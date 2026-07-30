@@ -1,0 +1,29 @@
+{
+  "name": "job-finder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "job-finder": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc && pnpm copy:web",
+    "copy:web": "node scripts/copy-web.js",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist web/dist"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.0",
+    "drizzle-orm": "^0.44.7",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import { fastifyAwilixPlugin } from '@fastify/awilix';
 import mercurius from 'mercurius';
 import cookie from '@fastify/cookie';
+import fastifyStatic from '@fastify/static';
+import { join } from 'path';
 
 import corsPlugin from '#src/http/adapters/fastify/corsPlugin.js';
 import { registerRoutes } from '#src/http/adapters/fastify/registerRoutes.js';
@@ -14,6 +16,7 @@ import { digestRoutes } from '#src/http/routes/digest.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { oauthRoutes } from '#src/http/routes/oauth.routes.js';
+import { registerUploadRoutes } from '#src/http/routes/uploads.routes.js';
 import { buildContainer } from '#src/http/container.js';
 import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
@@ -24,6 +27,8 @@ import {
 } from '#src/infrastructure/observability/tracing.js';
 import { asValue } from 'awilix';
 import { ENV, NODE_ENV, ROUTES } from '#src/constants.js';
+
+const isOfflineMode = process.env[ENV.OFFLINE_MODE] === 'true';
 
 // startObservability();
 
@@ -84,15 +89,36 @@ fastify.route({
   },
 });
 
+// Register upload routes for local file storage
+await fastify.register(registerUploadRoutes);
+
 await fastify.register(mercurius, {
   schema,
-  graphiql: process.env[ENV.NODE_ENV] !== NODE_ENV.PRODUCTION,
+  graphiql: !isOfflineMode && process.env[ENV.NODE_ENV] !== NODE_ENV.PRODUCTION,
   errorFormatter: (result) => {
     const errors = result.errors?.map(formatError);
     return { statusCode: 200, response: { ...result, errors } };
   },
   context: buildGraphQLContext,
 });
+
+// In offline mode, serve the web app as static files
+if (isOfflineMode) {
+  const webDistPath = join(import.meta.dirname, '..', 'web', 'dist');
+  await fastify.register(fastifyStatic, {
+    root: webDistPath,
+    prefix: '/',
+    wildcard: false,
+  });
+
+  // SPA fallback: serve index.html for any non-API route
+  fastify.setNotFoundHandler((request, reply) => {
+    if (request.url.startsWith('/graphql') || request.url.startsWith('/uploads')) {
+      return reply.code(404).send({ error: 'Not found' });
+    }
+    return reply.sendFile('index.html');
+  });
+}
 
 const port = Number(process.env[ENV.PORT] ?? 3001);
 
@@ -108,5 +134,7 @@ fastify.listen({ port, host: '0.0.0.0' }, (err) => {
     process.exit(1);
   }
   console.log(`API server listening on http://localhost:${port}`);
-  console.log(`GraphiQL available at http://localhost:${port}/graphiql`);
+  if (!isOfflineMode) {
+    console.log(`GraphiQL available at http://localhost:${port}/graphiql`);
+  }
 });
