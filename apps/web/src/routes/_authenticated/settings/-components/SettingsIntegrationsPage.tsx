@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { Alert, Badge, Button, FormLabel, Input, Select } from '@trakwyn/ui';
+import { Alert, Badge, Button, FormLabel, Input, Select, Skeleton } from '@trakwyn/ui';
 import {
   API_TOKENS_QUERY,
   CREATE_API_TOKEN,
@@ -84,7 +84,7 @@ export function SettingsIntegrationsPage() {
   // action — there is nothing for the user to create.
   const [revokingGrantId, setRevokingGrantId] = useState<string | null>(null);
   const [grantError, setGrantError] = useState<string | null>(null);
-  const { data: mcpGrantsData } = useQuery({
+  const { data: mcpGrantsData, isLoading: mcpGrantsLoading } = useQuery({
     queryKey: ['mcpOAuthGrants'],
     queryFn: () => gqlClient.request<{ mcpOAuthGrants: McpOAuthGrant[] }>(MCP_OAUTH_GRANTS_QUERY),
   });
@@ -298,7 +298,9 @@ export function SettingsIntegrationsPage() {
 
         {grantError && <Alert>{grantError}</Alert>}
 
-        {mcpGrants.length === 0 ? (
+        {mcpGrantsLoading ? (
+          <Skeleton className="h-16 rounded-lg" />
+        ) : mcpGrants.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {t('integrations.mcpGrantsEmpty')}
           </p>

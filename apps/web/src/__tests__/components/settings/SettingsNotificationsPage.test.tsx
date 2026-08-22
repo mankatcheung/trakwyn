@@ -72,6 +72,13 @@ describe('SettingsNotificationsPage', () => {
   });
 
   describe('notification preferences', () => {
+    it('shows a loading placeholder instead of blank controls while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsNotificationsPage />, { wrapper: Wrapper });
+
+      expect(screen.queryByLabelText('Job search digest')).not.toBeInTheDocument();
+    });
+
     it('renders digest frequency and reminder preferences', async () => {
       render(<SettingsNotificationsPage />, { wrapper: Wrapper });
 

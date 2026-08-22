@@ -309,6 +309,23 @@ describe('SettingsProfilePage', () => {
     });
   });
 
+  describe('backup email', () => {
+    it('shows a loading placeholder instead of the add-backup-email form while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+      expect(screen.queryByRole('button', { name: /add backup email/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the add-backup-email form once the me query resolves with none set', async () => {
+      render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /add backup email/i })).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('step-up reauthentication (JEF-44)', () => {
     const stepUpRequiredError = {
       response: {

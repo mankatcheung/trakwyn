@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { UserIcon, Trash2Icon } from 'lucide-react';
 import { put as putBlob } from '@vercel/blob/client';
 import { gqlClient } from '#/graphql/client';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { Alert, Button, FormLabel, Input, Skeleton } from '@trakwyn/ui';
 import { useTheme, type Theme } from '#/lib/theme';
 import { LOCALE_OPTIONS, useLocale } from '#/lib/i18n';
 import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
@@ -51,7 +51,7 @@ export function SettingsProfilePage() {
   }, []);
 
   // Profile form
-  const { data: meData } = useQuery({
+  const { data: meData, isLoading: meLoading } = useQuery({
     queryKey: ['me'],
     queryFn: () => gqlClient.request<{ me: Me | null }>(ME_QUERY),
   });
@@ -361,7 +361,9 @@ export function SettingsProfilePage() {
             {t('security.backupEmailDescription')}
           </p>
         </div>
-        {backupEmail ? (
+        {meLoading ? (
+          <Skeleton className="h-10 rounded-lg" />
+        ) : backupEmail ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-900 dark:text-gray-100">
               {backupEmail}{' '}

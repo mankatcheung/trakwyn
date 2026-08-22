@@ -1,5 +1,5 @@
 import { UnlinkIcon, CheckIcon, LogOutIcon, BanIcon } from 'lucide-react';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { Alert, Button, FormLabel, Input, Skeleton } from '@trakwyn/ui';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -60,7 +60,7 @@ export function SettingsSecurityPage() {
   };
 
   // Linked OAuth accounts
-  const { data: linkedAccountsData } = useQuery({
+  const { data: linkedAccountsData, isLoading: linkedAccountsLoading } = useQuery({
     queryKey: ['linkedOAuthAccounts'],
     queryFn: () =>
       gqlClient.request<{ linkedOAuthAccounts: LinkedOAuthAccount[] }>(LINKED_OAUTH_ACCOUNTS_QUERY),
@@ -83,7 +83,7 @@ export function SettingsSecurityPage() {
   };
 
   // Two-factor authentication
-  const { data: totpData } = useQuery({
+  const { data: totpData, isLoading: totpLoading } = useQuery({
     queryKey: ['totpEnabled'],
     queryFn: () => gqlClient.request<{ totpEnabled: boolean }>(TOTP_ENABLED_QUERY),
   });
@@ -275,48 +275,55 @@ export function SettingsSecurityPage() {
           </Alert>
         )}
         {linkOauthError && <Alert>{t(oauthErrorKey(linkOauthError))}</Alert>}
-        <div className="space-y-2">
-          {(['google', 'github'] as const).map((provider) => {
-            const linked = linkedAccounts.find((a) => a.provider === provider);
-            const providerLabel = t(`security.${provider}`);
-            return (
-              <div
-                key={provider}
-                className="flex items-center justify-between px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <OAuthProviderLogo provider={provider} className="h-5 w-5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {providerLabel}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {linked ? (linked.email ?? t('security.linked')) : t('security.notLinked')}
-                    </p>
+        {linkedAccountsLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-14 rounded-lg" />
+            <Skeleton className="h-14 rounded-lg" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {(['google', 'github'] as const).map((provider) => {
+              const linked = linkedAccounts.find((a) => a.provider === provider);
+              const providerLabel = t(`security.${provider}`);
+              return (
+                <div
+                  key={provider}
+                  className="flex items-center justify-between px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <OAuthProviderLogo provider={provider} className="h-5 w-5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {providerLabel}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {linked ? (linked.email ?? t('security.linked')) : t('security.notLinked')}
+                      </p>
+                    </div>
                   </div>
+                  {linked ? (
+                    <button
+                      type="button"
+                      onClick={() => onUnlink(provider)}
+                      aria-label={t('security.unlinkAria', { provider: providerLabel })}
+                      className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                    >
+                      <UnlinkIcon size={14} />{' '}
+                      <span className="hidden sm:inline">{t('security.unlink')}</span>
+                    </button>
+                  ) : (
+                    <a
+                      href={`${API_ORIGIN}/auth/oauth/${provider}/start?mode=link`}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {t('security.link')}
+                    </a>
+                  )}
                 </div>
-                {linked ? (
-                  <button
-                    type="button"
-                    onClick={() => onUnlink(provider)}
-                    aria-label={t('security.unlinkAria', { provider: providerLabel })}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                  >
-                    <UnlinkIcon size={14} />{' '}
-                    <span className="hidden sm:inline">{t('security.unlink')}</span>
-                  </button>
-                ) : (
-                  <a
-                    href={`${API_ORIGIN}/auth/oauth/${provider}/start?mode=link`}
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    {t('security.link')}
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <hr className="border-gray-200 dark:border-gray-700" />
@@ -332,7 +339,9 @@ export function SettingsSecurityPage() {
           </p>
         </div>
 
-        {backupCodes ? (
+        {totpLoading ? (
+          <Skeleton className="h-24 rounded-lg" />
+        ) : backupCodes ? (
           <div className="space-y-3">
             <p className="text-sm text-green-600">{t('security.twoFactorEnabled')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">

@@ -218,6 +218,13 @@ describe('SettingsIntegrationsPage', () => {
       expect(await screen.findByText('No MCP clients are connected.')).toBeInTheDocument();
     });
 
+    it('shows a loading placeholder instead of the empty state while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      expect(screen.queryByText('No MCP clients are connected.')).not.toBeInTheDocument();
+    });
+
     it('revokes by grant id and drops the client from the list', async () => {
       const revoke = respondWithGrants([GRANT]);
       render(<SettingsIntegrationsPage />, { wrapper: Wrapper });

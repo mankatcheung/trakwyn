@@ -36,6 +36,15 @@ describe('SettingsExperiencePage', () => {
     });
   });
 
+  it('shows loading placeholders instead of empty states while the requests are in flight', () => {
+    mockGqlRequest.mockReturnValue(new Promise(() => {}));
+    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+
+    expect(screen.queryByText('No work experiences added yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No education entries added yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No skills added yet.')).not.toBeInTheDocument();
+  });
+
   it('shows empty states for all three sections when there is no data', async () => {
     render(<SettingsExperiencePage />, { wrapper: Wrapper });
 

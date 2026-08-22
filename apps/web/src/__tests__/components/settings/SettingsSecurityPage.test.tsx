@@ -148,6 +148,13 @@ describe('SettingsSecurityPage', () => {
   });
 
   describe('two-factor authentication', () => {
+    it('shows a loading placeholder instead of the Enable 2FA form while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsSecurityPage />, { wrapper: Wrapper });
+
+      expect(screen.queryByRole('button', { name: /enable 2fa/i })).not.toBeInTheDocument();
+    });
+
     it('shows an "Enable 2FA" button when disabled', async () => {
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
       await waitFor(() => {
@@ -384,6 +391,13 @@ describe('SettingsSecurityPage', () => {
   });
 
   describe('linked accounts', () => {
+    it('shows a loading placeholder instead of "not linked" while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsSecurityPage />, { wrapper: Wrapper });
+
+      expect(screen.queryByRole('link', { name: /^link$/i })).not.toBeInTheDocument();
+    });
+
     it('shows both providers as not linked, with a Link link to the start route', async () => {
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
       await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());

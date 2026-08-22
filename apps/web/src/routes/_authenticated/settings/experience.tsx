@@ -14,7 +14,16 @@ import {
 } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { Alert, Button, FormLabel, IconButton, Input, Select, Textarea } from '@trakwyn/ui';
+import {
+  Alert,
+  Button,
+  FormLabel,
+  IconButton,
+  Input,
+  Select,
+  Skeleton,
+  Textarea,
+} from '@trakwyn/ui';
 
 export const Route = createFileRoute('/_authenticated/settings/experience')({
   component: SettingsExperiencePage,
@@ -245,15 +254,15 @@ function SettingsExperiencePage() {
   const qc = useQueryClient();
 
   // Queries
-  const { data: weData } = useQuery({
+  const { data: weData, isLoading: weLoading } = useQuery({
     queryKey: ['workExperiences'],
     queryFn: () => gqlClient.request<{ workExperiences: WorkExperience[] }>(WORK_EXPERIENCES_QUERY),
   });
-  const { data: eduData } = useQuery({
+  const { data: eduData, isLoading: eduLoading } = useQuery({
     queryKey: ['educations'],
     queryFn: () => gqlClient.request<{ educations: Education[] }>(EDUCATIONS_QUERY),
   });
-  const { data: skillData } = useQuery({
+  const { data: skillData, isLoading: skillLoading } = useQuery({
     queryKey: ['skills'],
     queryFn: () => gqlClient.request<{ skills: Skill[] }>(SKILLS_QUERY),
   });
@@ -460,10 +469,15 @@ function SettingsExperiencePage() {
           </Button>
         </div>
 
-        {workExperiences.length === 0 && !weFormOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('experience.noWorkExperiencesYet')}
-          </p>
+        {weLoading ? (
+          <Skeleton className="h-16 rounded-lg" />
+        ) : (
+          workExperiences.length === 0 &&
+          !weFormOpen && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('experience.noWorkExperiencesYet')}
+            </p>
+          )
         )}
 
         {workExperiences.map((we) => (
@@ -624,10 +638,15 @@ function SettingsExperiencePage() {
           </Button>
         </div>
 
-        {educations.length === 0 && !eduFormOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('experience.noEducationYet')}
-          </p>
+        {eduLoading ? (
+          <Skeleton className="h-16 rounded-lg" />
+        ) : (
+          educations.length === 0 &&
+          !eduFormOpen && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('experience.noEducationYet')}
+            </p>
+          )
         )}
 
         {educations.map((edu) => (
@@ -778,8 +797,15 @@ function SettingsExperiencePage() {
           </Button>
         </div>
 
-        {skills.length === 0 && !skillFormOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('experience.noSkillsYet')}</p>
+        {skillLoading ? (
+          <Skeleton className="h-8 w-48 rounded-lg" />
+        ) : (
+          skills.length === 0 &&
+          !skillFormOpen && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('experience.noSkillsYet')}
+            </p>
+          )
         )}
 
         {skills.length > 0 && (

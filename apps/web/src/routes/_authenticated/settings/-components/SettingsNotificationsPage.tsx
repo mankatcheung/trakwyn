@@ -8,14 +8,14 @@ import {
 } from './shared';
 import { usePushNotifications } from '#/hooks/usePushNotifications';
 import { useLocale } from '#/lib/i18n';
-import { Checkbox, Select } from '@trakwyn/ui';
+import { Checkbox, Select, Skeleton } from '@trakwyn/ui';
 
 export function SettingsNotificationsPage() {
   const { t } = useLocale();
   const qc = useQueryClient();
   const push = usePushNotifications();
 
-  const { data: prefsData } = useQuery({
+  const { data: prefsData, isLoading: prefsLoading } = useQuery({
     queryKey: ['notificationPreferences'],
     queryFn: () =>
       gqlClient.request<{ notificationPreferences: NotificationPreferences }>(
@@ -78,61 +78,69 @@ export function SettingsNotificationsPage() {
             {t('notifications.chooseEmails')}
           </p>
         </div>
-        {prefs && (
+        {prefsLoading ? (
           <div className="space-y-3">
-            <div>
-              <label
-                htmlFor="digest-frequency"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                {t('notifications.digestLabel')}
-              </label>
-              <Select
-                id="digest-frequency"
-                value={digestFrequency}
-                onChange={(e) =>
-                  onChangeDigestFrequency(
-                    e.target.value as NotificationPreferences['digestFrequency'],
-                  )
-                }
-                className="mt-1 max-w-xs"
-              >
-                <option value="daily">{t('notifications.daily')}</option>
-                <option value="weekly">{t('notifications.weekly')}</option>
-                <option value="off">{t('notifications.off')}</option>
-              </Select>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t('notifications.digestHelp')}
-              </p>
-            </div>
-            <label className="flex items-center gap-3 text-sm text-gray-900 dark:text-gray-100">
-              <Checkbox
-                checked={prefs.followUpRemindersEnabled}
-                onChange={(e) => onToggleFollowUpReminders(e.target.checked)}
-              />
-              {t('notifications.followUpReminderEmails')}
-            </label>
-            <div>
-              <label
-                htmlFor="weekly-application-goal"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                {t('notifications.weeklyGoalLabel')}
-              </label>
-              <input
-                id="weekly-application-goal"
-                type="number"
-                min={1}
-                max={100}
-                value={prefs.weeklyApplicationGoal}
-                onChange={(e) => void onChangeWeeklyGoal(Number(e.target.value))}
-                className="mt-1 block w-28 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {t('notifications.weeklyGoalHelp')}
-              </p>
-            </div>
+            <Skeleton className="h-10 w-full max-w-xs rounded-lg" />
+            <Skeleton className="h-5 w-48 rounded" />
+            <Skeleton className="h-10 w-28 rounded-lg" />
           </div>
+        ) : (
+          prefs && (
+            <div className="space-y-3">
+              <div>
+                <label
+                  htmlFor="digest-frequency"
+                  className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  {t('notifications.digestLabel')}
+                </label>
+                <Select
+                  id="digest-frequency"
+                  value={digestFrequency}
+                  onChange={(e) =>
+                    onChangeDigestFrequency(
+                      e.target.value as NotificationPreferences['digestFrequency'],
+                    )
+                  }
+                  className="mt-1 max-w-xs"
+                >
+                  <option value="daily">{t('notifications.daily')}</option>
+                  <option value="weekly">{t('notifications.weekly')}</option>
+                  <option value="off">{t('notifications.off')}</option>
+                </Select>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t('notifications.digestHelp')}
+                </p>
+              </div>
+              <label className="flex items-center gap-3 text-sm text-gray-900 dark:text-gray-100">
+                <Checkbox
+                  checked={prefs.followUpRemindersEnabled}
+                  onChange={(e) => onToggleFollowUpReminders(e.target.checked)}
+                />
+                {t('notifications.followUpReminderEmails')}
+              </label>
+              <div>
+                <label
+                  htmlFor="weekly-application-goal"
+                  className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  {t('notifications.weeklyGoalLabel')}
+                </label>
+                <input
+                  id="weekly-application-goal"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={prefs.weeklyApplicationGoal}
+                  onChange={(e) => void onChangeWeeklyGoal(Number(e.target.value))}
+                  className="mt-1 block w-28 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t('notifications.weeklyGoalHelp')}
+                </p>
+              </div>
+            </div>
+          )
         )}
       </section>
 
