@@ -2,6 +2,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import i18n from '../../../i18n';
 
 export class PushRegistrationError extends Error {}
 
@@ -15,7 +16,7 @@ export class PushRegistrationError extends Error {}
  */
 export async function registerForPushNotifications(): Promise<string> {
   if (!Device.isDevice) {
-    throw new PushRegistrationError('Push notifications require a physical device.');
+    throw new PushRegistrationError(i18n.t('push:requiresPhysicalDevice'));
   }
 
   if (Platform.OS === 'android') {
@@ -32,14 +33,12 @@ export async function registerForPushNotifications(): Promise<string> {
     finalStatus = status;
   }
   if (finalStatus !== 'granted') {
-    throw new PushRegistrationError('Notification permission was not granted.');
+    throw new PushRegistrationError(i18n.t('push:permissionNotGranted'));
   }
 
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) {
-    throw new PushRegistrationError(
-      'This build has no EAS project configured, so it cannot register for push notifications.',
-    );
+    throw new PushRegistrationError(i18n.t('push:noEasProject'));
   }
 
   try {
@@ -47,7 +46,7 @@ export async function registerForPushNotifications(): Promise<string> {
     return token;
   } catch (err) {
     throw new PushRegistrationError(
-      err instanceof Error ? err.message : 'Could not obtain a push token.',
+      err instanceof Error ? err.message : i18n.t('push:couldNotObtainToken'),
     );
   }
 }

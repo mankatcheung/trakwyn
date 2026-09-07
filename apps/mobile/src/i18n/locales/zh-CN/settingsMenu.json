@@ -1,0 +1,15 @@
+{
+  "profile": "个人资料",
+  "security": "安全",
+  "notifications": "通知",
+  "appearance": "外观",
+  "language": "语言",
+  "ai": "AI",
+  "experience": "经历",
+  "integrations": "集成",
+  "data": "数据",
+  "dangerZone": "危险区域",
+  "analytics": "分析",
+  "trash": "回收站",
+  "signOut": "退出登录"
+}

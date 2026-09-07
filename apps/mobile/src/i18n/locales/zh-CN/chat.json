@@ -1,0 +1,15 @@
+{
+  "emptyPrompt": "询问关于你的求职申请、下一步行动或其他任何问题。",
+  "inputPlaceholder": "给助手发消息",
+  "send": "发送",
+  "conversations": {
+    "empty": "还没有对话记录。",
+    "newButton": "+ 新建",
+    "newConversation": "新建对话",
+    "delete": "删除",
+    "deleteTitle": "删除对话",
+    "deleteMessage": "此操作无法撤销。",
+    "cancel": "取消",
+    "couldNotDeleteTitle": "无法删除"
+  }
+}

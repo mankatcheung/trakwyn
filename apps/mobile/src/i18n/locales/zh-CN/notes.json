@@ -1,0 +1,14 @@
+{
+  "deleteNoteTitle": "删除备注",
+  "deleteNoteMessage": "此操作无法撤销。",
+  "cancel": "取消",
+  "delete": "删除",
+  "save": "保存",
+  "edit": "编辑",
+  "emptyText": "还没有备注。",
+  "addNotePlaceholder": "添加备注",
+  "add": "添加",
+  "couldNotAddNoteTitle": "无法添加备注",
+  "couldNotSaveTitle": "无法保存",
+  "couldNotDeleteTitle": "无法删除"
+}

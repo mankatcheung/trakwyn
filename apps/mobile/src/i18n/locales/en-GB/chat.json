@@ -1,0 +1,15 @@
+{
+  "emptyPrompt": "Ask about your applications, next steps, or anything else.",
+  "inputPlaceholder": "Message the assistant",
+  "send": "Send",
+  "conversations": {
+    "empty": "No conversations yet.",
+    "newButton": "+ New",
+    "newConversation": "New conversation",
+    "delete": "Delete",
+    "deleteTitle": "Delete conversation",
+    "deleteMessage": "This cannot be undone.",
+    "cancel": "Cancel",
+    "couldNotDeleteTitle": "Could not delete"
+  }
+}

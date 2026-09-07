@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../i18n';
 
 jest.mock('../../../auth/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -8,12 +9,16 @@ jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
+jest.mock('../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../auth/AuthContext';
 import { LoginScreen } from '../LoginScreen';
+import { useTheme } from '../../../theme/ThemeContext';
+import { lightColors } from '../../../theme/colors';
 
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseRouter = jest.mocked(useRouter);
+const mockedUseTheme = jest.mocked(useTheme);
 
 function renderScreen(push = jest.fn()) {
   mockedUseRouter.mockReturnValue({ push } as never);
@@ -22,6 +27,12 @@ function renderScreen(push = jest.fn()) {
 
 describe('LoginScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
   });
 
@@ -118,7 +129,7 @@ describe('LoginScreen', () => {
 
     const { getByTestId, findByText } = await renderScreen();
 
-    await findByText('Sign in with Google');
+    await findByText('Google');
     await fireEvent.press(getByTestId('oauth-google-button'));
 
     await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('google'));
@@ -140,7 +151,7 @@ describe('LoginScreen', () => {
 
     const { getByTestId, findByText } = await renderScreen();
 
-    await findByText('Sign in with GitHub');
+    await findByText('GitHub');
     await fireEvent.press(getByTestId('oauth-github-button'));
 
     await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('github'));

@@ -1,4 +1,5 @@
 import { File, UploadTask, UploadType } from 'expo-file-system';
+import i18n from '../../../i18n';
 
 /**
  * Mirrors apps/web's DocumentsTab upload branch, adapted to RN upload
@@ -21,7 +22,7 @@ export async function uploadFileToStorage(
     });
     const result = await task.uploadAsync();
     if (result.status >= 400) {
-      throw new Error(`Upload failed with status ${result.status}`);
+      throw new Error(i18n.t('documents:uploadFailedStatus', { status: result.status }));
     }
     return;
   }
@@ -30,5 +31,5 @@ export async function uploadFileToStorage(
   // token meant for @vercel/blob/client's browser-only put() — not yet
   // wired up for React Native. Local dev is the primary target for the
   // mobile app right now, same as the rest of this phase.
-  throw new Error('Uploading to Vercel Blob storage from the mobile app is not supported yet.');
+  throw new Error(i18n.t('documents:uploadNotSupported'));
 }

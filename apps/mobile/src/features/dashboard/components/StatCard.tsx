@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 interface StatCardProps {
   label: string;
@@ -9,6 +11,8 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, loading, color }: StatCardProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={[styles.card, { borderColor: color }]} testID={`stat-card-${label}`}>
       {loading ? (
@@ -21,15 +25,17 @@ export function StatCard({ label, value, loading, color }: StatCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: 104,
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: '#ffffff',
-    padding: 12,
-    gap: 4,
-  },
-  value: { fontSize: 22, fontWeight: '700' },
-  label: { fontSize: 12, color: '#6b7280' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    card: {
+      width: 104,
+      borderRadius: 12,
+      borderWidth: 1,
+      backgroundColor: colors.surface,
+      padding: 12,
+      gap: 4,
+    },
+    value: { fontSize: 22, fontWeight: '700' },
+    label: { fontSize: 12, color: colors.textSubtle },
+  });
+}

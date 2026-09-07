@@ -1,0 +1,15 @@
+{
+  "profile": "Profile",
+  "security": "Security",
+  "notifications": "Notifications",
+  "appearance": "Appearance",
+  "language": "Language",
+  "ai": "AI",
+  "experience": "Experience",
+  "integrations": "Integrations",
+  "data": "Data",
+  "dangerZone": "Danger zone",
+  "analytics": "Analytics",
+  "trash": "Trash",
+  "signOut": "Sign out"
+}

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,12 +12,34 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useProfile, useUpdateProfile } from '../hooks/useProfile';
+import { useTranslation } from 'react-i18next';
+import {
+  useProfile,
+  useRemoveAvatar,
+  useRemoveBackupEmail,
+  useRequestAddBackupEmail,
+  useRequestEmailChange,
+  useUpdateProfile,
+  useUploadAvatar,
+} from '../hooks/useProfile';
+import { TimezonePicker } from '../components/TimezonePicker';
 import { getErrorMessage } from '../../../lib/errors';
+import { StepUpCancelledError, useStepUpReauth } from '../../../auth/useStepUpReauth';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 export function ProfileScreen() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: profile, isLoading, isError, error } = useProfile();
   const updateProfile = useUpdateProfile();
+  const uploadAvatar = useUploadAvatar();
+  const removeAvatar = useRemoveAvatar();
+  const requestEmailChange = useRequestEmailChange();
+  const requestAddBackupEmail = useRequestAddBackupEmail();
+  const removeBackupEmail = useRemoveBackupEmail();
+  const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
 
   const [name, setName] = useState('');
   const [timezone, setTimezone] = useState('');
@@ -23,6 +47,20 @@ export function ProfileScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [syncedProfile, setSyncedProfile] = useState<typeof profile>(undefined);
+
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const [emailPassword, setEmailPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const [backupEmailInput, setBackupEmailInput] = useState('');
+  const [backupEmailPassword, setBackupEmailPassword] = useState('');
+  const [backupEmailError, setBackupEmailError] = useState<string | null>(null);
+  const [backupEmailSent, setBackupEmailSent] = useState(false);
+  const [removeBackupPassword, setRemoveBackupPassword] = useState('');
+  const [removeBackupError, setRemoveBackupError] = useState<string | null>(null);
 
   if (profile && profile !== syncedProfile) {
     setSyncedProfile(profile);
@@ -43,10 +81,80 @@ export function ProfileScreen() {
     );
   };
 
+  const onPickAvatar = async () => {
+    setAvatarError(null);
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'image/*',
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    uploadAvatar.mutate(
+      {
+        uri: asset.uri,
+        name: asset.name,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+        sizeBytes: asset.size ?? 0,
+      },
+      { onError: (err) => setAvatarError(getErrorMessage(err)) },
+    );
+  };
+
+  const onRemoveAvatar = () => {
+    setAvatarError(null);
+    removeAvatar.mutate(undefined, { onError: (err) => setAvatarError(getErrorMessage(err)) });
+  };
+
+  const onUpdateEmail = async () => {
+    setEmailError(null);
+    setEmailSent(false);
+    try {
+      await withStepUp(() =>
+        requestEmailChange.mutateAsync({ currentPassword: emailPassword, newEmail }),
+      );
+      setEmailPassword('');
+      setNewEmail('');
+      setEmailSent(true);
+    } catch (err) {
+      if (err instanceof StepUpCancelledError) return;
+      setEmailError(getErrorMessage(err));
+    }
+  };
+
+  const onAddBackupEmail = async () => {
+    setBackupEmailError(null);
+    setBackupEmailSent(false);
+    try {
+      await withStepUp(() =>
+        requestAddBackupEmail.mutateAsync({
+          currentPassword: backupEmailPassword,
+          backupEmail: backupEmailInput,
+        }),
+      );
+      setBackupEmailInput('');
+      setBackupEmailPassword('');
+      setBackupEmailSent(true);
+    } catch (err) {
+      if (err instanceof StepUpCancelledError) return;
+      setBackupEmailError(getErrorMessage(err));
+    }
+  };
+
+  const onRemoveBackupEmail = async () => {
+    setRemoveBackupError(null);
+    try {
+      await withStepUp(() => removeBackupEmail.mutateAsync(removeBackupPassword));
+      setRemoveBackupPassword('');
+    } catch (err) {
+      if (err instanceof StepUpCancelledError) return;
+      setRemoveBackupError(getErrorMessage(err));
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" testID="profile-loading" />
+        <ActivityIndicator size="large" color={colors.primary} testID="profile-loading" />
       </View>
     );
   }
@@ -55,7 +163,7 @@ export function ProfileScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.error}>
-          {error ? getErrorMessage(error) : 'Could not load profile'}
+          {error ? getErrorMessage(error) : t('profile.couldNotLoad')}
         </Text>
       </View>
     );
@@ -68,12 +176,53 @@ export function ProfileScreen() {
     >
       <ScrollView contentContainerStyle={styles.content}>
         {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
-        {saved ? <Text style={styles.success}>Saved.</Text> : null}
+        {saved ? <Text style={styles.success}>{t('profile.saved')}</Text> : null}
 
-        <Text style={styles.label}>Email</Text>
+        <View style={styles.avatarRow}>
+          {profile.avatarUrl ? (
+            <Image
+              source={{ uri: profile.avatarUrl }}
+              style={styles.avatarImage}
+              testID="profile-avatar-image"
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder} testID="profile-avatar-placeholder">
+              <Text style={styles.avatarPlaceholderText}>
+                {(profile.name || profile.email).charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.avatarActions}>
+            <Pressable
+              onPress={() => void onPickAvatar()}
+              disabled={uploadAvatar.isPending}
+              testID="profile-upload-avatar-button"
+            >
+              <Text style={styles.link}>
+                {uploadAvatar.isPending
+                  ? t('profile.uploading')
+                  : profile.avatarUrl
+                    ? t('profile.changePhoto')
+                    : t('profile.uploadPhoto')}
+              </Text>
+            </Pressable>
+            {profile.avatarUrl ? (
+              <Pressable
+                onPress={onRemoveAvatar}
+                disabled={removeAvatar.isPending}
+                testID="profile-remove-avatar-button"
+              >
+                <Text style={styles.linkDanger}>{t('profile.removePhoto')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+        {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
+
+        <Text style={styles.label}>{t('profile.emailLabel')}</Text>
         <Text style={styles.readOnly}>{profile.email}</Text>
 
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>{t('profile.nameLabel')}</Text>
         <TextInput
           style={styles.input}
           value={name}
@@ -81,20 +230,15 @@ export function ProfileScreen() {
           testID="profile-name-input"
         />
 
-        <Text style={styles.label}>Timezone</Text>
-        <TextInput
-          style={styles.input}
-          value={timezone}
-          onChangeText={setTimezone}
-          placeholder="e.g. Europe/London"
-          testID="profile-timezone-input"
-        />
+        <Text style={styles.label}>{t('profile.timezoneLabel')}</Text>
+        <TimezonePicker value={timezone} onChange={setTimezone} testID="profile-timezone-input" />
 
-        <Text style={styles.label}>Target role</Text>
+        <Text style={styles.label}>{t('profile.targetRoleLabel')}</Text>
         <TextInput
           style={styles.input}
           value={targetRole}
           onChangeText={setTargetRole}
+          placeholder={t('profile.targetRolePlaceholder')}
           testID="profile-target-role-input"
         />
 
@@ -105,53 +249,197 @@ export function ProfileScreen() {
           testID="profile-save-button"
         >
           <Text style={styles.saveButtonText}>
-            {updateProfile.isPending ? 'Saving...' : 'Save'}
+            {updateProfile.isPending ? t('profile.saving') : t('profile.save')}
           </Text>
         </Pressable>
+
+        <Text style={styles.sectionTitle}>{t('profile.emailSectionTitle')}</Text>
+        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+        {emailSent ? <Text style={styles.success}>{t('profile.emailChangeSent')}</Text> : null}
+        <TextInput
+          style={styles.input}
+          value={emailPassword}
+          onChangeText={setEmailPassword}
+          placeholder={t('profile.currentPasswordPlaceholder')}
+          secureTextEntry
+          testID="profile-email-current-password-input"
+        />
+        <TextInput
+          style={styles.input}
+          value={newEmail}
+          onChangeText={setNewEmail}
+          placeholder={t('profile.newEmailPlaceholder')}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          testID="profile-new-email-input"
+        />
+        <Pressable
+          style={[styles.saveButton, requestEmailChange.isPending && styles.saveButtonDisabled]}
+          onPress={() => void onUpdateEmail()}
+          disabled={requestEmailChange.isPending || !emailPassword || !newEmail}
+          testID="profile-update-email-button"
+        >
+          <Text style={styles.saveButtonText}>
+            {requestEmailChange.isPending ? t('profile.saving') : t('profile.updateEmail')}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.sectionTitle}>{t('profile.backupEmailSectionTitle')}</Text>
+        <Text style={styles.sectionDescription}>{t('profile.backupEmailDescription')}</Text>
+        {profile.backupEmail ? (
+          <>
+            <Text style={styles.readOnly} testID="profile-backup-email-value">
+              {profile.backupEmail}
+              {'  '}
+              {profile.backupEmailVerifiedAt
+                ? t('profile.backupEmailVerified')
+                : t('profile.backupEmailPending')}
+            </Text>
+            {removeBackupError ? <Text style={styles.error}>{removeBackupError}</Text> : null}
+            <TextInput
+              style={styles.input}
+              value={removeBackupPassword}
+              onChangeText={setRemoveBackupPassword}
+              placeholder={t('profile.currentPasswordPlaceholder')}
+              secureTextEntry
+              testID="profile-remove-backup-email-password-input"
+            />
+            <Pressable
+              style={[
+                styles.dangerButton,
+                removeBackupEmail.isPending && styles.saveButtonDisabled,
+              ]}
+              onPress={() => void onRemoveBackupEmail()}
+              disabled={removeBackupEmail.isPending || !removeBackupPassword}
+              testID="profile-remove-backup-email-button"
+            >
+              <Text style={styles.dangerButtonText}>
+                {removeBackupEmail.isPending ? t('profile.saving') : t('profile.removeBackupEmail')}
+              </Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            {backupEmailError ? <Text style={styles.error}>{backupEmailError}</Text> : null}
+            {backupEmailSent ? (
+              <Text style={styles.success}>{t('profile.backupEmailAdded')}</Text>
+            ) : null}
+            <TextInput
+              style={styles.input}
+              value={backupEmailInput}
+              onChangeText={setBackupEmailInput}
+              placeholder={t('profile.backupEmailPlaceholder')}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              testID="profile-backup-email-input"
+            />
+            <TextInput
+              style={styles.input}
+              value={backupEmailPassword}
+              onChangeText={setBackupEmailPassword}
+              placeholder={t('profile.currentPasswordPlaceholder')}
+              secureTextEntry
+              testID="profile-backup-email-password-input"
+            />
+            <Pressable
+              style={[
+                styles.saveButton,
+                requestAddBackupEmail.isPending && styles.saveButtonDisabled,
+              ]}
+              onPress={() => void onAddBackupEmail()}
+              disabled={
+                requestAddBackupEmail.isPending || !backupEmailInput || !backupEmailPassword
+              }
+              testID="profile-add-backup-email-button"
+            >
+              <Text style={styles.saveButtonText}>
+                {requestAddBackupEmail.isPending
+                  ? t('profile.saving')
+                  : t('profile.addBackupEmail')}
+              </Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
+      {stepUpDialog}
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  content: { padding: 20, gap: 6 },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  success: {
-    color: '#047857',
-    backgroundColor: '#d1fae5',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginTop: 10 },
-  readOnly: { fontSize: 15, color: '#6b7280', paddingVertical: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  saveButton: {
-    minHeight: 44,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+    content: { padding: 20, gap: 6 },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    success: {
+      color: '#047857',
+      backgroundColor: '#d1fae5',
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
+    avatarImage: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surfaceAlt },
+    avatarPlaceholder: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.primarySurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarPlaceholderText: { fontSize: 24, fontWeight: '700', color: colors.primary },
+    avatarActions: { gap: 6 },
+    link: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+    linkDanger: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+    label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 10 },
+    readOnly: { fontSize: 15, color: colors.textSubtle, paddingVertical: 8 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    saveButton: {
+      minHeight: 44,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+    },
+    saveButtonDisabled: { opacity: 0.6 },
+    saveButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    dangerButton: {
+      minHeight: 44,
+      borderRadius: 8,
+      backgroundColor: colors.dangerSurface,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+    },
+    dangerButtonText: { color: colors.danger, fontSize: 16, fontWeight: '600' },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 32,
+      marginBottom: 4,
+    },
+    sectionDescription: { fontSize: 13, color: colors.textSubtle, marginBottom: 8 },
+  });
+}

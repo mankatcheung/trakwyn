@@ -1,0 +1,72 @@
+{
+  "status": {
+    "draft": "草稿",
+    "applied": "已申請",
+    "interviewing": "面試中",
+    "offered": "已獲得聘用",
+    "accepted": "已接受",
+    "rejected": "已拒絕",
+    "withdrawn": "已撤回"
+  },
+  "detail": {
+    "moveToTrashTitle": "移至垃圾桶",
+    "moveToTrashMessage": "此求職申請將移至垃圾桶。",
+    "cancel": "取消",
+    "delete": "刪除",
+    "couldNotDeleteTitle": "無法刪除",
+    "notFound": "找不到求職申請",
+    "locationLabel": "地點",
+    "salaryRangeLabel": "薪資範圍",
+    "sourceLabel": "來源",
+    "descriptionLabel": "描述",
+    "notes": "筆記",
+    "documents": "文件",
+    "offers": "聘書",
+    "edit": "編輯",
+    "deleting": "刪除中…",
+    "moveToTrash": "移至垃圾桶"
+  },
+  "form": {
+    "companyLabel": "公司",
+    "roleLabel": "職位",
+    "statusLabel": "狀態",
+    "jobUrlLabel": "職缺網址",
+    "locationLabel": "地點",
+    "salaryRangeLabel": "薪資範圍",
+    "descriptionLabel": "描述",
+    "invalidInput": "輸入無效",
+    "saving": "儲存中…",
+    "saveChanges": "儲存變更",
+    "createApplication": "建立求職申請",
+    "validation": {
+      "companyRequired": "請輸入公司名稱",
+      "roleRequired": "請輸入職位名稱",
+      "invalidUrl": "請輸入有效的網址"
+    }
+  },
+  "board": {
+    "title": "看板",
+    "newButton": "+ 新增",
+    "move": "移動",
+    "moveModalTitle": "移動 {{company}}",
+    "cancel": "取消"
+  },
+  "trash": {
+    "deletePermanentlyTitle": "永久刪除",
+    "deletePermanentlyMessage": "{{company}} 的「{{role}}」將被永久刪除，且無法復原。",
+    "cancel": "取消",
+    "deleteForever": "永久刪除",
+    "couldNotDeleteTitle": "無法刪除",
+    "couldNotRestoreTitle": "無法復原",
+    "restore": "復原",
+    "delete": "刪除",
+    "empty": "垃圾桶是空的。"
+  },
+  "list": {
+    "searchPlaceholder": "搜尋公司或職位",
+    "all": "全部",
+    "empty": "尚無求職申請。",
+    "viewList": "列表",
+    "viewBoard": "看板"
+  }
+}

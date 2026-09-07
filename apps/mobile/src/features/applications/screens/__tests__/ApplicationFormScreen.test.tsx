@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('../../hooks/useApplicationQueries', () => ({ useApplication: jest.fn() }));
 jest.mock('../../hooks/useApplicationMutations', () => ({
@@ -11,17 +12,21 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApplication } from '../../hooks/useApplicationQueries';
 import { useCreateApplication, useUpdateApplication } from '../../hooks/useApplicationMutations';
 import { ApplicationFormScreen } from '../ApplicationFormScreen';
 import type { Application } from '../../types';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedUseApplication = jest.mocked(useApplication);
 const mockedUseCreateApplication = jest.mocked(useCreateApplication);
 const mockedUseUpdateApplication = jest.mocked(useUpdateApplication);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseTheme = jest.mocked(useTheme);
 
 const existing: Application = {
   id: '1',
@@ -51,6 +56,12 @@ function renderScreen(applicationId: string | undefined, back = jest.fn()) {
 
 describe('ApplicationFormScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseApplication.mockReturnValue({ data: undefined, isLoading: false } as never);
   });

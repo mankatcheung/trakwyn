@@ -1,0 +1,48 @@
+{
+  "screenTitles": {
+    "dashboard": "儀表板",
+    "calendar": "行事曆",
+    "notifications": "通知",
+    "applications": "求職申請",
+    "newApplication": "新增求職申請",
+    "analytics": "分析",
+    "board": "看板",
+    "trash": "垃圾桶",
+    "application": "求職申請",
+    "editApplication": "編輯求職申請",
+    "notes": "筆記",
+    "documents": "文件",
+    "offers": "聘書",
+    "compareOffers": "比較聘書",
+    "assistant": "助理",
+    "settings": "設定",
+    "profile": "個人資料",
+    "security": "安全性",
+    "ai": "AI",
+    "experience": "經歷",
+    "integrations": "整合",
+    "data": "資料",
+    "dangerZone": "危險區域",
+    "language": "語言",
+    "appearance": "外觀"
+  },
+  "sidebar": {
+    "dashboard": "儀表板",
+    "applications": "求職申請",
+    "board": "看板",
+    "calendar": "行事曆",
+    "analytics": "分析",
+    "assistant": "助理",
+    "notifications": "通知",
+    "settings": "設定",
+    "trash": "垃圾桶",
+    "signOut": "登出"
+  },
+  "tabs": {
+    "home": "首頁",
+    "applications": "求職申請",
+    "calendar": "行事曆",
+    "assistant": "助理",
+    "settings": "設定"
+  }
+}

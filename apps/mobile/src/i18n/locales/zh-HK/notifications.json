@@ -1,0 +1,11 @@
+{
+  "markAllRead": "全部標示為已讀",
+  "allCaughtUp": "你已閱覽所有通知。",
+  "justNow": "剛剛",
+  "minutesAgo_one": "{{count}} 分鐘前",
+  "minutesAgo_other": "{{count}} 分鐘前",
+  "hoursAgo_one": "{{count}} 小時前",
+  "hoursAgo_other": "{{count}} 小時前",
+  "daysAgo_one": "{{count}} 日前",
+  "daysAgo_other": "{{count}} 日前"
+}

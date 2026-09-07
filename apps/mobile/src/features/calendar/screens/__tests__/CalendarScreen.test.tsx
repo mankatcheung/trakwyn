@@ -1,17 +1,25 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('../../hooks/useCalendarQueries', () => ({ useCalendarEvents: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../../../i18n/LanguageContext', () => ({
+  useLanguage: jest.fn(() => ({ mode: 'system', resolvedLanguage: 'en', setMode: jest.fn() })),
+}));
 import { useRouter } from 'expo-router';
 import { useCalendarEvents } from '../../hooks/useCalendarQueries';
 import { CalendarScreen } from '../CalendarScreen';
 import { dayKey } from '../../lib/calendarGrid';
 import type { CalendarEvent } from '../../types';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedUseCalendarEvents = jest.mocked(useCalendarEvents);
 const mockedUseRouter = jest.mocked(useRouter);
+const mockedUseTheme = jest.mocked(useTheme);
 
 const today = new Date();
 const todayKey = dayKey(today);
@@ -35,6 +43,12 @@ function renderScreen(push = jest.fn()) {
 
 describe('CalendarScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseCalendarEvents.mockReturnValue({
       data: events,
@@ -51,6 +65,18 @@ describe('CalendarScreen', () => {
     await findByText('Select a day to see its events.');
   });
 
+  it('stretches the view-mode picker to the full device width', async () => {
+    const { getByTestId } = await renderScreen();
+
+    const monthChip = getByTestId('calendar-view-month');
+    const row = monthChip.parent;
+
+    expect(row?.props.style).not.toContainEqual(
+      expect.objectContaining({ alignSelf: 'flex-start' }),
+    );
+    expect(monthChip.props.style).toContainEqual(expect.objectContaining({ flex: 1 }));
+  });
+
   it('shows events for the selected day and navigates on tap', async () => {
     const push = jest.fn();
     const { getByTestId, findByText } = await renderScreen(push);
@@ -60,7 +86,7 @@ describe('CalendarScreen', () => {
     await findByText('Interview (Onsite) — Stripe');
     await fireEvent.press(getByTestId('calendar-event-evt-1'));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/applications/app-1'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('./applications/app-1'));
   });
 
   it('switches to day view, showing that day’s events without a day selection', async () => {

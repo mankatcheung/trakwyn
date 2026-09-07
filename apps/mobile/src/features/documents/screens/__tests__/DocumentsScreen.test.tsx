@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
 jest.mock('../../hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }));
@@ -10,6 +11,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams } from 'expo-router';
 import { useDocuments } from '../../hooks/useDocumentQueries';
@@ -17,12 +19,15 @@ import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { DocumentsScreen } from '../DocumentsScreen';
 import type { Document } from '../../types';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedGetDocumentAsync = jest.mocked(DocumentPicker.getDocumentAsync);
 const mockedUseDocuments = jest.mocked(useDocuments);
 const mockedUseDeleteDocument = jest.mocked(useDeleteDocument);
 const mockedUseUploadDocument = jest.mocked(useUploadDocument);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseTheme = jest.mocked(useTheme);
 
 const document: Document = {
   id: '1',
@@ -43,6 +48,12 @@ function renderScreen() {
 
 describe('DocumentsScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseDeleteDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
   });

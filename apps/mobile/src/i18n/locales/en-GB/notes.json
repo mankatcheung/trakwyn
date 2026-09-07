@@ -1,0 +1,14 @@
+{
+  "deleteNoteTitle": "Delete note",
+  "deleteNoteMessage": "This cannot be undone.",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "save": "Save",
+  "edit": "Edit",
+  "emptyText": "No notes yet.",
+  "addNotePlaceholder": "Add a note",
+  "add": "Add",
+  "couldNotAddNoteTitle": "Could not add note",
+  "couldNotSaveTitle": "Could not save",
+  "couldNotDeleteTitle": "Could not delete"
+}

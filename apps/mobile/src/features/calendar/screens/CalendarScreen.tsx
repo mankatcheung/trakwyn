@@ -1,48 +1,49 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useCalendarEvents } from '../hooks/useCalendarQueries';
 import { buildGrid, dateFromDayKey, dayKey, goToPeriod } from '../lib/calendarGrid';
 import { getErrorMessage } from '../../../lib/errors';
 import type { CalendarEvent, CalendarEventKind, CalendarViewMode } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
+import { useLanguage } from '../../../i18n/LanguageContext';
 
-const EVENT_LABEL: Record<CalendarEventKind, string> = {
-  applied: 'Applied',
-  followUp: 'Follow-up',
-  interview: 'Interview',
-};
+function eventDotColor(colors: ThemeColors): Record<CalendarEventKind, string> {
+  return {
+    applied: colors.primary,
+    followUp: '#f59e0b',
+    interview: '#a855f7',
+  };
+}
 
-const EVENT_DOT_COLOR: Record<CalendarEventKind, string> = {
-  applied: '#3b82f6',
-  followUp: '#f59e0b',
-  interview: '#a855f7',
-};
-
-const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, i) =>
+function weekdayLabels(locale: string): string[] {
   // Jan 4, 2026 is a Sunday — used purely as a stable weekday-index anchor.
-  new Date(2026, 0, 4 + i).toLocaleDateString(undefined, { weekday: 'short' }),
-);
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(2026, 0, 4 + i).toLocaleDateString(locale, { weekday: 'short' }),
+  );
+}
 
-const VIEW_MODES: { mode: CalendarViewMode; label: string }[] = [
-  { mode: 'month', label: 'Month' },
-  { mode: 'week', label: 'Week' },
-  { mode: 'day', label: 'Day' },
-];
-
-function periodLabel(viewMode: CalendarViewMode, anchor: Date, grid: Date[]): string {
+function periodLabel(
+  viewMode: CalendarViewMode,
+  anchor: Date,
+  grid: Date[],
+  locale: string,
+): string {
   if (viewMode === 'month') {
-    return anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    return anchor.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
   }
   if (viewMode === 'week') {
-    const start = grid[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const end = grid[6].toLocaleDateString(undefined, {
+    const start = grid[0].toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    const end = grid[6].toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
     return `${start} – ${end}`;
   }
-  return anchor.toLocaleDateString(undefined, {
+  return anchor.toLocaleDateString(locale, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -51,6 +52,22 @@ function periodLabel(viewMode: CalendarViewMode, anchor: Date, grid: Date[]): st
 }
 
 export function CalendarScreen() {
+  const { t } = useTranslation('calendar');
+  const { resolvedLanguage } = useLanguage();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const eventDotColorMap = useMemo(() => eventDotColor(colors), [colors]);
+  const weekdayLabelList = useMemo(() => weekdayLabels(resolvedLanguage), [resolvedLanguage]);
+  const EVENT_LABEL: Record<CalendarEventKind, string> = {
+    applied: t('eventLabel.applied'),
+    followUp: t('eventLabel.followUp'),
+    interview: t('eventLabel.interview'),
+  };
+  const VIEW_MODES: { mode: CalendarViewMode; label: string }[] = [
+    { mode: 'month', label: t('viewModes.month') },
+    { mode: 'week', label: t('viewModes.week') },
+    { mode: 'day', label: t('viewModes.day') },
+  ];
   const router = useRouter();
   const { data: events, isLoading, isError, error, refetch } = useCalendarEvents();
 
@@ -112,7 +129,9 @@ export function CalendarScreen() {
           <Pressable onPress={() => changePeriod(-1)} testID="calendar-previous-period" hitSlop={8}>
             <Text style={styles.periodArrow}>‹</Text>
           </Pressable>
-          <Text style={styles.periodLabel}>{periodLabel(viewMode, anchorDate, grid)}</Text>
+          <Text style={styles.periodLabel}>
+            {periodLabel(viewMode, anchorDate, grid, resolvedLanguage)}
+          </Text>
           <Pressable onPress={() => changePeriod(1)} testID="calendar-next-period" hitSlop={8}>
             <Text style={styles.periodArrow}>›</Text>
           </Pressable>
@@ -120,12 +139,12 @@ export function CalendarScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={styles.loading} size="large" color="#2563eb" />
+        <ActivityIndicator style={styles.loading} size="large" color={colors.primary} />
       ) : isError ? (
         <View style={styles.centered}>
           <Text style={styles.error}>{getErrorMessage(error)}</Text>
           <Pressable onPress={() => void refetch()}>
-            <Text style={styles.link}>Retry</Text>
+            <Text style={styles.link}>{t('retry')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -133,8 +152,8 @@ export function CalendarScreen() {
           {viewMode !== 'day' && (
             <>
               <View style={styles.weekdayRow}>
-                {WEEKDAY_LABELS.map((label) => (
-                  <Text key={label} style={styles.weekdayLabel}>
+                {weekdayLabelList.map((label, i) => (
+                  <Text key={`${label}-${i}`} style={styles.weekdayLabel}>
                     {label}
                   </Text>
                 ))}
@@ -168,7 +187,7 @@ export function CalendarScreen() {
                           {eventTypes.map((type) => (
                             <View
                               key={type}
-                              style={[styles.dot, { backgroundColor: EVENT_DOT_COLOR[type] }]}
+                              style={[styles.dot, { backgroundColor: eventDotColorMap[type] }]}
                             />
                           ))}
                         </View>
@@ -181,26 +200,31 @@ export function CalendarScreen() {
           )}
 
           <View style={styles.eventsSection}>
-            {!dayInFocus && <Text style={styles.hintText}>Select a day to see its events.</Text>}
+            {!dayInFocus && <Text style={styles.hintText}>{t('selectDayHint')}</Text>}
             {dayInFocus && focusedEvents.length === 0 && (
-              <Text style={styles.hintText}>No events on this day.</Text>
+              <Text style={styles.hintText}>{t('noEventsOnDay')}</Text>
             )}
             {dayInFocus &&
               focusedEvents.map((event) => (
                 <Pressable
                   key={event.id}
                   style={styles.eventRow}
-                  onPress={() => router.push(`/applications/${event.applicationId}`)}
+                  onPress={() => router.push(`./applications/${event.applicationId}`)}
                   testID={`calendar-event-${event.id}`}
                 >
-                  <View style={[styles.dot, { backgroundColor: EVENT_DOT_COLOR[event.type] }]} />
+                  <View style={[styles.dot, { backgroundColor: eventDotColorMap[event.type] }]} />
                   <View style={styles.eventText}>
                     <Text style={styles.eventTitle}>
-                      {EVENT_LABEL[event.type]}
                       {event.type === 'interview' && event.interviewRoundType
-                        ? ` (${event.interviewRoundType})`
-                        : ''}{' '}
-                      — {event.company}
+                        ? t('eventTitleWithRound', {
+                            label: EVENT_LABEL[event.type],
+                            round: event.interviewRoundType,
+                            company: event.company,
+                          })
+                        : t('eventTitlePlain', {
+                            label: EVENT_LABEL[event.type],
+                            company: event.company,
+                          })}
                     </Text>
                     <Text style={styles.eventRole}>{event.role}</Text>
                   </View>
@@ -213,77 +237,89 @@ export function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  toolbar: {
-    padding: 16,
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  viewModeRow: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 3,
-    alignSelf: 'flex-start',
-  },
-  viewModeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
-  viewModeChipActive: { backgroundColor: '#ffffff' },
-  viewModeText: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
-  viewModeTextActive: { color: '#111827' },
-  periodRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  periodArrow: { fontSize: 22, color: '#374151', paddingHorizontal: 8 },
-  periodLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    minWidth: 160,
-    textAlign: 'center',
-  },
-  loading: { marginTop: 40 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
-  error: { color: '#b91c1c', fontSize: 14, textAlign: 'center' },
-  link: { color: '#2563eb', fontSize: 13, fontWeight: '600' },
-  scrollContent: { padding: 12, paddingBottom: 40 },
-  weekdayRow: { flexDirection: 'row' },
-  weekdayLabel: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9ca3af',
-    paddingVertical: 4,
-  },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: {
-    width: '14.2857%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    borderRadius: 8,
-  },
-  dayCellSelected: { backgroundColor: '#eff6ff' },
-  dayNumber: { fontSize: 13, color: '#374151' },
-  dayNumberDim: { color: '#d1d5db' },
-  dayNumberToday: { fontWeight: '700', color: '#2563eb' },
-  dotRow: { flexDirection: 'row', gap: 2 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  eventsSection: { marginTop: 16, gap: 8 },
-  hintText: { textAlign: 'center', color: '#9ca3af', fontSize: 13, paddingVertical: 16 },
-  eventRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#ffffff',
-    padding: 12,
-  },
-  eventText: { flex: 1, gap: 2 },
-  eventTitle: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  eventRole: { fontSize: 12, color: '#6b7280' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    toolbar: {
+      padding: 16,
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    viewModeRow: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      padding: 3,
+    },
+    viewModeChip: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    viewModeChipActive: { backgroundColor: colors.surface },
+    viewModeText: {
+      fontSize: 13,
+      color: colors.textSubtle,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    viewModeTextActive: { color: colors.text },
+    periodRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+    periodArrow: { fontSize: 22, color: colors.textMuted, paddingHorizontal: 8 },
+    periodLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textMuted,
+      minWidth: 160,
+      textAlign: 'center',
+    },
+    loading: { marginTop: 40 },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
+    error: { color: colors.danger, fontSize: 14, textAlign: 'center' },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    scrollContent: { padding: 12, paddingBottom: 40 },
+    weekdayRow: { flexDirection: 'row' },
+    weekdayLabel: {
+      flex: 1,
+      textAlign: 'center',
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textFaint,
+      paddingVertical: 4,
+    },
+    grid: { flexDirection: 'row', flexWrap: 'wrap' },
+    dayCell: {
+      width: '14.2857%',
+      aspectRatio: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 2,
+      borderRadius: 8,
+    },
+    dayCellSelected: { backgroundColor: colors.primarySurface },
+    dayNumber: { fontSize: 13, color: colors.textMuted },
+    dayNumberDim: { color: colors.borderStrong },
+    dayNumberToday: { fontWeight: '700', color: colors.primary },
+    dotRow: { flexDirection: 'row', gap: 2 },
+    dot: { width: 6, height: 6, borderRadius: 3 },
+    eventsSection: { marginTop: 16, gap: 8 },
+    hintText: { textAlign: 'center', color: colors.textFaint, fontSize: 13, paddingVertical: 16 },
+    eventRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      padding: 12,
+    },
+    eventText: { flex: 1, gap: 2 },
+    eventTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    eventRole: { fontSize: 12, color: colors.textSubtle },
+  });
+}

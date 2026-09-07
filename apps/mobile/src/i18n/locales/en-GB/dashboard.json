@@ -1,0 +1,28 @@
+{
+  "title": "Dashboard",
+  "stats": {
+    "total": "Total",
+    "applied": "Applied",
+    "interviewing": "Interviewing",
+    "offered": "Offered",
+    "followUpDue": "Follow-up due"
+  },
+  "goal": {
+    "title": "Weekly goal",
+    "progress": "{{current}} of {{goal}} applications this week",
+    "streak": "{{count}}-week streak"
+  },
+  "upcoming": {
+    "title": "Upcoming",
+    "viewCalendar": "View calendar"
+  },
+  "eventLabel": {
+    "interview": "Interview",
+    "followUp": "Follow-up",
+    "applied": "Applied"
+  },
+  "recent": {
+    "title": "Recent applications",
+    "empty": "No applications yet. Add your first one."
+  }
+}

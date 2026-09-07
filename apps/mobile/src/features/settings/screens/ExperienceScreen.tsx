@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   useCreateEducation,
   useCreateSkill,
@@ -23,12 +24,17 @@ import {
 } from '../hooks/useExperience';
 import { getErrorMessage } from '../../../lib/errors';
 import type { Education, Skill, WorkExperience } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
+import i18n from '../../../i18n';
 
 function dateRange(start: string, end: string | null): string {
-  return `${start.slice(0, 10)} – ${end ? end.slice(0, 10) : 'Present'}`;
+  return `${start.slice(0, 10)} – ${end ? end.slice(0, 10) : i18n.t('settings:experience.present')}`;
 }
 
 export function ExperienceScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <WorkExperienceSection />
@@ -39,6 +45,9 @@ export function ExperienceScreen() {
 }
 
 function WorkExperienceSection() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: items = [], isLoading } = useWorkExperiences();
   const create = useCreateWorkExperience();
   const update = useUpdateWorkExperience();
@@ -95,38 +104,40 @@ function WorkExperienceSection() {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.title}>Work experience</Text>
+        <Text style={styles.title}>{t('experience.workExperienceTitle')}</Text>
         {!formOpen && (
           <Pressable onPress={openCreate} testID="add-work-experience-button">
-            <Text style={styles.link}>+ Add</Text>
+            <Text style={styles.link}>{t('experience.add')}</Text>
           </Pressable>
         )}
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color={colors.primary} />
       ) : (
         !formOpen &&
-        items.length === 0 && <Text style={styles.emptyText}>No work experience yet.</Text>
+        items.length === 0 && (
+          <Text style={styles.emptyText}>{t('experience.noWorkExperienceYet')}</Text>
+        )
       )}
 
       {items.map((item) => (
         <View key={item.id} style={styles.row} testID={`work-experience-${item.id}`}>
           <View style={styles.rowText}>
             <Text style={styles.rowTitle}>
-              {item.title} at {item.company}
+              {t('experience.titleAtCompany', { title: item.title, company: item.company })}
             </Text>
             <Text style={styles.rowMeta}>{dateRange(item.startDate, item.endDate)}</Text>
           </View>
           <View style={styles.rowActions}>
             <Pressable onPress={() => openEdit(item)} testID={`edit-work-experience-${item.id}`}>
-              <Text style={styles.link}>Edit</Text>
+              <Text style={styles.link}>{t('experience.edit')}</Text>
             </Pressable>
             <Pressable
               onPress={() => remove.mutate(item.id)}
               testID={`delete-work-experience-${item.id}`}
             >
-              <Text style={styles.linkDanger}>Delete</Text>
+              <Text style={styles.linkDanger}>{t('experience.delete')}</Text>
             </Pressable>
           </View>
         </View>
@@ -137,28 +148,28 @@ function WorkExperienceSection() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
             style={styles.input}
-            placeholder="Company"
+            placeholder={t('experience.companyPlaceholder')}
             value={company}
             onChangeText={setCompany}
             testID="work-experience-company-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="Title"
+            placeholder={t('experience.titlePlaceholder')}
             value={title}
             onChangeText={setTitle}
             testID="work-experience-title-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="Start date (YYYY-MM-DD)"
+            placeholder={t('experience.startDatePlaceholder')}
             value={startDate}
             onChangeText={setStartDate}
             testID="work-experience-start-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="End date (blank if current)"
+            placeholder={t('experience.endDatePlaceholder')}
             value={endDate}
             onChangeText={setEndDate}
             testID="work-experience-end-input"
@@ -170,10 +181,12 @@ function WorkExperienceSection() {
               disabled={create.isPending || update.isPending}
               testID="save-work-experience-button"
             >
-              <Text style={styles.buttonText}>{editing ? 'Update' : 'Add'}</Text>
+              <Text style={styles.buttonText}>
+                {editing ? t('experience.update') : t('experience.addSubmit')}
+              </Text>
             </Pressable>
             <Pressable onPress={() => setFormOpen(false)} testID="cancel-work-experience-button">
-              <Text style={styles.link}>Cancel</Text>
+              <Text style={styles.link}>{t('experience.cancel')}</Text>
             </Pressable>
           </View>
         </View>
@@ -183,6 +196,9 @@ function WorkExperienceSection() {
 }
 
 function EducationSection() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: items = [], isLoading } = useEducations();
   const create = useCreateEducation();
   const update = useUpdateEducation();
@@ -239,18 +255,19 @@ function EducationSection() {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.title}>Education</Text>
+        <Text style={styles.title}>{t('experience.educationTitle')}</Text>
         {!formOpen && (
           <Pressable onPress={openCreate} testID="add-education-button">
-            <Text style={styles.link}>+ Add</Text>
+            <Text style={styles.link}>{t('experience.add')}</Text>
           </Pressable>
         )}
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color={colors.primary} />
       ) : (
-        !formOpen && items.length === 0 && <Text style={styles.emptyText}>No education yet.</Text>
+        !formOpen &&
+        items.length === 0 && <Text style={styles.emptyText}>{t('experience.noEducationYet')}</Text>
       )}
 
       {items.map((item) => (
@@ -258,19 +275,19 @@ function EducationSection() {
           <View style={styles.rowText}>
             <Text style={styles.rowTitle}>
               {item.institution}
-              {item.degree ? ` — ${item.degree}` : ''}
+              {item.degree ? t('experience.institutionDegree', { degree: item.degree }) : ''}
             </Text>
             <Text style={styles.rowMeta}>{dateRange(item.startDate, item.endDate)}</Text>
           </View>
           <View style={styles.rowActions}>
             <Pressable onPress={() => openEdit(item)} testID={`edit-education-${item.id}`}>
-              <Text style={styles.link}>Edit</Text>
+              <Text style={styles.link}>{t('experience.edit')}</Text>
             </Pressable>
             <Pressable
               onPress={() => remove.mutate(item.id)}
               testID={`delete-education-${item.id}`}
             >
-              <Text style={styles.linkDanger}>Delete</Text>
+              <Text style={styles.linkDanger}>{t('experience.delete')}</Text>
             </Pressable>
           </View>
         </View>
@@ -281,28 +298,28 @@ function EducationSection() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
             style={styles.input}
-            placeholder="Institution"
+            placeholder={t('experience.institutionPlaceholder')}
             value={institution}
             onChangeText={setInstitution}
             testID="education-institution-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="Degree"
+            placeholder={t('experience.degreePlaceholder')}
             value={degree}
             onChangeText={setDegree}
             testID="education-degree-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="Start date (YYYY-MM-DD)"
+            placeholder={t('experience.startDatePlaceholder')}
             value={startDate}
             onChangeText={setStartDate}
             testID="education-start-input"
           />
           <TextInput
             style={styles.input}
-            placeholder="End date (blank if current)"
+            placeholder={t('experience.endDatePlaceholder')}
             value={endDate}
             onChangeText={setEndDate}
             testID="education-end-input"
@@ -314,10 +331,12 @@ function EducationSection() {
               disabled={create.isPending || update.isPending}
               testID="save-education-button"
             >
-              <Text style={styles.buttonText}>{editing ? 'Update' : 'Add'}</Text>
+              <Text style={styles.buttonText}>
+                {editing ? t('experience.update') : t('experience.addSubmit')}
+              </Text>
             </Pressable>
             <Pressable onPress={() => setFormOpen(false)} testID="cancel-education-button">
-              <Text style={styles.link}>Cancel</Text>
+              <Text style={styles.link}>{t('experience.cancel')}</Text>
             </Pressable>
           </View>
         </View>
@@ -327,6 +346,9 @@ function EducationSection() {
 }
 
 function SkillsSection() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: skills = [], isLoading } = useSkills();
   const create = useCreateSkill();
   const remove = useDeleteSkill();
@@ -350,18 +372,19 @@ function SkillsSection() {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.title}>Skills</Text>
+        <Text style={styles.title}>{t('experience.skillsTitle')}</Text>
         {!formOpen && (
           <Pressable onPress={() => setFormOpen(true)} testID="add-skill-button">
-            <Text style={styles.link}>+ Add</Text>
+            <Text style={styles.link}>{t('experience.add')}</Text>
           </Pressable>
         )}
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color={colors.primary} />
       ) : (
-        !formOpen && skills.length === 0 && <Text style={styles.emptyText}>No skills yet.</Text>
+        !formOpen &&
+        skills.length === 0 && <Text style={styles.emptyText}>{t('experience.noSkillsYet')}</Text>
       )}
 
       {skills.length > 0 && (
@@ -385,7 +408,7 @@ function SkillsSection() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
             style={styles.input}
-            placeholder="e.g. TypeScript"
+            placeholder={t('experience.skillNamePlaceholder')}
             value={name}
             onChangeText={setName}
             testID="skill-name-input"
@@ -397,10 +420,10 @@ function SkillsSection() {
               disabled={create.isPending}
               testID="save-skill-button"
             >
-              <Text style={styles.buttonText}>Add</Text>
+              <Text style={styles.buttonText}>{t('experience.addSubmit')}</Text>
             </Pressable>
             <Pressable onPress={() => setFormOpen(false)} testID="cancel-skill-button">
-              <Text style={styles.link}>Cancel</Text>
+              <Text style={styles.link}>{t('experience.cancel')}</Text>
             </Pressable>
           </View>
         </View>
@@ -409,74 +432,76 @@ function SkillsSection() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20, gap: 16 },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 16,
-    gap: 12,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  link: { color: '#2563eb', fontSize: 13, fontWeight: '600' },
-  linkDanger: { color: '#b91c1c', fontSize: 13, fontWeight: '600' },
-  emptyText: { fontSize: 13, color: '#9ca3af' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingTop: 10,
-    gap: 8,
-  },
-  rowText: { flex: 1, gap: 2 },
-  rowTitle: { fontSize: 13, fontWeight: '600', color: '#111827' },
-  rowMeta: { fontSize: 11, color: '#9ca3af' },
-  rowActions: { flexDirection: 'row', gap: 12 },
-  form: { gap: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 10 },
-  formActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  button: {
-    alignSelf: 'flex-start',
-    minHeight: 40,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  buttonText: { color: '#111827', fontSize: 14, fontWeight: '600' },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 13,
-  },
-  skillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  skillChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  skillText: { fontSize: 13, color: '#111827' },
-  skillDelete: { fontSize: 14, color: '#9ca3af', fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20, gap: 16 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 12,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    title: { fontSize: 15, fontWeight: '700', color: colors.text },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    emptyText: { fontSize: 13, color: colors.textFaint },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: colors.surfaceAlt,
+      paddingTop: 10,
+      gap: 8,
+    },
+    rowText: { flex: 1, gap: 2 },
+    rowTitle: { fontSize: 13, fontWeight: '600', color: colors.text },
+    rowMeta: { fontSize: 11, color: colors.textFaint },
+    rowActions: { flexDirection: 'row', gap: 12 },
+    form: { gap: 8, borderTopWidth: 1, borderTopColor: colors.surfaceAlt, paddingTop: 10 },
+    formActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    button: {
+      alignSelf: 'flex-start',
+      minHeight: 40,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    buttonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 13,
+    },
+    skillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    skillChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    skillText: { fontSize: 13, color: colors.text },
+    skillDelete: { fontSize: 14, color: colors.textFaint, fontWeight: '700' },
+  });
+}

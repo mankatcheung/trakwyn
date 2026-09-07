@@ -4,6 +4,14 @@ export interface Profile {
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
+  avatarUrl: string | null;
+  backupEmail: string | null;
+  backupEmailVerifiedAt: string | null;
+}
+
+export interface RequestAvatarUploadUrlResult {
+  uploadUrl: string;
+  storageKey: string;
 }
 
 export interface Session {
@@ -38,6 +46,18 @@ export interface LlmApiKey {
   provider: string;
   model: string | null;
   baseUrl: string | null;
+  /** Monthly prompt+completion token ceiling; null means no limit (JEF-258). */
+  monthlyTokenLimit: number | null;
+}
+
+export interface LlmUsageSummary {
+  provider: string;
+  requestCount: number;
+  promptTokens: number;
+  completionTokens: number;
+  lastUsedAt: string;
+  monthlyTokenLimit: number | null;
+  limitReached: boolean;
 }
 
 export const LLM_PROVIDERS = ['openai', 'anthropic', 'googleai', 'openrouter', 'custom'] as const;

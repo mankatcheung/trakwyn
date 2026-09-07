@@ -1,0 +1,28 @@
+{
+  "title": "仪表盘",
+  "stats": {
+    "total": "总计",
+    "applied": "已投递",
+    "interviewing": "面试中",
+    "offered": "已获录用",
+    "followUpDue": "待跟进"
+  },
+  "goal": {
+    "title": "每周目标",
+    "progress": "本周已投递 {{current}} / {{goal}} 份",
+    "streak": "连续 {{count}} 周"
+  },
+  "upcoming": {
+    "title": "即将到来",
+    "viewCalendar": "查看日历"
+  },
+  "eventLabel": {
+    "interview": "面试",
+    "followUp": "跟进",
+    "applied": "已投递"
+  },
+  "recent": {
+    "title": "最近的求职申请",
+    "empty": "还没有求职申请，添加你的第一条吧。"
+  }
+}

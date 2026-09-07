@@ -1,0 +1,14 @@
+{
+  "deleteNoteTitle": "刪除筆記",
+  "deleteNoteMessage": "此操作無法復原。",
+  "cancel": "取消",
+  "delete": "刪除",
+  "save": "儲存",
+  "edit": "編輯",
+  "emptyText": "尚無筆記。",
+  "addNotePlaceholder": "新增筆記",
+  "add": "新增",
+  "couldNotAddNoteTitle": "無法新增筆記",
+  "couldNotSaveTitle": "無法儲存",
+  "couldNotDeleteTitle": "無法刪除"
+}

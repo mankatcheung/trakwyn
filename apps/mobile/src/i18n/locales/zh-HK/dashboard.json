@@ -1,0 +1,28 @@
+{
+  "title": "主頁",
+  "stats": {
+    "total": "總數",
+    "applied": "已申請",
+    "interviewing": "面試中",
+    "offered": "已獲取錄",
+    "followUpDue": "待跟進"
+  },
+  "goal": {
+    "title": "每週目標",
+    "progress": "本週已申請 {{current}} / {{goal}} 個",
+    "streak": "連續 {{count}} 週"
+  },
+  "upcoming": {
+    "title": "即將發生",
+    "viewCalendar": "查看日曆"
+  },
+  "eventLabel": {
+    "interview": "面試",
+    "followUp": "跟進",
+    "applied": "已申請"
+  },
+  "recent": {
+    "title": "最近的求職申請",
+    "empty": "還沒有求職申請，新增你的第一個吧。"
+  }
+}

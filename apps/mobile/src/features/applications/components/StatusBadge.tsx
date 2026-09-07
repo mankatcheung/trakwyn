@@ -1,29 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { ApplicationStatus } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
+import i18n from '../../../i18n';
 
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  draft: 'Draft',
-  applied: 'Applied',
-  interviewing: 'Interviewing',
-  offered: 'Offered',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-};
-
-const STATUS_COLORS: Record<ApplicationStatus, { bg: string; fg: string }> = {
-  draft: { bg: '#f3f4f6', fg: '#374151' },
-  applied: { bg: '#dbeafe', fg: '#1d4ed8' },
-  interviewing: { bg: '#fef3c7', fg: '#a16207' },
-  offered: { bg: '#dcfce7', fg: '#15803d' },
-  accepted: { bg: '#d1fae5', fg: '#047857' },
-  rejected: { bg: '#fee2e2', fg: '#b91c1c' },
-  withdrawn: { bg: '#e5e7eb', fg: '#4b5563' },
-};
+function statusColors(colors: ThemeColors): Record<ApplicationStatus, { bg: string; fg: string }> {
+  return {
+    draft: { bg: colors.surfaceAlt, fg: colors.textMuted },
+    applied: { bg: colors.primarySurface, fg: colors.primary },
+    interviewing: { bg: '#fef3c7', fg: '#a16207' },
+    offered: { bg: '#dcfce7', fg: '#15803d' },
+    accepted: { bg: '#d1fae5', fg: '#047857' },
+    rejected: { bg: colors.dangerSurface, fg: colors.danger },
+    withdrawn: { bg: colors.border, fg: colors.textSubtle },
+  };
+}
 
 export function statusLabel(status: ApplicationStatus): string {
-  return STATUS_LABELS[status];
+  return i18n.t(`applications:status.${status}`);
 }
 
 interface Props {
@@ -31,20 +27,25 @@ interface Props {
 }
 
 export function StatusBadge({ status }: Props) {
-  const colors = STATUS_COLORS[status];
+  const { t } = useTranslation('applications');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const statusColor = statusColors(colors)[status];
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.text, { color: colors.fg }]}>{STATUS_LABELS[status]}</Text>
+    <View style={[styles.badge, { backgroundColor: statusColor.bg }]}>
+      <Text style={[styles.text, { color: statusColor.fg }]}>{t(`status.${status}`)}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: 9999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  text: { fontSize: 12, fontWeight: '600' },
-});
+function createStyles(_colors: ThemeColors) {
+  return StyleSheet.create({
+    badge: {
+      alignSelf: 'flex-start',
+      borderRadius: 9999,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    text: { fontSize: 12, fontWeight: '600' },
+  });
+}

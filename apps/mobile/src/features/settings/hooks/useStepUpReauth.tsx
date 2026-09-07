@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { gqlRequest } from '../../../graphql/client';
 import { getErrorMessage } from '../../../lib/errors';
 import { REAUTHENTICATE_MUTATION } from '../graphql/operations';
 import type { ReauthenticateResult } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 /** Thrown to the caller of `withStepUp` when the user dismisses the reauth dialog instead of completing it. */
 export const STEP_UP_CANCELLED = 'step-up-cancelled';
@@ -70,6 +73,9 @@ function StepUpReauthDialog({
   onSuccess: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [totpRequired, setTotpRequired] = useState(false);
@@ -100,14 +106,14 @@ function StepUpReauthDialog({
     <Modal transparent animationType="fade" onRequestClose={onCancel} testID="step-up-reauth-modal">
       <View style={styles.backdrop}>
         <View style={styles.dialog}>
-          <Text style={styles.title}>Confirm it&apos;s you</Text>
-          <Text style={styles.subtitle}>Re-enter your password to continue.</Text>
+          <Text style={styles.title}>{t('stepUp.title')}</Text>
+          <Text style={styles.subtitle}>{t('stepUp.subtitle')}</Text>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('stepUp.passwordPlaceholder')}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -118,7 +124,7 @@ function StepUpReauthDialog({
           {totpRequired && (
             <TextInput
               style={styles.input}
-              placeholder="6-digit code"
+              placeholder={t('stepUp.codePlaceholder')}
               keyboardType="number-pad"
               value={code}
               onChangeText={setCode}
@@ -129,7 +135,7 @@ function StepUpReauthDialog({
 
           <View style={styles.actions}>
             <Pressable onPress={onCancel} testID="step-up-cancel-button">
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('stepUp.cancel')}</Text>
             </Pressable>
             <Pressable
               style={[styles.confirmButton, isSubmitting && styles.confirmButtonDisabled]}
@@ -138,7 +144,11 @@ function StepUpReauthDialog({
               testID="step-up-confirm-button"
             >
               <Text style={styles.confirmText}>
-                {isSubmitting ? 'Verifying…' : totpRequired ? 'Verify code' : 'Confirm'}
+                {isSubmitting
+                  ? t('stepUp.verifying')
+                  : totpRequired
+                    ? t('stepUp.verifyCode')
+                    : t('stepUp.confirm')}
               </Text>
             </Pressable>
           </View>
@@ -148,51 +158,53 @@ function StepUpReauthDialog({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  dialog: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    gap: 12,
-  },
-  title: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  subtitle: { fontSize: 13, color: '#6b7280' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 13,
-  },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 4 },
-  cancelText: { color: '#6b7280', fontSize: 14, fontWeight: '600', paddingVertical: 10 },
-  confirmButton: {
-    minWidth: 100,
-    minHeight: 40,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  confirmButtonDisabled: { opacity: 0.6 },
-  confirmText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    dialog: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      gap: 12,
+    },
+    title: { fontSize: 16, fontWeight: '700', color: colors.text },
+    subtitle: { fontSize: 13, color: colors.textSubtle },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 13,
+    },
+    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 4 },
+    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '600', paddingVertical: 10 },
+    confirmButton: {
+      minWidth: 100,
+      minHeight: 40,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    confirmButtonDisabled: { opacity: 0.6 },
+    confirmText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
+  });
+}

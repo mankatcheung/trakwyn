@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('../../hooks/useNoteQueries', () => ({ useNotes: jest.fn() }));
 jest.mock('../../hooks/useNoteMutations', () => ({
@@ -12,17 +13,21 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useLocalSearchParams } from 'expo-router';
 import { useNotes } from '../../hooks/useNoteQueries';
 import { useCreateNote, useDeleteNote, useUpdateNote } from '../../hooks/useNoteMutations';
 import { NotesScreen } from '../NotesScreen';
 import type { Note } from '../../types';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedUseNotes = jest.mocked(useNotes);
 const mockedUseCreateNote = jest.mocked(useCreateNote);
 const mockedUseUpdateNote = jest.mocked(useUpdateNote);
 const mockedUseDeleteNote = jest.mocked(useDeleteNote);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseTheme = jest.mocked(useTheme);
 
 const note: Note = {
   id: '1',
@@ -39,6 +44,12 @@ function renderScreen() {
 
 describe('NotesScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseUpdateNote.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDeleteNote.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);

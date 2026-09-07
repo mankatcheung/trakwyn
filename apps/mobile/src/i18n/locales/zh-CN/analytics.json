@@ -1,0 +1,53 @@
+{
+  "title": "分析",
+  "stats": {
+    "total": "总计",
+    "active": "进行中",
+    "responseRate": "回复率",
+    "offerRate": "录用率",
+    "ghostingRate": "已读不回率"
+  },
+  "noDataYet": "暂无数据。",
+  "cards": {
+    "applicationsPerWeek": "每周求职申请数",
+    "stageFunnel": "阶段漏斗",
+    "channelsAndTags": "渠道与标签",
+    "channelsAndTagsDescription": "哪个来源或标签真正有效。",
+    "documentVersionOutcomes": "文件版本效果",
+    "documentVersionOutcomesDescription": "哪个简历/求职信版本更容易带来面试机会。",
+    "interviewRounds": "面试轮次",
+    "interviewRoundsDescription": "每轮的通过率，以及得出结果前经历的轮次。",
+    "offers": "录用信息",
+    "offersDescription": "记录的每一份录用信息，按时间与货币趋势展示。",
+    "responseTimes": "响应时间",
+    "responseTimesDescription": "求职申请在每个阶段停留的时长，以及首次回复所需的时间。"
+  },
+  "responseLabel": "回复",
+  "bySource": "按来源",
+  "byTag": "按标签",
+  "noSourcesTracked": "还没有记录任何来源。",
+  "noTagsUsed": "还没有使用任何标签。",
+  "documentType": {
+    "resume": "简历",
+    "coverLetter": "求职信"
+  },
+  "noDocumentVersionsTracked": "还没有记录任何文件版本。",
+  "noInterviewRoundsLogged": "还没有记录任何面试轮次。",
+  "roundsBeforeOffer": "获得录用前的轮次",
+  "roundsBeforeRejection": "被拒绝前的轮次",
+  "medianValue": "中位数 {{value}}",
+  "offersCount_one": "{{count}} 份录用",
+  "offersCount_other": "{{count}} 份录用",
+  "noOffersYet": "还没有录用信息",
+  "rejectionsCount_one": "{{count}} 次拒绝",
+  "rejectionsCount_other": "{{count}} 次拒绝",
+  "noRejectionsYet": "还没有被拒绝的记录",
+  "noOffersLogged": "还没有记录任何录用信息。",
+  "medianCurrency": "中位数（{{currency}}，n={{count}}）",
+  "noStageDurationsYet": "还没有阶段时长数据。",
+  "firstResponseSummary": "首次回复：中位数 {{value}}（{{detail}}）",
+  "applicationsCount_one": "{{count}} 份求职申请",
+  "applicationsCount_other": "{{count}} 份求职申请",
+  "noResponsesYet": "暂无回复",
+  "smallSample": "样本较少"
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,24 +9,54 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useConversations, useDeleteConversation } from '../hooks/useConversations';
+import { useTranslation } from 'react-i18next';
+import {
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+} from '../hooks/useConversations';
+import { TrashIcon } from '../components/TrashIcon';
 import type { Conversation } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 export function ConversationsScreen() {
+  const { t } = useTranslation('chat');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { data: conversations, isLoading, isError, error } = useConversations();
   const deleteConversation = useDeleteConversation();
+  const createConversation = useCreateConversation();
+
+  const [isStarting, setIsStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  const onNewConversation = async () => {
+    if (isStarting) return;
+    setStartError(null);
+    setIsStarting(true);
+    try {
+      const created = await createConversation.mutateAsync({});
+      router.push(`./${created.id}`);
+    } catch (err) {
+      setStartError(getErrorMessage(err));
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   const onDelete = (conversation: Conversation) => {
-    Alert.alert('Delete conversation', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('conversations.deleteTitle'), t('conversations.deleteMessage'), [
+      { text: t('conversations.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('conversations.delete'),
         style: 'destructive',
         onPress: () =>
           deleteConversation.mutate(conversation.id, {
-            onError: (err) => Alert.alert('Could not delete', getErrorMessage(err)),
+            onError: (err) =>
+              Alert.alert(t('conversations.couldNotDeleteTitle'), getErrorMessage(err)),
           }),
       },
     ]);
@@ -35,7 +65,7 @@ export function ConversationsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" testID="conversations-loading" />
+        <ActivityIndicator size="large" color={colors.primary} testID="conversations-loading" />
       </View>
     );
   }
@@ -50,78 +80,87 @@ export function ConversationsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable
+          style={[styles.newButton, isStarting && styles.newButtonDisabled]}
+          onPress={() => void onNewConversation()}
+          disabled={isStarting}
+          testID="new-conversation-button"
+        >
+          <Text style={styles.newButtonText}>{t('conversations.newButton')}</Text>
+        </Pressable>
+      </View>
+
+      {startError ? <Text style={styles.error}>{startError}</Text> : null}
+
       <FlatList
         data={conversations ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>No conversations yet.</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>{t('conversations.empty')}</Text>}
         renderItem={({ item }) => (
           <Pressable
             style={styles.row}
-            onPress={() => router.push(`/conversations/${item.id}`)}
+            onPress={() => router.push(`./${item.id}`)}
             testID={`conversation-${item.id}`}
           >
             <View style={styles.textColumn}>
               <Text style={styles.title} numberOfLines={1}>
-                {item.title ?? 'New conversation'}
+                {item.title ?? t('conversations.newConversation')}
               </Text>
               <Text style={styles.meta}>{new Date(item.updatedAt).toLocaleDateString()}</Text>
             </View>
             <Pressable
               onPress={() => onDelete(item)}
               hitSlop={8}
+              accessibilityLabel={t('conversations.delete')}
               testID={`delete-conversation-${item.id}`}
             >
-              <Text style={styles.linkDanger}>Delete</Text>
+              <TrashIcon color={colors.danger} />
             </Pressable>
           </Pressable>
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-
-      <Pressable
-        style={styles.newButton}
-        onPress={() => router.push('/conversations/new')}
-        testID="new-conversation-button"
-      >
-        <Text style={styles.newButtonText}>New conversation</Text>
-      </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  error: { fontSize: 14, color: '#b91c1c', textAlign: 'center' },
-  list: { padding: 16, paddingBottom: 96 },
-  separator: { height: 10 },
-  emptyText: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginTop: 20 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 14,
-  },
-  textColumn: { flex: 1, gap: 2 },
-  title: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  meta: { fontSize: 12, color: '#6b7280' },
-  linkDanger: { color: '#b91c1c', fontSize: 13, fontWeight: '600' },
-  newButton: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 20,
-    minHeight: 48,
-    borderRadius: 10,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+    error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
+    list: { padding: 16, paddingBottom: 96 },
+    separator: { height: 10 },
+    emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
+    textColumn: { flex: 1, gap: 2 },
+    title: { fontSize: 14, fontWeight: '600', color: colors.text },
+    meta: { fontSize: 12, color: colors.textSubtle },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+    },
+    newButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+    },
+    newButtonDisabled: { opacity: 0.5 },
+    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
+  });
+}

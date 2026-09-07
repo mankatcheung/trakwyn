@@ -1,0 +1,72 @@
+{
+  "status": {
+    "draft": "草稿",
+    "applied": "已投递",
+    "interviewing": "面试中",
+    "offered": "已获录用",
+    "accepted": "已接受",
+    "rejected": "已拒绝",
+    "withdrawn": "已撤回"
+  },
+  "detail": {
+    "moveToTrashTitle": "移至回收站",
+    "moveToTrashMessage": "此求职申请将被移至回收站。",
+    "cancel": "取消",
+    "delete": "删除",
+    "couldNotDeleteTitle": "无法删除",
+    "notFound": "未找到该求职申请",
+    "locationLabel": "地点",
+    "salaryRangeLabel": "薪资范围",
+    "sourceLabel": "来源",
+    "descriptionLabel": "描述",
+    "notes": "备注",
+    "documents": "文件",
+    "offers": "录用信息",
+    "edit": "编辑",
+    "deleting": "正在删除…",
+    "moveToTrash": "移至回收站"
+  },
+  "form": {
+    "companyLabel": "公司",
+    "roleLabel": "职位",
+    "statusLabel": "状态",
+    "jobUrlLabel": "职位链接",
+    "locationLabel": "地点",
+    "salaryRangeLabel": "薪资范围",
+    "descriptionLabel": "描述",
+    "invalidInput": "输入无效",
+    "saving": "正在保存…",
+    "saveChanges": "保存更改",
+    "createApplication": "创建求职申请",
+    "validation": {
+      "companyRequired": "公司为必填项",
+      "roleRequired": "职位为必填项",
+      "invalidUrl": "请输入有效的链接"
+    }
+  },
+  "board": {
+    "title": "看板",
+    "newButton": "+ 新建",
+    "move": "移动",
+    "moveModalTitle": "移动 {{company}}",
+    "cancel": "取消"
+  },
+  "trash": {
+    "deletePermanentlyTitle": "永久删除",
+    "deletePermanentlyMessage": "{{company}}的{{role}}将被永久删除，此操作无法撤销。",
+    "cancel": "取消",
+    "deleteForever": "永久删除",
+    "couldNotDeleteTitle": "无法删除",
+    "couldNotRestoreTitle": "无法恢复",
+    "restore": "恢复",
+    "delete": "删除",
+    "empty": "回收站是空的。"
+  },
+  "list": {
+    "searchPlaceholder": "搜索公司或职位",
+    "all": "全部",
+    "empty": "还没有求职申请。",
+    "viewList": "列表",
+    "viewBoard": "看板"
+  }
+}

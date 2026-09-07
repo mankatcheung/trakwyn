@@ -1,0 +1,28 @@
+{
+  "title": "儀表板",
+  "stats": {
+    "total": "總計",
+    "applied": "已申請",
+    "interviewing": "面試中",
+    "offered": "已獲得聘用",
+    "followUpDue": "待追蹤"
+  },
+  "goal": {
+    "title": "每週目標",
+    "progress": "本週已完成 {{current}} / {{goal}} 個求職申請",
+    "streak": "連續 {{count}} 週"
+  },
+  "upcoming": {
+    "title": "即將到來",
+    "viewCalendar": "查看行事曆"
+  },
+  "eventLabel": {
+    "interview": "面試",
+    "followUp": "追蹤",
+    "applied": "已申請"
+  },
+  "recent": {
+    "title": "最近的求職申請",
+    "empty": "尚無求職申請，新增您的第一筆吧。"
+  }
+}

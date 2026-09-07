@@ -1,3 +1,5 @@
+import '../../../../i18n';
+
 jest.mock('expo-device', () => ({ __esModule: true, isDevice: true }));
 jest.mock('expo-notifications', () => ({
   __esModule: true,

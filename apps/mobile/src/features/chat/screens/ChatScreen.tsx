@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,34 +12,42 @@ import {
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   useChatHistory,
   chatHistoryQueryKey,
   useAppendOptimisticMessage,
 } from '../hooks/useChatHistory';
-import { conversationsQueryKey, useCreateConversation } from '../hooks/useConversations';
+import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 function tempMessageId(): string {
   return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [conversationId, setConversationId] = useState<string | null>(id === 'new' ? null : id);
+  const { t } = useTranslation('chat');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { id: conversationId, initialMessage } = useLocalSearchParams<{
+    id: string;
+    initialMessage?: string;
+  }>();
   const queryClient = useQueryClient();
   const { data: history, isLoading } = useChatHistory(conversationId);
   const appendOptimistic = useAppendOptimisticMessage();
-  const createConversation = useCreateConversation();
 
   const [input, setInput] = useState('');
   const [streamingText, setStreamingText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const autoSentInitialMessage = useRef(false);
 
   const messages = history ?? [];
 
@@ -47,23 +55,14 @@ export function ChatScreen() {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages.length, streamingText]);
 
-  const handleSend = async () => {
-    const trimmed = input.trim();
+  const sendMessage = async (trimmed: string) => {
     if (!trimmed || isSending) return;
-    setInput('');
     setSendError(null);
     setIsSending(true);
     setStreamingText('');
 
     try {
-      let targetConversationId = conversationId;
-      if (!targetConversationId) {
-        const created = await createConversation.mutateAsync({});
-        targetConversationId = created.id;
-        setConversationId(created.id);
-      }
-
-      appendOptimistic(targetConversationId, {
+      appendOptimistic(conversationId, {
         id: tempMessageId(),
         role: 'user',
         content: trimmed,
@@ -71,14 +70,12 @@ export function ChatScreen() {
       });
 
       await streamChatMessage({
-        conversationId: targetConversationId,
+        conversationId,
         message: trimmed,
         onDelta: (text) => setStreamingText((prev) => prev + text),
       });
 
-      await queryClient.invalidateQueries({
-        queryKey: chatHistoryQueryKey(targetConversationId),
-      });
+      await queryClient.invalidateQueries({ queryKey: chatHistoryQueryKey(conversationId) });
       void queryClient.invalidateQueries({ queryKey: conversationsQueryKey });
     } catch (err) {
       setSendError(err instanceof ChatStreamError ? err.message : getErrorMessage(err));
@@ -86,6 +83,24 @@ export function ChatScreen() {
       setIsSending(false);
       setStreamingText('');
     }
+  };
+
+  const sendMessageRef = useRef(sendMessage);
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  });
+
+  useEffect(() => {
+    if (!initialMessage || autoSentInitialMessage.current) return;
+    autoSentInitialMessage.current = true;
+    void sendMessageRef.current(initialMessage);
+  }, [initialMessage]);
+
+  const handleSend = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    setInput('');
+    void sendMessage(trimmed);
   };
 
   return (
@@ -97,7 +112,7 @@ export function ChatScreen() {
         <ActivityIndicator
           style={styles.loading}
           size="large"
-          color="#2563eb"
+          color={colors.primary}
           testID="chat-loading"
         />
       ) : (
@@ -106,11 +121,7 @@ export function ChatScreen() {
           data={messages}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              Ask about your applications, next steps, or anything else.
-            </Text>
-          }
+          ListEmptyComponent={<Text style={styles.emptyText}>{t('emptyPrompt')}</Text>}
           renderItem={({ item }) => (
             <View style={[styles.bubbleRow, item.role === 'user' && styles.bubbleRowUser]}>
               <View
@@ -136,7 +147,11 @@ export function ChatScreen() {
             {streamingText ? (
               <Text style={styles.bubbleTextAssistant}>{streamingText}</Text>
             ) : (
-              <ActivityIndicator size="small" color="#6b7280" testID="chat-sending-indicator" />
+              <ActivityIndicator
+                size="small"
+                color={colors.textSubtle}
+                testID="chat-sending-indicator"
+              />
             )}
           </View>
         </View>
@@ -147,7 +162,7 @@ export function ChatScreen() {
       <View style={styles.composer}>
         <TextInput
           style={styles.input}
-          placeholder="Message the assistant"
+          placeholder={t('inputPlaceholder')}
           value={input}
           onChangeText={setInput}
           multiline
@@ -156,66 +171,72 @@ export function ChatScreen() {
         />
         <Pressable
           style={[styles.sendButton, (isSending || !input.trim()) && styles.sendButtonDisabled]}
-          onPress={() => void handleSend()}
+          onPress={handleSend}
           disabled={isSending || !input.trim()}
           testID="chat-send-button"
         >
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Text style={styles.sendButtonText}>{t('send')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  loading: { marginTop: 40 },
-  list: { padding: 16, gap: 8 },
-  emptyText: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginTop: 20 },
-  bubbleRow: { flexDirection: 'row', marginBottom: 8 },
-  bubbleRowUser: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '80%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleUser: { backgroundColor: '#2563eb', alignSelf: 'flex-end' },
-  bubbleAssistant: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e5e7eb' },
-  bubbleTextUser: { color: '#ffffff', fontSize: 14 },
-  bubbleTextAssistant: { color: '#111827', fontSize: 14 },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    marginHorizontal: 16,
-    fontSize: 13,
-  },
-  composer: {
-    flexDirection: 'row',
-    gap: 8,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
-    alignItems: 'flex-end',
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: '#ffffff',
-  },
-  sendButton: {
-    minHeight: 44,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonDisabled: { opacity: 0.5 },
-  sendButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    loading: { marginTop: 40 },
+    list: { padding: 16, gap: 8 },
+    emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
+    bubbleRow: { flexDirection: 'row', marginBottom: 8 },
+    bubbleRowUser: { justifyContent: 'flex-end' },
+    bubble: { maxWidth: '80%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
+    bubbleUser: { backgroundColor: colors.primary, alignSelf: 'flex-end' },
+    bubbleAssistant: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    bubbleTextUser: { color: colors.surface, fontSize: 14 },
+    bubbleTextAssistant: { color: colors.text, fontSize: 14 },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      marginHorizontal: 16,
+      fontSize: 13,
+    },
+    composer: {
+      flexDirection: 'row',
+      gap: 8,
+      padding: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+      alignItems: 'flex-end',
+    },
+    input: {
+      flex: 1,
+      minHeight: 44,
+      maxHeight: 100,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      backgroundColor: colors.surface,
+    },
+    sendButton: {
+      minHeight: 44,
+      paddingHorizontal: 18,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendButtonDisabled: { opacity: 0.5 },
+    sendButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+  });
+}

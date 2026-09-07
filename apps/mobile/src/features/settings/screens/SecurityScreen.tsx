@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   useRevokeOtherSessions,
   useRevokeSession,
@@ -22,13 +23,14 @@ import type { LinkedOAuthAccount, OAuthProvider, Session } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { StepUpCancelledError, useStepUpReauth } from '../../../auth/useStepUpReauth';
 import { OAuthProviderLogo } from '../../../screens/auth/OAuthProviderLogo';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 const OAUTH_PROVIDERS: OAuthProvider[] = ['google', 'github'];
 
-const OAUTH_PROVIDER_LABEL: Record<OAuthProvider, string> = {
-  google: 'Google',
-  github: 'GitHub',
-};
+function oauthProviderLabel(t: (key: string) => string, provider: OAuthProvider): string {
+  return provider === 'google' ? t('security.providerGoogle') : t('security.providerGithub');
+}
 
 function LinkedAccountRow({
   provider,
@@ -41,7 +43,10 @@ function LinkedAccountRow({
   onUnlink: () => void;
   isUnlinking: boolean;
 }) {
-  const providerLabel = OAUTH_PROVIDER_LABEL[provider];
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const providerLabel = oauthProviderLabel(t, provider);
   return (
     <View style={styles.oauthRow} testID={`linked-account-${provider}`}>
       <View style={styles.oauthRowMain}>
@@ -50,14 +55,19 @@ function LinkedAccountRow({
           <Text style={styles.sessionTitle}>{providerLabel}</Text>
           <Text style={styles.sessionMeta}>
             {linked
-              ? `${linked.email ?? 'Linked'} · since ${new Date(linked.createdAt).toLocaleDateString()}`
-              : 'Not linked'}
+              ? t('security.linkedSince', {
+                  email: linked.email ?? t('security.linkedDefault'),
+                  date: new Date(linked.createdAt).toLocaleDateString(),
+                })
+              : t('security.notLinked')}
           </Text>
         </View>
       </View>
       {linked ? (
         <Pressable onPress={onUnlink} disabled={isUnlinking} testID={`unlink-oauth-${provider}`}>
-          <Text style={styles.linkDanger}>{isUnlinking ? 'Unlinking...' : 'Unlink'}</Text>
+          <Text style={styles.linkDanger}>
+            {isUnlinking ? t('security.unlinking') : t('security.unlink')}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -65,23 +75,26 @@ function LinkedAccountRow({
 }
 
 function SessionRow({ session, onRevoke }: { session: Session; onRevoke: () => void }) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.sessionRow} testID={`session-${session.id}`}>
       <View style={styles.textColumn}>
         <Text style={styles.sessionTitle}>
-          {session.deviceLabel ?? session.userAgent ?? 'Unknown device'}
-          {session.current ? ' (this device)' : ''}
+          {session.deviceLabel ?? session.userAgent ?? t('security.unknownDevice')}
+          {session.current ? t('security.thisDevice') : ''}
         </Text>
         <Text style={styles.sessionMeta}>
           {[session.location, session.ipAddress].filter(Boolean).join(' · ')}
         </Text>
         <Text style={styles.sessionMeta}>
-          Last used {new Date(session.lastUsedAt).toLocaleString()}
+          {t('security.lastUsed', { date: new Date(session.lastUsedAt).toLocaleString() })}
         </Text>
       </View>
       {!session.current ? (
         <Pressable onPress={onRevoke} testID={`revoke-session-${session.id}`}>
-          <Text style={styles.linkDanger}>Revoke</Text>
+          <Text style={styles.linkDanger}>{t('security.revoke')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -89,6 +102,9 @@ function SessionRow({ session, onRevoke }: { session: Session; onRevoke: () => v
 }
 
 export function SecurityScreen() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: sessions, isLoading, isError, error } = useSessions();
   const revokeSession = useRevokeSession();
   const revokeOthers = useRevokeOtherSessions();
@@ -111,7 +127,7 @@ export function SecurityScreen() {
     setPasswordError(null);
     setPasswordSaved(false);
     if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters');
+      setPasswordError(t('security.newPasswordTooShort'));
       return;
     }
     try {
@@ -128,33 +144,41 @@ export function SecurityScreen() {
   };
 
   const onRevokeOthers = () => {
-    Alert.alert('Sign out other sessions', 'This will sign you out everywhere else.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out others',
-        style: 'destructive',
-        onPress: () =>
-          revokeOthers.mutate(undefined, {
-            onError: (err) =>
-              Alert.alert('Could not sign out other sessions', getErrorMessage(err)),
-          }),
-      },
-    ]);
+    Alert.alert(
+      t('security.signOutOtherSessionsTitle'),
+      t('security.signOutOtherSessionsMessage'),
+      [
+        { text: t('security.cancel'), style: 'cancel' },
+        {
+          text: t('security.signOutOtherSessions'),
+          style: 'destructive',
+          onPress: () =>
+            revokeOthers.mutate(undefined, {
+              onError: (err) =>
+                Alert.alert(t('security.couldNotSignOutOthers'), getErrorMessage(err)),
+            }),
+        },
+      ],
+    );
   };
 
   const onUnlink = (provider: OAuthProvider) => {
-    const providerLabel = OAUTH_PROVIDER_LABEL[provider];
-    Alert.alert(`Unlink ${providerLabel}`, `This will unlink your ${providerLabel} account.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Unlink',
-        style: 'destructive',
-        onPress: () =>
-          unlinkOAuthAccount.mutate(provider, {
-            onError: (err) => Alert.alert('Could not unlink', getErrorMessage(err)),
-          }),
-      },
-    ]);
+    const providerLabel = oauthProviderLabel(t, provider);
+    Alert.alert(
+      t('security.unlinkTitle', { provider: providerLabel }),
+      t('security.unlinkMessage', { provider: providerLabel }),
+      [
+        { text: t('security.cancel'), style: 'cancel' },
+        {
+          text: t('security.unlink'),
+          style: 'destructive',
+          onPress: () =>
+            unlinkOAuthAccount.mutate(provider, {
+              onError: (err) => Alert.alert(t('security.couldNotUnlink'), getErrorMessage(err)),
+            }),
+        },
+      ],
+    );
   };
 
   return (
@@ -163,9 +187,9 @@ export function SecurityScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Sessions</Text>
+        <Text style={styles.sectionTitle}>{t('security.sessionsTitle')}</Text>
         {isLoading ? (
-          <ActivityIndicator color="#2563eb" testID="sessions-loading" />
+          <ActivityIndicator color={colors.primary} testID="sessions-loading" />
         ) : isError ? (
           <Text style={styles.error}>{getErrorMessage(error)}</Text>
         ) : (
@@ -176,7 +200,8 @@ export function SecurityScreen() {
                 session={session}
                 onRevoke={() =>
                   revokeSession.mutate(session.id, {
-                    onError: (err) => Alert.alert('Could not revoke', getErrorMessage(err)),
+                    onError: (err) =>
+                      Alert.alert(t('security.couldNotRevoke'), getErrorMessage(err)),
                   })
                 }
               />
@@ -187,15 +212,17 @@ export function SecurityScreen() {
                 onPress={onRevokeOthers}
                 testID="revoke-other-sessions-button"
               >
-                <Text style={styles.revokeOthersText}>Sign out other sessions</Text>
+                <Text style={styles.revokeOthersText}>{t('security.signOutOtherSessions')}</Text>
               </Pressable>
             ) : null}
           </>
         )}
 
-        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>Linked accounts</Text>
+        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>
+          {t('security.linkedAccountsTitle')}
+        </Text>
         {linkedAccountsLoading ? (
-          <ActivityIndicator color="#2563eb" testID="linked-accounts-loading" />
+          <ActivityIndicator color={colors.primary} testID="linked-accounts-loading" />
         ) : linkedAccountsError ? (
           <Text style={styles.error}>{getErrorMessage(linkedAccountsErrorObj)}</Text>
         ) : (
@@ -212,12 +239,14 @@ export function SecurityScreen() {
           ))
         )}
 
-        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>Change password</Text>
+        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>
+          {t('security.changePasswordTitle')}
+        </Text>
         {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
-        {passwordSaved ? <Text style={styles.success}>Password updated.</Text> : null}
+        {passwordSaved ? <Text style={styles.success}>{t('security.passwordUpdated')}</Text> : null}
         <TextInput
           style={styles.input}
-          placeholder="Current password"
+          placeholder={t('security.currentPasswordPlaceholder')}
           secureTextEntry
           value={currentPassword}
           onChangeText={setCurrentPassword}
@@ -225,7 +254,7 @@ export function SecurityScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="New password"
+          placeholder={t('security.newPasswordPlaceholder')}
           secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
@@ -238,7 +267,7 @@ export function SecurityScreen() {
           testID="change-password-button"
         >
           <Text style={styles.saveButtonText}>
-            {updatePassword.isPending ? 'Saving...' : 'Update password'}
+            {updatePassword.isPending ? t('security.saving') : t('security.updatePassword')}
           </Text>
         </Pressable>
       </ScrollView>
@@ -247,79 +276,81 @@ export function SecurityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20, gap: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  sectionSpacing: { marginTop: 24 },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-  },
-  success: {
-    color: '#047857',
-    backgroundColor: '#d1fae5',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-  },
-  sessionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 14,
-    gap: 8,
-  },
-  textColumn: { flex: 1, gap: 2 },
-  oauthRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 14,
-    gap: 8,
-  },
-  oauthRowMain: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  sessionTitle: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  sessionMeta: { fontSize: 12, color: '#6b7280' },
-  linkDanger: { color: '#b91c1c', fontSize: 13, fontWeight: '600' },
-  revokeOthersButton: {
-    minHeight: 44,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    backgroundColor: '#fef2f2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  revokeOthersText: { color: '#b91c1c', fontSize: 14, fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  saveButton: {
-    minHeight: 44,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20, gap: 8 },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    sectionSpacing: { marginTop: 24 },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+    },
+    success: {
+      color: '#047857',
+      backgroundColor: '#d1fae5',
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+    },
+    sessionRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      gap: 8,
+    },
+    textColumn: { flex: 1, gap: 2 },
+    oauthRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      gap: 8,
+    },
+    oauthRowMain: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+    sessionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    sessionMeta: { fontSize: 12, color: colors.textSubtle },
+    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    revokeOthersButton: {
+      minHeight: 44,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    revokeOthersText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    saveButton: {
+      minHeight: 44,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 8,
+    },
+    saveButtonDisabled: { opacity: 0.6 },
+    saveButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+  });
+}

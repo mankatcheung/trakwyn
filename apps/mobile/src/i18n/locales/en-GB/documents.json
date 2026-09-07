@@ -1,0 +1,14 @@
+{
+  "deleteDocumentTitle": "Delete document",
+  "deleteDocumentMessage": "Delete {{name}}?",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "versionPlaceholder": "Version (optional)",
+  "uploading": "Uploading...",
+  "upload": "Upload",
+  "chooseFile": "Choose a file to upload",
+  "emptyText": "No documents yet.",
+  "couldNotDeleteTitle": "Could not delete",
+  "uploadFailedStatus": "Upload failed with status {{status}}",
+  "uploadNotSupported": "Uploading to Vercel Blob storage from the mobile app is not supported yet."
+}

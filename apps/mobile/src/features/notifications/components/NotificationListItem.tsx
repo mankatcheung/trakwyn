@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { timeAgo } from '../lib/timeAgo';
 import type { NotificationItem } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 const TYPE_LABEL: Record<NotificationItem['type'], string> = {
   interview_reminder: '📅',
@@ -15,6 +17,8 @@ interface NotificationListItemProps {
 }
 
 export function NotificationListItem({ notification, onPress }: NotificationListItemProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={[styles.container, !notification.read && styles.unreadContainer]}
@@ -36,27 +40,29 @@ export function NotificationListItem({ notification, onPress }: NotificationList
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-  },
-  unreadContainer: { backgroundColor: '#eff6ff' },
-  icon: { fontSize: 16, marginTop: 1 },
-  body: { flex: 1, gap: 2 },
-  title: { fontSize: 14, color: '#374151' },
-  unreadTitle: { fontWeight: '700', color: '#111827' },
-  text: { fontSize: 12, color: '#6b7280' },
-  time: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#2563eb',
-    marginTop: 6,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.surface,
+    },
+    unreadContainer: { backgroundColor: colors.primarySurface },
+    icon: { fontSize: 16, marginTop: 1 },
+    body: { flex: 1, gap: 2 },
+    title: { fontSize: 14, color: colors.textMuted },
+    unreadTitle: { fontWeight: '700', color: colors.text },
+    text: { fontSize: 12, color: colors.textSubtle },
+    time: { fontSize: 11, color: colors.textFaint, marginTop: 2 },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      marginTop: 6,
+    },
+  });
+}

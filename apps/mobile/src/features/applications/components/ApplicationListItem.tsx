@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Application } from '../types';
 import { StatusBadge } from './StatusBadge';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 interface Props {
   application: Application;
@@ -9,6 +11,8 @@ interface Props {
 }
 
 export function ApplicationListItem({ application, onPress }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
@@ -33,21 +37,23 @@ export function ApplicationListItem({ application, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 14,
-  },
-  pressed: { backgroundColor: '#f3f4f6' },
-  textColumn: { flex: 1, gap: 2 },
-  role: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  company: { fontSize: 13, color: '#374151' },
-  location: { fontSize: 12, color: '#6b7280' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
+    pressed: { backgroundColor: colors.surfaceAlt },
+    textColumn: { flex: 1, gap: 2 },
+    role: { fontSize: 15, fontWeight: '600', color: colors.text },
+    company: { fontSize: 13, color: colors.textMuted },
+    location: { fontSize: 12, color: colors.textSubtle },
+  });
+}

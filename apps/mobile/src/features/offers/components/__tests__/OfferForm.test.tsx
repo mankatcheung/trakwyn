@@ -1,8 +1,24 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 import { OfferForm } from '../OfferForm';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
+
+const mockedUseTheme = jest.mocked(useTheme);
+
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 
 describe('OfferForm', () => {
+  beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
+  });
+
   it('disables save until a base salary is entered', async () => {
     const onSubmit = jest.fn();
     const { getByTestId } = await render(<OfferForm onSubmit={onSubmit} onCancel={jest.fn()} />);

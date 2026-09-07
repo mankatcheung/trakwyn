@@ -1,17 +1,33 @@
 import { z } from 'zod';
+import i18n from '../../i18n';
 
 export const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().superRefine((value, ctx) => {
+    if (!z.string().email().safeParse(value).success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: i18n.t('auth:validation.invalidEmail'),
+      });
+    }
+  }),
+  password: z.string().superRefine((value, ctx) => {
+    if (value.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: i18n.t('auth:validation.passwordMinLength'),
+      });
+    }
+  }),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const totpSchema = z.object({
-  code: z
-    .string()
-    .min(6, 'Enter your 6-digit code or a backup code')
-    .max(20, 'Enter your 6-digit code or a backup code'),
+  code: z.string().superRefine((value, ctx) => {
+    if (value.length < 6 || value.length > 20) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: i18n.t('auth:validation.totpCode') });
+    }
+  }),
 });
 
 export type TotpFormValues = z.infer<typeof totpSchema>;

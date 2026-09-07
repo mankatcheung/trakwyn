@@ -1,0 +1,53 @@
+{
+  "title": "分析",
+  "stats": {
+    "total": "總計",
+    "active": "進行中",
+    "responseRate": "回覆率",
+    "offerRate": "錄取率",
+    "ghostingRate": "已讀不回率"
+  },
+  "noDataYet": "尚無資料。",
+  "cards": {
+    "applicationsPerWeek": "每週求職申請數",
+    "stageFunnel": "階段漏斗",
+    "channelsAndTags": "管道與標籤",
+    "channelsAndTagsDescription": "哪個來源或標籤真正有效。",
+    "documentVersionOutcomes": "文件版本成效",
+    "documentVersionOutcomesDescription": "哪個履歷／求職信版本較容易獲得面試機會。",
+    "interviewRounds": "面試輪次",
+    "interviewRoundsDescription": "各輪次的通過率，以及獲得結果前經歷的輪次。",
+    "offers": "聘書",
+    "offersDescription": "所有已記錄的聘書，依時間與幣別呈現趨勢。",
+    "responseTimes": "回覆時間",
+    "responseTimesDescription": "求職申請在各階段停留的時間，以及首次回覆所需時間。"
+  },
+  "responseLabel": "回覆",
+  "bySource": "依來源",
+  "byTag": "依標籤",
+  "noSourcesTracked": "尚未追蹤任何來源。",
+  "noTagsUsed": "尚未使用任何標籤。",
+  "documentType": {
+    "resume": "履歷",
+    "coverLetter": "求職信"
+  },
+  "noDocumentVersionsTracked": "尚未追蹤任何文件版本。",
+  "noInterviewRoundsLogged": "尚未記錄任何面試輪次。",
+  "roundsBeforeOffer": "獲得錄取前的輪次",
+  "roundsBeforeRejection": "遭拒絕前的輪次",
+  "medianValue": "中位數 {{value}}",
+  "offersCount_one": "{{count}} 個聘書",
+  "offersCount_other": "{{count}} 個聘書",
+  "noOffersYet": "尚無聘書",
+  "rejectionsCount_one": "{{count}} 次拒絕",
+  "rejectionsCount_other": "{{count}} 次拒絕",
+  "noRejectionsYet": "尚無拒絕紀錄",
+  "noOffersLogged": "尚未記錄任何聘書。",
+  "medianCurrency": "中位數（{{currency}}，n={{count}}）",
+  "noStageDurationsYet": "尚無階段時長資料。",
+  "firstResponseSummary": "首次回覆：中位數 {{value}}（{{detail}}）",
+  "applicationsCount_one": "{{count}} 筆求職申請",
+  "applicationsCount_other": "{{count}} 筆求職申請",
+  "noResponsesYet": "尚無回覆",
+  "smallSample": "樣本數過少"
+}

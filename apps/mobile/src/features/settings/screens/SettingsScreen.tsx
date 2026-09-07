@@ -1,29 +1,43 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../auth/AuthContext';
-
-const MENU: { label: string; href: Href; testID: string }[] = [
-  { label: 'Profile', href: '/settings/profile', testID: 'settings-profile-row' },
-  { label: 'Security', href: '/settings/security', testID: 'settings-security-row' },
-  {
-    label: 'Notifications',
-    href: '/settings/notifications',
-    testID: 'settings-notifications-row',
-  },
-  { label: 'AI', href: '/settings/ai', testID: 'settings-ai-row' },
-  { label: 'Experience', href: '/settings/experience', testID: 'settings-experience-row' },
-  { label: 'Integrations', href: '/settings/integrations', testID: 'settings-integrations-row' },
-  { label: 'Data', href: '/settings/data', testID: 'settings-data-row' },
-];
-
-const DANGER_MENU: { label: string; href: Href; testID: string }[] = [
-  { label: 'Danger zone', href: '/settings/danger-zone', testID: 'settings-danger-zone-row' },
-];
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 export function SettingsScreen() {
+  const { t } = useTranslation('settingsMenu');
   const router = useRouter();
   const { logout } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const MENU: { label: string; href: Href; testID: string }[] = [
+    { label: t('profile'), href: '/settings/profile', testID: 'settings-profile-row' },
+    { label: t('security'), href: '/settings/security', testID: 'settings-security-row' },
+    {
+      label: t('notifications'),
+      href: '/settings/notifications',
+      testID: 'settings-notifications-row',
+    },
+    { label: t('appearance'), href: '/settings/appearance', testID: 'settings-appearance-row' },
+    { label: t('language'), href: '/settings/language', testID: 'settings-language-row' },
+    { label: t('ai'), href: '/settings/ai', testID: 'settings-ai-row' },
+    { label: t('experience'), href: '/settings/experience', testID: 'settings-experience-row' },
+    {
+      label: t('integrations'),
+      href: '/settings/integrations',
+      testID: 'settings-integrations-row',
+    },
+    { label: t('data'), href: '/settings/data', testID: 'settings-data-row' },
+    { label: t('analytics'), href: '/settings/analytics', testID: 'settings-analytics-row' },
+    { label: t('trash'), href: '/settings/trash', testID: 'settings-trash-row' },
+  ];
+
+  const DANGER_MENU: { label: string; href: Href; testID: string }[] = [
+    { label: t('dangerZone'), href: '/settings/danger-zone', testID: 'settings-danger-zone-row' },
+  ];
 
   return (
     <View style={styles.container}>
@@ -56,34 +70,40 @@ export function SettingsScreen() {
         onPress={() => void logout()}
         testID="settings-signout-button"
       >
-        <Text style={styles.signOutLabel}>Sign out</Text>
+        <Text style={styles.signOutLabel}>{t('signOut')}</Text>
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb', padding: 16, gap: 10 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  label: { fontSize: 15, fontWeight: '500', color: '#111827' },
-  chevron: { color: '#9ca3af', fontSize: 16 },
-  dangerRow: { marginTop: 12, borderColor: '#fecaca', backgroundColor: '#fef2f2' },
-  dangerLabel: { fontSize: 15, fontWeight: '500', color: '#b91c1c' },
-  signOutRow: {
-    justifyContent: 'center',
-    marginTop: 12,
-    borderColor: '#fecaca',
-    backgroundColor: '#fef2f2',
-  },
-  signOutLabel: { fontSize: 15, fontWeight: '600', color: '#b91c1c' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, padding: 16, gap: 10 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    label: { fontSize: 15, fontWeight: '500', color: colors.text },
+    chevron: { color: colors.textFaint, fontSize: 16 },
+    dangerRow: {
+      marginTop: 12,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSurface,
+    },
+    dangerLabel: { fontSize: 15, fontWeight: '500', color: colors.danger },
+    signOutRow: {
+      justifyContent: 'center',
+      marginTop: 12,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSurface,
+    },
+    signOutLabel: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  });
+}

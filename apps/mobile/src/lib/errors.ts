@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 interface GraphQLErrorLike {
   response: {
     errors?: { message?: string; extensions?: { code?: string } }[];
@@ -10,19 +12,21 @@ function isGraphQLErrorLike(error: unknown): error is GraphQLErrorLike {
   return typeof error === 'object' && error !== null && 'response' in error;
 }
 
-const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
-export const NETWORK_MESSAGE = 'Could not reach the server. Check your connection and try again.';
+/** Resolved lazily (not a module-level constant) so it always reflects the current language. */
+export function getNetworkMessage(): string {
+  return i18n.t('common:errorNetwork');
+}
 
 /** Turns any thrown error (GraphQL, network, or otherwise) into a single user-facing message. */
 export function getErrorMessage(error: unknown): string {
   if (isGraphQLErrorLike(error)) {
     const gqlError = error.response.errors?.[0];
-    return gqlError?.message ?? GENERIC_MESSAGE;
+    return gqlError?.message ?? i18n.t('common:errorGeneric');
   }
 
-  if (error instanceof TypeError) return NETWORK_MESSAGE;
+  if (error instanceof TypeError) return getNetworkMessage();
 
-  return GENERIC_MESSAGE;
+  return i18n.t('common:errorGeneric');
 }
 
 /** The API's error code (`ERROR_CODES.*`) on a GraphQL error, or null for anything else — mirrors apps/web's extractGqlErrorCode. */

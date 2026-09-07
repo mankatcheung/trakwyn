@@ -1,8 +1,6 @@
 // Hand-written to match apps/web's settings pages' GraphQL operations
 // field-for-field — codegen is still deferred for apps/mobile (see
-// JEF-261/262). Token-limit fields (monthlyTokenLimit, llmUsageSummary,
-// setLlmApiKeyMonthlyLimit) are intentionally omitted: that feature is only
-// a design at this point, not yet in the schema.
+// JEF-261/262).
 
 export const PROFILE_QUERY = `
   query Me {
@@ -12,13 +10,69 @@ export const PROFILE_QUERY = `
       name
       timezone
       targetRole
+      avatarUrl
+      backupEmail
+      backupEmailVerifiedAt
     }
   }
 `;
 
 export const UPDATE_PROFILE_MUTATION = `
-  mutation UpdateProfile($name: String, $timezone: String, $targetRole: String) {
-    updateProfile(name: $name, timezone: $timezone, targetRole: $targetRole)
+  mutation UpdateProfile(
+    $name: String
+    $timezone: String
+    $targetRole: String
+    $customAiPrompt: String
+    $useCrossApplicationContext: Boolean
+    $llmFallbackWhenLimited: Boolean
+  ) {
+    updateProfile(
+      name: $name
+      timezone: $timezone
+      targetRole: $targetRole
+      customAiPrompt: $customAiPrompt
+      useCrossApplicationContext: $useCrossApplicationContext
+      llmFallbackWhenLimited: $llmFallbackWhenLimited
+    )
+  }
+`;
+
+export const REQUEST_AVATAR_UPLOAD_URL_MUTATION = `
+  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {
+    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {
+      uploadUrl
+      storageKey
+    }
+  }
+`;
+
+export const CONFIRM_AVATAR_MUTATION = `
+  mutation ConfirmAvatar($storageKey: String!, $mimeType: String!, $sizeBytes: Int!) {
+    confirmAvatar(storageKey: $storageKey, mimeType: $mimeType, sizeBytes: $sizeBytes)
+  }
+`;
+
+export const REMOVE_AVATAR_MUTATION = `
+  mutation RemoveAvatar {
+    removeAvatar
+  }
+`;
+
+export const REQUEST_EMAIL_CHANGE_MUTATION = `
+  mutation RequestEmailChange($currentPassword: String!, $newEmail: String!) {
+    requestEmailChange(currentPassword: $currentPassword, newEmail: $newEmail)
+  }
+`;
+
+export const REQUEST_ADD_BACKUP_EMAIL_MUTATION = `
+  mutation RequestAddBackupEmail($currentPassword: String!, $backupEmail: String!) {
+    requestAddBackupEmail(currentPassword: $currentPassword, backupEmail: $backupEmail)
+  }
+`;
+
+export const REMOVE_BACKUP_EMAIL_MUTATION = `
+  mutation RemoveBackupEmail($currentPassword: String!) {
+    removeBackupEmail(currentPassword: $currentPassword)
   }
 `;
 
@@ -103,10 +157,34 @@ export const LLM_API_KEYS_QUERY = `
       provider
       model
       baseUrl
+      monthlyTokenLimit
     }
     me {
       defaultLlmProvider
+      customAiPrompt
+      useCrossApplicationContext
+      llmFallbackWhenLimited
     }
+  }
+`;
+
+export const LLM_USAGE_SUMMARY_QUERY = `
+  query LlmUsageSummary {
+    llmUsageSummary {
+      provider
+      requestCount
+      promptTokens
+      completionTokens
+      lastUsedAt
+      monthlyTokenLimit
+      limitReached
+    }
+  }
+`;
+
+export const SET_LLM_API_KEY_MONTHLY_LIMIT_MUTATION = `
+  mutation SetLlmApiKeyMonthlyLimit($provider: String!, $monthlyTokenLimit: Int) {
+    setLlmApiKeyMonthlyLimit(provider: $provider, monthlyTokenLimit: $monthlyTokenLimit)
   }
 `;
 

@@ -1,0 +1,15 @@
+{
+  "emptyPrompt": "查詢你的求職申請、下一步行動，或其他任何問題。",
+  "inputPlaceholder": "向助理發送訊息",
+  "send": "發送",
+  "conversations": {
+    "empty": "還沒有對話。",
+    "newButton": "+ 新增",
+    "newConversation": "新增對話",
+    "delete": "刪除",
+    "deleteTitle": "刪除對話",
+    "deleteMessage": "此操作無法還原。",
+    "cancel": "取消",
+    "couldNotDeleteTitle": "無法刪除"
+  }
+}

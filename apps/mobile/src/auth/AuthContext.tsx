@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { useTranslation } from 'react-i18next';
 import { getTokens, setTokens, clearTokens, type TokenPair } from './tokenStorage';
 import {
   gqlRequest,
@@ -128,6 +129,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined>
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // AuthProvider is mounted inside QueryClientProvider (app/_layout.tsx), so
   // the cache is reachable from every session boundary below.
+  const { t } = useTranslation('auth');
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -239,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const code = queryParams?.code;
       if (typeof code !== 'string') {
-        throw new Error("Sign-in didn't work. Please try again.");
+        throw new Error(t('errors.signInFailed'));
       }
 
       let data: { exchangeMobileOAuthCode: { accessToken: string; refreshToken: string } };
@@ -253,11 +255,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // presented with the wrong verifier, or the request never landed —
         // none of that is worth distinguishing for the user, unlike the
         // oauthError slugs above which are.
-        throw new Error("Sign-in didn't work. Please try again.");
+        throw new Error(t('errors.signInFailed'));
       }
       await applyTokens(data.exchangeMobileOAuthCode);
     },
-    [applyTokens],
+    [applyTokens, t],
   );
 
   const register = useCallback(

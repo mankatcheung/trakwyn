@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, Text } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('../../hooks/useSessions', () => ({
   useSessions: jest.fn(),
@@ -12,6 +13,7 @@ jest.mock('../../hooks/useLinkedOAuthAccounts', () => ({
   useLinkedOAuthAccounts: jest.fn(),
   useUnlinkOAuthAccount: jest.fn(),
 }));
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('../../../../auth/useStepUpReauth', () => {
   class StepUpCancelledError extends Error {}
   return { StepUpCancelledError, useStepUpReauth: jest.fn() };
@@ -27,6 +29,8 @@ import { useLinkedOAuthAccounts, useUnlinkOAuthAccount } from '../../hooks/useLi
 import { StepUpCancelledError, useStepUpReauth } from '../../../../auth/useStepUpReauth';
 import { SecurityScreen } from '../SecurityScreen';
 import type { LinkedOAuthAccount, Session } from '../../types';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedUseSessions = jest.mocked(useSessions);
 const mockedUseRevokeSession = jest.mocked(useRevokeSession);
@@ -35,6 +39,7 @@ const mockedUseUpdatePassword = jest.mocked(useUpdatePassword);
 const mockedUseStepUpReauth = jest.mocked(useStepUpReauth);
 const mockedUseLinkedOAuthAccounts = jest.mocked(useLinkedOAuthAccounts);
 const mockedUseUnlinkOAuthAccount = jest.mocked(useUnlinkOAuthAccount);
+const mockedUseTheme = jest.mocked(useTheme);
 
 const currentSession: Session = {
   id: '1',
@@ -62,6 +67,12 @@ const googleAccount: LinkedOAuthAccount = {
 
 describe('SecurityScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseSessions.mockReturnValue({
       data: [currentSession],

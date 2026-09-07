@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,18 +11,25 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useApplication } from '../hooks/useApplicationQueries';
 import { useCreateApplication, useUpdateApplication } from '../hooks/useApplicationMutations';
 import { statusLabel } from '../components/StatusBadge';
 import { APPLICATION_STATUSES, type ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
+import i18n from '../../../i18n';
 import {
-  applicationFormSchema,
+  getApplicationFormSchema,
   EMPTY_APPLICATION_FORM_VALUES,
   type ApplicationFormValues,
 } from './applicationFormSchema';
 
 export function ApplicationFormScreen() {
+  const { t } = useTranslation('applications');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id?: string }>();
   const isEditing = Boolean(applicationId);
@@ -55,9 +62,9 @@ export function ApplicationFormScreen() {
 
   const onSubmit = () => {
     setError(null);
-    const parsed = applicationFormSchema.safeParse(values);
+    const parsed = getApplicationFormSchema().safeParse(values);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid input');
+      setError(parsed.error.issues[0]?.message ?? i18n.t('applications:form.invalidInput'));
       return;
     }
 
@@ -87,7 +94,7 @@ export function ApplicationFormScreen() {
   if (isEditing && isLoadingExisting) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" testID="application-form-loading" />
+        <ActivityIndicator size="large" color={colors.primary} testID="application-form-loading" />
       </View>
     );
   }
@@ -100,7 +107,7 @@ export function ApplicationFormScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Text style={styles.label}>Company</Text>
+        <Text style={styles.label}>{t('form.companyLabel')}</Text>
         <TextInput
           style={styles.input}
           value={values.company}
@@ -108,7 +115,7 @@ export function ApplicationFormScreen() {
           testID="form-company-input"
         />
 
-        <Text style={styles.label}>Role</Text>
+        <Text style={styles.label}>{t('form.roleLabel')}</Text>
         <TextInput
           style={styles.input}
           value={values.role}
@@ -116,7 +123,7 @@ export function ApplicationFormScreen() {
           testID="form-role-input"
         />
 
-        <Text style={styles.label}>Status</Text>
+        <Text style={styles.label}>{t('form.statusLabel')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusRow}>
           {APPLICATION_STATUSES.map((status) => (
             <StatusChip
@@ -128,7 +135,7 @@ export function ApplicationFormScreen() {
           ))}
         </ScrollView>
 
-        <Text style={styles.label}>Job URL</Text>
+        <Text style={styles.label}>{t('form.jobUrlLabel')}</Text>
         <TextInput
           style={styles.input}
           value={values.jobUrl}
@@ -138,7 +145,7 @@ export function ApplicationFormScreen() {
           testID="form-joburl-input"
         />
 
-        <Text style={styles.label}>Location</Text>
+        <Text style={styles.label}>{t('form.locationLabel')}</Text>
         <TextInput
           style={styles.input}
           value={values.location}
@@ -146,7 +153,7 @@ export function ApplicationFormScreen() {
           testID="form-location-input"
         />
 
-        <Text style={styles.label}>Salary range</Text>
+        <Text style={styles.label}>{t('form.salaryRangeLabel')}</Text>
         <TextInput
           style={styles.input}
           value={values.salaryRange}
@@ -154,7 +161,7 @@ export function ApplicationFormScreen() {
           testID="form-salary-input"
         />
 
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.label}>{t('form.descriptionLabel')}</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           value={values.description}
@@ -171,7 +178,11 @@ export function ApplicationFormScreen() {
           testID="form-submit-button"
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'Saving...' : isEditing ? 'Save changes' : 'Create application'}
+            {isSubmitting
+              ? t('form.saving')
+              : isEditing
+                ? t('form.saveChanges')
+                : t('form.createApplication')}
           </Text>
         </Pressable>
       </ScrollView>
@@ -188,6 +199,8 @@ function StatusChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={[styles.chip, active && styles.chipActive]}
@@ -199,50 +212,52 @@ function StatusChip({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20, gap: 6 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginTop: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  multiline: { minHeight: 90, textAlignVertical: 'top' },
-  statusRow: { marginBottom: 4 },
-  chip: {
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginRight: 8,
-    backgroundColor: '#ffffff',
-  },
-  chipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  chipTextActive: { color: '#ffffff' },
-  submitButton: {
-    minHeight: 44,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  submitButtonDisabled: { opacity: 0.6 },
-  submitButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    marginBottom: 4,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20, gap: 6 },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 10 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    multiline: { minHeight: 90, textAlignVertical: 'top' },
+    statusRow: { marginBottom: 4 },
+    chip: {
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      marginRight: 8,
+      backgroundColor: colors.surface,
+    },
+    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+    chipTextActive: { color: colors.surface },
+    submitButton: {
+      minHeight: 44,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+    },
+    submitButtonDisabled: { opacity: 0.6 },
+    submitButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+      marginBottom: 4,
+    },
+  });
+}

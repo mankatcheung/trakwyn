@@ -1,0 +1,13 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "retry": "Retry",
+  "loading": "Loading…",
+  "errorGeneric": "Something went wrong. Please try again.",
+  "errorNetwork": "Could not reach the server. Check your connection and try again.",
+  "confirm": "Confirm",
+  "back": "Back"
+}

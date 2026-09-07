@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { CURRENCIES, PERIODS, type Offer, type OfferFormData, type OfferPeriod } from '../types';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 interface OfferFormProps {
   initialData?: Offer | null;
@@ -10,6 +13,9 @@ interface OfferFormProps {
 }
 
 export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFormProps) {
+  const { t } = useTranslation('offers');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [baseSalary, setBaseSalary] = useState(String(initialData?.baseSalary ?? ''));
   const [bonus, setBonus] = useState(initialData?.bonus != null ? String(initialData.bonus) : '');
   const [currency, setCurrency] = useState(initialData?.currency ?? 'USD');
@@ -42,7 +48,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
     <View style={styles.form}>
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Base salary</Text>
+          <Text style={styles.label}>{t('baseSalaryLabel')}</Text>
           <TextInput
             style={styles.input}
             value={baseSalary}
@@ -52,7 +58,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
           />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>Bonus</Text>
+          <Text style={styles.label}>{t('bonusLabel')}</Text>
           <TextInput
             style={styles.input}
             value={bonus}
@@ -63,7 +69,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         </View>
       </View>
 
-      <Text style={styles.label}>Currency</Text>
+      <Text style={styles.label}>{t('currencyLabel')}</Text>
       <View style={styles.chipRow} testID="offer-currency-picker">
         {CURRENCIES.map((c) => (
           <Pressable
@@ -77,7 +83,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         ))}
       </View>
 
-      <Text style={styles.label}>Period</Text>
+      <Text style={styles.label}>{t('periodLabel')}</Text>
       <View style={styles.chipRow} testID="offer-period-picker">
         {PERIODS.map((p) => (
           <Pressable
@@ -91,16 +97,16 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         ))}
       </View>
 
-      <Text style={styles.label}>Equity</Text>
+      <Text style={styles.label}>{t('equityFieldLabel')}</Text>
       <TextInput
         style={styles.input}
         value={equity}
         onChangeText={setEquity}
-        placeholder="e.g. 0.1% over 4 years"
+        placeholder={t('equityPlaceholder')}
         testID="offer-equity-input"
       />
 
-      <Text style={styles.label}>Benefits</Text>
+      <Text style={styles.label}>{t('benefitsFieldLabel')}</Text>
       <TextInput
         style={[styles.input, styles.multiline]}
         value={benefits}
@@ -109,7 +115,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         testID="offer-benefits-input"
       />
 
-      <Text style={styles.label}>Cost of living adjustment</Text>
+      <Text style={styles.label}>{t('costOfLivingLabel')}</Text>
       <TextInput
         style={styles.input}
         value={costOfLiving}
@@ -118,7 +124,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         testID="offer-col-input"
       />
 
-      <Text style={styles.label}>Notes</Text>
+      <Text style={styles.label}>{t('notesLabel')}</Text>
       <TextInput
         style={[styles.input, styles.multiline]}
         value={notes}
@@ -129,7 +135,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
 
       <View style={styles.actions}>
         <Pressable onPress={onCancel} testID="offer-form-cancel-button">
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={styles.cancelText}>{t('cancel')}</Text>
         </Pressable>
         <Pressable
           style={[styles.saveButton, (!canSubmit || loading) && styles.saveButtonDisabled]}
@@ -138,9 +144,9 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
           testID="offer-form-save-button"
         >
           {loading ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color={colors.surface} />
           ) : (
-            <Text style={styles.saveText}>Save offer</Text>
+            <Text style={styles.saveText}>{t('saveOffer')}</Text>
           )}
         </Pressable>
       </View>
@@ -148,49 +154,51 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
   );
 }
 
-const styles = StyleSheet.create({
-  form: { gap: 8 },
-  row: { flexDirection: 'row', gap: 12 },
-  half: { flex: 1, gap: 4 },
-  label: { fontSize: 12, fontWeight: '600', color: '#374151', marginTop: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    backgroundColor: '#ffffff',
-  },
-  multiline: { minHeight: 60, textAlignVertical: 'top' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: {
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  chipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { fontSize: 12, color: '#374151' },
-  chipTextActive: { color: '#ffffff' },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 16,
-    marginTop: 12,
-  },
-  cancelText: { color: '#6b7280', fontSize: 14, fontWeight: '600' },
-  saveButton: {
-    minWidth: 110,
-    minHeight: 40,
-    borderRadius: 8,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  saveButtonDisabled: { opacity: 0.6 },
-  saveText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    form: { gap: 8 },
+    row: { flexDirection: 'row', gap: 12 },
+    half: { flex: 1, gap: 4 },
+    label: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 8 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      fontSize: 14,
+      backgroundColor: colors.surface,
+    },
+    multiline: { minHeight: 60, textAlignVertical: 'top' },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    chip: {
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { fontSize: 12, color: colors.textMuted },
+    chipTextActive: { color: colors.surface },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      gap: 16,
+      marginTop: 12,
+    },
+    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '600' },
+    saveButton: {
+      minWidth: 110,
+      minHeight: 40,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    saveButtonDisabled: { opacity: 0.6 },
+    saveText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+  });
+}

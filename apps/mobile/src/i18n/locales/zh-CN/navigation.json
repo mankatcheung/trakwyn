@@ -1,0 +1,48 @@
+{
+  "screenTitles": {
+    "dashboard": "仪表盘",
+    "calendar": "日历",
+    "notifications": "通知",
+    "applications": "求职申请",
+    "newApplication": "新建求职申请",
+    "analytics": "分析",
+    "board": "看板",
+    "trash": "回收站",
+    "application": "求职申请",
+    "editApplication": "编辑求职申请",
+    "notes": "备注",
+    "documents": "文件",
+    "offers": "录用信息",
+    "compareOffers": "比较录用信息",
+    "assistant": "助手",
+    "settings": "设置",
+    "profile": "个人资料",
+    "security": "安全",
+    "ai": "AI",
+    "experience": "经历",
+    "integrations": "集成",
+    "data": "数据",
+    "dangerZone": "危险区域",
+    "language": "语言",
+    "appearance": "外观"
+  },
+  "sidebar": {
+    "dashboard": "仪表盘",
+    "applications": "求职申请",
+    "board": "看板",
+    "calendar": "日历",
+    "analytics": "分析",
+    "assistant": "助手",
+    "notifications": "通知",
+    "settings": "设置",
+    "trash": "回收站",
+    "signOut": "退出登录"
+  },
+  "tabs": {
+    "home": "首页",
+    "applications": "求职申请",
+    "calendar": "日历",
+    "assistant": "助手",
+    "settings": "设置"
+  }
+}

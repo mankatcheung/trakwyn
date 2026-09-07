@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,10 +8,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../auth/AuthContext';
 import { getErrorMessage } from '../../../lib/errors';
 import { useDeleteAccount } from '../hooks/useDeleteAccount';
 import { STEP_UP_CANCELLED, useStepUpReauth } from '../hooks/useStepUpReauth';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 /**
  * Account deletion, on its own screen rather than bundled with Export/Import
@@ -19,6 +22,9 @@ import { STEP_UP_CANCELLED, useStepUpReauth } from '../hooks/useStepUpReauth';
  * password-gated, so it shouldn't be reachable by accident.
  */
 export function DangerZoneScreen() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { logout } = useAuth();
   const deleteAccount = useDeleteAccount();
   const { withStepUp, dialog } = useStepUpReauth();
@@ -40,17 +46,14 @@ export function DangerZoneScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <Text style={styles.title}>Danger zone</Text>
-        <Text style={styles.description}>
-          Deleting your account is permanent. All your applications, notes, and documents will be
-          removed.
-        </Text>
+        <Text style={styles.title}>{t('danger.title')}</Text>
+        <Text style={styles.description}>{t('danger.description')}</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TextInput
           style={styles.input}
-          placeholder="Confirm your password"
+          placeholder={t('danger.confirmPasswordPlaceholder')}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -64,9 +67,9 @@ export function DangerZoneScreen() {
           testID="delete-account-button"
         >
           {deleteAccount.isPending ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color={colors.surface} />
           ) : (
-            <Text style={styles.deleteButtonText}>Delete my account</Text>
+            <Text style={styles.deleteButtonText}>{t('danger.deleteMyAccount')}</Text>
           )}
         </Pressable>
       </View>
@@ -76,45 +79,47 @@ export function DangerZoneScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20 },
-  card: {
-    backgroundColor: '#fef2f2',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    padding: 16,
-    gap: 12,
-  },
-  title: { fontSize: 15, fontWeight: '700', color: '#b91c1c' },
-  description: { fontSize: 13, color: '#b91c1c' },
-  input: {
-    maxWidth: 320,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#ffffff',
-  },
-  error: {
-    color: '#b91c1c',
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 13,
-  },
-  deleteButton: {
-    alignSelf: 'flex-start',
-    minHeight: 40,
-    borderRadius: 8,
-    backgroundColor: '#dc2626',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  deleteButtonDisabled: { opacity: 0.6 },
-  deleteButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20 },
+    card: {
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      padding: 16,
+      gap: 12,
+    },
+    title: { fontSize: 15, fontWeight: '700', color: colors.danger },
+    description: { fontSize: 13, color: colors.danger },
+    input: {
+      maxWidth: 320,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 15,
+      backgroundColor: colors.surface,
+    },
+    error: {
+      color: colors.danger,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 13,
+    },
+    deleteButton: {
+      alignSelf: 'flex-start',
+      minHeight: 40,
+      borderRadius: 8,
+      backgroundColor: colors.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+    },
+    deleteButtonDisabled: { opacity: 0.6 },
+    deleteButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+  });
+}

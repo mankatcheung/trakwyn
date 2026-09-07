@@ -1,17 +1,31 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../../i18n';
 
 jest.mock('../../../../auth/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../../hooks/useDeleteAccount', () => ({ useDeleteAccount: jest.fn() }));
 
+jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useAuth } from '../../../../auth/AuthContext';
 import { useDeleteAccount } from '../../hooks/useDeleteAccount';
 import { DangerZoneScreen } from '../DangerZoneScreen';
+import { useTheme } from '../../../../theme/ThemeContext';
+import { lightColors } from '../../../../theme/colors';
 
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseDeleteAccount = jest.mocked(useDeleteAccount);
+const mockedUseTheme = jest.mocked(useTheme);
 
 describe('DangerZoneScreen', () => {
+  beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
+  });
+
   beforeEach(() => jest.clearAllMocks());
 
   it('deletes the account and logs out on success', async () => {

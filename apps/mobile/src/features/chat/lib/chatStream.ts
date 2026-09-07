@@ -1,7 +1,7 @@
 import fetch from './expoFetch';
 import { CHAT_STREAM_URL, ERROR_CODES } from '../../../constants';
 import { getValidAccessToken, recoverFromUnauthorized } from '../../../graphql/client';
-import { NETWORK_MESSAGE } from '../../../lib/errors';
+import { getNetworkMessage } from '../../../lib/errors';
 import { buildUserAgent } from '../../../lib/userAgent';
 
 const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Sign in again to continue.';
@@ -100,7 +100,7 @@ export async function streamChatMessage({
   if (response.status === 401 && sentWith) {
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind === 'unreachable') {
-      throw new ChatStreamError(NETWORK_MESSAGE, ERROR_CODES.NETWORK_ERROR);
+      throw new ChatStreamError(getNetworkMessage(), ERROR_CODES.NETWORK_ERROR);
     }
     if (recovery.kind === 'retry') response = await openStream(recovery.token, body, signal);
   }

@@ -1,0 +1,14 @@
+{
+  "deleteDocumentTitle": "刪除文件",
+  "deleteDocumentMessage": "刪除 {{name}}？",
+  "cancel": "取消",
+  "delete": "刪除",
+  "versionPlaceholder": "版本（選填）",
+  "uploading": "上傳中…",
+  "upload": "上傳",
+  "chooseFile": "選擇要上傳的檔案",
+  "emptyText": "尚無文件。",
+  "couldNotDeleteTitle": "無法刪除",
+  "uploadFailedStatus": "上傳失敗，狀態碼 {{status}}",
+  "uploadNotSupported": "行動應用程式尚不支援上傳至 Vercel Blob 儲存空間。"
+}

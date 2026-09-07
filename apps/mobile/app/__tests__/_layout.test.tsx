@@ -5,6 +5,7 @@ jest.mock('../../src/auth/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
+jest.mock('../../src/theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('expo-router', () => {
   const Stack = ({ children }: { children?: React.ReactNode }) => children;
   Stack.Screen = () => null;
@@ -16,10 +17,13 @@ jest.mock('expo-router', () => {
 import { usePathname, useRouter } from 'expo-router';
 import { useAuth } from '../../src/auth/AuthContext';
 import { RootNavigator } from '../_layout';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { lightColors } from '../../src/theme/colors';
 
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUsePathname = jest.mocked(usePathname);
+const mockedUseTheme = jest.mocked(useTheme);
 
 type AuthState = ReturnType<typeof useAuth>;
 
@@ -42,6 +46,12 @@ describe('RootNavigator', () => {
   const replace = jest.fn();
 
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
     mockedUseRouter.mockReturnValue({ replace } as never);
     mockedUsePathname.mockReturnValue('/');

@@ -1,0 +1,14 @@
+{
+  "deleteDocumentTitle": "删除文件",
+  "deleteDocumentMessage": "删除{{name}}？",
+  "cancel": "取消",
+  "delete": "删除",
+  "versionPlaceholder": "版本（可选）",
+  "uploading": "正在上传…",
+  "upload": "上传",
+  "chooseFile": "选择要上传的文件",
+  "emptyText": "还没有文件。",
+  "couldNotDeleteTitle": "无法删除",
+  "uploadFailedStatus": "上传失败，状态码 {{status}}",
+  "uploadNotSupported": "移动应用暂不支持上传到 Vercel Blob 存储。"
+}

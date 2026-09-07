@@ -1,0 +1,17 @@
+{
+  "eventLabel": {
+    "applied": "已投递",
+    "followUp": "跟进",
+    "interview": "面试"
+  },
+  "viewModes": {
+    "month": "月",
+    "week": "周",
+    "day": "日"
+  },
+  "retry": "重试",
+  "selectDayHint": "选择某一天查看当天的事件。",
+  "noEventsOnDay": "这一天没有事件。",
+  "eventTitleWithRound": "{{label}}（{{round}}）— {{company}}",
+  "eventTitlePlain": "{{label}} — {{company}}"
+}

@@ -1,0 +1,6 @@
+{
+  "requiresPhysicalDevice": "推送通知需要實體裝置。",
+  "permissionNotGranted": "尚未授予通知權限。",
+  "noEasProject": "此組建未設定 EAS 項目，因此無法註冊推送通知。",
+  "couldNotObtainToken": "無法取得推送權杖。"
+}

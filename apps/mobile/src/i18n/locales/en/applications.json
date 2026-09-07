@@ -1,0 +1,72 @@
+{
+  "status": {
+    "draft": "Draft",
+    "applied": "Applied",
+    "interviewing": "Interviewing",
+    "offered": "Offered",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn"
+  },
+  "detail": {
+    "moveToTrashTitle": "Move to Trash",
+    "moveToTrashMessage": "This application will be moved to Trash.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "couldNotDeleteTitle": "Could not delete",
+    "notFound": "Application not found",
+    "locationLabel": "Location",
+    "salaryRangeLabel": "Salary range",
+    "sourceLabel": "Source",
+    "descriptionLabel": "Description",
+    "notes": "Notes",
+    "documents": "Documents",
+    "offers": "Offers",
+    "edit": "Edit",
+    "deleting": "Deleting...",
+    "moveToTrash": "Move to Trash"
+  },
+  "form": {
+    "companyLabel": "Company",
+    "roleLabel": "Role",
+    "statusLabel": "Status",
+    "jobUrlLabel": "Job URL",
+    "locationLabel": "Location",
+    "salaryRangeLabel": "Salary range",
+    "descriptionLabel": "Description",
+    "invalidInput": "Invalid input",
+    "saving": "Saving...",
+    "saveChanges": "Save changes",
+    "createApplication": "Create application",
+    "validation": {
+      "companyRequired": "Company is required",
+      "roleRequired": "Role is required",
+      "invalidUrl": "Enter a valid URL"
+    }
+  },
+  "board": {
+    "title": "Board",
+    "newButton": "+ New",
+    "move": "Move",
+    "moveModalTitle": "Move {{company}}",
+    "cancel": "Cancel"
+  },
+  "trash": {
+    "deletePermanentlyTitle": "Delete permanently",
+    "deletePermanentlyMessage": "{{role}} at {{company}} will be deleted forever. This cannot be undone.",
+    "cancel": "Cancel",
+    "deleteForever": "Delete forever",
+    "couldNotDeleteTitle": "Could not delete",
+    "couldNotRestoreTitle": "Could not restore",
+    "restore": "Restore",
+    "delete": "Delete",
+    "empty": "Trash is empty."
+  },
+  "list": {
+    "searchPlaceholder": "Search company or role",
+    "all": "All",
+    "empty": "No applications yet.",
+    "viewList": "List",
+    "viewBoard": "Board"
+  }
+}

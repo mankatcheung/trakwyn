@@ -1,0 +1,17 @@
+{
+  "eventLabel": {
+    "applied": "Applied",
+    "followUp": "Follow-up",
+    "interview": "Interview"
+  },
+  "viewModes": {
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  },
+  "retry": "Retry",
+  "selectDayHint": "Select a day to see its events.",
+  "noEventsOnDay": "No events on this day.",
+  "eventTitleWithRound": "{{label}} ({{round}}) — {{company}}",
+  "eventTitlePlain": "{{label}} — {{company}}"
+}

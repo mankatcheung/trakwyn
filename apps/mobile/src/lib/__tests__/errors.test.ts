@@ -1,4 +1,5 @@
-import { getErrorCode, getErrorMessage, NETWORK_MESSAGE } from '../errors';
+import '../../i18n';
+import { getErrorCode, getErrorMessage, getNetworkMessage } from '../errors';
 
 const gqlError = (message?: string, code?: string) => ({
   response: { errors: [{ message, extensions: code ? { code } : undefined }] },
@@ -16,7 +17,7 @@ describe('getErrorMessage', () => {
   });
 
   it('reports a TypeError as a connectivity problem, the way fetch fails offline', () => {
-    expect(getErrorMessage(new TypeError('Network request failed'))).toBe(NETWORK_MESSAGE);
+    expect(getErrorMessage(new TypeError('Network request failed'))).toBe(getNetworkMessage());
   });
 
   it('never leaks an arbitrary error message', () => {

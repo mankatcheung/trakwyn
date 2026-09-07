@@ -1,3 +1,5 @@
+import '../../../../i18n';
+
 const mockUploadAsync = jest.fn();
 
 jest.mock('expo-file-system', () => ({

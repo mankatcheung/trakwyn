@@ -1,0 +1,6 @@
+{
+  "requiresPhysicalDevice": "Push notifications require a physical device.",
+  "permissionNotGranted": "Notification permission was not granted.",
+  "noEasProject": "This build has no EAS project configured, so it cannot register for push notifications.",
+  "couldNotObtainToken": "Could not obtain a push token."
+}

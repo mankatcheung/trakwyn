@@ -1,15 +1,20 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '../../../i18n';
 
 jest.mock('../../../graphql/client', () => ({ gqlRequest: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
+jest.mock('../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useRouter } from 'expo-router';
 import { gqlRequest } from '../../../graphql/client';
 import { ForgotPasswordScreen } from '../ForgotPasswordScreen';
+import { useTheme } from '../../../theme/ThemeContext';
+import { lightColors } from '../../../theme/colors';
 
 const mockedGqlRequest = jest.mocked(gqlRequest);
 const mockedUseRouter = jest.mocked(useRouter);
+const mockedUseTheme = jest.mocked(useTheme);
 
 function renderScreen(push = jest.fn()) {
   mockedUseRouter.mockReturnValue({ push } as never);
@@ -18,6 +23,12 @@ function renderScreen(push = jest.fn()) {
 
 describe('ForgotPasswordScreen', () => {
   beforeEach(() => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
     jest.clearAllMocks();
   });
 

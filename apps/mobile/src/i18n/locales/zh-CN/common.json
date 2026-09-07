@@ -1,0 +1,13 @@
+{
+  "save": "保存",
+  "cancel": "取消",
+  "delete": "删除",
+  "edit": "编辑",
+  "close": "关闭",
+  "retry": "重试",
+  "loading": "加载中…",
+  "errorGeneric": "发生错误，请重试。",
+  "errorNetwork": "无法连接服务器，请检查网络连接后重试。",
+  "confirm": "确认",
+  "back": "返回"
+}

@@ -1,0 +1,53 @@
+{
+  "title": "Analytics",
+  "stats": {
+    "total": "Total",
+    "active": "Active",
+    "responseRate": "Response rate",
+    "offerRate": "Offer rate",
+    "ghostingRate": "Ghosting rate"
+  },
+  "noDataYet": "No data yet.",
+  "cards": {
+    "applicationsPerWeek": "Applications per week",
+    "stageFunnel": "Stage funnel",
+    "channelsAndTags": "Channels & tags",
+    "channelsAndTagsDescription": "Which source or tag is actually working.",
+    "documentVersionOutcomes": "Document version outcomes",
+    "documentVersionOutcomesDescription": "Which resume/cover-letter version tends to lead to interviews.",
+    "interviewRounds": "Interview rounds",
+    "interviewRoundsDescription": "Pass rate per round type, and rounds before an outcome.",
+    "offers": "Offers",
+    "offersDescription": "Every offer logged, trended over time and by currency.",
+    "responseTimes": "Response times",
+    "responseTimesDescription": "How long applications sit in each stage, and time to first response."
+  },
+  "responseLabel": "Response",
+  "bySource": "By source",
+  "byTag": "By tag",
+  "noSourcesTracked": "No sources tracked yet.",
+  "noTagsUsed": "No tags used yet.",
+  "documentType": {
+    "resume": "Resume",
+    "coverLetter": "Cover letter"
+  },
+  "noDocumentVersionsTracked": "No document versions tracked yet.",
+  "noInterviewRoundsLogged": "No interview rounds logged yet.",
+  "roundsBeforeOffer": "Rounds before offer",
+  "roundsBeforeRejection": "Rounds before rejection",
+  "medianValue": "{{value}} median",
+  "offersCount_one": "{{count}} offer",
+  "offersCount_other": "{{count}} offers",
+  "noOffersYet": "No offers yet",
+  "rejectionsCount_one": "{{count}} rejection",
+  "rejectionsCount_other": "{{count}} rejections",
+  "noRejectionsYet": "No rejections yet",
+  "noOffersLogged": "No offers logged yet.",
+  "medianCurrency": "Median ({{currency}}, n={{count}})",
+  "noStageDurationsYet": "No stage durations yet.",
+  "firstResponseSummary": "First response: {{value}} median ({{detail}})",
+  "applicationsCount_one": "{{count}} application",
+  "applicationsCount_other": "{{count}} applications",
+  "noResponsesYet": "no responses yet",
+  "smallSample": "small sample"
+}

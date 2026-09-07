@@ -1,0 +1,17 @@
+{
+  "eventLabel": {
+    "applied": "已申請",
+    "followUp": "跟進",
+    "interview": "面試"
+  },
+  "viewModes": {
+    "month": "月",
+    "week": "週",
+    "day": "日"
+  },
+  "retry": "重試",
+  "selectDayHint": "選擇一天查看當天的事件。",
+  "noEventsOnDay": "這天沒有任何事件。",
+  "eventTitleWithRound": "{{label}}（{{round}}）— {{company}}",
+  "eventTitlePlain": "{{label}} — {{company}}"
+}

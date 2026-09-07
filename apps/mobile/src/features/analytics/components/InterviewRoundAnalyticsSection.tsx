@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useInterviewRoundAnalytics } from '../hooks/useAnalyticsQueries';
 import { AnalyticsCard } from './AnalyticsCard';
 import { RatioBar } from './RatioBar';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 function formatRounds(n: number | null): string {
   if (n === null) return '—';
@@ -10,19 +13,22 @@ function formatRounds(n: number | null): string {
 }
 
 export function InterviewRoundAnalyticsSection() {
+  const { t } = useTranslation('analytics');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, isLoading } = useInterviewRoundAnalytics();
 
-  if (isLoading) return <ActivityIndicator color="#2563eb" />;
+  if (isLoading) return <ActivityIndicator color={colors.primary} />;
   if (!data) return null;
 
   return (
     <AnalyticsCard
-      title="Interview rounds"
-      description="Pass rate per round type, and rounds before an outcome."
+      title={t('cards.interviewRounds')}
+      description={t('cards.interviewRoundsDescription')}
       testID="interview-round-analytics-section"
     >
       {data.byType.length === 0 ? (
-        <Text style={styles.empty}>No interview rounds logged yet.</Text>
+        <Text style={styles.empty}>{t('noInterviewRoundsLogged')}</Text>
       ) : (
         data.byType.map((stat) => {
           const decided = stat.passed + stat.failed;
@@ -43,23 +49,25 @@ export function InterviewRoundAnalyticsSection() {
 
       <View style={styles.summaryRow}>
         <View style={styles.summaryCol}>
-          <Text style={styles.summaryLabel}>Rounds before offer</Text>
-          <Text style={styles.summaryValue}>{formatRounds(data.roundsToOffer.median)} median</Text>
+          <Text style={styles.summaryLabel}>{t('roundsBeforeOffer')}</Text>
+          <Text style={styles.summaryValue}>
+            {t('medianValue', { value: formatRounds(data.roundsToOffer.median) })}
+          </Text>
           <Text style={styles.summaryMeta}>
             {data.roundsToOffer.sampleSize > 0
-              ? `${data.roundsToOffer.sampleSize} offers`
-              : 'No offers yet'}
+              ? t('offersCount', { count: data.roundsToOffer.sampleSize })
+              : t('noOffersYet')}
           </Text>
         </View>
         <View style={styles.summaryCol}>
-          <Text style={styles.summaryLabel}>Rounds before rejection</Text>
+          <Text style={styles.summaryLabel}>{t('roundsBeforeRejection')}</Text>
           <Text style={styles.summaryValue}>
-            {formatRounds(data.roundsToRejection.median)} median
+            {t('medianValue', { value: formatRounds(data.roundsToRejection.median) })}
           </Text>
           <Text style={styles.summaryMeta}>
             {data.roundsToRejection.sampleSize > 0
-              ? `${data.roundsToRejection.sampleSize} rejections`
-              : 'No rejections yet'}
+              ? t('rejectionsCount', { count: data.roundsToRejection.sampleSize })
+              : t('noRejectionsYet')}
           </Text>
         </View>
       </View>
@@ -67,18 +75,20 @@ export function InterviewRoundAnalyticsSection() {
   );
 }
 
-const styles = StyleSheet.create({
-  empty: { fontSize: 12, color: '#9ca3af' },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingTop: 10,
-    marginTop: 4,
-  },
-  summaryCol: { flex: 1, gap: 2 },
-  summaryLabel: { fontSize: 10, color: '#9ca3af' },
-  summaryValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  summaryMeta: { fontSize: 10, color: '#9ca3af' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    empty: { fontSize: 12, color: colors.textFaint },
+    summaryRow: {
+      flexDirection: 'row',
+      gap: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.surfaceAlt,
+      paddingTop: 10,
+      marginTop: 4,
+    },
+    summaryCol: { flex: 1, gap: 2 },
+    summaryLabel: { fontSize: 10, color: colors.textFaint },
+    summaryValue: { fontSize: 14, fontWeight: '700', color: colors.text },
+    summaryMeta: { fontSize: 10, color: colors.textFaint },
+  });
+}
