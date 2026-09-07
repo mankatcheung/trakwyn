@@ -68,6 +68,13 @@ export function BoardScreen() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{t('board.title')}</Text>
+        <Pressable
+          style={styles.newButton}
+          onPress={() => router.push('./new')}
+          testID="board-new-application-button"
+        >
+          <Text style={styles.newButtonText}>{t('board.newButton')}</Text>
+        </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.board}>
@@ -157,6 +164,13 @@ function createStyles(colors: ThemeColors) {
       paddingBottom: 8,
     },
     title: { fontSize: 20, fontWeight: '700', color: colors.text },
+    newButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+    },
+    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: {
