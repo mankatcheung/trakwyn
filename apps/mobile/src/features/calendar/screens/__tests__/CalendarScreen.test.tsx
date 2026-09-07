@@ -65,6 +65,18 @@ describe('CalendarScreen', () => {
     await findByText('Select a day to see its events.');
   });
 
+  it('stretches the view-mode picker to the full device width', async () => {
+    const { getByTestId } = await renderScreen();
+
+    const monthChip = getByTestId('calendar-view-month');
+    const row = monthChip.parent;
+
+    expect(row?.props.style).not.toContainEqual(
+      expect.objectContaining({ alignSelf: 'flex-start' }),
+    );
+    expect(monthChip.props.style).toContainEqual(expect.objectContaining({ flex: 1 }));
+  });
+
   it('shows events for the selected day and navigates on tap', async () => {
     const push = jest.fn();
     const { getByTestId, findByText } = await renderScreen(push);
