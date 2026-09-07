@@ -160,6 +160,7 @@ export function ChatScreen() {
 
       <View style={styles.composer}>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           placeholder={t('inputPlaceholder')}
           value={input}

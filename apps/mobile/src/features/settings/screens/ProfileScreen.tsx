@@ -224,6 +224,7 @@ export function ProfileScreen() {
 
         <Text style={styles.label}>{t('profile.nameLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={name}
           onChangeText={setName}
@@ -235,6 +236,7 @@ export function ProfileScreen() {
 
         <Text style={styles.label}>{t('profile.targetRoleLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={targetRole}
           onChangeText={setTargetRole}
@@ -257,6 +259,7 @@ export function ProfileScreen() {
         {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
         {emailSent ? <Text style={styles.success}>{t('profile.emailChangeSent')}</Text> : null}
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={emailPassword}
           onChangeText={setEmailPassword}
@@ -265,6 +268,7 @@ export function ProfileScreen() {
           testID="profile-email-current-password-input"
         />
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={newEmail}
           onChangeText={setNewEmail}
@@ -297,6 +301,7 @@ export function ProfileScreen() {
             </Text>
             {removeBackupError ? <Text style={styles.error}>{removeBackupError}</Text> : null}
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               value={removeBackupPassword}
               onChangeText={setRemoveBackupPassword}
@@ -325,6 +330,7 @@ export function ProfileScreen() {
               <Text style={styles.success}>{t('profile.backupEmailAdded')}</Text>
             ) : null}
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               value={backupEmailInput}
               onChangeText={setBackupEmailInput}
@@ -334,6 +340,7 @@ export function ProfileScreen() {
               testID="profile-backup-email-input"
             />
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               value={backupEmailPassword}
               onChangeText={setBackupEmailPassword}

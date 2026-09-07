@@ -103,6 +103,7 @@ function ApiTokensSection() {
         <View style={styles.form}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('integrations.apiTokenNamePlaceholder')}
             value={name}
@@ -265,6 +266,7 @@ function ShareLinksSection() {
         <View style={styles.form}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('integrations.shareLinkNamePlaceholder')}
             value={name}

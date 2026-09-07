@@ -147,6 +147,7 @@ export function NotificationsScreen() {
 
       <Text style={styles.label}>{t('notifications.weeklyGoal')}</Text>
       <TextInput
+        placeholderTextColor={colors.textFaint}
         style={styles.input}
         value={weeklyGoal}
         onChangeText={setWeeklyGoal}

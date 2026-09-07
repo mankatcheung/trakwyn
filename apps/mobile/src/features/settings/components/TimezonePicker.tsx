@@ -111,6 +111,7 @@ export function TimezonePicker({ value, onChange, testID }: TimezonePickerProps)
             </Pressable>
           </View>
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.searchInput}
             placeholder={t('profile.timezoneSearchPlaceholder')}
             value={query}
