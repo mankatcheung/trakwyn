@@ -4,15 +4,38 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useApplications } from '../../applications/hooks/useApplicationQueries';
 import { useDashboardCalendarEvents, useWeeklyApplicationGoal } from '../hooks/useDashboardQueries';
+import { useProfile } from '../../settings/hooks/useProfile';
 import { StatCard } from '../components/StatCard';
+import {
+  AlertCircleIcon,
+  BriefcaseIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  DocumentIcon,
+} from '../components/DashboardIcons';
 import { StatusBadge } from '../../applications/components/StatusBadge';
 import { getErrorMessage } from '../../../lib/errors';
 import type { CalendarEvent, CalendarEventKind } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
+const STAT_COLORS = {
+  blue: { bg: '#eff6ff', fg: '#2563eb' },
+  indigo: { bg: '#eef2ff', fg: '#4338ca' },
+  amber: { bg: '#fef3c7', fg: '#a16207' },
+  green: { bg: '#dcfce7', fg: '#15803d' },
+  orange: { bg: '#ffedd5', fg: '#c2410c' },
+};
+
 function formatEventDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 export function DashboardScreen() {
@@ -23,6 +46,7 @@ export function DashboardScreen() {
   const { data: applications, isLoading, isError, error } = useApplications();
   const { data: calendarEvents } = useDashboardCalendarEvents();
   const { data: goal } = useWeeklyApplicationGoal();
+  const { data: profile } = useProfile();
 
   const EVENT_LABEL: Record<CalendarEventKind, string> = {
     interview: t('eventLabel.interview'),
@@ -46,10 +70,20 @@ export function DashboardScreen() {
 
   const recentApps = apps.slice(0, 8);
 
+  const displayName = profile?.name || profile?.email || '';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('title')}</Text>
+        <View>
+          <Text style={styles.greeting}>{t('welcomeBack')}</Text>
+          <Text style={styles.title}>{displayName || t('title')}</Text>
+        </View>
+        {displayName ? (
+          <View style={styles.avatar} testID="dashboard-avatar">
+            <Text style={styles.avatarText}>{initialsOf(displayName)}</Text>
+          </View>
+        ) : null}
       </View>
 
       <ScrollView
@@ -61,31 +95,36 @@ export function DashboardScreen() {
           label={t('stats.total')}
           value={counts.total}
           loading={isLoading}
-          color={colors.primary}
+          icon={<BriefcaseIcon color={STAT_COLORS.blue.fg} />}
+          iconBg={STAT_COLORS.blue.bg}
         />
         <StatCard
           label={t('stats.applied')}
           value={counts.applied}
           loading={isLoading}
-          color="#4f46e5"
+          icon={<DocumentIcon color={STAT_COLORS.indigo.fg} />}
+          iconBg={STAT_COLORS.indigo.bg}
         />
         <StatCard
           label={t('stats.interviewing')}
           value={counts.interviewing}
           loading={isLoading}
-          color="#b45309"
+          icon={<ClockIcon color={STAT_COLORS.amber.fg} />}
+          iconBg={STAT_COLORS.amber.bg}
         />
         <StatCard
           label={t('stats.offered')}
           value={counts.offered}
           loading={isLoading}
-          color="#15803d"
+          icon={<CheckCircleIcon color={STAT_COLORS.green.fg} />}
+          iconBg={STAT_COLORS.green.bg}
         />
         <StatCard
           label={t('stats.followUpDue')}
           value={counts.overdue}
           loading={isLoading}
-          color="#c2410c"
+          icon={<AlertCircleIcon color={STAT_COLORS.orange.fg} />}
+          iconBg={STAT_COLORS.orange.bg}
         />
       </ScrollView>
 
@@ -133,15 +172,16 @@ export function DashboardScreen() {
           {upcomingEvents.map((event) => (
             <Pressable
               key={event.id}
-              style={styles.eventRow}
+              style={styles.eventCard}
               onPress={() => router.push(`./applications/${event.applicationId}`)}
               testID={`upcoming-event-${event.id}`}
             >
-              <Text style={styles.eventMeta}>
+              <Text style={styles.eventHeadline}>
                 {EVENT_LABEL[event.type]} · {formatEventDate(event.date)}
               </Text>
-              <Text style={styles.eventCompany}>{event.company}</Text>
-              <Text style={styles.eventRole}>{event.role}</Text>
+              <Text style={styles.eventSubtext}>
+                {event.role} · {event.company}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -167,13 +207,16 @@ export function DashboardScreen() {
                 onPress={() => router.push(`./applications/${app.id}`)}
                 testID={`recent-application-${app.id}`}
               >
+                <View style={styles.appLogo}>
+                  <Text style={styles.appLogoText}>{initialsOf(app.company).slice(0, 2)}</Text>
+                </View>
                 <View style={styles.appRowText}>
-                  <Text style={styles.appCompany}>
+                  <Text style={styles.appTitle}>
                     {app.starred ? '★ ' : ''}
                     {isOverdue ? '⚠ ' : ''}
-                    {app.company}
+                    {app.role}
                   </Text>
-                  <Text style={styles.appRole}>{app.role}</Text>
+                  <Text style={styles.appSubtitle}>{app.company}</Text>
                 </View>
                 <StatusBadge status={app.status} />
               </Pressable>
@@ -190,10 +233,20 @@ function createStyles(colors: ThemeColors) {
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 24, paddingBottom: 40 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    title: { fontSize: 22, fontWeight: '700', color: colors.text },
+    greeting: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
+    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary,
+    },
+    avatarText: { fontSize: 16, fontWeight: '700', color: colors.onPrimary },
     statsRow: { gap: 10 },
     goalCard: {
-      borderRadius: 12,
+      borderRadius: 14,
       backgroundColor: colors.primarySurface,
       borderWidth: 1,
       borderColor: colors.primarySurface,
@@ -202,7 +255,7 @@ function createStyles(colors: ThemeColors) {
     },
     goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
     goalHeaderText: { flex: 1, gap: 2 },
-    goalTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    goalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
     goalProgress: { fontSize: 13, color: colors.textMuted },
     goalStreak: { fontSize: 13, fontWeight: '700', color: colors.primary },
     progressTrack: {
@@ -218,19 +271,18 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
     link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    eventRow: {
-      borderRadius: 10,
+    eventCard: {
+      borderRadius: 14,
+      backgroundColor: colors.primarySurface,
       borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      padding: 12,
-      gap: 2,
+      borderColor: colors.primarySurface,
+      padding: 16,
+      gap: 4,
     },
-    eventMeta: { fontSize: 11, color: colors.textSubtle, fontWeight: '600' },
-    eventCompany: { fontSize: 14, fontWeight: '600', color: colors.text },
-    eventRole: { fontSize: 12, color: colors.textSubtle },
+    eventHeadline: { fontSize: 16, fontWeight: '700', color: colors.text },
+    eventSubtext: { fontSize: 13, color: colors.textMuted },
     loading: { marginTop: 16 },
     error: { color: colors.danger, fontSize: 13 },
     emptyText: { color: colors.primary, fontSize: 13 },
@@ -238,14 +290,25 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderRadius: 10,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
       padding: 12,
+      gap: 12,
     },
-    appRowText: { flex: 1, gap: 2, marginRight: 8 },
-    appCompany: { fontSize: 14, fontWeight: '600', color: colors.text },
-    appRole: { fontSize: 12, color: colors.textSubtle },
+    appLogo: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceAlt,
+      flexShrink: 0,
+    },
+    appLogoText: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+    appRowText: { flex: 1, gap: 2 },
+    appTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    appSubtitle: { fontSize: 13, color: colors.textSubtle },
   });
 }
