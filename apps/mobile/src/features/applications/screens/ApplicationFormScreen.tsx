@@ -109,6 +109,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.companyLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={values.company}
           onChangeText={(v) => update('company', v)}
@@ -117,6 +118,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.roleLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={values.role}
           onChangeText={(v) => update('role', v)}
@@ -137,6 +139,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.jobUrlLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={values.jobUrl}
           onChangeText={(v) => update('jobUrl', v)}
@@ -147,6 +150,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.locationLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={values.location}
           onChangeText={(v) => update('location', v)}
@@ -155,6 +159,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.salaryRangeLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           value={values.salaryRange}
           onChangeText={(v) => update('salaryRange', v)}
@@ -163,6 +168,7 @@ export function ApplicationFormScreen() {
 
         <Text style={styles.label}>{t('form.descriptionLabel')}</Text>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={[styles.input, styles.multiline]}
           value={values.description}
           onChangeText={(v) => update('description', v)}

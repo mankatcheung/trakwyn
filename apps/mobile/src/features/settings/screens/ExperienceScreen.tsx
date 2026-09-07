@@ -147,6 +147,7 @@ function WorkExperienceSection() {
         <View style={styles.form}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.companyPlaceholder')}
             value={company}
@@ -154,6 +155,7 @@ function WorkExperienceSection() {
             testID="work-experience-company-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.titlePlaceholder')}
             value={title}
@@ -161,6 +163,7 @@ function WorkExperienceSection() {
             testID="work-experience-title-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.startDatePlaceholder')}
             value={startDate}
@@ -168,6 +171,7 @@ function WorkExperienceSection() {
             testID="work-experience-start-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.endDatePlaceholder')}
             value={endDate}
@@ -297,6 +301,7 @@ function EducationSection() {
         <View style={styles.form}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.institutionPlaceholder')}
             value={institution}
@@ -304,6 +309,7 @@ function EducationSection() {
             testID="education-institution-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.degreePlaceholder')}
             value={degree}
@@ -311,6 +317,7 @@ function EducationSection() {
             testID="education-degree-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.startDatePlaceholder')}
             value={startDate}
@@ -318,6 +325,7 @@ function EducationSection() {
             testID="education-start-input"
           />
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.endDatePlaceholder')}
             value={endDate}
@@ -407,6 +415,7 @@ function SkillsSection() {
         <View style={styles.form}>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('experience.skillNamePlaceholder')}
             value={name}

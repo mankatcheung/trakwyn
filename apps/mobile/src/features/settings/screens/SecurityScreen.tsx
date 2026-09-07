@@ -245,6 +245,7 @@ export function SecurityScreen() {
         {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
         {passwordSaved ? <Text style={styles.success}>{t('security.passwordUpdated')}</Text> : null}
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           placeholder={t('security.currentPasswordPlaceholder')}
           secureTextEntry
@@ -253,6 +254,7 @@ export function SecurityScreen() {
           testID="current-password-input"
         />
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           placeholder={t('security.newPasswordPlaceholder')}
           secureTextEntry

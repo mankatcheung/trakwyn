@@ -119,6 +119,7 @@ function StepUpReauthPrompt({
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('stepUp.passwordPlaceholder')}
             secureTextEntry
@@ -130,6 +131,7 @@ function StepUpReauthPrompt({
           />
           {totpRequired ? (
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               placeholder={t('stepUp.codePlaceholder')}
               keyboardType="number-pad"

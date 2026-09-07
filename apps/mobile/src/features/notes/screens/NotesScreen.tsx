@@ -41,6 +41,7 @@ function NoteRow({
     return (
       <View style={styles.card} testID={`note-${note.id}`}>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={[styles.input, styles.multiline]}
           value={draft}
           onChangeText={setDraft}
@@ -164,6 +165,7 @@ export function NotesScreen() {
 
       <View style={styles.addRow}>
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={[styles.input, styles.addInput]}
           placeholder={t('addNotePlaceholder')}
           value={draft}

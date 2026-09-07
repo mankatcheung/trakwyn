@@ -52,6 +52,7 @@ export function DangerZoneScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TextInput
+          placeholderTextColor={colors.textFaint}
           style={styles.input}
           placeholder={t('danger.confirmPasswordPlaceholder')}
           secureTextEntry

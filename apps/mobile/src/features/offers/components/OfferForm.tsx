@@ -50,6 +50,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         <View style={styles.half}>
           <Text style={styles.label}>{t('baseSalaryLabel')}</Text>
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             value={baseSalary}
             onChangeText={setBaseSalary}
@@ -60,6 +61,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         <View style={styles.half}>
           <Text style={styles.label}>{t('bonusLabel')}</Text>
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             value={bonus}
             onChangeText={setBonus}
@@ -99,6 +101,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
 
       <Text style={styles.label}>{t('equityFieldLabel')}</Text>
       <TextInput
+        placeholderTextColor={colors.textFaint}
         style={styles.input}
         value={equity}
         onChangeText={setEquity}
@@ -108,6 +111,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
 
       <Text style={styles.label}>{t('benefitsFieldLabel')}</Text>
       <TextInput
+        placeholderTextColor={colors.textFaint}
         style={[styles.input, styles.multiline]}
         value={benefits}
         onChangeText={setBenefits}
@@ -117,6 +121,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
 
       <Text style={styles.label}>{t('costOfLivingLabel')}</Text>
       <TextInput
+        placeholderTextColor={colors.textFaint}
         style={styles.input}
         value={costOfLiving}
         onChangeText={setCostOfLiving}
@@ -126,6 +131,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
 
       <Text style={styles.label}>{t('notesLabel')}</Text>
       <TextInput
+        placeholderTextColor={colors.textFaint}
         style={[styles.input, styles.multiline]}
         value={notes}
         onChangeText={setNotes}

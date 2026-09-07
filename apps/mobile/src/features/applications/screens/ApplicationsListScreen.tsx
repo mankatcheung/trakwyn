@@ -81,6 +81,7 @@ export function ApplicationsListScreen() {
       ) : (
         <>
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.search}
             placeholder={t('list.searchPlaceholder')}
             value={search}

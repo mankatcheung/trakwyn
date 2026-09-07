@@ -151,6 +151,7 @@ export function DocumentsScreen() {
             ))}
           </ScrollView>
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={styles.input}
             placeholder={t('versionPlaceholder')}
             value={version}

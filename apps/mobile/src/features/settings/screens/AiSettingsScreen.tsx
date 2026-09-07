@@ -353,6 +353,7 @@ function LimitEditorSheet({ apiKey, used, atCeiling, onClose, onSave }: LimitEdi
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               value={value}
               onChangeText={setValue}
@@ -467,6 +468,7 @@ function AddProviderModal({
               <ProviderPicker value={provider} onChange={onChangeProvider} />
 
               <TextInput
+                placeholderTextColor={colors.textFaint}
                 style={styles.input}
                 placeholder={t('ai.apiKeyPlaceholder')}
                 value={apiKeyValue}
@@ -476,6 +478,7 @@ function AddProviderModal({
                 testID="llm-api-key-input"
               />
               <TextInput
+                placeholderTextColor={colors.textFaint}
                 style={styles.input}
                 placeholder={t('ai.modelPlaceholder')}
                 value={model}
@@ -485,6 +488,7 @@ function AddProviderModal({
               />
               {provider === 'custom' ? (
                 <TextInput
+                  placeholderTextColor={colors.textFaint}
                   style={styles.input}
                   placeholder={t('ai.baseUrlPlaceholder')}
                   value={baseUrl}
@@ -709,6 +713,7 @@ export function AiSettingsScreen() {
             <Text style={styles.successText}>{t('ai.customInstructionsUpdated')}</Text>
           ) : null}
           <TextInput
+            placeholderTextColor={colors.textFaint}
             style={[styles.input, styles.textArea]}
             value={customAiPrompt}
             onChangeText={(text) => {

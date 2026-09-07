@@ -80,6 +80,7 @@ export function ResetPasswordScreen() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               placeholder={t('resetPassword.newPasswordPlaceholder')}
               value={newPassword}
@@ -89,6 +90,7 @@ export function ResetPasswordScreen() {
               testID="reset-password-new-input"
             />
             <TextInput
+              placeholderTextColor={colors.textFaint}
               style={styles.input}
               placeholder={t('resetPassword.confirmPasswordPlaceholder')}
               value={confirmPassword}
