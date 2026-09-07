@@ -117,7 +117,7 @@ describe('ApplicationsListScreen', () => {
 
     await fireEvent.press(getByTestId('application-item-1'));
 
-    expect(push).toHaveBeenCalledWith('./1');
+    expect(push).toHaveBeenCalledWith('/applications/1');
   });
 
   it('filters the list by search text', async () => {
@@ -153,7 +153,7 @@ describe('ApplicationsListScreen', () => {
 
     await fireEvent.press(getByTestId('add-application-button'));
 
-    expect(push).toHaveBeenCalledWith('./new');
+    expect(push).toHaveBeenCalledWith('/applications/new');
   });
 
   it('shows an empty state when there are no applications', async () => {
