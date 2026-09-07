@@ -132,7 +132,7 @@ export function ApplicationsListScreen() {
               renderItem={({ item }) => (
                 <ApplicationListItem
                   application={item}
-                  onPress={() => router.push(`./${item.id}`)}
+                  onPress={() => router.push(`/applications/${item.id}`)}
                 />
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -141,7 +141,7 @@ export function ApplicationsListScreen() {
 
           <Pressable
             style={styles.fab}
-            onPress={() => router.push('./new')}
+            onPress={() => router.push('/applications/new')}
             testID="add-application-button"
           >
             <Text style={styles.fabText}>+</Text>
