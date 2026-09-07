@@ -9,6 +9,7 @@ jest.mock('../../hooks/useDashboardQueries', () => ({
   useDashboardCalendarEvents: jest.fn(),
   useWeeklyApplicationGoal: jest.fn(),
 }));
+jest.mock('../../../settings/hooks/useProfile', () => ({ useProfile: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
@@ -18,6 +19,7 @@ import {
   useDashboardCalendarEvents,
   useWeeklyApplicationGoal,
 } from '../../hooks/useDashboardQueries';
+import { useProfile } from '../../../settings/hooks/useProfile';
 import { DashboardScreen } from '../DashboardScreen';
 import type { Application } from '../../../applications/types';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -26,6 +28,7 @@ import { lightColors } from '../../../../theme/colors';
 const mockedUseApplications = jest.mocked(useApplications);
 const mockedUseCalendarEvents = jest.mocked(useDashboardCalendarEvents);
 const mockedUseGoal = jest.mocked(useWeeklyApplicationGoal);
+const mockedUseProfile = jest.mocked(useProfile);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
@@ -67,6 +70,7 @@ describe('DashboardScreen', () => {
     jest.clearAllMocks();
     mockedUseCalendarEvents.mockReturnValue({ data: [] } as never);
     mockedUseGoal.mockReturnValue({ data: undefined } as never);
+    mockedUseProfile.mockReturnValue({ data: { name: 'Alex Morgan' } } as never);
   });
 
   it('shows stat counts and recent applications', async () => {
@@ -80,8 +84,24 @@ describe('DashboardScreen', () => {
 
     const { findByText, getByTestId } = await renderScreen();
 
-    await findByText('★ Acme');
+    await findByText('★ Backend Engineer');
     expect(getByTestId('stat-card-Total')).toBeTruthy();
+  });
+
+  it('shows a greeting with the user name and avatar initials', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+
+    const { findByText, getByTestId } = await renderScreen();
+
+    await findByText('Alex Morgan');
+    expect(getByTestId('dashboard-avatar')).toBeTruthy();
+    await findByText('AM');
   });
 
   it('shows the weekly goal progress when present', async () => {

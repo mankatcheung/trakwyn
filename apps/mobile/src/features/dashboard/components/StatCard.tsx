@@ -7,18 +7,20 @@ interface StatCardProps {
   label: string;
   value: number;
   loading: boolean;
-  color: string;
+  icon: React.ReactNode;
+  iconBg: string;
 }
 
-export function StatCard({ label, value, loading, color }: StatCardProps) {
+export function StatCard({ label, value, loading, icon, iconBg }: StatCardProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <View style={[styles.card, { borderColor: color }]} testID={`stat-card-${label}`}>
+    <View style={styles.card} testID={`stat-card-${label}`}>
+      <View style={[styles.iconBadge, { backgroundColor: iconBg }]}>{icon}</View>
       {loading ? (
-        <ActivityIndicator size="small" color={color} />
+        <ActivityIndicator style={styles.loading} size="small" color={colors.text} />
       ) : (
-        <Text style={[styles.value, { color }]}>{value}</Text>
+        <Text style={styles.value}>{value}</Text>
       )}
       <Text style={styles.label}>{label}</Text>
     </View>
@@ -28,14 +30,23 @@ export function StatCard({ label, value, loading, color }: StatCardProps) {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     card: {
-      width: 104,
-      borderRadius: 12,
+      width: 112,
+      borderRadius: 14,
       borderWidth: 1,
+      borderColor: colors.border,
       backgroundColor: colors.surface,
-      padding: 12,
-      gap: 4,
+      padding: 14,
+      gap: 10,
     },
-    value: { fontSize: 22, fontWeight: '700' },
+    iconBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    value: { fontSize: 22, fontWeight: '700', color: colors.text },
     label: { fontSize: 12, color: colors.textSubtle },
+    loading: { alignSelf: 'flex-start' },
   });
 }
