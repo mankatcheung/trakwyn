@@ -4,6 +4,7 @@
   "send": "發送",
   "conversations": {
     "empty": "還沒有對話。",
+    "newButton": "+ 新增",
     "newConversation": "新增對話",
     "delete": "刪除",
     "deleteTitle": "刪除對話",

@@ -3,12 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -18,6 +15,7 @@ import {
   useCreateConversation,
   useDeleteConversation,
 } from '../hooks/useConversations';
+import { TrashIcon } from '../components/TrashIcon';
 import type { Conversation } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -32,22 +30,16 @@ export function ConversationsScreen() {
   const deleteConversation = useDeleteConversation();
   const createConversation = useCreateConversation();
 
-  const [composerText, setComposerText] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
-  const onStartConversation = async () => {
-    const trimmed = composerText.trim();
-    if (!trimmed || isStarting) return;
+  const onNewConversation = async () => {
+    if (isStarting) return;
     setStartError(null);
     setIsStarting(true);
     try {
       const created = await createConversation.mutateAsync({});
-      setComposerText('');
-      router.replace({
-        pathname: './[id]',
-        params: { id: created.id, initialMessage: trimmed },
-      });
+      router.push(`./${created.id}`);
     } catch (err) {
       setStartError(getErrorMessage(err));
     } finally {
@@ -87,10 +79,20 @@ export function ConversationsScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable
+          style={[styles.newButton, isStarting && styles.newButtonDisabled]}
+          onPress={() => void onNewConversation()}
+          disabled={isStarting}
+          testID="new-conversation-button"
+        >
+          <Text style={styles.newButtonText}>{t('conversations.newButton')}</Text>
+        </Pressable>
+      </View>
+
+      {startError ? <Text style={styles.error}>{startError}</Text> : null}
+
       <FlatList
         data={conversations ?? []}
         keyExtractor={(item) => item.id}
@@ -111,39 +113,16 @@ export function ConversationsScreen() {
             <Pressable
               onPress={() => onDelete(item)}
               hitSlop={8}
+              accessibilityLabel={t('conversations.delete')}
               testID={`delete-conversation-${item.id}`}
             >
-              <Text style={styles.linkDanger}>{t('conversations.delete')}</Text>
+              <TrashIcon color={colors.danger} />
             </Pressable>
           </Pressable>
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-
-      {startError ? <Text style={styles.error}>{startError}</Text> : null}
-
-      <View style={styles.composer}>
-        <TextInput
-          style={styles.composerInput}
-          placeholder={t('inputPlaceholder')}
-          value={composerText}
-          onChangeText={setComposerText}
-          multiline
-          testID="assistant-composer-input"
-        />
-        <Pressable
-          style={[
-            styles.composerSendButton,
-            (isStarting || !composerText.trim()) && styles.composerSendButtonDisabled,
-          ]}
-          onPress={() => void onStartConversation()}
-          disabled={isStarting || !composerText.trim()}
-          testID="assistant-composer-send-button"
-        >
-          <Text style={styles.composerSendButtonText}>{t('send')}</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -169,37 +148,19 @@ function createStyles(colors: ThemeColors) {
     textColumn: { flex: 1, gap: 2 },
     title: { fontSize: 14, fontWeight: '600', color: colors.text },
     meta: { fontSize: 12, color: colors.textSubtle },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
-    composer: {
+    header: {
       flexDirection: 'row',
-      gap: 8,
-      padding: 12,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+      paddingHorizontal: 16,
+      paddingTop: 16,
     },
-    composerInput: {
-      flex: 1,
-      minHeight: 44,
-      maxHeight: 100,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 14,
-      backgroundColor: colors.surface,
-    },
-    composerSendButton: {
-      minHeight: 44,
-      paddingHorizontal: 18,
-      borderRadius: 8,
+    newButton: {
       backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
     },
-    composerSendButtonDisabled: { opacity: 0.5 },
-    composerSendButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    newButtonDisabled: { opacity: 0.5 },
+    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
   });
 }

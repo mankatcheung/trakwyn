@@ -4,6 +4,7 @@
   "send": "Send",
   "conversations": {
     "empty": "No conversations yet.",
+    "newButton": "+ New",
     "newConversation": "New conversation",
     "delete": "Delete",
     "deleteTitle": "Delete conversation",
