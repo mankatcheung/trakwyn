@@ -12,6 +12,9 @@ export const PROFILE_QUERY = `
       name
       timezone
       targetRole
+      avatarUrl
+      backupEmail
+      backupEmailVerifiedAt
     }
   }
 `;
@@ -19,6 +22,45 @@ export const PROFILE_QUERY = `
 export const UPDATE_PROFILE_MUTATION = `
   mutation UpdateProfile($name: String, $timezone: String, $targetRole: String) {
     updateProfile(name: $name, timezone: $timezone, targetRole: $targetRole)
+  }
+`;
+
+export const REQUEST_AVATAR_UPLOAD_URL_MUTATION = `
+  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {
+    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {
+      uploadUrl
+      storageKey
+    }
+  }
+`;
+
+export const CONFIRM_AVATAR_MUTATION = `
+  mutation ConfirmAvatar($storageKey: String!, $mimeType: String!, $sizeBytes: Int!) {
+    confirmAvatar(storageKey: $storageKey, mimeType: $mimeType, sizeBytes: $sizeBytes)
+  }
+`;
+
+export const REMOVE_AVATAR_MUTATION = `
+  mutation RemoveAvatar {
+    removeAvatar
+  }
+`;
+
+export const REQUEST_EMAIL_CHANGE_MUTATION = `
+  mutation RequestEmailChange($currentPassword: String!, $newEmail: String!) {
+    requestEmailChange(currentPassword: $currentPassword, newEmail: $newEmail)
+  }
+`;
+
+export const REQUEST_ADD_BACKUP_EMAIL_MUTATION = `
+  mutation RequestAddBackupEmail($currentPassword: String!, $backupEmail: String!) {
+    requestAddBackupEmail(currentPassword: $currentPassword, backupEmail: $backupEmail)
+  }
+`;
+
+export const REMOVE_BACKUP_EMAIL_MUTATION = `
+  mutation RemoveBackupEmail($currentPassword: String!) {
+    removeBackupEmail(currentPassword: $currentPassword)
   }
 `;
 

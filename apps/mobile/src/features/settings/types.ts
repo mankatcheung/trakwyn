@@ -4,6 +4,14 @@ export interface Profile {
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
+  avatarUrl: string | null;
+  backupEmail: string | null;
+  backupEmailVerifiedAt: string | null;
+}
+
+export interface RequestAvatarUploadUrlResult {
+  uploadUrl: string;
+  storageKey: string;
 }
 
 export interface Session {
