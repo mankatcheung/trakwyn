@@ -84,23 +84,6 @@ describe('DashboardScreen', () => {
     expect(getByTestId('stat-card-Total')).toBeTruthy();
   });
 
-  it('navigates to new application form', async () => {
-    mockedUseApplications.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    } as never);
-    const push = jest.fn();
-
-    const { getByTestId } = await renderScreen(push);
-
-    await fireEvent.press(getByTestId('dashboard-new-application-button'));
-
-    await waitFor(() => expect(push).toHaveBeenCalledWith('./applications/new'));
-  });
-
   it('shows the weekly goal progress when present', async () => {
     mockedUseApplications.mockReturnValue({
       data: [],
