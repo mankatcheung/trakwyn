@@ -46,6 +46,7 @@
   },
   "board": {
     "title": "看板",
+    "newButton": "+ 新增",
     "move": "移動",
     "moveModalTitle": "移動 {{company}}",
     "cancel": "取消"

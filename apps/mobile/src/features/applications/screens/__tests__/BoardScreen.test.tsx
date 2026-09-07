@@ -109,7 +109,21 @@ describe('BoardScreen', () => {
 
     await fireEvent.press(getByTestId('board-card-app-1'));
 
-    expect(push).toHaveBeenCalledWith('./app-1');
+    expect(push).toHaveBeenCalledWith('/applications/app-1');
+  });
+
+  it('navigates to the new application form when the new button is pressed', async () => {
+    mockedUseMoveApplicationOnBoard.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+    const push = jest.fn();
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('board-new-application-button'));
+
+    expect(push).toHaveBeenCalledWith('/applications/new');
   });
 
   it('moves a card to a different column via the move modal', async () => {

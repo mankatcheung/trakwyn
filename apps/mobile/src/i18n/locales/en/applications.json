@@ -46,6 +46,7 @@
   },
   "board": {
     "title": "Board",
+    "newButton": "+ New",
     "move": "Move",
     "moveModalTitle": "Move {{company}}",
     "cancel": "Cancel"
