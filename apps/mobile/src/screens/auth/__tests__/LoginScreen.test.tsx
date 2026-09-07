@@ -129,7 +129,7 @@ describe('LoginScreen', () => {
 
     const { getByTestId, findByText } = await renderScreen();
 
-    await findByText('Sign in with Google');
+    await findByText('Google');
     await fireEvent.press(getByTestId('oauth-google-button'));
 
     await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('google'));
@@ -151,7 +151,7 @@ describe('LoginScreen', () => {
 
     const { getByTestId, findByText } = await renderScreen();
 
-    await findByText('Sign in with GitHub');
+    await findByText('GitHub');
     await fireEvent.press(getByTestId('oauth-github-button'));
 
     await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('github'));

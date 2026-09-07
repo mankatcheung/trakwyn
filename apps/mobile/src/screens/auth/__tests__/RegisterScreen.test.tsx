@@ -126,8 +126,52 @@ describe('RegisterScreen', () => {
 
     const { getByText } = await renderScreen(push);
 
-    await fireEvent.press(getByText('Already have an account? Sign in'));
+    await fireEvent.press(getByText('Sign in'));
 
     expect(push).toHaveBeenCalledWith('/login');
+  });
+
+  it('starts the Google OAuth flow when its button is pressed', async () => {
+    const loginWithOAuth = jest.fn().mockResolvedValue(undefined);
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth,
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+    });
+
+    const { getByTestId, findByText } = await renderScreen();
+
+    await findByText('Google');
+    await fireEvent.press(getByTestId('oauth-google-button'));
+
+    await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('google'));
+  });
+
+  it('starts the GitHub OAuth flow when its button is pressed', async () => {
+    const loginWithOAuth = jest.fn().mockResolvedValue(undefined);
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth,
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+    });
+
+    const { getByTestId, findByText } = await renderScreen();
+
+    await findByText('GitHub');
+    await fireEvent.press(getByTestId('oauth-github-button'));
+
+    await waitFor(() => expect(loginWithOAuth).toHaveBeenCalledWith('github'));
   });
 });
