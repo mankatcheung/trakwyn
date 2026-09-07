@@ -60,6 +60,9 @@
     "couldNotRestoreTitle": "Could not restore",
     "restore": "Restore",
     "delete": "Delete",
+    "deletesToday": "Deletes today",
+    "deletesIn_one": "Deletes in {{count}} day",
+    "deletesIn_other": "Deletes in {{count}} days",
     "empty": "Bin is empty."
   },
   "list": {

@@ -43,9 +43,9 @@ function createStyles(_colors: ThemeColors) {
     badge: {
       alignSelf: 'flex-start',
       borderRadius: 9999,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
     },
-    text: { fontSize: 12, fontWeight: '600' },
+    text: { fontSize: 13, fontWeight: '700' },
   });
 }

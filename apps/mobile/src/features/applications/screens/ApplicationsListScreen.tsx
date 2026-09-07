@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { ApplicationListItem } from '../components/ApplicationListItem';
 import { statusLabel } from '../components/StatusBadge';
+import { SearchIcon } from '../components/ApplicationIcons';
 import { BoardScreen } from './BoardScreen';
 import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
@@ -80,15 +81,18 @@ export function ApplicationsListScreen() {
         <BoardScreen />
       ) : (
         <>
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={styles.search}
-            placeholder={t('list.searchPlaceholder')}
-            value={search}
-            onChangeText={setSearch}
-            autoCapitalize="none"
-            testID="applications-search-input"
-          />
+          <View style={styles.searchWrapper}>
+            <SearchIcon color={colors.textFaint} />
+            <TextInput
+              placeholderTextColor={colors.textFaint}
+              style={styles.search}
+              placeholder={t('list.searchPlaceholder')}
+              value={search}
+              onChangeText={setSearch}
+              autoCapitalize="none"
+              testID="applications-search-input"
+            />
+          </View>
 
           <ScrollView
             horizontal
@@ -191,33 +195,40 @@ function createStyles(colors: ThemeColors) {
     viewToggleOptionActive: { backgroundColor: colors.surface },
     viewToggleText: { fontSize: 13, color: colors.textSubtle, fontWeight: '500' },
     viewToggleTextActive: { color: colors.text, fontWeight: '700' },
-    search: {
+    searchWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
       margin: 16,
-      marginBottom: 8,
+      marginBottom: 12,
       borderWidth: 1,
-      borderColor: colors.borderStrong,
-      borderRadius: 8,
+      borderColor: colors.border,
+      borderRadius: 12,
       paddingHorizontal: 14,
-      paddingVertical: 10,
-      fontSize: 15,
       backgroundColor: colors.surface,
     },
-    filtersScroll: { flexGrow: 0, flexShrink: 0, height: 36, marginBottom: 12 },
+    search: {
+      flex: 1,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: colors.text,
+    },
+    filtersScroll: { flexGrow: 0, flexShrink: 0, height: 40, marginBottom: 12 },
     filters: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
     chip: {
       borderRadius: 9999,
       borderWidth: 1,
-      borderColor: colors.borderStrong,
-      paddingHorizontal: 14,
-      paddingVertical: 6,
+      borderColor: colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
       marginRight: 8,
       backgroundColor: colors.surface,
     },
-    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    chipText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+    chipActive: { backgroundColor: colors.text, borderColor: colors.text },
+    chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
     chipTextActive: { color: colors.surface },
     list: { paddingHorizontal: 16, paddingBottom: 96 },
-    separator: { height: 10 },
+    separator: { height: 12 },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     emptyText: { fontSize: 14, color: colors.textSubtle },

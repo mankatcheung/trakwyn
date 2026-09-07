@@ -15,6 +15,7 @@ import {
 } from '../components/DashboardIcons';
 import { StatusBadge } from '../../applications/components/StatusBadge';
 import { getErrorMessage } from '../../../lib/errors';
+import { initialsOf } from '../../../lib/initials';
 import type { CalendarEvent, CalendarEventKind } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -29,13 +30,6 @@ const STAT_COLORS = {
 
 function formatEventDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '';
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 export function DashboardScreen() {

@@ -60,6 +60,8 @@
     "couldNotRestoreTitle": "無法還原",
     "restore": "還原",
     "delete": "刪除",
+    "deletesToday": "今天刪除",
+    "deletesIn_other": "{{count}} 天後刪除",
     "empty": "垃圾桶是空的。"
   },
   "list": {

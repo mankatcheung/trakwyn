@@ -16,8 +16,18 @@ import {
 } from '../hooks/useApplicationMutations';
 import type { Application } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
+import { initialsOf } from '../../../lib/initials';
+import { DeleteForeverIcon, RestoreIcon } from '../components/ApplicationIcons';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+
+const URGENT_DAYS_REMAINING = 3;
+
+function daysRemaining(purgeAt: string | null | undefined): number | null {
+  if (!purgeAt) return null;
+  const diffMs = new Date(purgeAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
+}
 
 function TrashRow({ application }: { application: Application }) {
   const { t } = useTranslation('applications');
@@ -25,6 +35,8 @@ function TrashRow({ application }: { application: Application }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const restore = useRestoreApplication();
   const permanentlyDelete = usePermanentlyDeleteApplication();
+  const days = daysRemaining(application.purgeAt);
+  const isUrgent = days !== null && days <= URGENT_DAYS_REMAINING;
 
   const onPermanentlyDelete = () => {
     Alert.alert(
@@ -49,13 +61,23 @@ function TrashRow({ application }: { application: Application }) {
 
   return (
     <View style={styles.row} testID={`trash-item-${application.id}`}>
-      <View style={styles.textColumn}>
-        <Text style={styles.role} numberOfLines={1}>
-          {application.role}
-        </Text>
-        <Text style={styles.company} numberOfLines={1}>
-          {application.company}
-        </Text>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initialsOf(application.company).slice(0, 2)}</Text>
+        </View>
+        <View style={styles.textColumn}>
+          <Text style={styles.company} numberOfLines={1}>
+            {application.company}
+          </Text>
+          <Text style={styles.role} numberOfLines={1}>
+            {application.role}
+          </Text>
+          {days !== null ? (
+            <Text style={[styles.deletesIn, isUrgent && styles.deletesInUrgent]}>
+              {days === 0 ? t('trash.deletesToday') : t('trash.deletesIn', { count: days })}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <View style={styles.actions}>
         <Pressable
@@ -68,6 +90,7 @@ function TrashRow({ application }: { application: Application }) {
           disabled={restore.isPending}
           testID={`restore-button-${application.id}`}
         >
+          <RestoreIcon color={colors.textMuted} />
           <Text style={styles.restoreButtonText}>{t('trash.restore')}</Text>
         </Pressable>
         <Pressable
@@ -76,7 +99,8 @@ function TrashRow({ application }: { application: Application }) {
           disabled={permanentlyDelete.isPending}
           testID={`permanently-delete-button-${application.id}`}
         >
-          <Text style={styles.deleteButtonText}>{t('trash.delete')}</Text>
+          <DeleteForeverIcon color={colors.danger} />
+          <Text style={styles.deleteButtonText}>{t('trash.deleteForever')}</Text>
         </Pressable>
       </View>
     </View>
@@ -127,7 +151,7 @@ export function TrashScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     list: { padding: 16, backgroundColor: colors.background },
-    separator: { height: 10 },
+    separator: { height: 12 },
     centered: {
       flex: 1,
       alignItems: 'center',
@@ -138,41 +162,55 @@ function createStyles(colors: ThemeColors) {
     emptyText: { fontSize: 14, color: colors.textSubtle },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
     row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
+      gap: 14,
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 14,
+      padding: 16,
     },
-    textColumn: { flex: 1, gap: 2 },
-    role: { fontSize: 15, fontWeight: '600', color: colors.text },
-    company: { fontSize: 13, color: colors.textMuted },
-    actions: { flexDirection: 'row', gap: 8 },
-    restoreButton: {
-      minHeight: 36,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: colors.surfaceAlt,
+      flexShrink: 0,
+    },
+    avatarText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+    textColumn: { flex: 1, gap: 2 },
+    company: { fontSize: 16, fontWeight: '700', color: colors.text },
+    role: { fontSize: 13, color: colors.textSubtle },
+    deletesIn: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+    deletesInUrgent: { color: colors.danger, fontWeight: '600' },
+    actions: { flexDirection: 'row', gap: 10 },
+    restoreButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      minHeight: 40,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
       backgroundColor: colors.surface,
     },
-    restoreButtonText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
+    restoreButtonText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
     deleteButton: {
-      minHeight: 36,
-      paddingHorizontal: 12,
-      borderRadius: 8,
+      flex: 1,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.dangerSurface,
+      gap: 6,
+      minHeight: 40,
+      borderRadius: 10,
+      backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: colors.dangerBorder,
+      borderColor: colors.border,
     },
-    deleteButtonText: { fontSize: 13, fontWeight: '600', color: colors.danger },
+    deleteButtonText: { fontSize: 14, fontWeight: '600', color: colors.danger },
   });
 }
