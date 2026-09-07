@@ -73,8 +73,8 @@ describe('ConversationsScreen', () => {
     expect(push).toHaveBeenCalledWith('./1');
   });
 
-  it('creates a conversation and transitions into it when the composer is sent', async () => {
-    const replace = jest.fn();
+  it('creates a conversation and navigates into it when the new button is pressed', async () => {
+    const push = jest.fn();
     const mutateAsync = jest.fn().mockResolvedValue({ id: 'new-conv' });
     mockedUseConversations.mockReturnValue({
       data: [],
@@ -84,34 +84,38 @@ describe('ConversationsScreen', () => {
     } as never);
     mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
 
-    const { getByTestId } = await renderScreen(jest.fn(), replace);
+    const { getByTestId } = await renderScreen(push);
 
-    await fireEvent.changeText(getByTestId('assistant-composer-input'), 'Help me prep');
-    await fireEvent.press(getByTestId('assistant-composer-send-button'));
+    await fireEvent.press(getByTestId('new-conversation-button'));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith({
-        pathname: './[id]',
-        params: { id: 'new-conv', initialMessage: 'Help me prep' },
-      }),
-    );
+    await waitFor(() => expect(push).toHaveBeenCalledWith('./new-conv'));
   });
 
-  it('does not start a conversation for a blank composer', async () => {
-    const mutateAsync = jest.fn();
+  it('does not show a chat composer on the conversation list', async () => {
     mockedUseConversations.mockReturnValue({
       data: [],
       isLoading: false,
       isError: false,
       error: null,
     } as never);
-    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
 
-    const { getByTestId } = await renderScreen();
+    const { queryByTestId } = await renderScreen();
 
-    await fireEvent.press(getByTestId('assistant-composer-send-button'));
+    expect(queryByTestId('assistant-composer-input')).toBeNull();
+  });
 
-    expect(mutateAsync).not.toHaveBeenCalled();
+  it('shows an icon-only delete control with no visible label', async () => {
+    mockedUseConversations.mockReturnValue({
+      data: [conversation],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+    const { getByTestId, queryByText } = await renderScreen();
+
+    await waitFor(() => expect(getByTestId('delete-conversation-1')).toBeTruthy());
+    expect(queryByText('Delete')).toBeNull();
   });
 });
