@@ -4,12 +4,14 @@ import '../../../../i18n';
 
 jest.mock('../../../../auth/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../hooks/useProfile', () => ({ useProfile: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../../auth/AuthContext';
+import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 import { SettingsScreen } from '../SettingsScreen';
@@ -17,6 +19,7 @@ import { SettingsScreen } from '../SettingsScreen';
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
+const mockedUseProfile = jest.mocked(useProfile);
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
@@ -25,6 +28,18 @@ describe('SettingsScreen', () => {
       resolvedScheme: 'light',
       colors: lightColors,
       setMode: jest.fn(),
+    } as never);
+    mockedUseProfile.mockReturnValue({
+      data: {
+        id: '1',
+        email: 'demo@trakwyn.app',
+        name: 'Demo User',
+        timezone: null,
+        targetRole: null,
+        avatarUrl: null,
+        backupEmail: null,
+        backupEmailVerifiedAt: null,
+      },
     } as never);
   });
 
