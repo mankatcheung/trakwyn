@@ -82,7 +82,10 @@ export function DataScreen() {
           {exportUserData.isPending ? (
             <ActivityIndicator color={colors.text} />
           ) : (
-            <Text style={styles.buttonText}>{t('data.downloadExport')}</Text>
+            <Text style={styles.buttonText}>
+              {'↓  '}
+              {t('data.downloadExport')}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -105,7 +108,10 @@ export function DataScreen() {
           {importUserData.isPending ? (
             <ActivityIndicator color={colors.text} />
           ) : (
-            <Text style={styles.buttonText}>{t('data.chooseFileToImport')}</Text>
+            <Text style={styles.buttonText}>
+              {'↑  '}
+              {t('data.chooseFileToImport')}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -119,22 +125,22 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 20, gap: 16 },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
       padding: 16,
       gap: 10,
     },
-    title: { fontSize: 15, fontWeight: '700', color: colors.text },
+    title: { fontSize: 16, fontWeight: '700', color: colors.text },
     description: { fontSize: 13, color: colors.textSubtle },
     button: {
-      alignSelf: 'flex-start',
-      minHeight: 40,
+      minHeight: 44,
       borderRadius: 8,
       backgroundColor: colors.surfaceAlt,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 14,
+      marginTop: 4,
     },
     buttonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
     error: {

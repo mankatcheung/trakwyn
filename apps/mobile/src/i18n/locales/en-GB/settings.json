@@ -130,13 +130,17 @@
     "delete": "Delete"
   },
   "notifications": {
+    "emailNotifications": "Email notifications",
     "digestEmails": "Digest emails",
+    "digestEmailsHint": "A summary of your pipeline",
     "digestOff": "Off",
     "digestDaily": "Daily",
     "digestWeekly": "Weekly",
-    "followUpReminders": "Follow-up reminders",
-    "pushNotifications": "Push notifications",
-    "weeklyGoal": "Weekly application goal"
+    "followUpReminders": "Follow-up reminder emails",
+    "pushNotificationsTitle": "Push notifications",
+    "pushNotifications": "Enable push notifications",
+    "weeklyGoal": "Weekly application goal",
+    "weeklyGoalHint": "Get nudged if you fall behind"
   },
   "profile": {
     "couldNotLoad": "Could not load profile",
@@ -154,9 +158,12 @@
     "save": "Save",
     "uploadPhoto": "Upload photo",
     "changePhoto": "Change photo",
+    "photoHint": "JPG, PNG or WebP",
     "removePhoto": "Remove",
     "uploading": "Uploading...",
-    "emailSectionTitle": "Email",
+    "emailSectionTitle": "Email address",
+    "emailSectionDescription": "Changing your email requires your current password.",
+    "change": "Change",
     "currentPasswordPlaceholder": "Current password",
     "newEmailPlaceholder": "New email",
     "updateEmail": "Update email",

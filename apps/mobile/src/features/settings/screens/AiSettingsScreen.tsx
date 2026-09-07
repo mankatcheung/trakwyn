@@ -142,7 +142,11 @@ function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
 
   return (
     <Pressable
-      style={[styles.keyRow, reached && styles.keyRowPaused]}
+      style={[
+        styles.keyRow,
+        isDefault && !reached && styles.keyRowDefault,
+        reached && styles.keyRowPaused,
+      ]}
       onPress={onOpenActions}
       testID={`llm-key-${apiKey.provider}`}
     >
@@ -899,6 +903,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 8,
     },
+    keyRowDefault: { borderColor: '#86efac', backgroundColor: '#f0fdf4' },
     keyRowPaused: { borderColor: colors.dangerBorder, backgroundColor: colors.dangerSurface },
     textColumn: { flex: 1, gap: 4 },
     keyProviderLine: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },

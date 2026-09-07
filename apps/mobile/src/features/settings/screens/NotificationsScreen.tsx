@@ -102,59 +102,80 @@ export function NotificationsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
 
-      <Text style={styles.label}>{t('notifications.digestEmails')}</Text>
-      <View style={styles.chipRow}>
-        {DIGEST_OPTIONS.map((option) => (
-          <Pressable
-            key={option.value}
-            style={[styles.chip, digestFrequency === option.value && styles.chipActive]}
-            onPress={() => {
-              setDigestFrequency(option.value);
-              save({ digestFrequency: option.value });
-            }}
-            testID={`digest-${option.value.toLowerCase()}`}
-          >
-            <Text
-              style={[styles.chipText, digestFrequency === option.value && styles.chipTextActive]}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>{t('notifications.emailNotifications')}</Text>
+
+        <View style={styles.fieldRow}>
+          <View style={styles.fieldRowText}>
+            <Text style={styles.label}>{t('notifications.digestEmails')}</Text>
+            <Text style={styles.hint}>{t('notifications.digestEmailsHint')}</Text>
+          </View>
+        </View>
+        <View style={styles.chipRow}>
+          {DIGEST_OPTIONS.map((option) => (
+            <Pressable
+              key={option.value}
+              style={[styles.chip, digestFrequency === option.value && styles.chipActive]}
+              onPress={() => {
+                setDigestFrequency(option.value);
+                save({ digestFrequency: option.value });
+              }}
+              testID={`digest-${option.value.toLowerCase()}`}
             >
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                style={[styles.chipText, digestFrequency === option.value && styles.chipTextActive]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.fieldRow}>
+          <Text style={styles.label}>{t('notifications.followUpReminders')}</Text>
+          <Switch
+            value={followUpRemindersEnabled}
+            onValueChange={(value) => {
+              setFollowUpRemindersEnabled(value);
+              save({ followUpRemindersEnabled: value });
+            }}
+            testID="follow-up-reminders-switch"
+          />
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.fieldRow}>
+          <View style={styles.fieldRowText}>
+            <Text style={styles.label}>{t('notifications.weeklyGoal')}</Text>
+            <Text style={styles.hint}>{t('notifications.weeklyGoalHint')}</Text>
+          </View>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.goalInput}
+            value={weeklyGoal}
+            onChangeText={setWeeklyGoal}
+            onEndEditing={() => save()}
+            keyboardType="number-pad"
+            testID="weekly-goal-input"
+          />
+        </View>
       </View>
 
-      <View style={styles.switchRow}>
-        <Text style={styles.label}>{t('notifications.followUpReminders')}</Text>
-        <Switch
-          value={followUpRemindersEnabled}
-          onValueChange={(value) => {
-            setFollowUpRemindersEnabled(value);
-            save({ followUpRemindersEnabled: value });
-          }}
-          testID="follow-up-reminders-switch"
-        />
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>{t('notifications.pushNotificationsTitle')}</Text>
+        <View style={styles.fieldRow}>
+          <Text style={styles.label}>{t('notifications.pushNotifications')}</Text>
+          <Switch
+            value={pushNotificationsEnabled}
+            onValueChange={onTogglePush}
+            disabled={enablePush.isPending}
+            testID="push-notifications-switch"
+          />
+        </View>
       </View>
-
-      <View style={styles.switchRow}>
-        <Text style={styles.label}>{t('notifications.pushNotifications')}</Text>
-        <Switch
-          value={pushNotificationsEnabled}
-          onValueChange={onTogglePush}
-          disabled={enablePush.isPending}
-          testID="push-notifications-switch"
-        />
-      </View>
-
-      <Text style={styles.label}>{t('notifications.weeklyGoal')}</Text>
-      <TextInput
-        placeholderTextColor={colors.textFaint}
-        style={styles.input}
-        value={weeklyGoal}
-        onChangeText={setWeeklyGoal}
-        onEndEditing={() => save()}
-        keyboardType="number-pad"
-        testID="weekly-goal-input"
-      />
     </ScrollView>
   );
 }
@@ -163,7 +184,17 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-    content: { padding: 20, gap: 10 },
+    content: { padding: 20, gap: 16 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 10,
+    },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    divider: { height: 1, backgroundColor: colors.border },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -171,8 +202,16 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 14,
     },
-    label: { fontSize: 14, fontWeight: '600', color: colors.text },
-    chipRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    fieldRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+    },
+    fieldRowText: { flex: 1, gap: 2 },
+    label: { fontSize: 15, fontWeight: '600', color: colors.text },
+    hint: { fontSize: 12, color: colors.textSubtle },
+    chipRow: { flexDirection: 'row', gap: 8 },
     chip: {
       borderRadius: 9999,
       borderWidth: 1,
@@ -184,25 +223,17 @@ function createStyles(colors: ThemeColors) {
     chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     chipText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
     chipTextActive: { color: colors.surface },
-    switchRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
-    input: {
+    goalInput: {
+      width: 64,
       borderWidth: 1,
       borderColor: colors.borderStrong,
       borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
       fontSize: 15,
+      textAlign: 'center',
       backgroundColor: colors.surface,
+      color: colors.text,
     },
   });
 }
