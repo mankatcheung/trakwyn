@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -76,64 +77,81 @@ export function ForgotPasswordScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{t('forgotPassword.title')}</Text>
-        <Text style={styles.subtitle}>
-          {recoveryMode === 'backup'
-            ? t('forgotPassword.subtitleBackup')
-            : t('forgotPassword.subtitlePrimary')}
-        </Text>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {isSubmitted ? (
-          <Text style={styles.success} testID="forgot-password-success">
-            {t('forgotPassword.successMessage')}
-          </Text>
-        ) : (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder={t('forgotPassword.emailPlaceholder')}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              testID="forgot-password-email-input"
-            />
-
-            <Pressable
-              style={[styles.button, isSubmitting && styles.buttonDisabled]}
-              onPress={onSubmit}
-              disabled={isSubmitting}
-              testID="forgot-password-submit-button"
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {recoveryMode === 'backup'
-                    ? t('forgotPassword.sendRecoveryLink')
-                    : t('forgotPassword.sendResetLink')}
-                </Text>
-              )}
-            </Pressable>
-          </>
-        )}
-
         <Pressable
-          onPress={() => setRecoveryMode((mode) => (mode === 'primary' ? 'backup' : 'primary'))}
+          style={styles.backButton}
+          onPress={() => router.push('/login')}
+          hitSlop={12}
+          testID="forgot-password-back-button"
         >
-          <Text style={styles.link}>
-            {recoveryMode === 'primary'
-              ? t('forgotPassword.useBackupEmail')
-              : t('forgotPassword.usePrimaryEmail')}
-          </Text>
+          <Text style={styles.backChevron}>‹</Text>
         </Pressable>
 
-        <Pressable onPress={() => router.push('/login')}>
-          <Text style={styles.link}>{t('forgotPassword.backToSignIn')}</Text>
-        </Pressable>
+        <View style={styles.card}>
+          <Text style={styles.title}>{t('forgotPassword.title')}</Text>
+          <Text style={styles.subtitle}>
+            {recoveryMode === 'backup'
+              ? t('forgotPassword.subtitleBackup')
+              : t('forgotPassword.subtitlePrimary')}
+          </Text>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          {isSubmitted ? (
+            <Text style={styles.success} testID="forgot-password-success">
+              {t('forgotPassword.successMessage')}
+            </Text>
+          ) : (
+            <>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>{t('forgotPassword.emailLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('forgotPassword.emailPlaceholder')}
+                  placeholderTextColor={colors.textFaint}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  testID="forgot-password-email-input"
+                />
+              </View>
+
+              <Pressable
+                style={[styles.button, isSubmitting && styles.buttonDisabled]}
+                onPress={onSubmit}
+                disabled={isSubmitting}
+                testID="forgot-password-submit-button"
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={colors.onPrimary} />
+                ) : (
+                  <Text style={styles.buttonText}>
+                    {recoveryMode === 'backup'
+                      ? t('forgotPassword.sendRecoveryLink')
+                      : t('forgotPassword.sendResetLink')}
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          )}
+
+          <View style={styles.divider} />
+
+          <Pressable
+            onPress={() => setRecoveryMode((mode) => (mode === 'primary' ? 'backup' : 'primary'))}
+          >
+            <Text style={styles.link}>
+              {recoveryMode === 'primary'
+                ? t('forgotPassword.useBackupEmail')
+                : t('forgotPassword.usePrimaryEmail')}
+            </Text>
+          </Pressable>
+
+          <Pressable onPress={() => router.push('/login')}>
+            <Text style={styles.backToSignIn}>{t('forgotPassword.backToSignIn')}</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -142,29 +160,51 @@ export function ForgotPasswordScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12 },
-    title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
-    subtitle: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginBottom: 4 },
+    content: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+    backButton: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backChevron: { fontSize: 26, color: colors.text, fontWeight: '600' },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 24,
+      gap: 16,
+      shadowColor: '#000000',
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    subtitle: { fontSize: 14, color: colors.textSubtle, marginTop: -8 },
+    field: { gap: 6 },
+    fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
-      borderRadius: 8,
+      borderRadius: 10,
       paddingHorizontal: 14,
       paddingVertical: 12,
       fontSize: 16,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     button: {
-      minHeight: 44,
-      borderRadius: 8,
+      minHeight: 48,
+      borderRadius: 10,
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: 8,
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
-    link: { color: colors.primary, textAlign: 'center', marginTop: 12 },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -179,5 +219,8 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 14,
     },
+    divider: { height: 1, backgroundColor: colors.border },
+    link: { color: colors.primary, textAlign: 'center', fontSize: 14, fontWeight: '600' },
+    backToSignIn: { color: colors.textSubtle, textAlign: 'center', fontSize: 14, marginTop: -4 },
   });
 }
