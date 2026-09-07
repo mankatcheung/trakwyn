@@ -50,13 +50,6 @@ export function DashboardScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('title')}</Text>
-        <Pressable
-          style={styles.newButton}
-          onPress={() => router.push('./applications/new')}
-          testID="dashboard-new-application-button"
-        >
-          <Text style={styles.newButtonText}>{t('newButton')}</Text>
-        </Pressable>
       </View>
 
       <ScrollView
@@ -198,13 +191,6 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 16, gap: 24, paddingBottom: 40 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     title: { fontSize: 22, fontWeight: '700', color: colors.text },
-    newButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-    },
-    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
     statsRow: { gap: 10 },
     goalCard: {
       borderRadius: 12,
