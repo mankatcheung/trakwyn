@@ -70,7 +70,7 @@ export function BoardScreen() {
         <Text style={styles.title}>{t('board.title')}</Text>
         <Pressable
           style={styles.newButton}
-          onPress={() => router.push('./new')}
+          onPress={() => router.push('/applications/new')}
           testID="board-new-application-button"
         >
           <Text style={styles.newButtonText}>{t('board.newButton')}</Text>
@@ -94,7 +94,7 @@ export function BoardScreen() {
                   <Pressable
                     key={id}
                     style={styles.card}
-                    onPress={() => router.push(`./${id}`)}
+                    onPress={() => router.push(`/applications/${id}`)}
                     onLongPress={() => setMovingApp(app)}
                     testID={`board-card-${id}`}
                   >
