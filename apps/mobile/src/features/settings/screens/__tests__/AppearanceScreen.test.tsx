@@ -46,4 +46,21 @@ describe('AppearanceScreen', () => {
     expect(getByTestId('appearance-dark')).toBeTruthy();
     expect(getByTestId('appearance-system')).toBeTruthy();
   });
+
+  it('stacks the options vertically, each spanning the full device width', async () => {
+    mockedUseTheme.mockReturnValue({
+      mode: 'system',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
+
+    const { getByTestId } = await render(<AppearanceScreen />);
+
+    const list = getByTestId('appearance-light').parent;
+    expect(list?.props.style).not.toContainEqual(expect.objectContaining({ flexDirection: 'row' }));
+    expect(getByTestId('appearance-light').props.style).toContainEqual(
+      expect.objectContaining({ alignSelf: 'stretch' }),
+    );
+  });
 });
