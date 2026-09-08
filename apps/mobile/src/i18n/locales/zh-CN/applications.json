@@ -78,6 +78,22 @@
     "all": "全部",
     "empty": "还没有求职申请。",
     "viewList": "列表",
-    "viewBoard": "看板"
+    "viewBoard": "看板",
+    "starredAria": "仅显示已加星标",
+    "ghostedAria": "仅显示疑似已读不回",
+    "likelyGhosted": "疑似已读不回",
+    "trashAria": "回收站",
+    "displayFields": {
+      "title": "显示字段",
+      "pickerAria": "选择要显示的字段",
+      "role": "职位",
+      "location": "地点",
+      "date": "日期",
+      "tags": "标签",
+      "status": "状态",
+      "starred": "星标",
+      "ghosted": "已读不回",
+      "companyAlwaysShown": "公司始终显示"
+    }
   }
 }
