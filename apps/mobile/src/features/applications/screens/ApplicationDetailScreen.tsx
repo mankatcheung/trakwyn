@@ -19,7 +19,6 @@ import {
 import { useDeleteApplication } from '../hooks/useApplicationMutations';
 import { StatusBadge } from '../components/StatusBadge';
 import { SectionTabBar } from '../components/SectionTabBar';
-import { DETAIL_SECTION_ROUTES, type DetailSectionKey } from '../lib/detailSections';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -164,7 +163,13 @@ export function ApplicationDetailScreen() {
         activeKey="overview"
         onSelect={(key) => {
           if (key === 'overview') return;
-          router.push(DETAIL_SECTION_ROUTES[key as DetailSectionKey] as never);
+          // This screen is the [id]/index route, so expo-router resolves a
+          // bare relative push ('./notes') against the parent of `[id]`,
+          // dropping applicationId from the URL entirely and 404ing the
+          // sub-screen's query. Sibling non-index screens (notes.tsx etc, see
+          // DETAIL_SECTION_ROUTES) don't have this quirk — only an index
+          // route does — so the id has to be spelled out here explicitly.
+          router.push(`./${applicationId}/${key}` as never);
         }}
       />
 
