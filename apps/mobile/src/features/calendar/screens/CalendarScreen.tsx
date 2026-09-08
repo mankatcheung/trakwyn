@@ -51,6 +51,21 @@ function periodLabel(
   });
 }
 
+function focusedDayLabel(dayInFocus: string, locale: string): string {
+  return dateFromDayKey(dayInFocus).toLocaleDateString(locale, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function eventTime(dateIso: string, locale: string): { value: string; meridiem: string } {
+  const parts = new Date(dateIso)
+    .toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
+    .split(' ');
+  return { value: parts[0], meridiem: parts[1] ?? '' };
+}
+
 export function CalendarScreen() {
   const { t } = useTranslation('calendar');
   const { resolvedLanguage } = useLanguage();
@@ -109,33 +124,43 @@ export function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.toolbar}>
-        <View style={styles.viewModeRow}>
-          {VIEW_MODES.map(({ mode, label }) => (
-            <Pressable
-              key={mode}
-              style={[styles.viewModeChip, viewMode === mode && styles.viewModeChipActive]}
-              onPress={() => changeViewMode(mode)}
-              testID={`calendar-view-${mode}`}
-            >
-              <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.periodRow}>
-          <Pressable onPress={() => changePeriod(-1)} testID="calendar-previous-period" hitSlop={8}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {periodLabel(viewMode, anchorDate, grid, resolvedLanguage)}
+        </Text>
+        <View style={styles.periodNav}>
+          <Pressable
+            style={styles.periodArrowButton}
+            onPress={() => changePeriod(-1)}
+            testID="calendar-previous-period"
+            hitSlop={8}
+          >
             <Text style={styles.periodArrow}>‹</Text>
           </Pressable>
-          <Text style={styles.periodLabel}>
-            {periodLabel(viewMode, anchorDate, grid, resolvedLanguage)}
-          </Text>
-          <Pressable onPress={() => changePeriod(1)} testID="calendar-next-period" hitSlop={8}>
+          <Pressable
+            style={styles.periodArrowButton}
+            onPress={() => changePeriod(1)}
+            testID="calendar-next-period"
+            hitSlop={8}
+          >
             <Text style={styles.periodArrow}>›</Text>
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.viewModeRow}>
+        {VIEW_MODES.map(({ mode, label }) => (
+          <Pressable
+            key={mode}
+            style={[styles.viewModeChip, viewMode === mode && styles.viewModeChipActive]}
+            onPress={() => changeViewMode(mode)}
+            testID={`calendar-view-${mode}`}
+          >
+            <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {isLoading ? (
@@ -169,19 +194,24 @@ export function CalendarScreen() {
                   return (
                     <Pressable
                       key={key}
-                      style={[styles.dayCell, isSelected && styles.dayCellSelected]}
+                      style={styles.dayCell}
                       onPress={() => setSelectedDay(key === selectedDay ? null : key)}
                       testID={`calendar-day-${key}`}
                     >
-                      <Text
-                        style={[
-                          styles.dayNumber,
-                          !inMonth && styles.dayNumberDim,
-                          isToday && styles.dayNumberToday,
-                        ]}
+                      <View
+                        style={[styles.dayNumberBadge, isSelected && styles.dayNumberBadgeSelected]}
                       >
-                        {date.getDate()}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.dayNumber,
+                            !inMonth && styles.dayNumberDim,
+                            isToday && !isSelected && styles.dayNumberToday,
+                            isSelected && styles.dayNumberSelected,
+                          ]}
+                        >
+                          {date.getDate()}
+                        </Text>
+                      </View>
                       {eventTypes.length > 0 && (
                         <View style={styles.dotRow}>
                           {eventTypes.map((type) => (
@@ -200,36 +230,52 @@ export function CalendarScreen() {
           )}
 
           <View style={styles.eventsSection}>
+            {dayInFocus && viewMode !== 'day' && (
+              <Text style={styles.focusedDayLabel}>
+                {focusedDayLabel(dayInFocus, resolvedLanguage)}
+              </Text>
+            )}
             {!dayInFocus && <Text style={styles.hintText}>{t('selectDayHint')}</Text>}
             {dayInFocus && focusedEvents.length === 0 && (
               <Text style={styles.hintText}>{t('noEventsOnDay')}</Text>
             )}
             {dayInFocus &&
-              focusedEvents.map((event) => (
-                <Pressable
-                  key={event.id}
-                  style={styles.eventRow}
-                  onPress={() => router.push(`./applications/${event.applicationId}`)}
-                  testID={`calendar-event-${event.id}`}
-                >
-                  <View style={[styles.dot, { backgroundColor: eventDotColorMap[event.type] }]} />
-                  <View style={styles.eventText}>
-                    <Text style={styles.eventTitle}>
-                      {event.type === 'interview' && event.interviewRoundType
-                        ? t('eventTitleWithRound', {
-                            label: EVENT_LABEL[event.type],
-                            round: event.interviewRoundType,
-                            company: event.company,
-                          })
-                        : t('eventTitlePlain', {
-                            label: EVENT_LABEL[event.type],
-                            company: event.company,
-                          })}
-                    </Text>
-                    <Text style={styles.eventRole}>{event.role}</Text>
-                  </View>
-                </Pressable>
-              ))}
+              focusedEvents.map((event) => {
+                const time = eventTime(event.date, resolvedLanguage);
+                return (
+                  <Pressable
+                    key={event.id}
+                    style={styles.eventRow}
+                    onPress={() => router.push(`./applications/${event.applicationId}`)}
+                    testID={`calendar-event-${event.id}`}
+                  >
+                    <View style={styles.eventTime}>
+                      <Text style={styles.eventTimeValue}>{time.value}</Text>
+                      {time.meridiem ? (
+                        <Text style={styles.eventTimeMeridiem}>{time.meridiem}</Text>
+                      ) : null}
+                    </View>
+                    <View
+                      style={[styles.eventBar, { backgroundColor: eventDotColorMap[event.type] }]}
+                    />
+                    <View style={styles.eventText}>
+                      <Text style={styles.eventTitle}>
+                        {event.type === 'interview' && event.interviewRoundType
+                          ? t('eventTitleWithRound', {
+                              label: EVENT_LABEL[event.type],
+                              round: event.interviewRoundType,
+                              company: event.company,
+                            })
+                          : t('eventTitlePlain', {
+                              label: EVENT_LABEL[event.type],
+                              company: event.company,
+                            })}
+                      </Text>
+                      <Text style={styles.eventRole}>{event.role}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
           </View>
         </ScrollView>
       )}
@@ -240,15 +286,39 @@ export function CalendarScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    toolbar: {
-      padding: 16,
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 12,
       gap: 12,
+    },
+    headerTitle: { flex: 1, fontSize: 28, fontWeight: '800', color: colors.text },
+    periodNav: { flexDirection: 'row', gap: 8 },
+    periodArrowButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    periodArrow: { fontSize: 18, color: colors.textMuted, lineHeight: 20 },
+    periodLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textMuted,
+      minWidth: 160,
+      textAlign: 'center',
     },
     viewModeRow: {
       flexDirection: 'row',
+      marginHorizontal: 16,
+      marginBottom: 16,
       backgroundColor: colors.surfaceAlt,
       borderRadius: 8,
       padding: 3,
@@ -267,29 +337,22 @@ function createStyles(colors: ThemeColors) {
       fontWeight: '500',
       textAlign: 'center',
     },
-    viewModeTextActive: { color: colors.text },
-    periodRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-    periodArrow: { fontSize: 22, color: colors.textMuted, paddingHorizontal: 8 },
-    periodLabel: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.textMuted,
-      minWidth: 160,
-      textAlign: 'center',
-    },
+    viewModeTextActive: { color: colors.text, fontWeight: '700' },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
     error: { color: colors.danger, fontSize: 14, textAlign: 'center' },
     link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    scrollContent: { padding: 12, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
     weekdayRow: { flexDirection: 'row' },
     weekdayLabel: {
       flex: 1,
       textAlign: 'center',
       fontSize: 11,
       fontWeight: '600',
+      letterSpacing: 0.04,
       color: colors.textFaint,
       paddingVertical: 4,
+      textTransform: 'uppercase',
     },
     grid: { flexDirection: 'row', flexWrap: 'wrap' },
     dayCell: {
@@ -297,29 +360,42 @@ function createStyles(colors: ThemeColors) {
       aspectRatio: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 2,
-      borderRadius: 8,
+      gap: 4,
     },
-    dayCellSelected: { backgroundColor: colors.primarySurface },
-    dayNumber: { fontSize: 13, color: colors.textMuted },
+    dayNumberBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayNumberBadgeSelected: { backgroundColor: colors.primary },
+    dayNumber: { fontSize: 15, color: colors.textMuted },
     dayNumberDim: { color: colors.borderStrong },
     dayNumberToday: { fontWeight: '700', color: colors.primary },
+    dayNumberSelected: { fontWeight: '700', color: colors.onPrimary },
     dotRow: { flexDirection: 'row', gap: 2 },
     dot: { width: 6, height: 6, borderRadius: 3 },
-    eventsSection: { marginTop: 16, gap: 8 },
+    eventsSection: { marginTop: 8, gap: 10 },
+    focusedDayLabel: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 2 },
     hintText: { textAlign: 'center', color: colors.textFaint, fontSize: 13, paddingVertical: 16 },
     eventRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      borderRadius: 10,
+      gap: 12,
+      borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
-      padding: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
     },
+    eventTime: { width: 44, alignItems: 'flex-start' },
+    eventTimeValue: { fontSize: 15, fontWeight: '700', color: colors.text },
+    eventTimeMeridiem: { fontSize: 11, color: colors.textFaint, fontWeight: '600' },
+    eventBar: { width: 3, alignSelf: 'stretch', borderRadius: 2 },
     eventText: { flex: 1, gap: 2 },
-    eventTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
-    eventRole: { fontSize: 12, color: colors.textSubtle },
+    eventTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    eventRole: { fontSize: 13, color: colors.textSubtle },
   });
 }
