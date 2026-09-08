@@ -10,5 +10,8 @@
   "add": "Add",
   "couldNotAddNoteTitle": "Could not add note",
   "couldNotSaveTitle": "Could not save",
-  "couldNotDeleteTitle": "Could not delete"
+  "couldNotDeleteTitle": "Could not delete",
+  "notesTabLabel": "Notes",
+  "interviewsTabLabel": "Interviews",
+  "documentsTabLabel": "Docs"
 }

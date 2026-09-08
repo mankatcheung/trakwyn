@@ -28,6 +28,11 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.notes') }}
     />,
     <Stack.Screen
+      key="interviews"
+      name={`${prefix}[id]/interviews`}
+      options={{ title: t('screenTitles.interviews') }}
+    />,
+    <Stack.Screen
       key="documents"
       name={`${prefix}[id]/documents`}
       options={{ title: t('screenTitles.documents') }}

@@ -10,5 +10,8 @@
   "add": "添加",
   "couldNotAddNoteTitle": "无法添加备注",
   "couldNotSaveTitle": "无法保存",
-  "couldNotDeleteTitle": "无法删除"
+  "couldNotDeleteTitle": "无法删除",
+  "notesTabLabel": "备注",
+  "interviewsTabLabel": "面试",
+  "documentsTabLabel": "文件"
 }

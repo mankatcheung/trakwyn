@@ -92,3 +92,23 @@ export const MOVE_APPLICATION_ON_BOARD_MUTATION = `
     }
   }
 `;
+
+export const APPLICATION_HEALTH_SCORE_QUERY = `
+  query ApplicationHealthScore($applicationId: ID!) {
+    applicationHealthScore(applicationId: $applicationId) {
+      score
+      label
+    }
+  }
+`;
+
+export const ACTIVITY_LOGS_QUERY = `
+  query ActivityLogs($applicationId: ID!) {
+    activityLogs(applicationId: $applicationId) {
+      id
+      eventType
+      payload
+      createdAt
+    }
+  }
+`;

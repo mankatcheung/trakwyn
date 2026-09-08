@@ -11,10 +11,11 @@ jest.mock('../../hooks/useNoteMutations', () => ({
 }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: jest.fn(),
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNotes } from '../../hooks/useNoteQueries';
 import { useCreateNote, useDeleteNote, useUpdateNote } from '../../hooks/useNoteMutations';
 import { NotesScreen } from '../NotesScreen';
@@ -27,6 +28,7 @@ const mockedUseCreateNote = jest.mocked(useCreateNote);
 const mockedUseUpdateNote = jest.mocked(useUpdateNote);
 const mockedUseDeleteNote = jest.mocked(useDeleteNote);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
 const note: Note = {
@@ -37,8 +39,9 @@ const note: Note = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-function renderScreen() {
+function renderScreen(push = jest.fn()) {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
+  mockedUseRouter.mockReturnValue({ push } as never);
   return render(<NotesScreen />);
 }
 
@@ -107,5 +110,22 @@ describe('NotesScreen', () => {
     await fireEvent.press(getByTestId('note-delete-1'));
 
     expect(deleteMutate).toHaveBeenCalledWith('1', expect.any(Object));
+  });
+
+  it('navigates to Interviews when its tab is pressed', async () => {
+    const push = jest.fn();
+    mockedUseNotes.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseCreateNote.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('section-tab-interviews'));
+
+    expect(push).toHaveBeenCalledWith('./interviews');
   });
 });
