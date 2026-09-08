@@ -29,8 +29,18 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
     />,
     <Stack.Screen
       key="documents"
-      name={`${prefix}[id]/documents`}
+      name={`${prefix}[id]/documents/index`}
       options={{ title: t('screenTitles.documents') }}
+    />,
+    <Stack.Screen
+      key="newDraft"
+      name={`${prefix}[id]/documents/new`}
+      options={{ title: t('screenTitles.newDraft') }}
+    />,
+    <Stack.Screen
+      key="draft"
+      name={`${prefix}[id]/documents/[draftId]`}
+      options={{ title: t('screenTitles.draft') }}
     />,
     <Stack.Screen
       key="offers"

@@ -12,12 +12,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../hooks/useDeleteDocument';
 import { useUploadDocument, type UploadDocumentInput } from '../hooks/useUploadDocument';
-import type { Document } from '../types';
+import { useDocumentDrafts } from '../hooks/useDocumentDraftQueries';
+import type { Document, DocumentDraftSummary } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -26,6 +27,27 @@ const DOCUMENT_TYPES = ['other', 'resume', 'cover_letter', 'portfolio'] as const
 
 function formatSize(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function DraftRow({ draft }: { draft: DocumentDraftSummary }) {
+  const { t } = useTranslation('documents');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <Link href={`./${draft.id}`} asChild>
+      <Pressable style={styles.card} testID={`draft-${draft.id}`}>
+        <Text style={styles.name} numberOfLines={1}>
+          {draft.title}
+        </Text>
+        <View style={styles.rowBetween}>
+          <Text style={[styles.typeBadge, draft.type === 'resume' && styles.typeBadgeResume]}>
+            {draft.type === 'cover_letter' ? t('cover_letter') : t('resume')}
+          </Text>
+          <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
+        </View>
+      </Pressable>
+    </Link>
+  );
 }
 
 function DocumentRow({ document, onDelete }: { document: Document; onDelete: () => void }) {
@@ -73,6 +95,7 @@ export function DocumentsScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: documents, isLoading, isError, error } = useDocuments(applicationId);
+  const { data: drafts } = useDocumentDrafts(applicationId);
   const uploadDocument = useUploadDocument(applicationId);
   const deleteDocument = useDeleteDocument(applicationId);
 
@@ -127,6 +150,22 @@ export function DocumentsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.draftsHeaderRow}>
+        <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
+        <Link href="./new" asChild>
+          <Pressable testID="new-draft-button">
+            <Text style={styles.newDraftLink}>{`+ ${t('newDraft')}`}</Text>
+          </Pressable>
+        </Link>
+      </View>
+      {drafts && drafts.length > 0 ? (
+        <View style={styles.draftsList}>
+          {drafts.map((draft) => (
+            <DraftRow key={draft.id} draft={draft} />
+          ))}
+        </View>
+      ) : null}
+
       {pickError ? <Text style={styles.error}>{pickError}</Text> : null}
 
       {pending ? (
@@ -218,6 +257,16 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 0,
       fontSize: 14,
     },
+    draftsHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+    },
+    sectionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    newDraftLink: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    draftsList: { paddingHorizontal: 16, paddingTop: 10, gap: 10 },
     list: { padding: 16 },
     separator: { height: 10 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
@@ -305,5 +354,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 2,
       textTransform: 'capitalize',
     },
+    typeBadgeResume: { color: colors.textMuted, backgroundColor: colors.surfaceAlt },
   });
 }
