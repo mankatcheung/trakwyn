@@ -14,16 +14,21 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { ApplicationListItem } from '../components/ApplicationListItem';
+import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
 import { statusLabel } from '../components/StatusBadge';
-import { SearchIcon } from '../components/ApplicationIcons';
+import { GhostIcon, SearchIcon, StarIcon, TrashIcon } from '../components/ApplicationIcons';
 import { BoardScreen } from './BoardScreen';
 import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
 
 type StatusFilter = 'all' | ApplicationStatus;
 type ViewMode = 'list' | 'board';
+
+const STAR_COLOR = '#eab308';
+const GHOST_COLOR = '#d97706';
 
 function matchesSearch(application: Application, search: string): boolean {
   if (!search) return true;
@@ -42,38 +47,60 @@ export function ApplicationsListScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [starredOnly, setStarredOnly] = useState(false);
+  const [ghostedOnly, setGhostedOnly] = useState(false);
+  const { fields: displayFields, toggleField: toggleDisplayField } = useApplicationDisplayFields();
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useApplications(
     statusFilter === 'all' ? undefined : statusFilter,
   );
 
   const applications = useMemo(
-    () => (data ?? []).filter((application) => matchesSearch(application, search)),
-    [data, search],
+    () =>
+      (data ?? []).filter(
+        (application) =>
+          matchesSearch(application, search) &&
+          (!starredOnly || application.starred) &&
+          (!ghostedOnly || application.likelyGhosted),
+      ),
+    [data, search, starredOnly, ghostedOnly],
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.viewToggle} testID="applications-view-toggle">
-        <Pressable
-          style={[styles.viewToggleOption, viewMode === 'list' && styles.viewToggleOptionActive]}
-          onPress={() => setViewMode('list')}
-          testID="applications-view-list"
-        >
-          <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>
-            {t('list.viewList')}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.viewToggleOption, viewMode === 'board' && styles.viewToggleOptionActive]}
-          onPress={() => setViewMode('board')}
-          testID="applications-view-board"
-        >
-          <Text
-            style={[styles.viewToggleText, viewMode === 'board' && styles.viewToggleTextActive]}
+      <View style={styles.headerRow}>
+        <View style={styles.viewToggle} testID="applications-view-toggle">
+          <Pressable
+            style={[styles.viewToggleOption, viewMode === 'list' && styles.viewToggleOptionActive]}
+            onPress={() => setViewMode('list')}
+            testID="applications-view-list"
           >
-            {t('list.viewBoard')}
-          </Text>
+            <Text
+              style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}
+            >
+              {t('list.viewList')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.viewToggleOption, viewMode === 'board' && styles.viewToggleOptionActive]}
+            onPress={() => setViewMode('board')}
+            testID="applications-view-board"
+          >
+            <Text
+              style={[styles.viewToggleText, viewMode === 'board' && styles.viewToggleTextActive]}
+            >
+              {t('list.viewBoard')}
+            </Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          style={styles.trashButton}
+          onPress={() => router.push('/applications/trash')}
+          accessibilityLabel={t('list.trashAria')}
+          testID="applications-trash-button"
+        >
+          <TrashIcon color={colors.textSubtle} />
         </Pressable>
       </View>
 
@@ -92,6 +119,31 @@ export function ApplicationsListScreen() {
               autoCapitalize="none"
               testID="applications-search-input"
             />
+          </View>
+
+          <View style={styles.toggleFiltersRow}>
+            <Pressable
+              style={[styles.toggleFilter, starredOnly && styles.toggleFilterStarredActive]}
+              onPress={() => setStarredOnly((prev) => !prev)}
+              accessibilityLabel={t('list.starredAria')}
+              testID="applications-filter-starred"
+            >
+              <StarIcon
+                color={starredOnly ? colors.surface : STAR_COLOR}
+                filled={starredOnly}
+                size={15}
+              />
+            </Pressable>
+            <Pressable
+              style={[styles.toggleFilter, ghostedOnly && styles.toggleFilterGhostedActive]}
+              onPress={() => setGhostedOnly((prev) => !prev)}
+              accessibilityLabel={t('list.ghostedAria')}
+              testID="applications-filter-ghosted"
+            >
+              <GhostIcon color={ghostedOnly ? colors.surface : GHOST_COLOR} size={15} />
+            </Pressable>
+            <View style={styles.toggleFiltersSpacer} />
+            <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
           </View>
 
           <ScrollView
@@ -138,6 +190,7 @@ export function ApplicationsListScreen() {
                 <ApplicationListItem
                   application={item}
                   onPress={() => router.push(`/applications/${item.id}`)}
+                  displayFields={displayFields}
                 />
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -182,10 +235,15 @@ function FilterChip({
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    viewToggle: {
+    headerRow: {
       flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       margin: 16,
       marginBottom: 0,
+    },
+    viewToggle: {
+      flexDirection: 'row',
       backgroundColor: colors.surfaceAlt,
       borderRadius: 8,
       padding: 3,
@@ -195,6 +253,36 @@ function createStyles(colors: ThemeColors) {
     viewToggleOptionActive: { backgroundColor: colors.surface },
     viewToggleText: { fontSize: 13, color: colors.textSubtle, fontWeight: '500' },
     viewToggleTextActive: { color: colors.text, fontWeight: '700' },
+    trashButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
+    toggleFiltersRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 12,
+    },
+    toggleFilter: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
+    toggleFilterStarredActive: { backgroundColor: STAR_COLOR, borderColor: STAR_COLOR },
+    toggleFilterGhostedActive: { backgroundColor: GHOST_COLOR, borderColor: GHOST_COLOR },
+    toggleFiltersSpacer: { flex: 1 },
     searchWrapper: {
       flexDirection: 'row',
       alignItems: 'center',

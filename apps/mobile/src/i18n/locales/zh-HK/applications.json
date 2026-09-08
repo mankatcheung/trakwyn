@@ -78,6 +78,22 @@
     "all": "全部",
     "empty": "還沒有求職申請。",
     "viewList": "列表",
-    "viewBoard": "看板"
+    "viewBoard": "看板",
+    "starredAria": "只顯示已加星號",
+    "ghostedAria": "只顯示疑似已讀不回",
+    "likelyGhosted": "疑似已讀不回",
+    "trashAria": "垃圾桶",
+    "displayFields": {
+      "title": "顯示欄位",
+      "pickerAria": "選擇要顯示的欄位",
+      "role": "職位",
+      "location": "地點",
+      "date": "日期",
+      "tags": "標籤",
+      "status": "狀態",
+      "starred": "星號",
+      "ghosted": "已讀不回",
+      "companyAlwaysShown": "公司名稱一律顯示"
+    }
   }
 }

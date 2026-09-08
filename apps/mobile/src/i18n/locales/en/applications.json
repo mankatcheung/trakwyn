@@ -79,6 +79,22 @@
     "all": "All",
     "empty": "No applications yet.",
     "viewList": "List",
-    "viewBoard": "Board"
+    "viewBoard": "Board",
+    "starredAria": "Starred only",
+    "ghostedAria": "Likely ghosted only",
+    "likelyGhosted": "Likely ghosted",
+    "trashAria": "Trash",
+    "displayFields": {
+      "title": "Display fields",
+      "pickerAria": "Choose which fields to display",
+      "role": "Role",
+      "location": "Location",
+      "date": "Date",
+      "tags": "Tags",
+      "status": "Status",
+      "starred": "Starred",
+      "ghosted": "Ghosted",
+      "companyAlwaysShown": "Company is always shown"
+    }
   }
 }
