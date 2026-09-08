@@ -3,7 +3,7 @@ import { Stack, usePathname, useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, View, type AppStateStatus } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeContext';
@@ -19,6 +19,25 @@ export function RootNavigator() {
   const pathname = usePathname();
   const lastAppPath = useRef<string | null>(null);
   const returnTo = useRef<string | null>(null);
+  // A freshly launched app is always in the foreground, so this doesn't
+  // need to read AppState.currentState at mount.
+  const appState = useRef<AppStateStatus>('active');
+
+  // Bringing the app back to the foreground should always land on the
+  // dashboard tab, not wherever the tab navigator happened to be left —
+  // React Navigation keeps its state across backgrounding, it doesn't
+  // remount on resume.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const cameToForeground =
+        appState.current.match(/inactive|background/) && nextState === 'active';
+      appState.current = nextState;
+      if (cameToForeground && isAuthenticated) {
+        router.replace('/(tabs)/(home)' as Href);
+      }
+    });
+    return () => subscription.remove();
+  }, [isAuthenticated, router]);
 
   // Remember where the user is while signed in, so a session that dies
   // underneath them (as opposed to a deliberate sign-out) can put them back
