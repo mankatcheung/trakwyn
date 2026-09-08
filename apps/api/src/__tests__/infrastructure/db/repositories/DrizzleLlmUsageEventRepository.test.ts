@@ -37,9 +37,69 @@ describe('DrizzleLlmUsageEventRepository', () => {
           requestCount: 1,
           promptTokens: 100,
           completionTokens: 20,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
           lastUsedAt: expect.any(Date),
         },
       ]);
+    });
+
+    it('persists the estimated flag, defaulting to exact (F3)', async () => {
+      await repo.record({
+        id: 'evt-exact',
+        userId: 'u1',
+        provider: 'openai',
+        model: null,
+        promptTokens: 10,
+        completionTokens: 1,
+      });
+      await repo.record({
+        id: 'evt-est',
+        userId: 'u1',
+        provider: 'openai',
+        model: null,
+        promptTokens: 20,
+        completionTokens: 0,
+        estimated: true,
+      });
+
+      const rows = await db.db.select().from(llmUsageEvent);
+      expect(rows.find((r) => r.id === 'evt-exact')?.estimated).toBe(false);
+      expect(rows.find((r) => r.id === 'evt-est')?.estimated).toBe(true);
+      // Estimates count toward the month like any other event: the prompt was billed.
+      const [summary] = await repo.summarizeByUserId('u1', new Date(0));
+      expect(summary.promptTokens).toBe(30);
+    });
+
+    it('keeps the cache split when the provider reports one, and sums it (T3)', async () => {
+      await repo.record({
+        id: 'evt-1',
+        userId: 'u1',
+        provider: 'anthropic',
+        model: null,
+        promptTokens: 1000,
+        completionTokens: 20,
+        cacheReadTokens: 800,
+        cacheWriteTokens: 100,
+      });
+      await repo.record({
+        id: 'evt-2',
+        userId: 'u1',
+        provider: 'anthropic',
+        model: null,
+        promptTokens: 1000,
+        completionTokens: 20,
+        cacheReadTokens: 900,
+        cacheWriteTokens: null,
+      });
+
+      const [summary] = await repo.summarizeByUserId('u1', new Date(0));
+
+      expect(summary).toMatchObject({
+        promptTokens: 2000,
+        cacheReadTokens: 1700,
+        cacheWriteTokens: 100,
+      });
     });
   });
 
@@ -141,6 +201,8 @@ describe('DrizzleLlmUsageEventRepository', () => {
           requestCount: 1,
           promptTokens: 10,
           completionTokens: 5,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
           lastUsedAt: expect.any(Date),
         },
       ]);

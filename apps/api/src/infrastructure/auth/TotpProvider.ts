@@ -1,7 +1,12 @@
 import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
-import { ENV, TOTP_CONFIG } from '#src/infrastructure/config/constants.js';
+import {
+  ENV,
+  TOTP_CONFIG,
+  NODE_ENV,
+  PLACEHOLDER_SECRET,
+} from '#src/infrastructure/config/constants.js';
 
 const crypto = new NobleCryptoPlugin();
 const base32 = new ScureBase32Plugin();
@@ -31,6 +36,9 @@ export class TotpProvider implements ITotpProvider {
     return new TOTP({ crypto, base32, issuer: TOTP_CONFIG.ISSUER, ...options });
   }
 
+  /** Cached per passphrase — scrypt is deliberately slow (see LlmApiKeyCipher). */
+  private derived: { passphrase: string; key: Buffer } | null = null;
+
   private getKey(): Buffer {
     const passphrase = process.env[ENV.TOTP_ENCRYPTION_KEY];
     if (!passphrase) {
@@ -38,7 +46,17 @@ export class TotpProvider implements ITotpProvider {
         `${ENV.TOTP_ENCRYPTION_KEY} is not configured — required to encrypt/decrypt TOTP secrets`,
       );
     }
-    return scryptSync(passphrase, SCRYPT_SALT, KEY_LENGTH);
+    // Same guard as the LLM key cipher (S7/F5): the .env.example value is a
+    // string in a public repo, and every user's 2FA secret would be behind it.
+    if (passphrase === PLACEHOLDER_SECRET && process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION) {
+      throw new Error(
+        `${ENV.TOTP_ENCRYPTION_KEY} is still the .env.example placeholder — set a real passphrase before running in production`,
+      );
+    }
+    if (this.derived?.passphrase !== passphrase) {
+      this.derived = { passphrase, key: scryptSync(passphrase, SCRYPT_SALT, KEY_LENGTH) };
+    }
+    return this.derived.key;
   }
 
   generateSecret(): string {

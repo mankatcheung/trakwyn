@@ -22,6 +22,7 @@ import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
+import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
@@ -166,6 +167,7 @@ export function ChatScreen() {
           value={input}
           onChangeText={setInput}
           multiline
+          maxLength={CHAT_MESSAGE_MAX_CHARS}
           testID="chat-input"
         />
         <Pressable

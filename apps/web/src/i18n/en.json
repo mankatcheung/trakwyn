@@ -452,6 +452,7 @@
   "integrations.usageRequests_one": "{{count}} request",
   "integrations.usageRequests_other": "{{count}} requests",
   "integrations.usageTokens": "{{count}} tokens",
+  "integrations.usageCacheHits": "{{rate}}% cache hits",
   "integrations.usageLastUsed": "last used {{date}}",
   "integrations.providerLabel": "Provider",
   "integrations.apiKeyLabel": "API key",

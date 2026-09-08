@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ENV } from '#src/infrastructure/config/constants.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ENV, PLACEHOLDER_SECRET } from '#src/infrastructure/config/constants.js';
 import { TotpProvider } from '#src/infrastructure/auth/TotpProvider.js';
 
 describe('TotpProvider', () => {
@@ -88,6 +88,34 @@ describe('TotpProvider', () => {
       delete process.env[ENV.TOTP_ENCRYPTION_KEY];
 
       expect(() => provider.encryptSecret('JBSWY3DPEHPK3PXP')).toThrow(/TOTP_ENCRYPTION_KEY/);
+    });
+  });
+
+  describe('passphrase guard (F5)', () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('refuses the .env.example placeholder in production', () => {
+      process.env[ENV.TOTP_ENCRYPTION_KEY] = PLACEHOLDER_SECRET;
+      vi.stubEnv('NODE_ENV', 'production');
+
+      expect(() => new TotpProvider().encryptSecret('JBSWY3DPEHPK3PXP')).toThrow(/placeholder/);
+    });
+
+    it('tolerates the placeholder outside production', () => {
+      process.env[ENV.TOTP_ENCRYPTION_KEY] = PLACEHOLDER_SECRET;
+      vi.stubEnv('NODE_ENV', 'test');
+      const fresh = new TotpProvider();
+
+      expect(fresh.decryptSecret(fresh.encryptSecret('JBSWY3DPEHPK3PXP'))).toBe('JBSWY3DPEHPK3PXP');
+    });
+
+    it('derives the scrypt key once per passphrase', () => {
+      const fresh = new TotpProvider();
+      fresh.encryptSecret('JBSWY3DPEHPK3PXP');
+      const first = fresh['derived'];
+      fresh.encryptSecret('JBSWY3DPEHPK3PXP');
+
+      expect(fresh['derived']).toBe(first);
     });
   });
 });

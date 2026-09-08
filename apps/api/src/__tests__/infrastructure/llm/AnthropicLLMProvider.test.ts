@@ -235,6 +235,20 @@ describe('AnthropicLLMProvider', () => {
       expect(result.content).toBe('');
     });
 
+    it('flags a reply cut off by max_tokens (F2)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          content: [{ type: 'text', text: '{"a":' }],
+          stop_reason: 'max_tokens',
+        }) as never,
+      );
+
+      const provider = new AnthropicLLMProvider('secret-key');
+      const result = await provider.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(result.truncated).toBe(true);
+    });
+
     it('returns null usage when the response has no usage field', async () => {
       vi.mocked(fetch).mockResolvedValue(
         jsonResponse({ content: [{ type: 'text', text: 'ok' }] }) as never,
@@ -262,7 +276,12 @@ describe('AnthropicLLMProvider', () => {
       const provider = new AnthropicLLMProvider('secret-key');
       const result = await provider.complete([{ role: 'user', content: 'hi' }]);
 
-      expect(result.usage).toEqual({ promptTokens: 115, completionTokens: 40 });
+      expect(result.usage).toEqual({
+        promptTokens: 115,
+        completionTokens: 40,
+        cacheReadTokens: 5,
+        cacheWriteTokens: 10,
+      });
     });
 
     it('throws with the status and body when the response is not ok', async () => {
@@ -349,6 +368,70 @@ describe('AnthropicLLMProvider', () => {
         },
         { type: 'text', text: 'per-user custom prompt' },
       ]);
+    });
+  });
+
+  describe('conversation cache breakpoints (T2)', () => {
+    it('turns a cacheBreakpoint on a user message into cache_control on its text block', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        streamResponse('event: message_stop\ndata: {"type":"message_stop"}\n\n') as never,
+      );
+      const provider = new AnthropicLLMProvider('secret-key');
+
+      await collectStream(
+        provider,
+        [
+          { role: 'user', content: 'earlier', cacheBreakpoint: true },
+          { role: 'assistant', content: 'reply' },
+          { role: 'user', content: 'now' },
+        ],
+        [],
+      );
+
+      const [, options] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(options.body as string);
+      expect(body.messages).toEqual([
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'earlier', cache_control: { type: 'ephemeral' } }],
+        },
+        { role: 'assistant', content: 'reply' },
+        { role: 'user', content: 'now' },
+      ]);
+    });
+
+    it('attaches cache_control to the marked tool result and to an assistant tool_use turn', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        streamResponse('event: message_stop\ndata: {"type":"message_stop"}\n\n') as never,
+      );
+      const provider = new AnthropicLLMProvider('secret-key');
+
+      await collectStream(
+        provider,
+        [
+          {
+            role: 'assistant',
+            content: '',
+            toolCalls: [{ id: 't1', name: 'list_applications', arguments: {} }],
+            cacheBreakpoint: true,
+          },
+          { role: 'tool', content: '{}', toolCallId: 't1', cacheBreakpoint: true },
+        ],
+        [],
+      );
+
+      const [, options] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(options.body as string);
+      expect(body.messages[0].content[0]).toMatchObject({
+        type: 'tool_use',
+        id: 't1',
+        cache_control: { type: 'ephemeral' },
+      });
+      expect(body.messages[1].content[0]).toMatchObject({
+        type: 'tool_result',
+        tool_use_id: 't1',
+        cache_control: { type: 'ephemeral' },
+      });
     });
   });
 
@@ -463,8 +546,11 @@ describe('AnthropicLLMProvider', () => {
         type: 'done',
         content: 'hi',
         toolCalls: [],
-        usage: { promptTokens: 50, completionTokens: 12 },
+        usage: { promptTokens: 50, completionTokens: 12, cacheReadTokens: 0, cacheWriteTokens: 0 },
       });
+      // Reported as soon as message_start arrives, so an aborted stream can
+      // still be charged for the prompt the provider already billed (S8).
+      expect(events[0]).toEqual({ type: 'prompt_usage', promptTokens: 50 });
     });
 
     it('completes a stream that runs well past REQUEST_TIMEOUT_MS in total, as long as chunks keep arriving within the idle window (regression)', async () => {

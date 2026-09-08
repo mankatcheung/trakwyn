@@ -3,11 +3,20 @@ import { AnthropicLLMProvider } from '#src/infrastructure/llm/AnthropicLLMProvid
 import { OpenAICompatibleLLMProvider } from '#src/infrastructure/llm/OpenAICompatibleLLMProvider.js';
 import { LLM, LLM_PROVIDER } from '#src/use-cases/constants.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
+import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+
+export interface LLMProviderCreateParams {
+  apiKey: string;
+  /** `model`/`baseUrl` are the user's stored overrides — null unless explicitly set. */
+  model: string | null;
+  baseUrl: string | null;
+  /** Consulted only by the entry whose endpoint the user chose (`custom`). */
+  outboundUrlPolicy?: IOutboundUrlPolicy;
+}
 
 export interface LLMProviderRegistryEntry {
   label: string;
-  /** `model`/`baseUrl` are the user's stored overrides — null unless explicitly set. */
-  create(params: { apiKey: string; model: string | null; baseUrl: string | null }): ILLMProvider;
+  create(params: LLMProviderCreateParams): ILLMProvider;
 }
 
 /**
@@ -83,11 +92,11 @@ export const PROVIDER_REGISTRY: Record<string, LLMProviderRegistryEntry> = {
   },
   [LLM_PROVIDER.CUSTOM]: {
     label: 'Custom (OpenAI-compatible)',
-    create: ({ apiKey, model, baseUrl }) => {
+    create: ({ apiKey, model, baseUrl, outboundUrlPolicy }) => {
       if (!baseUrl || !model) {
         throw new Error('Custom provider requires both a base URL and a model');
       }
-      return new OpenAICompatibleLLMProvider(apiKey, baseUrl, model);
+      return new OpenAICompatibleLLMProvider(apiKey, baseUrl, model, outboundUrlPolicy);
     },
   },
 };

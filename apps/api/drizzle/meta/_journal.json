@@ -225,6 +225,27 @@
       "when": 1788454415275,
       "tag": "0031_optimal_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1788701057042,
+      "tag": "0032_woozy_marrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1788706991554,
+      "tag": "0033_nasty_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1788707507376,
+      "tag": "0034_flat_komodo",
+      "breakpoints": true
     }
   ]
 }

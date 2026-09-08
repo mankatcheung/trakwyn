@@ -126,12 +126,24 @@ export const LLM_PROVIDER = {
 /** LLM provider API URLs, default models, and other per-provider settings. */
 export const LLM = {
   OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions',
-  OPENAI_DEFAULT_MODEL: 'gpt-4o-mini',
+  /**
+   * OpenAI's cost-tier model per its current model list (F11, checked
+   * 2026-09-06); `gpt-4o-mini` is no longer listed there. OpenRouter keeps
+   * its own id below until its catalogue is confirmed.
+   */
+  OPENAI_DEFAULT_MODEL: 'gpt-5.6-luna',
   ANTHROPIC_API_URL: 'https://api.anthropic.com/v1/messages',
-  ANTHROPIC_DEFAULT_MODEL: 'claude-3-5-haiku-latest',
+  /**
+   * Haiku 4.5 (T4). Haiku 3.5 was cheaper per token than it looked: its
+   * prompt cache needs a 2 048-token prefix and the chat's tools + system
+   * block sits right at that floor, so the `cache_control` marker was often
+   * a no-op. Users who pinned a model on their key are unaffected.
+   */
+  ANTHROPIC_DEFAULT_MODEL: 'claude-haiku-4-5',
   ANTHROPIC_VERSION: '2023-06-01',
   GOOGLEAI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models',
-  GOOGLEAI_DEFAULT_MODEL: 'gemini-2.0-flash',
+  /** 2.5 Flash (T4): the first Flash tier eligible for Gemini's implicit prompt caching — 2.0 was not, whatever the request did. */
+  GOOGLEAI_DEFAULT_MODEL: 'gemini-2.5-flash',
   OPENROUTER_API_URL: 'https://openrouter.ai/api/v1/chat/completions',
   OPENROUTER_DEFAULT_MODEL: 'openai/gpt-4o-mini',
   MISTRAL_API_URL: 'https://api.mistral.ai/v1/chat/completions',
@@ -139,7 +151,8 @@ export const LLM = {
   GROQ_API_URL: 'https://api.groq.com/openai/v1/chat/completions',
   GROQ_DEFAULT_MODEL: 'llama-3.3-70b-versatile',
   XAI_API_URL: 'https://api.x.ai/v1/chat/completions',
-  XAI_DEFAULT_MODEL: 'grok-2-latest',
+  /** xAI's cheapest general-purpose Grok per its model list (F11, checked 2026-09-06); `grok-2-latest` is gone from it. */
+  XAI_DEFAULT_MODEL: 'grok-4.3',
   DEEPSEEK_API_URL: 'https://api.deepseek.com/chat/completions',
   DEEPSEEK_DEFAULT_MODEL: 'deepseek-chat',
   NVIDIA_API_URL: 'https://integrate.api.nvidia.com/v1/chat/completions',
@@ -175,8 +188,15 @@ export const LLM = {
    * for the whole call.
    */
   STREAM_IDLE_TIMEOUT_MS: 45_000,
-  /** Extra attempts after the first for transient (network / 5xx) failures — 4xx responses never retry. */
+  /** Extra attempts after the first for transient (network / 5xx) failures — 4xx responses never retry, except a 429 that names a short Retry-After (below). */
   MAX_RETRIES: 2,
+  /**
+   * A 429 or 503 whose `Retry-After` is at most this long is waited out and
+   * retried within the same attempt budget (F7); a longer one — or a 429
+   * with no header — is returned to the caller as before. Bounded so a
+   * request never sits on a provider's "try again in an hour".
+   */
+  RETRY_AFTER_MAX_MS: 5_000,
   /** Base delay before a retry, in milliseconds; doubles each attempt (300ms, 600ms, ...). */
   RETRY_BACKOFF_BASE_MS: 300,
 } as const;
@@ -302,6 +322,38 @@ export const AI_PROMPT_INPUT = {
 export const CHAT = {
   /** Hard cap on LLM<->tool round-trips within a single chat turn, to bound cost/latency. */
   MAX_TOOL_ITERATIONS: 5,
+  /**
+   * Longest message a user may send in one turn. Without it the only bound
+   * was Fastify's 1 MB body limit — a message that size is ~250k tokens,
+   * over most models' context, and it would have been stored and re-sent
+   * on each of the next `MAX_HISTORY_MESSAGES` turns. Long enough to paste
+   * a job description or a cover letter in full.
+   */
+  MAX_MESSAGE_CHARS: 8000,
+  /**
+   * Longest single string field a chat tool result may carry back to the
+   * model, after which it is clipped with an ellipsis (T7). Generous — a
+   * whole note or offer letter fits — but a bound: without it one
+   * unbounded text column could cost more than the rest of the turn.
+   */
+  TOOL_RESULT_STRING_MAX_CHARS: 2000,
+  /**
+   * How much of a job description a chat list row carries (T1) — enough to
+   * recognise the role, not the whole posting. `get_application` returns
+   * the description up to `DETAIL_DESCRIPTION_MAX_CHARS` for questions
+   * that need it.
+   */
+  LIST_DESCRIPTION_MAX_CHARS: 300,
+  /**
+   * Rows per `list_applications` page when the model does not ask for a
+   * number (T5). Half of `PAGINATION.DEFAULT_LIMIT`: a chat answer
+   * summarises, and a second page is one more tool call, whereas an
+   * oversized first page is paid for on every later iteration of the turn.
+   */
+  LIST_DEFAULT_LIMIT: 10,
+  /** How many result rows a persisted tool trace names before "+N more" (F10). */
+  TOOL_TRACE_MAX_ROWS: 10,
+  DETAIL_DESCRIPTION_MAX_CHARS: 3000,
   /** Auto-derived conversation title is truncated to this many characters of the first message. */
   TITLE_MAX_LENGTH: 50,
   /**
@@ -318,6 +370,13 @@ export const CHAT = {
    * `StreamChatWithAssistantUseCase`.
    */
   MAX_HISTORY_MESSAGES: 40,
+  /**
+   * The same cap by size (T6): forty messages of a few words is nothing,
+   * forty pasted cover letters is not. Oldest messages are dropped first
+   * until the history fits, on top of the message-count cap above. Roughly
+   * 6k tokens — a long conversation still fits comfortably under it.
+   */
+  MAX_HISTORY_CHARS: 24_000,
 } as const;
 
 /** Defaults/limits for cursor-paginated list queries. */
@@ -354,6 +413,19 @@ export const ALLOWED_DOCUMENT_MIME_TYPES = [
 
 /** Max accepted document upload size, in bytes. */
 export const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/**
+ * Bounds on reading an uploaded resume back for analysis
+ * (`ComputeResumeMatchScoreUseCase`). The size limit is the upload cap
+ * restated at read time — storage is trusted, but a stale or oversized
+ * object should not be parsed on the request path — and the timeouts keep a
+ * pathological PDF from holding a request open indefinitely.
+ */
+export const RESUME_TEXT_EXTRACTION = {
+  MAX_BYTES: MAX_DOCUMENT_SIZE_BYTES,
+  FETCH_TIMEOUT_MS: 15_000,
+  EXTRACT_TIMEOUT_MS: 20_000,
+} as const;
 
 /** MIME types accepted for avatar/profile-photo uploads. */
 export const ALLOWED_AVATAR_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;

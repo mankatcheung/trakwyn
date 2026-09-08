@@ -10,6 +10,22 @@ const jsonResponse = (body: unknown, ok = true, status = 200) => ({
   text: () => Promise.resolve(JSON.stringify(body)),
 });
 
+/** Frames each chunk the way `streamGenerateContent?alt=sse` does (F8). */
+const sseResponse = (...chunks: unknown[]) => {
+  const sse = chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join('');
+  return {
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(sse));
+        controller.close();
+      },
+    }),
+    text: () => Promise.resolve(sse),
+  };
+};
+
 async function collectStream(
   provider: GoogleAILLMProvider,
   ...args: Parameters<GoogleAILLMProvider['completeWithToolsStream']>
@@ -64,7 +80,7 @@ describe('GoogleAILLMProvider', () => {
       expect(fetch).not.toHaveBeenCalled();
     });
 
-    it('sends the API key as a query param and the messages as contents', async () => {
+    it('sends the API key as a header, never in the URL, and the messages as contents', async () => {
       vi.mocked(fetch).mockResolvedValue(
         jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
       );
@@ -78,16 +94,53 @@ describe('GoogleAILLMProvider', () => {
       await provider.complete(messages, 256);
 
       const [url, options] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
-      expect(url).toContain('key=secret-key');
+      // Outbound fetch spans and proxy logs record the URL verbatim, so the
+      // secret must not be part of it.
+      expect(url).not.toContain('secret-key');
+      expect((options.headers as Record<string, string>)['x-goog-api-key']).toBe('secret-key');
       expect(options.method).toBe('POST');
 
       const body = JSON.parse(options.body as string);
       expect(body.generationConfig).toEqual({ maxOutputTokens: 256 });
+      // `contents[].role` is user|model only — a `system` role is a 400 from
+      // Gemini (F1). System text goes in the top-level systemInstruction.
+      expect(body.systemInstruction).toEqual({ parts: [{ text: 'be helpful' }] });
       expect(body.contents).toEqual([
-        { role: 'system', parts: [{ text: 'be helpful' }] },
         { role: 'user', parts: [{ text: 'hello' }] },
         { role: 'model', parts: [{ text: 'hi there' }] },
       ]);
+    });
+
+    it('omits systemInstruction when there is no system message', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+      );
+
+      const provider = new GoogleAILLMProvider('secret-key');
+      await provider.complete([{ role: 'user', content: 'hello' }]);
+
+      const [, options] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(options.body as string);
+      expect(body.systemInstruction).toBeUndefined();
+      expect(body.contents).toEqual([{ role: 'user', parts: [{ text: 'hello' }] }]);
+    });
+
+    it('asks for a JSON reply only when the caller opts in (F6)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ candidates: [{ content: { parts: [{ text: '{}' }] } }] }) as never,
+      );
+      const provider = new GoogleAILLMProvider('test-key');
+
+      await provider.complete([{ role: 'user', content: 'JSON' }], undefined, undefined, {
+        json: true,
+      });
+      await provider.complete([{ role: 'user', content: 'prose' }]);
+
+      const bodies = vi
+        .mocked(fetch)
+        .mock.calls.map(([, o]) => JSON.parse((o as RequestInit).body as string));
+      expect(bodies[0].generationConfig.responseMimeType).toBe('application/json');
+      expect(bodies[1].generationConfig.responseMimeType).toBeUndefined();
     });
 
     it('defaults maxTokens to 512 when not provided', async () => {
@@ -138,6 +191,19 @@ describe('GoogleAILLMProvider', () => {
       expect(result.content).toBe('');
     });
 
+    it('flags a reply cut off by MAX_TOKENS (F2)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          candidates: [{ content: { parts: [{ text: '{"a":' }] }, finishReason: 'MAX_TOKENS' }],
+        }) as never,
+      );
+
+      const provider = new GoogleAILLMProvider('test-key');
+      const result = await provider.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(result.truncated).toBe(true);
+    });
+
     it('returns null usage when the response has no usageMetadata field', async () => {
       vi.mocked(fetch).mockResolvedValue(
         jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
@@ -147,6 +213,24 @@ describe('GoogleAILLMProvider', () => {
       const result = await provider.complete([{ role: 'user', content: 'hi' }]);
 
       expect(result.usage).toBeNull();
+    });
+
+    it('keeps the cached share of the prompt when Gemini reports it (T3)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+          usageMetadata: {
+            promptTokenCount: 60,
+            candidatesTokenCount: 15,
+            cachedContentTokenCount: 40,
+          },
+        }) as never,
+      );
+
+      const provider = new GoogleAILLMProvider('test-key');
+      const result = await provider.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(result.usage).toEqual({ promptTokens: 60, completionTokens: 15, cacheReadTokens: 40 });
     });
 
     it('parses usage from usageMetadata (JEF-250)', async () => {
@@ -240,7 +324,7 @@ describe('GoogleAILLMProvider', () => {
 
     it('clamps a maxTokens request above the hard ceiling (JEF-126)', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
       );
 
       const provider = new GoogleAILLMProvider('secret-key');
@@ -253,7 +337,7 @@ describe('GoogleAILLMProvider', () => {
 
     it('sends tool definitions in the Gemini functionDeclarations shape', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
       );
 
       const provider = new GoogleAILLMProvider('secret-key');
@@ -276,7 +360,7 @@ describe('GoogleAILLMProvider', () => {
 
     it('moves the system message to a top-level systemInstruction field', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
       );
 
       const provider = new GoogleAILLMProvider('secret-key');
@@ -297,7 +381,7 @@ describe('GoogleAILLMProvider', () => {
 
     it('parses a functionCall part from the response', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({
+        sseResponse({
           candidates: [
             {
               content: {
@@ -331,20 +415,21 @@ describe('GoogleAILLMProvider', () => {
 
     it('returns an empty toolCalls array when the response has only text', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'plain answer' }] } }] }) as never,
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'plain answer' }] } }] }) as never,
       );
 
       const provider = new GoogleAILLMProvider('secret-key');
       const events = await collectStream(provider, [{ role: 'user', content: 'hi' }], TOOLS);
 
       expect(events).toEqual([
+        { type: 'text_delta', text: 'plain answer' },
         { type: 'done', content: 'plain answer', toolCalls: [], usage: null },
       ]);
     });
 
     it('serializes an assistant tool-call request as a model functionCall part and a tool result by function name', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'done' }] } }] }) as never,
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'done' }] } }] }) as never,
       );
 
       const provider = new GoogleAILLMProvider('secret-key');
@@ -378,28 +463,74 @@ describe('GoogleAILLMProvider', () => {
     });
   });
 
-  describe('completeWithToolsStream (JEF-239)', () => {
-    it('wraps the non-streaming call and yields a single done event with its result', async () => {
+  describe('completeWithToolsStream (F8 — real streaming)', () => {
+    it('posts to streamGenerateContent with alt=sse and yields a text_delta per chunk, then done', async () => {
       vi.mocked(fetch).mockResolvedValue(
-        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+        sseResponse(
+          { candidates: [{ content: { parts: [{ text: 'Hel' }] } }] },
+          { candidates: [{ content: { parts: [{ text: 'lo' }] } }] },
+          {
+            candidates: [{ content: { parts: [] }, finishReason: 'STOP' }],
+            usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 3 },
+          },
+        ) as never,
       );
       const provider = new GoogleAILLMProvider('secret-key');
 
-      const events = [];
-      for await (const event of provider.completeWithToolsStream(
-        [{ role: 'user', content: 'hi' }],
-        [],
-      )) {
-        events.push(event);
-      }
+      const events = await collectStream(provider, [{ role: 'user', content: 'hi' }], []);
 
-      expect(events).toEqual([{ type: 'done', content: 'ok', toolCalls: [], usage: null }]);
-      // Confirms it's the real (non-streaming) endpoint doing the work — no
-      // stream:true or SSE parsing involved for this provider.
-      expect(fetch).toHaveBeenCalledTimes(1);
+      const [url] = vi.mocked(fetch).mock.calls[0] as [string];
+      expect(url).toContain(':streamGenerateContent?alt=sse');
+      expect(url).not.toContain('secret-key');
+      expect(events).toEqual([
+        { type: 'text_delta', text: 'Hel' },
+        { type: 'text_delta', text: 'lo' },
+        {
+          type: 'done',
+          content: 'Hello',
+          toolCalls: [],
+          usage: { promptTokens: 12, completionTokens: 3 },
+        },
+      ]);
     });
 
-    it('forwards a caller-supplied signal through to the underlying completeWithTools call', async () => {
+    it('collects a functionCall part that arrives mid-stream', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        sseResponse(
+          { candidates: [{ content: { parts: [{ text: 'Checking…' }] } }] },
+          {
+            candidates: [
+              { content: { parts: [{ functionCall: { name: 'list_skills', args: {} } }] } },
+            ],
+          },
+        ) as never,
+      );
+      const provider = new GoogleAILLMProvider('secret-key');
+
+      const events = await collectStream(provider, [{ role: 'user', content: 'hi' }], []);
+
+      expect(events[events.length - 1]).toEqual({
+        type: 'done',
+        content: 'Checking…',
+        toolCalls: [{ id: 'list_skills-0', name: 'list_skills', arguments: {} }],
+        usage: null,
+      });
+    });
+
+    it('throws a coded provider error on a non-2xx response', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: () => Promise.resolve('{"error":"quota"}'),
+      } as never);
+      const provider = new GoogleAILLMProvider('secret-key');
+
+      await expect(collectStream(provider, [{ role: 'user', content: 'hi' }], [])).rejects.toThrow(
+        /Google AI error 429/,
+      );
+    });
+
+    it('forwards a caller-supplied signal into the outbound fetch', async () => {
       vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
       const controller = new AbortController();
       const provider = new GoogleAILLMProvider('secret-key');

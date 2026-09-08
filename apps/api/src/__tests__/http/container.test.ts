@@ -44,4 +44,19 @@ describe('buildContainer', () => {
     expect(container.resolve('generateCoverLetterDraftUseCase')).toBeDefined();
     expect(container.resolve('generateResumeDraftUseCase')).toBeDefined();
   });
+  it('resolves the outbound URL policy and the factories that take it (S1)', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { OutboundUrlPolicy } = await import('#src/infrastructure/net/OutboundUrlPolicy.js');
+
+    const container = buildContainer();
+
+    // Registered with asFunction: asClass would proxy-inject the cradle as
+    // the options object and fail resolving `strict` as a dependency — which
+    // is exactly what the chat-stream integration test caught.
+    expect(container.resolve('outboundUrlPolicy')).toBeInstanceOf(OutboundUrlPolicy);
+    expect(container.resolve('userLlmProviderFactory')).toBeDefined();
+    expect(container.resolve('jobPostingSourceResolver')).toBeDefined();
+    expect(container.resolve('saveLlmApiKeyUseCase')).toBeDefined();
+    expect(container.resolve('testLlmApiKeyUseCase')).toBeDefined();
+  });
 });

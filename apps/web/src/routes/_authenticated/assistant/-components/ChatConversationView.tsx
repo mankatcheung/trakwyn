@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { streamChatMessage, ChatStreamError } from '#/lib/chatStream';
+import { CHAT_MESSAGE_MAX_CHARS } from '#/constants';
 import { Link } from '@tanstack/react-router';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
@@ -297,6 +298,7 @@ export function ChatConversationView({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('chat.inputPlaceholder')}
+          maxLength={CHAT_MESSAGE_MAX_CHARS}
           className="flex-1"
         />
         {send.isPending ? (

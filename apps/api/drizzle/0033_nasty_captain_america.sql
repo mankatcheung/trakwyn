@@ -1,0 +1,1 @@
+ALTER TABLE `LlmUsageEvent` ADD `estimated` integer DEFAULT false NOT NULL;

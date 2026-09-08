@@ -8,11 +8,20 @@
 
 import { vi } from 'vitest';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
 
 export const makeRateLimiter = (overrides?: Partial<IRateLimiter>): IRateLimiter => ({
   consume: vi.fn().mockResolvedValue(true),
+  ...overrides,
+});
+
+/** Allows everything unless overridden — the "no" cases are what tests assert on. */
+export const makeOutboundUrlPolicy = (
+  overrides?: Partial<IOutboundUrlPolicy>,
+): IOutboundUrlPolicy => ({
+  assertAllowed: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 

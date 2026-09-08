@@ -19,8 +19,16 @@ export const API_ORIGIN = API_URL.replace(/\/graphql$/, '');
  */
 export const OAUTH_MOBILE_CALLBACK_URL = 'trakwyn://oauth-callback';
 
+/**
+ * Longest chat message the API accepts (`CHAT.MAX_MESSAGE_CHARS` in
+ * apps/api). Mirrored so the composer stops at the limit rather than
+ * letting the user learn it from a 400.
+ */
+export const CHAT_MESSAGE_MAX_CHARS = 8000;
+
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
+  VALIDATION: 'VALIDATION',
   /** A TOTP-enabled account's session is too old for a sensitive change; the API wants a fresh reauthentication first (JEF-44). */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
   /** Client-side only: the request never reached the server. */

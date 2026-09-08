@@ -430,6 +430,8 @@ describe('SettingsAiPage', () => {
                 requestCount: 3,
                 promptTokens: 100,
                 completionTokens: 40,
+                cacheReadTokens: 0,
+                cacheWriteTokens: 0,
                 lastUsedAt: '2026-01-01T00:00:00.000Z',
                 monthlyTokenLimit: null,
                 limitReached: false,
@@ -473,7 +475,13 @@ describe('SettingsAiPage', () => {
   describe('monthly token limits (JEF-258)', () => {
     const respond = (
       key: { monthlyTokenLimit: number | null },
-      usage: { promptTokens: number; completionTokens: number; limitReached: boolean } | null,
+      usage: {
+        promptTokens: number;
+        completionTokens: number;
+        limitReached: boolean;
+        cacheReadTokens?: number;
+        cacheWriteTokens?: number;
+      } | null,
     ) =>
       mockGqlRequest.mockImplementation((document: string) => {
         if (document.includes('query LlmApiKeys')) {
@@ -498,6 +506,8 @@ describe('SettingsAiPage', () => {
                     requestCount: 3,
                     promptTokens: usage.promptTokens,
                     completionTokens: usage.completionTokens,
+                    cacheReadTokens: usage.cacheReadTokens ?? 0,
+                    cacheWriteTokens: usage.cacheWriteTokens ?? 0,
                     lastUsedAt: '2026-01-01T00:00:00.000Z',
                     monthlyTokenLimit: key.monthlyTokenLimit,
                     limitReached: usage.limitReached,
@@ -535,6 +545,35 @@ describe('SettingsAiPage', () => {
       expect(meter).toHaveAttribute('aria-valuenow', '1240000');
       expect(meter).toHaveAttribute('aria-valuemax', '2000000');
       expect(within(el).getByText(/1,240,000 of 2,000,000 tokens/)).toBeInTheDocument();
+    });
+
+    it('shows the prompt-cache hit rate when the provider reports one (F12)', async () => {
+      respond(
+        { monthlyTokenLimit: null },
+        {
+          promptTokens: 1000,
+          completionTokens: 40,
+          limitReached: false,
+          cacheReadTokens: 680,
+          cacheWriteTokens: 100,
+        },
+      );
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      const el = await row();
+      expect(await within(el).findByText(/68% cache hits/)).toBeInTheDocument();
+    });
+
+    it('says nothing about caching for a provider that never reports a split', async () => {
+      respond(
+        { monthlyTokenLimit: null },
+        { promptTokens: 1000, completionTokens: 40, limitReached: false },
+      );
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      const el = await row();
+      await within(el).findByText(/This month/);
+      expect(within(el).queryByText(/cache hits/)).not.toBeInTheDocument();
     });
 
     /** The request count and last-used date survive the meter arriving. */

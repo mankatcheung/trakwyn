@@ -81,4 +81,23 @@ describe('CreateConversationUseCase', () => {
       llmModel: 'gpt-4o',
     });
   });
+  it('refuses a model id that could re-target the provider URL', async () => {
+    const conversationRepository = makeConversationRepository();
+    const llmApiKeyRepository = makeLlmApiKeyRepository({
+      findByUserIdAndProvider: vi.fn().mockResolvedValue(makeLlmApiKey({ provider: 'googleai' })),
+    });
+    const useCase = new CreateConversationUseCase({
+      conversationRepository,
+      llmApiKeyRepository,
+      generateId: vi.fn().mockReturnValue('conv-1'),
+    });
+
+    for (const model of ['../../v1/models', 'gemini?key=x', 'a b', 'http://evil']) {
+      const err = await useCase
+        .execute({ userId: 'user-1', provider: 'googleai', model })
+        .catch((e) => e);
+      expect((err as { code: string }).code, model).toBe('VALIDATION');
+    }
+    expect(conversationRepository.create).not.toHaveBeenCalled();
+  });
 });

@@ -112,6 +112,59 @@ export class LlmLimitReachedError extends DomainError {
   }
 }
 
+/**
+ * How the user's own provider failed, coarse enough to act on: `auth` means
+ * fix the key, `quota`/`rate_limited` mean wait or pay, `bad_request` means
+ * the model or request shape, `unavailable` means try later.
+ */
+export type LlmProviderErrorKind =
+  'auth' | 'quota' | 'rate_limited' | 'bad_request' | 'unavailable' | 'unreachable';
+
+/**
+ * What a person reads for each `LlmProviderErrorKind` — the message every
+ * client shows as-is, so it is written for the settings page and the chat
+ * pane, not the log.
+ */
+export const LLM_PROVIDER_FAILURE_MESSAGES: Record<LlmProviderErrorKind, string> = {
+  auth: 'The provider rejected this API key — check it in Settings and try again',
+  quota: 'The provider reports this key is out of credit',
+  rate_limited: 'The provider is rate-limiting this key — wait a moment and try again',
+  bad_request: 'The provider rejected the request — check the model name in Settings',
+  unavailable: 'The provider is unavailable right now — try again later',
+  unreachable: 'Could not reach the provider — check the base URL and try again',
+};
+
+/**
+ * The user's LLM provider refused or failed the call.
+ *
+ * A bare `Error` here reached clients as "Something went wrong" with a 500
+ * and was logged as a server fault, for what is a revoked key or an exhausted
+ * quota on a key this server does not own. The `message` is the per-kind
+ * copy above plus, when known, which provider and status ("… (Anthropic
+ * error 401)"), since web and mobile show it verbatim. What the provider
+ * actually said — a short, truncated excerpt, never its whole body — goes
+ * in `detail` for logs, not in front of a user.
+ */
+export class LlmProviderError extends DomainError {
+  readonly status: number | null;
+  readonly detail: string | null;
+
+  constructor(
+    readonly kind: LlmProviderErrorKind = 'unavailable',
+    options: { provider?: string; status?: number | null; detail?: string | null } = {},
+  ) {
+    const where =
+      options.provider && options.status
+        ? ` (${options.provider} error ${options.status})`
+        : options.provider
+          ? ` (${options.provider})`
+          : '';
+    super(`${LLM_PROVIDER_FAILURE_MESSAGES[kind]}${where}`, ERROR_CODES.AI_PROVIDER_ERROR);
+    this.status = options.status ?? null;
+    this.detail = options.detail ?? null;
+  }
+}
+
 /** The model replied with something unusable. */
 export class AiResponseInvalidError extends DomainError {
   constructor(message = 'The AI response could not be used') {

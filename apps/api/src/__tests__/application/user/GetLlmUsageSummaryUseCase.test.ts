@@ -12,6 +12,8 @@ const summaryFor = (promptTokens: number, completionTokens: number, provider = '
     requestCount: 2,
     promptTokens,
     completionTokens,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
     lastUsedAt: new Date('2026-03-15T00:00:00.000Z'),
   },
 ];

@@ -8,7 +8,7 @@ import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFacto
 import type { IJobPostingSourceResolver } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
-import { parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
 
 export interface ParseJobDescriptionInput {
@@ -86,12 +86,18 @@ export class ParseJobDescriptionUseCase {
       throw new ValidationError('No job description content provided');
     }
 
-    const { content: raw } = await llmProvider.complete([
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: USER_PROMPT_TEMPLATE(text) },
-    ]);
+    const result = await llmProvider.complete(
+      [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: USER_PROMPT_TEMPLATE(text) },
+      ],
+      undefined,
+      undefined,
+      { json: true },
+    );
+    assertNotTruncated(result);
 
-    return this.parseResponse(raw);
+    return this.parseResponse(result.content);
   }
 
   private parseResponse(raw: string): ParsedJobDescription {

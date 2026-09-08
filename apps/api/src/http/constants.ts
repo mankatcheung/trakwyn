@@ -65,6 +65,16 @@ export const ROUTES = {
   LLM_FAKE_COMPLETIONS: '/llm-test/fake/chat/completions',
 } as const;
 
+/**
+ * `/chat/stream` request bodies. Fastify's default is 1 MB, sized for file
+ * uploads; a chat turn is one id and one message of at most
+ * `CHAT.MAX_MESSAGE_CHARS` (64 KB leaves room for 4-byte characters and JSON
+ * escaping), and an over-long body should be refused before it is parsed.
+ */
+export const CHAT_STREAM = {
+  BODY_LIMIT_BYTES: 64 * 1024,
+} as const;
+
 /** Rate limits for auth endpoints prone to abuse (in-process, fixed-window). */
 export const RATE_LIMIT = {
   PASSWORD_RESET_REQUEST: {

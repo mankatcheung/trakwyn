@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.js';
 import { LLM } from '#src/use-cases/constants.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { LlmProviderError, ValidationError } from '#src/use-cases/errors/DomainError.js';
+import {
+  makeOutboundUrlPolicy,
+  makeRateLimiter,
+} from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 
 describe('TestLlmApiKeyUseCase', () => {
@@ -9,7 +13,11 @@ describe('TestLlmApiKeyUseCase', () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter({ consume: vi.fn().mockResolvedValue(false) });
     const llmProviderFactory = makeLLMProviderFactory();
 
-    const err = await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter })
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    })
       .execute({ userId: 'user-1', provider: 'openrouter' })
       .catch((e) => e);
 
@@ -21,7 +29,11 @@ describe('TestLlmApiKeyUseCase', () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter();
     const llmProviderFactory = makeLLMProviderFactory();
 
-    const err = await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter })
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    })
       .execute({ userId: 'user-1', provider: 'not-a-provider' })
       .catch((e) => e);
 
@@ -32,7 +44,11 @@ describe('TestLlmApiKeyUseCase', () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter();
     const llmProviderFactory = makeLLMProviderFactory();
 
-    const err = await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter })
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    })
       .execute({ userId: 'user-1', provider: 'not-a-provider', apiKey: 'sk-123' })
       .catch((e) => e);
 
@@ -43,7 +59,11 @@ describe('TestLlmApiKeyUseCase', () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter();
     const llmProviderFactory = makeLLMProviderFactory();
 
-    const err = await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter })
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    })
       .execute({
         userId: 'user-1',
         provider: 'custom',
@@ -62,7 +82,11 @@ describe('TestLlmApiKeyUseCase', () => {
       forUser: vi.fn().mockResolvedValue(null),
     });
 
-    const err = await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter })
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    })
       .execute({ userId: 'user-1', provider: 'openai' })
       .catch((e) => e);
 
@@ -79,6 +103,7 @@ describe('TestLlmApiKeyUseCase', () => {
     const result = await new TestLlmApiKeyUseCase({
       llmProviderFactory,
       testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
     }).execute({ userId: 'user-1', provider: 'openai' });
 
     // trackUsage: false — testing a saved key is a connectivity check, not
@@ -102,6 +127,7 @@ describe('TestLlmApiKeyUseCase', () => {
     const result = await new TestLlmApiKeyUseCase({
       llmProviderFactory,
       testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
     }).execute({ userId: 'user-1', provider: 'openai', apiKey: '  sk-123  ' });
 
     expect(llmProviderFactory.forUser).not.toHaveBeenCalled();
@@ -118,7 +144,11 @@ describe('TestLlmApiKeyUseCase', () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter();
     const llmProviderFactory = makeLLMProviderFactory();
 
-    await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter }).execute({
+    await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    }).execute({
       userId: 'user-1',
       provider: 'custom',
       apiKey: 'sk-123',
@@ -135,7 +165,11 @@ describe('TestLlmApiKeyUseCase', () => {
 
     vi.mocked(llmProviderFactory.fromCredentials).mockClear();
 
-    await new TestLlmApiKeyUseCase({ llmProviderFactory, testLlmApiKeyRateLimiter }).execute({
+    await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    }).execute({
       userId: 'user-1',
       provider: 'openai',
       apiKey: 'sk-123',
@@ -153,10 +187,16 @@ describe('TestLlmApiKeyUseCase', () => {
     });
   });
 
-  it('returns ok:false with the error message when the provider call fails, without throwing', async () => {
+  it('returns ok:false with a classified message, never the provider body, when the provider rejects the key', async () => {
     const testLlmApiKeyRateLimiter = makeRateLimiter();
     const provider = makeLLMProvider();
-    vi.mocked(provider.complete).mockRejectedValue(new Error('LLM provider error 401: bad key'));
+    vi.mocked(provider.complete).mockRejectedValue(
+      new LlmProviderError('auth', {
+        provider: 'Anthropic',
+        status: 401,
+        detail: '{"error":"invalid x-api-key"}',
+      }),
+    );
     const llmProviderFactory = makeLLMProviderFactory({
       forUser: vi.fn().mockResolvedValue(provider),
     });
@@ -164,9 +204,65 @@ describe('TestLlmApiKeyUseCase', () => {
     const result = await new TestLlmApiKeyUseCase({
       llmProviderFactory,
       testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
     }).execute({ userId: 'user-1', provider: 'openai' });
 
-    expect(result).toEqual({ ok: false, error: 'LLM provider error 401: bad key' });
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/rejected this API key/);
+    expect(result.error).toContain('(Anthropic error 401)');
+    // The upstream body is exactly what a custom base URL pointed at an
+    // internal service would leak through this mutation — it must not appear.
+    expect(result.error).not.toContain('invalid x-api-key');
+  });
+
+  it('reports a transport failure as unreachable, without quoting the underlying error', async () => {
+    const testLlmApiKeyRateLimiter = makeRateLimiter();
+    const provider = makeLLMProvider();
+    vi.mocked(provider.complete).mockRejectedValue(
+      new Error('fetch failed: ECONNREFUSED 10.0.0.5'),
+    );
+    const llmProviderFactory = makeLLMProviderFactory({
+      forUser: vi.fn().mockResolvedValue(provider),
+    });
+
+    const result = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
+    }).execute({ userId: 'user-1', provider: 'openai' });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/Could not reach the provider/);
+    expect(result.error).not.toContain('10.0.0.5');
+  });
+
+  it('refuses a custom base URL the outbound policy rejects before building a provider', async () => {
+    const testLlmApiKeyRateLimiter = makeRateLimiter();
+    const llmProviderFactory = makeLLMProviderFactory();
+    const outboundUrlPolicy = makeOutboundUrlPolicy({
+      assertAllowed: vi.fn().mockRejectedValue(new ValidationError('URL host is not allowed')),
+    });
+
+    const err = await new TestLlmApiKeyUseCase({
+      llmProviderFactory,
+      testLlmApiKeyRateLimiter,
+      outboundUrlPolicy,
+    })
+      .execute({
+        userId: 'user-1',
+        provider: 'custom',
+        apiKey: 'sk-123',
+        baseUrl: 'http://169.254.169.254/latest/',
+        model: 'anything',
+      })
+      .catch((e) => e);
+
+    expect((err as { code: string }).code).toBe('VALIDATION');
+    expect(outboundUrlPolicy.assertAllowed).toHaveBeenCalledWith(
+      'http://169.254.169.254/latest/',
+      'llm-provider',
+    );
+    expect(llmProviderFactory.fromCredentials).not.toHaveBeenCalled();
   });
 
   it('returns a generic error message when the provider throws a non-Error value', async () => {
@@ -180,8 +276,10 @@ describe('TestLlmApiKeyUseCase', () => {
     const result = await new TestLlmApiKeyUseCase({
       llmProviderFactory,
       testLlmApiKeyRateLimiter,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
     }).execute({ userId: 'user-1', provider: 'openai' });
 
-    expect(result).toEqual({ ok: false, error: 'Request failed' });
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/Could not reach the provider/);
   });
 });

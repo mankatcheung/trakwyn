@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { asClass, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
+import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { db } from '#src/infrastructure/db/client.js';
 
@@ -33,6 +33,7 @@ import { WebPushService } from '#src/infrastructure/push/WebPushService.js';
 import { ExpoPushService } from '#src/infrastructure/push/ExpoPushService.js';
 import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransactionManager.js';
 import { LlmApiKeyCipher } from '#src/infrastructure/llm/LlmApiKeyCipher.js';
+import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
@@ -113,6 +114,13 @@ export const infrastructure = {
   ipLocationResolver: asClass(IpLocationService, { lifetime: Lifetime.SINGLETON }),
   webPushService: asClass(WebPushService, { lifetime: Lifetime.SINGLETON }),
   expoPushService: asClass(ExpoPushService, { lifetime: Lifetime.SINGLETON }),
+  // Where the server may connect on a user's behalf (custom LLM base URLs,
+  // job-posting links). Strict in production; see the class for why not
+  // elsewhere.
+  // asFunction, not asClass: the constructor takes an options object, and
+  // Awilix's proxy injection would hand it the cradle instead — resolving
+  // `options.strict` as a dependency named "strict".
+  outboundUrlPolicy: asFunction(() => new OutboundUrlPolicy(), { lifetime: Lifetime.SINGLETON }),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   userLlmProviderFactory: asClass(UserLLMProviderFactory, { lifetime: Lifetime.SINGLETON }),
   // Decorates the factory so a key past its monthly token limit is refused

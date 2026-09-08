@@ -11,6 +11,7 @@ import {
   makeLlmUsageEventRepository,
 } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { makeOutboundUrlPolicy } from '#src/__tests__/helpers/mocks/infrastructure.js';
 
 describe('UserLLMProviderFactory', () => {
   it('returns null when no provider is given and the user has no default configured', async () => {
@@ -21,6 +22,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository,
       llmApiKeyRepository: makeLlmApiKeyRepository(),
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -34,6 +36,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository,
       llmApiKeyRepository: makeLlmApiKeyRepository(),
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -52,6 +55,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository,
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -69,6 +73,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository: makeUserRepository(),
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -89,6 +94,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository,
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -116,6 +122,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository,
       llmApiKeyRepository,
       llmApiKeyCipher,
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -124,7 +131,7 @@ describe('UserLLMProviderFactory', () => {
 
     expect(userRepository.findById).not.toHaveBeenCalled();
     expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
-    expect(llmApiKeyCipher.decrypt).toHaveBeenCalledWith('encrypted:my-key');
+    expect(llmApiKeyCipher.decrypt).toHaveBeenCalledWith('encrypted:my-key', 'user-1:openai');
   });
 
   it('returns an OpenAICompatibleLLMProvider for openrouter', async () => {
@@ -137,6 +144,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository: makeUserRepository(),
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -156,6 +164,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository: makeUserRepository(),
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -179,6 +188,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository: makeUserRepository(),
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -198,6 +208,7 @@ describe('UserLLMProviderFactory', () => {
       userRepository: makeUserRepository(),
       llmApiKeyRepository,
       llmApiKeyCipher: makeLlmApiKeyCipher(),
+      outboundUrlPolicy: makeOutboundUrlPolicy(),
       llmUsageEventRepository: makeLlmUsageEventRepository(),
       generateId: () => 'evt-id',
     });
@@ -219,6 +230,7 @@ describe('UserLLMProviderFactory', () => {
         userRepository: makeUserRepository(),
         llmApiKeyRepository,
         llmApiKeyCipher: makeLlmApiKeyCipher(),
+        outboundUrlPolicy: makeOutboundUrlPolicy(),
         llmUsageEventRepository,
         generateId: () => 'evt-id',
       });
@@ -237,12 +249,70 @@ describe('UserLLMProviderFactory', () => {
         userRepository: makeUserRepository(),
         llmApiKeyRepository,
         llmApiKeyCipher: makeLlmApiKeyCipher(),
+        outboundUrlPolicy: makeOutboundUrlPolicy(),
         llmUsageEventRepository: makeLlmUsageEventRepository(),
         generateId: () => 'evt-id',
       });
 
       const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
       expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
+    });
+  });
+
+  describe('hints (F9)', () => {
+    it('skips the user and key lookups when both are hinted', async () => {
+      const userRepository = makeUserRepository();
+      const llmApiKeyRepository = makeLlmApiKeyRepository();
+      const factory = new UserLLMProviderFactory({
+        userRepository,
+        llmApiKeyRepository,
+        llmApiKeyCipher: makeLlmApiKeyCipher(),
+        outboundUrlPolicy: makeOutboundUrlPolicy(),
+        llmUsageEventRepository: makeLlmUsageEventRepository(),
+        generateId: () => 'evt-id',
+      });
+      const hintedKey = makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI, apiKey: 'encrypted:k' });
+
+      const resolution = await factory.resolveForUser('user-1', undefined, null, true, {
+        user: makeUser({ defaultLlmProvider: LLM_PROVIDER.OPENAI }),
+        key: hintedKey,
+      });
+
+      expect(resolution?.providerId).toBe(LLM_PROVIDER.OPENAI);
+      expect(userRepository.findById).not.toHaveBeenCalled();
+      expect(llmApiKeyRepository.findByUserIdAndProvider).not.toHaveBeenCalled();
+    });
+
+    it('ignores a hinted key for a different provider and looks the right one up', async () => {
+      const llmApiKeyRepository = makeLlmApiKeyRepository({
+        findByUserIdAndProvider: vi
+          .fn()
+          .mockResolvedValue(makeLlmApiKey({ provider: LLM_PROVIDER.ANTHROPIC })),
+      });
+      const factory = new UserLLMProviderFactory({
+        userRepository: makeUserRepository(),
+        llmApiKeyRepository,
+        llmApiKeyCipher: makeLlmApiKeyCipher(),
+        outboundUrlPolicy: makeOutboundUrlPolicy(),
+        llmUsageEventRepository: makeLlmUsageEventRepository(),
+        generateId: () => 'evt-id',
+      });
+
+      const resolution = await factory.resolveForUser(
+        'user-1',
+        LLM_PROVIDER.ANTHROPIC,
+        null,
+        true,
+        {
+          key: makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI }),
+        },
+      );
+
+      expect(resolution?.providerId).toBe(LLM_PROVIDER.ANTHROPIC);
+      expect(llmApiKeyRepository.findByUserIdAndProvider).toHaveBeenCalledWith(
+        'user-1',
+        LLM_PROVIDER.ANTHROPIC,
+      );
     });
   });
 });

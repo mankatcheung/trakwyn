@@ -24,6 +24,8 @@ export const ERROR_CODES = {
   AI_RESPONSE_INVALID: 'AI_RESPONSE_INVALID',
   /** The key the request would have used has passed its monthly token limit (JEF-258) — distinct from AI_NOT_CONFIGURED, which would wrongly tell someone to add a key they already have. */
   AI_LIMIT_REACHED: 'AI_LIMIT_REACHED',
+  /** The user's own LLM provider rejected or failed the call (bad key, quota, outage) — a user-side condition on a BYOK key, not a fault in this server. */
+  AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
   /** Session is stale for a 2FA-enabled account attempting a sensitive change — caller must reauthenticate (see `reauthenticate` mutation) and retry. */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
 } as const;

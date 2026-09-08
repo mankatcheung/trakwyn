@@ -1,9 +1,12 @@
 import {
   AiNotConfiguredError,
+  LLM_PROVIDER_FAILURE_MESSAGES,
+  LlmProviderError,
   RateLimitedError,
   ServiceUnavailableError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
+import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { LLM, LLM_PROVIDER } from '#src/use-cases/constants.js';
 import {
@@ -19,6 +22,7 @@ import type {
 interface Deps {
   llmProviderFactory: ILLMProviderFactory;
   testLlmApiKeyRateLimiter: IRateLimiter;
+  outboundUrlPolicy: IOutboundUrlPolicy;
 }
 
 const TEST_MESSAGE = 'Reply with a single word to confirm this connection works.';
@@ -38,12 +42,11 @@ const TEST_MESSAGE = 'Reply with a single word to confirm this connection works.
  *   automatic AI features use.
  *
  * Deliberately never throws for "the key doesn't work" — a bad key someone
- * is actively testing isn't a server error, and provider failures today are
- * plain `Error`s with no structured way to tell a bad key apart from a rate
- * limit or a network failure (see JEF-247's ticket). `ok`/`error` reports
- * that outcome instead; thrown `DomainError`s stay reserved for genuine
- * failures — our own rate limit, an unrecognized provider id, or no key on
- * file to test at all.
+ * is actively testing isn't a server error. `ok`/`error` reports that
+ * outcome, with the error classified by `LlmProviderError.kind` rather than
+ * quoted from the provider; thrown `DomainError`s stay reserved for genuine
+ * failures — our own rate limit, an unrecognized provider id, a base URL the
+ * outbound policy refuses, or no key on file to test at all.
  */
 export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
   constructor(private readonly deps: Deps) {}
@@ -59,7 +62,7 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
     const model = input.model?.trim() || null;
 
     const provider = trimmedKey
-      ? this.resolveUnsavedProvider(input.provider, trimmedKey, isCustom, baseUrl, model)
+      ? await this.resolveUnsavedProvider(input.provider, trimmedKey, isCustom, baseUrl, model)
       : await this.resolveSavedProvider(input.userId, input.provider);
 
     try {
@@ -69,11 +72,17 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
       );
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : 'Request failed' };
+      // The provider's own words never reach the caller: for a custom base
+      // URL the "provider" is whatever the user pointed us at, and echoing
+      // its body made this mutation a way to read any HTTP service the API
+      // host can reach. `LlmProviderError.message` is per-kind copy.
+      const message =
+        err instanceof LlmProviderError ? err.message : LLM_PROVIDER_FAILURE_MESSAGES.unreachable;
+      return { ok: false, error: message };
     }
   }
 
-  private resolveUnsavedProvider(
+  private async resolveUnsavedProvider(
     providerId: string,
     apiKey: string,
     isCustom: boolean,
@@ -81,6 +90,9 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
     model: string | null,
   ) {
     assertValidLlmApiKeyShape({ provider: providerId, baseUrl, model });
+    if (isCustom && baseUrl) {
+      await this.deps.outboundUrlPolicy.assertAllowed(baseUrl, 'llm-provider');
+    }
     // Shape is already validated, so a null return here would mean
     // VALID_LLM_PROVIDERS and the provider registry disagree — a
     // programmer error, not a user-facing "key doesn't work" case.

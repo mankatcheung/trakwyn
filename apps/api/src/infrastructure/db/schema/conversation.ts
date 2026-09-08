@@ -37,6 +37,14 @@ export const message = sqliteTable(
       .references(() => conversation.id, { onDelete: 'cascade' }),
     role: text('role', { enum: ['user', 'assistant'] }).notNull(),
     content: text('content').notNull(),
+    /**
+     * What the assistant looked up to produce this reply, as one short line
+     * per tool call (F10) — "list_applications → app-1 Acme/Engineer, …".
+     * Rendered back into the prompt on later turns so the model does not
+     * re-fetch what it already saw; never shown in the UI. Null on user
+     * messages and on replies that needed no tools.
+     */
+    toolTrace: text('toolTrace'),
     createdAt: integer('createdAt', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),

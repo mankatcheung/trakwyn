@@ -5,6 +5,7 @@ export interface CreateMessageData {
   conversationId: string;
   role: MessageRole;
   content: string;
+  toolTrace?: string | null;
 }
 
 export interface IMessageRepository {

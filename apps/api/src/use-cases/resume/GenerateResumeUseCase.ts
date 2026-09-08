@@ -18,7 +18,7 @@ import { formatApplicationContext } from '#src/use-cases/shared/applicationConte
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
-import { parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import {
   loadUserProfile,
   formatUserProfile,
@@ -162,8 +162,9 @@ export class GenerateResumeUseCase {
       content: this.buildPrompt(app, profile, context, crossApplicationContext),
     });
 
-    const { content: rawResume } = await llmProvider.complete(messages, 2048);
-    const resume = parseAiJson<ResumeContent>(rawResume, resumeSchema);
+    const result = await llmProvider.complete(messages, 2048, undefined, { json: true });
+    assertNotTruncated(result);
+    const resume = parseAiJson<ResumeContent>(result.content, resumeSchema);
     assertGrounded(resume, profile);
     return resume;
   }

@@ -37,7 +37,7 @@ import {
   OAUTH_PROVIDER_MODE,
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
-import { ROUTES } from '#src/http/constants.js';
+import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
 
 /**
  * Fully configures an already-constructed Fastify instance (cors/cookie/
@@ -157,6 +157,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'POST',
     url: ROUTES.CHAT_STREAM,
+    bodyLimit: CHAT_STREAM.BODY_LIMIT_BYTES,
     handler: handleChatStream,
   });
   fastify.route({

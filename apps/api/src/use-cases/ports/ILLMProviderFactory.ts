@@ -1,4 +1,6 @@
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
+import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
+import type { User } from '#src/domain/user/User.js';
 
 /**
  * Resolves the LLM provider to use for a given user's own API key —
@@ -35,6 +37,17 @@ export interface LLMProviderResolution {
   fellBackFrom: string | null;
 }
 
+/**
+ * Rows a caller already holds (F9). The limit-enforcing decorator has to
+ * load the user and every key to decide whether to refuse; without this
+ * the inner factory loaded the same user and key again, four round-trips
+ * per AI call. Anything omitted is fetched as before.
+ */
+export interface LLMProviderResolveHints {
+  user?: User | null;
+  key?: LlmApiKey | null;
+}
+
 export interface ILLMProviderFactory {
   /**
    * `forUser`, plus which key was used. Throws the same limit error when no
@@ -45,6 +58,7 @@ export interface ILLMProviderFactory {
     provider?: string,
     model?: string | null,
     trackUsage?: boolean,
+    hints?: LLMProviderResolveHints,
   ): Promise<LLMProviderResolution | null>;
   /**
    * `trackUsage` (default `true`) gates the `UsageTrackingLLMProvider` wrap
