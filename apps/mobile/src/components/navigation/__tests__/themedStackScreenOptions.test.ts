@@ -6,6 +6,7 @@ describe('themedStackScreenOptions', () => {
     expect(themedStackScreenOptions(lightColors)).toEqual({
       headerStyle: { backgroundColor: lightColors.surface },
       headerTintColor: lightColors.text,
+      headerBackButtonDisplayMode: 'minimal',
     });
   });
 
@@ -13,6 +14,7 @@ describe('themedStackScreenOptions', () => {
     expect(themedStackScreenOptions(darkColors)).toEqual({
       headerStyle: { backgroundColor: darkColors.surface },
       headerTintColor: darkColors.text,
+      headerBackButtonDisplayMode: 'minimal',
     });
   });
 });
