@@ -24,7 +24,16 @@
     "offers": "聘書",
     "edit": "編輯",
     "deleting": "刪除中…",
-    "moveToTrash": "移至垃圾桶"
+    "moveToTrash": "移至垃圾桶",
+    "overviewTab": "總覽",
+    "interviewsTab": "面試",
+    "notesTab": "筆記",
+    "docsTab": "文件",
+    "healthScoreLabel": "健康分數",
+    "appliedOnLabel": "申請日期",
+    "activityLabel": "活動",
+    "noActivityYet": "還沒有活動。",
+    "moreActionsTitle": "更多操作"
   },
   "form": {
     "companyLabel": "公司",

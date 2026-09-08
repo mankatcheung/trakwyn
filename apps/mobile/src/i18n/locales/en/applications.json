@@ -24,7 +24,16 @@
     "offers": "Offers",
     "edit": "Edit",
     "deleting": "Deleting...",
-    "moveToTrash": "Move to Trash"
+    "moveToTrash": "Move to Trash",
+    "overviewTab": "Overview",
+    "interviewsTab": "Interviews",
+    "notesTab": "Notes",
+    "docsTab": "Docs",
+    "healthScoreLabel": "Health score",
+    "appliedOnLabel": "Applied on",
+    "activityLabel": "Activity",
+    "noActivityYet": "No activity yet.",
+    "moreActionsTitle": "More actions"
   },
   "form": {
     "companyLabel": "Company",

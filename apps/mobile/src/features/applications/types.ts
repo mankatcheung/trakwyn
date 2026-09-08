@@ -44,3 +44,15 @@ export interface CreateApplicationInput {
 }
 
 export type UpdateApplicationInput = Partial<CreateApplicationInput>;
+
+export interface ApplicationHealthScore {
+  score: number;
+  label: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  eventType: string;
+  payload: string;
+  createdAt: string;
+}

@@ -24,7 +24,16 @@
     "offers": "录用信息",
     "edit": "编辑",
     "deleting": "正在删除…",
-    "moveToTrash": "移至回收站"
+    "moveToTrash": "移至回收站",
+    "overviewTab": "概览",
+    "interviewsTab": "面试",
+    "notesTab": "备注",
+    "docsTab": "文件",
+    "healthScoreLabel": "健康分数",
+    "appliedOnLabel": "申请日期",
+    "activityLabel": "活动",
+    "noActivityYet": "还没有活动。",
+    "moreActionsTitle": "更多操作"
   },
   "form": {
     "companyLabel": "公司",

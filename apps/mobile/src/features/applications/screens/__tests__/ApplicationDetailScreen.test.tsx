@@ -3,7 +3,11 @@ import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
-jest.mock('../../hooks/useApplicationQueries', () => ({ useApplication: jest.fn() }));
+jest.mock('../../hooks/useApplicationQueries', () => ({
+  useApplication: jest.fn(),
+  useApplicationHealthScore: jest.fn(),
+  useActivityLogs: jest.fn(),
+}));
 jest.mock('../../hooks/useApplicationMutations', () => ({ useDeleteApplication: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
@@ -12,7 +16,11 @@ jest.mock('expo-router', () => ({
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useApplication } from '../../hooks/useApplicationQueries';
+import {
+  useActivityLogs,
+  useApplication,
+  useApplicationHealthScore,
+} from '../../hooks/useApplicationQueries';
 import { useDeleteApplication } from '../../hooks/useApplicationMutations';
 import { ApplicationDetailScreen } from '../ApplicationDetailScreen';
 import type { Application } from '../../types';
@@ -20,6 +28,8 @@ import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
 const mockedUseApplication = jest.mocked(useApplication);
+const mockedUseApplicationHealthScore = jest.mocked(useApplicationHealthScore);
+const mockedUseActivityLogs = jest.mocked(useActivityLogs);
 const mockedUseDeleteApplication = jest.mocked(useDeleteApplication);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
@@ -59,6 +69,8 @@ describe('ApplicationDetailScreen', () => {
       colors: lightColors,
       setMode: jest.fn(),
     } as never);
+    mockedUseApplicationHealthScore.mockReturnValue({ data: undefined } as never);
+    mockedUseActivityLogs.mockReturnValue({ data: [] } as never);
     jest.clearAllMocks();
   });
 
@@ -69,6 +81,8 @@ describe('ApplicationDetailScreen', () => {
       isError: false,
       error: null,
     } as never);
+    mockedUseApplicationHealthScore.mockReturnValue({ data: undefined } as never);
+    mockedUseActivityLogs.mockReturnValue({ data: [] } as never);
     mockedUseDeleteApplication.mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
@@ -77,12 +91,87 @@ describe('ApplicationDetailScreen', () => {
     const { getByText } = await renderScreen();
 
     await waitFor(() => expect(getByText('Backend Engineer')).toBeTruthy());
-    expect(getByText('Acme')).toBeTruthy();
-    expect(getByText('Remote')).toBeTruthy();
-    expect(getByText('$100k-$120k')).toBeTruthy();
+    expect(getByText('Acme · Remote · $100k-$120k')).toBeTruthy();
   });
 
-  it('navigates to the edit form when Edit is pressed', async () => {
+  it('shows the health score when available', async () => {
+    mockedUseApplication.mockReturnValue({
+      data: application,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseApplicationHealthScore.mockReturnValue({
+      data: { score: 82, label: 'Strong' },
+    } as never);
+    mockedUseActivityLogs.mockReturnValue({ data: [] } as never);
+    mockedUseDeleteApplication.mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as never);
+
+    const { getByText, getByTestId } = await renderScreen();
+
+    await waitFor(() => expect(getByTestId('health-score-card')).toBeTruthy());
+    expect(getByText('82 / 100')).toBeTruthy();
+  });
+
+  it('navigates to the edit form from the actions menu', async () => {
+    const push = jest.fn();
+    mockedUseApplication.mockReturnValue({
+      data: application,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDeleteApplication.mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as never);
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      const editButton = buttons?.find((b) => b.text === 'Edit');
+      editButton?.onPress?.();
+    });
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('application-detail-menu-button'));
+
+    expect(push).toHaveBeenCalledWith('./edit');
+  });
+
+  it('confirms and deletes the application from the actions menu, then navigates back', async () => {
+    const back = jest.fn();
+    const mutate = jest.fn((_id, options) => options?.onSuccess?.());
+    mockedUseApplication.mockReturnValue({
+      data: application,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDeleteApplication.mockReturnValue({ mutate, isPending: false } as never);
+
+    let alertCallCount = 0;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      alertCallCount += 1;
+      if (alertCallCount === 1) {
+        const moveToTrashButton = buttons?.find((b) => b.text === 'Move to Trash');
+        moveToTrashButton?.onPress?.();
+      } else {
+        const confirmButton = buttons?.find((b) => b.text === 'Delete');
+        confirmButton?.onPress?.();
+      }
+    });
+
+    const { getByTestId } = await renderScreen(jest.fn(), back);
+
+    await fireEvent.press(getByTestId('application-detail-menu-button'));
+
+    expect(mutate).toHaveBeenCalledWith('1', expect.any(Object));
+    expect(back).toHaveBeenCalled();
+  });
+
+  it('navigates to the Interviews section when its tab is pressed', async () => {
     const push = jest.fn();
     mockedUseApplication.mockReturnValue({
       data: application,
@@ -97,31 +186,8 @@ describe('ApplicationDetailScreen', () => {
 
     const { getByTestId } = await renderScreen(push);
 
-    await fireEvent.press(getByTestId('edit-application-button'));
+    await fireEvent.press(getByTestId('section-tab-interviews'));
 
-    expect(push).toHaveBeenCalledWith('./edit');
-  });
-
-  it('confirms and deletes the application, then navigates back', async () => {
-    const back = jest.fn();
-    const mutate = jest.fn((_id, options) => options?.onSuccess?.());
-    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-      const deleteButton = buttons?.find((b) => b.text === 'Delete');
-      deleteButton?.onPress?.();
-    });
-    mockedUseApplication.mockReturnValue({
-      data: application,
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseDeleteApplication.mockReturnValue({ mutate, isPending: false } as never);
-
-    const { getByTestId } = await renderScreen(jest.fn(), back);
-
-    await fireEvent.press(getByTestId('delete-application-button'));
-
-    expect(mutate).toHaveBeenCalledWith('1', expect.any(Object));
-    expect(back).toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('./interviews');
   });
 });

@@ -11,6 +11,7 @@ import calendar from './calendar.json';
 import chat from './chat.json';
 import documents from './documents.json';
 import notes from './notes.json';
+import interviews from './interviews.json';
 import notifications from './notifications.json';
 import offers from './offers.json';
 import push from './push.json';
@@ -30,6 +31,7 @@ export default {
   chat,
   documents,
   notes,
+  interviews,
   notifications,
   offers,
   push,
