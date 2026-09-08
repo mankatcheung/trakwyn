@@ -118,6 +118,7 @@ describe('CompareOffersScreen', () => {
     await fireEvent.press(getByTestId('run-compare-button'));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(['offer-1', 'offer-2']));
-    await findByText('Stripe  · Best');
+    await findByText('Stripe');
+    await findByText('BEST');
   });
 });

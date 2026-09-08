@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useCompareOffers, useOffers } from '../hooks/useOfferQueries';
+import { CheckIcon } from '../components/OfferIcons';
 import { formatSalary } from '../lib/formatSalary';
 import { getErrorMessage } from '../../../lib/errors';
 import type { OfferComparison } from '../types';
@@ -42,8 +43,6 @@ export function CompareOffersScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{t('compareOffersTitle')}</Text>
-
       {isLoading ? (
         <ActivityIndicator size="large" color={colors.primary} />
       ) : items.length === 0 ? (
@@ -61,22 +60,31 @@ export function CompareOffersScreen() {
                   onPress={() => toggleSelection(offer.id)}
                   testID={`compare-offer-option-${offer.id}`}
                 >
-                  <Text style={styles.optionSalary}>
-                    {formatSalary(offer.baseSalary, offer.currency, offer.period, resolvedLanguage)}
-                  </Text>
-                  {offer.bonus ? (
-                    <Text style={styles.optionMeta}>
-                      {t('bonusSuffixCompact', {
-                        amount: formatSalary(
-                          offer.bonus,
-                          offer.currency,
-                          undefined,
-                          resolvedLanguage,
-                        ),
-                      })}
+                  <View style={styles.optionBody}>
+                    <Text style={styles.optionSalary}>
+                      {formatSalary(
+                        offer.baseSalary,
+                        offer.currency,
+                        offer.period,
+                        resolvedLanguage,
+                      )}
                     </Text>
-                  ) : null}
-                  {selected && <Text style={styles.checkmark}>{t('selected')}</Text>}
+                    {offer.bonus ? (
+                      <Text style={styles.optionMeta}>
+                        {t('bonusSuffixCompact', {
+                          amount: formatSalary(
+                            offer.bonus,
+                            offer.currency,
+                            undefined,
+                            resolvedLanguage,
+                          ),
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={[styles.radio, selected && styles.radioSelected]}>
+                    {selected ? <CheckIcon color={colors.onPrimary} size={13} /> : null}
+                  </View>
                 </Pressable>
               );
             })}
@@ -92,7 +100,7 @@ export function CompareOffersScreen() {
             testID="run-compare-button"
           >
             {compareOffers.isPending ? (
-              <ActivityIndicator color={colors.surface} />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <Text style={styles.compareButtonText}>
                 {t('compareCount', { count: selectedIds.length })}
@@ -109,34 +117,36 @@ export function CompareOffersScreen() {
               testID={`comparison-result-${comp.offer.id}`}
             >
               <View style={styles.resultHeader}>
-                <Text style={styles.resultCompany}>
-                  {comp.company}
-                  {index === 0 ? t('bestSuffix') : ''}
-                </Text>
+                <View style={styles.resultHeaderLeft}>
+                  <Text style={styles.resultCompany}>{comp.company}</Text>
+                  {index === 0 ? (
+                    <View style={styles.bestBadge}>
+                      <Text style={styles.bestBadgeText}>{t('bestBadge')}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text style={styles.resultTotal}>
                   {formatSalary(comp.totalCompensation, 'USD', undefined, resolvedLanguage)}
                 </Text>
               </View>
               <Text style={styles.resultRole}>{comp.role}</Text>
-              <Text style={styles.resultMeta}>
-                {t('baseNormalizedLabel', {
-                  amount: formatSalary(
-                    comp.normalizedYearlySalary,
-                    'USD',
-                    undefined,
-                    resolvedLanguage,
-                  ),
-                })}
-              </Text>
-              {comp.offer.equity ? (
-                <Text style={styles.resultMeta}>
-                  {t('equityLabel', { value: comp.offer.equity })}
+              <View style={styles.resultRow}>
+                <Text style={styles.resultRowLabel}>{t('baseNormalizedLabel')}</Text>
+                <Text style={styles.resultRowValue}>
+                  {formatSalary(comp.normalizedYearlySalary, 'USD', undefined, resolvedLanguage)}
                 </Text>
+              </View>
+              {comp.offer.equity ? (
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultRowLabel}>{t('equityFieldLabel')}</Text>
+                  <Text style={styles.resultRowValue}>{comp.offer.equity}</Text>
+                </View>
               ) : null}
               {comp.offer.benefits ? (
-                <Text style={styles.resultMeta}>
-                  {t('benefitsLabel', { value: comp.offer.benefits })}
-                </Text>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultRowLabel}>{t('benefitsFieldLabel')}</Text>
+                  <Text style={styles.resultRowValue}>{comp.offer.benefits}</Text>
+                </View>
               ) : null}
             </View>
           ))}
@@ -150,30 +160,43 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 12, paddingBottom: 40 },
-    title: { fontSize: 20, fontWeight: '700', color: colors.text },
-    hint: { fontSize: 13, color: colors.textSubtle },
+    hint: { fontSize: 14, color: colors.textSubtle },
     emptyText: { fontSize: 13, color: colors.textFaint, textAlign: 'center', paddingVertical: 24 },
     optionsGrid: { gap: 10 },
     option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
       backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
+      borderRadius: 16,
+      borderWidth: 1.5,
       borderColor: colors.border,
-      padding: 14,
+      padding: 16,
     },
     optionSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-    optionSalary: { fontSize: 15, fontWeight: '700', color: colors.text },
-    optionMeta: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
-    checkmark: { fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 4 },
+    optionBody: { flex: 1 },
+    optionSalary: { fontSize: 17, fontWeight: '700', color: colors.text },
+    optionMeta: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
+    radio: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: colors.borderStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
     compareButton: {
-      minHeight: 44,
-      borderRadius: 8,
+      minHeight: 52,
+      borderRadius: 14,
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
     compareButtonDisabled: { opacity: 0.6 },
-    compareButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    compareButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '600' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -183,17 +206,27 @@ function createStyles(colors: ThemeColors) {
     },
     resultCard: {
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 14,
+      padding: 16,
       gap: 2,
     },
     resultCardBest: { borderColor: '#86efac', backgroundColor: '#f0fdf4' },
-    resultHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-    resultCompany: { fontSize: 14, fontWeight: '700', color: colors.text },
-    resultTotal: { fontSize: 14, fontWeight: '700', color: colors.text },
-    resultRole: { fontSize: 12, color: colors.textSubtle },
-    resultMeta: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+    resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    resultHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    resultCompany: { fontSize: 16, fontWeight: '700', color: colors.text },
+    bestBadge: {
+      backgroundColor: '#16a34a',
+      borderRadius: 9999,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    bestBadgeText: { fontSize: 11, fontWeight: '700', color: '#ffffff' },
+    resultTotal: { fontSize: 20, fontWeight: '800', color: colors.text },
+    resultRole: { fontSize: 13, color: colors.textSubtle, marginBottom: 4 },
+    resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+    resultRowLabel: { fontSize: 13, color: colors.textSubtle },
+    resultRowValue: { fontSize: 13, color: colors.text, fontWeight: '600' },
   });
 }

@@ -8,7 +8,17 @@ jest.mock('../../hooks/useOfferQueries', () => ({
   useUpdateOffer: jest.fn(),
   useDeleteOffer: jest.fn(),
 }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: jest.fn(), useRouter: jest.fn() }));
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(),
+  useRouter: jest.fn(),
+  // The real Stack.Screen hands `options` to React Navigation's header, which
+  // isn't mounted in these tests — rendering `headerRight()` here instead
+  // keeps the add-offer button reachable by testID.
+  Stack: {
+    Screen: ({ options }: { options?: { headerRight?: () => React.ReactNode } }) =>
+      options?.headerRight ? options.headerRight() : null,
+  },
+}));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('../../../../i18n/LanguageContext', () => ({ useLanguage: jest.fn() }));
