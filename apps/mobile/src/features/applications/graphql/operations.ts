@@ -98,6 +98,13 @@ export const APPLICATION_HEALTH_SCORE_QUERY = `
     applicationHealthScore(applicationId: $applicationId) {
       score
       label
+      criteria {
+        key
+        label
+        points
+        earned
+        met
+      }
     }
   }
 `;

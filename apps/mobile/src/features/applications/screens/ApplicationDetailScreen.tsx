@@ -11,52 +11,24 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  useActivityLogs,
-  useApplication,
-  useApplicationHealthScore,
-} from '../hooks/useApplicationQueries';
-import { useDeleteApplication } from '../hooks/useApplicationMutations';
+import { useApplication, useApplicationHealthScore } from '../hooks/useApplicationQueries';
+import { useDeleteApplication, useUpdateApplication } from '../hooks/useApplicationMutations';
 import { StatusBadge } from '../components/StatusBadge';
-import { SectionTabBar } from '../components/SectionTabBar';
+import { StarIcon } from '../components/ApplicationIcons';
+import { HealthScoreCard } from '../components/HealthScoreCard';
+import { ApplicationInfoChips } from '../components/ApplicationInfoChips';
+import { SectionIndexList } from '../components/SectionIndexList';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
-const EVENT_LABELS: Record<string, string> = {
-  status_changed: 'Status changed',
-  note_added: 'Note added',
-  note_deleted: 'Note deleted',
-  document_uploaded: 'Document uploaded',
-  document_deleted: 'Document deleted',
-  interview_added: 'Interview round added',
-  field_updated: 'Fields updated',
-};
-
-function formatActivityDetail(eventType: string, payloadStr: string): string {
-  try {
-    const payload = JSON.parse(payloadStr);
-    if (eventType === 'status_changed') return `${payload.from} → ${payload.to}`;
-    if (eventType === 'field_updated' && Array.isArray(payload.fields)) {
-      return payload.fields.join(', ');
-    }
-  } catch {
-    // Payload isn't JSON or doesn't have the expected shape — show nothing extra.
-  }
-  return '';
-}
+const STAR_COLOR = '#eab308';
 
 function initialsFor(company: string): string {
   const words = company.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '?';
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
-}
-
-function healthScoreTone(colors: ThemeColors, score: number): string {
-  if (score >= 71) return colors.primary;
-  if (score >= 41) return '#a16207';
-  return colors.danger;
 }
 
 function Field({ label, value }: { label: string; value: string | null }) {
@@ -79,8 +51,8 @@ export function ApplicationDetailScreen() {
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: application, isLoading, isError, error } = useApplication(applicationId);
   const { data: healthScore } = useApplicationHealthScore(applicationId);
-  const { data: activityLogs } = useActivityLogs(applicationId);
   const deleteApplication = useDeleteApplication();
+  const updateApplication = useUpdateApplication();
 
   const onDelete = () => {
     Alert.alert(t('detail.moveToTrashTitle'), t('detail.moveToTrashMessage'), [
@@ -96,6 +68,14 @@ export function ApplicationDetailScreen() {
         },
       },
     ]);
+  };
+
+  const onToggleStar = () => {
+    if (!application) return;
+    updateApplication.mutate(
+      { id: applicationId, input: { starred: !application.starred } },
+      { onError: (err) => Alert.alert(t('detail.couldNotUpdateTitle'), getErrorMessage(err)) },
+    );
   };
 
   const openMenu = () => {
@@ -136,13 +116,28 @@ export function ApplicationDetailScreen() {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initialsFor(application.company)}</Text>
         </View>
-        <Pressable
-          style={styles.menuButton}
-          onPress={openMenu}
-          testID="application-detail-menu-button"
-        >
-          <Text style={styles.menuDots}>•••</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.starButton}
+            onPress={onToggleStar}
+            disabled={updateApplication.isPending}
+            testID="application-detail-star-button"
+            accessibilityLabel={t(application.starred ? 'detail.unstar' : 'detail.star')}
+          >
+            <StarIcon
+              color={application.starred ? STAR_COLOR : colors.textFaint}
+              size={20}
+              filled={application.starred}
+            />
+          </Pressable>
+          <Pressable
+            style={styles.menuButton}
+            onPress={openMenu}
+            testID="application-detail-menu-button"
+          >
+            <Text style={styles.menuDots}>•••</Text>
+          </Pressable>
+        </View>
       </View>
 
       <Text style={styles.role}>{application.role}</Text>
@@ -152,53 +147,9 @@ export function ApplicationDetailScreen() {
         <StatusBadge status={application.status} />
       </View>
 
-      <SectionTabBar
-        variant="underline"
-        items={[
-          { key: 'overview', label: t('detail.overviewTab') },
-          { key: 'interviews', label: t('detail.interviewsTab') },
-          { key: 'notes', label: t('detail.notesTab') },
-          { key: 'documents', label: t('detail.docsTab') },
-        ]}
-        activeKey="overview"
-        onSelect={(key) => {
-          if (key === 'overview') return;
-          // This screen is the [id]/index route, so expo-router resolves a
-          // bare relative push ('./notes') against the parent of `[id]`,
-          // dropping applicationId from the URL entirely and 404ing the
-          // sub-screen's query. Sibling non-index screens (notes.tsx etc, see
-          // DETAIL_SECTION_ROUTES) don't have this quirk — only an index
-          // route does — so the id has to be spelled out here explicitly.
-          router.push(`./${applicationId}/${key}` as never);
-        }}
-      />
+      <ApplicationInfoChips application={application} />
 
-      {healthScore ? (
-        <View style={styles.card} testID="health-score-card">
-          <View style={styles.healthScoreRow}>
-            <Text style={styles.cardLabel}>{t('detail.healthScoreLabel')}</Text>
-            <Text
-              style={[
-                styles.healthScoreValue,
-                { color: healthScoreTone(colors, healthScore.score) },
-              ]}
-            >
-              {healthScore.score} / 100
-            </Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.max(0, Math.min(100, healthScore.score))}%`,
-                  backgroundColor: healthScoreTone(colors, healthScore.score),
-                },
-              ]}
-            />
-          </View>
-        </View>
-      ) : null}
+      {healthScore ? <HealthScoreCard healthScore={healthScore} /> : null}
 
       {application.appliedAt ||
       application.location ||
@@ -230,33 +181,17 @@ export function ApplicationDetailScreen() {
         </Pressable>
       ) : null}
 
-      <Text style={styles.sectionHeader}>{t('detail.activityLabel')}</Text>
-      {activityLogs && activityLogs.length > 0 ? (
-        <View style={styles.timeline} testID="activity-timeline">
-          {activityLogs.map((log, index) => {
-            const detail = formatActivityDetail(log.eventType, log.payload);
-            return (
-              <View key={log.id} style={styles.timelineRow}>
-                <View style={styles.timelineMarkerColumn}>
-                  <View style={[styles.timelineDot, index === 0 && styles.timelineDotActive]} />
-                  {index < activityLogs.length - 1 ? <View style={styles.timelineLine} /> : null}
-                </View>
-                <View style={styles.timelineContent}>
-                  <Text style={styles.timelineTitle}>
-                    {EVENT_LABELS[log.eventType] ?? log.eventType}
-                    {detail ? <Text style={styles.timelineDetail}> — {detail}</Text> : null}
-                  </Text>
-                  <Text style={styles.timelineDate}>
-                    {new Date(log.createdAt).toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>{t('detail.noActivityYet')}</Text>
-      )}
+      <SectionIndexList
+        onSelect={(slug) => {
+          // This screen is the [id]/index route, so expo-router resolves a
+          // bare relative push ('./notes') against the parent of `[id]`,
+          // dropping applicationId from the URL entirely and 404ing the
+          // sub-screen's query. Sibling non-index screens (notes.tsx etc, see
+          // DETAIL_SECTION_ROUTES) don't have this quirk — only an index
+          // route does — so the id has to be spelled out here explicitly.
+          router.push(`./${applicationId}/${slug}` as never);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -277,6 +212,8 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     avatarText: { color: colors.background, fontSize: 18, fontWeight: '700' },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    starButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
     menuButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
     menuDots: { fontSize: 18, color: colors.textSubtle, fontWeight: '700' },
     role: { fontSize: 22, fontWeight: '700', color: colors.text },
@@ -290,16 +227,6 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 12,
     },
-    cardLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-    healthScoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    healthScoreValue: { fontSize: 16, fontWeight: '700' },
-    progressTrack: {
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.surfaceAlt,
-      overflow: 'hidden',
-    },
-    progressFill: { height: '100%', borderRadius: 4 },
     infoRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -318,23 +245,5 @@ function createStyles(colors: ThemeColors) {
     },
     fieldValue: { fontSize: 15, color: colors.text, lineHeight: 21 },
     link: { fontSize: 14, color: colors.primary },
-    sectionHeader: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 4 },
-    emptyText: { fontSize: 13, color: colors.textFaint },
-    timeline: { gap: 0 },
-    timelineRow: { flexDirection: 'row', gap: 12 },
-    timelineMarkerColumn: { alignItems: 'center', width: 12 },
-    timelineDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.border,
-      marginTop: 4,
-    },
-    timelineDotActive: { backgroundColor: colors.primary },
-    timelineLine: { width: 1, flex: 1, backgroundColor: colors.border, marginVertical: 2 },
-    timelineContent: { flex: 1, paddingBottom: 16 },
-    timelineTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
-    timelineDetail: { fontWeight: '400', color: colors.textSubtle },
-    timelineDate: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
   });
 }
