@@ -33,6 +33,16 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.interviews') }}
     />,
     <Stack.Screen
+      key="contacts"
+      name={`${prefix}[id]/contacts`}
+      options={{ title: t('screenTitles.contacts') }}
+    />,
+    <Stack.Screen
+      key="activity"
+      name={`${prefix}[id]/activity`}
+      options={{ title: t('screenTitles.activity') }}
+    />,
+    <Stack.Screen
       key="documents"
       name={`${prefix}[id]/documents/index`}
       options={{ title: t('screenTitles.documents') }}
@@ -46,6 +56,21 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       key="draft"
       name={`${prefix}[id]/documents/[draftId]`}
       options={{ title: t('screenTitles.draft') }}
+    />,
+    <Stack.Screen
+      key="coverLetter"
+      name={`${prefix}[id]/cover-letter`}
+      options={{ title: t('screenTitles.coverLetter') }}
+    />,
+    <Stack.Screen
+      key="resumeMatch"
+      name={`${prefix}[id]/resume-match`}
+      options={{ title: t('screenTitles.resumeMatch') }}
+    />,
+    <Stack.Screen
+      key="companyBriefing"
+      name={`${prefix}[id]/company-briefing`}
+      options={{ title: t('screenTitles.companyBriefing') }}
     />,
     <Stack.Screen
       key="offers"

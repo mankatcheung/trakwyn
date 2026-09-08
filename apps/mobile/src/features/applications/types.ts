@@ -43,11 +43,24 @@ export interface CreateApplicationInput {
   description?: string;
 }
 
-export type UpdateApplicationInput = Partial<CreateApplicationInput>;
+export type UpdateApplicationInput = Partial<CreateApplicationInput> & {
+  starred?: boolean;
+  tags?: string[];
+  followUpAt?: string | null;
+};
+
+export interface HealthScoreCriterion {
+  key: string;
+  label: string;
+  points: number;
+  earned: number;
+  met: boolean;
+}
 
 export interface ApplicationHealthScore {
   score: number;
   label: string;
+  criteria: HealthScoreCriterion[];
 }
 
 export interface ActivityLog {
@@ -55,4 +68,41 @@ export interface ActivityLog {
   eventType: string;
   payload: string;
   createdAt: string;
+}
+
+export interface Contact {
+  id: string;
+  applicationId: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedinUrl: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactInput {
+  name: string;
+  role?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  linkedinUrl?: string | null;
+  notes?: string | null;
+}
+
+export interface ResumeMatchScoreResult {
+  score: number;
+  label: string;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  summary: string;
+}
+
+export interface CompanyBriefing {
+  id: string;
+  applicationId: string;
+  content: string;
+  generatedAt: string;
 }
