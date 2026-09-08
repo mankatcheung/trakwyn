@@ -171,23 +171,30 @@ describe('ApplicationDetailScreen', () => {
     expect(back).toHaveBeenCalled();
   });
 
-  it('navigates to the Interviews section when its tab is pressed', async () => {
-    const push = jest.fn();
-    mockedUseApplication.mockReturnValue({
-      data: application,
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseDeleteApplication.mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    } as never);
+  // This screen is the `[id]/index` route — a bare relative push like
+  // './interviews' resolves against the parent of `[id]` in expo-router
+  // (dropping applicationId from the URL entirely, 404ing the sub-screen's
+  // query), so the id must be spelled out in the pushed path explicitly.
+  it.each(['interviews', 'notes', 'documents'])(
+    'navigates to the %s section with the applicationId in the path when its tab is pressed',
+    async (section) => {
+      const push = jest.fn();
+      mockedUseApplication.mockReturnValue({
+        data: application,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as never);
+      mockedUseDeleteApplication.mockReturnValue({
+        mutate: jest.fn(),
+        isPending: false,
+      } as never);
 
-    const { getByTestId } = await renderScreen(push);
+      const { getByTestId } = await renderScreen(push);
 
-    await fireEvent.press(getByTestId('section-tab-interviews'));
+      await fireEvent.press(getByTestId(`section-tab-${section}`));
 
-    expect(push).toHaveBeenCalledWith('./interviews');
-  });
+      expect(push).toHaveBeenCalledWith(`./1/${section}`);
+    },
+  );
 });
