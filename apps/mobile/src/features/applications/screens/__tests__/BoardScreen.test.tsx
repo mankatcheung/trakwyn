@@ -9,6 +9,10 @@ jest.mock('../../hooks/useApplicationMutations', () => ({
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
 import { useRouter } from 'expo-router';
 import { useApplications } from '../../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../../hooks/useApplicationMutations';
@@ -94,8 +98,25 @@ describe('BoardScreen', () => {
     const { findByTestId, findByText } = await renderScreen();
 
     await findByTestId('board-column-applied');
-    await findByText('★ Acme');
+    await findByText('Acme');
     await findByText('Globex');
+  });
+
+  it('hides a field on the cards once toggled off via the display fields picker', async () => {
+    mockedUseMoveApplicationOnBoard.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+
+    const { getByTestId, queryByText, findByText } = await renderScreen();
+
+    await findByText('Backend Engineer');
+
+    await fireEvent.press(getByTestId('applications-display-fields-button'));
+    await fireEvent.press(getByTestId('display-field-role'));
+
+    expect(queryByText('Backend Engineer')).toBeNull();
+    expect(queryByText('Frontend Engineer')).toBeNull();
   });
 
   it('navigates to the application on tap', async () => {
