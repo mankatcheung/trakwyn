@@ -27,8 +27,12 @@ import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
 type StatusFilter = 'all' | ApplicationStatus;
 type ViewMode = 'list' | 'board';
 
+// The starred/ghosted filter pills keep the same fill in both themes, so the
+// icon sitting on them needs a fixed dark tone — it was `colors.surface`, i.e.
+// white on gold (1.9:1) in light mode and dark-slate on amber (2.6:1) in dark.
 const STAR_COLOR = '#eab308';
 const GHOST_COLOR = '#d97706';
+const ON_FILTER_PILL_COLOR = '#111827';
 
 function matchesSearch(application: Application, search: string): boolean {
   if (!search) return true;
@@ -129,7 +133,7 @@ export function ApplicationsListScreen() {
               testID="applications-filter-starred"
             >
               <StarIcon
-                color={starredOnly ? colors.surface : STAR_COLOR}
+                color={starredOnly ? ON_FILTER_PILL_COLOR : STAR_COLOR}
                 filled={starredOnly}
                 size={15}
               />
@@ -140,7 +144,7 @@ export function ApplicationsListScreen() {
               accessibilityLabel={t('list.ghostedAria')}
               testID="applications-filter-ghosted"
             >
-              <GhostIcon color={ghostedOnly ? colors.surface : GHOST_COLOR} size={15} />
+              <GhostIcon color={ghostedOnly ? ON_FILTER_PILL_COLOR : GHOST_COLOR} size={15} />
             </Pressable>
             <View style={styles.toggleFiltersSpacer} />
             <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />

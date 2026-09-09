@@ -24,7 +24,6 @@ import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
 const STAR_COLOR = '#eab308';
-const GHOST_COLOR = '#d97706';
 
 const COLUMN_WIDTH = 220;
 
@@ -280,7 +279,7 @@ function createStyles(colors: ThemeColors) {
     cardMetaLeading: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
     cardMetaTrailing: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
     cardDate: { fontSize: 11, color: colors.textFaint },
-    cardGhostedBadge: { fontSize: 10, fontWeight: '600', color: GHOST_COLOR },
+    cardGhostedBadge: { fontSize: 10, fontWeight: '600', color: colors.warning },
     moveButton: { alignSelf: 'flex-end', marginTop: 6 },
     moveButtonText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
     modalBackdrop: {

@@ -222,7 +222,7 @@ function createStyles(colors: ThemeColors) {
     },
     chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     chipText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-    chipTextActive: { color: colors.surface },
+    chipTextActive: { color: colors.onPrimary },
     goalInput: {
       width: 64,
       borderWidth: 1,

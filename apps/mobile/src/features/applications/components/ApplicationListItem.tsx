@@ -11,7 +11,6 @@ import type { ApplicationDisplayFields } from '../lib/applicationDisplayFields';
 import { defaultApplicationDisplayFields } from '../lib/applicationDisplayFields';
 
 const STAR_COLOR = '#eab308';
-const GHOST_COLOR = '#d97706';
 
 interface Props {
   application: Application;
@@ -116,7 +115,7 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 6,
       paddingVertical: 2,
     },
-    ghostedBadge: { fontSize: 11, fontWeight: '600', color: GHOST_COLOR, marginTop: 2 },
+    ghostedBadge: { fontSize: 11, fontWeight: '600', color: colors.warning, marginTop: 2 },
     trailing: { alignItems: 'flex-end', gap: 6, flexShrink: 0 },
     date: { fontSize: 11, color: colors.textFaint },
   });

@@ -370,14 +370,14 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
-    badgeFull: { backgroundColor: '#ffedd5' },
+    badgeFull: { backgroundColor: colors.warningSurface },
     badgeText: {
       fontSize: 10,
       fontWeight: '700',
       color: colors.textMuted,
       textTransform: 'uppercase',
     },
-    badgeTextFull: { color: '#c2410c' },
+    badgeTextFull: { color: colors.warning },
     form: { gap: 8 },
     input: {
       borderWidth: 1,
@@ -398,7 +398,7 @@ function createStyles(colors: ThemeColors) {
     },
     scopeChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     scopeChipText: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
-    scopeChipTextActive: { color: colors.surface },
+    scopeChipTextActive: { color: colors.onPrimary },
     button: {
       alignSelf: 'flex-start',
       minHeight: 40,

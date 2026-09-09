@@ -40,11 +40,11 @@ function emptyForm(): InterviewRoundFormData {
 function outcomeStyle(colors: ThemeColors, outcome: string) {
   switch (outcome) {
     case 'passed':
-      return { bg: '#dcfce7', fg: '#15803d' };
+      return { bg: colors.successSurface, fg: colors.success };
     case 'failed':
       return { bg: colors.dangerSurface, fg: colors.danger };
     case 'cancelled':
-      return { bg: '#fef3c7', fg: '#a16207' };
+      return { bg: colors.warningSurface, fg: colors.warning };
     default:
       return { bg: colors.surfaceAlt, fg: colors.textMuted };
   }

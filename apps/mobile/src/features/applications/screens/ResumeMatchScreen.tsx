@@ -187,15 +187,15 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      backgroundColor: '#dcfce7',
+      backgroundColor: colors.successSurface,
     },
-    matchedChipText: { fontSize: 12, color: '#15803d', fontWeight: '600' },
+    matchedChipText: { fontSize: 12, color: colors.success, fontWeight: '600' },
     missingChip: {
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      backgroundColor: '#fee2e2',
+      backgroundColor: colors.dangerSurface,
     },
-    missingChipText: { fontSize: 12, color: '#b91c1c', fontWeight: '600' },
+    missingChipText: { fontSize: 12, color: colors.danger, fontWeight: '600' },
   });
 }

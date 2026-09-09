@@ -47,9 +47,9 @@ function createStyles(colors: ThemeColors) {
     row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     chip: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     chipNeutral: { backgroundColor: colors.surfaceAlt },
-    chipWarning: { backgroundColor: '#fef3c7' },
+    chipWarning: { backgroundColor: colors.warningSurface },
     chipText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
-    chipTextWarning: { color: '#92400e' },
+    chipTextWarning: { color: colors.warning },
     tagChip: {
       borderRadius: 6,
       paddingHorizontal: 8,

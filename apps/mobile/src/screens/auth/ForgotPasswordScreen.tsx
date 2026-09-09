@@ -213,8 +213,8 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     success: {
-      color: '#166534',
-      backgroundColor: '#f0fdf4',
+      color: colors.success,
+      backgroundColor: colors.successSurface,
       borderRadius: 8,
       padding: 10,
       fontSize: 14,

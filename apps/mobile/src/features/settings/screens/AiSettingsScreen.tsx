@@ -904,7 +904,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 8,
     },
-    keyRowDefault: { borderColor: '#86efac', backgroundColor: '#f0fdf4' },
+    keyRowDefault: { borderColor: colors.successBorder, backgroundColor: colors.successSurface },
     keyRowPaused: { borderColor: colors.dangerBorder, backgroundColor: colors.dangerSurface },
     textColumn: { flex: 1, gap: 4 },
     keyProviderLine: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
@@ -934,7 +934,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 2,
     },
     meterFill: { height: '100%', borderRadius: 9999, backgroundColor: colors.primary },
-    meterFillWarn: { backgroundColor: '#d97706' },
+    meterFillWarn: { backgroundColor: colors.warning },
     meterFillDanger: { backgroundColor: colors.danger },
     actionsButton: {
       padding: 6,

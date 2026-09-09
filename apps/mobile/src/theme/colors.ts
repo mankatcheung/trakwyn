@@ -13,14 +13,26 @@ export interface ThemeColors {
   textFaint: string;
   primary: string;
   primarySurface: string;
+  /** Label colour for text/icons sitting on a `primary` fill. Never use `surface` for this. */
   onPrimary: string;
   danger: string;
   dangerBorder: string;
   dangerSurface: string;
+  /** Label colour for text/icons sitting on a `danger` fill. */
+  onDanger: string;
+  success: string;
+  successBorder: string;
+  successSurface: string;
+  /** Label colour for text/icons sitting on a `success` fill. */
+  onSuccess: string;
+  warning: string;
+  warningBorder: string;
+  warningSurface: string;
 }
 
-// The light palette is the app's original hardcoded values, kept as-is so
-// migrating a screen to theme tokens is a no-op in light mode.
+// Every foreground/background pairing below is asserted to clear WCAG AA
+// (4.5:1) by `__tests__/colors.test.ts` — change a value there and the test
+// tells you what it broke.
 export const lightColors: ThemeColors = {
   background: '#f9fafb',
   surface: '#ffffff',
@@ -29,14 +41,24 @@ export const lightColors: ThemeColors = {
   borderStrong: '#d1d5db',
   text: '#111827',
   textMuted: '#374151',
-  textSubtle: '#6b7280',
-  textFaint: '#9ca3af',
+  textSubtle: '#4b5563',
+  // Off-scale on purpose: gray-500 (#6b7280) lands at 4.39:1 on `surfaceAlt`,
+  // just under AA, and this token carries placeholder and meta text.
+  textFaint: '#667085',
   primary: '#2563eb',
   primarySurface: '#eff6ff',
   onPrimary: '#ffffff',
   danger: '#b91c1c',
   dangerBorder: '#fecaca',
   dangerSurface: '#fef2f2',
+  onDanger: '#ffffff',
+  success: '#15803d',
+  successBorder: '#bbf7d0',
+  successSurface: '#dcfce7',
+  onSuccess: '#ffffff',
+  warning: '#92400e',
+  warningBorder: '#fde68a',
+  warningSurface: '#fef3c7',
 };
 
 export const darkColors: ThemeColors = {
@@ -48,13 +70,23 @@ export const darkColors: ThemeColors = {
   text: '#f9fafb',
   textMuted: '#d1d5db',
   textSubtle: '#9ca3af',
-  textFaint: '#6b7280',
-  primary: '#3b82f6',
-  primarySurface: '#1e3a8a',
-  onPrimary: '#ffffff',
+  textFaint: '#8a93a3',
+  // The accent tones lighten in dark mode, so anything sitting *on* a filled
+  // accent (`onPrimary`, `onDanger`) has to darken to stay readable.
+  primary: '#60a5fa',
+  primarySurface: '#172554',
+  onPrimary: '#0b1120',
   danger: '#f87171',
   dangerBorder: '#7f1d1d',
   dangerSurface: '#3f1212',
+  onDanger: '#0b1120',
+  success: '#4ade80',
+  successBorder: '#166534',
+  successSurface: '#0f2a1a',
+  onSuccess: '#0b1120',
+  warning: '#fbbf24',
+  warningBorder: '#78350f',
+  warningSurface: '#3a2a0a',
 };
 
 export function getColorsForScheme(scheme: ColorScheme): ThemeColors {

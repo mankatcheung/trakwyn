@@ -303,7 +303,7 @@ function createStyles(colors: ThemeColors) {
     },
     typeChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     typeChipText: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
-    typeChipTextActive: { color: colors.surface },
+    typeChipTextActive: { color: colors.onPrimary },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -323,7 +323,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     disabled: { opacity: 0.6 },
-    confirmButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    confirmButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
     linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
     linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
     card: {
