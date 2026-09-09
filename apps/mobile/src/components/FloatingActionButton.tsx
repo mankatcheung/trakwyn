@@ -47,6 +47,6 @@ function createStyles(colors: ThemeColors) {
       shadowOffset: { width: 0, height: 3 },
       elevation: 4,
     },
-    fabText: { color: colors.surface, fontSize: 28, lineHeight: 30, fontWeight: '400' },
+    fabText: { color: colors.onPrimary, fontSize: 28, lineHeight: 30, fontWeight: '400' },
   });
 }

@@ -7,7 +7,7 @@ import type { ThemeColors } from '../../../theme/colors';
 
 function healthScoreTone(colors: ThemeColors, score: number): string {
   if (score >= 71) return colors.primary;
-  if (score >= 41) return '#a16207';
+  if (score >= 41) return colors.warning;
   return colors.danger;
 }
 
@@ -104,7 +104,7 @@ function createStyles(colors: ThemeColors) {
     criterionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     criterionLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
     criterionDot: { width: 8, height: 8, borderRadius: 4 },
-    criterionDotUnmet: { backgroundColor: '#d1d5db' },
+    criterionDotUnmet: { backgroundColor: colors.borderStrong },
     criterionLabel: { fontSize: 13, color: colors.textMuted, flexShrink: 1 },
     criterionLabelUnmet: { color: colors.textFaint },
     criterionPoints: { fontSize: 13, fontWeight: '600', color: colors.textMuted },

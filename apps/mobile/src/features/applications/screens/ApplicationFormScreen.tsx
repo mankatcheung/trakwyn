@@ -247,7 +247,9 @@ function createStyles(colors: ThemeColors) {
     },
     chipActive: { backgroundColor: colors.text, borderColor: colors.text },
     chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
-    chipTextActive: { color: colors.surface },
+    // The active status chip is an inverted pill (`colors.text` fill), not a
+    // primary one — its label is the page ground, not `onPrimary`.
+    chipTextActive: { color: colors.background },
     submitButton: {
       minHeight: 48,
       borderRadius: 12,

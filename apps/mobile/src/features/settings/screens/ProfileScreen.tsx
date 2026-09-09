@@ -435,8 +435,8 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 8,
     },
     success: {
-      color: '#047857',
-      backgroundColor: '#d1fae5',
+      color: colors.success,
+      backgroundColor: colors.successSurface,
       borderRadius: 8,
       padding: 10,
       fontSize: 14,
@@ -504,7 +504,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 20,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    saveButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
     dangerButton: {
       minHeight: 44,
       borderRadius: 8,

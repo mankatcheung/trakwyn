@@ -294,7 +294,7 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 0,
       fontSize: 14,
     },
-    savedText: { fontSize: 13, fontWeight: '600', color: '#16a34a' },
+    savedText: { fontSize: 13, fontWeight: '600', color: colors.success },
     savingText: { fontSize: 13, fontWeight: '600', color: colors.primary },
     headerActionText: { fontSize: 13, fontWeight: '600', color: colors.primary },
     headerActionTextDanger: { fontSize: 13, fontWeight: '600', color: colors.danger },

@@ -121,6 +121,6 @@ function createStyles(colors: ThemeColors) {
       marginTop: 4,
     },
     deleteButtonDisabled: { opacity: 0.6 },
-    deleteButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    deleteButtonText: { color: colors.onDanger, fontSize: 14, fontWeight: '600' },
   });
 }

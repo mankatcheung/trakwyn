@@ -150,6 +150,6 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 13,
     },
-    success: { color: '#047857', fontSize: 13 },
+    success: { color: colors.success, fontSize: 13 },
   });
 }

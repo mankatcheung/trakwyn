@@ -186,7 +186,7 @@ function createStyles(colors: ThemeColors) {
     },
     chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     chipText: { fontSize: 12, color: colors.textMuted },
-    chipTextActive: { color: colors.surface },
+    chipTextActive: { color: colors.onPrimary },
     actions: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
@@ -205,6 +205,6 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    saveText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
   });
 }

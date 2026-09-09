@@ -10,9 +10,9 @@ function statusColors(colors: ThemeColors): Record<ApplicationStatus, { bg: stri
   return {
     draft: { bg: colors.surfaceAlt, fg: colors.textMuted },
     applied: { bg: colors.primarySurface, fg: colors.primary },
-    interviewing: { bg: '#fef3c7', fg: '#a16207' },
-    offered: { bg: '#dcfce7', fg: '#15803d' },
-    accepted: { bg: '#d1fae5', fg: '#047857' },
+    interviewing: { bg: colors.warningSurface, fg: colors.warning },
+    offered: { bg: colors.successSurface, fg: colors.success },
+    accepted: { bg: colors.success, fg: colors.onSuccess },
     rejected: { bg: colors.dangerSurface, fg: colors.danger },
     withdrawn: { bg: colors.border, fg: colors.textSubtle },
   };
