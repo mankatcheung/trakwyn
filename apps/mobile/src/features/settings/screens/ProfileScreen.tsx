@@ -233,6 +233,7 @@ export function ProfileScreen() {
             style={styles.input}
             value={name}
             onChangeText={setName}
+            placeholder={t('profile.namePlaceholder')}
             testID="profile-name-input"
           />
 

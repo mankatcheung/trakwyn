@@ -200,6 +200,7 @@ export function SecurityScreen() {
             secureTextEntry
             value={currentPassword}
             onChangeText={setCurrentPassword}
+            placeholder={t('security.currentPasswordPlaceholder')}
             testID="current-password-input"
           />
           <Text style={styles.fieldLabel}>{t('security.newPasswordPlaceholder')}</Text>
@@ -209,6 +210,7 @@ export function SecurityScreen() {
             secureTextEntry
             value={newPassword}
             onChangeText={setNewPassword}
+            placeholder={t('security.newPasswordPlaceholder')}
             testID="new-password-input"
           />
           <Pressable

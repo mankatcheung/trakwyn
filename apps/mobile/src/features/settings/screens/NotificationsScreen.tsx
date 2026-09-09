@@ -159,6 +159,7 @@ export function NotificationsScreen() {
             onChangeText={setWeeklyGoal}
             onEndEditing={() => save()}
             keyboardType="number-pad"
+            placeholder={t('notifications.weeklyGoalPlaceholder')}
             testID="weekly-goal-input"
           />
         </View>
