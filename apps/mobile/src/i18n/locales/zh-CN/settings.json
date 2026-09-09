@@ -136,13 +136,15 @@
     "digestWeekly": "每周",
     "followUpReminders": "跟进提醒",
     "pushNotifications": "推送通知",
-    "weeklyGoal": "每周求职申请目标"
+    "weeklyGoal": "每周求职申请目标",
+    "weeklyGoalPlaceholder": "例如 5"
   },
   "profile": {
     "couldNotLoad": "无法加载个人资料",
     "saved": "已保存。",
     "emailLabel": "邮箱",
     "nameLabel": "姓名",
+    "namePlaceholder": "例如 张三",
     "timezoneLabel": "时区",
     "timezonePlaceholder": "例如 Europe/London",
     "timezoneModalTitle": "选择时区",

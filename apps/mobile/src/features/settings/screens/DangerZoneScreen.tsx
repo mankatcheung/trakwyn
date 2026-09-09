@@ -58,6 +58,7 @@ export function DangerZoneScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          placeholder={t('danger.confirmPasswordPlaceholder')}
           testID="delete-account-password-input"
         />
 
