@@ -31,18 +31,18 @@ test.describe('Offers', () => {
     await addOffer(page, '150000');
   });
 
-  test('compares two offers and highlights the best one', async ({ page }) => {
+  test('compares two offers on the user-level offers page and highlights the best one', async ({
+    page,
+  }) => {
     await page.getByRole('link', { name: /manage offers/i }).click();
 
     await addOffer(page, '150000');
     await addOffer(page, '130000');
 
-    // "Compare offers" only lives back on the detail page's Offers tab, not
-    // on this offers-list page.
-    await page.goBack();
-    await openTab(page, 'Offers');
-    await page.getByRole('link', { name: /^compare offers$/i }).click();
-    await expect(page.getByRole('heading', { name: 'Compare Offers' })).toBeVisible();
+    // Compare now lives on the top-level /offers page, which lists every
+    // offer across every application — not on the per-application offers tab.
+    await page.goto('/offers');
+    await expect(page.getByRole('heading', { name: 'All Offers' })).toBeVisible();
 
     await page.getByText('$150,000/yearly').click();
     await page.getByText('$130,000/yearly').click();
@@ -53,5 +53,17 @@ test.describe('Offers', () => {
     // Both rows are for the same application — the higher offer wins.
     const rows = page.locator('tbody tr');
     await expect(rows).toHaveCount(2);
+  });
+
+  test('selecting all offers on the user-level page enables compare for every offer', async ({
+    page,
+  }) => {
+    await page.getByRole('link', { name: /manage offers/i }).click();
+    await addOffer(page, '150000');
+    await addOffer(page, '130000');
+
+    await page.goto('/offers');
+    await page.getByRole('button', { name: /select all/i }).click();
+    await expect(page.getByRole('button', { name: /compare \(2\)/i })).toBeEnabled();
   });
 });

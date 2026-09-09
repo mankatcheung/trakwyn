@@ -152,6 +152,14 @@ export function DashboardScreen() {
         </View>
       )}
 
+      <Pressable
+        style={styles.offersLinkCard}
+        onPress={() => router.push('/offers')}
+        testID="dashboard-view-offers"
+      >
+        <Text style={styles.offersLinkText}>{t('viewAllOffers')}</Text>
+      </Pressable>
+
       {upcomingEvents.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -259,6 +267,15 @@ function createStyles(colors: ThemeColors) {
       overflow: 'hidden',
     },
     progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 4 },
+    offersLinkCard: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      padding: 16,
+      alignItems: 'center',
+    },
+    offersLinkText: { fontSize: 15, fontWeight: '600', color: colors.primary },
     section: { gap: 10 },
     sectionHeaderRow: {
       flexDirection: 'row',

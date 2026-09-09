@@ -29,6 +29,12 @@ export interface OfferFormData {
   notes: string;
 }
 
+export interface OfferWithApplication {
+  company: string;
+  role: string;
+  offer: Offer;
+}
+
 export interface OfferComparison {
   offer: Offer;
   company: string;

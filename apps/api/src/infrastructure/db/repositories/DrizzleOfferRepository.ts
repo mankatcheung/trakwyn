@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { offer, jobApplication } from '#src/infrastructure/db/schema.js';
 import type { DrizzleDb, DrizzleClient } from '#src/infrastructure/db/client.js';
 import { getClient } from '#src/infrastructure/db/transactionContext.js';
@@ -55,7 +55,7 @@ export class DrizzleOfferRepository implements IOfferRepository {
       .select({ offer })
       .from(offer)
       .innerJoin(jobApplication, eq(offer.applicationId, jobApplication.id))
-      .where(eq(jobApplication.userId, userId));
+      .where(and(eq(jobApplication.userId, userId), isNull(jobApplication.deletedAt)));
     return rows.map((r) => this.toEntity(r.offer));
   }
 

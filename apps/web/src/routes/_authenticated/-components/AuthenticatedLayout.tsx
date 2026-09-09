@@ -18,6 +18,7 @@ import {
   BarChart2Icon,
   BriefcaseIcon,
   CalendarIcon,
+  GitCompareArrowsIcon,
   KeyboardIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -52,6 +53,7 @@ const MAIN_NAV = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboardIcon },
   { to: '/applications', labelKey: 'nav.applications', icon: BriefcaseIcon },
   { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon },
+  { to: '/offers', labelKey: 'nav.offers', icon: GitCompareArrowsIcon },
   { to: '/analytics', labelKey: 'nav.analytics', icon: BarChart2Icon },
   { to: '/assistant', labelKey: 'nav.assistant', icon: MessageCircleIcon },
 ] as const;

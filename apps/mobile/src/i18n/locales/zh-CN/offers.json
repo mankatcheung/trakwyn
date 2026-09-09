@@ -31,5 +31,8 @@
   "periodSuffixYearly": "/年",
   "periodSuffixMonthly": "/月",
   "periodSuffixWeekly": "/周",
-  "periodSuffixHourly": "/时"
+  "periodSuffixHourly": "/时",
+  "allOffersTitle": "全部录用通知",
+  "selectAll": "全选",
+  "deselectAll": "取消全选"
 }

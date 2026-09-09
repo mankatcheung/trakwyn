@@ -3,64 +3,68 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
 jest.mock('../../hooks/useOfferQueries', () => ({
-  useOffers: jest.fn(),
+  useAllOffers: jest.fn(),
   useCompareOffers: jest.fn(),
 }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: jest.fn() }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('../../../../i18n/LanguageContext', () => ({ useLanguage: jest.fn() }));
-import { useLocalSearchParams } from 'expo-router';
-import { useCompareOffers, useOffers } from '../../hooks/useOfferQueries';
-import { CompareOffersScreen } from '../CompareOffersScreen';
-import type { Offer } from '../../types';
+import { useAllOffers, useCompareOffers } from '../../hooks/useOfferQueries';
+import { AllOffersScreen } from '../AllOffersScreen';
+import type { OfferWithApplication } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 import { useLanguage } from '../../../../i18n/LanguageContext';
 
-const mockedUseOffers = jest.mocked(useOffers);
+const mockedUseAllOffers = jest.mocked(useAllOffers);
 const mockedUseCompareOffers = jest.mocked(useCompareOffers);
-const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseLanguage = jest.mocked(useLanguage);
 
-const offers: Offer[] = [
+const entries: OfferWithApplication[] = [
   {
-    id: 'offer-1',
-    applicationId: 'app-1',
-    baseSalary: 150000,
-    bonus: null,
-    equity: null,
-    benefits: null,
-    costOfLivingAdjustment: null,
-    currency: 'USD',
-    period: 'yearly',
-    notes: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
+    company: 'Stripe',
+    role: 'Engineer',
+    offer: {
+      id: 'offer-1',
+      applicationId: 'app-1',
+      baseSalary: 150000,
+      bonus: null,
+      equity: null,
+      benefits: null,
+      costOfLivingAdjustment: null,
+      currency: 'USD',
+      period: 'yearly',
+      notes: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
   },
   {
-    id: 'offer-2',
-    applicationId: 'app-1',
-    baseSalary: 140000,
-    bonus: null,
-    equity: null,
-    benefits: null,
-    costOfLivingAdjustment: null,
-    currency: 'USD',
-    period: 'yearly',
-    notes: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
+    company: 'Notion',
+    role: 'Staff Engineer',
+    offer: {
+      id: 'offer-2',
+      applicationId: 'app-2',
+      baseSalary: 140000,
+      bonus: null,
+      equity: null,
+      benefits: null,
+      costOfLivingAdjustment: null,
+      currency: 'USD',
+      period: 'yearly',
+      notes: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
   },
 ];
 
 function renderScreen() {
-  mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
-  return render(<CompareOffersScreen />);
+  return render(<AllOffersScreen />);
 }
 
-describe('CompareOffersScreen', () => {
+describe('AllOffersScreen', () => {
   beforeEach(() => {
     mockedUseTheme.mockReturnValue({
       mode: 'light',
@@ -78,8 +82,8 @@ describe('CompareOffersScreen', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('shows an empty state when there are no offers', async () => {
-    mockedUseOffers.mockReturnValue({ data: [], isLoading: false } as never);
+  it('shows an empty state when the user has no offers across any application', async () => {
+    mockedUseAllOffers.mockReturnValue({ data: [], isLoading: false } as never);
     mockedUseCompareOffers.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
 
     const { findByText } = await renderScreen();
@@ -87,20 +91,20 @@ describe('CompareOffersScreen', () => {
     await findByText('No offers to compare.');
   });
 
-  it('disables compare until two offers are selected, then shows the results', async () => {
-    mockedUseOffers.mockReturnValue({ data: offers, isLoading: false } as never);
+  it('lists offers from every application with company and role, and select all selects every offer', async () => {
+    mockedUseAllOffers.mockReturnValue({ data: entries, isLoading: false } as never);
     const mutateAsync = jest.fn().mockResolvedValue([
       {
-        offer: offers[0],
+        offer: entries[0].offer,
         company: 'Stripe',
         role: 'Engineer',
         normalizedYearlySalary: 150000,
         totalCompensation: 150000,
       },
       {
-        offer: offers[1],
+        offer: entries[1].offer,
         company: 'Notion',
-        role: 'Engineer',
+        role: 'Staff Engineer',
         normalizedYearlySalary: 140000,
         totalCompensation: 140000,
       },
@@ -109,16 +113,15 @@ describe('CompareOffersScreen', () => {
 
     const { getByTestId, findByText } = await renderScreen();
 
+    await findByText(/Stripe.*Engineer/);
     expect(getByTestId('run-compare-button').props.accessibilityState?.disabled).toBe(true);
 
-    await fireEvent.press(getByTestId('compare-offer-option-offer-1'));
-    await fireEvent.press(getByTestId('compare-offer-option-offer-2'));
+    await fireEvent.press(getByTestId('select-all-offers'));
     expect(getByTestId('run-compare-button').props.accessibilityState?.disabled).toBeFalsy();
 
     await fireEvent.press(getByTestId('run-compare-button'));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(['offer-1', 'offer-2']));
-    await findByText('Stripe');
     await findByText('BEST');
   });
 });

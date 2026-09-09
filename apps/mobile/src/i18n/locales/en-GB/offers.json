@@ -31,5 +31,8 @@
   "periodSuffixYearly": "/yr",
   "periodSuffixMonthly": "/mo",
   "periodSuffixWeekly": "/wk",
-  "periodSuffixHourly": "/hr"
+  "periodSuffixHourly": "/hr",
+  "allOffersTitle": "All Offers",
+  "selectAll": "Select all",
+  "deselectAll": "Deselect all"
 }
