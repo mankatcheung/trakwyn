@@ -46,7 +46,9 @@
     "star": "Star",
     "unstar": "Unstar",
     "couldNotUpdateTitle": "Could not update",
-    "followUpLabel": "Follow up"
+    "followUpLabel": "Follow up",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "contacts": {
     "addContact": "Add contact",

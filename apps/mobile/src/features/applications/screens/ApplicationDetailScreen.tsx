@@ -18,6 +18,7 @@ import { StarIcon } from '../components/ApplicationIcons';
 import { HealthScoreCard } from '../components/HealthScoreCard';
 import { ApplicationInfoChips } from '../components/ApplicationInfoChips';
 import { SectionIndexList } from '../components/SectionIndexList';
+import { CollapsibleDescription } from '../components/CollapsibleDescription';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -171,7 +172,7 @@ export function ApplicationDetailScreen() {
       {application.description ? (
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>{t('detail.descriptionLabel')}</Text>
-          <Text style={styles.fieldValue}>{application.description}</Text>
+          <CollapsibleDescription text={application.description} />
         </View>
       ) : null}
 

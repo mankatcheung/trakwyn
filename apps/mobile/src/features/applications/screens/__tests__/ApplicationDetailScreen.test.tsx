@@ -92,6 +92,42 @@ describe('ApplicationDetailScreen', () => {
     expect(getByText('Acme · Remote · $100k-$120k')).toBeTruthy();
   });
 
+  it('expands a long description via the show more toggle', async () => {
+    const longDescription = 'A long description spanning many lines.';
+    mockedUseApplication.mockReturnValue({
+      data: { ...application, description: longDescription },
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDeleteApplication.mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as never);
+    mockedUseUpdateApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+
+    const { getByText, getAllByText, getByTestId } = await renderScreen();
+
+    await waitFor(() => expect(getByTestId('description-measure')).toBeTruthy());
+
+    const lines = Array.from({ length: 8 }, (_, index) => ({
+      text: `line ${index}`,
+      x: 0,
+      y: index * 21,
+      width: 300,
+      height: 21,
+    }));
+    await fireEvent(getByTestId('description-measure'), 'textLayout', { nativeEvent: { lines } });
+
+    expect(getByText('Show more')).toBeTruthy();
+
+    await fireEvent.press(getByText('Show more'));
+
+    expect(getByText('Show less')).toBeTruthy();
+    const expandedText = getAllByText(longDescription)[1];
+    expect(expandedText.props.numberOfLines).toBeUndefined();
+  });
+
   it('shows the health score and expands to reveal the criteria breakdown', async () => {
     mockedUseApplication.mockReturnValue({
       data: application,
