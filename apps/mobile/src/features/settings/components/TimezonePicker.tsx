@@ -1,5 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -103,40 +114,45 @@ export function TimezonePicker({ value, onChange, testID }: TimezonePickerProps)
       </Pressable>
 
       <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t('profile.timezoneModalTitle')}</Text>
-            <Pressable onPress={onClose} testID="timezone-picker-done">
-              <Text style={styles.doneText}>{t('profile.timezoneDone')}</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={styles.searchInput}
-            placeholder={t('profile.timezoneSearchPlaceholder')}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoFocus
-            testID="timezone-search-input"
-          />
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <Pressable
-                style={styles.row}
-                onPress={() => onSelect(item)}
-                testID={`timezone-option-${item}`}
-              >
-                <Text style={[styles.rowText, item === value && styles.rowTextSelected]}>
-                  {item}
-                </Text>
+        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoidingContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('profile.timezoneModalTitle')}</Text>
+              <Pressable onPress={onClose} testID="timezone-picker-done">
+                <Text style={styles.doneText}>{t('profile.timezoneDone')}</Text>
               </Pressable>
-            )}
-          />
-        </View>
+            </View>
+            <TextInput
+              placeholderTextColor={colors.textFaint}
+              style={styles.searchInput}
+              placeholder={t('profile.timezoneSearchPlaceholder')}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoFocus
+              testID="timezone-search-input"
+            />
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.row}
+                  onPress={() => onSelect(item)}
+                  testID={`timezone-option-${item}`}
+                >
+                  <Text style={[styles.rowText, item === value && styles.rowTextSelected]}>
+                    {item}
+                  </Text>
+                </Pressable>
+              )}
+            />
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -155,6 +171,7 @@ function createStyles(colors: ThemeColors) {
     fieldValue: { fontSize: 15, color: colors.text },
     fieldPlaceholder: { fontSize: 15, color: colors.textFaint },
     modalContainer: { flex: 1, backgroundColor: colors.background },
+    keyboardAvoidingContainer: { flex: 1 },
     modalHeader: {
       flexDirection: 'row',
       alignItems: 'center',
