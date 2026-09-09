@@ -270,4 +270,32 @@ describe('ApplicationsListScreen', () => {
     await waitFor(() => expect(queryByText('Backend Engineer')).toBeNull());
     expect(queryByText('Frontend Engineer')).toBeNull();
   });
+
+  it('opens the status filter modal and filters by the selected status', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, getByText, queryByText } = await renderScreen();
+
+    expect(getByText('Status: All')).toBeTruthy();
+
+    await fireEvent.press(getByTestId('applications-status-filter-button'));
+    await fireEvent.press(getByTestId('status-filter-option-interviewing'));
+
+    expect(mockedUseApplications).toHaveBeenLastCalledWith('interviewing');
+    await waitFor(() => expect(getByText('Status: Interviewing')).toBeTruthy());
+
+    await fireEvent.press(getByTestId('applications-status-filter-button'));
+    await fireEvent.press(getByTestId('status-filter-option-all'));
+
+    expect(mockedUseApplications).toHaveBeenLastCalledWith(undefined);
+    await waitFor(() => expect(getByText('Status: All')).toBeTruthy());
+    expect(queryByText('Backend Engineer')).toBeTruthy();
+  });
 });

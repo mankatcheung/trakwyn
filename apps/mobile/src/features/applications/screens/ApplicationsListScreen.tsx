@@ -4,7 +4,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,10 +14,10 @@ import { useTranslation } from 'react-i18next';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { ApplicationListItem } from '../components/ApplicationListItem';
 import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
-import { statusLabel } from '../components/StatusBadge';
+import { StatusFilterButton } from '../components/StatusFilterButton';
 import { GhostIcon, SearchIcon, StarIcon, TrashIcon } from '../components/ApplicationIcons';
 import { BoardScreen } from './BoardScreen';
-import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '../types';
+import type { Application, ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -146,27 +145,9 @@ export function ApplicationsListScreen() {
             <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filtersScroll}
-            contentContainerStyle={styles.filters}
-            testID="applications-status-filters"
-          >
-            <FilterChip
-              label={t('list.all')}
-              active={statusFilter === 'all'}
-              onPress={() => setStatusFilter('all')}
-            />
-            {APPLICATION_STATUSES.map((status) => (
-              <FilterChip
-                key={status}
-                label={statusLabel(status)}
-                active={statusFilter === status}
-                onPress={() => setStatusFilter(status)}
-              />
-            ))}
-          </ScrollView>
+          <View style={styles.statusFilterRow}>
+            <StatusFilterButton value={statusFilter} onChange={setStatusFilter} />
+          </View>
 
           {isLoading ? (
             <ActivityIndicator style={styles.loading} size="large" color={colors.primary} />
@@ -207,28 +188,6 @@ export function ApplicationsListScreen() {
         </>
       )}
     </View>
-  );
-}
-
-function FilterChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  return (
-    <Pressable
-      style={[styles.chip, active && styles.chipActive]}
-      onPress={onPress}
-      testID={`filter-chip-${label.toLowerCase()}`}
-    >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -301,20 +260,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 15,
       color: colors.text,
     },
-    filtersScroll: { flexGrow: 0, flexShrink: 0, height: 40, marginBottom: 12 },
-    filters: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-    chip: {
-      borderRadius: 9999,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      marginRight: 8,
-      backgroundColor: colors.surface,
-    },
-    chipActive: { backgroundColor: colors.text, borderColor: colors.text },
-    chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
-    chipTextActive: { color: colors.surface },
+    statusFilterRow: { marginHorizontal: 16, marginBottom: 12 },
     list: { paddingHorizontal: 16, paddingBottom: 96 },
     separator: { height: 12 },
     loading: { marginTop: 40 },

@@ -141,6 +141,9 @@
     "ghostedAria": "只顯示疑似已讀不回",
     "likelyGhosted": "疑似已讀不回",
     "trashAria": "垃圾桶",
+    "statusFilterAria": "依狀態篩選",
+    "statusFilterLabel": "狀態：{{status}}",
+    "statusFilterTitle": "依狀態篩選",
     "displayFields": {
       "title": "顯示欄位",
       "pickerAria": "選擇要顯示的欄位",

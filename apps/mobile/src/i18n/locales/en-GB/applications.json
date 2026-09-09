@@ -142,6 +142,9 @@
     "ghostedAria": "Likely ghosted only",
     "likelyGhosted": "Likely ghosted",
     "trashAria": "Bin",
+    "statusFilterAria": "Filter by status",
+    "statusFilterLabel": "Status: {{status}}",
+    "statusFilterTitle": "Filter by status",
     "displayFields": {
       "title": "Display fields",
       "pickerAria": "Choose which fields to display",
