@@ -387,6 +387,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 15,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     scopeRow: { flexDirection: 'row', gap: 8 },
     scopeChip: {
