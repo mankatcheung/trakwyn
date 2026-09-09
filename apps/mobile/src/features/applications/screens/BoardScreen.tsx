@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../hooks/useApplicationMutations';
 import { groupByStatus } from '../lib/boardOrder';
@@ -68,13 +69,6 @@ export function BoardScreen() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{t('board.title')}</Text>
-        <Pressable
-          style={styles.newButton}
-          onPress={() => router.push('/applications/new')}
-          testID="board-new-application-button"
-        >
-          <Text style={styles.newButtonText}>{t('board.newButton')}</Text>
-        </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.board}>
@@ -120,6 +114,11 @@ export function BoardScreen() {
         ))}
       </ScrollView>
 
+      <FloatingActionButton
+        onPress={() => router.push('/applications/new')}
+        testID="board-new-application-button"
+      />
+
       <Modal
         visible={movingApp != null}
         transparent
@@ -164,13 +163,6 @@ function createStyles(colors: ThemeColors) {
       paddingBottom: 8,
     },
     title: { fontSize: 20, fontWeight: '700', color: colors.text },
-    newButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-    },
-    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: {
