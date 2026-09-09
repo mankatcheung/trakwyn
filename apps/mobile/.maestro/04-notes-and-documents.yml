@@ -1,0 +1,50 @@
+# F-4 — Notes and documents on an application.
+#
+# Notes are driven end to end. The document half stops at the picker on
+# purpose: expo-document-picker hands off to the OS file picker, whose UI is
+# the OEM's and not the app's, so driving it is where this flow would become
+# the flaky one that gets re-run on reflex (JEF-300, R-1). Reaching the picker
+# still proves the documents screen loads its query and mounts — the upload
+# itself (requestUploadUrl -> PUT -> confirmDocument) is covered by
+# src/features/documents/hooks/__tests__/useUploadDocument.test.tsx and by
+# apps/web's Playwright suite against the same three-step API.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Notes Co ' + Date.now()}
+- evalScript: ${output.note = 'Phone screen booked ' + Date.now()}
+
+- tapOn:
+    id: 'tab-applications'
+- tapOn:
+    id: 'add-application-button'
+- tapOn:
+    id: 'form-company-input'
+- inputText: ${output.company}
+- tapOn:
+    id: 'form-role-input'
+- inputText: 'Backend Engineer'
+- hideKeyboard
+- tapOn:
+    id: 'form-submit-button'
+
+- tapOn: ${output.company}
+
+- tapOn:
+    id: 'notes-button'
+- tapOn:
+    id: 'new-note-input'
+- inputText: ${output.note}
+- hideKeyboard
+- tapOn:
+    id: 'add-note-button'
+- assertVisible: ${output.note}
+
+- back
+- tapOn:
+    id: 'documents-button'
+- assertVisible:
+    id: 'pick-document-button'

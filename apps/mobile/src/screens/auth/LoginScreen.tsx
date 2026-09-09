@@ -156,7 +156,11 @@ export function LoginScreen() {
           <Text style={styles.title}>{t('auth:login.title')}</Text>
           <Text style={styles.subtitle}>
             {t('auth:login.noAccountPrefix')}{' '}
-            <Text style={styles.link} onPress={() => router.push('/register')}>
+            <Text
+              style={styles.link}
+              onPress={() => router.push('/register')}
+              testID="login-register-link"
+            >
               {t('auth:login.registerLink')}
             </Text>
           </Text>

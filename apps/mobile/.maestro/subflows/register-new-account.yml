@@ -1,0 +1,37 @@
+# Registers a brand-new account and leaves the app signed in on the tab bar.
+#
+# Every flow starts here rather than signing into a seeded user: the flows share
+# one API and one SQLite file, and sharing an account across them is what turns
+# a suite that passes in isolation into one that fails en masse (JEF-300, R-3 —
+# the same failure apps/web's playwright.config.ts documents in its `workers: 1`
+# comment).
+#
+# The credentials are left on `output` so the calling flow can sign back in as
+# the same person.
+appId: com.trakwyn.app
+---
+- evalScript: ${output.email = 'e2e-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com'}
+- evalScript: ${output.password = 'CorrectHorseBatteryStaple1!'}
+
+- assertVisible:
+    id: 'login-email-input'
+- tapOn:
+    id: 'login-register-link'
+
+- tapOn:
+    id: 'register-email-input'
+- inputText: ${output.email}
+- tapOn:
+    id: 'register-password-input'
+- inputText: ${output.password}
+- tapOn:
+    id: 'register-confirm-password-input'
+- inputText: ${output.password}
+- hideKeyboard
+- tapOn:
+    id: 'register-submit-button'
+
+# The tab bar only mounts inside Stack.Protected's authenticated guard, so
+# seeing it is the assertion that registration really signed us in.
+- assertVisible:
+    id: 'tabs-root'

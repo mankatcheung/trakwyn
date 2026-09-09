@@ -1,0 +1,121 @@
+name: Mobile E2E (iOS)
+
+# The same seven Maestro flows as the Android job in ci.yml, on a simulator.
+#
+# Kept out of the per-PR path on purpose (JEF-300, D-2): an iOS build is Xcode's
+# to do and macOS runners queue longer, so this job costs an estimated 20-30
+# minutes against Android's 12-18. Android blocks every pull request; iOS runs
+# nightly, and can be pulled into any single PR by adding the `run-ios-e2e`
+# label to it.
+#
+# It lives in its own file rather than as another job in ci.yml because ci.yml
+# deploys: a scheduled run there would match `github.ref == 'refs/heads/main'`
+# and ship production every night.
+#
+# Free on GitHub's hosted runners while mankatcheung/trakwyn is public —
+# including macos, which is otherwise the metered one.
+
+on:
+  schedule:
+    # 03:00 UTC, after the day's merges have settled.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-e2e-ios:
+    name: Mobile E2E (iOS simulator)
+    # On a pull request this runs only when asked for by name; on a schedule or
+    # a manual dispatch it always runs.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-ios-e2e')
+    # Pinned, not macos-latest: every run regenerates the native project from
+    # scratch, so the Xcode version is part of this job's contract (R-4).
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Configure ephemeral E2E environment
+        run: |
+          cat > apps/api/.env <<'EOF'
+          PORT=3001
+          NODE_ENV=development
+          DATABASE_URL=file:${{ runner.temp }}/trakwyn-mobile-e2e.db
+          DATABASE_AUTH_TOKEN=
+          JWT_SECRET=e2e-only-jwt-secret
+          JWT_REFRESH_SECRET=e2e-only-refresh-secret
+          TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
+          LLM_API_KEY_ENCRYPTION_KEY=e2e-only-llm-encryption-key
+          STORAGE_PROVIDER=local
+          CACHE_PROVIDER=memory
+          EMAIL_PROVIDER=console
+          CORS_ORIGIN=http://localhost:3000
+          WEB_APP_ORIGIN=http://localhost:3000
+          API_ORIGIN=http://localhost:3001
+          COOKIE_DOMAIN=
+          GOOGLE_OAUTH_CLIENT_ID=e2e-fake-google-client-id
+          GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
+          OAUTH_PROVIDER_MODE=fake
+          LLM_PROVIDER_MODE=fake
+          EOF
+
+      - name: Run database migrations
+        run: pnpm --filter @trakwyn/api db:migrate:apply
+
+      - name: Start the API
+        run: |
+          pnpm --filter @trakwyn/api dev > "${{ runner.temp }}/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf -X POST -H 'content-type: application/json' \
+              -d '{"query":"{ __typename }"}' http://localhost:3001/graphql >/dev/null; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the API never answered on :3001"
+          cat "${{ runner.temp }}/api.log"
+          exit 1
+
+      # A simulator shares the host's network, so unlike the Android job this
+      # one reaches the API on plain localhost. That difference is the whole
+      # reason the two platforms need two builds: src/constants.ts's
+      # EXPO_PUBLIC_API_URL is inlined by Metro at build time, not read at
+      # launch, so it cannot be switched afterwards.
+      #
+      # `expo run:ios` does prebuild, pod install, the Xcode build, and the
+      # install onto a booted simulator in one command — the pieces that would
+      # otherwise be four brittle steps of xcodebuild and simctl.
+      - name: Build and install on a simulator
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:3001/graphql
+        run: pnpm exec expo run:ios --configuration Release --no-bundler
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run the Maestro flows
+        run: maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"
+
+      - name: Upload Maestro artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios
+          path: |
+            ${{ runner.temp }}/maestro-debug/
+            ${{ runner.temp }}/api.log
+          if-no-files-found: ignore

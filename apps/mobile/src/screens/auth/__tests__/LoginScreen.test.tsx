@@ -83,6 +83,30 @@ describe('LoginScreen', () => {
     expect(login).not.toHaveBeenCalled();
   });
 
+  it('navigates to register when the create-account link is pressed', async () => {
+    const push = jest.fn();
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+    });
+
+    // By testID rather than by its label: .maestro/01-register-and-create-application.yml
+    // taps this link by that id to reach the register screen, so a rename has
+    // to fail here first (JEF-300, R-5).
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('login-register-link'));
+
+    expect(push).toHaveBeenCalledWith('/register');
+  });
+
   it('switches to the TOTP step when login reports totpRequired', async () => {
     const login = jest.fn().mockResolvedValue({ totpRequired: true });
     const loginWithTotp = jest.fn().mockResolvedValue(undefined);

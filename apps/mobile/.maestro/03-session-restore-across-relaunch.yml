@@ -1,0 +1,22 @@
+# F-3 — Session restore across a relaunch.
+#
+# Kill the app and start it again without clearing state: the stored pair is
+# read back, the access token (all of 15 minutes long) is refreshed, and the app
+# lands signed in without showing the login screen.
+#
+# This is the flow that guards the single-key token write in
+# src/auth/tokenStorage.ts — a fresh access token stored beside a stale refresh
+# token is what the API reads as token reuse, and it revokes the session.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- stopApp
+- launchApp
+# Not clearState: the point is that the pair survived the process dying.
+- assertVisible:
+    id: 'tabs-root'
+- assertNotVisible:
+    id: 'login-email-input'

@@ -79,7 +79,11 @@ export function RegisterScreen() {
           <Text style={styles.title}>{t('auth:register.title')}</Text>
           <Text style={styles.subtitle}>
             {t('auth:register.haveAccountPrefix')}{' '}
-            <Text style={styles.link} onPress={() => router.push('/login')}>
+            <Text
+              style={styles.link}
+              onPress={() => router.push('/login')}
+              testID="register-login-link"
+            >
               {t('auth:register.signInLink')}
             </Text>
           </Text>

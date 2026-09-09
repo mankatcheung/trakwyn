@@ -43,6 +43,7 @@ on:
     paths:
       - 'apps/api/**'
       - 'apps/web/**'
+      - 'apps/mobile/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -92,6 +93,13 @@ jobs:
 
       - run: pnpm build
       - run: pnpm test
+
+      # The unit and component tiers run above, inside `pnpm test`. This one is
+      # separate because it boots apps/api itself (jest.config.js's integration
+      # project, globalSetup) — it is what validates apps/mobile's 96
+      # hand-written GraphQL documents against the real schema, so a renamed
+      # resolver field fails here instead of on a phone (JEF-300, G-3/G-5).
+      - run: pnpm --filter @trakwyn/mobile test:integration
 
   e2e:
     name: Playwright E2E
@@ -155,6 +163,160 @@ jobs:
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
+          if-no-files-found: ignore
+
+  mobile-e2e-android:
+    name: Mobile E2E (Android)
+    needs: [quality, build-test]
+    runs-on: ubuntu-latest
+    # Deliberately non-blocking for now. A required check that people re-run on
+    # reflex is worse than no check at all, so this stays advisory until it has
+    # gone green ten times in a row on unrelated PRs — then drop this line and
+    # add it to the branch protection rules (JEF-300, R-1).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-project
+
+      # Pinned rather than tracking whatever the runner image ships: there is no
+      # android/ directory in the repo, so every run regenerates the native
+      # project, and an Expo SDK bump that changes the required JDK should fail
+      # here loudly rather than drift (JEF-300, R-4).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('apps/mobile/package.json', 'pnpm-lock.yaml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # The same ephemeral configuration the Playwright job writes. Every
+      # provider that would need a secret is faked, which is what lets this job
+      # run on a pull request from a fork — GitHub withholds secrets there, and
+      # any device-farm option would have needed an access key (R-7).
+      - name: Configure ephemeral E2E environment
+        run: |
+          cat > apps/api/.env <<'EOF'
+          PORT=3001
+          NODE_ENV=development
+          DATABASE_URL=file:${{ runner.temp }}/trakwyn-mobile-e2e.db
+          DATABASE_AUTH_TOKEN=
+          JWT_SECRET=e2e-only-jwt-secret
+          JWT_REFRESH_SECRET=e2e-only-refresh-secret
+          TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
+          LLM_API_KEY_ENCRYPTION_KEY=e2e-only-llm-encryption-key
+          STORAGE_PROVIDER=local
+          CACHE_PROVIDER=memory
+          EMAIL_PROVIDER=console
+          CORS_ORIGIN=http://localhost:3000
+          WEB_APP_ORIGIN=http://localhost:3000
+          API_ORIGIN=http://localhost:3001
+          COOKIE_DOMAIN=
+          GOOGLE_OAUTH_CLIENT_ID=e2e-fake-google-client-id
+          GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
+          OAUTH_PROVIDER_MODE=fake
+          LLM_PROVIDER_MODE=fake
+          EOF
+
+      - name: Run database migrations
+        run: pnpm --filter @trakwyn/api db:migrate:apply
+
+      - name: Start the API
+        run: |
+          pnpm --filter @trakwyn/api dev > "${{ runner.temp }}/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf -X POST -H 'content-type: application/json' \
+              -d '{"query":"{ __typename }"}' http://localhost:3001/graphql >/dev/null; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the API never answered on :3001"
+          cat "${{ runner.temp }}/api.log"
+          exit 1
+
+      # EXPO_PUBLIC_API_URL is inlined into the bundle by Metro, not read at
+      # launch (apps/mobile/src/constants.ts), so it has to be set here — after
+      # the build there is no way to point the app anywhere else. 10.0.2.2 is
+      # the emulator's route to the runner's own localhost.
+      - name: Build the release APK
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3001/graphql
+        run: |
+          pnpm exec expo prebuild --platform android --no-install
+          cd android
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # Hardware acceleration. Without it the emulator falls back to software
+      # rendering and the job goes from minutes to tens of minutes.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache the AVD snapshot
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34
+
+      # Creating the AVD and booting it cold costs a couple of minutes every
+      # run; this does it once and caches the snapshot so later runs resume it.
+      - name: Create the AVD
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "AVD created"
+
+      - name: Run the Maestro flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"
+
+      # Recordings, view hierarchy dumps and the command log for whichever flow
+      # failed — the mobile equivalent of the Playwright report, and the reason
+      # a red run here is diagnosable without re-running it locally (G-8).
+      - name: Upload Maestro artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android
+          path: |
+            ${{ runner.temp }}/maestro-debug/
+            ${{ runner.temp }}/api.log
           if-no-files-found: ignore
 
   migrate-db:

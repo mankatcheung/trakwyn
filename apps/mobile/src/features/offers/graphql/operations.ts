@@ -37,8 +37,13 @@ export const UPDATE_OFFER_MUTATION = `
   }
 `;
 
+// String!, not ID!: the API declares deleteOffer(id: String!)
+// (apps/api/src/http/schema/mutations/offerMutations.ts), and GraphQL will not
+// pass an ID! variable into a String! position — the request was rejected
+// before it reached the resolver. Found by
+// src/__integration__/graphqlDocuments.test.ts (JEF-300, G-3).
 export const DELETE_OFFER_MUTATION = `
-  mutation DeleteOffer($id: ID!) {
+  mutation DeleteOffer($id: String!) {
     deleteOffer(id: $id)
   }
 `;

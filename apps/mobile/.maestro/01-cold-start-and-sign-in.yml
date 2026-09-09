@@ -1,0 +1,31 @@
+# F-1 — Cold start and sign in.
+#
+# Proves the release bundle boots on a real OS, that SecureStore is available
+# to hold the token pair, and that a pair written on one launch is honoured on
+# the next. Nothing below the e2e tier can fail here: every Jest suite replaces
+# SecureStore with a double and never starts a process.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- tapOn:
+    id: 'tab-settings'
+- tapOn:
+    id: 'settings-signout-button'
+- assertVisible:
+    id: 'login-email-input'
+
+- tapOn:
+    id: 'login-email-input'
+- inputText: ${output.email}
+- tapOn:
+    id: 'login-password-input'
+- inputText: ${output.password}
+- hideKeyboard
+- tapOn:
+    id: 'login-submit-button'
+
+- assertVisible:
+    id: 'tabs-root'
