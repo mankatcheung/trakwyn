@@ -10,5 +10,6 @@ export function themedStackScreenOptions(colors: ThemeColors) {
   return {
     headerStyle: { backgroundColor: colors.surface },
     headerTintColor: colors.text,
+    headerBackButtonDisplayMode: 'minimal' as const,
   };
 }
