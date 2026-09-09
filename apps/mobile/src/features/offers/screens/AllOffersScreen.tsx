@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useCompareOffers, useOffers } from '../hooks/useOfferQueries';
+import { useAllOffers, useCompareOffers } from '../hooks/useOfferQueries';
 import { CheckIcon } from '../components/OfferIcons';
 import { formatSalary } from '../lib/formatSalary';
 import { getErrorMessage } from '../../../lib/errors';
@@ -11,21 +10,27 @@ import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { useLanguage } from '../../../i18n/LanguageContext';
 
-export function CompareOffersScreen() {
+export function AllOffersScreen() {
   const { t } = useTranslation('offers');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { resolvedLanguage } = useLanguage();
-  const { id: applicationId } = useLocalSearchParams<{ id: string }>();
-  const { data: offers, isLoading } = useOffers(applicationId);
+  const { data: offers, isLoading } = useAllOffers();
   const compareOffers = useCompareOffers();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comparisons, setComparisons] = useState<OfferComparison[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const items = offers ?? [];
+
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const allSelected = items.length > 0 && selectedIds.length === items.length;
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? [] : items.map((entry) => entry.offer.id));
   };
 
   const onCompare = async () => {
@@ -39,8 +44,6 @@ export function CompareOffersScreen() {
     }
   };
 
-  const items = offers ?? [];
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {isLoading ? (
@@ -49,9 +52,16 @@ export function CompareOffersScreen() {
         <Text style={styles.emptyText}>{t('noOffersToCompare')}</Text>
       ) : (
         <>
-          <Text style={styles.hint}>{t('selectHint')}</Text>
+          <View style={styles.hintRow}>
+            <Text style={styles.hint}>{t('selectHint')}</Text>
+            <Pressable onPress={toggleSelectAll} testID="select-all-offers">
+              <Text style={styles.selectAllText}>
+                {allSelected ? t('deselectAll') : t('selectAll')}
+              </Text>
+            </Pressable>
+          </View>
           <View style={styles.optionsGrid}>
-            {items.map((offer) => {
+            {items.map(({ offer, company, role }) => {
               const selected = selectedIds.includes(offer.id);
               return (
                 <Pressable
@@ -61,6 +71,9 @@ export function CompareOffersScreen() {
                   testID={`compare-offer-option-${offer.id}`}
                 >
                   <View style={styles.optionBody}>
+                    <Text style={styles.optionCompany}>
+                      {company} — {role}
+                    </Text>
                     <Text style={styles.optionSalary}>
                       {formatSalary(
                         offer.baseSalary,
@@ -160,7 +173,9 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 12, paddingBottom: 40 },
+    hintRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     hint: { fontSize: 14, color: colors.textSubtle },
+    selectAllText: { fontSize: 13, fontWeight: '600', color: colors.primary },
     emptyText: { fontSize: 13, color: colors.textFaint, textAlign: 'center', paddingVertical: 24 },
     optionsGrid: { gap: 10 },
     option: {
@@ -176,6 +191,7 @@ function createStyles(colors: ThemeColors) {
     },
     optionSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
     optionBody: { flex: 1 },
+    optionCompany: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
     optionSalary: { fontSize: 17, fontWeight: '700', color: colors.text },
     optionMeta: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
     radio: {

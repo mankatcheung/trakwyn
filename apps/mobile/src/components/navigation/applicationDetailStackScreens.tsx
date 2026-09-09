@@ -2,8 +2,8 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import type { TFunction } from 'i18next';
 
-// The application-detail subtree (detail, edit, notes, documents, offers,
-// compare) is intentionally duplicated as physical route files under each of
+// The application-detail subtree (detail, edit, notes, documents, offers)
+// is intentionally duplicated as physical route files under each of
 // the Home, Applications, and Calendar tabs (JEF-291), so every tab keeps its
 // own independent stack. `prefix` locates that subtree relative to the
 // calling layout's own folder — empty for the Applications tab (where
@@ -76,11 +76,6 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       key="offers"
       name={`${prefix}[id]/offers/index`}
       options={{ title: t('screenTitles.offers') }}
-    />,
-    <Stack.Screen
-      key="compareOffers"
-      name={`${prefix}[id]/offers/compare`}
-      options={{ title: t('screenTitles.compareOffers') }}
     />,
   ];
 }

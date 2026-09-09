@@ -4,18 +4,28 @@ import {
   COMPARE_OFFERS_MUTATION,
   CREATE_OFFER_MUTATION,
   DELETE_OFFER_MUTATION,
+  MY_OFFERS_QUERY,
   OFFERS_QUERY,
   UPDATE_OFFER_MUTATION,
 } from '../graphql/operations';
-import type { Offer, OfferComparison, OfferFormData } from '../types';
+import type { Offer, OfferComparison, OfferFormData, OfferWithApplication } from '../types';
 
 export const offersQueryKey = (applicationId: string) => ['offers', applicationId] as const;
+export const allOffersQueryKey = ['offers', 'all'] as const;
 
 export function useOffers(applicationId: string) {
   return useQuery({
     queryKey: offersQueryKey(applicationId),
     queryFn: () =>
       gqlRequest<{ offers: Offer[] }>(OFFERS_QUERY, { applicationId }).then((d) => d.offers),
+  });
+}
+
+export function useAllOffers() {
+  return useQuery({
+    queryKey: allOffersQueryKey,
+    queryFn: () =>
+      gqlRequest<{ myOffers: OfferWithApplication[] }>(MY_OFFERS_QUERY).then((d) => d.myOffers),
   });
 }
 

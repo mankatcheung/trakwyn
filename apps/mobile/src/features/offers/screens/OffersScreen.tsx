@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateOffer,
@@ -9,7 +9,7 @@ import {
   useUpdateOffer,
 } from '../hooks/useOfferQueries';
 import { OfferForm } from '../components/OfferForm';
-import { PencilIcon, PlusIcon, SwapIcon, TrashIcon } from '../components/OfferIcons';
+import { PencilIcon, PlusIcon, TrashIcon } from '../components/OfferIcons';
 import { formatSalary } from '../lib/formatSalary';
 import { getErrorMessage } from '../../../lib/errors';
 import type { Offer, OfferFormData } from '../types';
@@ -22,7 +22,6 @@ export function OffersScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { resolvedLanguage } = useLanguage();
-  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: offers, isLoading, isError, error } = useOffers(applicationId);
   const createOffer = useCreateOffer(applicationId);
@@ -154,17 +153,6 @@ export function OffersScreen() {
           </View>
         ))
       )}
-
-      {items.length >= 2 && (
-        <Pressable
-          style={styles.compareButton}
-          onPress={() => router.push('./compare')}
-          testID="compare-offers-button"
-        >
-          <SwapIcon color={colors.text} size={18} />
-          <Text style={styles.compareButtonText}>{t('compareOffersTitle')}</Text>
-        </Pressable>
-      )}
     </ScrollView>
   );
 }
@@ -213,17 +201,5 @@ function createStyles(colors: ThemeColors) {
     offerNotes: { fontSize: 13, color: colors.textFaint, marginTop: 10 },
     offerActions: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
     iconButton: { padding: 2 },
-    compareButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      minHeight: 52,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    compareButtonText: { fontSize: 15, fontWeight: '600', color: colors.text },
   });
 }

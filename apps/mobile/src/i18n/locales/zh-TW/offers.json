@@ -31,5 +31,8 @@
   "periodSuffixYearly": "/年",
   "periodSuffixMonthly": "/月",
   "periodSuffixWeekly": "/週",
-  "periodSuffixHourly": "/時"
+  "periodSuffixHourly": "/時",
+  "allOffersTitle": "全部聘書",
+  "selectAll": "全選",
+  "deselectAll": "取消全選"
 }

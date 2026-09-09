@@ -53,5 +53,22 @@ describe('DrizzleOfferRepository', () => {
     it('returns an empty array when the user has no offers', async () => {
       expect(await repo.findAllByUserId('u1')).toHaveLength(0);
     });
+
+    it('excludes offers belonging to a trashed application', async () => {
+      await db.db.insert(jobApplication).values({
+        id: 'app-2',
+        userId: 'u1',
+        company: 'Globex',
+        role: 'Eng',
+        status: 'offered',
+        deletedAt: new Date(),
+      });
+      await repo.create({ id: 'o1', applicationId: 'app-1', baseSalary: 120_000 });
+      await repo.create({ id: 'o2', applicationId: 'app-2', baseSalary: 90_000 });
+
+      const offers = await repo.findAllByUserId('u1');
+
+      expect(offers.map((o) => o.id)).toEqual(['o1']);
+    });
   });
 });

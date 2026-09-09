@@ -279,6 +279,7 @@ import type { CreateOfferUseCase } from '#src/use-cases/offers/CreateOfferUseCas
 import type { UpdateOfferUseCase } from '#src/use-cases/offers/UpdateOfferUseCase.js';
 import type { DeleteOfferUseCase } from '#src/use-cases/offers/DeleteOfferUseCase.js';
 import type { GetOffersUseCase } from '#src/use-cases/offers/GetOffersUseCase.js';
+import type { GetAllOffersUseCase } from '#src/use-cases/offers/GetAllOffersUseCase.js';
 import type { CompareOffersUseCase } from '#src/use-cases/offers/CompareOffersUseCase.js';
 
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
@@ -599,5 +600,6 @@ export interface Cradle {
   updateOfferUseCase: UpdateOfferUseCase;
   deleteOfferUseCase: DeleteOfferUseCase;
   getOffersUseCase: GetOffersUseCase;
+  getAllOffersUseCase: GetAllOffersUseCase;
   compareOffersUseCase: CompareOffersUseCase;
 }

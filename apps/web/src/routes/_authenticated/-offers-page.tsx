@@ -1,88 +1,33 @@
-import { useState, useEffect } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
+import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
 import { GitCompareArrowsIcon, CheckIcon } from 'lucide-react';
-import { Button, EmptyState } from '@trakwyn/ui';
+import { Button, EmptyState, Skeleton } from '@trakwyn/ui';
+import {
+  myOffersQueryOptions,
+  COMPARE_OFFERS_MUTATION,
+  type OfferComparison,
+} from './-offers-queries';
 
-const OFFERS_QUERY = `
-  query Offers($applicationId: ID!) {
-    offers(applicationId: $applicationId) {
-      id
-      baseSalary
-      bonus
-      equity
-      benefits
-      costOfLivingAdjustment
-      currency
-      period
-    }
-  }
-`;
-
-const COMPARE_OFFERS_MUTATION = `
-  mutation CompareOffers($offerIds: [String!]!) {
-    compareOffers(offerIds: $offerIds) {
-      offer {
-        id
-        baseSalary
-        bonus
-        equity
-        benefits
-        costOfLivingAdjustment
-        currency
-        period
-      }
-      company
-      role
-      normalizedYearlySalary
-      totalCompensation
-    }
-  }
-`;
-
-interface Offer {
-  id: string;
-  baseSalary: number;
-  bonus: number | null;
-  equity: string | null;
-  benefits: string | null;
-  costOfLivingAdjustment: number | null;
-  currency: string;
-  period: string;
-}
-
-interface OfferComparison {
-  offer: Offer;
-  company: string;
-  role: string;
-  normalizedYearlySalary: number;
-  totalCompensation: number;
-}
-
-export const Route = createFileRoute('/_authenticated/applications/$applicationId/offers/compare')({
-  component: CompareOffersPage,
-});
-
-function CompareOffersPage() {
+export function OffersPage() {
   const { t } = useLocale();
-  const { applicationId } = Route.useParams();
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const { data, isLoading, isError, error, refetch } = useQuery(myOffersQueryOptions);
+  const offers = data?.myOffers ?? [];
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comparisons, setComparisons] = useState<OfferComparison[]>([]);
-  const [loading, setLoading] = useState(true);
   const [comparing, setComparing] = useState(false);
-
-  useEffect(() => {
-    gqlClient
-      .request<{ offers: Offer[] }>(OFFERS_QUERY, { applicationId })
-      .then((res) => setOffers(res.offers))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [applicationId]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const allSelected = offers.length > 0 && selectedIds.length === offers.length;
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? [] : offers.map((entry) => entry.offer.id));
   };
 
   const handleCompare = async () => {
@@ -109,10 +54,20 @@ function CompareOffersPage() {
     }).format(amount);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-sm text-gray-500">{t('offerCompare.loadingOffers')}</div>
+      <div className="mx-auto max-w-6xl space-y-4 px-4 py-8">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <ErrorState error={error} onRetry={() => refetch()} />
       </div>
     );
   }
@@ -121,7 +76,7 @@ function CompareOffersPage() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('offerCompare.title')}
+          {t('offers.allOffersTitle')}
         </h1>
         <Button onClick={handleCompare} disabled={selectedIds.length < 2 || comparing}>
           <span className="inline-flex items-center gap-1.5">
@@ -138,11 +93,19 @@ function CompareOffersPage() {
       ) : (
         <>
           <div className="mb-6">
-            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              {t('offerCompare.selectHint')}
-            </p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t('offerCompare.selectHint')}
+              </p>
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                {allSelected ? t('offers.deselectAll') : t('offers.selectAll')}
+              </button>
+            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {offers.map((offer) => (
+              {offers.map(({ offer, company, role }) => (
                 <button
                   key={offer.id}
                   onClick={() => toggleSelection(offer.id)}
@@ -154,6 +117,9 @@ function CompareOffersPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {company} — {role}
+                      </div>
                       <div className="font-semibold text-gray-900 dark:text-gray-100">
                         {formatSalary(offer.baseSalary)}/{offer.period}
                       </div>
@@ -167,6 +133,14 @@ function CompareOffersPage() {
                       <CheckIcon className="size-5 text-blue-600" />
                     )}
                   </div>
+                  <Link
+                    to="/applications/$applicationId/offers"
+                    params={{ applicationId: offer.applicationId }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-2 inline-block text-xs text-blue-600 hover:underline"
+                  >
+                    {t('applicationDetail.manageOffers')}
+                  </Link>
                 </button>
               ))}
             </div>
