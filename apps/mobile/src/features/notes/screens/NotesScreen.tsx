@@ -11,16 +11,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useNotes } from '../hooks/useNoteQueries';
 import { useCreateNote, useDeleteNote, useUpdateNote } from '../hooks/useNoteMutations';
 import type { Note } from '../types';
-import { SectionTabBar } from '../../applications/components/SectionTabBar';
-import {
-  DETAIL_SECTION_ROUTES,
-  type DetailSectionKey,
-} from '../../applications/lib/detailSections';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -108,7 +103,6 @@ export function NotesScreen() {
   const { t } = useTranslation('notes');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: notes, isLoading, isError, error } = useNotes(applicationId);
   const createNote = useCreateNote(applicationId);
@@ -126,27 +120,9 @@ export function NotesScreen() {
     });
   };
 
-  const tabs = (
-    <View style={styles.tabsWrapper}>
-      <SectionTabBar
-        items={[
-          { key: 'notes', label: t('notesTabLabel') },
-          { key: 'interviews', label: t('interviewsTabLabel') },
-          { key: 'documents', label: t('documentsTabLabel') },
-        ]}
-        activeKey="notes"
-        onSelect={(key) => {
-          if (key === 'notes') return;
-          router.push(DETAIL_SECTION_ROUTES[key as DetailSectionKey] as never);
-        }}
-      />
-    </View>
-  );
-
   if (isLoading) {
     return (
       <View style={styles.container}>
-        {tabs}
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} testID="notes-loading" />
         </View>
@@ -157,7 +133,6 @@ export function NotesScreen() {
   if (isError) {
     return (
       <View style={styles.container}>
-        {tabs}
         <View style={styles.centered}>
           <Text style={styles.error}>{getErrorMessage(error)}</Text>
         </View>
@@ -170,8 +145,6 @@ export function NotesScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {tabs}
-
       <View style={styles.addCard}>
         <TextInput
           placeholderTextColor={colors.textFaint}
@@ -223,7 +196,6 @@ export function NotesScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    tabsWrapper: { paddingHorizontal: 16, paddingTop: 12 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
     list: { padding: 16, paddingTop: 12 },
