@@ -46,7 +46,9 @@
     "star": "加星标",
     "unstar": "取消星标",
     "couldNotUpdateTitle": "无法更新",
-    "followUpLabel": "跟进"
+    "followUpLabel": "跟进",
+    "showMore": "展开",
+    "showLess": "收起"
   },
   "contacts": {
     "addContact": "添加联系人",
