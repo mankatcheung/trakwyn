@@ -16,10 +16,14 @@ import {
   useDeleteConversation,
 } from '../hooks/useConversations';
 import { TrashIcon } from '../components/TrashIcon';
+import { ConversationProviderPicker } from '../components/ConversationProviderPicker';
 import type { Conversation } from '../types';
+import { useLlmApiKeys } from '../../settings/hooks/useLlmApiKeys';
+import type { LlmApiKey } from '../../settings/types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
 export function ConversationsScreen() {
   const { t } = useTranslation('chat');
@@ -29,22 +33,43 @@ export function ConversationsScreen() {
   const { data: conversations, isLoading, isError, error } = useConversations();
   const deleteConversation = useDeleteConversation();
   const createConversation = useCreateConversation();
+  const { data: llmApiKeys } = useLlmApiKeys();
 
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const onNewConversation = async () => {
+  const onNewConversation = async (key?: LlmApiKey) => {
     if (isStarting) return;
+    setPickerOpen(false);
     setStartError(null);
     setIsStarting(true);
     try {
-      const created = await createConversation.mutateAsync({});
+      const created = await createConversation.mutateAsync({
+        provider: key?.provider ?? null,
+        model: key?.model ?? null,
+      });
       router.push(`./${created.id}`);
     } catch (err) {
       setStartError(getErrorMessage(err));
     } finally {
       setIsStarting(false);
     }
+  };
+
+  const onFabPress = () => {
+    if (isStarting) return;
+    if (!llmApiKeys || llmApiKeys.keys.length === 0) {
+      Alert.alert(t('conversations.noKeysTitle'), t('conversations.noKeysMessage'), [
+        { text: t('conversations.cancel'), style: 'cancel' },
+        {
+          text: t('conversations.noKeysGoToSettings'),
+          onPress: () => router.push('/settings/ai'),
+        },
+      ]);
+      return;
+    }
+    setPickerOpen(true);
   };
 
   const onDelete = (conversation: Conversation) => {
@@ -80,17 +105,6 @@ export function ConversationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          style={[styles.newButton, isStarting && styles.newButtonDisabled]}
-          onPress={() => void onNewConversation()}
-          disabled={isStarting}
-          testID="new-conversation-button"
-        >
-          <Text style={styles.newButtonText}>{t('conversations.newButton')}</Text>
-        </Pressable>
-      </View>
-
       {startError ? <Text style={styles.error}>{startError}</Text> : null}
 
       <FlatList
@@ -122,6 +136,21 @@ export function ConversationsScreen() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
+
+      <FloatingActionButton
+        onPress={onFabPress}
+        accessibilityLabel={t('conversations.newButtonLabel')}
+        testID="new-conversation-button"
+      />
+
+      {pickerOpen && (
+        <ConversationProviderPicker
+          keys={llmApiKeys?.keys ?? []}
+          defaultProvider={llmApiKeys?.defaultProvider ?? null}
+          onSelect={(key) => void onNewConversation(key)}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
     </View>
   );
 }
@@ -148,19 +177,5 @@ function createStyles(colors: ThemeColors) {
     textColumn: { flex: 1, gap: 2 },
     title: { fontSize: 14, fontWeight: '600', color: colors.text },
     meta: { fontSize: 12, color: colors.textSubtle },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      paddingHorizontal: 16,
-      paddingTop: 16,
-    },
-    newButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-    },
-    newButtonDisabled: { opacity: 0.5 },
-    newButtonText: { color: colors.surface, fontSize: 13, fontWeight: '600' },
   });
 }
