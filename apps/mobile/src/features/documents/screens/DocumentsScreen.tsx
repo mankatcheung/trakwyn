@@ -34,7 +34,7 @@ function DraftRow({ draft }: { draft: DocumentDraftSummary }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <Link href={`./${draft.id}`} asChild>
+    <Link href={`./documents/${draft.id}`} asChild>
       <Pressable style={styles.card} testID={`draft-${draft.id}`}>
         <Text style={styles.name} numberOfLines={1}>
           {draft.title}
@@ -152,7 +152,7 @@ export function DocumentsScreen() {
     <View style={styles.container}>
       <View style={styles.draftsHeaderRow}>
         <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
-        <Link href="./new" asChild>
+        <Link href="./documents/new" asChild>
           <Pressable testID="new-draft-button">
             <Text style={styles.newDraftLink}>{`+ ${t('newDraft')}`}</Text>
           </Pressable>
