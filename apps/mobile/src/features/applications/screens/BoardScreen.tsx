@@ -14,11 +14,17 @@ import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../hooks/useApplicationMutations';
 import { groupByStatus } from '../lib/boardOrder';
-import { statusLabel } from '../components/StatusBadge';
+import { StatusBadge, statusLabel } from '../components/StatusBadge';
+import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
+import { StarIcon } from '../components/ApplicationIcons';
+import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
 import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+
+const STAR_COLOR = '#eab308';
+const GHOST_COLOR = '#d97706';
 
 const COLUMN_WIDTH = 220;
 
@@ -29,6 +35,7 @@ export function BoardScreen() {
   const router = useRouter();
   const { data: applications, isLoading, isError, error } = useApplications();
   const moveOnBoard = useMoveApplicationOnBoard();
+  const { fields: displayFields, toggleField: toggleDisplayField } = useApplicationDisplayFields();
 
   const [movingApp, setMovingApp] = useState<Application | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -69,6 +76,7 @@ export function BoardScreen() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{t('board.title')}</Text>
+        <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.board}>
@@ -84,6 +92,11 @@ export function BoardScreen() {
               {(columns[status] ?? []).map((id) => {
                 const app = appsById.get(id);
                 if (!app) return null;
+                const showMetaRow =
+                  (displayFields.starred && app.starred) ||
+                  displayFields.date ||
+                  displayFields.status ||
+                  (displayFields.ghosted && app.likelyGhosted);
                 return (
                   <Pressable
                     key={id}
@@ -93,12 +106,50 @@ export function BoardScreen() {
                     testID={`board-card-${id}`}
                   >
                     <Text style={styles.cardCompany} numberOfLines={2}>
-                      {app.starred ? '★ ' : ''}
                       {app.company}
                     </Text>
-                    <Text style={styles.cardRole} numberOfLines={1}>
-                      {app.role}
-                    </Text>
+                    {displayFields.role ? (
+                      <Text style={styles.cardRole} numberOfLines={1}>
+                        {app.role}
+                      </Text>
+                    ) : null}
+                    {displayFields.location && app.location ? (
+                      <Text style={styles.cardLocation} numberOfLines={1}>
+                        {app.location}
+                      </Text>
+                    ) : null}
+                    {displayFields.tags && app.tags.length > 0 ? (
+                      <View style={styles.cardTagsRow}>
+                        {app.tags.slice(0, 2).map((tag) => (
+                          <Text key={tag} style={styles.cardTag} numberOfLines={1}>
+                            {tag}
+                          </Text>
+                        ))}
+                        {app.tags.length > 2 ? (
+                          <Text style={styles.cardTagsMore}>+{app.tags.length - 2}</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                    {showMetaRow ? (
+                      <View style={styles.cardMetaRow}>
+                        <View style={styles.cardMetaLeading}>
+                          {displayFields.starred && app.starred ? (
+                            <StarIcon color={STAR_COLOR} size={11} filled />
+                          ) : null}
+                          {displayFields.date ? (
+                            <Text style={styles.cardDate} numberOfLines={1}>
+                              {new Date(app.appliedAt ?? app.createdAt).toLocaleDateString()}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View style={styles.cardMetaTrailing}>
+                          {displayFields.status ? <StatusBadge status={app.status} /> : null}
+                          {displayFields.ghosted && app.likelyGhosted ? (
+                            <Text style={styles.cardGhostedBadge}>{t('list.likelyGhosted')}</Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    ) : null}
                     <Pressable
                       style={styles.moveButton}
                       onPress={() => setMovingApp(app)}
@@ -206,6 +257,30 @@ function createStyles(colors: ThemeColors) {
     },
     cardCompany: { fontSize: 13, fontWeight: '600', color: colors.text },
     cardRole: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+    cardLocation: { fontSize: 11, color: colors.textFaint, marginTop: 2 },
+    cardTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
+    cardTag: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.primary,
+      backgroundColor: colors.primarySurface,
+      borderRadius: 4,
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+      maxWidth: COLUMN_WIDTH - 40,
+    },
+    cardTagsMore: { fontSize: 10, color: colors.textFaint, alignSelf: 'center' },
+    cardMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 4,
+      marginTop: 8,
+    },
+    cardMetaLeading: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+    cardMetaTrailing: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
+    cardDate: { fontSize: 11, color: colors.textFaint },
+    cardGhostedBadge: { fontSize: 10, fontWeight: '600', color: GHOST_COLOR },
     moveButton: { alignSelf: 'flex-end', marginTop: 6 },
     moveButtonText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
     modalBackdrop: {
