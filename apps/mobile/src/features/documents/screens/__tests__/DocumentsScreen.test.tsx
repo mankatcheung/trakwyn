@@ -8,12 +8,19 @@ jest.mock('../../hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }))
 jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn() }));
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: jest.fn(),
-  // `asChild` composition isn't exercised here — a passthrough keeps the
-  // wrapped Pressable (and its testID) intact without real navigation.
-  Link: ({ children }: { children: React.ReactNode }) => children,
-}));
+jest.mock('expo-router', () => {
+  const { View } = require('react-native');
+  return {
+    useLocalSearchParams: jest.fn(),
+    // `asChild` composition isn't exercised here, but unlike a bare
+    // passthrough, wrapping in a testID-tagged View still lets tests assert
+    // the resolved `href` — a relative href resolves against the wrong
+    // directory from an index route, which a passthrough mock can't catch.
+    Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+      <View testID={`link:${href}`}>{children}</View>
+    ),
+  };
+});
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import * as DocumentPicker from 'expo-document-picker';
@@ -167,5 +174,36 @@ describe('DocumentsScreen', () => {
     await waitFor(() => expect(getByText('Cover Letter — Acme Corp')).toBeTruthy());
     expect(getByTestId('draft-draft-1')).toBeTruthy();
     expect(getByTestId('new-draft-button')).toBeTruthy();
+  });
+
+  it('resolves draft and new-draft links against the documents/ subroute', async () => {
+    mockedUseDocuments.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDocumentDrafts.mockReturnValue({
+      data: [
+        {
+          id: 'draft-1',
+          applicationId: 'app-1',
+          type: 'resume',
+          title: 'Resume — Acme Corp',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    const { getByTestId } = await renderScreen();
+
+    // Rendered from an index route, a bare relative href (e.g. "./new")
+    // resolves against the parent of documents/, not documents/ itself —
+    // regression coverage for the "Unmatched Route" bug (JEF-310).
+    expect(getByTestId('link:./documents/new')).toBeTruthy();
+    expect(getByTestId('link:./documents/draft-1')).toBeTruthy();
   });
 });
