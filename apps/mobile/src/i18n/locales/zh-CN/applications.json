@@ -141,6 +141,9 @@
     "ghostedAria": "仅显示疑似已读不回",
     "likelyGhosted": "疑似已读不回",
     "trashAria": "回收站",
+    "statusFilterAria": "按状态筛选",
+    "statusFilterLabel": "状态：{{status}}",
+    "statusFilterTitle": "按状态筛选",
     "displayFields": {
       "title": "显示字段",
       "pickerAria": "选择要显示的字段",
