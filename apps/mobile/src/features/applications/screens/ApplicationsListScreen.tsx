@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { useApplications } from '../hooks/useApplicationQueries';
 import { ApplicationListItem } from '../components/ApplicationListItem';
 import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
@@ -197,13 +198,10 @@ export function ApplicationsListScreen() {
             />
           )}
 
-          <Pressable
-            style={styles.fab}
+          <FloatingActionButton
             onPress={() => router.push('/applications/new')}
             testID="add-application-button"
-          >
-            <Text style={styles.fabText}>+</Text>
-          </Pressable>
+          />
         </>
       )}
     </View>
@@ -321,22 +319,5 @@ function createStyles(colors: ThemeColors) {
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     emptyText: { fontSize: 14, color: colors.textSubtle },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
-    fab: {
-      position: 'absolute',
-      right: 20,
-      bottom: 28,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOpacity: 0.2,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 3 },
-      elevation: 4,
-    },
-    fabText: { color: colors.surface, fontSize: 28, lineHeight: 30, fontWeight: '400' },
   });
 }
