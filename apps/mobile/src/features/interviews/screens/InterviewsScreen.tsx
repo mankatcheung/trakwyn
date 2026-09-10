@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateInterviewRound,
@@ -18,11 +18,6 @@ import {
 import { useInterviewRounds } from '../hooks/useInterviewQueries';
 import { INTERVIEW_ROUND_OUTCOMES, INTERVIEW_ROUND_TYPES } from '../types';
 import type { InterviewRound, InterviewRoundFormData } from '../types';
-import { SectionTabBar } from '../../applications/components/SectionTabBar';
-import {
-  DETAIL_SECTION_ROUTES,
-  type DetailSectionKey,
-} from '../../applications/lib/detailSections';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -54,7 +49,6 @@ export function InterviewsScreen() {
   const { t } = useTranslation('interviews');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: rounds, isLoading, isError, error } = useInterviewRounds(applicationId);
   const createRound = useCreateInterviewRound(applicationId);
@@ -110,21 +104,6 @@ export function InterviewsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.tabsWrapper}>
-        <SectionTabBar
-          items={[
-            { key: 'notes', label: t('notesTabLabel') },
-            { key: 'interviews', label: t('interviewsTabLabel') },
-            { key: 'documents', label: t('documentsTabLabel') },
-          ]}
-          activeKey="interviews"
-          onSelect={(key) => {
-            if (key === 'interviews') return;
-            router.push(DETAIL_SECTION_ROUTES[key as DetailSectionKey] as never);
-          }}
-        />
-      </View>
-
       {!showForm && (
         <View style={styles.actionsRow}>
           <Pressable style={styles.addButton} onPress={openCreate} testID="add-round-button">
@@ -252,7 +231,6 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 12, paddingBottom: 40 },
-    tabsWrapper: { marginBottom: 4 },
     actionsRow: { flexDirection: 'row', gap: 10 },
     addButton: {
       minHeight: 44,
