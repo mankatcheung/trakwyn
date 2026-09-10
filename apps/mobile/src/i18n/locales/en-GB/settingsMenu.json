@@ -11,5 +11,8 @@
   "dangerZone": "Danger zone",
   "analytics": "Analytics",
   "trash": "Bin",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  "accessibility": "Accessibility",
   "signOut": "Sign out"
 }

@@ -190,6 +190,38 @@ export function TrashSettingsIcon({ color }: SettingsIconProps) {
   );
 }
 
+export function DocumentIcon({ color }: SettingsIconProps) {
+  return (
+    <Svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
+        stroke={color}
+        strokeWidth={STROKE}
+        strokeLinejoin="round"
+      />
+      <Path d="M14 3v4h4" stroke={color} strokeWidth={STROKE} strokeLinejoin="round" />
+      <Line
+        x1={8.5}
+        y1={13}
+        x2={15.5}
+        y2={13}
+        stroke={color}
+        strokeWidth={STROKE}
+        strokeLinecap="round"
+      />
+      <Line
+        x1={8.5}
+        y1={17}
+        x2={13.5}
+        y2={17}
+        stroke={color}
+        strokeWidth={STROKE}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 export function ChevronRightIcon({ color }: SettingsIconProps) {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
