@@ -93,7 +93,24 @@ describe('InterviewsScreen', () => {
     expect(getByText('Strong on system design.')).toBeTruthy();
   });
 
-  it('creates a new interview round via the form', async () => {
+  it('opens the form modal from the floating action button', async () => {
+    mockedUseInterviewRounds.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+    const { getByTestId, queryByTestId } = await renderScreen();
+
+    expect(queryByTestId('interview-interviewer-input')).toBeNull();
+
+    await fireEvent.press(getByTestId('add-round-button'));
+
+    expect(getByTestId('interview-interviewer-input')).toBeTruthy();
+  });
+
+  it('creates a new interview round via the form, including interviewer and notes', async () => {
     mockedUseInterviewRounds.mockReturnValue({
       data: [],
       isLoading: false,
@@ -107,12 +124,34 @@ describe('InterviewsScreen', () => {
 
     await fireEvent.press(getByTestId('add-round-button'));
     await fireEvent.press(getByTestId('interview-type-onsite'));
+    await fireEvent.changeText(getByTestId('interview-interviewer-input'), 'Priya Shah');
+    await fireEvent.changeText(getByTestId('interview-notes-input'), 'Bring portfolio.');
     await fireEvent.press(getByTestId('interview-form-save-button'));
 
     expect(mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'onsite' }),
+      expect.objectContaining({
+        type: 'onsite',
+        interviewerName: 'Priya Shah',
+        notes: 'Bring portfolio.',
+      }),
       expect.any(Object),
     );
+  });
+
+  it('opens the form pre-filled when editing a round', async () => {
+    mockedUseInterviewRounds.mockReturnValue({
+      data: [round],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+    const { getByTestId } = await renderScreen();
+
+    await fireEvent.press(getByTestId('edit-round-round-1'));
+
+    expect(getByTestId('interview-interviewer-input').props.value).toBe('Marcus Lin');
+    expect(getByTestId('interview-notes-input').props.value).toBe('Strong on system design.');
   });
 
   it('deletes a round after confirmation', async () => {
