@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
+import { PlusIcon } from '../features/applications/components/ApplicationIcons';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -24,7 +25,7 @@ export function FloatingActionButton({
       accessibilityLabel={accessibilityLabel}
       testID={testID}
     >
-      <Text style={styles.fabText}>+</Text>
+      <PlusIcon color={colors.onPrimary} size={24} />
     </Pressable>
   );
 }
@@ -47,6 +48,5 @@ function createStyles(colors: ThemeColors) {
       shadowOffset: { width: 0, height: 3 },
       elevation: 4,
     },
-    fabText: { color: colors.onPrimary, fontSize: 28, lineHeight: 30, fontWeight: '400' },
   });
 }

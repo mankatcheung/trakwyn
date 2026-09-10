@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useApplication, useApplicationHealthScore } from '../hooks/useApplicationQueries';
 import { useDeleteApplication, useUpdateApplication } from '../hooks/useApplicationMutations';
 import { StatusBadge } from '../components/StatusBadge';
-import { StarIcon } from '../components/ApplicationIcons';
+import { StarIcon, PencilIcon, TrashIcon } from '../components/ApplicationIcons';
 import { HealthScoreCard } from '../components/HealthScoreCard';
 import { ApplicationInfoChips } from '../components/ApplicationInfoChips';
 import { SectionIndexList } from '../components/SectionIndexList';
@@ -22,6 +22,7 @@ import { CollapsibleDescription } from '../components/CollapsibleDescription';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { IconButton } from '../../../components/IconButton';
 
 const STAR_COLOR = '#eab308';
 
@@ -79,14 +80,6 @@ export function ApplicationDetailScreen() {
     );
   };
 
-  const openMenu = () => {
-    Alert.alert(t('detail.moreActionsTitle'), undefined, [
-      { text: t('detail.edit'), onPress: () => router.push('./edit') },
-      { text: t('detail.moveToTrash'), style: 'destructive', onPress: onDelete },
-      { text: t('detail.cancel'), style: 'cancel' },
-    ]);
-  };
-
   if (isLoading) {
     return (
       <View style={styles.centered}>
@@ -131,13 +124,19 @@ export function ApplicationDetailScreen() {
               filled={application.starred}
             />
           </Pressable>
-          <Pressable
-            style={styles.menuButton}
-            onPress={openMenu}
-            testID="application-detail-menu-button"
-          >
-            <Text style={styles.menuDots}>•••</Text>
-          </Pressable>
+          <IconButton
+            icon={PencilIcon}
+            onPress={() => router.push(`./${applicationId}/edit` as never)}
+            testID="application-detail-edit-button"
+            accessibilityLabel={t('detail.edit')}
+          />
+          <IconButton
+            icon={TrashIcon}
+            onPress={onDelete}
+            variant="danger"
+            testID="application-detail-delete-button"
+            accessibilityLabel={t('detail.moveToTrash')}
+          />
         </View>
       </View>
 
@@ -215,8 +214,6 @@ function createStyles(colors: ThemeColors) {
     avatarText: { color: colors.background, fontSize: 18, fontWeight: '700' },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     starButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    menuButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    menuDots: { fontSize: 18, color: colors.textSubtle, fontWeight: '700' },
     role: { fontSize: 22, fontWeight: '700', color: colors.text },
     subline: { fontSize: 14, color: colors.textSubtle },
     statusRow: { flexDirection: 'row' },

@@ -14,7 +14,10 @@ export default function HomeStackLayout() {
   return (
     <Stack screenOptions={themedStackScreenOptions(colors)}>
       <Stack.Screen name="index" options={{ title: t('screenTitles.dashboard'), ...bellHeader }} />
-      <Stack.Screen name="applications/new" options={{ title: t('screenTitles.newApplication') }} />
+      <Stack.Screen
+        name="applications/new"
+        options={{ title: t('screenTitles.newApplication'), presentation: 'modal' }}
+      />
       {applicationDetailStackScreens(t, 'applications/')}
     </Stack>
   );
