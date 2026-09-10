@@ -12,6 +12,9 @@ export const CHAT_STREAM_URL = API_URL.replace(/\/graphql$/, '/chat/stream');
 /** The API's own origin, with no path — used to build the OAuth start URL (apps/api's /auth/oauth/:provider/start). */
 export const API_ORIGIN = API_URL.replace(/\/graphql$/, '');
 
+/** The web app's own origin — used to open the Privacy Policy, Terms of Service, and Accessibility pages, which only exist on web (apps/web/src/routes/{privacy,terms,accessibility}.tsx). */
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3000';
+
 /**
  * The app's own custom URL scheme (app.json's `scheme`), matching
  * apps/api's `MOBILE_OAUTH_CALLBACK` — where the OAuth callback redirects

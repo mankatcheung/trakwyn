@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../auth/AuthContext';
@@ -7,11 +7,13 @@ import { useProfile } from '../hooks/useProfile';
 import { initialsOf } from '../../../lib/initials';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { WEB_URL } from '../../../constants';
 import {
   BellIcon,
   ChartIcon,
   ChevronRightIcon,
   DatabaseIcon,
+  DocumentIcon,
   GlobeIcon,
   PaletteIcon,
   RefreshIcon,
@@ -41,6 +43,12 @@ interface MenuItem {
   testID: string;
   icon: (props: SettingsIconProps) => React.JSX.Element;
   iconColor: { bg: string; fg: string };
+}
+
+interface LegalLinkItem {
+  label: string;
+  url: string;
+  testID: string;
 }
 
 export function SettingsScreen() {
@@ -124,6 +132,24 @@ export function SettingsScreen() {
     },
   ];
 
+  const LEGAL_LINKS: LegalLinkItem[] = [
+    {
+      label: t('privacyPolicy'),
+      url: `${WEB_URL}/privacy`,
+      testID: 'settings-privacy-policy-row',
+    },
+    {
+      label: t('termsOfService'),
+      url: `${WEB_URL}/terms`,
+      testID: 'settings-terms-of-service-row',
+    },
+    {
+      label: t('accessibility'),
+      url: `${WEB_URL}/accessibility`,
+      testID: 'settings-accessibility-row',
+    },
+  ];
+
   const initials = profile ? initialsOf(profile.name || profile.email) : '';
 
   return (
@@ -189,6 +215,23 @@ export function SettingsScreen() {
         <Text style={styles.dangerLabel}>{t('dangerZone')}</Text>
         <ChevronRightIcon color={colors.danger} />
       </Pressable>
+
+      <View style={styles.menuCard}>
+        {LEGAL_LINKS.map((item, index) => (
+          <Pressable
+            key={item.testID}
+            style={[styles.row, index > 0 && styles.rowDivider]}
+            onPress={() => void Linking.openURL(item.url)}
+            testID={item.testID}
+          >
+            <View style={[styles.iconBadge, { backgroundColor: ROW_COLORS.slate.bg }]}>
+              <DocumentIcon color={ROW_COLORS.slate.fg} />
+            </View>
+            <Text style={styles.label}>{item.label}</Text>
+            <ChevronRightIcon color={colors.textFaint} />
+          </Pressable>
+        ))}
+      </View>
 
       <Pressable
         style={styles.signOutRow}
