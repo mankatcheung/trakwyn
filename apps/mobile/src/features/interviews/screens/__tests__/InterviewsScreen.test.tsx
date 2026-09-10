@@ -11,11 +11,10 @@ jest.mock('../../hooks/useInterviewMutations', () => ({
 }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
-  useRouter: jest.fn(),
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useInterviewRounds } from '../../hooks/useInterviewQueries';
 import {
   useCreateInterviewRound,
@@ -32,7 +31,6 @@ const mockedUseCreateInterviewRound = jest.mocked(useCreateInterviewRound);
 const mockedUseUpdateInterviewRound = jest.mocked(useUpdateInterviewRound);
 const mockedUseDeleteInterviewRound = jest.mocked(useDeleteInterviewRound);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
-const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
 const round: InterviewRound = {
@@ -48,9 +46,8 @@ const round: InterviewRound = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-function renderScreen(push = jest.fn()) {
+function renderScreen() {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
-  mockedUseRouter.mockReturnValue({ push } as never);
   return render(<InterviewsScreen />);
 }
 
@@ -140,21 +137,5 @@ describe('InterviewsScreen', () => {
     await fireEvent.press(getByTestId('delete-round-round-1'));
 
     expect(deleteMutate).toHaveBeenCalledWith('round-1', expect.any(Object));
-  });
-
-  it('navigates to Notes when its tab is pressed', async () => {
-    const push = jest.fn();
-    mockedUseInterviewRounds.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-
-    const { getByTestId } = await renderScreen(push);
-
-    await fireEvent.press(getByTestId('section-tab-notes'));
-
-    expect(push).toHaveBeenCalledWith('./notes');
   });
 });
