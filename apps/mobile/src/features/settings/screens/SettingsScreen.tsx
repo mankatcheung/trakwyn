@@ -20,7 +20,6 @@ import {
   ShieldIcon,
   SlidersIcon,
   StarIcon,
-  TrashSettingsIcon,
   WarningIcon,
   type SettingsIconProps,
 } from '../components/SettingsIcons';
@@ -122,13 +121,6 @@ export function SettingsScreen() {
       testID: 'settings-analytics-row',
       icon: ChartIcon,
       iconColor: ROW_COLORS.orange,
-    },
-    {
-      label: t('trash'),
-      href: '/settings/trash',
-      testID: 'settings-trash-row',
-      icon: TrashSettingsIcon,
-      iconColor: ROW_COLORS.gray,
     },
   ];
 
