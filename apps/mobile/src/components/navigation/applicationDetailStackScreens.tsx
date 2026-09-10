@@ -20,7 +20,7 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
     <Stack.Screen
       key="edit"
       name={`${prefix}[id]/edit`}
-      options={{ title: t('screenTitles.editApplication') }}
+      options={{ title: t('screenTitles.editApplication'), presentation: 'modal' }}
     />,
     <Stack.Screen
       key="notes"
@@ -50,12 +50,12 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
     <Stack.Screen
       key="newDraft"
       name={`${prefix}[id]/documents/new`}
-      options={{ title: t('screenTitles.newDraft') }}
+      options={{ title: t('screenTitles.newDraft'), presentation: 'modal' }}
     />,
     <Stack.Screen
       key="draft"
       name={`${prefix}[id]/documents/[draftId]`}
-      options={{ title: t('screenTitles.draft') }}
+      options={{ title: t('screenTitles.draft'), presentation: 'modal' }}
     />,
     <Stack.Screen
       key="coverLetter"

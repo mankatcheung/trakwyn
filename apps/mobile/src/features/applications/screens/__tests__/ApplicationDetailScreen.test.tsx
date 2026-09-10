@@ -207,7 +207,7 @@ describe('ApplicationDetailScreen', () => {
     expect(getByTestId('follow-up-chip')).toBeTruthy();
   });
 
-  it('navigates to the edit form from the actions menu', async () => {
+  it('navigates to the edit form when the edit icon button is pressed', async () => {
     const push = jest.fn();
     mockedUseApplication.mockReturnValue({
       data: application,
@@ -220,19 +220,15 @@ describe('ApplicationDetailScreen', () => {
       isPending: false,
     } as never);
     mockedUseUpdateApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
-    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-      const editButton = buttons?.find((b) => b.text === 'Edit');
-      editButton?.onPress?.();
-    });
 
     const { getByTestId } = await renderScreen(push);
 
-    await fireEvent.press(getByTestId('application-detail-menu-button'));
+    await fireEvent.press(getByTestId('application-detail-edit-button'));
 
-    expect(push).toHaveBeenCalledWith('./edit');
+    expect(push).toHaveBeenCalledWith('./1/edit');
   });
 
-  it('confirms and deletes the application from the actions menu, then navigates back', async () => {
+  it('confirms and deletes the application from the delete icon button, then navigates back', async () => {
     const back = jest.fn();
     const mutate = jest.fn((_id, options) => options?.onSuccess?.());
     mockedUseApplication.mockReturnValue({
@@ -244,21 +240,14 @@ describe('ApplicationDetailScreen', () => {
     mockedUseDeleteApplication.mockReturnValue({ mutate, isPending: false } as never);
     mockedUseUpdateApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
 
-    let alertCallCount = 0;
     jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-      alertCallCount += 1;
-      if (alertCallCount === 1) {
-        const moveToTrashButton = buttons?.find((b) => b.text === 'Move to Trash');
-        moveToTrashButton?.onPress?.();
-      } else {
-        const confirmButton = buttons?.find((b) => b.text === 'Delete');
-        confirmButton?.onPress?.();
-      }
+      const confirmButton = buttons?.find((b) => b.text === 'Delete');
+      confirmButton?.onPress?.();
     });
 
     const { getByTestId } = await renderScreen(jest.fn(), back);
 
-    await fireEvent.press(getByTestId('application-detail-menu-button'));
+    await fireEvent.press(getByTestId('application-detail-delete-button'));
 
     expect(mutate).toHaveBeenCalledWith('1', expect.any(Object));
     expect(back).toHaveBeenCalled();

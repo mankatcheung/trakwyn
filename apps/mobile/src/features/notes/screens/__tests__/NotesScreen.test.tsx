@@ -69,7 +69,7 @@ describe('NotesScreen', () => {
     await waitFor(() => expect(getByText('Follow up next week')).toBeTruthy());
   });
 
-  it('adds a new note', async () => {
+  it('adds a new note through the modal', async () => {
     const mutate = jest.fn();
     mockedUseNotes.mockReturnValue({
       data: [],
@@ -81,10 +81,34 @@ describe('NotesScreen', () => {
 
     const { getByTestId } = await renderScreen();
 
-    await fireEvent.changeText(getByTestId('new-note-input'), 'New note content');
     await fireEvent.press(getByTestId('add-note-button'));
+    await fireEvent.changeText(getByTestId('note-modal-input'), 'New note content');
+    await fireEvent.press(getByTestId('note-modal-save'));
 
     expect(mutate).toHaveBeenCalledWith('New note content', expect.any(Object));
+  });
+
+  it('edits an existing note through the modal', async () => {
+    const mutate = jest.fn();
+    mockedUseNotes.mockReturnValue({
+      data: [note],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseCreateNote.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseUpdateNote.mockReturnValue({ mutate, isPending: false } as never);
+
+    const { getByTestId } = await renderScreen();
+
+    await fireEvent.press(getByTestId('note-edit-1'));
+    await fireEvent.changeText(getByTestId('note-modal-input'), 'Updated content');
+    await fireEvent.press(getByTestId('note-modal-save'));
+
+    expect(mutate).toHaveBeenCalledWith(
+      { id: '1', content: 'Updated content' },
+      expect.any(Object),
+    );
   });
 
   it('deletes a note after confirmation', async () => {
