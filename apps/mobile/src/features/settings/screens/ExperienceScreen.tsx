@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -27,6 +30,13 @@ import type { Education, Skill, WorkExperience } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import i18n from '../../../i18n';
+import {
+  CheckIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../../applications/components/ApplicationIcons';
+import { IconButton } from '../../../components/IconButton';
 
 function dateRange(start: string, end: string | null): string {
   return `${start.slice(0, 10)} – ${end ? end.slice(0, 10) : i18n.t('settings:experience.present')}`;
@@ -44,108 +54,71 @@ export function ExperienceScreen() {
   );
 }
 
-function WorkExperienceSection() {
+interface WorkExperienceFormModalProps {
+  visible: boolean;
+  editing: WorkExperience | null;
+  isSaving: boolean;
+  onSave: (input: {
+    company: string;
+    title: string;
+    startDate: string;
+    endDate: string | undefined;
+  }) => void;
+  onClose: () => void;
+}
+
+function WorkExperienceFormModal({
+  visible,
+  editing,
+  isSaving,
+  onSave,
+  onClose,
+}: WorkExperienceFormModalProps) {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { data: items = [], isLoading } = useWorkExperiences();
-  const create = useCreateWorkExperience();
-  const update = useUpdateWorkExperience();
-  const remove = useDeleteWorkExperience();
+  const [company, setCompany] = useState(editing?.company ?? '');
+  const [title, setTitle] = useState(editing?.title ?? '');
+  const [startDate, setStartDate] = useState(editing?.startDate.slice(0, 10) ?? '');
+  const [endDate, setEndDate] = useState(editing?.endDate?.slice(0, 10) ?? '');
 
-  const [editing, setEditing] = useState<WorkExperience | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [company, setCompany] = useState('');
-  const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const openCreate = () => {
-    setEditing(null);
-    setCompany('');
-    setTitle('');
-    setStartDate('');
-    setEndDate('');
-    setFormOpen(true);
-  };
-
-  const openEdit = (item: WorkExperience) => {
-    setEditing(item);
-    setCompany(item.company);
-    setTitle(item.title);
-    setStartDate(item.startDate.slice(0, 10));
-    setEndDate(item.endDate?.slice(0, 10) ?? '');
-    setFormOpen(true);
-  };
-
-  const onSave = async () => {
-    if (!company.trim() || !title.trim() || !startDate.trim()) return;
-    setError(null);
-    const input = {
-      company: company.trim(),
-      title: title.trim(),
-      startDate,
-      endDate: endDate || undefined,
-    };
-    try {
-      if (editing) {
-        await update.mutateAsync({ id: editing.id, input });
-      } else {
-        await create.mutateAsync(input);
-      }
-      setFormOpen(false);
-      setEditing(null);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  };
+  const canSave = company.trim() && title.trim() && startDate.trim();
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.title}>{t('experience.workExperienceTitle')}</Text>
-        {!formOpen && (
-          <Pressable onPress={openCreate} testID="add-work-experience-button">
-            <Text style={styles.link}>{t('experience.add')}</Text>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      testID="work-experience-form-modal"
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <Pressable onPress={onClose} testID="cancel-work-experience-button">
+            <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
           </Pressable>
-        )}
-      </View>
-
-      {isLoading ? (
-        <ActivityIndicator color={colors.primary} />
-      ) : (
-        !formOpen &&
-        items.length === 0 && (
-          <Text style={styles.emptyText}>{t('experience.noWorkExperienceYet')}</Text>
-        )
-      )}
-
-      {items.map((item) => (
-        <View key={item.id} style={styles.row} testID={`work-experience-${item.id}`}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>
-              {t('experience.titleAtCompany', { title: item.title, company: item.company })}
-            </Text>
-            <Text style={styles.rowMeta}>{dateRange(item.startDate, item.endDate)}</Text>
-          </View>
-          <View style={styles.rowActions}>
-            <Pressable onPress={() => openEdit(item)} testID={`edit-work-experience-${item.id}`}>
-              <Text style={styles.link}>{t('experience.edit')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => remove.mutate(item.id)}
-              testID={`delete-work-experience-${item.id}`}
-            >
-              <Text style={styles.linkDanger}>{t('experience.delete')}</Text>
-            </Pressable>
-          </View>
+          <Text style={styles.modalTitle}>
+            {editing ? t('experience.edit') : t('experience.add')}
+          </Text>
+          <IconButton
+            icon={CheckIcon}
+            onPress={() =>
+              onSave({
+                company: company.trim(),
+                title: title.trim(),
+                startDate,
+                endDate: endDate || undefined,
+              })
+            }
+            disabled={isSaving || !canSave}
+            testID="save-work-experience-button"
+            accessibilityLabel={editing ? t('experience.update') : t('experience.addSubmit')}
+          />
         </View>
-      ))}
-
-      {formOpen && (
-        <View style={styles.form}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={styles.modalBody}>
           <TextInput
             placeholderTextColor={colors.textFaint}
             style={styles.input}
@@ -178,79 +151,46 @@ function WorkExperienceSection() {
             onChangeText={setEndDate}
             testID="work-experience-end-input"
           />
-          <View style={styles.formActions}>
-            <Pressable
-              style={styles.button}
-              onPress={onSave}
-              disabled={create.isPending || update.isPending}
-              testID="save-work-experience-button"
-            >
-              <Text style={styles.buttonText}>
-                {editing ? t('experience.update') : t('experience.addSubmit')}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setFormOpen(false)} testID="cancel-work-experience-button">
-              <Text style={styles.link}>{t('experience.cancel')}</Text>
-            </Pressable>
-          </View>
         </View>
-      )}
-    </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
-function EducationSection() {
+function WorkExperienceSection() {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { data: items = [], isLoading } = useEducations();
-  const create = useCreateEducation();
-  const update = useUpdateEducation();
-  const remove = useDeleteEducation();
+  const { data: items = [], isLoading } = useWorkExperiences();
+  const create = useCreateWorkExperience();
+  const update = useUpdateWorkExperience();
+  const remove = useDeleteWorkExperience();
 
-  const [editing, setEditing] = useState<Education | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [institution, setInstitution] = useState('');
-  const [degree, setDegree] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [editing, setEditing] = useState<WorkExperience | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const openCreate = () => {
+  const isModalVisible = isAdding || editing !== null;
+
+  const closeModal = () => {
+    setIsAdding(false);
     setEditing(null);
-    setInstitution('');
-    setDegree('');
-    setStartDate('');
-    setEndDate('');
-    setFormOpen(true);
   };
 
-  const openEdit = (item: Education) => {
-    setEditing(item);
-    setInstitution(item.institution);
-    setDegree(item.degree ?? '');
-    setStartDate(item.startDate.slice(0, 10));
-    setEndDate(item.endDate?.slice(0, 10) ?? '');
-    setFormOpen(true);
-  };
-
-  const onSave = async () => {
-    if (!institution.trim() || !startDate.trim()) return;
+  const onSave = async (input: {
+    company: string;
+    title: string;
+    startDate: string;
+    endDate: string | undefined;
+  }) => {
     setError(null);
-    const input = {
-      institution: institution.trim(),
-      degree: degree.trim() || undefined,
-      startDate,
-      endDate: endDate || undefined,
-    };
     try {
       if (editing) {
         await update.mutateAsync({ id: editing.id, input });
       } else {
         await create.mutateAsync(input);
       }
-      setFormOpen(false);
-      setEditing(null);
+      closeModal();
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -259,47 +199,128 @@ function EducationSection() {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.title}>{t('experience.educationTitle')}</Text>
-        {!formOpen && (
-          <Pressable onPress={openCreate} testID="add-education-button">
-            <Text style={styles.link}>{t('experience.add')}</Text>
-          </Pressable>
-        )}
+        <Text style={styles.title}>{t('experience.workExperienceTitle')}</Text>
+        <IconButton
+          icon={PlusIcon}
+          onPress={() => setIsAdding(true)}
+          testID="add-work-experience-button"
+          accessibilityLabel={t('experience.add')}
+        />
       </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {isLoading ? (
         <ActivityIndicator color={colors.primary} />
       ) : (
-        !formOpen &&
-        items.length === 0 && <Text style={styles.emptyText}>{t('experience.noEducationYet')}</Text>
+        items.length === 0 && (
+          <Text style={styles.emptyText}>{t('experience.noWorkExperienceYet')}</Text>
+        )
       )}
 
       {items.map((item) => (
-        <View key={item.id} style={styles.row} testID={`education-${item.id}`}>
+        <View key={item.id} style={styles.row} testID={`work-experience-${item.id}`}>
           <View style={styles.rowText}>
             <Text style={styles.rowTitle}>
-              {item.institution}
-              {item.degree ? t('experience.institutionDegree', { degree: item.degree }) : ''}
+              {t('experience.titleAtCompany', { title: item.title, company: item.company })}
             </Text>
             <Text style={styles.rowMeta}>{dateRange(item.startDate, item.endDate)}</Text>
           </View>
           <View style={styles.rowActions}>
-            <Pressable onPress={() => openEdit(item)} testID={`edit-education-${item.id}`}>
-              <Text style={styles.link}>{t('experience.edit')}</Text>
-            </Pressable>
-            <Pressable
+            <IconButton
+              icon={PencilIcon}
+              onPress={() => setEditing(item)}
+              testID={`edit-work-experience-${item.id}`}
+              accessibilityLabel={t('experience.edit')}
+            />
+            <IconButton
+              icon={TrashIcon}
+              variant="danger"
               onPress={() => remove.mutate(item.id)}
-              testID={`delete-education-${item.id}`}
-            >
-              <Text style={styles.linkDanger}>{t('experience.delete')}</Text>
-            </Pressable>
+              testID={`delete-work-experience-${item.id}`}
+              accessibilityLabel={t('experience.delete')}
+            />
           </View>
         </View>
       ))}
 
-      {formOpen && (
-        <View style={styles.form}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+      <WorkExperienceFormModal
+        key={editing?.id ?? (isAdding ? 'add' : 'closed')}
+        visible={isModalVisible}
+        editing={editing}
+        isSaving={create.isPending || update.isPending}
+        onSave={onSave}
+        onClose={closeModal}
+      />
+    </View>
+  );
+}
+
+interface EducationFormModalProps {
+  visible: boolean;
+  editing: Education | null;
+  isSaving: boolean;
+  onSave: (input: {
+    institution: string;
+    degree: string | undefined;
+    startDate: string;
+    endDate: string | undefined;
+  }) => void;
+  onClose: () => void;
+}
+
+function EducationFormModal({
+  visible,
+  editing,
+  isSaving,
+  onSave,
+  onClose,
+}: EducationFormModalProps) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [institution, setInstitution] = useState(editing?.institution ?? '');
+  const [degree, setDegree] = useState(editing?.degree ?? '');
+  const [startDate, setStartDate] = useState(editing?.startDate.slice(0, 10) ?? '');
+  const [endDate, setEndDate] = useState(editing?.endDate?.slice(0, 10) ?? '');
+
+  const canSave = institution.trim() && startDate.trim();
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      testID="education-form-modal"
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <Pressable onPress={onClose} testID="cancel-education-button">
+            <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
+          </Pressable>
+          <Text style={styles.modalTitle}>
+            {editing ? t('experience.edit') : t('experience.add')}
+          </Text>
+          <IconButton
+            icon={CheckIcon}
+            onPress={() =>
+              onSave({
+                institution: institution.trim(),
+                degree: degree.trim() || undefined,
+                startDate,
+                endDate: endDate || undefined,
+              })
+            }
+            disabled={isSaving || !canSave}
+            testID="save-education-button"
+            accessibilityLabel={editing ? t('experience.update') : t('experience.addSubmit')}
+          />
+        </View>
+        <View style={styles.modalBody}>
           <TextInput
             placeholderTextColor={colors.textFaint}
             style={styles.input}
@@ -332,24 +353,161 @@ function EducationSection() {
             onChangeText={setEndDate}
             testID="education-end-input"
           />
-          <View style={styles.formActions}>
-            <Pressable
-              style={styles.button}
-              onPress={onSave}
-              disabled={create.isPending || update.isPending}
-              testID="save-education-button"
-            >
-              <Text style={styles.buttonText}>
-                {editing ? t('experience.update') : t('experience.addSubmit')}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setFormOpen(false)} testID="cancel-education-button">
-              <Text style={styles.link}>{t('experience.cancel')}</Text>
-            </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function EducationSection() {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { data: items = [], isLoading } = useEducations();
+  const create = useCreateEducation();
+  const update = useUpdateEducation();
+  const remove = useDeleteEducation();
+
+  const [editing, setEditing] = useState<Education | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isModalVisible = isAdding || editing !== null;
+
+  const closeModal = () => {
+    setIsAdding(false);
+    setEditing(null);
+  };
+
+  const onSave = async (input: {
+    institution: string;
+    degree: string | undefined;
+    startDate: string;
+    endDate: string | undefined;
+  }) => {
+    setError(null);
+    try {
+      if (editing) {
+        await update.mutateAsync({ id: editing.id, input });
+      } else {
+        await create.mutateAsync(input);
+      }
+      closeModal();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.title}>{t('experience.educationTitle')}</Text>
+        <IconButton
+          icon={PlusIcon}
+          onPress={() => setIsAdding(true)}
+          testID="add-education-button"
+          accessibilityLabel={t('experience.add')}
+        />
+      </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {isLoading ? (
+        <ActivityIndicator color={colors.primary} />
+      ) : (
+        items.length === 0 && <Text style={styles.emptyText}>{t('experience.noEducationYet')}</Text>
+      )}
+
+      {items.map((item) => (
+        <View key={item.id} style={styles.row} testID={`education-${item.id}`}>
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>
+              {item.institution}
+              {item.degree ? t('experience.institutionDegree', { degree: item.degree }) : ''}
+            </Text>
+            <Text style={styles.rowMeta}>{dateRange(item.startDate, item.endDate)}</Text>
+          </View>
+          <View style={styles.rowActions}>
+            <IconButton
+              icon={PencilIcon}
+              onPress={() => setEditing(item)}
+              testID={`edit-education-${item.id}`}
+              accessibilityLabel={t('experience.edit')}
+            />
+            <IconButton
+              icon={TrashIcon}
+              variant="danger"
+              onPress={() => remove.mutate(item.id)}
+              testID={`delete-education-${item.id}`}
+              accessibilityLabel={t('experience.delete')}
+            />
           </View>
         </View>
-      )}
+      ))}
+
+      <EducationFormModal
+        key={editing?.id ?? (isAdding ? 'add' : 'closed')}
+        visible={isModalVisible}
+        editing={editing}
+        isSaving={create.isPending || update.isPending}
+        onSave={onSave}
+        onClose={closeModal}
+      />
     </View>
+  );
+}
+
+interface SkillFormModalProps {
+  visible: boolean;
+  isSaving: boolean;
+  onSave: (name: string) => void;
+  onClose: () => void;
+}
+
+function SkillFormModal({ visible, isSaving, onSave, onClose }: SkillFormModalProps) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [name, setName] = useState('');
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      testID="skill-form-modal"
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <Pressable onPress={onClose} testID="cancel-skill-button">
+            <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
+          </Pressable>
+          <Text style={styles.modalTitle}>{t('experience.add')}</Text>
+          <IconButton
+            icon={CheckIcon}
+            onPress={() => onSave(name.trim())}
+            disabled={isSaving || !name.trim()}
+            testID="save-skill-button"
+            accessibilityLabel={t('experience.addSubmit')}
+          />
+        </View>
+        <View style={styles.modalBody}>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            placeholder={t('experience.skillNamePlaceholder')}
+            value={name}
+            onChangeText={setName}
+            autoFocus
+            testID="skill-name-input"
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -361,17 +519,15 @@ function SkillsSection() {
   const create = useCreateSkill();
   const remove = useDeleteSkill();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [name, setName] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onSave = async () => {
-    if (!name.trim()) return;
+  const onSave = async (name: string) => {
+    if (!name) return;
     setError(null);
     try {
-      await create.mutateAsync({ name: name.trim() });
-      setName('');
-      setFormOpen(false);
+      await create.mutateAsync({ name });
+      setIsAdding(false);
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -381,17 +537,19 @@ function SkillsSection() {
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={styles.title}>{t('experience.skillsTitle')}</Text>
-        {!formOpen && (
-          <Pressable onPress={() => setFormOpen(true)} testID="add-skill-button">
-            <Text style={styles.link}>{t('experience.add')}</Text>
-          </Pressable>
-        )}
+        <IconButton
+          icon={PlusIcon}
+          onPress={() => setIsAdding(true)}
+          testID="add-skill-button"
+          accessibilityLabel={t('experience.add')}
+        />
       </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {isLoading ? (
         <ActivityIndicator color={colors.primary} />
       ) : (
-        !formOpen &&
         skills.length === 0 && <Text style={styles.emptyText}>{t('experience.noSkillsYet')}</Text>
       )}
 
@@ -400,43 +558,27 @@ function SkillsSection() {
           {skills.map((skill: Skill) => (
             <View key={skill.id} style={styles.skillChip} testID={`skill-${skill.id}`}>
               <Text style={styles.skillText}>{skill.name}</Text>
-              <Pressable
+              <IconButton
+                icon={TrashIcon}
+                variant="danger"
+                size={24}
+                iconSize={12}
                 onPress={() => remove.mutate(skill.id)}
                 testID={`delete-skill-${skill.id}`}
-              >
-                <Text style={styles.skillDelete}>×</Text>
-              </Pressable>
+                accessibilityLabel={t('experience.delete')}
+              />
             </View>
           ))}
         </View>
       )}
 
-      {formOpen && (
-        <View style={styles.form}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={styles.input}
-            placeholder={t('experience.skillNamePlaceholder')}
-            value={name}
-            onChangeText={setName}
-            testID="skill-name-input"
-          />
-          <View style={styles.formActions}>
-            <Pressable
-              style={styles.button}
-              onPress={onSave}
-              disabled={create.isPending}
-              testID="save-skill-button"
-            >
-              <Text style={styles.buttonText}>{t('experience.addSubmit')}</Text>
-            </Pressable>
-            <Pressable onPress={() => setFormOpen(false)} testID="cancel-skill-button">
-              <Text style={styles.link}>{t('experience.cancel')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      <SkillFormModal
+        key={isAdding ? 'add' : 'closed'}
+        visible={isAdding}
+        isSaving={create.isPending}
+        onSave={onSave}
+        onClose={() => setIsAdding(false)}
+      />
     </View>
   );
 }
@@ -470,9 +612,7 @@ function createStyles(colors: ThemeColors) {
     rowText: { flex: 1, gap: 2 },
     rowTitle: { fontSize: 13, fontWeight: '600', color: colors.text },
     rowMeta: { fontSize: 11, color: colors.textFaint },
-    rowActions: { flexDirection: 'row', gap: 12 },
-    form: { gap: 8, borderTopWidth: 1, borderTopColor: colors.surfaceAlt, paddingTop: 10 },
-    formActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    rowActions: { flexDirection: 'row', gap: 4 },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -483,16 +623,6 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       color: colors.text,
     },
-    button: {
-      alignSelf: 'flex-start',
-      minHeight: 40,
-      borderRadius: 8,
-      backgroundColor: colors.surfaceAlt,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 14,
-    },
-    buttonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -504,14 +634,27 @@ function createStyles(colors: ThemeColors) {
     skillChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 2,
       borderRadius: 9999,
       borderWidth: 1,
       borderColor: colors.border,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+      paddingLeft: 12,
     },
     skillText: { fontSize: 13, color: colors.text },
-    skillDelete: { fontSize: 14, color: colors.textFaint, fontWeight: '700' },
+    modalContainer: { flex: 1, backgroundColor: colors.background },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalBody: { padding: 16, gap: 10 },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
   });
 }
