@@ -52,6 +52,7 @@
   },
   "contacts": {
     "addContact": "Add contact",
+    "editContact": "Edit contact",
     "nameLabel": "Name",
     "roleLabel": "Role",
     "emailLabel": "Email",

@@ -135,6 +135,29 @@ describe('ContactsScreen', () => {
     );
   });
 
+  it('opens the form modal from the FAB and closes it on cancel without saving', async () => {
+    const mutate = jest.fn();
+    mockedUseContacts.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseCreateContact.mockReturnValue({ mutate, isPending: false } as never);
+
+    const { getByTestId, queryByTestId } = await renderScreen();
+
+    expect(queryByTestId('contact-form-modal')).toBeNull();
+
+    await fireEvent.press(getByTestId('add-contact-button'));
+    expect(getByTestId('contact-form-modal')).toBeTruthy();
+
+    await fireEvent.press(getByTestId('contact-modal-cancel'));
+
+    expect(queryByTestId('contact-form-modal')).toBeNull();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
   it('deletes a contact after confirmation', async () => {
     const mutate = jest.fn();
     jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {

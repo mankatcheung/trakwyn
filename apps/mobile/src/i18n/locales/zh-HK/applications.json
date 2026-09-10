@@ -52,6 +52,7 @@
   },
   "contacts": {
     "addContact": "新增聯絡人",
+    "editContact": "編輯聯絡人",
     "nameLabel": "姓名",
     "roleLabel": "職稱",
     "emailLabel": "電郵",
