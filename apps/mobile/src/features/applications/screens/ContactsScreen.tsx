@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,6 +19,9 @@ import { useCreateContact, useDeleteContact, useUpdateContact } from '../hooks/u
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { PencilIcon, TrashIcon } from '../components/ApplicationIcons';
+import { IconButton } from '../../../components/IconButton';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import type { Contact, ContactInput } from '../types';
 
 function emptyForm(): ContactInput {
@@ -46,6 +50,113 @@ function normalize(input: ContactInput): ContactInput {
   };
 }
 
+interface ContactFormModalProps {
+  visible: boolean;
+  isEditing: boolean;
+  initialValue: ContactInput;
+  isSaving: boolean;
+  onSubmit: (input: ContactInput) => void;
+  onClose: () => void;
+}
+
+function ContactFormModal({
+  visible,
+  isEditing,
+  initialValue,
+  isSaving,
+  onSubmit,
+  onClose,
+}: ContactFormModalProps) {
+  const { t } = useTranslation('applications');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [form, setForm] = useState<ContactInput>(initialValue);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      testID="contact-form-modal"
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <Pressable onPress={onClose} testID="contact-modal-cancel">
+            <Text style={styles.linkMuted}>{t('detail.cancel')}</Text>
+          </Pressable>
+          <Text style={styles.modalTitle}>
+            {isEditing ? t('contacts.editContact') : t('contacts.addContact')}
+          </Text>
+          <Pressable
+            onPress={() => onSubmit(normalize(form))}
+            disabled={isSaving || !form.name.trim()}
+            testID="save-contact-button"
+          >
+            <Text style={[styles.link, (isSaving || !form.name.trim()) && styles.linkDisabled]}>
+              {t('contacts.save')}
+            </Text>
+          </Pressable>
+        </View>
+        <ScrollView contentContainerStyle={styles.modalContent}>
+          <TextInput
+            style={styles.input}
+            placeholder={t('contacts.nameLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.name}
+            onChangeText={(name) => setForm((f) => ({ ...f, name }))}
+            autoFocus
+            testID="contact-name-input"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t('contacts.roleLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.role ?? ''}
+            onChangeText={(role) => setForm((f) => ({ ...f, role }))}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t('contacts.emailLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.email ?? ''}
+            onChangeText={(email) => setForm((f) => ({ ...f, email }))}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t('contacts.phoneLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.phone ?? ''}
+            onChangeText={(phone) => setForm((f) => ({ ...f, phone }))}
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t('contacts.linkedinUrlLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.linkedinUrl ?? ''}
+            onChangeText={(linkedinUrl) => setForm((f) => ({ ...f, linkedinUrl }))}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={[styles.input, styles.multiline]}
+            placeholder={t('contacts.notesLabel')}
+            placeholderTextColor={colors.textFaint}
+            value={form.notes ?? ''}
+            onChangeText={(notes) => setForm((f) => ({ ...f, notes }))}
+            multiline
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 export function ContactsScreen() {
   const { t } = useTranslation('applications');
   const { colors } = useTheme();
@@ -56,41 +167,30 @@ export function ContactsScreen() {
   const updateContact = useUpdateContact(applicationId);
   const deleteContact = useDeleteContact(applicationId);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<ContactInput>(emptyForm());
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
-  const startCreate = () => {
-    setEditingId(null);
-    setForm(emptyForm());
-    setShowForm(true);
+  const isModalVisible = isAdding || editingContact !== null;
+  const saving = createContact.isPending || updateContact.isPending;
+
+  const closeModal = () => {
+    setIsAdding(false);
+    setEditingContact(null);
   };
 
-  const startEdit = (contact: Contact) => {
-    setEditingId(contact.id);
-    setForm(contactToForm(contact));
-    setShowForm(true);
-  };
-
-  const cancelForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-  };
-
-  const submit = () => {
-    if (!form.name.trim()) return;
-    const input = normalize(form);
-    if (editingId) {
+  const submit = (input: ContactInput) => {
+    if (!input.name.trim()) return;
+    if (editingContact) {
       updateContact.mutate(
-        { id: editingId, input },
+        { id: editingContact.id, input },
         {
-          onSuccess: cancelForm,
+          onSuccess: closeModal,
           onError: (err) => Alert.alert(t('contacts.couldNotSaveTitle'), getErrorMessage(err)),
         },
       );
     } else {
       createContact.mutate(input, {
-        onSuccess: cancelForm,
+        onSuccess: closeModal,
         onError: (err) => Alert.alert(t('contacts.couldNotSaveTitle'), getErrorMessage(err)),
       });
     }
@@ -126,148 +226,77 @@ export function ContactsScreen() {
     );
   }
 
-  const saving = createContact.isPending || updateContact.isPending;
   const items = contacts ?? [];
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        {!showForm ? (
-          <Pressable style={styles.addButton} onPress={startCreate} testID="add-contact-button">
-            <Text style={styles.addButtonText}>{t('contacts.addContact')}</Text>
-          </Pressable>
-        ) : (
-          <View style={styles.formCard} testID="contact-form">
-            <TextInput
-              style={styles.input}
-              placeholder={t('contacts.nameLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.name}
-              onChangeText={(name) => setForm((f) => ({ ...f, name }))}
-              testID="contact-name-input"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('contacts.roleLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.role ?? ''}
-              onChangeText={(role) => setForm((f) => ({ ...f, role }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('contacts.emailLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.email ?? ''}
-              onChangeText={(email) => setForm((f) => ({ ...f, email }))}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('contacts.phoneLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.phone ?? ''}
-              onChangeText={(phone) => setForm((f) => ({ ...f, phone }))}
-              keyboardType="phone-pad"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t('contacts.linkedinUrlLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.linkedinUrl ?? ''}
-              onChangeText={(linkedinUrl) => setForm((f) => ({ ...f, linkedinUrl }))}
-              autoCapitalize="none"
-            />
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              placeholder={t('contacts.notesLabel')}
-              placeholderTextColor={colors.textFaint}
-              value={form.notes ?? ''}
-              onChangeText={(notes) => setForm((f) => ({ ...f, notes }))}
-              multiline
-            />
-            <View style={styles.formActions}>
-              <Pressable
-                style={[styles.saveButton, (!form.name.trim() || saving) && styles.buttonDisabled]}
-                onPress={submit}
-                disabled={!form.name.trim() || saving}
-                testID="save-contact-button"
-              >
-                <Text style={styles.saveButtonText}>{t('contacts.save')}</Text>
-              </Pressable>
-              <Pressable style={styles.cancelButton} onPress={cancelForm}>
-                <Text style={styles.cancelButtonText}>{t('detail.cancel')}</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {items.length === 0 && !showForm ? (
+        {items.length === 0 ? (
           <Text style={styles.emptyText}>{t('contacts.noContactsYet')}</Text>
         ) : null}
 
-        {items.map((contact) =>
-          editingId === contact.id ? null : (
-            <View key={contact.id} style={styles.contactCard} testID={`contact-${contact.id}`}>
-              <View style={styles.contactHeader}>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                {contact.role ? (
-                  <View style={styles.roleBadge}>
-                    <Text style={styles.roleBadgeText}>{contact.role}</Text>
-                  </View>
-                ) : null}
-              </View>
-              {contact.email ? <Text style={styles.contactMeta}>{contact.email}</Text> : null}
-              {contact.phone ? <Text style={styles.contactMeta}>{contact.phone}</Text> : null}
-              {contact.linkedinUrl ? (
-                <Text style={styles.contactMeta}>{contact.linkedinUrl}</Text>
+        {items.map((contact) => (
+          <View key={contact.id} style={styles.contactCard} testID={`contact-${contact.id}`}>
+            <View style={styles.contactHeader}>
+              <Text style={styles.contactName}>{contact.name}</Text>
+              {contact.role ? (
+                <View style={styles.roleBadge}>
+                  <Text style={styles.roleBadgeText}>{contact.role}</Text>
+                </View>
               ) : null}
-              {contact.notes ? <Text style={styles.contactNotes}>{contact.notes}</Text> : null}
-              <View style={styles.contactActions}>
-                <Pressable onPress={() => startEdit(contact)} testID={`edit-contact-${contact.id}`}>
-                  <Text style={styles.link}>{t('detail.edit')}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => confirmDelete(contact)}
-                  testID={`delete-contact-${contact.id}`}
-                >
-                  <Text style={styles.linkDanger}>{t('detail.delete')}</Text>
-                </Pressable>
-              </View>
             </View>
-          ),
-        )}
+            {contact.email ? <Text style={styles.contactMeta}>{contact.email}</Text> : null}
+            {contact.phone ? <Text style={styles.contactMeta}>{contact.phone}</Text> : null}
+            {contact.linkedinUrl ? (
+              <Text style={styles.contactMeta}>{contact.linkedinUrl}</Text>
+            ) : null}
+            {contact.notes ? <Text style={styles.contactNotes}>{contact.notes}</Text> : null}
+            <View style={styles.contactActions}>
+              <IconButton
+                icon={PencilIcon}
+                onPress={() => setEditingContact(contact)}
+                testID={`edit-contact-${contact.id}`}
+                accessibilityLabel={t('detail.edit')}
+              />
+              <IconButton
+                icon={TrashIcon}
+                variant="danger"
+                onPress={() => confirmDelete(contact)}
+                disabled={deleteContact.isPending}
+                testID={`delete-contact-${contact.id}`}
+                accessibilityLabel={t('detail.delete')}
+              />
+            </View>
+          </View>
+        ))}
       </ScrollView>
-    </KeyboardAvoidingView>
+
+      <FloatingActionButton
+        onPress={() => setIsAdding(true)}
+        testID="add-contact-button"
+        accessibilityLabel={t('contacts.addContact')}
+      />
+
+      <ContactFormModal
+        key={editingContact?.id ?? (isAdding ? 'add' : 'closed')}
+        visible={isModalVisible}
+        isEditing={editingContact !== null}
+        initialValue={editingContact ? contactToForm(editingContact) : emptyForm()}
+        isSaving={saving}
+        onSubmit={submit}
+        onClose={closeModal}
+      />
+    </View>
   );
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, gap: 12, paddingBottom: 40 },
+    content: { padding: 16, gap: 12, paddingBottom: 96 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
-    addButton: {
-      alignSelf: 'flex-start',
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-    },
-    addButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '700' },
-    formCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 14,
-      gap: 10,
-    },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -279,17 +308,6 @@ function createStyles(colors: ThemeColors) {
       color: colors.text,
     },
     multiline: { minHeight: 70, textAlignVertical: 'top' },
-    formActions: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end' },
-    saveButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-    },
-    buttonDisabled: { opacity: 0.6 },
-    saveButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '700' },
-    cancelButton: { paddingHorizontal: 16, paddingVertical: 10 },
-    cancelButtonText: { color: colors.textSubtle, fontSize: 14, fontWeight: '600' },
     contactCard: {
       backgroundColor: colors.surface,
       borderRadius: 12,
@@ -309,8 +327,21 @@ function createStyles(colors: ThemeColors) {
     roleBadgeText: { fontSize: 11, fontWeight: '600', color: colors.primary },
     contactMeta: { fontSize: 13, color: colors.textSubtle },
     contactNotes: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
-    contactActions: { flexDirection: 'row', gap: 16, marginTop: 6 },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    contactActions: { flexDirection: 'row', gap: 4, marginTop: 6 },
+    link: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    linkDisabled: { color: colors.textFaint },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    modalContainer: { flex: 1, backgroundColor: colors.background },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalContent: { padding: 16, gap: 10 },
   });
 }

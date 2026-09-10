@@ -52,6 +52,7 @@
   },
   "contacts": {
     "addContact": "添加联系人",
+    "editContact": "编辑联系人",
     "nameLabel": "姓名",
     "roleLabel": "职位",
     "emailLabel": "邮箱",
