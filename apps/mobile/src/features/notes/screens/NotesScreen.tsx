@@ -20,8 +20,9 @@ import type { Note } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import { PencilIcon, PlusIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
+import { PencilIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
 function NoteRow({
   note,
@@ -192,15 +193,6 @@ export function NotesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <IconButton
-          icon={PlusIcon}
-          onPress={() => setIsAdding(true)}
-          testID="add-note-button"
-          accessibilityLabel={t('add')}
-        />
-      </View>
-
       <FlatList
         data={notes ?? []}
         keyExtractor={(item) => item.id}
@@ -221,6 +213,12 @@ export function NotesScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
+      <FloatingActionButton
+        onPress={() => setIsAdding(true)}
+        testID="add-note-button"
+        accessibilityLabel={t('add')}
+      />
+
       <NoteFormModal
         key={editingNote?.id ?? (isAdding ? 'add' : 'closed')}
         visible={isModalVisible}
@@ -238,13 +236,7 @@ function createStyles(colors: ThemeColors) {
     container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
-    headerRow: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      paddingHorizontal: 12,
-      paddingTop: 12,
-    },
-    list: { padding: 16, paddingTop: 4 },
+    list: { padding: 16, paddingTop: 4, paddingBottom: 96 },
     separator: { height: 10 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
     card: {
