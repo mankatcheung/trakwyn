@@ -49,7 +49,9 @@
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.57.0",
     "react-i18next": "^17.0.11",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.9.2",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.18",
     "zod": "^3.23.8"
