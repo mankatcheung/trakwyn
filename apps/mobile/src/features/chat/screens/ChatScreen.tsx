@@ -21,6 +21,7 @@ import {
 import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import { SendIcon } from '../components/SendIcon';
+import { AssistantMarkdown } from '../components/AssistantMarkdown';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
@@ -131,11 +132,11 @@ export function ChatScreen() {
                   item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
                 ]}
               >
-                <Text
-                  style={item.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant}
-                >
-                  {item.content}
-                </Text>
+                {item.role === 'assistant' ? (
+                  <AssistantMarkdown content={item.content} />
+                ) : (
+                  <Text style={styles.bubbleTextUser}>{item.content}</Text>
+                )}
               </View>
             </View>
           )}
@@ -146,7 +147,7 @@ export function ChatScreen() {
         <View style={[styles.bubbleRow, styles.sendingRow]}>
           <View style={[styles.bubble, styles.bubbleAssistant]}>
             {streamingText ? (
-              <Text style={styles.bubbleTextAssistant}>{streamingText}</Text>
+              <AssistantMarkdown content={streamingText} />
             ) : (
               <ActivityIndicator
                 size="small"
@@ -202,7 +203,6 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     bubbleTextUser: { color: colors.onPrimary, fontSize: 15, lineHeight: 20 },
-    bubbleTextAssistant: { color: colors.text, fontSize: 15, lineHeight: 20 },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
