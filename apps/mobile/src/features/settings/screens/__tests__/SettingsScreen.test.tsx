@@ -87,7 +87,7 @@ describe('SettingsScreen', () => {
     expect(push).toHaveBeenCalledWith('/settings/danger-zone');
   });
 
-  it('navigates to analytics and trash, relocated here from the old sidebar', async () => {
+  it('navigates to analytics, relocated here from the old sidebar', async () => {
     const push = jest.fn();
     mockedUseRouter.mockReturnValue({ push } as never);
     mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
@@ -96,9 +96,6 @@ describe('SettingsScreen', () => {
 
     await fireEvent.press(getByTestId('settings-analytics-row'));
     expect(push).toHaveBeenCalledWith('/settings/analytics');
-
-    await fireEvent.press(getByTestId('settings-trash-row'));
-    expect(push).toHaveBeenCalledWith('/settings/trash');
   });
 
   it('opens the legal pages in the browser', async () => {

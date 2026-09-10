@@ -26,18 +26,12 @@ import { TimezonePicker } from '../components/TimezonePicker';
 import { getErrorMessage } from '../../../lib/errors';
 import { StepUpCancelledError, useStepUpReauth } from '../../../auth/useStepUpReauth';
 import { useTheme } from '../../../theme/ThemeContext';
-import type { ThemeColors, ThemeMode } from '../../../theme/colors';
+import type { ThemeColors } from '../../../theme/colors';
 
 export function ProfileScreen() {
   const { t } = useTranslation('settings');
-  const { t: tAppearance } = useTranslation('appearance');
-  const { colors, mode, setMode } = useTheme();
+  const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
-    { value: 'light', label: tAppearance('light') },
-    { value: 'dark', label: tAppearance('dark') },
-    { value: 'system', label: tAppearance('system') },
-  ];
   const { data: profile, isLoading, isError, error } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
@@ -387,27 +381,6 @@ export function ProfileScreen() {
             </>
           )}
         </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{tAppearance('themeLabel')}</Text>
-          <View style={styles.segmentedRow}>
-            {MODE_OPTIONS.map((option) => {
-              const selected = mode === option.value;
-              return (
-                <Pressable
-                  key={option.value}
-                  style={[styles.segment, selected && styles.segmentSelected]}
-                  onPress={() => setMode(option.value)}
-                  testID={`profile-appearance-${option.value}`}
-                >
-                  <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
       </ScrollView>
       {stepUpDialog}
     </KeyboardAvoidingView>
@@ -470,23 +443,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 12,
       marginBottom: 4,
     },
-    segmentedRow: {
-      flexDirection: 'row',
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: 8,
-      padding: 4,
-      gap: 4,
-    },
-    segment: {
-      flex: 1,
-      minHeight: 40,
-      borderRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    segmentSelected: { backgroundColor: colors.primary },
-    segmentText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
-    segmentTextSelected: { color: colors.onPrimary },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
