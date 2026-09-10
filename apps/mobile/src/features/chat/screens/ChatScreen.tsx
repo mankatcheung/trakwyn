@@ -20,8 +20,11 @@ import {
 } from '../hooks/useChatHistory';
 import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
+import { SendIcon } from '../components/SendIcon';
+import { AssistantMarkdown } from '../components/AssistantMarkdown';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
+import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
@@ -129,11 +132,11 @@ export function ChatScreen() {
                   item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
                 ]}
               >
-                <Text
-                  style={item.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant}
-                >
-                  {item.content}
-                </Text>
+                {item.role === 'assistant' ? (
+                  <AssistantMarkdown content={item.content} />
+                ) : (
+                  <Text style={styles.bubbleTextUser}>{item.content}</Text>
+                )}
               </View>
             </View>
           )}
@@ -141,10 +144,10 @@ export function ChatScreen() {
       )}
 
       {isSending ? (
-        <View style={[styles.bubbleRow, { paddingHorizontal: 16 }]}>
+        <View style={[styles.bubbleRow, styles.sendingRow]}>
           <View style={[styles.bubble, styles.bubbleAssistant]}>
             {streamingText ? (
-              <Text style={styles.bubbleTextAssistant}>{streamingText}</Text>
+              <AssistantMarkdown content={streamingText} />
             ) : (
               <ActivityIndicator
                 size="small"
@@ -166,6 +169,7 @@ export function ChatScreen() {
           value={input}
           onChangeText={setInput}
           multiline
+          maxLength={CHAT_MESSAGE_MAX_CHARS}
           testID="chat-input"
         />
         <Pressable
@@ -173,8 +177,9 @@ export function ChatScreen() {
           onPress={handleSend}
           disabled={isSending || !input.trim()}
           testID="chat-send-button"
+          accessibilityLabel={t('send')}
         >
-          <Text style={styles.sendButtonText}>{t('send')}</Text>
+          <SendIcon color={colors.onPrimary} size={18} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -185,19 +190,19 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     loading: { marginTop: 40 },
-    list: { padding: 16, gap: 8 },
+    list: { padding: 16, gap: 12 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
-    bubbleRow: { flexDirection: 'row', marginBottom: 8 },
+    bubbleRow: { flexDirection: 'row', marginBottom: 12 },
     bubbleRowUser: { justifyContent: 'flex-end' },
-    bubble: { maxWidth: '80%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
+    sendingRow: { paddingHorizontal: 16 },
+    bubble: { maxWidth: '80%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
     bubbleUser: { backgroundColor: colors.primary, alignSelf: 'flex-end' },
     bubbleAssistant: {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
     },
-    bubbleTextUser: { color: colors.surface, fontSize: 14 },
-    bubbleTextAssistant: { color: colors.text, fontSize: 14 },
+    bubbleTextUser: { color: colors.onPrimary, fontSize: 15, lineHeight: 20 },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -208,7 +213,7 @@ function createStyles(colors: ThemeColors) {
     },
     composer: {
       flexDirection: 'row',
-      gap: 8,
+      gap: 10,
       padding: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -219,23 +224,20 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       minHeight: 44,
       maxHeight: 100,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 14,
-      backgroundColor: colors.surface,
+      borderRadius: 22,
+      paddingHorizontal: 16,
+      paddingVertical: 11,
+      fontSize: 15,
+      backgroundColor: colors.surfaceAlt,
     },
     sendButton: {
-      minHeight: 44,
-      paddingHorizontal: 18,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
     sendButtonDisabled: { opacity: 0.5 },
-    sendButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
   });
 }

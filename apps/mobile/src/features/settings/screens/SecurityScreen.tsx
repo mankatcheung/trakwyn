@@ -187,14 +187,80 @@ export function SecurityScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>{t('security.sessionsTitle')}</Text>
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} testID="sessions-loading" />
-        ) : isError ? (
-          <Text style={styles.error}>{getErrorMessage(error)}</Text>
-        ) : (
-          <>
-            {(sessions ?? []).map((session) => (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('security.changePasswordTitle')}</Text>
+          {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
+          {passwordSaved ? (
+            <Text style={styles.success}>{t('security.passwordUpdated')}</Text>
+          ) : null}
+          <Text style={styles.fieldLabel}>{t('security.currentPasswordPlaceholder')}</Text>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            secureTextEntry
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder={t('security.currentPasswordPlaceholder')}
+            testID="current-password-input"
+          />
+          <Text style={styles.fieldLabel}>{t('security.newPasswordPlaceholder')}</Text>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder={t('security.newPasswordPlaceholder')}
+            testID="new-password-input"
+          />
+          <Pressable
+            style={[styles.saveButton, updatePassword.isPending && styles.saveButtonDisabled]}
+            onPress={() => void onChangePassword()}
+            disabled={updatePassword.isPending}
+            testID="change-password-button"
+          >
+            <Text style={styles.saveButtonText}>
+              {updatePassword.isPending ? t('security.saving') : t('security.updatePassword')}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('security.linkedAccountsTitle')}</Text>
+          {linkedAccountsLoading ? (
+            <ActivityIndicator color={colors.primary} testID="linked-accounts-loading" />
+          ) : linkedAccountsError ? (
+            <Text style={styles.error}>{getErrorMessage(linkedAccountsErrorObj)}</Text>
+          ) : (
+            OAUTH_PROVIDERS.map((provider) => (
+              <LinkedAccountRow
+                key={provider}
+                provider={provider}
+                linked={(linkedAccounts ?? []).find((a) => a.provider === provider)}
+                onUnlink={() => onUnlink(provider)}
+                isUnlinking={
+                  unlinkOAuthAccount.isPending && unlinkOAuthAccount.variables === provider
+                }
+              />
+            ))
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.sectionTitle}>{t('security.sessionsTitle')}</Text>
+            {(sessions ?? []).length > 1 ? (
+              <Pressable onPress={onRevokeOthers} testID="revoke-other-sessions-button">
+                <Text style={styles.link}>{t('security.signOutOtherSessions')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} testID="sessions-loading" />
+          ) : isError ? (
+            <Text style={styles.error}>{getErrorMessage(error)}</Text>
+          ) : (
+            (sessions ?? []).map((session) => (
               <SessionRow
                 key={session.id}
                 session={session}
@@ -205,73 +271,9 @@ export function SecurityScreen() {
                   })
                 }
               />
-            ))}
-            {(sessions ?? []).length > 1 ? (
-              <Pressable
-                style={styles.revokeOthersButton}
-                onPress={onRevokeOthers}
-                testID="revoke-other-sessions-button"
-              >
-                <Text style={styles.revokeOthersText}>{t('security.signOutOtherSessions')}</Text>
-              </Pressable>
-            ) : null}
-          </>
-        )}
-
-        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>
-          {t('security.linkedAccountsTitle')}
-        </Text>
-        {linkedAccountsLoading ? (
-          <ActivityIndicator color={colors.primary} testID="linked-accounts-loading" />
-        ) : linkedAccountsError ? (
-          <Text style={styles.error}>{getErrorMessage(linkedAccountsErrorObj)}</Text>
-        ) : (
-          OAUTH_PROVIDERS.map((provider) => (
-            <LinkedAccountRow
-              key={provider}
-              provider={provider}
-              linked={(linkedAccounts ?? []).find((a) => a.provider === provider)}
-              onUnlink={() => onUnlink(provider)}
-              isUnlinking={
-                unlinkOAuthAccount.isPending && unlinkOAuthAccount.variables === provider
-              }
-            />
-          ))
-        )}
-
-        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>
-          {t('security.changePasswordTitle')}
-        </Text>
-        {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
-        {passwordSaved ? <Text style={styles.success}>{t('security.passwordUpdated')}</Text> : null}
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          placeholder={t('security.currentPasswordPlaceholder')}
-          secureTextEntry
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          testID="current-password-input"
-        />
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          placeholder={t('security.newPasswordPlaceholder')}
-          secureTextEntry
-          value={newPassword}
-          onChangeText={setNewPassword}
-          testID="new-password-input"
-        />
-        <Pressable
-          style={[styles.saveButton, updatePassword.isPending && styles.saveButtonDisabled]}
-          onPress={() => void onChangePassword()}
-          disabled={updatePassword.isPending}
-          testID="change-password-button"
-        >
-          <Text style={styles.saveButtonText}>
-            {updatePassword.isPending ? t('security.saving') : t('security.updatePassword')}
-          </Text>
-        </Pressable>
+            ))
+          )}
+        </View>
       </ScrollView>
       {stepUpDialog}
     </KeyboardAvoidingView>
@@ -281,9 +283,23 @@ export function SecurityScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 20, gap: 8 },
+    content: { padding: 20, gap: 16 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 10,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
     sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-    sectionSpacing: { marginTop: 24 },
+    fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 4 },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -292,8 +308,8 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     success: {
-      color: '#047857',
-      backgroundColor: '#d1fae5',
+      color: colors.success,
+      backgroundColor: colors.successSurface,
       borderRadius: 8,
       padding: 10,
       fontSize: 14,
@@ -325,16 +341,6 @@ function createStyles(colors: ThemeColors) {
     sessionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
     sessionMeta: { fontSize: 12, color: colors.textSubtle },
     linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
-    revokeOthersButton: {
-      minHeight: 44,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.dangerBorder,
-      backgroundColor: colors.dangerSurface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    revokeOthersText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -343,6 +349,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 15,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     saveButton: {
       minHeight: 44,
@@ -353,6 +360,6 @@ function createStyles(colors: ThemeColors) {
       marginTop: 8,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    saveButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
   });
 }

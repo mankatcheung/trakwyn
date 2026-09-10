@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 
 const schema = z.object({
   name: z.string(),
@@ -77,5 +77,25 @@ describe('parseAiJson', () => {
     expect((err as Error).message).toBe(
       "The AI's response couldn't be understood — please try again",
     );
+  });
+});
+
+describe('assertNotTruncated (F2)', () => {
+  it('passes a complete reply through', () => {
+    expect(() => assertNotTruncated({ truncated: false })).not.toThrow();
+    expect(() => assertNotTruncated({})).not.toThrow();
+  });
+
+  it('throws AI_RESPONSE_INVALID with a message about the output budget for a cut-off reply', () => {
+    const err = (() => {
+      try {
+        assertNotTruncated({ truncated: true });
+      } catch (e) {
+        return e as { code: string; message: string };
+      }
+      return null;
+    })();
+    expect(err?.code).toBe('AI_RESPONSE_INVALID');
+    expect(err?.message).toMatch(/ran out of room/);
   });
 });

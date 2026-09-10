@@ -174,6 +174,15 @@ export function LlmApiKeyRow({
                         limit: formatNumber(limit),
                       }),
                   t('integrations.usageRequests', { count: usage.requestCount }),
+                  // Only when the provider reports a cache split at all —
+                  // a 0% for a provider that never says would be misleading.
+                  ...(usage.cacheReadTokens + usage.cacheWriteTokens > 0 && usage.promptTokens > 0
+                    ? [
+                        t('integrations.usageCacheHits', {
+                          rate: Math.round((100 * usage.cacheReadTokens) / usage.promptTokens),
+                        }),
+                      ]
+                    : []),
                   ...(limit === null
                     ? [t('integrations.usageTokens', { count: formatNumber(used) })]
                     : []),

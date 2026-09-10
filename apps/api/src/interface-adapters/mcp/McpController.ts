@@ -28,6 +28,7 @@ import type { IEducationRepository } from '#src/use-cases/ports/IEducationReposi
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { API_TOKEN_SCOPE } from '#src/use-cases/constants.js';
+import { projectApplicationSummary } from '#src/use-cases/chat/chatToolProjection.js';
 import { JSON_RPC_ERROR, MCP } from '#src/interface-adapters/mcp/constants.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import { MCP_TOOLS } from '#src/interface-adapters/llm/toolCatalogue.js';
@@ -152,6 +153,7 @@ export class McpController {
             protocolVersion: MCP.PROTOCOL_VERSION,
             capabilities: { tools: {} },
             serverInfo: { name: MCP.SERVER_NAME, version: MCP.SERVER_VERSION },
+            instructions: MCP.INSTRUCTIONS,
           },
         },
       };
@@ -202,14 +204,20 @@ export class McpController {
       let result: unknown;
 
       switch (toolName) {
-        case 'list_applications':
-          result = await this.deps.getApplicationsPageUseCase.execute({
+        case 'list_applications': {
+          // Same preview rows the chat assistant gets (T1/F4): a page of
+          // whole rows carried up to 20 scraped job descriptions, and the
+          // full text is one get_application away. Nulls are kept — an MCP
+          // client is a program, and a missing field reads as absent.
+          const page = await this.deps.getApplicationsPageUseCase.execute({
             userId,
             status: toStr(args.status) as ApplicationStatus | undefined,
             cursor: toStr(args.cursor),
             limit: toPositiveInt(args.limit),
           });
+          result = { ...page, items: page.items.map(projectApplicationSummary) };
           break;
+        }
         case 'get_application':
           if (!toStr(args.applicationId)) {
             return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');

@@ -175,198 +175,212 @@ export function ProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
-        {saved ? <Text style={styles.success}>{t('profile.saved')}</Text> : null}
+        <View style={styles.card}>
+          {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
+          {saved ? <Text style={styles.success}>{t('profile.saved')}</Text> : null}
 
-        <View style={styles.avatarRow}>
-          {profile.avatarUrl ? (
-            <Image
-              source={{ uri: profile.avatarUrl }}
-              style={styles.avatarImage}
-              testID="profile-avatar-image"
-            />
-          ) : (
-            <View style={styles.avatarPlaceholder} testID="profile-avatar-placeholder">
-              <Text style={styles.avatarPlaceholderText}>
-                {(profile.name || profile.email).charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <View style={styles.avatarActions}>
-            <Pressable
-              onPress={() => void onPickAvatar()}
-              disabled={uploadAvatar.isPending}
-              testID="profile-upload-avatar-button"
-            >
-              <Text style={styles.link}>
-                {uploadAvatar.isPending
-                  ? t('profile.uploading')
-                  : profile.avatarUrl
-                    ? t('profile.changePhoto')
-                    : t('profile.uploadPhoto')}
-              </Text>
-            </Pressable>
+          <View style={styles.avatarRow}>
             {profile.avatarUrl ? (
+              <Image
+                source={{ uri: profile.avatarUrl }}
+                style={styles.avatarImage}
+                testID="profile-avatar-image"
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder} testID="profile-avatar-placeholder">
+                <Text style={styles.avatarPlaceholderText}>
+                  {(profile.name || profile.email).charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.avatarActions}>
               <Pressable
-                onPress={onRemoveAvatar}
-                disabled={removeAvatar.isPending}
-                testID="profile-remove-avatar-button"
+                onPress={() => void onPickAvatar()}
+                disabled={uploadAvatar.isPending}
+                testID="profile-upload-avatar-button"
               >
-                <Text style={styles.linkDanger}>{t('profile.removePhoto')}</Text>
+                <Text style={styles.link}>
+                  {uploadAvatar.isPending
+                    ? t('profile.uploading')
+                    : profile.avatarUrl
+                      ? t('profile.changePhoto')
+                      : t('profile.uploadPhoto')}
+                </Text>
               </Pressable>
-            ) : null}
+              <Text style={styles.avatarHint}>{t('profile.photoHint')}</Text>
+              {profile.avatarUrl ? (
+                <Pressable
+                  onPress={onRemoveAvatar}
+                  disabled={removeAvatar.isPending}
+                  testID="profile-remove-avatar-button"
+                >
+                  <Text style={styles.linkDanger}>{t('profile.removePhoto')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
-        </View>
-        {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
+          {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
 
-        <Text style={styles.label}>{t('profile.emailLabel')}</Text>
-        <Text style={styles.readOnly}>{profile.email}</Text>
+          <Text style={styles.label}>{t('profile.nameLabel')}</Text>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('profile.namePlaceholder')}
+            testID="profile-name-input"
+          />
 
-        <Text style={styles.label}>{t('profile.nameLabel')}</Text>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          testID="profile-name-input"
-        />
+          <Text style={styles.label}>{t('profile.timezoneLabel')}</Text>
+          <TimezonePicker value={timezone} onChange={setTimezone} testID="profile-timezone-input" />
 
-        <Text style={styles.label}>{t('profile.timezoneLabel')}</Text>
-        <TimezonePicker value={timezone} onChange={setTimezone} testID="profile-timezone-input" />
+          <Text style={styles.label}>{t('profile.targetRoleLabel')}</Text>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            value={targetRole}
+            onChangeText={setTargetRole}
+            placeholder={t('profile.targetRolePlaceholder')}
+            testID="profile-target-role-input"
+          />
 
-        <Text style={styles.label}>{t('profile.targetRoleLabel')}</Text>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          value={targetRole}
-          onChangeText={setTargetRole}
-          placeholder={t('profile.targetRolePlaceholder')}
-          testID="profile-target-role-input"
-        />
-
-        <Pressable
-          style={[styles.saveButton, updateProfile.isPending && styles.saveButtonDisabled]}
-          onPress={onSave}
-          disabled={updateProfile.isPending}
-          testID="profile-save-button"
-        >
-          <Text style={styles.saveButtonText}>
-            {updateProfile.isPending ? t('profile.saving') : t('profile.save')}
-          </Text>
-        </Pressable>
-
-        <Text style={styles.sectionTitle}>{t('profile.emailSectionTitle')}</Text>
-        {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
-        {emailSent ? <Text style={styles.success}>{t('profile.emailChangeSent')}</Text> : null}
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          value={emailPassword}
-          onChangeText={setEmailPassword}
-          placeholder={t('profile.currentPasswordPlaceholder')}
-          secureTextEntry
-          testID="profile-email-current-password-input"
-        />
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          value={newEmail}
-          onChangeText={setNewEmail}
-          placeholder={t('profile.newEmailPlaceholder')}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          testID="profile-new-email-input"
-        />
-        <Pressable
-          style={[styles.saveButton, requestEmailChange.isPending && styles.saveButtonDisabled]}
-          onPress={() => void onUpdateEmail()}
-          disabled={requestEmailChange.isPending || !emailPassword || !newEmail}
-          testID="profile-update-email-button"
-        >
-          <Text style={styles.saveButtonText}>
-            {requestEmailChange.isPending ? t('profile.saving') : t('profile.updateEmail')}
-          </Text>
-        </Pressable>
-
-        <Text style={styles.sectionTitle}>{t('profile.backupEmailSectionTitle')}</Text>
-        <Text style={styles.sectionDescription}>{t('profile.backupEmailDescription')}</Text>
-        {profile.backupEmail ? (
-          <>
-            <Text style={styles.readOnly} testID="profile-backup-email-value">
-              {profile.backupEmail}
-              {'  '}
-              {profile.backupEmailVerifiedAt
-                ? t('profile.backupEmailVerified')
-                : t('profile.backupEmailPending')}
+          <Pressable
+            style={[styles.saveButton, updateProfile.isPending && styles.saveButtonDisabled]}
+            onPress={onSave}
+            disabled={updateProfile.isPending}
+            testID="profile-save-button"
+          >
+            <Text style={styles.saveButtonText}>
+              {updateProfile.isPending ? t('profile.saving') : t('profile.save')}
             </Text>
-            {removeBackupError ? <Text style={styles.error}>{removeBackupError}</Text> : null}
-            <TextInput
-              placeholderTextColor={colors.textFaint}
-              style={styles.input}
-              value={removeBackupPassword}
-              onChangeText={setRemoveBackupPassword}
-              placeholder={t('profile.currentPasswordPlaceholder')}
-              secureTextEntry
-              testID="profile-remove-backup-email-password-input"
-            />
-            <Pressable
-              style={[
-                styles.dangerButton,
-                removeBackupEmail.isPending && styles.saveButtonDisabled,
-              ]}
-              onPress={() => void onRemoveBackupEmail()}
-              disabled={removeBackupEmail.isPending || !removeBackupPassword}
-              testID="profile-remove-backup-email-button"
-            >
-              <Text style={styles.dangerButtonText}>
-                {removeBackupEmail.isPending ? t('profile.saving') : t('profile.removeBackupEmail')}
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('profile.emailSectionTitle')}</Text>
+          <Text style={styles.sectionDescription}>{t('profile.emailSectionDescription')}</Text>
+          {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+          {emailSent ? <Text style={styles.success}>{t('profile.emailChangeSent')}</Text> : null}
+
+          <View style={styles.readOnlyRow}>
+            <Text style={styles.readOnly}>{profile.email}</Text>
+            <Text style={styles.link}>{t('profile.change')}</Text>
+          </View>
+
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            value={emailPassword}
+            onChangeText={setEmailPassword}
+            placeholder={t('profile.currentPasswordPlaceholder')}
+            secureTextEntry
+            testID="profile-email-current-password-input"
+          />
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            value={newEmail}
+            onChangeText={setNewEmail}
+            placeholder={t('profile.newEmailPlaceholder')}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            testID="profile-new-email-input"
+          />
+          <Pressable
+            style={[styles.saveButton, requestEmailChange.isPending && styles.saveButtonDisabled]}
+            onPress={() => void onUpdateEmail()}
+            disabled={requestEmailChange.isPending || !emailPassword || !newEmail}
+            testID="profile-update-email-button"
+          >
+            <Text style={styles.saveButtonText}>
+              {requestEmailChange.isPending ? t('profile.saving') : t('profile.updateEmail')}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('profile.backupEmailSectionTitle')}</Text>
+          <Text style={styles.sectionDescription}>{t('profile.backupEmailDescription')}</Text>
+          {profile.backupEmail ? (
+            <>
+              <Text style={styles.readOnly} testID="profile-backup-email-value">
+                {profile.backupEmail}
+                {'  '}
+                {profile.backupEmailVerifiedAt
+                  ? t('profile.backupEmailVerified')
+                  : t('profile.backupEmailPending')}
               </Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            {backupEmailError ? <Text style={styles.error}>{backupEmailError}</Text> : null}
-            {backupEmailSent ? (
-              <Text style={styles.success}>{t('profile.backupEmailAdded')}</Text>
-            ) : null}
-            <TextInput
-              placeholderTextColor={colors.textFaint}
-              style={styles.input}
-              value={backupEmailInput}
-              onChangeText={setBackupEmailInput}
-              placeholder={t('profile.backupEmailPlaceholder')}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              testID="profile-backup-email-input"
-            />
-            <TextInput
-              placeholderTextColor={colors.textFaint}
-              style={styles.input}
-              value={backupEmailPassword}
-              onChangeText={setBackupEmailPassword}
-              placeholder={t('profile.currentPasswordPlaceholder')}
-              secureTextEntry
-              testID="profile-backup-email-password-input"
-            />
-            <Pressable
-              style={[
-                styles.saveButton,
-                requestAddBackupEmail.isPending && styles.saveButtonDisabled,
-              ]}
-              onPress={() => void onAddBackupEmail()}
-              disabled={
-                requestAddBackupEmail.isPending || !backupEmailInput || !backupEmailPassword
-              }
-              testID="profile-add-backup-email-button"
-            >
-              <Text style={styles.saveButtonText}>
-                {requestAddBackupEmail.isPending
-                  ? t('profile.saving')
-                  : t('profile.addBackupEmail')}
-              </Text>
-            </Pressable>
-          </>
-        )}
+              {removeBackupError ? <Text style={styles.error}>{removeBackupError}</Text> : null}
+              <TextInput
+                placeholderTextColor={colors.textFaint}
+                style={styles.input}
+                value={removeBackupPassword}
+                onChangeText={setRemoveBackupPassword}
+                placeholder={t('profile.currentPasswordPlaceholder')}
+                secureTextEntry
+                testID="profile-remove-backup-email-password-input"
+              />
+              <Pressable
+                style={[
+                  styles.dangerButton,
+                  removeBackupEmail.isPending && styles.saveButtonDisabled,
+                ]}
+                onPress={() => void onRemoveBackupEmail()}
+                disabled={removeBackupEmail.isPending || !removeBackupPassword}
+                testID="profile-remove-backup-email-button"
+              >
+                <Text style={styles.dangerButtonText}>
+                  {removeBackupEmail.isPending
+                    ? t('profile.saving')
+                    : t('profile.removeBackupEmail')}
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              {backupEmailError ? <Text style={styles.error}>{backupEmailError}</Text> : null}
+              {backupEmailSent ? (
+                <Text style={styles.success}>{t('profile.backupEmailAdded')}</Text>
+              ) : null}
+              <TextInput
+                placeholderTextColor={colors.textFaint}
+                style={styles.input}
+                value={backupEmailInput}
+                onChangeText={setBackupEmailInput}
+                placeholder={t('profile.backupEmailPlaceholder')}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                testID="profile-backup-email-input"
+              />
+              <TextInput
+                placeholderTextColor={colors.textFaint}
+                style={styles.input}
+                value={backupEmailPassword}
+                onChangeText={setBackupEmailPassword}
+                placeholder={t('profile.currentPasswordPlaceholder')}
+                secureTextEntry
+                testID="profile-backup-email-password-input"
+              />
+              <Pressable
+                style={[
+                  styles.saveButton,
+                  requestAddBackupEmail.isPending && styles.saveButtonDisabled,
+                ]}
+                onPress={() => void onAddBackupEmail()}
+                disabled={
+                  requestAddBackupEmail.isPending || !backupEmailInput || !backupEmailPassword
+                }
+                testID="profile-add-backup-email-button"
+              >
+                <Text style={styles.saveButtonText}>
+                  {requestAddBackupEmail.isPending
+                    ? t('profile.saving')
+                    : t('profile.addBackupEmail')}
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </View>
       </ScrollView>
       {stepUpDialog}
     </KeyboardAvoidingView>
@@ -377,7 +391,15 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-    content: { padding: 20, gap: 6 },
+    content: { padding: 20, gap: 16 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 6,
+    },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -387,8 +409,8 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 8,
     },
     success: {
-      color: '#047857',
-      backgroundColor: '#d1fae5',
+      color: colors.success,
+      backgroundColor: colors.successSurface,
       borderRadius: 8,
       padding: 10,
       fontSize: 14,
@@ -405,11 +427,22 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     avatarPlaceholderText: { fontSize: 24, fontWeight: '700', color: colors.primary },
-    avatarActions: { gap: 6 },
+    avatarActions: { gap: 4 },
+    avatarHint: { fontSize: 12, color: colors.textFaint },
     link: { color: colors.primary, fontSize: 14, fontWeight: '600' },
     linkDanger: { color: colors.danger, fontSize: 14, fontWeight: '600' },
     label: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 10 },
-    readOnly: { fontSize: 15, color: colors.textSubtle, paddingVertical: 8 },
+    readOnly: { fontSize: 15, color: colors.textSubtle },
+    readOnlyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 4,
+    },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -418,6 +451,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 15,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     saveButton: {
       minHeight: 44,
@@ -428,7 +462,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 20,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveButtonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    saveButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
     dangerButton: {
       minHeight: 44,
       borderRadius: 8,
@@ -444,9 +478,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginTop: 32,
-      marginBottom: 4,
     },
-    sectionDescription: { fontSize: 13, color: colors.textSubtle, marginBottom: 8 },
+    sectionDescription: { fontSize: 13, color: colors.textSubtle, marginBottom: 4 },
   });
 }

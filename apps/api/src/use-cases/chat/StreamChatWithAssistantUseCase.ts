@@ -3,6 +3,7 @@ import {
   ForbiddenError,
   NotFoundError,
   RateLimitedError,
+  ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
@@ -16,6 +17,9 @@ import {
   buildChatMessages,
   deriveChatTitle,
   executeChatTool,
+  formatToolResultForModel,
+  summarizeToolResult,
+  trimHistoryToBudget,
 } from '#src/use-cases/chat/chatAssembly.js';
 
 export interface ChatWithAssistantInput {
@@ -77,6 +81,17 @@ export class StreamChatWithAssistantUseCase {
   constructor(private readonly deps: ChatWithAssistantDeps) {}
 
   async *execute(input: ChatWithAssistantInput): AsyncGenerator<ChatStreamEvent> {
+    // Before the rate limiter: a request that was never going to run should
+    // not spend one of the user's attempts.
+    if (input.message.trim().length === 0) {
+      throw new ValidationError('Message is required');
+    }
+    if (input.message.length > CHAT.MAX_MESSAGE_CHARS) {
+      throw new ValidationError(
+        `Message is too long — keep it under ${CHAT.MAX_MESSAGE_CHARS.toLocaleString()} characters`,
+      );
+    }
+
     if (!(await this.deps.chatRateLimiter.consume(`chat:${input.userId}`))) {
       throw new RateLimitedError('Too many messages — please wait a moment and try again');
     }
@@ -96,7 +111,10 @@ export class StreamChatWithAssistantUseCase {
     // uncapped list: `history.length === 0` below needs to know whether this
     // is truly the conversation's first message, not just the first one
     // still within the cap.
-    const historyForPrompt = history.slice(-CHAT.MAX_HISTORY_MESSAGES);
+    const historyForPrompt = trimHistoryToBudget(
+      history.slice(-CHAT.MAX_HISTORY_MESSAGES),
+      CHAT.MAX_HISTORY_CHARS,
+    );
     const messages = buildChatMessages(historyForPrompt, input.message, user);
 
     const providerName = conversation.llmProvider ?? user?.defaultLlmProvider ?? null;
@@ -122,6 +140,7 @@ export class StreamChatWithAssistantUseCase {
 
     let finalReply =
       'That took more steps than I could complete — try asking something more specific.';
+    const toolTrace: string[] = [];
 
     for (let i = 0; i < CHAT.MAX_TOOL_ITERATIONS; i++) {
       let content = '';
@@ -135,10 +154,11 @@ export class StreamChatWithAssistantUseCase {
       )) {
         if (event.type === 'text_delta') {
           yield { type: 'delta', text: event.text };
-        } else {
+        } else if (event.type === 'done') {
           content = event.content ?? '';
           toolCalls = event.toolCalls;
         }
+        // `prompt_usage` is the usage tracker's business, not the chat's.
       }
 
       if (toolCalls.length === 0) {
@@ -151,12 +171,21 @@ export class StreamChatWithAssistantUseCase {
         toolCalls.map((call) => executeChatTool(call, input.userId, this.deps)),
       );
       toolCalls.forEach((call, idx) => {
+        toolTrace.push(summarizeToolResult(call, toolResults[idx]));
         messages.push({
           role: 'tool',
-          content: JSON.stringify(toolResults[idx]),
+          content: formatToolResultForModel(call.name, toolResults[idx]),
           toolCallId: call.id,
         });
       });
+      // Breakpoint 3 moves each iteration: everything up to and including
+      // this round's tool results is a cache hit on the next call of the
+      // loop, instead of the whole prompt being re-billed per iteration.
+      // Anthropic allows four markers; the two from buildChatMessages plus
+      // this one leave one spare. Providers without explicit caching ignore
+      // the flag (T2).
+      for (const m of messages) if (m.role === 'tool') m.cacheBreakpoint = false;
+      messages[messages.length - 1].cacheBreakpoint = true;
     }
 
     await this.deps.messageRepository.create({
@@ -170,6 +199,7 @@ export class StreamChatWithAssistantUseCase {
       conversationId: input.conversationId,
       role: 'assistant',
       content: finalReply,
+      toolTrace: toolTrace.length ? toolTrace.join('; ') : null,
     });
 
     if (history.length === 0) {

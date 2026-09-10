@@ -10,6 +10,8 @@
   "data": "数据",
   "dangerZone": "危险区域",
   "analytics": "分析",
-  "trash": "回收站",
+  "privacyPolicy": "隐私政策",
+  "termsOfService": "服务条款",
+  "accessibility": "无障碍",
   "signOut": "退出登录"
 }

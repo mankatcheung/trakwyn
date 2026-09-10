@@ -3,9 +3,11 @@ import type {
   LLMMessage,
   LLMToolDefinition,
   LLMStreamEvent,
+  LLMCompleteOptions,
   LLMCompleteResult,
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
+import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import { LLM } from '#src/use-cases/constants.js';
 import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
 import {
@@ -13,6 +15,7 @@ import {
   createIdleAbortController,
 } from '#src/infrastructure/llm/fetchWithRetry.js';
 import { parseSSE } from '#src/infrastructure/llm/sseParser.js';
+import { providerHttpError } from '#src/infrastructure/llm/providerError.js';
 
 interface OpenAIWireMessage {
   role: string;
@@ -28,6 +31,8 @@ interface OpenAIWireMessage {
 interface OpenAIWireUsage {
   prompt_tokens: number;
   completion_tokens: number;
+  /** OpenAI reports automatic prefix-cache hits here; most compatible backends omit it. */
+  prompt_tokens_details?: { cached_tokens?: number } | null;
 }
 
 interface OpenAIWireResponse {
@@ -36,13 +41,19 @@ interface OpenAIWireResponse {
       content: string | null;
       tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
     };
+    finish_reason?: string | null;
   }>;
   usage?: OpenAIWireUsage;
 }
 
 function toLLMUsage(usage: OpenAIWireUsage | null | undefined): LLMUsage | null {
   if (!usage) return null;
-  return { promptTokens: usage.prompt_tokens, completionTokens: usage.completion_tokens };
+  const cached = usage.prompt_tokens_details?.cached_tokens;
+  return {
+    promptTokens: usage.prompt_tokens,
+    completionTokens: usage.completion_tokens,
+    ...(typeof cached === 'number' ? { cacheReadTokens: cached } : {}),
+  };
 }
 
 const OPENAI_STREAM_DONE = '[DONE]';
@@ -94,24 +105,37 @@ interface OpenAIStreamChunk {
  * grows, never shrinks or reorders.
  */
 export class OpenAICompatibleLLMProvider implements ILLMProvider {
+  /**
+   * `outboundUrlPolicy` is set only for the "Custom" provider, whose base
+   * URL the user typed: the vendor endpoints are fixed constants and need no
+   * check. It runs on every call, not just at save time, because the name a
+   * user saved can be re-pointed at a private address afterwards.
+   */
   constructor(
     private readonly apiKey: string,
     private readonly baseUrl: string,
     private readonly model: string,
+    private readonly outboundUrlPolicy?: IOutboundUrlPolicy,
   ) {}
 
   async complete(
     messages: LLMMessage[],
     maxTokens: number = LLM.DEFAULT_MAX_TOKENS,
     signal?: AbortSignal,
+    options?: LLMCompleteOptions,
   ): Promise<LLMCompleteResult> {
     if (!this.apiKey) throw new Error('API key is not set');
+    await this.outboundUrlPolicy?.assertAllowed(this.baseUrl, 'llm-provider');
 
     const json = await this.post(
       {
         model: this.model,
         messages: this.toWireMessages(messages),
         max_tokens: Math.min(maxTokens, LLM.MAX_OUTPUT_TOKENS_CAP),
+        // OpenAI's JSON mode (F6); requires the word "JSON" in the prompt,
+        // which every caller that asks for it already has. Compatible
+        // backends that do not know the field ignore it.
+        ...(options?.json ? { response_format: { type: 'json_object' } } : {}),
       },
       signal,
     );
@@ -119,6 +143,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     return {
       content: json.choices[0]?.message?.content ?? '',
       usage: toLLMUsage(json.usage),
+      truncated: json.choices[0]?.finish_reason === 'length',
     };
   }
 
@@ -129,6 +154,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     signal?: AbortSignal,
   ): AsyncGenerator<LLMStreamEvent> {
     if (!this.apiKey) throw new Error('API key is not set');
+    await this.outboundUrlPolicy?.assertAllowed(this.baseUrl, 'llm-provider');
 
     const { body, onChunk, dispose } = await this.postStream(
       {
@@ -238,7 +264,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`LLM provider error ${response.status}: ${text}`);
+      throw providerHttpError('LLM provider', response.status, text);
     }
 
     return response.json() as Promise<OpenAIWireResponse>;
@@ -270,7 +296,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     if (!response.ok) {
       idle.dispose();
       const text = await response.text();
-      throw new Error(`LLM provider error ${response.status}: ${text}`);
+      throw providerHttpError('LLM provider', response.status, text);
     }
     if (!response.body) {
       idle.dispose();

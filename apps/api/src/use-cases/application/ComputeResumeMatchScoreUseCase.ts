@@ -18,8 +18,9 @@ import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js'
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
-import { parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
+import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { AI_PROMPT_INPUT, RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
+import { withTimeout } from '#src/use-cases/shared/withTimeout.js';
 
 export interface ComputeResumeMatchScoreInput {
   applicationId: string;
@@ -120,12 +121,18 @@ export class ComputeResumeMatchScoreUseCase {
 
     const resumeText = await this.resolveResumeText(input);
 
-    const { content: raw } = await llmProvider.complete([
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: USER_PROMPT_TEMPLATE(jobDescription, resumeText) },
-    ]);
+    const result = await llmProvider.complete(
+      [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: USER_PROMPT_TEMPLATE(jobDescription, resumeText) },
+      ],
+      undefined,
+      undefined,
+      { json: true },
+    );
+    assertNotTruncated(result);
 
-    return this.parseResponse(raw);
+    return this.parseResponse(result.content);
   }
 
   private async resolveResumeText(input: ComputeResumeMatchScoreInput): Promise<string> {
@@ -140,12 +147,28 @@ export class ComputeResumeMatchScoreUseCase {
 
     if (resumeDoc) {
       const url = await this.deps.storageProvider.getSignedUrl(resumeDoc.storageKey);
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(RESUME_TEXT_EXTRACTION.FETCH_TIMEOUT_MS),
+      });
       if (!response.ok) {
         throw new ServiceUnavailableError('Failed to read the uploaded resume file');
       }
+      // Checked before the body is read (the header) and after (the header
+      // can be absent or wrong): the file is parsed on the request path, and
+      // the upload cap is the size the parser was ever meant to see.
+      const declared = Number(response.headers?.get('content-length') ?? 0);
+      if (declared > RESUME_TEXT_EXTRACTION.MAX_BYTES) {
+        throw new ValidationError('The uploaded resume is too large to analyse');
+      }
       const buffer = Buffer.from(await response.arrayBuffer());
-      const text = await this.deps.documentTextExtractor.extract(buffer, resumeDoc.mimeType);
+      if (buffer.byteLength > RESUME_TEXT_EXTRACTION.MAX_BYTES) {
+        throw new ValidationError('The uploaded resume is too large to analyse');
+      }
+      const text = await withTimeout(
+        this.deps.documentTextExtractor.extract(buffer, resumeDoc.mimeType),
+        RESUME_TEXT_EXTRACTION.EXTRACT_TIMEOUT_MS,
+        () => new ServiceUnavailableError('Reading the uploaded resume took too long'),
+      );
 
       if (text.trim()) return text;
     }

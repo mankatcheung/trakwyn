@@ -8,6 +8,9 @@ LlmUsageSummaryRef.implement({
     requestCount: t.exposeInt('requestCount'),
     promptTokens: t.exposeInt('promptTokens'),
     completionTokens: t.exposeInt('completionTokens'),
+    /** Share of promptTokens served from / written to the provider's prompt cache this month (T3). */
+    cacheReadTokens: t.exposeInt('cacheReadTokens'),
+    cacheWriteTokens: t.exposeInt('cacheWriteTokens'),
     lastUsedAt: t.exposeString('lastUsedAt'),
     monthlyTokenLimit: t.exposeInt('monthlyTokenLimit', { nullable: true }),
     limitReached: t.exposeBoolean('limitReached'),

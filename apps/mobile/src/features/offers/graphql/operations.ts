@@ -21,6 +21,29 @@ export const OFFERS_QUERY = `
   }
 `;
 
+export const MY_OFFERS_QUERY = `
+  query MyOffers {
+    myOffers {
+      company
+      role
+      offer {
+        id
+        applicationId
+        baseSalary
+        bonus
+        equity
+        benefits
+        costOfLivingAdjustment
+        currency
+        period
+        notes
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
 export const CREATE_OFFER_MUTATION = `
   mutation CreateOffer($input: CreateOfferInput!) {
     createOffer(input: $input) {

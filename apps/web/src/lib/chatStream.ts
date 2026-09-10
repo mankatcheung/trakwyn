@@ -1,4 +1,5 @@
 import { CHAT_STREAM_URL } from '#/graphql/client';
+import { ERROR_CODES } from '#/constants';
 
 export class ChatStreamError extends Error {
   constructor(
@@ -36,6 +37,23 @@ function parseFrame(raw: string): SSEFrame | null {
 }
 
 /**
+ * A 400 (message missing or over `CHAT.MAX_MESSAGE_CHARS`) and a 413 (body
+ * over the route's limit) carry a JSON `{ error }` the user can act on —
+ * surfaced as a `ChatStreamError` with the VALIDATION code so the chat pane
+ * shows it instead of "Something went wrong". Anything else stays a plain
+ * transport error.
+ */
+async function toRequestError(response: Response): Promise<Error> {
+  if (response.status === 400 || response.status === 413) {
+    const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+    if (typeof body?.error === 'string') {
+      return new ChatStreamError(body.error, ERROR_CODES.VALIDATION);
+    }
+  }
+  return new Error(`Chat stream request failed with status ${response.status}`);
+}
+
+/**
  * Consumes the `/chat/stream` SSE endpoint (JEF-239) — a plain `fetch()` +
  * `ReadableStream` reader, not `gqlClient`, since this isn't a GraphQL
  * request and needs incremental delivery `graphql-request` doesn't support.
@@ -67,7 +85,7 @@ export async function streamChatMessage({
   });
 
   if (!response.ok || !response.body) {
-    throw new Error(`Chat stream request failed with status ${response.status}`);
+    throw await toRequestError(response);
   }
 
   const reader = response.body.getReader();

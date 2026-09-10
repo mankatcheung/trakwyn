@@ -12,6 +12,9 @@ export const CHAT_STREAM_URL = API_URL.replace(/\/graphql$/, '/chat/stream');
 /** The API's own origin, with no path — used to build the OAuth start URL (apps/api's /auth/oauth/:provider/start). */
 export const API_ORIGIN = API_URL.replace(/\/graphql$/, '');
 
+/** The web app's own origin — used to open the Privacy Policy, Terms of Service, and Accessibility pages, which only exist on web (apps/web/src/routes/{privacy,terms,accessibility}.tsx). */
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3000';
+
 /**
  * The app's own custom URL scheme (app.json's `scheme`), matching
  * apps/api's `MOBILE_OAUTH_CALLBACK` — where the OAuth callback redirects
@@ -19,8 +22,16 @@ export const API_ORIGIN = API_URL.replace(/\/graphql$/, '');
  */
 export const OAUTH_MOBILE_CALLBACK_URL = 'trakwyn://oauth-callback';
 
+/**
+ * Longest chat message the API accepts (`CHAT.MAX_MESSAGE_CHARS` in
+ * apps/api). Mirrored so the composer stops at the limit rather than
+ * letting the user learn it from a 400.
+ */
+export const CHAT_MESSAGE_MAX_CHARS = 8000;
+
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
+  VALIDATION: 'VALIDATION',
   /** A TOTP-enabled account's session is too old for a sensitive change; the API wants a fresh reauthentication first (JEF-44). */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
   /** Client-side only: the request never reached the server. */

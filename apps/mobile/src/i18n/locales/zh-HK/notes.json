@@ -10,5 +10,8 @@
   "add": "新增",
   "couldNotAddNoteTitle": "無法新增筆記",
   "couldNotSaveTitle": "無法儲存",
-  "couldNotDeleteTitle": "無法刪除"
+  "couldNotDeleteTitle": "無法刪除",
+  "notesTabLabel": "筆記",
+  "interviewsTabLabel": "面試",
+  "documentsTabLabel": "文件"
 }

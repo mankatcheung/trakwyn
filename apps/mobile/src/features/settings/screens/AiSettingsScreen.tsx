@@ -31,6 +31,7 @@ import { LLM_PROVIDER_LABEL, LLM_PROVIDERS, type LlmApiKey, type LlmUsageSummary
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { createSheetStyles } from '../../../components/sheetStyles';
 
 /** Above this share of the limit the meter warns rather than just reports. */
 const NEARING_LIMIT_RATIO = 0.8;
@@ -142,7 +143,11 @@ function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
 
   return (
     <Pressable
-      style={[styles.keyRow, reached && styles.keyRowPaused]}
+      style={[
+        styles.keyRow,
+        isDefault && !reached && styles.keyRowDefault,
+        reached && styles.keyRowPaused,
+      ]}
       onPress={onOpenActions}
       testID={`llm-key-${apiKey.provider}`}
     >
@@ -899,6 +904,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 8,
     },
+    keyRowDefault: { borderColor: colors.successBorder, backgroundColor: colors.successSurface },
     keyRowPaused: { borderColor: colors.dangerBorder, backgroundColor: colors.dangerSurface },
     textColumn: { flex: 1, gap: 4 },
     keyProviderLine: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
@@ -928,7 +934,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 2,
     },
     meterFill: { height: '100%', borderRadius: 9999, backgroundColor: colors.primary },
-    meterFillWarn: { backgroundColor: '#d97706' },
+    meterFillWarn: { backgroundColor: colors.warning },
     meterFillDanger: { backgroundColor: colors.danger },
     actionsButton: {
       padding: 6,
@@ -1010,51 +1016,10 @@ function createStyles(colors: ThemeColors) {
     switchRowText: { flex: 1, gap: 4 },
     switchRowTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
 
-    // Action sheet / limit editor modals
-    sheetBackdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    sheetContainer: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      padding: 16,
-      paddingBottom: 28,
-      gap: 2,
-    },
-    sheetTitle: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textFaint,
-      marginBottom: 8,
-      textTransform: 'uppercase',
-    },
-    sheetRow: {
-      paddingVertical: 14,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
+    // Action sheet / limit editor modals — shared chrome lives in sheetStyles.ts
+    ...createSheetStyles(colors),
     sheetRowLast: {},
-    sheetRowText: { fontSize: 16, color: colors.text },
-    sheetRowTextSelected: { color: colors.primary, fontWeight: '700' },
     sheetRowTextDanger: { fontSize: 16, color: colors.danger, fontWeight: '600' },
-    sheetCancel: {
-      marginTop: 12,
-      paddingVertical: 14,
-      borderRadius: 10,
-      backgroundColor: colors.surfaceAlt,
-      alignItems: 'center',
-    },
-    sheetCancelText: { fontSize: 16, fontWeight: '600', color: colors.text },
     limitAtCeilingText: {
       fontSize: 12,
       color: colors.danger,

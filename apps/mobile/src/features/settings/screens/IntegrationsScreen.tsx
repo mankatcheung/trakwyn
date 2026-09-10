@@ -29,6 +29,19 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+function ScopeBadge({ scope }: { scope: ApiTokenScope }) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <View style={[styles.badge, scope === 'full' && styles.badgeFull]}>
+      <Text style={[styles.badgeText, scope === 'full' && styles.badgeTextFull]}>
+        {scope === 'read' ? t('integrations.readOnly') : t('integrations.fullAccess')}
+      </Text>
+    </View>
+  );
+}
+
 export function IntegrationsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -77,8 +90,13 @@ function ApiTokensSection() {
           <Text style={styles.description}>{t('integrations.apiTokensDescription')}</Text>
         </View>
         {!formOpen && !created && (
-          <Pressable onPress={() => setFormOpen(true)} testID="new-api-token-button">
-            <Text style={styles.link}>{t('integrations.new')}</Text>
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setFormOpen(true)}
+            testID="new-api-token-button"
+            accessibilityLabel={t('integrations.new')}
+          >
+            <Text style={styles.addButtonText}>+</Text>
           </Pressable>
         )}
       </View>
@@ -142,10 +160,10 @@ function ApiTokensSection() {
       {tokens.map((token) => (
         <View key={token.id} style={styles.row} testID={`api-token-${token.id}`}>
           <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>
-              {token.name} ·{' '}
-              {token.scope === 'read' ? t('integrations.readOnly') : t('integrations.fullAccess')}
-            </Text>
+            <View style={styles.rowTitleLine}>
+              <Text style={styles.rowTitle}>{token.name}</Text>
+              <ScopeBadge scope={token.scope} />
+            </View>
             <Text style={styles.rowMeta}>
               {t('integrations.created', { date: formatDate(token.createdAt) })}
               {token.lastUsedAt
@@ -185,10 +203,10 @@ function McpGrantsSection() {
         grants.map((grant) => (
           <View key={grant.id} style={styles.row} testID={`mcp-grant-${grant.id}`}>
             <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>
-                {grant.clientName} ·{' '}
-                {grant.scope === 'read' ? t('integrations.readOnly') : t('integrations.fullAccess')}
-              </Text>
+              <View style={styles.rowTitleLine}>
+                <Text style={styles.rowTitle}>{grant.clientName}</Text>
+                <ScopeBadge scope={grant.scope} />
+              </View>
               <Text style={styles.rowMeta}>
                 {t('integrations.authorized', { date: formatDate(grant.authorizedAt) })}
               </Text>
@@ -240,8 +258,13 @@ function ShareLinksSection() {
           <Text style={styles.description}>{t('integrations.shareLinksDescription')}</Text>
         </View>
         {!formOpen && !created && (
-          <Pressable onPress={() => setFormOpen(true)} testID="new-share-link-button">
-            <Text style={styles.link}>{t('integrations.new')}</Text>
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setFormOpen(true)}
+            testID="new-share-link-button"
+            accessibilityLabel={t('integrations.new')}
+          >
+            <Text style={styles.addButtonText}>+</Text>
           </Pressable>
         )}
       </View>
@@ -314,19 +337,47 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 20, gap: 16 },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
       padding: 16,
       gap: 12,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
     cardHeaderText: { flex: 1, gap: 2 },
-    title: { fontSize: 15, fontWeight: '700', color: colors.text },
+    title: { fontSize: 16, fontWeight: '700', color: colors.text },
     description: { fontSize: 13, color: colors.textSubtle },
     link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
     linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
     emptyText: { fontSize: 13, color: colors.textFaint },
+    addButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addButtonText: { fontSize: 18, fontWeight: '600', color: colors.text, lineHeight: 20 },
+    badge: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 9999,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    badgeFull: { backgroundColor: colors.warningSurface },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+    },
+    badgeTextFull: { color: colors.warning },
     form: { gap: 8 },
     input: {
       borderWidth: 1,
@@ -336,6 +387,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 15,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     scopeRow: { flexDirection: 'row', gap: 8 },
     scopeChip: {
@@ -347,7 +399,7 @@ function createStyles(colors: ThemeColors) {
     },
     scopeChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     scopeChipText: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
-    scopeChipTextActive: { color: colors.surface },
+    scopeChipTextActive: { color: colors.onPrimary },
     button: {
       alignSelf: 'flex-start',
       minHeight: 40,
@@ -372,13 +424,15 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: colors.surfaceAlt,
-      paddingTop: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      padding: 12,
       gap: 8,
     },
-    rowText: { flex: 1, gap: 2 },
-    rowTitle: { fontSize: 13, fontWeight: '600', color: colors.text },
-    rowMeta: { fontSize: 11, color: colors.textFaint },
+    rowText: { flex: 1, gap: 3 },
+    rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    rowTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    rowMeta: { fontSize: 12, color: colors.textFaint },
   });
 }

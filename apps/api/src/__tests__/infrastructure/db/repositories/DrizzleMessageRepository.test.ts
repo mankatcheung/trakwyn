@@ -36,6 +36,27 @@ describe('DrizzleMessageRepository', () => {
       expect(msg.content).toBe('hi there');
       expect(msg.createdAt).toBeInstanceOf(Date);
     });
+
+    it("stores an assistant reply's tool trace and reads it back; null when absent (F10)", async () => {
+      const plain = await repo.create({
+        id: 'msg-plain',
+        conversationId: 'conv-1',
+        role: 'assistant',
+        content: 'hello',
+      });
+      const traced = await repo.create({
+        id: 'msg-traced',
+        conversationId: 'conv-1',
+        role: 'assistant',
+        content: 'two apps',
+        toolTrace: 'list_applications → 2 results: a Acme/Eng, b Globex/Staff',
+      });
+
+      expect(plain.toolTrace).toBeNull();
+      expect(traced.toolTrace).toBe('list_applications → 2 results: a Acme/Eng, b Globex/Staff');
+      const [, second] = await repo.findAllByConversationId('conv-1');
+      expect(second.toolTrace).toBe(traced.toolTrace);
+    });
   });
 
   describe('findAllByConversationId', () => {

@@ -402,6 +402,8 @@ describe('UserResolver', () => {
               requestCount: 3,
               promptTokens: 100,
               completionTokens: 40,
+              cacheReadTokens: 60,
+              cacheWriteTokens: 10,
               lastUsedAt,
             },
           ]),
@@ -417,6 +419,8 @@ describe('UserResolver', () => {
           requestCount: 3,
           promptTokens: 100,
           completionTokens: 40,
+          cacheReadTokens: 60,
+          cacheWriteTokens: 10,
           lastUsedAt: lastUsedAt.toISOString(),
         },
       ]);

@@ -279,9 +279,11 @@ import type { CreateOfferUseCase } from '#src/use-cases/offers/CreateOfferUseCas
 import type { UpdateOfferUseCase } from '#src/use-cases/offers/UpdateOfferUseCase.js';
 import type { DeleteOfferUseCase } from '#src/use-cases/offers/DeleteOfferUseCase.js';
 import type { GetOffersUseCase } from '#src/use-cases/offers/GetOffersUseCase.js';
+import type { GetAllOffersUseCase } from '#src/use-cases/offers/GetAllOffersUseCase.js';
 import type { CompareOffersUseCase } from '#src/use-cases/offers/CompareOffersUseCase.js';
 
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
+import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
@@ -555,6 +557,7 @@ export interface Cradle {
   sendPushNotificationsUseCase: SendPushNotificationsUseCase;
   sendFollowUpRemindersUseCase: SendFollowUpRemindersUseCase;
   transactionManager: DrizzleTransactionManager;
+  outboundUrlPolicy: IOutboundUrlPolicy;
   llmApiKeyCipher: ILlmApiKeyCipher;
   userLlmProviderFactory: ILLMProviderFactory;
   llmProviderFactory: ILLMProviderFactory;
@@ -597,5 +600,6 @@ export interface Cradle {
   updateOfferUseCase: UpdateOfferUseCase;
   deleteOfferUseCase: DeleteOfferUseCase;
   getOffersUseCase: GetOffersUseCase;
+  getAllOffersUseCase: GetAllOffersUseCase;
   compareOffersUseCase: CompareOffersUseCase;
 }

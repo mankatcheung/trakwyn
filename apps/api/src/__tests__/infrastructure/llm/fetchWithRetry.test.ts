@@ -61,6 +61,71 @@ describe('fetchWithRetry', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  describe('Retry-After (F7)', () => {
+    const withRetryAfter = (status: number, value: string) =>
+      ({ ok: false, status, headers: new Headers({ 'retry-after': value }) }) as Response;
+
+    it('waits out a short Retry-After on a 429, then retries', async () => {
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(withRetryAfter(429, '2'))
+        .mockResolvedValueOnce(okResponse(200));
+
+      const promise = fetchWithRetry('https://example.com', {});
+      await vi.advanceTimersByTimeAsync(1_999);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      const response = await promise;
+
+      expect(response.status).toBe(200);
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns a 429 immediately when there is no Retry-After', async () => {
+      vi.mocked(fetch).mockResolvedValue(okResponse(429));
+
+      const response = await fetchWithRetry('https://example.com', {});
+
+      expect(response.status).toBe(429);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns a 429 immediately when Retry-After is longer than the cap', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        withRetryAfter(429, String(LLM.RETRY_AFTER_MAX_MS / 1000 + 1)),
+      );
+
+      const response = await fetchWithRetry('https://example.com', {});
+
+      expect(response.status).toBe(429);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses a 503 Retry-After instead of the backoff, and accepts an HTTP-date', async () => {
+      const date = new Date(Date.now() + 1_000).toUTCString();
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(withRetryAfter(503, date))
+        .mockResolvedValueOnce(okResponse(200));
+
+      const promise = fetchWithRetry('https://example.com', {});
+      await vi.advanceTimersByTimeAsync(1_100);
+      const response = await promise;
+
+      expect(response.status).toBe(200);
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('still gives up after the attempt budget even when every 429 names a delay', async () => {
+      vi.mocked(fetch).mockResolvedValue(withRetryAfter(429, '1'));
+
+      const promise = fetchWithRetry('https://example.com', {});
+      await vi.runAllTimersAsync();
+      const response = await promise;
+
+      expect(response.status).toBe(429);
+      expect(fetch).toHaveBeenCalledTimes(LLM.MAX_RETRIES + 1);
+    });
+  });
+
   it('retries a 5xx response up to the configured limit, then returns the final failure', async () => {
     vi.mocked(fetch).mockResolvedValue(okResponse(503));
 

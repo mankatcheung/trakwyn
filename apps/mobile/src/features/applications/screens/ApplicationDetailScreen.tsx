@@ -11,21 +11,36 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useApplication } from '../hooks/useApplicationQueries';
-import { useDeleteApplication } from '../hooks/useApplicationMutations';
+import { useApplication, useApplicationHealthScore } from '../hooks/useApplicationQueries';
+import { useDeleteApplication, useUpdateApplication } from '../hooks/useApplicationMutations';
 import { StatusBadge } from '../components/StatusBadge';
+import { StarIcon, PencilIcon, TrashIcon } from '../components/ApplicationIcons';
+import { HealthScoreCard } from '../components/HealthScoreCard';
+import { ApplicationInfoChips } from '../components/ApplicationInfoChips';
+import { SectionIndexList } from '../components/SectionIndexList';
+import { CollapsibleDescription } from '../components/CollapsibleDescription';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { IconButton } from '../../../components/IconButton';
+
+const STAR_COLOR = '#eab308';
+
+function initialsFor(company: string): string {
+  const words = company.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
 
 function Field({ label, value }: { label: string; value: string | null }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   if (!value) return null;
   return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <Text style={styles.fieldValue}>{value}</Text>
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
 }
@@ -37,7 +52,9 @@ export function ApplicationDetailScreen() {
   const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: application, isLoading, isError, error } = useApplication(applicationId);
+  const { data: healthScore } = useApplicationHealthScore(applicationId);
   const deleteApplication = useDeleteApplication();
+  const updateApplication = useUpdateApplication();
 
   const onDelete = () => {
     Alert.alert(t('detail.moveToTrashTitle'), t('detail.moveToTrashMessage'), [
@@ -53,6 +70,14 @@ export function ApplicationDetailScreen() {
         },
       },
     ]);
+  };
+
+  const onToggleStar = () => {
+    if (!application) return;
+    updateApplication.mutate(
+      { id: applicationId, input: { starred: !application.starred } },
+      { onError: (err) => Alert.alert(t('detail.couldNotUpdateTitle'), getErrorMessage(err)) },
+    );
   };
 
   if (isLoading) {
@@ -75,20 +100,80 @@ export function ApplicationDetailScreen() {
     );
   }
 
+  const subline = [application.company, application.location, application.salaryRange]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.role}>{application.role}</Text>
-          <Text style={styles.company}>{application.company}</Text>
+      <View style={styles.headerTop}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initialsFor(application.company)}</Text>
         </View>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.starButton}
+            onPress={onToggleStar}
+            disabled={updateApplication.isPending}
+            testID="application-detail-star-button"
+            accessibilityLabel={t(application.starred ? 'detail.unstar' : 'detail.star')}
+          >
+            <StarIcon
+              color={application.starred ? STAR_COLOR : colors.textFaint}
+              size={20}
+              filled={application.starred}
+            />
+          </Pressable>
+          <IconButton
+            icon={PencilIcon}
+            onPress={() => router.push(`./${applicationId}/edit` as never)}
+            testID="application-detail-edit-button"
+            accessibilityLabel={t('detail.edit')}
+          />
+          <IconButton
+            icon={TrashIcon}
+            onPress={onDelete}
+            variant="danger"
+            testID="application-detail-delete-button"
+            accessibilityLabel={t('detail.moveToTrash')}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.role}>{application.role}</Text>
+      {subline ? <Text style={styles.subline}>{subline}</Text> : null}
+
+      <View style={styles.statusRow}>
         <StatusBadge status={application.status} />
       </View>
 
-      <Field label={t('detail.locationLabel')} value={application.location} />
-      <Field label={t('detail.salaryRangeLabel')} value={application.salaryRange} />
-      <Field label={t('detail.sourceLabel')} value={application.source} />
-      <Field label={t('detail.descriptionLabel')} value={application.description} />
+      <ApplicationInfoChips application={application} />
+
+      {healthScore ? <HealthScoreCard healthScore={healthScore} /> : null}
+
+      {application.appliedAt ||
+      application.location ||
+      application.salaryRange ||
+      application.source ? (
+        <View style={styles.card}>
+          <Field
+            label={t('detail.appliedOnLabel')}
+            value={
+              application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : null
+            }
+          />
+          <Field label={t('detail.locationLabel')} value={application.location} />
+          <Field label={t('detail.salaryRangeLabel')} value={application.salaryRange} />
+          <Field label={t('detail.sourceLabel')} value={application.source} />
+        </View>
+      ) : null}
+
+      {application.description ? (
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>{t('detail.descriptionLabel')}</Text>
+          <CollapsibleDescription text={application.description} />
+        </View>
+      ) : null}
 
       {application.jobUrl ? (
         <Pressable onPress={() => void Linking.openURL(application.jobUrl!)}>
@@ -96,49 +181,17 @@ export function ApplicationDetailScreen() {
         </Pressable>
       ) : null}
 
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.editButton}
-          onPress={() => router.push('./notes')}
-          testID="notes-button"
-        >
-          <Text style={styles.editButtonText}>{t('detail.notes')}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.editButton}
-          onPress={() => router.push('./documents')}
-          testID="documents-button"
-        >
-          <Text style={styles.editButtonText}>{t('detail.documents')}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.editButton}
-          onPress={() => router.push('./offers')}
-          testID="offers-button"
-        >
-          <Text style={styles.editButtonText}>{t('detail.offers')}</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.editButton}
-          onPress={() => router.push('./edit')}
-          testID="edit-application-button"
-        >
-          <Text style={styles.editButtonText}>{t('detail.edit')}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.deleteButton}
-          onPress={onDelete}
-          disabled={deleteApplication.isPending}
-          testID="delete-application-button"
-        >
-          <Text style={styles.deleteButtonText}>
-            {deleteApplication.isPending ? t('detail.deleting') : t('detail.moveToTrash')}
-          </Text>
-        </Pressable>
-      </View>
+      <SectionIndexList
+        onSelect={(slug) => {
+          // This screen is the [id]/index route, so expo-router resolves a
+          // bare relative push ('./notes') against the parent of `[id]`,
+          // dropping applicationId from the URL entirely and 404ing the
+          // sub-screen's query. Sibling non-index screens (notes.tsx etc, see
+          // DETAIL_SECTION_ROUTES) don't have this quirk — only an index
+          // route does — so the id has to be spelled out here explicitly.
+          router.push(`./${applicationId}/${slug}` as never);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -146,44 +199,49 @@ export function ApplicationDetailScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 20, gap: 16 },
+    content: { padding: 20, paddingBottom: 40, gap: 16 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    headerText: { flex: 1, gap: 2 },
-    role: { fontSize: 20, fontWeight: '700', color: colors.text },
-    company: { fontSize: 15, color: colors.textMuted },
-    field: { gap: 2 },
+    headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    avatar: {
+      width: 56,
+      height: 56,
+      borderRadius: 14,
+      backgroundColor: colors.text,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: { color: colors.background, fontSize: 18, fontWeight: '700' },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    starButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    role: { fontSize: 22, fontWeight: '700', color: colors.text },
+    subline: { fontSize: 14, color: colors.textSubtle },
+    statusRow: { flexDirection: 'row' },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 12,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    infoLabel: { fontSize: 14, color: colors.textSubtle },
+    infoValue: { fontSize: 14, fontWeight: '700', color: colors.text },
+    field: { gap: 4 },
     fieldLabel: {
       fontSize: 12,
       color: colors.textSubtle,
       fontWeight: '600',
       textTransform: 'uppercase',
     },
-    fieldValue: { fontSize: 15, color: colors.text },
+    fieldValue: { fontSize: 15, color: colors.text, lineHeight: 21 },
     link: { fontSize: 14, color: colors.primary },
-    actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
-    editButton: {
-      flex: 1,
-      minHeight: 44,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
-    editButtonText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
-    deleteButton: {
-      flex: 1,
-      minHeight: 44,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.dangerSurface,
-      borderWidth: 1,
-      borderColor: colors.dangerBorder,
-    },
-    deleteButtonText: { fontSize: 15, fontWeight: '600', color: colors.danger },
   });
 }

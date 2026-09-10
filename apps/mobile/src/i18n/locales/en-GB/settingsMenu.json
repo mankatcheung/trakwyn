@@ -4,12 +4,14 @@
   "notifications": "Notifications",
   "appearance": "Appearance",
   "language": "Language",
-  "ai": "AI",
+  "ai": "AI Assistant",
   "experience": "Experience",
   "integrations": "Integrations",
-  "data": "Data",
+  "data": "Data & export",
   "dangerZone": "Danger zone",
   "analytics": "Analytics",
-  "trash": "Bin",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  "accessibility": "Accessibility",
   "signOut": "Sign out"
 }

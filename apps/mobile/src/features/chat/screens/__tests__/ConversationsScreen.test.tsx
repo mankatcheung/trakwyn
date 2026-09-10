@@ -7,6 +7,9 @@ jest.mock('../../hooks/useConversations', () => ({
   useDeleteConversation: jest.fn(),
   useCreateConversation: jest.fn(),
 }));
+jest.mock('../../../settings/hooks/useLlmApiKeys', () => ({
+  useLlmApiKeys: jest.fn(),
+}));
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
@@ -18,6 +21,7 @@ import {
   useCreateConversation,
   useDeleteConversation,
 } from '../../hooks/useConversations';
+import { useLlmApiKeys } from '../../../settings/hooks/useLlmApiKeys';
 import { ConversationsScreen } from '../ConversationsScreen';
 import type { Conversation } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -26,6 +30,7 @@ import { lightColors } from '../../../../theme/colors';
 const mockedUseConversations = jest.mocked(useConversations);
 const mockedUseCreateConversation = jest.mocked(useCreateConversation);
 const mockedUseDeleteConversation = jest.mocked(useDeleteConversation);
+const mockedUseLlmApiKeys = jest.mocked(useLlmApiKeys);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
@@ -54,6 +59,17 @@ describe('ConversationsScreen', () => {
     jest.clearAllMocks();
     mockedUseDeleteConversation.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseCreateConversation.mockReturnValue({ mutateAsync: jest.fn() } as never);
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: {
+        keys: [
+          { provider: 'openai', model: 'gpt-4o-mini', baseUrl: null, monthlyTokenLimit: null },
+        ],
+        defaultProvider: 'openai',
+        customAiPrompt: null,
+        useCrossApplicationContext: false,
+        llmFallbackWhenLimited: true,
+      },
+    } as never);
   });
 
   it('renders conversations and navigates to Chat on press', async () => {
@@ -73,7 +89,23 @@ describe('ConversationsScreen', () => {
     expect(push).toHaveBeenCalledWith('./1');
   });
 
-  it('creates a conversation and navigates into it when the new button is pressed', async () => {
+  it('renders a FAB that opens the model picker instead of creating immediately', async () => {
+    mockedUseConversations.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+    const { getByTestId } = await renderScreen();
+
+    await fireEvent.press(getByTestId('new-conversation-button'));
+
+    expect(getByTestId('conversation-provider-picker-backdrop')).toBeTruthy();
+    expect(getByTestId('conversation-provider-option-openai')).toBeTruthy();
+  });
+
+  it('creates a conversation with the selected provider/model and navigates into it', async () => {
     const push = jest.fn();
     const mutateAsync = jest.fn().mockResolvedValue({ id: 'new-conv' });
     mockedUseConversations.mockReturnValue({
@@ -87,9 +119,37 @@ describe('ConversationsScreen', () => {
     const { getByTestId } = await renderScreen(push);
 
     await fireEvent.press(getByTestId('new-conversation-button'));
+    await fireEvent.press(getByTestId('conversation-provider-option-openai'));
 
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ provider: 'openai', model: 'gpt-4o-mini' }),
+    );
     await waitFor(() => expect(push).toHaveBeenCalledWith('./new-conv'));
+  });
+
+  it('redirects to AI settings instead of opening the picker when no keys are saved', async () => {
+    const push = jest.fn();
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: {
+        keys: [],
+        defaultProvider: null,
+        customAiPrompt: null,
+        useCrossApplicationContext: false,
+        llmFallbackWhenLimited: true,
+      },
+    } as never);
+    mockedUseConversations.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+    const { getByTestId, queryByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('new-conversation-button'));
+
+    expect(queryByTestId('conversation-provider-picker-backdrop')).toBeNull();
   });
 
   it('does not show a chat composer on the conversation list', async () => {

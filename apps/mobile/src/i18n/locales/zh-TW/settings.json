@@ -136,13 +136,15 @@
     "digestWeekly": "每週",
     "followUpReminders": "追蹤提醒",
     "pushNotifications": "推播通知",
-    "weeklyGoal": "每週求職申請目標"
+    "weeklyGoal": "每週求職申請目標",
+    "weeklyGoalPlaceholder": "例如：5"
   },
   "profile": {
     "couldNotLoad": "無法載入個人資料",
     "saved": "已儲存。",
     "emailLabel": "電子郵件",
     "nameLabel": "姓名",
+    "namePlaceholder": "例如：王小明",
     "timezoneLabel": "時區",
     "timezonePlaceholder": "例如：Europe/London",
     "timezoneModalTitle": "選擇時區",

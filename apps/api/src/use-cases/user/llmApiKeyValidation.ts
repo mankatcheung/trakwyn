@@ -9,6 +9,21 @@ export function assertValidLlmProvider(provider: string): void {
   }
 }
 
+/**
+ * What a model id may look like. Real ids are things like `gpt-4o-mini`,
+ * `claude-haiku-4-5`, `openai/gpt-4o-mini` (OpenRouter), `models/gemini-…`.
+ * The Google provider interpolates the id into a URL path, so anything that
+ * could climb or re-target it — `..`, `?`, `#`, whitespace, a scheme — is
+ * refused here, where every model id enters the system.
+ */
+const MODEL_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
+
+export function assertValidLlmModelId(model: string): void {
+  if (!MODEL_ID_PATTERN.test(model) || model.includes('..') || model.includes('//')) {
+    throw new ValidationError('Model name contains characters that are not allowed');
+  }
+}
+
 export function isValidLlmApiKeyUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -30,6 +45,7 @@ export function assertValidLlmApiKeyShape(params: {
   model: string | null;
 }): void {
   assertValidLlmProvider(params.provider);
+  if (params.model) assertValidLlmModelId(params.model);
 
   const isCustom = params.provider === LLM_PROVIDER.CUSTOM;
   if (isCustom) {

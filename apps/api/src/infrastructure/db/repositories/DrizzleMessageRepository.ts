@@ -39,6 +39,7 @@ export class DrizzleMessageRepository implements IMessageRepository {
       conversationId: row.conversationId,
       role: row.role,
       content: row.content,
+      toolTrace: row.toolTrace,
       createdAt: row.createdAt,
     };
   }

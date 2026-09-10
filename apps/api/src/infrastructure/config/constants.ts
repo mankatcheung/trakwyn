@@ -48,6 +48,7 @@ export const ENV = {
   GITHUB_OAUTH_CLIENT_SECRET: 'GITHUB_OAUTH_CLIENT_SECRET',
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
+  OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
   VAPID_PUBLIC_KEY: 'VAPID_PUBLIC_KEY',
   VAPID_PRIVATE_KEY: 'VAPID_PRIVATE_KEY',
   VAPID_SUBJECT: 'VAPID_SUBJECT',
@@ -57,6 +58,14 @@ export const ENV = {
 export const NODE_ENV = {
   PRODUCTION: 'production',
 } as const;
+
+/**
+ * The value `.env.example` ships for every secret-derivation passphrase.
+ * Fine for a laptop; a production process that still carries it has its
+ * users' encrypted API keys protected by a string in a public repo, so
+ * `LlmApiKeyCipher` refuses to start with it there.
+ */
+export const PLACEHOLDER_SECRET = 'change-me-in-production';
 
 /** HTTP Authorization header. */
 export const AUTH_HEADER = {
@@ -179,6 +188,50 @@ export const LLM_PROVIDER_MODE = {
   REAL: 'real',
   FAKE: 'fake',
 } as const;
+
+/**
+ * Where the server refuses to connect on a user's behalf — see
+ * `OutboundUrlPolicy`. Ports are the ones an SSRF is typically aimed at
+ * (databases, caches, mail); the address ranges live in the policy itself.
+ */
+export const OUTBOUND_URL = {
+  BLOCKED_PORTS: [22, 25, 3306, 5432, 6379, 9200, 11211, 27017],
+} as const;
+
+/**
+ * `OUTBOUND_URL_POLICY` values (F13). Unset means "strict when
+ * NODE_ENV=production, permissive otherwise". `permissive` exists for a
+ * self-hosted production instance that runs a model on its own network and
+ * wants to add it as a custom provider — an explicit choice to accept SSRF
+ * exposure, never the default.
+ */
+export const OUTBOUND_URL_POLICY = {
+  STRICT: 'strict',
+  PERMISSIVE: 'permissive',
+} as const;
+
+/**
+ * Fetching a job posting the user linked to (`FetchJobPostingSourceResolver`).
+ * The byte cap bounds memory for an arbitrary URL — the parser only reads
+ * the first `AI_PROMPT_INPUT.JOB_POSTING_MAX_CHARS` of the stripped text
+ * anyway, and 1 MB of HTML is far more than that.
+ */
+export const JOB_POSTING_FETCH = {
+  USER_AGENT: 'Mozilla/5.0 (compatible; TrakwynBot/1.0)',
+  TIMEOUT_MS: 10_000,
+  MAX_BYTES: 1024 * 1024,
+  /** Each hop is re-checked against the outbound URL policy. */
+  MAX_REDIRECTS: 3,
+  /** A `<main>`/`<article>` with less text than this is a template shell, not the posting — fall back to the whole page. */
+  MIN_CONTENT_REGION_CHARS: 200,
+} as const;
+
+/**
+ * How much of an upstream error body is kept when a provider call fails.
+ * Enough to diagnose ("invalid x-api-key", "model not found"), not enough to
+ * carry a page of HTML — and never repeated verbatim to a client (JEF-S1).
+ */
+export const PROVIDER_ERROR_BODY_MAX_CHARS = 300;
 
 /** Cache configuration, shared by MemoryCache and RedisCache. */
 export const CACHE = {

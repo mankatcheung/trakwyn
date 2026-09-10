@@ -79,13 +79,17 @@ describe('ExperienceScreen', () => {
     setDefaults();
   });
 
-  it('adds a work experience entry', async () => {
+  it('adds a work experience entry via the modal', async () => {
     const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
     mockedUseCreateWorkExperience.mockReturnValue({ mutateAsync, isPending: false } as never);
 
-    const { getByTestId } = await render(<ExperienceScreen />);
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    expect(queryByTestId('work-experience-company-input')).toBeNull();
 
     await fireEvent.press(getByTestId('add-work-experience-button'));
+    expect(getByTestId('work-experience-company-input')).toBeTruthy();
+
     await fireEvent.changeText(getByTestId('work-experience-company-input'), 'Acme');
     await fireEvent.changeText(getByTestId('work-experience-title-input'), 'Engineer');
     await fireEvent.changeText(getByTestId('work-experience-start-input'), '2024-01-01');
@@ -97,6 +101,60 @@ describe('ExperienceScreen', () => {
         title: 'Engineer',
         startDate: '2024-01-01',
         endDate: undefined,
+      }),
+    );
+    await waitFor(() => expect(queryByTestId('work-experience-company-input')).toBeNull());
+  });
+
+  it('closes the work experience modal without saving on cancel', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
+    mockedUseCreateWorkExperience.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    await fireEvent.press(getByTestId('add-work-experience-button'));
+    await fireEvent.changeText(getByTestId('work-experience-company-input'), 'Acme');
+    await fireEvent.press(getByTestId('cancel-work-experience-button'));
+
+    expect(queryByTestId('work-experience-company-input')).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('opens the work experience modal prefilled when editing', async () => {
+    mockedUseWorkExperiences.mockReturnValue({
+      data: [
+        {
+          id: 'we-1',
+          company: 'Acme',
+          title: 'Engineer',
+          location: null,
+          startDate: '2024-01-01T00:00:00.000Z',
+          endDate: null,
+          description: null,
+        },
+      ],
+      isLoading: false,
+    } as never);
+    const mutateAsync = jest.fn().mockResolvedValue({ id: 'we-1' });
+    mockedUseUpdateWorkExperience.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId } = await render(<ExperienceScreen />);
+
+    await fireEvent.press(getByTestId('edit-work-experience-we-1'));
+    expect(getByTestId('work-experience-company-input').props.value).toBe('Acme');
+
+    await fireEvent.changeText(getByTestId('work-experience-title-input'), 'Staff Engineer');
+    await fireEvent.press(getByTestId('save-work-experience-button'));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({
+        id: 'we-1',
+        input: {
+          company: 'Acme',
+          title: 'Staff Engineer',
+          startDate: '2024-01-01',
+          endDate: undefined,
+        },
       }),
     );
   });
@@ -126,11 +184,13 @@ describe('ExperienceScreen', () => {
     expect(mutate).toHaveBeenCalledWith('we-1');
   });
 
-  it('adds an education entry', async () => {
+  it('adds an education entry via the modal', async () => {
     const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
     mockedUseCreateEducation.mockReturnValue({ mutateAsync, isPending: false } as never);
 
-    const { getByTestId } = await render(<ExperienceScreen />);
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    expect(queryByTestId('education-institution-input')).toBeNull();
 
     await fireEvent.press(getByTestId('add-education-button'));
     await fireEvent.changeText(getByTestId('education-institution-input'), 'MIT');
@@ -145,9 +205,24 @@ describe('ExperienceScreen', () => {
         endDate: undefined,
       }),
     );
+    await waitFor(() => expect(queryByTestId('education-institution-input')).toBeNull());
   });
 
-  it('adds and deletes a skill', async () => {
+  it('closes the education modal without saving on cancel', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
+    mockedUseCreateEducation.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    await fireEvent.press(getByTestId('add-education-button'));
+    await fireEvent.changeText(getByTestId('education-institution-input'), 'MIT');
+    await fireEvent.press(getByTestId('cancel-education-button'));
+
+    expect(queryByTestId('education-institution-input')).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('adds and deletes a skill via the modal', async () => {
     const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
     mockedUseCreateSkill.mockReturnValue({ mutateAsync, isPending: false } as never);
     mockedUseSkills.mockReturnValue({
@@ -157,14 +232,31 @@ describe('ExperienceScreen', () => {
     const deleteMutate = jest.fn();
     mockedUseDeleteSkill.mockReturnValue({ mutate: deleteMutate } as never);
 
-    const { getByTestId } = await render(<ExperienceScreen />);
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    expect(queryByTestId('skill-name-input')).toBeNull();
 
     await fireEvent.press(getByTestId('add-skill-button'));
     await fireEvent.changeText(getByTestId('skill-name-input'), 'Go');
     await fireEvent.press(getByTestId('save-skill-button'));
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ name: 'Go' }));
+    await waitFor(() => expect(queryByTestId('skill-name-input')).toBeNull());
 
     await fireEvent.press(getByTestId('delete-skill-sk-1'));
     expect(deleteMutate).toHaveBeenCalledWith('sk-1');
+  });
+
+  it('closes the skill modal without saving on cancel', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
+    mockedUseCreateSkill.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId, queryByTestId } = await render(<ExperienceScreen />);
+
+    await fireEvent.press(getByTestId('add-skill-button'));
+    await fireEvent.changeText(getByTestId('skill-name-input'), 'Go');
+    await fireEvent.press(getByTestId('cancel-skill-button'));
+
+    expect(queryByTestId('skill-name-input')).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

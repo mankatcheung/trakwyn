@@ -271,6 +271,8 @@ export const LLM_USAGE_SUMMARY_QUERY = `
       requestCount
       promptTokens
       completionTokens
+      cacheReadTokens
+      cacheWriteTokens
       lastUsedAt
       monthlyTokenLimit
       limitReached
@@ -521,6 +523,9 @@ export type LlmUsageSummary = {
   requestCount: number;
   promptTokens: number;
   completionTokens: number;
+  /** Share of promptTokens served from / written to the provider's prompt cache this month. */
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
   lastUsedAt: string;
   monthlyTokenLimit: number | null;
   /**

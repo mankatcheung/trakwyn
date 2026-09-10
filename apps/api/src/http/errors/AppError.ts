@@ -96,6 +96,18 @@ export class LlmLimitReachedAppError extends AppError {
   }
 }
 
+/**
+ * 502: the user's own provider failed. Not a 500 — nothing in this server
+ * went wrong — and not a 4xx either, since the request to us was fine; the
+ * gateway status is the honest one, and the code tells the client which
+ * remedy to offer.
+ */
+export class AiProviderAppError extends AppError {
+  constructor(message = 'The AI provider could not complete the request') {
+    super(message, 502, ERROR_CODES.AI_PROVIDER_ERROR);
+  }
+}
+
 export function fromCodedError(err: unknown): AppError {
   if (err instanceof AppError) return err;
   if (err instanceof Error) {
@@ -129,6 +141,8 @@ export function fromCodedError(err: unknown): AppError {
         return new LlmLimitReachedAppError(err.message);
       case ERROR_CODES.AI_RESPONSE_INVALID:
         return new AiResponseInvalidError(err.message);
+      case ERROR_CODES.AI_PROVIDER_ERROR:
+        return new AiProviderAppError(err.message);
       case ERROR_CODES.STEP_UP_REQUIRED:
         return new StepUpRequiredError(err.message);
     }

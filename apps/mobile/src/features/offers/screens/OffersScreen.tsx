@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateOffer,
@@ -9,6 +9,7 @@ import {
   useUpdateOffer,
 } from '../hooks/useOfferQueries';
 import { OfferForm } from '../components/OfferForm';
+import { PencilIcon, PlusIcon, TrashIcon } from '../components/OfferIcons';
 import { formatSalary } from '../lib/formatSalary';
 import { getErrorMessage } from '../../../lib/errors';
 import type { Offer, OfferFormData } from '../types';
@@ -21,7 +22,6 @@ export function OffersScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { resolvedLanguage } = useLanguage();
-  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: offers, isLoading, isError, error } = useOffers(applicationId);
   const createOffer = useCreateOffer(applicationId);
@@ -61,21 +61,21 @@ export function OffersScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{t('title')}</Text>
-        <View style={styles.headerActions}>
-          {items.length >= 2 && (
-            <Pressable onPress={() => router.push('./compare')} testID="compare-offers-button">
-              <Text style={styles.link}>{t('compare')}</Text>
-            </Pressable>
-          )}
-          {!formOpen && (
-            <Pressable onPress={openCreate} testID="add-offer-button">
-              <Text style={styles.link}>{t('addOffer')}</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
+      <Stack.Screen
+        options={{
+          headerRight: () =>
+            formOpen ? null : (
+              <Pressable
+                style={styles.headerAddButton}
+                onPress={openCreate}
+                hitSlop={8}
+                testID="add-offer-button"
+              >
+                <PlusIcon color={colors.onPrimary} size={18} />
+              </Pressable>
+            ),
+        }}
+      />
 
       {formOpen && (
         <View style={styles.formCard}>
@@ -105,7 +105,7 @@ export function OffersScreen() {
         items.map((offer) => (
           <View key={offer.id} style={styles.offerCard} testID={`offer-${offer.id}`}>
             <View style={styles.offerCardHeader}>
-              <View>
+              <View style={styles.offerCardBody}>
                 <Text style={styles.offerSalary}>
                   {formatSalary(offer.baseSalary, offer.currency, offer.period, resolvedLanguage)}
                 </Text>
@@ -132,14 +132,21 @@ export function OffersScreen() {
                 {offer.notes ? <Text style={styles.offerNotes}>{offer.notes}</Text> : null}
               </View>
               <View style={styles.offerActions}>
-                <Pressable onPress={() => openEdit(offer)} testID={`edit-offer-${offer.id}`}>
-                  <Text style={styles.link}>{t('edit')}</Text>
+                <Pressable
+                  style={styles.iconButton}
+                  onPress={() => openEdit(offer)}
+                  hitSlop={8}
+                  testID={`edit-offer-${offer.id}`}
+                >
+                  <PencilIcon color={colors.textFaint} size={18} />
                 </Pressable>
                 <Pressable
+                  style={styles.iconButton}
                   onPress={() => deleteOffer.mutate(offer.id)}
+                  hitSlop={8}
                   testID={`delete-offer-${offer.id}`}
                 >
-                  <Text style={styles.linkDanger}>{t('delete')}</Text>
+                  <TrashIcon color={colors.textFaint} size={18} />
                 </Pressable>
               </View>
             </View>
@@ -153,21 +160,24 @@ export function OffersScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, gap: 12, paddingBottom: 40 },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    title: { fontSize: 20, fontWeight: '700', color: colors.text },
-    headerActions: { flexDirection: 'row', gap: 16 },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    content: { padding: 16, gap: 16, paddingBottom: 40 },
+    headerAddButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     formCard: {
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 16,
+      padding: 20,
       gap: 4,
     },
-    formTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    formTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
     loading: { marginTop: 24 },
     emptyText: { fontSize: 13, color: colors.textFaint, textAlign: 'center', paddingVertical: 24 },
     error: {
@@ -179,15 +189,17 @@ function createStyles(colors: ThemeColors) {
     },
     offerCard: {
       backgroundColor: colors.surface,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 16,
+      padding: 20,
     },
     offerCardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-    offerSalary: { fontSize: 17, fontWeight: '700', color: colors.text },
-    offerMeta: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
-    offerNotes: { fontSize: 12, color: colors.textFaint, marginTop: 4 },
-    offerActions: { gap: 8, alignItems: 'flex-end' },
+    offerCardBody: { flex: 1 },
+    offerSalary: { fontSize: 24, fontWeight: '800', color: colors.text },
+    offerMeta: { fontSize: 15, color: colors.textSubtle, marginTop: 6, lineHeight: 20 },
+    offerNotes: { fontSize: 13, color: colors.textFaint, marginTop: 10 },
+    offerActions: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+    iconButton: { padding: 2 },
   });
 }

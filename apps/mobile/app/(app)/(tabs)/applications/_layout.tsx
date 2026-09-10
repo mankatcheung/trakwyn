@@ -18,6 +18,7 @@ export default function ApplicationsStackLayout() {
         options={{ title: t('screenTitles.applications'), ...bellHeader }}
       />
       <Stack.Screen name="new" options={{ title: t('screenTitles.newApplication') }} />
+      <Stack.Screen name="trash" options={{ title: t('screenTitles.trash') }} />
       {applicationDetailStackScreens(t, '')}
     </Stack>
   );

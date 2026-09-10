@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
+import { RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
 import {
   makeDocument,
   makeDocumentRepository,
@@ -216,6 +217,92 @@ describe('ComputeResumeMatchScoreUseCase', () => {
     expect((err as Error).message).toMatch(
       /Upload a resume, paste your resume text, or add work experience/,
     );
+  });
+
+  it('refuses an uploaded resume whose Content-Length exceeds the upload cap before reading it (S9)', async () => {
+    const arrayBuffer = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-length': String(RESUME_TEXT_EXTRACTION.MAX_BYTES + 1) }),
+        arrayBuffer,
+      }),
+    );
+    const documentRepository = makeDocumentRepository({
+      findAllByApplicationId: vi
+        .fn()
+        .mockResolvedValue([
+          makeDocument({ documentType: 'resume', storageKey: 'big', mimeType: 'application/pdf' }),
+        ]),
+    });
+    const deps = makeDeps({ documentRepository });
+
+    const err = await new ComputeResumeMatchScoreUseCase(deps as never)
+      .execute({ applicationId: 'app-1', userId: 'user-1' })
+      .catch((e) => e);
+
+    expect((err as { code: string }).code).toBe('VALIDATION');
+    expect(arrayBuffer).not.toHaveBeenCalled();
+    expect(deps.documentTextExtractor.extract).not.toHaveBeenCalled();
+  });
+
+  it('refuses a body larger than the cap even when no Content-Length was sent', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers(),
+        arrayBuffer: () =>
+          Promise.resolve(new Uint8Array(RESUME_TEXT_EXTRACTION.MAX_BYTES + 1).buffer),
+      }),
+    );
+    const documentRepository = makeDocumentRepository({
+      findAllByApplicationId: vi
+        .fn()
+        .mockResolvedValue([
+          makeDocument({ documentType: 'resume', storageKey: 'big', mimeType: 'application/pdf' }),
+        ]),
+    });
+    const deps = makeDeps({ documentRepository });
+
+    const err = await new ComputeResumeMatchScoreUseCase(deps as never)
+      .execute({ applicationId: 'app-1', userId: 'user-1' })
+      .catch((e) => e);
+
+    expect((err as { code: string }).code).toBe('VALIDATION');
+    expect(deps.documentTextExtractor.extract).not.toHaveBeenCalled();
+  });
+
+  it('fetches the stored file with a timeout and gives up on extraction that never finishes', async () => {
+    vi.useFakeTimers();
+    try {
+      const documentRepository = makeDocumentRepository({
+        findAllByApplicationId: vi.fn().mockResolvedValue([
+          makeDocument({
+            documentType: 'resume',
+            storageKey: 'slow',
+            mimeType: 'application/pdf',
+          }),
+        ]),
+      });
+      const documentTextExtractor = makeDocumentTextExtractor({
+        extract: vi.fn().mockReturnValue(new Promise(() => {})),
+      });
+      const deps = makeDeps({ documentRepository, documentTextExtractor });
+
+      const pending = new ComputeResumeMatchScoreUseCase(deps as never)
+        .execute({ applicationId: 'app-1', userId: 'user-1' })
+        .catch((e) => e);
+      await vi.advanceTimersByTimeAsync(RESUME_TEXT_EXTRACTION.EXTRACT_TIMEOUT_MS + 1);
+      const err = await pending;
+
+      expect((err as { code: string }).code).toBe('SERVICE_UNAVAILABLE');
+      const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('throws VALIDATION when fetch to storage fails', async () => {

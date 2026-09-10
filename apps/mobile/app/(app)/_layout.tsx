@@ -14,6 +14,7 @@ export default function AppLayout() {
         name="notifications"
         options={{ title: t('screenTitles.notifications'), presentation: 'modal' }}
       />
+      <Stack.Screen name="offers" options={{ title: t('screenTitles.allOffers') }} />
     </Stack>
   );
 }

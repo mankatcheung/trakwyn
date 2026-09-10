@@ -23,5 +23,12 @@ export const ERROR_CODES = {
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
 
+/**
+ * Longest chat message the API accepts (`CHAT.MAX_MESSAGE_CHARS` in
+ * apps/api). Mirrored here so the composer stops at the limit instead of
+ * letting the user type past it and learn from a 400.
+ */
+export const CHAT_MESSAGE_MAX_CHARS = 8000;
+
 /** Fallback GraphQL endpoint when `VITE_API_URL` is unset (dev proxy path). */
 export const DEFAULT_API_URL = '/graphql';

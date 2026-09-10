@@ -159,7 +159,13 @@ describe('LimitEnforcingLLMProviderFactory', () => {
       const resolution = await factory.resolveForUser('user-1', 'openai');
 
       expect(resolution).toMatchObject({ providerId: 'anthropic', fellBackFrom: 'openai' });
-      expect(inner.resolveForUser).toHaveBeenCalledWith('user-1', 'anthropic', null, true);
+      expect(inner.resolveForUser).toHaveBeenCalledWith(
+        'user-1',
+        'anthropic',
+        null,
+        true,
+        expect.anything(),
+      );
     });
 
     /** Oldest first, so the stand-in does not change from call to call. */
@@ -222,7 +228,13 @@ describe('LimitEnforcingLLMProviderFactory', () => {
 
       await factory.resolveForUser('user-1', 'openai', 'gpt-4o-mini');
 
-      expect(inner.resolveForUser).toHaveBeenCalledWith('user-1', 'anthropic', null, true);
+      expect(inner.resolveForUser).toHaveBeenCalledWith(
+        'user-1',
+        'anthropic',
+        null,
+        true,
+        expect.anything(),
+      );
     });
 
     it('reports no fallback on the ordinary path', async () => {
@@ -231,6 +243,47 @@ describe('LimitEnforcingLLMProviderFactory', () => {
       await expect(factory.resolveForUser('user-1', 'openai')).resolves.toMatchObject({
         fellBackFrom: null,
       });
+    });
+  });
+
+  describe('round-trips (F9)', () => {
+    it('hands the key it already loaded to the inner factory, so it is not fetched twice', async () => {
+      const openai = key('openai', null);
+      const { factory, inner } = build({ keys: [openai] });
+
+      await factory.forUser('user-1', 'openai');
+
+      expect(inner.resolveForUser).toHaveBeenCalledWith('user-1', 'openai', undefined, true, {
+        user: undefined,
+        key: openai,
+      });
+    });
+
+    it('loads the user once when the default provider is needed, and passes it down', async () => {
+      const openai = key('openai', null);
+      const { factory, inner } = build({ keys: [openai], defaultLlmProvider: 'openai' });
+
+      await factory.forUser('user-1');
+
+      const [, , , , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
+      expect(hints?.user?.defaultLlmProvider).toBe('openai');
+      expect(hints?.key).toBe(openai);
+    });
+
+    it('hands the substitute key down when falling back', async () => {
+      const paused = key('openai', 100, 2);
+      const spare = key('anthropic', null, 1);
+      const { factory, inner } = build({
+        keys: [paused, spare],
+        usage: [spent('openai', 100)],
+        llmFallbackWhenLimited: true,
+      });
+
+      await factory.forUser('user-1', 'openai');
+
+      const [, providerId, , , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
+      expect(providerId).toBe('anthropic');
+      expect(hints?.key).toBe(spare);
     });
   });
 });

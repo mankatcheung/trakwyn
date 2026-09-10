@@ -4,6 +4,7 @@ import type {
   LLMToolDefinition,
   LLMToolCall,
   LLMStreamEvent,
+  LLMCompleteOptions,
   LLMCompleteResult,
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
@@ -13,13 +14,15 @@ import {
   createIdleAbortController,
 } from '#src/infrastructure/llm/fetchWithRetry.js';
 import { parseSSE } from '#src/infrastructure/llm/sseParser.js';
-
-type AnthropicContentBlock =
-  | { type: 'text'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
-  | { type: 'tool_result'; tool_use_id: string; content: string };
+import { providerHttpError } from '#src/infrastructure/llm/providerError.js';
 
 type AnthropicCacheControl = { type: 'ephemeral' };
+
+type AnthropicContentBlock = { cache_control?: AnthropicCacheControl } & (
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+  | { type: 'tool_result'; tool_use_id: string; content: string }
+);
 
 type AnthropicSystemBlock = { type: 'text'; text: string; cache_control?: AnthropicCacheControl };
 
@@ -38,16 +41,18 @@ interface AnthropicWireUsage {
 interface AnthropicWireResponse {
   content?: AnthropicContentBlock[];
   usage?: AnthropicWireUsage;
+  stop_reason?: string;
 }
 
 function toLLMUsage(usage: AnthropicWireUsage | undefined): LLMUsage | null {
   if (!usage) return null;
+  const cacheReadTokens = usage.cache_read_input_tokens ?? 0;
+  const cacheWriteTokens = usage.cache_creation_input_tokens ?? 0;
   return {
-    promptTokens:
-      usage.input_tokens +
-      (usage.cache_creation_input_tokens ?? 0) +
-      (usage.cache_read_input_tokens ?? 0),
+    promptTokens: usage.input_tokens + cacheWriteTokens + cacheReadTokens,
     completionTokens: usage.output_tokens,
+    cacheReadTokens,
+    cacheWriteTokens,
   };
 }
 
@@ -77,10 +82,16 @@ export class AnthropicLLMProvider implements ILLMProvider {
     private readonly model: string = LLM.ANTHROPIC_DEFAULT_MODEL,
   ) {}
 
+  /**
+   * `options.json` is accepted and ignored (F6): Anthropic's structured
+   * outputs need a schema, not a flag, and the prompt-level "return only
+   * JSON" plus `parseAiJson`'s fence stripping already cover Claude.
+   */
   async complete(
     messages: LLMMessage[],
     maxTokens: number = LLM.DEFAULT_MAX_TOKENS,
     signal?: AbortSignal,
+    _options?: LLMCompleteOptions,
   ): Promise<LLMCompleteResult> {
     if (!this.apiKey) throw new Error('Anthropic API key is not set');
 
@@ -98,6 +109,7 @@ export class AnthropicLLMProvider implements ILLMProvider {
     return {
       content: json.content?.find((block) => block.type === 'text')?.text ?? '',
       usage: toLLMUsage(json.usage),
+      truncated: json.stop_reason === 'max_tokens',
     };
   }
 
@@ -139,7 +151,7 @@ export class AnthropicLLMProvider implements ILLMProvider {
     >();
     // See toLLMUsage: input tokens (incl. cache) arrive once on message_start;
     // the final, cumulative output token count arrives once on message_delta.
-    let promptTokens: number | null = null;
+    let promptUsage: LLMUsage | null = null;
     let completionTokens: number | null = null;
 
     try {
@@ -149,7 +161,10 @@ export class AnthropicLLMProvider implements ILLMProvider {
         switch (event.type) {
           case 'message_start': {
             const usage = toLLMUsage(event.message?.usage);
-            if (usage) promptTokens = usage.promptTokens;
+            if (usage) {
+              promptUsage = usage;
+              yield { type: 'prompt_usage', promptTokens: usage.promptTokens };
+            }
             break;
           }
           case 'message_delta': {
@@ -209,8 +224,8 @@ export class AnthropicLLMProvider implements ILLMProvider {
     }
 
     const usage =
-      promptTokens !== null && completionTokens !== null
-        ? { promptTokens, completionTokens }
+      promptUsage !== null && completionTokens !== null
+        ? { ...promptUsage, completionTokens }
         : null;
     yield { type: 'done', content: text, toolCalls, usage };
   }
@@ -246,12 +261,24 @@ export class AnthropicLLMProvider implements ILLMProvider {
     return { system, conversation };
   }
 
+  /**
+   * A `cacheBreakpoint` on a conversation message becomes `cache_control`
+   * on that message's last content block (T2). The prefix up to it — tools,
+   * system, every earlier turn and tool result — is then a cache read on
+   * the next call, which is what makes a multi-iteration tool loop and a
+   * long conversation affordable; the marker only ever attaches to a block
+   * that already exists, so an unmarked message keeps the bare-string
+   * shape callers relied on before.
+   */
   private toWireMessages(messages: LLMMessage[]): AnthropicWireMessage[] {
     return messages.map((m) => {
       if (m.role === 'tool') {
         return {
           role: 'user',
-          content: [{ type: 'tool_result', tool_use_id: m.toolCallId ?? '', content: m.content }],
+          content: this.withCacheControl(
+            [{ type: 'tool_result', tool_use_id: m.toolCallId ?? '', content: m.content }],
+            m.cacheBreakpoint,
+          ),
         };
       }
       if (m.role === 'assistant' && m.toolCalls?.length) {
@@ -264,10 +291,22 @@ export class AnthropicLLMProvider implements ILLMProvider {
             input: tc.arguments,
           })),
         ];
-        return { role: 'assistant', content: blocks };
+        return { role: 'assistant', content: this.withCacheControl(blocks, m.cacheBreakpoint) };
       }
-      return { role: m.role as 'user' | 'assistant', content: m.content };
+      const role = m.role as 'user' | 'assistant';
+      return m.cacheBreakpoint
+        ? { role, content: this.withCacheControl([{ type: 'text', text: m.content }], true) }
+        : { role, content: m.content };
     });
+  }
+
+  private withCacheControl(
+    blocks: AnthropicContentBlock[],
+    breakpoint: boolean | undefined,
+  ): AnthropicContentBlock[] {
+    if (!breakpoint || blocks.length === 0) return blocks;
+    const last = blocks[blocks.length - 1];
+    return [...blocks.slice(0, -1), { ...last, cache_control: { type: 'ephemeral' as const } }];
   }
 
   private async post(
@@ -290,7 +329,7 @@ export class AnthropicLLMProvider implements ILLMProvider {
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`Anthropic error ${response.status}: ${text}`);
+      throw providerHttpError('Anthropic', response.status, text);
     }
 
     return response.json() as Promise<AnthropicWireResponse>;
@@ -323,7 +362,7 @@ export class AnthropicLLMProvider implements ILLMProvider {
     if (!response.ok) {
       idle.dispose();
       const text = await response.text();
-      throw new Error(`Anthropic error ${response.status}: ${text}`);
+      throw providerHttpError('Anthropic', response.status, text);
     }
     if (!response.body) {
       idle.dispose();

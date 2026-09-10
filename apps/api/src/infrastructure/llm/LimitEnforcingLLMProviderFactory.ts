@@ -68,23 +68,33 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
       return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage);
     }
 
-    const requested = await this.resolveProviderId(userId, provider);
+    // Loaded once here and handed down as hints (F9): the inner factory
+    // used to fetch the same user and key again on every call.
+    const user = provider ? undefined : await this.deps.userRepository.findById(userId);
+    const requested = provider ?? user?.defaultLlmProvider ?? undefined;
     // No provider and no key are the inner factory's cases to report: it
     // returns null and the caller raises AI_NOT_CONFIGURED.
     if (!requested) {
-      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage);
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage, {
+        user,
+      });
     }
 
-    const usedByProvider = await this.usedTokensByProvider(userId);
-    const keys = await this.deps.llmApiKeyRepository.findAllByUserId(userId);
-    const requestedKey = keys.find((key) => key.provider === requested);
+    const [usedByProvider, keys] = await Promise.all([
+      this.usedTokensByProvider(userId),
+      this.deps.llmApiKeyRepository.findAllByUserId(userId),
+    ]);
+    const requestedKey = keys.find((key) => key.provider === requested) ?? null;
 
     if (!requestedKey || !this.isPaused(requestedKey, usedByProvider)) {
-      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage);
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage, {
+        user,
+        key: requestedKey,
+      });
     }
 
-    const user = await this.deps.userRepository.findById(userId);
-    if (!user?.llmFallbackWhenLimited) {
+    const fallbackUser = user ?? (await this.deps.userRepository.findById(userId));
+    if (!fallbackUser?.llmFallbackWhenLimited) {
       throw new LlmLimitReachedError(requested, this.nextReset());
     }
 
@@ -107,6 +117,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
       substitute.provider,
       null,
       trackUsage,
+      { user: fallbackUser, key: substitute },
     );
     // A key that cannot be built (an unknown provider id, say) is the same as
     // having no substitute at all.
@@ -117,12 +128,6 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
 
   fromCredentials(credentials: LLMProviderCredentials): ILLMProvider | null {
     return this.deps.userLlmProviderFactory.fromCredentials(credentials);
-  }
-
-  private async resolveProviderId(userId: string, provider?: string): Promise<string | undefined> {
-    if (provider) return provider;
-    const user = await this.deps.userRepository.findById(userId);
-    return user?.defaultLlmProvider ?? undefined;
   }
 
   private async usedTokensByProvider(userId: string): Promise<Map<string, number>> {

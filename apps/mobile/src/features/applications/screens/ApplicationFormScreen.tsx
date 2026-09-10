@@ -113,6 +113,7 @@ export function ApplicationFormScreen() {
           style={styles.input}
           value={values.company}
           onChangeText={(v) => update('company', v)}
+          placeholder={t('form.companyPlaceholder')}
           testID="form-company-input"
         />
 
@@ -122,6 +123,7 @@ export function ApplicationFormScreen() {
           style={styles.input}
           value={values.role}
           onChangeText={(v) => update('role', v)}
+          placeholder={t('form.rolePlaceholder')}
           testID="form-role-input"
         />
 
@@ -145,6 +147,7 @@ export function ApplicationFormScreen() {
           onChangeText={(v) => update('jobUrl', v)}
           autoCapitalize="none"
           keyboardType="url"
+          placeholder={t('form.jobUrlPlaceholder')}
           testID="form-joburl-input"
         />
 
@@ -154,6 +157,7 @@ export function ApplicationFormScreen() {
           style={styles.input}
           value={values.location}
           onChangeText={(v) => update('location', v)}
+          placeholder={t('form.locationPlaceholder')}
           testID="form-location-input"
         />
 
@@ -163,6 +167,7 @@ export function ApplicationFormScreen() {
           style={styles.input}
           value={values.salaryRange}
           onChangeText={(v) => update('salaryRange', v)}
+          placeholder={t('form.salaryRangePlaceholder')}
           testID="form-salary-input"
         />
 
@@ -174,6 +179,7 @@ export function ApplicationFormScreen() {
           onChangeText={(v) => update('description', v)}
           multiline
           numberOfLines={4}
+          placeholder={t('form.descriptionPlaceholder')}
           testID="form-description-input"
         />
 
@@ -247,7 +253,9 @@ function createStyles(colors: ThemeColors) {
     },
     chipActive: { backgroundColor: colors.text, borderColor: colors.text },
     chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
-    chipTextActive: { color: colors.surface },
+    // The active status chip is an inverted pill (`colors.text` fill), not a
+    // primary one — its label is the page ground, not `onPrimary`.
+    chipTextActive: { color: colors.background },
     submitButton: {
       minHeight: 48,
       borderRadius: 12,

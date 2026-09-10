@@ -12,6 +12,10 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
 import { useRouter } from 'expo-router';
 import { useApplications } from '../../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../../hooks/useApplicationMutations';
@@ -36,7 +40,7 @@ const applications: Application[] = [
     salaryRange: null,
     description: null,
     appliedAt: null,
-    starred: false,
+    starred: true,
     source: null,
     followUpAt: null,
     tags: [],
@@ -62,7 +66,7 @@ const applications: Application[] = [
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     boardPosition: 0,
-    likelyGhosted: false,
+    likelyGhosted: true,
   },
 ];
 
@@ -189,5 +193,109 @@ describe('ApplicationsListScreen', () => {
     await findByTestId('board-column-applied');
     expect(queryByTestId('applications-search-input')).toBeNull();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the trash screen when the trash button is pressed', async () => {
+    const push = jest.fn();
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('applications-trash-button'));
+
+    expect(push).toHaveBeenCalledWith('/applications/trash');
+  });
+
+  it('filters the list to starred applications only', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, queryByText } = await renderScreen();
+
+    await fireEvent.press(getByTestId('applications-filter-starred'));
+
+    await waitFor(() => expect(queryByText('Frontend Engineer')).toBeNull());
+    expect(queryByText('Backend Engineer')).toBeTruthy();
+
+    await fireEvent.press(getByTestId('applications-filter-starred'));
+    await waitFor(() => expect(queryByText('Frontend Engineer')).toBeTruthy());
+  });
+
+  it('filters the list to likely-ghosted applications only', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, queryByText } = await renderScreen();
+
+    await fireEvent.press(getByTestId('applications-filter-ghosted'));
+
+    await waitFor(() => expect(queryByText('Backend Engineer')).toBeNull());
+    expect(queryByText('Frontend Engineer')).toBeTruthy();
+  });
+
+  it('opens the display fields picker and hides a field when toggled off', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, queryByText } = await renderScreen();
+
+    await fireEvent.press(getByTestId('applications-display-fields-button'));
+    await fireEvent.press(getByTestId('display-field-role'));
+
+    await waitFor(() => expect(queryByText('Backend Engineer')).toBeNull());
+    expect(queryByText('Frontend Engineer')).toBeNull();
+  });
+
+  it('opens the status filter modal and filters by the selected status', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, getByText, queryByText } = await renderScreen();
+
+    expect(getByText('Status: All')).toBeTruthy();
+
+    await fireEvent.press(getByTestId('applications-status-filter-button'));
+    await fireEvent.press(getByTestId('status-filter-option-interviewing'));
+
+    expect(mockedUseApplications).toHaveBeenLastCalledWith('interviewing');
+    await waitFor(() => expect(getByText('Status: Interviewing')).toBeTruthy());
+
+    await fireEvent.press(getByTestId('applications-status-filter-button'));
+    await fireEvent.press(getByTestId('status-filter-option-all'));
+
+    expect(mockedUseApplications).toHaveBeenLastCalledWith(undefined);
+    await waitFor(() => expect(getByText('Status: All')).toBeTruthy());
+    expect(queryByText('Backend Engineer')).toBeTruthy();
   });
 });

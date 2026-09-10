@@ -1,6 +1,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { DomainError } from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
+import { CHAT } from '#src/use-cases/constants.js';
 import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
 import { COOKIES } from '#src/http/constants.js';
 import { diScopeOf } from '#src/http/adapters/fastify/diScope.js';
@@ -21,6 +23,18 @@ function errorPayload(err: unknown): { code: string; message: string } {
   if (err instanceof DomainError) return { code: err.code, message: err.message };
   return { code: ERROR_CODES.INTERNAL_ERROR, message: 'Something went wrong' };
 }
+
+/**
+ * The request body, checked before the response is hijacked so a bad
+ * request gets an ordinary 400 rather than an SSE `error` frame. The
+ * length cap mirrors the use case's own check (`CHAT.MAX_MESSAGE_CHARS`);
+ * refusing here as well keeps a 1 MB body from being parsed into a string
+ * and handed further in.
+ */
+const bodySchema = z.object({
+  conversationId: z.string().min(1),
+  message: z.string().min(1).max(CHAT.MAX_MESSAGE_CHARS),
+});
 
 /**
  * Same cookie-based JWT auth as `buildGraphQLContext.ts` (cookie, falling
@@ -60,13 +74,17 @@ export async function handleChatStream(
     return;
   }
 
-  const body = request.body as { conversationId?: unknown; message?: unknown } | undefined;
-  const conversationId = typeof body?.conversationId === 'string' ? body.conversationId : null;
-  const message = typeof body?.message === 'string' ? body.message : null;
-  if (!conversationId || !message) {
-    reply.code(400).send({ error: 'conversationId and message are required' });
+  const parsed = bodySchema.safeParse(request.body);
+  if (!parsed.success) {
+    const tooLong = parsed.error.issues.some((issue) => issue.code === 'too_big');
+    reply.code(400).send({
+      error: tooLong
+        ? `message must be at most ${CHAT.MAX_MESSAGE_CHARS} characters`
+        : 'conversationId and message are required',
+    });
     return;
   }
+  const { conversationId, message } = parsed.data;
 
   // Fastify's normal response lifecycle (serialization, onSend hooks) has no
   // notion of a response written incrementally over time — hijack() opts

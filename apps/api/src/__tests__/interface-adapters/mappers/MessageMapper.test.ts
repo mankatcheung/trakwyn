@@ -10,6 +10,7 @@ describe('MessageMapper', () => {
     conversationId: 'conv-1',
     role: 'assistant',
     content: 'You have 3 active applications.',
+    toolTrace: null,
     createdAt: new Date('2024-03-01T08:00:00.000Z'),
   };
 

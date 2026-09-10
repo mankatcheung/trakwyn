@@ -50,6 +50,25 @@ export const llmUsageEvent = sqliteTable(
     model: text('model'),
     promptTokens: integer('promptTokens').notNull(),
     completionTokens: integer('completionTokens').notNull(),
+    /**
+     * Of `promptTokens`, how many the provider served from its prompt cache
+     * and how many it wrote to it (T3). `promptTokens` stays the total the
+     * provider billed input for, so the monthly meter is unchanged; these
+     * exist so the cache hit rate can be seen at all — before them a
+     * `cache_control` marker that silently did nothing looked identical to
+     * one that worked. Null for events recorded before the columns existed
+     * and for providers that do not report the split.
+     */
+    cacheReadTokens: integer('cacheReadTokens'),
+    cacheWriteTokens: integer('cacheWriteTokens'),
+    /**
+     * The counts above were not reported by the provider but estimated from
+     * the request (F3) — a stream that was aborted before a provider that
+     * only reports usage at the end ever got to. Counted toward the monthly
+     * limit like any other event (the prompt was billed), but marked so the
+     * meter can say how much of it is exact.
+     */
+    estimated: integer('estimated', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('createdAt', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),

@@ -146,7 +146,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 8,
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
     link: { color: colors.primary, textAlign: 'center', marginTop: 12 },
     error: {
       color: colors.danger,
@@ -156,8 +156,8 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     success: {
-      color: '#166534',
-      backgroundColor: '#f0fdf4',
+      color: colors.success,
+      backgroundColor: colors.successSurface,
       borderRadius: 8,
       padding: 10,
       fontSize: 14,

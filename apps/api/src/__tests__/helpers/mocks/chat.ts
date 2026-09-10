@@ -25,6 +25,7 @@ export const makeMessage = (overrides?: Partial<Message>): Message => ({
   conversationId: 'conv-1',
   role: 'user',
   content: 'hi',
+  toolTrace: null,
   createdAt: new Date('2024-01-01'),
   ...overrides,
 });

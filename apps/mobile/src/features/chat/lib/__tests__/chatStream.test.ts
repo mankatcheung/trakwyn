@@ -114,6 +114,21 @@ describe('streamChatMessage', () => {
     await expect(send()).rejects.toThrow(ChatStreamError);
   });
 
+  it('surfaces a 400 JSON error body as a ChatStreamError the screen can show', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      body: null,
+      json: () => Promise.resolve({ error: 'message must be at most 8000 characters' }),
+    });
+
+    const err = await send().catch((e) => e);
+
+    expect(err).toBeInstanceOf(ChatStreamError);
+    expect(err.code).toBe('VALIDATION');
+    expect(err.message).toBe('message must be at most 8000 characters');
+  });
+
   it('throws a plain error on a non-2xx response', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500, body: null });
 

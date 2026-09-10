@@ -6,6 +6,7 @@ jest.mock('../../../../graphql/client', () => ({ gqlRequest: jest.fn() }));
 
 import { gqlRequest } from '../../../../graphql/client';
 import {
+  useAllOffers,
   useCompareOffers,
   useCreateOffer,
   useDeleteOffer,
@@ -44,6 +45,28 @@ describe('useOffers', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), { applicationId: 'app-1' });
+  });
+});
+
+describe('useAllOffers', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('fetches offers across every application, not scoped to one', async () => {
+    mockedGqlRequest.mockResolvedValueOnce({
+      myOffers: [
+        {
+          company: 'Acme',
+          role: 'Engineer',
+          offer: { id: '1', applicationId: 'app-1', baseSalary: 150000 },
+        },
+      ],
+    });
+
+    const { result } = await renderHook(() => useAllOffers(), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String));
+    expect(result.current.data?.[0]?.company).toBe('Acme');
   });
 });
 

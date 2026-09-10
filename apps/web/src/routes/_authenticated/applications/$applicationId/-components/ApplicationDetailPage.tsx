@@ -229,13 +229,6 @@ export function ApplicationDetailPage() {
             >
               {t('applicationDetail.manageOffers')}
             </Link>
-            <Link
-              to="/applications/$applicationId/offers/compare"
-              params={{ applicationId }}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              {t('applicationDetail.compareOffers')}
-            </Link>
           </div>
         </div>
       )}

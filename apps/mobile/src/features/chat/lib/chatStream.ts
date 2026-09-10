@@ -40,6 +40,25 @@ function parseFrame(raw: string): SSEFrame | null {
 
 const userAgent = buildUserAgent();
 
+/**
+ * A 400 (message missing or over the API's `CHAT.MAX_MESSAGE_CHARS`) and a
+ * 413 (body over the route's limit) carry a JSON `{ error }` worth showing;
+ * anything else stays a plain transport error. Duck-typed on `json`, since
+ * the streaming `expo/fetch` response is what arrives here.
+ */
+async function toRequestError(response: {
+  status: number;
+  json?: () => Promise<unknown>;
+}): Promise<Error> {
+  if ((response.status === 400 || response.status === 413) && response.json) {
+    const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+    if (typeof body?.error === 'string') {
+      return new ChatStreamError(body.error, ERROR_CODES.VALIDATION);
+    }
+  }
+  return new Error(`Chat stream request failed with status ${response.status}`);
+}
+
 function openStream(accessToken: string | null, body: string, signal?: AbortSignal) {
   return fetch(CHAT_STREAM_URL, {
     method: 'POST',
@@ -92,7 +111,7 @@ export async function streamChatMessage({
     throw new ChatStreamError(SESSION_EXPIRED_MESSAGE, ERROR_CODES.UNAUTHORIZED);
   }
   if (!response.ok || !response.body) {
-    throw new Error(`Chat stream request failed with status ${response.status}`);
+    throw await toRequestError(response);
   }
 
   const reader = response.body.getReader();

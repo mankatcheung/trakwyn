@@ -25,5 +25,6 @@
   "recent": {
     "title": "Recent applications",
     "empty": "No applications yet. Add your first one."
-  }
+  },
+  "viewAllOffers": "View all offers"
 }

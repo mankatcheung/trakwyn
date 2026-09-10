@@ -2,14 +2,20 @@ import type { ICreateOfferUseCase } from '#src/use-cases/offers/ICreateOfferUseC
 import type { IUpdateOfferUseCase } from '#src/use-cases/offers/IUpdateOfferUseCase.js';
 import type { IDeleteOfferUseCase } from '#src/use-cases/offers/IDeleteOfferUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
+import type { IGetAllOffersUseCase } from '#src/use-cases/offers/IGetAllOffersUseCase.js';
 import type { ICompareOffersUseCase } from '#src/use-cases/offers/ICompareOffersUseCase.js';
-import { OfferMapper, type OfferDTO } from '#src/interface-adapters/mappers/OfferMapper.js';
+import {
+  OfferMapper,
+  type OfferDTO,
+  type OfferWithApplicationDTO,
+} from '#src/interface-adapters/mappers/OfferMapper.js';
 
 interface Deps {
   createOfferUseCase: ICreateOfferUseCase;
   updateOfferUseCase: IUpdateOfferUseCase;
   deleteOfferUseCase: IDeleteOfferUseCase;
   getOffersUseCase: IGetOffersUseCase;
+  getAllOffersUseCase: IGetAllOffersUseCase;
   compareOffersUseCase: ICompareOffersUseCase;
   offerMapper: OfferMapper;
 }
@@ -19,6 +25,7 @@ export class OfferResolver {
   private readonly updateOfferUseCase: IUpdateOfferUseCase;
   private readonly deleteOfferUseCase: IDeleteOfferUseCase;
   private readonly getOffersUseCase: IGetOffersUseCase;
+  private readonly getAllOffersUseCase: IGetAllOffersUseCase;
   private readonly compareOffersUseCase: ICompareOffersUseCase;
   private readonly offerMapper: OfferMapper;
 
@@ -27,6 +34,7 @@ export class OfferResolver {
     this.updateOfferUseCase = deps.updateOfferUseCase;
     this.deleteOfferUseCase = deps.deleteOfferUseCase;
     this.getOffersUseCase = deps.getOffersUseCase;
+    this.getAllOffersUseCase = deps.getAllOffersUseCase;
     this.compareOffersUseCase = deps.compareOffersUseCase;
     this.offerMapper = deps.offerMapper;
   }
@@ -34,6 +42,11 @@ export class OfferResolver {
   async getOffers(userId: string, applicationId: string): Promise<OfferDTO[]> {
     const offers = await this.getOffersUseCase.execute({ userId, applicationId });
     return offers.map((offer) => this.offerMapper.toDTO(offer));
+  }
+
+  async getAllOffers(userId: string): Promise<OfferWithApplicationDTO[]> {
+    const offers = await this.getAllOffersUseCase.execute({ userId });
+    return offers.map((entry) => this.offerMapper.toWithApplicationDTO(entry));
   }
 
   async createOffer(

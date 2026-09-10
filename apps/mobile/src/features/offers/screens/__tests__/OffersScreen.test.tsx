@@ -8,11 +8,20 @@ jest.mock('../../hooks/useOfferQueries', () => ({
   useUpdateOffer: jest.fn(),
   useDeleteOffer: jest.fn(),
 }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: jest.fn(), useRouter: jest.fn() }));
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(),
+  // The real Stack.Screen hands `options` to React Navigation's header, which
+  // isn't mounted in these tests — rendering `headerRight()` here instead
+  // keeps the add-offer button reachable by testID.
+  Stack: {
+    Screen: ({ options }: { options?: { headerRight?: () => React.ReactNode } }) =>
+      options?.headerRight ? options.headerRight() : null,
+  },
+}));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('../../../../i18n/LanguageContext', () => ({ useLanguage: jest.fn() }));
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import {
   useCreateOffer,
   useDeleteOffer,
@@ -30,7 +39,6 @@ const mockedUseCreateOffer = jest.mocked(useCreateOffer);
 const mockedUseUpdateOffer = jest.mocked(useUpdateOffer);
 const mockedUseDeleteOffer = jest.mocked(useDeleteOffer);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
-const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseLanguage = jest.mocked(useLanguage);
 
@@ -51,9 +59,8 @@ const offers: Offer[] = [
   },
 ];
 
-function renderScreen(push = jest.fn()) {
+function renderScreen() {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
-  mockedUseRouter.mockReturnValue({ push } as never);
   return render(<OffersScreen />);
 }
 
@@ -111,18 +118,15 @@ describe('OffersScreen', () => {
     await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
   });
 
-  it('shows a compare link once there are 2+ offers and navigates to compare', async () => {
+  it('does not show a compare action even with 2+ offers — compare lives on the all-offers page now', async () => {
     mockedUseOffers.mockReturnValue({
       data: [...offers, { ...offers[0], id: 'offer-2' }],
       isLoading: false,
       isError: false,
     } as never);
-    const push = jest.fn();
 
-    const { getByTestId } = await renderScreen(push);
+    const { queryByTestId } = await renderScreen();
 
-    await fireEvent.press(getByTestId('compare-offers-button'));
-
-    expect(push).toHaveBeenCalledWith('./compare');
+    expect(queryByTestId('compare-offers-button')).toBeNull();
   });
 });

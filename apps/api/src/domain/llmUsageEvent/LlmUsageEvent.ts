@@ -5,6 +5,10 @@ export type LlmUsageEvent = {
   model: string | null;
   promptTokens: number;
   completionTokens: number;
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
+  /** Counts estimated from the request rather than reported by the provider (F3). */
+  estimated: boolean;
   createdAt: Date;
 };
 
@@ -21,6 +25,14 @@ export type LlmUsageSummary = {
   requestCount: number;
   promptTokens: number;
   completionTokens: number;
+  /**
+   * Summed over the events that reported a split (T3); the share of
+   * `promptTokens` that was a cache hit / write. Zero both when nothing was
+   * cached and when the provider never says — the settings page can only
+   * show a rate for providers that report one.
+   */
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
   lastUsedAt: Date;
 };
 

@@ -20,6 +20,26 @@ OfferRef.implement({
   }),
 });
 
+export interface OfferWithApplicationDTO {
+  offer: OfferDTO;
+  company: string;
+  role: string;
+}
+
+export const OfferWithApplicationRef =
+  builder.objectRef<OfferWithApplicationDTO>('OfferWithApplication');
+
+OfferWithApplicationRef.implement({
+  fields: (t) => ({
+    offer: t.field({
+      type: OfferRef,
+      resolve: (parent) => parent.offer,
+    }),
+    company: t.exposeString('company'),
+    role: t.exposeString('role'),
+  }),
+});
+
 export interface OfferComparisonDTO {
   offer: OfferDTO;
   company: string;

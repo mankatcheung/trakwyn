@@ -76,6 +76,25 @@ describe('streamChatMessage', () => {
     });
   });
 
+  it('surfaces a 400/413 JSON error body as a ChatStreamError the pane can show', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 400,
+      body: null,
+      json: () => Promise.resolve({ error: 'message must be at most 8000 characters' }),
+    } as never);
+
+    const err = await streamChatMessage({
+      conversationId: 'conv-1',
+      message: 'x'.repeat(9000),
+      onDelta: vi.fn(),
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(ChatStreamError);
+    expect(err.code).toBe('VALIDATION');
+    expect(err.message).toBe('message must be at most 8000 characters');
+  });
+
   it('throws a plain error when the response is not ok', async () => {
     vi.mocked(fetch).mockResolvedValue(streamResponse('', false, 401) as never);
 

@@ -33,9 +33,8 @@ name: CI & Deploy
 #   7. Add repository secrets (in GitHub Settings > Secrets > Actions):
 #      PRODUCTION_DATABASE_URL — the libsql:// URL for your production Turso DB
 #      PRODUCTION_DATABASE_AUTH_TOKEN — the auth token for the production Turso DB
-#      NTFY_TOPIC — ntfy.sh topic (shared with deploy-preview.yml) that
-#        receives a push notification once both apps finish deploying to
-#        production
+#      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
+#        both apps finish deploying to production
 
 on:
   push:

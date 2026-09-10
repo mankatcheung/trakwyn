@@ -55,6 +55,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
             value={baseSalary}
             onChangeText={setBaseSalary}
             keyboardType="numeric"
+            placeholder={t('baseSalaryPlaceholder')}
             testID="offer-base-salary-input"
           />
         </View>
@@ -66,6 +67,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
             value={bonus}
             onChangeText={setBonus}
             keyboardType="numeric"
+            placeholder={t('bonusPlaceholder')}
             testID="offer-bonus-input"
           />
         </View>
@@ -116,6 +118,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         value={benefits}
         onChangeText={setBenefits}
         multiline
+        placeholder={t('benefitsPlaceholder')}
         testID="offer-benefits-input"
       />
 
@@ -136,6 +139,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
         value={notes}
         onChangeText={setNotes}
         multiline
+        placeholder={t('notesPlaceholder')}
         testID="offer-notes-input"
       />
 
@@ -186,7 +190,7 @@ function createStyles(colors: ThemeColors) {
     },
     chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     chipText: { fontSize: 12, color: colors.textMuted },
-    chipTextActive: { color: colors.surface },
+    chipTextActive: { color: colors.onPrimary },
     actions: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
@@ -205,6 +209,6 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    saveText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
   });
 }

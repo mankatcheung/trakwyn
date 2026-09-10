@@ -51,13 +51,14 @@ export function DangerZoneScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
+        <Text style={styles.fieldLabel}>{t('danger.confirmPasswordPlaceholder')}</Text>
         <TextInput
           placeholderTextColor={colors.textFaint}
           style={styles.input}
-          placeholder={t('danger.confirmPasswordPlaceholder')}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          placeholder={t('danger.confirmPasswordPlaceholder')}
           testID="delete-account-password-input"
         />
 
@@ -86,16 +87,16 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 20 },
     card: {
       backgroundColor: colors.dangerSurface,
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
       padding: 16,
       gap: 12,
     },
-    title: { fontSize: 15, fontWeight: '700', color: colors.danger },
+    title: { fontSize: 16, fontWeight: '700', color: colors.danger },
     description: { fontSize: 13, color: colors.danger },
+    fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginTop: 4 },
     input: {
-      maxWidth: 320,
       borderWidth: 1,
       borderColor: colors.borderStrong,
       borderRadius: 8,
@@ -112,15 +113,15 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
     },
     deleteButton: {
-      alignSelf: 'flex-start',
-      minHeight: 40,
+      minHeight: 44,
       borderRadius: 8,
       backgroundColor: colors.danger,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 16,
+      marginTop: 4,
     },
     deleteButtonDisabled: { opacity: 0.6 },
-    deleteButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    deleteButtonText: { color: colors.onDanger, fontSize: 14, fontWeight: '600' },
   });
 }

@@ -1,5 +1,20 @@
 import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import type { LLMCompleteResult } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ZodType } from 'zod';
+
+/**
+ * A reply the provider cut off at the output budget is not "invalid JSON"
+ * — it is incomplete, and asking again with the same input will be cut off
+ * again (F2). Checked before `parseAiJson` so the user hears which it was
+ * instead of paying for a retry that cannot succeed.
+ */
+export function assertNotTruncated(result: Pick<LLMCompleteResult, 'truncated'>): void {
+  if (result.truncated) {
+    throw new AiResponseInvalidError(
+      'The AI ran out of room before finishing its reply — try again with less input, or shorten the text it was given',
+    );
+  }
+}
 
 /**
  * Parses an LLM's JSON response against a Zod schema, instead of a bare

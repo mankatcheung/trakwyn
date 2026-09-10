@@ -1,4 +1,5 @@
 import type { Offer } from '#src/domain/offer/Offer.js';
+import type { OfferWithApplication } from '#src/use-cases/offers/IGetAllOffersUseCase.js';
 
 export interface OfferDTO {
   id: string;
@@ -15,7 +16,21 @@ export interface OfferDTO {
   updatedAt: string;
 }
 
+export interface OfferWithApplicationDTO {
+  offer: OfferDTO;
+  company: string;
+  role: string;
+}
+
 export class OfferMapper {
+  toWithApplicationDTO(entry: OfferWithApplication): OfferWithApplicationDTO {
+    return {
+      offer: this.toDTO(entry.offer),
+      company: entry.company,
+      role: entry.role,
+    };
+  }
+
   toDTO(offer: Offer): OfferDTO {
     return {
       id: offer.id,

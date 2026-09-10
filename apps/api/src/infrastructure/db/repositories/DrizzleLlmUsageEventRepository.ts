@@ -30,6 +30,8 @@ export class DrizzleLlmUsageEventRepository implements ILlmUsageEventRepository 
         requestCount: sql<number>`count(*)`,
         promptTokens: sql<number>`coalesce(sum(${llmUsageEvent.promptTokens}), 0)`,
         completionTokens: sql<number>`coalesce(sum(${llmUsageEvent.completionTokens}), 0)`,
+        cacheReadTokens: sql<number>`coalesce(sum(${llmUsageEvent.cacheReadTokens}), 0)`,
+        cacheWriteTokens: sql<number>`coalesce(sum(${llmUsageEvent.cacheWriteTokens}), 0)`,
         lastUsedAt: sql<number>`max(${llmUsageEvent.createdAt})`,
       })
       .from(llmUsageEvent)
@@ -42,6 +44,8 @@ export class DrizzleLlmUsageEventRepository implements ILlmUsageEventRepository 
       requestCount: Number(row.requestCount),
       promptTokens: Number(row.promptTokens),
       completionTokens: Number(row.completionTokens),
+      cacheReadTokens: Number(row.cacheReadTokens),
+      cacheWriteTokens: Number(row.cacheWriteTokens),
       lastUsedAt: new Date(Number(row.lastUsedAt)),
     }));
   }

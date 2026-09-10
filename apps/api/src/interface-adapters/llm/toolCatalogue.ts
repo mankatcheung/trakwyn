@@ -31,7 +31,7 @@ export const TOOL_CATALOGUE = [
     access: 'read',
     name: 'list_applications',
     description:
-      'List job applications for the authenticated user, newest first. Returns one page; pass the returned nextCursor to fetch the next.',
+      'List job applications for the authenticated user, newest first. Returns one page; pass the returned nextCursor to fetch the next. Each row carries a short description preview — use get_application for the full text.',
     inputSchema: {
       type: 'object',
       properties: {

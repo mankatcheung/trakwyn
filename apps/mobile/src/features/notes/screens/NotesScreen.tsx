@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -19,80 +20,115 @@ import type { Note } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { PencilIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
+import { IconButton } from '../../../components/IconButton';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
 function NoteRow({
   note,
-  onUpdate,
+  onEdit,
   onDelete,
   isSaving,
 }: {
   note: Note;
-  onUpdate: (content: string) => void;
+  onEdit: () => void;
   onDelete: () => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('notes');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(note.content);
-
-  if (isEditing) {
-    return (
-      <View style={styles.card} testID={`note-${note.id}`}>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={[styles.input, styles.multiline]}
-          value={draft}
-          onChangeText={setDraft}
-          multiline
-          autoFocus
-          testID={`note-edit-input-${note.id}`}
-        />
-        <View style={styles.rowActions}>
-          <Pressable
-            onPress={() => {
-              onUpdate(draft);
-              setIsEditing(false);
-            }}
-            testID={`note-save-${note.id}`}
-          >
-            <Text style={styles.link}>{t('save')}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              setDraft(note.content);
-              setIsEditing(false);
-            }}
-          >
-            <Text style={styles.linkMuted}>{t('cancel')}</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.card} testID={`note-${note.id}`}>
       <Text style={styles.content}>{note.content}</Text>
-      <View style={styles.rowActions}>
-        <Pressable onPress={() => setIsEditing(true)} testID={`note-edit-${note.id}`}>
-          <Text style={styles.link}>{t('edit')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() =>
-            Alert.alert(t('deleteNoteTitle'), t('deleteNoteMessage'), [
-              { text: t('cancel'), style: 'cancel' },
-              { text: t('delete'), style: 'destructive', onPress: onDelete },
-            ])
-          }
-          disabled={isSaving}
-          testID={`note-delete-${note.id}`}
-        >
-          <Text style={styles.linkDanger}>{t('delete')}</Text>
-        </Pressable>
+      <View style={styles.cardFooter}>
+        <Text style={styles.timestamp}>{new Date(note.updatedAt).toLocaleString()}</Text>
+        <View style={styles.rowActions}>
+          <IconButton
+            icon={PencilIcon}
+            onPress={onEdit}
+            testID={`note-edit-${note.id}`}
+            accessibilityLabel={t('edit')}
+          />
+          <IconButton
+            icon={TrashIcon}
+            variant="danger"
+            onPress={() =>
+              Alert.alert(t('deleteNoteTitle'), t('deleteNoteMessage'), [
+                { text: t('cancel'), style: 'cancel' },
+                { text: t('delete'), style: 'destructive', onPress: onDelete },
+              ])
+            }
+            disabled={isSaving}
+            testID={`note-delete-${note.id}`}
+            accessibilityLabel={t('delete')}
+          />
+        </View>
       </View>
     </View>
+  );
+}
+
+interface NoteFormModalProps {
+  visible: boolean;
+  initialContent: string;
+  isSaving: boolean;
+  onSubmit: (content: string) => void;
+  onClose: () => void;
+}
+
+function NoteFormModal({
+  visible,
+  initialContent,
+  isSaving,
+  onSubmit,
+  onClose,
+}: NoteFormModalProps) {
+  const { t } = useTranslation('notes');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [draft, setDraft] = useState(initialContent);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      testID="note-form-modal"
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <Pressable onPress={onClose} testID="note-modal-cancel">
+            <Text style={styles.linkMuted}>{t('cancel')}</Text>
+          </Pressable>
+          <Text style={styles.modalTitle}>{initialContent ? t('edit') : t('add')}</Text>
+          <Pressable
+            onPress={() => onSubmit(draft.trim())}
+            disabled={isSaving || !draft.trim()}
+            testID="note-modal-save"
+          >
+            <Text style={[styles.link, (isSaving || !draft.trim()) && styles.linkDisabled]}>
+              {t('save')}
+            </Text>
+          </Pressable>
+        </View>
+        <TextInput
+          placeholderTextColor={colors.textFaint}
+          style={[styles.input, styles.multiline, styles.modalInput]}
+          placeholder={t('addNotePlaceholder')}
+          value={draft}
+          onChangeText={setDraft}
+          multiline
+          autoFocus
+          testID="note-modal-input"
+        />
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -106,38 +142,57 @@ export function NotesScreen() {
   const updateNote = useUpdateNote(applicationId);
   const deleteNote = useDeleteNote(applicationId);
 
-  const [draft, setDraft] = useState('');
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
-  const onAdd = () => {
-    const content = draft.trim();
+  const isModalVisible = isAdding || editingNote !== null;
+  const isSaving = createNote.isPending || updateNote.isPending;
+
+  const closeModal = () => {
+    setIsAdding(false);
+    setEditingNote(null);
+  };
+
+  const onSubmit = (content: string) => {
     if (!content) return;
+    if (editingNote) {
+      updateNote.mutate(
+        { id: editingNote.id, content },
+        {
+          onSuccess: closeModal,
+          onError: (err) => Alert.alert(t('couldNotSaveTitle'), getErrorMessage(err)),
+        },
+      );
+      return;
+    }
     createNote.mutate(content, {
-      onSuccess: () => setDraft(''),
+      onSuccess: closeModal,
       onError: (err) => Alert.alert(t('couldNotAddNoteTitle'), getErrorMessage(err)),
     });
   };
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} testID="notes-loading" />
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} testID="notes-loading" />
+        </View>
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>{getErrorMessage(error)}</Text>
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.error}>{getErrorMessage(error)}</Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <FlatList
         data={notes ?? []}
         keyExtractor={(item) => item.id}
@@ -147,12 +202,7 @@ export function NotesScreen() {
           <NoteRow
             note={item}
             isSaving={updateNote.isPending || deleteNote.isPending}
-            onUpdate={(content) =>
-              updateNote.mutate(
-                { id: item.id, content },
-                { onError: (err) => Alert.alert(t('couldNotSaveTitle'), getErrorMessage(err)) },
-              )
-            }
+            onEdit={() => setEditingNote(item)}
             onDelete={() =>
               deleteNote.mutate(item.id, {
                 onError: (err) => Alert.alert(t('couldNotDeleteTitle'), getErrorMessage(err)),
@@ -163,26 +213,21 @@ export function NotesScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      <View style={styles.addRow}>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={[styles.input, styles.addInput]}
-          placeholder={t('addNotePlaceholder')}
-          value={draft}
-          onChangeText={setDraft}
-          multiline
-          testID="new-note-input"
-        />
-        <Pressable
-          style={[styles.addButton, createNote.isPending && styles.addButtonDisabled]}
-          onPress={onAdd}
-          disabled={createNote.isPending}
-          testID="add-note-button"
-        >
-          <Text style={styles.addButtonText}>{t('add')}</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+      <FloatingActionButton
+        onPress={() => setIsAdding(true)}
+        testID="add-note-button"
+        accessibilityLabel={t('add')}
+      />
+
+      <NoteFormModal
+        key={editingNote?.id ?? (isAdding ? 'add' : 'closed')}
+        visible={isModalVisible}
+        initialContent={editingNote?.content ?? ''}
+        isSaving={isSaving}
+        onSubmit={onSubmit}
+        onClose={closeModal}
+      />
+    </View>
   );
 }
 
@@ -191,7 +236,7 @@ function createStyles(colors: ThemeColors) {
     container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: { fontSize: 14, color: colors.danger, textAlign: 'center' },
-    list: { padding: 16 },
+    list: { padding: 16, paddingTop: 4, paddingBottom: 96 },
     separator: { height: 10 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
     card: {
@@ -203,10 +248,16 @@ function createStyles(colors: ThemeColors) {
       gap: 8,
     },
     content: { fontSize: 14, color: colors.text, lineHeight: 20 },
-    rowActions: { flexDirection: 'row', gap: 16 },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    cardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    timestamp: { fontSize: 12, color: colors.textFaint },
+    rowActions: { flexDirection: 'row', gap: 4 },
+    link: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    linkDisabled: { color: colors.textFaint },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -217,25 +268,17 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
     },
     multiline: { minHeight: 70, textAlignVertical: 'top' },
-    addRow: {
+    modalContainer: { flex: 1, backgroundColor: colors.background },
+    modalHeader: {
       flexDirection: 'row',
-      gap: 8,
-      padding: 16,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-      alignItems: 'flex-end',
-    },
-    addInput: { flex: 1, minHeight: 44, maxHeight: 100 },
-    addButton: {
-      minHeight: 44,
-      paddingHorizontal: 18,
-      borderRadius: 8,
-      backgroundColor: colors.primary,
+      justifyContent: 'space-between',
       alignItems: 'center',
-      justifyContent: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
-    addButtonDisabled: { opacity: 0.6 },
-    addButtonText: { color: colors.surface, fontSize: 14, fontWeight: '600' },
+    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalInput: { margin: 16, flex: 1 },
   });
 }

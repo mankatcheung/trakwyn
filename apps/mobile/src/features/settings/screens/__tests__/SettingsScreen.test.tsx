@@ -4,12 +4,15 @@ import '../../../../i18n';
 
 jest.mock('../../../../auth/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../hooks/useProfile', () => ({ useProfile: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
+import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../../auth/AuthContext';
+import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 import { SettingsScreen } from '../SettingsScreen';
@@ -17,6 +20,7 @@ import { SettingsScreen } from '../SettingsScreen';
 const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
+const mockedUseProfile = jest.mocked(useProfile);
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
@@ -25,6 +29,18 @@ describe('SettingsScreen', () => {
       resolvedScheme: 'light',
       colors: lightColors,
       setMode: jest.fn(),
+    } as never);
+    mockedUseProfile.mockReturnValue({
+      data: {
+        id: '1',
+        email: 'demo@trakwyn.app',
+        name: 'Demo User',
+        timezone: null,
+        targetRole: null,
+        avatarUrl: null,
+        backupEmail: null,
+        backupEmailVerifiedAt: null,
+      },
     } as never);
   });
 
@@ -71,7 +87,7 @@ describe('SettingsScreen', () => {
     expect(push).toHaveBeenCalledWith('/settings/danger-zone');
   });
 
-  it('navigates to analytics and trash, relocated here from the old sidebar', async () => {
+  it('navigates to analytics, relocated here from the old sidebar', async () => {
     const push = jest.fn();
     mockedUseRouter.mockReturnValue({ push } as never);
     mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
@@ -80,9 +96,25 @@ describe('SettingsScreen', () => {
 
     await fireEvent.press(getByTestId('settings-analytics-row'));
     expect(push).toHaveBeenCalledWith('/settings/analytics');
+  });
 
-    await fireEvent.press(getByTestId('settings-trash-row'));
-    expect(push).toHaveBeenCalledWith('/settings/trash');
+  it('opens the legal pages in the browser', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    mockedUseRouter.mockReturnValue({ push: jest.fn() } as never);
+    mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
+
+    const { getByTestId } = await render(<SettingsScreen />);
+
+    await fireEvent.press(getByTestId('settings-privacy-policy-row'));
+    expect(openURL).toHaveBeenCalledWith(expect.stringMatching(/\/privacy$/));
+
+    await fireEvent.press(getByTestId('settings-terms-of-service-row'));
+    expect(openURL).toHaveBeenCalledWith(expect.stringMatching(/\/terms$/));
+
+    await fireEvent.press(getByTestId('settings-accessibility-row'));
+    expect(openURL).toHaveBeenCalledWith(expect.stringMatching(/\/accessibility$/));
+
+    openURL.mockRestore();
   });
 
   it('signs out when the sign-out row is pressed', async () => {
