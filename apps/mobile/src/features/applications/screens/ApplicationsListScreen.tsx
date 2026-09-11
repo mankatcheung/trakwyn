@@ -98,18 +98,21 @@ export function ApplicationsListScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          style={styles.trashButton}
-          onPress={() => router.push('/applications/trash')}
-          accessibilityLabel={t('list.trashAria')}
-          testID="applications-trash-button"
-        >
-          <TrashIcon color={colors.textSubtle} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.trashButton}
+            onPress={() => router.push('/applications/trash')}
+            accessibilityLabel={t('list.trashAria')}
+            testID="applications-trash-button"
+          >
+            <TrashIcon color={colors.textSubtle} />
+          </Pressable>
+          <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
+        </View>
       </View>
 
       {viewMode === 'board' ? (
-        <BoardScreen />
+        <BoardScreen displayFields={displayFields} />
       ) : (
         <>
           <View style={styles.searchWrapper}>
@@ -147,10 +150,6 @@ export function ApplicationsListScreen() {
               <GhostIcon color={ghostedOnly ? ON_FILTER_PILL_COLOR : GHOST_COLOR} size={15} />
             </Pressable>
             <View style={styles.toggleFiltersSpacer} />
-            <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
-          </View>
-
-          <View style={styles.statusFilterRow}>
             <StatusFilterButton value={statusFilter} onChange={setStatusFilter} />
           </View>
 
@@ -214,6 +213,7 @@ function createStyles(colors: ThemeColors) {
     viewToggleOptionActive: { backgroundColor: colors.surface },
     viewToggleText: { fontSize: 13, color: colors.textSubtle, fontWeight: '500' },
     viewToggleTextActive: { color: colors.text, fontWeight: '700' },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     trashButton: {
       width: 36,
       height: 36,
@@ -262,7 +262,6 @@ function createStyles(colors: ThemeColors) {
       fontSize: 15,
       color: colors.text,
     },
-    statusFilterRow: { marginHorizontal: 16, marginBottom: 12 },
     list: { paddingHorizontal: 16, paddingBottom: 96 },
     separator: { height: 12 },
     loading: { marginTop: 40 },

@@ -119,7 +119,6 @@
     }
   },
   "board": {
-    "title": "看板",
     "move": "移动",
     "moveModalTitle": "移动 {{company}}",
     "cancel": "取消"

@@ -271,6 +271,28 @@ describe('ApplicationsListScreen', () => {
     expect(queryByText('Frontend Engineer')).toBeNull();
   });
 
+  it('hides a field on board cards when toggled off via the header field picker', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: applications,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as never);
+
+    const { getByTestId, findByTestId, queryByText } = await renderScreen();
+
+    await fireEvent.press(getByTestId('applications-view-board'));
+    await findByTestId('board-column-applied');
+
+    await fireEvent.press(getByTestId('applications-display-fields-button'));
+    await fireEvent.press(getByTestId('display-field-role'));
+
+    await waitFor(() => expect(queryByText('Backend Engineer')).toBeNull());
+    expect(queryByText('Frontend Engineer')).toBeNull();
+  });
+
   it('opens the status filter modal and filters by the selected status', async () => {
     mockedUseApplications.mockReturnValue({
       data: applications,
