@@ -12,6 +12,7 @@ jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
     useLocalSearchParams: jest.fn(),
+    useRouter: jest.fn(),
     // `asChild` composition isn't exercised here, but unlike a bare
     // passthrough, wrapping in a testID-tagged View still lets tests assert
     // the resolved `href` — a relative href resolves against the wrong
@@ -24,7 +25,7 @@ jest.mock('expo-router', () => {
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import * as DocumentPicker from 'expo-document-picker';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
@@ -40,6 +41,7 @@ const mockedUseDeleteDocument = jest.mocked(useDeleteDocument);
 const mockedUseUploadDocument = jest.mocked(useUploadDocument);
 const mockedUseDocumentDrafts = jest.mocked(useDocumentDrafts);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
 const document: Document = {
@@ -54,8 +56,9 @@ const document: Document = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-function renderScreen() {
+function renderScreen(push = jest.fn()) {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
+  mockedUseRouter.mockReturnValue({ push } as never);
   return render(<DocumentsScreen />);
 }
 
@@ -176,7 +179,7 @@ describe('DocumentsScreen', () => {
     expect(getByTestId('new-draft-button')).toBeTruthy();
   });
 
-  it('resolves draft and new-draft links against the documents/ subroute', async () => {
+  it('resolves the draft link against the documents/ subroute', async () => {
     mockedUseDocuments.mockReturnValue({
       data: [],
       isLoading: false,
@@ -200,10 +203,30 @@ describe('DocumentsScreen', () => {
 
     const { getByTestId } = await renderScreen();
 
-    // Rendered from an index route, a bare relative href (e.g. "./new")
+    // Rendered from an index route, a bare relative href (e.g. "./draft-1")
     // resolves against the parent of documents/, not documents/ itself —
     // regression coverage for the "Unmatched Route" bug (JEF-310).
-    expect(getByTestId('link:./documents/new')).toBeTruthy();
     expect(getByTestId('link:./documents/draft-1')).toBeTruthy();
+  });
+
+  it('navigates to the new-draft screen when the FAB is pressed', async () => {
+    const push = jest.fn();
+    mockedUseDocuments.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('new-draft-button'));
+
+    // Same relative-resolution concern as the draft links above (JEF-310):
+    // pushing "./documents/new" must resolve against this screen's route,
+    // not its parent.
+    expect(push).toHaveBeenCalledWith('./documents/new');
   });
 });
