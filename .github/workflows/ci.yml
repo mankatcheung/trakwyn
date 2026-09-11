@@ -255,6 +255,22 @@ jobs:
           cd android
           ./gradlew assembleRelease --no-daemon
 
+      # Two facts the flows cannot report about the binary they drive: whether
+      # the manifest allows the cleartext API URL (apps/mobile/plugins/
+      # withCleartextForHttpApi.js), and whether Metro inlined that URL at all —
+      # a build that lost EXPO_PUBLIC_API_URL falls back to localhost, which on
+      # the emulator is the emulator, and fails with the same symptom.
+      - name: Inspect the release APK
+        run: |
+          apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          aapt2="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt2"
+          echo "usesCleartextTraffic in the manifest:"
+          "$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | grep -i cleartext || echo "  (absent)"
+          echo "API URLs in the JS bundle:"
+          unzip -p "$apk" assets/index.android.bundle \
+            | grep -a -o -E 'https?://[A-Za-z0-9.-]+(:[0-9]+)?/graphql' | sort | uniq -c \
+            || echo "  (none found)"
+
       - name: Install Maestro
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
@@ -303,34 +319,28 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-            status=0
-            maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug" || status=$?
-            # Where the CLI actually put its artifacts: the first two device
-            # runs uploaded nothing from --debug-output, so list both candidate
-            # locations before the upload step decides there is nothing.
-            echo "::group::Maestro output on disk"
-            ls -laR "${{ runner.temp }}/maestro-debug" 2>/dev/null || echo "(no --debug-output directory)"
-            ls -laR "$HOME/.maestro/tests" 2>/dev/null || echo "(no ~/.maestro/tests directory)"
-            echo "::endgroup::"
-            exit $status
+          # One line, deliberately: the action runs each line of `script` as
+          # its own `sh -c`, so a multi-line script cannot carry Maestro's exit
+          # status to a later line — see the script's header.
+          script: bash .github/scripts/mobile-e2e-android.sh
 
       # Recordings, view hierarchy dumps and the command log for whichever flow
       # failed — the mobile equivalent of the Playwright report, and the reason
       # a red run here is diagnosable without re-running it locally (G-8).
-      # Both locations are listed because the first device run left
-      # --debug-output empty and the artifact held only api.log; ~/.maestro/tests
-      # is where the CLI writes its per-run output when it does not honour the
-      # flag.
+      # Maestro writes under a *hidden* `.maestro/tests/<run>/<flow>/` tree
+      # inside --debug-output (screenshots, screen hierarchy, device logcat),
+      # and upload-artifact skips hidden files unless told otherwise — which
+      # is why three artifacts in a row held only api.log. Uploaded on every
+      # outcome: a green run's logs are the baseline the next red one is read
+      # against.
       - name: Upload Maestro artifacts
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: maestro-android
+          include-hidden-files: true
           path: |
             ${{ runner.temp }}/maestro-debug/
-            ~/.maestro/tests/
             ${{ runner.temp }}/api.log
           if-no-files-found: ignore
 
