@@ -33,18 +33,25 @@ appId: com.trakwyn.app
 
 - tapOn: ${output.company}
 
+# The detail screen is an index of sections (JEF-303); each row drills into
+# its own screen.
 - tapOn:
-    id: 'notes-button'
-- tapOn:
-    id: 'new-note-input'
-- inputText: ${output.note}
-- hideKeyboard
+    id: 'section-index-notes'
+
+# Notes are added through a modal (JEF-317). Its save button sits in the modal
+# header, above the keyboard, so there is no hideKeyboard here — on Android
+# that is a back press, which would dismiss the modal instead.
 - tapOn:
     id: 'add-note-button'
+- tapOn:
+    id: 'note-modal-input'
+- inputText: ${output.note}
+- tapOn:
+    id: 'note-modal-save'
 - assertVisible: ${output.note}
 
 - back
 - tapOn:
-    id: 'documents-button'
+    id: 'section-index-documents'
 - assertVisible:
     id: 'pick-document-button'

@@ -32,6 +32,8 @@ appId: com.trakwyn.app
     id: 'register-submit-button'
 
 # The tab bar only mounts inside Stack.Protected's authenticated guard, so
-# seeing it is the assertion that registration really signed us in.
+# seeing one of its buttons is the assertion that registration really signed
+# us in. It has to be a button: the Tabs navigator itself carries no testID,
+# only `tabBarButtonTestID` on each tab (app/(app)/(tabs)/_layout.tsx).
 - assertVisible:
-    id: 'tabs-root'
+    id: 'tab-applications'

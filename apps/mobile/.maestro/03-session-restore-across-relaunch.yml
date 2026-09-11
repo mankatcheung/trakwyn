@@ -17,6 +17,6 @@ appId: com.trakwyn.app
 - launchApp
 # Not clearState: the point is that the pair survived the process dying.
 - assertVisible:
-    id: 'tabs-root'
+    id: 'tab-applications'
 - assertNotVisible:
     id: 'login-email-input'

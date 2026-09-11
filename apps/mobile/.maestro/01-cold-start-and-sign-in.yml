@@ -28,4 +28,4 @@ appId: com.trakwyn.app
     id: 'login-submit-button'
 
 - assertVisible:
-    id: 'tabs-root'
+    id: 'tab-applications'

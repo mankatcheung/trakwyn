@@ -44,6 +44,10 @@ appId: com.trakwyn.app
     id: 'tab-assistant'
 - tapOn:
     id: 'new-conversation-button'
+# With a key on the account the FAB opens a provider picker (JEF-311) instead
+# of starting the conversation outright; choose the custom key saved above.
+- tapOn:
+    id: 'conversation-provider-option-custom'
 - tapOn:
     id: 'chat-input'
 - inputText: 'What should I follow up on?'

@@ -35,6 +35,13 @@ platforms therefore need two different builds, not one build and two settings.
   being redesigned against the Paper mockups; a flow that matches on a label
   breaks on every copy change, and the fix for a broken flow is to fix the flow,
   not to skip it (JEF-300, R-5).
+- **A `testID` has to sit on a real view.** A `<Text>` nested inside another
+  `<Text>` is a span in its parent's TextView on Android — no view of its own,
+  no resource-id — so Maestro cannot find it, however the id is spelled. Put the
+  link in a row of sibling `Text`s or in a `Pressable` instead (the first device
+  run failed all seven flows on exactly this, at `login-register-link`).
+  `src/__tests__/architecture/maestroTestIds.test.ts` checks that every id a
+  flow references exists in the app at all; it cannot see nesting.
 - **Every flow registers its own account** via `subflows/register-new-account.yml`
   and asserts only on what it created. The flows share one API and one SQLite
   file, so anything that depends on seeded state — or on another flow — fails

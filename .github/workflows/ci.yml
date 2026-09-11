@@ -259,6 +259,8 @@ jobs:
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          # The installer tracks latest; record which one this run got.
+          "$HOME/.maestro/bin/maestro" --version
 
       # Hardware acceleration. Without it the emulator falls back to software
       # rendering and the job goes from minutes to tens of minutes.
@@ -308,6 +310,10 @@ jobs:
       # Recordings, view hierarchy dumps and the command log for whichever flow
       # failed — the mobile equivalent of the Playwright report, and the reason
       # a red run here is diagnosable without re-running it locally (G-8).
+      # Both locations are listed because the first device run left
+      # --debug-output empty and the artifact held only api.log; ~/.maestro/tests
+      # is where the CLI writes its per-run output when it does not honour the
+      # flag.
       - name: Upload Maestro artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -315,6 +321,7 @@ jobs:
           name: maestro-android
           path: |
             ${{ runner.temp }}/maestro-debug/
+            ~/.maestro/tests/
             ${{ runner.temp }}/api.log
           if-no-files-found: ignore
 
