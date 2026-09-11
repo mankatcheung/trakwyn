@@ -33,4 +33,18 @@ describe('AssistantMarkdown', () => {
     const { getByText } = await render(<AssistantMarkdown content="Hello there" />);
     expect(getByText('Hello there')).toBeTruthy();
   });
+
+  it('renders inline code constrained to the body line box', async () => {
+    const { getByText } = await render(<AssistantMarkdown content="Status is `pending`" />);
+    const node = getByText('pending');
+    expect(node).toBeTruthy();
+    const flatStyle = Object.assign({}, ...[node.props.style].flat());
+    expect(flatStyle.fontSize).toBeLessThan(15);
+    expect(flatStyle.lineHeight).toBe(20);
+  });
+
+  it('renders a fenced code block', async () => {
+    const { getByText } = await render(<AssistantMarkdown content={'```\nconst x = 1;\n```'} />);
+    expect(getByText('const x = 1;')).toBeTruthy();
+  });
 });
