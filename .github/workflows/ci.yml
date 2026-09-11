@@ -305,7 +305,16 @@ jobs:
           disable-animations: true
           script: |
             adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-            maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"
+            status=0
+            maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug" || status=$?
+            # Where the CLI actually put its artifacts: the first two device
+            # runs uploaded nothing from --debug-output, so list both candidate
+            # locations before the upload step decides there is nothing.
+            echo "::group::Maestro output on disk"
+            ls -laR "${{ runner.temp }}/maestro-debug" 2>/dev/null || echo "(no --debug-output directory)"
+            ls -laR "$HOME/.maestro/tests" 2>/dev/null || echo "(no ~/.maestro/tests directory)"
+            echo "::endgroup::"
+            exit $status
 
       # Recordings, view hierarchy dumps and the command log for whichever flow
       # failed — the mobile equivalent of the Playwright report, and the reason

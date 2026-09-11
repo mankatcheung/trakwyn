@@ -28,6 +28,15 @@ maestro test .maestro/02-register-and-create-application.yml   # or just one
 the host's network, so it uses `http://localhost:3001/graphql` instead — the two
 platforms therefore need two different builds, not one build and two settings.
 
+That URL is plain HTTP, which a release build on Android refuses by default —
+Expo's prebuild only allows cleartext in the debug variants. The local config
+plugin `plugins/withCleartextForHttpApi.js` adds the allowance to the release
+manifest whenever `EXPO_PUBLIC_API_URL` starts with `http://`, and leaves an
+`https://` production build alone. Forget the env var and the release build
+both talks to the wrong URL and cannot use cleartext to reach it, which the
+first two device runs showed as every flow timing out on the register form
+while the API log recorded no request at all.
+
 ## Conventions
 
 - **Select by `testID`, never by visible text**, except where the text _is_ the
