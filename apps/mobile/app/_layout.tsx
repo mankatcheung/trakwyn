@@ -22,6 +22,7 @@ export function RootNavigator() {
   // A freshly launched app is always in the foreground, so this doesn't
   // need to read AppState.currentState at mount.
   const appState = useRef<AppStateStatus>('active');
+  const initialAuthResolved = useRef(false);
 
   // Bringing the app back to the foreground should always land on the
   // dashboard tab, not wherever the tab navigator happened to be left —
@@ -51,15 +52,27 @@ export function RootNavigator() {
     if (lastAppPath.current && lastAppPath.current !== '/') returnTo.current = lastAppPath.current;
   }, [isAuthenticated, sessionExpired]);
 
+  // Fires once auth resolves. A returnTo path (above) wins when there is one;
+  // otherwise, the *first* time auth ever resolves — a cold start or full
+  // reload, which remounts this component instead of firing an AppState
+  // transition, so the foreground effect above never runs for it — the
+  // router is left sitting on whatever URL it launched with (e.g. a
+  // conversation), so send it to the dashboard instead. Later logins in the
+  // same app lifetime that aren't a returnTo restore navigate nowhere: the
+  // (app) group already mounts at its root.
   useEffect(() => {
-    if (!isAuthenticated || !returnTo.current) return;
-    const target = returnTo.current;
+    if (isLoading) return;
+    const isColdStart = !initialAuthResolved.current;
+    initialAuthResolved.current = true;
+    if (!isAuthenticated) return;
+    const target = returnTo.current ?? (isColdStart ? '/(tabs)/(home)' : null);
+    if (!target) return;
     returnTo.current = null;
     // Deferred a tick so Stack.Protected has mounted the (app) group before
     // the navigation into it is dispatched.
     const timer = setTimeout(() => router.replace(target as Href), 0);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (
