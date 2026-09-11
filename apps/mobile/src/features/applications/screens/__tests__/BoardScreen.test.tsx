@@ -19,6 +19,7 @@ import { useMoveApplicationOnBoard } from '../../hooks/useApplicationMutations';
 import { BoardScreen } from '../BoardScreen';
 import type { Application } from '../../types';
 import { statusDotColor } from '../../lib/statusColors';
+import { defaultApplicationDisplayFields } from '../../lib/applicationDisplayFields';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
@@ -68,9 +69,9 @@ const applications: Application[] = [
   },
 ];
 
-function renderScreen(push = jest.fn()) {
+function renderScreen(push = jest.fn(), displayFields = defaultApplicationDisplayFields()) {
   mockedUseRouter.mockReturnValue({ push } as never);
-  return render(<BoardScreen />);
+  return render(<BoardScreen displayFields={displayFields} />);
 }
 
 describe('BoardScreen', () => {
@@ -103,18 +104,16 @@ describe('BoardScreen', () => {
     await findByText('Globex');
   });
 
-  it('hides a field on the cards once toggled off via the display fields picker', async () => {
+  it('hides a field on the cards when displayFields marks it off', async () => {
     mockedUseMoveApplicationOnBoard.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
     } as never);
 
-    const { getByTestId, queryByText, findByText } = await renderScreen();
-
-    await findByText('Backend Engineer');
-
-    await fireEvent.press(getByTestId('applications-display-fields-button'));
-    await fireEvent.press(getByTestId('display-field-role'));
+    const { queryByText } = await renderScreen(jest.fn(), {
+      ...defaultApplicationDisplayFields(),
+      role: false,
+    });
 
     expect(queryByText('Backend Engineer')).toBeNull();
     expect(queryByText('Frontend Engineer')).toBeNull();
