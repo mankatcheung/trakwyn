@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../hooks/useDeleteDocument';
@@ -22,8 +22,9 @@ import type { Document, DocumentDraftSummary } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import { PlusIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
+import { TrashIcon } from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
 const DOCUMENT_TYPES = ['other', 'resume', 'cover_letter', 'portfolio'] as const;
 
@@ -96,6 +97,7 @@ export function DocumentsScreen() {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: documents, isLoading, isError, error } = useDocuments(applicationId);
   const { data: drafts } = useDocumentDrafts(applicationId);
@@ -155,11 +157,6 @@ export function DocumentsScreen() {
     <View style={styles.container}>
       <View style={styles.draftsHeaderRow}>
         <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
-        <Link href="./documents/new" asChild>
-          <Pressable testID="new-draft-button" accessibilityLabel={t('newDraft')}>
-            <PlusIcon color={colors.primary} size={18} />
-          </Pressable>
-        </Link>
       </View>
       {drafts && drafts.length > 0 ? (
         <View style={styles.draftsList}>
@@ -242,6 +239,12 @@ export function DocumentsScreen() {
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+
+      <FloatingActionButton
+        onPress={() => router.push('./documents/new')}
+        testID="new-draft-button"
+        accessibilityLabel={t('newDraft')}
       />
     </View>
   );
