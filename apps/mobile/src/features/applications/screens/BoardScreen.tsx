@@ -15,6 +15,7 @@ import { useApplications } from '../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../hooks/useApplicationMutations';
 import { groupByStatus } from '../lib/boardOrder';
 import { StatusBadge, statusLabel } from '../components/StatusBadge';
+import { statusDotColor } from '../lib/statusColors';
 import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
 import { StarIcon } from '../components/ApplicationIcons';
 import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
@@ -82,7 +83,19 @@ export function BoardScreen() {
         {APPLICATION_STATUSES.map((status) => (
           <View key={status} style={styles.column} testID={`board-column-${status}`}>
             <View style={styles.columnHeader}>
-              <Text style={styles.columnTitle}>{statusLabel(status)}</Text>
+              <View style={styles.columnTitleRow}>
+                <View
+                  style={[styles.columnDot, { backgroundColor: statusDotColor(status, colors) }]}
+                  testID={`column-dot-${status}`}
+                />
+                <Text
+                  style={[styles.columnTitle, { color: statusDotColor(status, colors) }]}
+                  numberOfLines={1}
+                  testID={`column-title-${status}`}
+                >
+                  {statusLabel(status)}
+                </Text>
+              </View>
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{columns[status]?.length ?? 0}</Text>
               </View>
@@ -237,6 +250,8 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 4,
       paddingBottom: 8,
     },
+    columnTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+    columnDot: { width: 8, height: 8, borderRadius: 9999, flexShrink: 0 },
     columnTitle: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
     countBadge: {
       backgroundColor: colors.border,

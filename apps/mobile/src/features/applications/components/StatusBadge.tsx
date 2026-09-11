@@ -2,21 +2,10 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ApplicationStatus } from '../types';
+import { statusColors } from '../lib/statusColors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import i18n from '../../../i18n';
-
-function statusColors(colors: ThemeColors): Record<ApplicationStatus, { bg: string; fg: string }> {
-  return {
-    draft: { bg: colors.surfaceAlt, fg: colors.textMuted },
-    applied: { bg: colors.primarySurface, fg: colors.primary },
-    interviewing: { bg: colors.warningSurface, fg: colors.warning },
-    offered: { bg: colors.successSurface, fg: colors.success },
-    accepted: { bg: colors.success, fg: colors.onSuccess },
-    rejected: { bg: colors.dangerSurface, fg: colors.danger },
-    withdrawn: { bg: colors.border, fg: colors.textSubtle },
-  };
-}
 
 export function statusLabel(status: ApplicationStatus): string {
   return i18n.t(`applications:status.${status}`);
