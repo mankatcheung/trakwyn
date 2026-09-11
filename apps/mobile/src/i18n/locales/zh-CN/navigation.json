@@ -21,6 +21,8 @@
     "resumeMatch": "简历匹配",
     "companyBriefing": "公司简报",
     "offers": "录用信息",
+    "newOffer": "新建录用信息",
+    "editOffer": "编辑录用信息",
     "allOffers": "全部录用通知",
     "assistant": "助手",
     "settings": "设置",
