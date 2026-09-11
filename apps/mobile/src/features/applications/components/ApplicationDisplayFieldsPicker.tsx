@@ -76,8 +76,8 @@ export function ApplicationDisplayFieldsPicker({ fields, onToggle }: Props) {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     iconButton: {
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       borderRadius: 10,
       borderWidth: 1,
       borderColor: colors.border,
