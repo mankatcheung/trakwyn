@@ -26,5 +26,10 @@
     "title": "最近的求職申請",
     "empty": "還沒有求職申請，新增你的第一個吧。"
   },
-  "viewAllOffers": "查看全部聘書"
+  "viewAllOffers": "查看全部聘書",
+  "analytics": {
+    "title": "分析",
+    "responseRate": "回覆率 {{rate}}%",
+    "viewAnalytics": "查看分析"
+  }
 }

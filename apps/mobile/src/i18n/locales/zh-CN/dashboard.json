@@ -26,5 +26,10 @@
     "title": "最近的求职申请",
     "empty": "还没有求职申请，添加你的第一条吧。"
   },
-  "viewAllOffers": "查看全部录用通知"
+  "viewAllOffers": "查看全部录用通知",
+  "analytics": {
+    "title": "分析",
+    "responseRate": "回复率 {{rate}}%",
+    "viewAnalytics": "查看分析"
+  }
 }
