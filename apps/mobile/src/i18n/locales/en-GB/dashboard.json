@@ -26,5 +26,10 @@
     "title": "Recent applications",
     "empty": "No applications yet. Add your first one."
   },
-  "viewAllOffers": "View all offers"
+  "viewAllOffers": "View all offers",
+  "analytics": {
+    "title": "Analytics",
+    "responseRate": "{{rate}}% response rate",
+    "viewAnalytics": "View analytics"
+  }
 }

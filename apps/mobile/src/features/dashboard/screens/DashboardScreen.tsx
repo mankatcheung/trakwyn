@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useApplications } from '../../applications/hooks/useApplicationQueries';
 import { useDashboardCalendarEvents, useWeeklyApplicationGoal } from '../hooks/useDashboardQueries';
 import { useProfile } from '../../settings/hooks/useProfile';
+import { computeSummaryStats } from '../../analytics/lib/analyticsSummary';
 import { StatCard } from '../components/StatCard';
 import {
   AlertCircleIcon,
@@ -63,6 +64,7 @@ export function DashboardScreen() {
     .slice(0, 5);
 
   const recentApps = apps.slice(0, 8);
+  const summaryStats = computeSummaryStats(apps);
 
   const displayName = profile?.name || profile?.email || '';
 
@@ -158,6 +160,20 @@ export function DashboardScreen() {
         testID="dashboard-view-offers"
       >
         <Text style={styles.offersLinkText}>{t('viewAllOffers')}</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.analyticsLinkCard}
+        onPress={() => router.push('./analytics')}
+        testID="dashboard-view-analytics"
+      >
+        <View style={styles.analyticsLinkTextGroup}>
+          <Text style={styles.analyticsLinkTitle}>{t('analytics.title')}</Text>
+          <Text style={styles.analyticsLinkSubtitle}>
+            {t('analytics.responseRate', { rate: summaryStats.responseRate })}
+          </Text>
+        </View>
+        <Text style={styles.link}>{t('analytics.viewAnalytics')}</Text>
       </Pressable>
 
       {upcomingEvents.length > 0 && (
@@ -276,6 +292,20 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
     },
     offersLinkText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+    analyticsLinkCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      padding: 16,
+      gap: 12,
+    },
+    analyticsLinkTextGroup: { flex: 1, gap: 2 },
+    analyticsLinkTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    analyticsLinkSubtitle: { fontSize: 13, color: colors.textMuted },
     section: { gap: 10 },
     sectionHeaderRow: {
       flexDirection: 'row',

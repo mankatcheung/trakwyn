@@ -188,6 +188,27 @@ describe('DashboardScreen', () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith('/(tabs)/calendar'));
   });
 
+  it('shows the analytics response rate and navigates to the Analytics screen', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: [
+        { ...applications[0], id: '1', status: 'applied' },
+        { ...applications[0], id: '2', status: 'interviewing' },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+    const push = jest.fn();
+
+    const { findByText, findByTestId } = await renderScreen(push);
+
+    await findByText('50% response rate');
+    await fireEvent.press(await findByTestId('dashboard-view-analytics'));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('./analytics'));
+  });
+
   it('shows an empty state when there are no applications', async () => {
     mockedUseApplications.mockReturnValue({
       data: [],
