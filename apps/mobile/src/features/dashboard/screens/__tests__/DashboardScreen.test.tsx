@@ -206,7 +206,7 @@ describe('DashboardScreen', () => {
     await findByText('50% response rate');
     await fireEvent.press(await findByTestId('dashboard-view-analytics'));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/(tabs)/settings/analytics'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('./analytics'));
   });
 
   it('shows an empty state when there are no applications', async () => {

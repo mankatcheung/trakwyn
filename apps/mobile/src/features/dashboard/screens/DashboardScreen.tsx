@@ -164,7 +164,7 @@ export function DashboardScreen() {
 
       <Pressable
         style={styles.analyticsLinkCard}
-        onPress={() => router.push('/(tabs)/settings/analytics')}
+        onPress={() => router.push('./analytics')}
         testID="dashboard-view-analytics"
       >
         <View style={styles.analyticsLinkTextGroup}>
