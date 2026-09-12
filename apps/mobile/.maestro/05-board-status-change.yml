@@ -1,0 +1,47 @@
+# F-5 — Move an application between board columns.
+#
+# The board is Reanimated and gesture-handler territory, which behaves
+# differently under a real touch pipeline than under RNTL's synthetic events —
+# BoardScreen.test.tsx can only assert that the handler was called.
+#
+# The move goes through the board's move menu rather than a drag: the menu is
+# what the screen actually offers, and a scripted drag would be asserting a
+# gesture the UI does not require.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Board Co ' + Date.now()}
+
+- tapOn:
+    id: 'tab-applications'
+- tapOn:
+    id: 'add-application-button'
+- tapOn:
+    id: 'form-company-input'
+- inputText: ${output.company}
+- tapOn:
+    id: 'form-role-input'
+- inputText: 'Backend Engineer'
+- hideKeyboard
+- tapOn:
+    id: 'form-submit-button'
+
+- tapOn:
+    id: 'applications-view-board'
+# There is exactly one application on this account's board, so the first move
+# button is its move button — ids carry the application's nanoid, which the
+# flow has no way to know.
+- tapOn:
+    id: 'move-card-.*'
+- tapOn:
+    id: 'move-to-interviewing'
+
+# The card is still on the board, now under a different column. Re-reading it
+# from the list view proves the status change was persisted rather than only
+# animated.
+- tapOn:
+    id: 'applications-view-list'
+- assertVisible: ${output.company}

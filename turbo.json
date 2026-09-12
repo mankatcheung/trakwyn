@@ -18,6 +18,7 @@
     "R2_SECRET_ACCESS_KEY",
     "CORS_ORIGIN",
     "VITE_API_URL",
+    "EXPO_PUBLIC_API_URL",
     "API_URL",
     "AXIOM_TOKEN",
     "AXIOM_DATASET",

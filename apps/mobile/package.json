@@ -51,14 +51,16 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build": "expo export --platform android --platform ios --output-dir dist",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --selectProjects unit component",
+    "test:unit": "jest --selectProjects unit",
+    "test:component": "jest --selectProjects component",
+    "test:integration": "jest --selectProjects integration --runInBand",
+    "test:coverage": "jest --selectProjects unit component --coverage",
+    "test:e2e": "maestro test .maestro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "private": true,
-  "jest": {
-    "preset": "jest-expo",
-    "testTimeout": 20000
-  }
+  "private": true
 }

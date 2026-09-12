@@ -1,0 +1,60 @@
+# F-6 — Assistant chat, end to end over SSE.
+#
+# The chat stream is the one request path that bypasses gqlRequest entirely:
+# src/features/chat/lib/chatStream.ts takes a raw token from
+# getValidAccessToken() and reads an SSE body itself, so its 401 is a plain
+# JSON payload rather than a GraphQL error. chatStream.test.ts feeds it a
+# hand-built ReadableStream; only this flow feeds it a real one.
+#
+# The provider is configured the way a user configures one: the app's existing
+# "Custom (OpenAI-compatible)" option pointed at the API's own fake completions
+# endpoint, which exists only under LLM_PROVIDER_MODE=fake. That URL is fetched
+# by the API process, not by the phone, so it stays localhost even on an
+# emulator that reaches the API at 10.0.2.2.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- tapOn:
+    id: 'tab-settings'
+- tapOn:
+    id: 'settings-ai-row'
+- tapOn:
+    id: 'open-add-provider-button'
+- tapOn:
+    id: 'provider-picker-field'
+- tapOn:
+    id: 'provider-option-custom'
+- tapOn:
+    id: 'llm-api-key-input'
+- inputText: 'fake-api-key'
+- tapOn:
+    id: 'llm-model-input'
+- inputText: 'fake-model'
+- tapOn:
+    id: 'llm-base-url-input'
+- inputText: 'http://localhost:3001/llm-test/fake'
+- hideKeyboard
+- tapOn:
+    id: 'save-llm-key-button'
+
+- tapOn:
+    id: 'tab-assistant'
+- tapOn:
+    id: 'new-conversation-button'
+# With a key on the account the FAB opens a provider picker (JEF-311) instead
+# of starting the conversation outright; choose the custom key saved above.
+- tapOn:
+    id: 'conversation-provider-option-custom'
+- tapOn:
+    id: 'chat-input'
+- inputText: 'What should I follow up on?'
+- hideKeyboard
+- tapOn:
+    id: 'chat-send-button'
+
+# fakeLlmCompletions.routes.ts's canned reply, streamed back as SSE frames and
+# reassembled by the app.
+- assertVisible: 'Fake assistant reply for e2e testing.'

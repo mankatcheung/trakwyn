@@ -1,0 +1,43 @@
+# F-7 — Signing out leaves nothing behind for the next account.
+#
+# logout() clears the React Query cache so the next person to sign in on this
+# device never sees the last one's applications. That guarantee is currently
+# asserted only against a spy on queryClient.clear() in AuthContext.test.tsx —
+# here two real accounts share one device and the second must see an empty
+# list.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Private Co ' + Date.now()}
+
+- tapOn:
+    id: 'tab-applications'
+- tapOn:
+    id: 'add-application-button'
+- tapOn:
+    id: 'form-company-input'
+- inputText: ${output.company}
+- tapOn:
+    id: 'form-role-input'
+- inputText: 'Backend Engineer'
+- hideKeyboard
+- tapOn:
+    id: 'form-submit-button'
+- assertVisible: ${output.company}
+
+- tapOn:
+    id: 'tab-settings'
+- tapOn:
+    id: 'settings-signout-button'
+- assertVisible:
+    id: 'login-email-input'
+
+# A second account on the same device, without clearing app state — the cache
+# is the only thing standing between it and the first account's data.
+- runFlow: subflows/register-new-account.yml
+- tapOn:
+    id: 'tab-applications'
+- assertNotVisible: ${output.company}

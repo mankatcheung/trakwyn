@@ -1,0 +1,5 @@
+# Only the numbered flows in this directory are flows. Without this, `maestro
+# test .maestro` would also run subflows/ on its own, where the app has never
+# been launched and the first assertion has nothing to assert against.
+flows:
+  - '*.yml'
