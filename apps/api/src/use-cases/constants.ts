@@ -243,6 +243,14 @@ export const DEFAULTS = {
   API_TOKEN_SCOPE: API_TOKEN_SCOPE.FULL,
 } as const;
 
+/** External calendar sync (Google/Outlook, JEF-331) policy. */
+export const CALENDAR_SYNC = {
+  /** An interview round has no end time of its own — default to a 1-hour block, same as a typical calendar invite. */
+  INTERVIEW_DURATION_MS: 60 * 60 * 1000,
+  /** A follow-up/applied date is a reminder, not a meeting — a short all-day-ish marker rather than a 1-hour block. */
+  REMINDER_DURATION_MS: 30 * 60 * 1000,
+} as const;
+
 /** Account security activity log settings. */
 export const LOGIN_HISTORY = {
   /** Max number of recent login events surfaced to the user. */

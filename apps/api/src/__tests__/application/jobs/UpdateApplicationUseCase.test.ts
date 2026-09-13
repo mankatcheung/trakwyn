@@ -3,6 +3,7 @@ import { UpdateApplicationUseCase } from '#src/use-cases/jobs/UpdateApplicationU
 import { makeActivityLogRepository } from '#src/__tests__/helpers/mocks/activity.js';
 import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('UpdateApplicationUseCase', () => {
   it('throws NOT_FOUND when the application does not exist', async () => {
@@ -278,6 +279,131 @@ describe('UpdateApplicationUseCase', () => {
         eventType: 'status_changed',
         payload: JSON.stringify({ from: 'draft', to: 'applied' }),
       }),
+    );
+  });
+
+  it('syncs an "applied" calendar event when the status transitions to applied', async () => {
+    const existing = makeApplication({ appliedAt: null, company: 'Acme', role: 'SWE' });
+    const updated = makeApplication({
+      id: 'app-1',
+      status: 'applied',
+      company: 'Acme',
+      role: 'SWE',
+    });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(updated),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateApplicationUseCase({
+      applicationRepository,
+      syncCalendarEventUseCase,
+      generateId: () => 'id',
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', status: 'applied' });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        sourceType: 'applied',
+        sourceId: 'app-1',
+        event: expect.objectContaining({ title: 'Applied: Acme — SWE' }),
+      }),
+    );
+  });
+
+  it('does not sync an "applied" event when appliedAt was already set', async () => {
+    const existing = makeApplication({ appliedAt: new Date('2024-01-01'), status: 'interviewing' });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateApplicationUseCase({
+      applicationRepository,
+      syncCalendarEventUseCase,
+      generateId: () => 'id',
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', status: 'applied' });
+
+    expect(syncCalendarEventUseCase.execute).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sourceType: 'applied' }),
+    );
+  });
+
+  it('syncs a followUp calendar event when followUpAt is set', async () => {
+    const existing = makeApplication({ followUpAt: null });
+    const followUpAt = new Date('2026-08-15T00:00:00.000Z');
+    const updated = makeApplication({ id: 'app-1', followUpAt, company: 'Acme', role: 'SWE' });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(updated),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateApplicationUseCase({
+      applicationRepository,
+      syncCalendarEventUseCase,
+      generateId: () => 'id',
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', followUpAt });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'followUp',
+      sourceId: 'app-1',
+      event: {
+        title: 'Follow up: Acme — SWE',
+        description: null,
+        startAt: followUpAt,
+        endAt: new Date(followUpAt.getTime() + 30 * 60 * 1000),
+      },
+    });
+  });
+
+  it('syncs a followUp deletion when followUpAt is cleared', async () => {
+    const existing = makeApplication({ followUpAt: new Date('2026-08-01T00:00:00.000Z') });
+    const updated = makeApplication({ id: 'app-1', followUpAt: null });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(updated),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateApplicationUseCase({
+      applicationRepository,
+      syncCalendarEventUseCase,
+      generateId: () => 'id',
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', followUpAt: null });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'followUp',
+      sourceId: 'app-1',
+      event: null,
+    });
+  });
+
+  it('does not sync followUp at all when followUpAt is not part of the input', async () => {
+    const existing = makeApplication({ followUpAt: new Date('2026-08-01T00:00:00.000Z') });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateApplicationUseCase({
+      applicationRepository,
+      syncCalendarEventUseCase,
+      generateId: () => 'id',
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', company: 'Renamed' });
+
+    expect(syncCalendarEventUseCase.execute).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sourceType: 'followUp' }),
     );
   });
 });

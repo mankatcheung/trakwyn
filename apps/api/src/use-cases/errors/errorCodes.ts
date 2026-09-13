@@ -28,4 +28,6 @@ export const ERROR_CODES = {
   AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
   /** Session is stale for a 2FA-enabled account attempting a sensitive change — caller must reauthenticate (see `reauthenticate` mutation) and retry. */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
+  /** A Google/Outlook calendar call failed (expired/revoked token, API error) — surfaced from the explicit connect/disconnect flow, not from inline sync, which is fail-open by design. */
+  CALENDAR_PROVIDER_ERROR: 'CALENDAR_PROVIDER_ERROR',
 } as const;

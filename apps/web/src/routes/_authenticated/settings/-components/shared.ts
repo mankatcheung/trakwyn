@@ -296,6 +296,21 @@ export const UNLINK_OAUTH_ACCOUNT = `
   }
 `;
 
+export const CALENDAR_CONNECTIONS_QUERY = `
+  query CalendarConnections {
+    calendarConnections {
+      provider
+      createdAt
+    }
+  }
+`;
+
+export const DISCONNECT_CALENDAR = `
+  mutation DisconnectCalendar($provider: CalendarProvider!) {
+    disconnectCalendar(provider: $provider)
+  }
+`;
+
 export const API_TOKENS_QUERY = `
   query ApiTokens {
     apiTokens {
@@ -664,6 +679,13 @@ export type NotificationPreferences = {
 export type LinkedOAuthAccount = {
   provider: 'google' | 'github';
   email: string | null;
+  createdAt: string;
+};
+
+export type CalendarProvider = 'google' | 'microsoft';
+
+export type CalendarConnection = {
+  provider: CalendarProvider;
   createdAt: string;
 };
 

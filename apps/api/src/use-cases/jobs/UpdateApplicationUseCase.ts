@@ -2,6 +2,8 @@ import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
+import { CALENDAR_SYNC } from '#src/use-cases/constants.js';
 import type {
   IUpdateApplicationUseCase,
   UpdateApplicationInput,
@@ -13,6 +15,7 @@ interface Deps {
   activityLogRepository?: IActivityLogRepository;
   generateId: () => string;
   transactionManager?: ITransactionManager;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
 }
 
 export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
@@ -108,6 +111,44 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
       return updated;
     };
 
-    return this.deps.transactionManager ? this.deps.transactionManager.run(doUpdate) : doUpdate();
+    const updated = this.deps.transactionManager
+      ? await this.deps.transactionManager.run(doUpdate)
+      : await doUpdate();
+
+    // Calendar sync runs after the write commits, not inside the transaction
+    // above — it is fail-open by design (SyncCalendarEventUseCase never
+    // throws) and calls an external API, neither of which belongs inside a
+    // DB transaction.
+    if (appliedAt) {
+      await this.deps.syncCalendarEventUseCase?.execute({
+        userId: input.userId,
+        sourceType: 'applied',
+        sourceId: updated.id,
+        event: {
+          title: `Applied: ${updated.company} — ${updated.role}`,
+          description: null,
+          startAt: appliedAt,
+          endAt: new Date(appliedAt.getTime() + CALENDAR_SYNC.REMINDER_DURATION_MS),
+        },
+      });
+    }
+
+    if (input.followUpAt !== undefined) {
+      await this.deps.syncCalendarEventUseCase?.execute({
+        userId: input.userId,
+        sourceType: 'followUp',
+        sourceId: updated.id,
+        event: updated.followUpAt
+          ? {
+              title: `Follow up: ${updated.company} — ${updated.role}`,
+              description: null,
+              startAt: updated.followUpAt,
+              endAt: new Date(updated.followUpAt.getTime() + CALENDAR_SYNC.REMINDER_DURATION_MS),
+            }
+          : null,
+      });
+    }
+
+    return updated;
   }
 }

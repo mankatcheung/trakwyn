@@ -1,6 +1,8 @@
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
+import { CALENDAR_SYNC } from '#src/use-cases/constants.js';
 import type {
   IUpdateInterviewRoundUseCase,
   UpdateInterviewRoundInput,
@@ -10,6 +12,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   interviewRoundRepository: IInterviewRoundRepository;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
 }
 
 export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase {
@@ -22,7 +25,7 @@ export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase
     const app = await this.deps.applicationRepository.findById(round.applicationId);
     if (!app || app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
-    return this.deps.interviewRoundRepository.update(input.roundId, {
+    const updated = await this.deps.interviewRoundRepository.update(input.roundId, {
       type: input.type,
       scheduledAt: input.scheduledAt,
       completedAt: input.completedAt,
@@ -30,5 +33,21 @@ export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase
       notes: input.notes,
       outcome: input.outcome,
     });
+
+    await this.deps.syncCalendarEventUseCase?.execute({
+      userId: input.userId,
+      sourceType: 'interview',
+      sourceId: updated.id,
+      event: updated.scheduledAt
+        ? {
+            title: `Interview: ${app.company} — ${app.role}`,
+            description: updated.notes,
+            startAt: updated.scheduledAt,
+            endAt: new Date(updated.scheduledAt.getTime() + CALENDAR_SYNC.INTERVIEW_DURATION_MS),
+          }
+        : null,
+    });
+
+    return updated;
   }
 }

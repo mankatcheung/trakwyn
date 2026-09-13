@@ -9,6 +9,7 @@ const { mockGqlRequest } = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (opts: object) => ({ ...opts, useSearch: () => ({}) }),
+  useSearch: () => ({}),
   useNavigate: () => vi.fn(),
   redirect: vi.fn(),
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
@@ -439,6 +440,48 @@ describe('SettingsIntegrationsPage', () => {
 
       expect(screen.getByPlaceholderText('e.g. For my mentor')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'New link' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Calendar sync (JEF-331)', () => {
+    function respondByOperation(connections: Array<Record<string, unknown>> = []) {
+      mockGqlRequest.mockImplementation((doc: string) => {
+        if (typeof doc === 'string' && doc.includes('query CalendarConnections')) {
+          return Promise.resolve({ calendarConnections: connections });
+        }
+        if (typeof doc === 'string' && doc.includes('mutation DisconnectCalendar')) {
+          return Promise.resolve({ disconnectCalendar: true });
+        }
+        return Promise.resolve({});
+      });
+    }
+
+    it('shows a connect link for a provider with no connection', async () => {
+      respondByOperation([]);
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      const links = await screen.findAllByRole('link', { name: 'Connect' });
+      expect(links).toHaveLength(2);
+      expect(links[0]).toHaveAttribute(
+        'href',
+        expect.stringContaining('/auth/calendar/google/start'),
+      );
+    });
+
+    it('shows Disconnect for a connected provider and disconnects on click', async () => {
+      const connections = [{ provider: 'google', createdAt: '2026-01-01T00:00:00.000Z' }];
+      respondByOperation(connections);
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+      await screen.findByText('Connected');
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+      await waitFor(() => {
+        expect(mockGqlRequest).toHaveBeenCalledWith(
+          expect.stringContaining('mutation DisconnectCalendar'),
+          { provider: 'google' },
+        );
+      });
     });
   });
 });

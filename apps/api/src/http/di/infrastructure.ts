@@ -24,6 +24,14 @@ import {
 import { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
+import { CalendarOAuthStateService } from '#src/infrastructure/auth/CalendarOAuthStateService.js';
+import { GoogleCalendarProvider } from '#src/infrastructure/calendar/GoogleCalendarProvider.js';
+import { MicrosoftCalendarProvider } from '#src/infrastructure/calendar/MicrosoftCalendarProvider.js';
+import {
+  FakeGoogleCalendarProvider,
+  FakeMicrosoftCalendarProvider,
+} from '#src/infrastructure/calendar/FakeCalendarProvider.js';
+import { CalendarProviderRegistry } from '#src/infrastructure/calendar/CalendarProviderRegistry.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import { BrevoEmailService } from '#src/infrastructure/email/BrevoEmailService.js';
 import { ConsoleEmailService } from '#src/infrastructure/email/ConsoleEmailService.js';
@@ -44,6 +52,7 @@ import {
   EMAIL_PROVIDER,
   ENV,
   OAUTH_PROVIDER_MODE,
+  CALENDAR_PROVIDER_MODE,
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
 import type { Cradle } from './types.js';
@@ -69,6 +78,18 @@ const GoogleOAuthProviderImpl: GoogleOAuthProviderConstructor = useFakeOAuth
 const GitHubOAuthProviderImpl: GitHubOAuthProviderConstructor = useFakeOAuth
   ? FakeGitHubOAuthProvider
   : GitHubOAuthProvider;
+
+const useFakeCalendar = process.env[ENV.CALENDAR_PROVIDER_MODE] === CALENDAR_PROVIDER_MODE.FAKE;
+type GoogleCalendarProviderConstructor = new () =>
+  GoogleCalendarProvider | FakeGoogleCalendarProvider;
+type MicrosoftCalendarProviderConstructor = new () =>
+  MicrosoftCalendarProvider | FakeMicrosoftCalendarProvider;
+const GoogleCalendarProviderImpl: GoogleCalendarProviderConstructor = useFakeCalendar
+  ? FakeGoogleCalendarProvider
+  : GoogleCalendarProvider;
+const MicrosoftCalendarProviderImpl: MicrosoftCalendarProviderConstructor = useFakeCalendar
+  ? FakeMicrosoftCalendarProvider
+  : MicrosoftCalendarProvider;
 
 function buildCache(): ICache {
   const redis = getRedisClient();
@@ -107,6 +128,12 @@ export const infrastructure = {
   gitHubOAuthProvider: asClass(GitHubOAuthProviderImpl, { lifetime: Lifetime.SINGLETON }),
   oauthProviderRegistry: asClass(OAuthProviderRegistry, { lifetime: Lifetime.SINGLETON }),
   oauthStateService: asClass(OAuthStateService, { lifetime: Lifetime.SINGLETON }),
+  calendarOAuthStateService: asClass(CalendarOAuthStateService, { lifetime: Lifetime.SINGLETON }),
+  googleCalendarProvider: asClass(GoogleCalendarProviderImpl, { lifetime: Lifetime.SINGLETON }),
+  microsoftCalendarProvider: asClass(MicrosoftCalendarProviderImpl, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  calendarProviderRegistry: asClass(CalendarProviderRegistry, { lifetime: Lifetime.SINGLETON }),
   mobileOAuthHandoffService: asClass(MobileOAuthHandoffService, { lifetime: Lifetime.SINGLETON }),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
   emailService: asClass(EmailService, { lifetime: Lifetime.SINGLETON }),

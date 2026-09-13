@@ -19,6 +19,8 @@ import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
 import { oauthRoutes } from '#src/http/routes/oauth.routes.js';
 import { fakeOAuthConsentRoutes } from '#src/http/routes/fakeOAuthConsent.routes.js';
+import { calendarOAuthRoutes } from '#src/http/routes/calendarOAuth.routes.js';
+import { fakeCalendarConsentRoutes } from '#src/http/routes/fakeCalendarConsent.routes.js';
 import { fakeLlmCompletionsRoutes } from '#src/http/routes/fakeLlmCompletions.routes.js';
 import { mcpOAuthMetadataRoutes } from '#src/http/routes/mcpOAuth.routes.js';
 import { buildContainer } from '#src/http/container.js';
@@ -35,6 +37,7 @@ import {
   LLM_PROVIDER_MODE,
   NODE_ENV,
   OAUTH_PROVIDER_MODE,
+  CALENDAR_PROVIDER_MODE,
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
 import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
@@ -129,6 +132,10 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     ...(process.env[ENV.OAUTH_PROVIDER_MODE] === OAUTH_PROVIDER_MODE.FAKE
       ? fakeOAuthConsentRoutes()
       : []),
+    // Never present unless explicitly opted into — see FakeCalendarProvider.
+    ...(process.env[ENV.CALENDAR_PROVIDER_MODE] === CALENDAR_PROVIDER_MODE.FAKE
+      ? fakeCalendarConsentRoutes()
+      : []),
     // Never present unless explicitly opted into — see fakeLlmCompletions.routes.ts.
     ...(process.env[ENV.LLM_PROVIDER_MODE] === LLM_PROVIDER_MODE.FAKE
       ? fakeLlmCompletionsRoutes()
@@ -176,6 +183,26 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     handler: async (request, reply) => {
       const route = oauthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.OAUTH_CALLBACK,
+      )!;
+      await route.handler(toHttpRequest(request), toHttpResponse(reply));
+    },
+  });
+  fastify.route({
+    method: 'GET',
+    url: ROUTES.CALENDAR_OAUTH_START,
+    handler: async (request, reply) => {
+      const route = calendarOAuthRoutes(() => diScopeOf(request).cradle).find(
+        (r) => r.path === ROUTES.CALENDAR_OAUTH_START,
+      )!;
+      await route.handler(toHttpRequest(request), toHttpResponse(reply));
+    },
+  });
+  fastify.route({
+    method: 'GET',
+    url: ROUTES.CALENDAR_OAUTH_CALLBACK,
+    handler: async (request, reply) => {
+      const route = calendarOAuthRoutes(() => diScopeOf(request).cradle).find(
+        (r) => r.path === ROUTES.CALENDAR_OAUTH_CALLBACK,
       )!;
       await route.handler(toHttpRequest(request), toHttpResponse(reply));
     },

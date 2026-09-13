@@ -178,3 +178,17 @@ export class ServiceUnavailableError extends DomainError {
     super(message, ERROR_CODES.SERVICE_UNAVAILABLE);
   }
 }
+
+/**
+ * A Google/Outlook calendar call failed — expired/revoked token, or the
+ * provider's API rejected the request. Raised by the explicit connect and
+ * disconnect flows, where a failure has somewhere to surface. Inline sync
+ * (`SyncCalendarEventUseCase`) deliberately does not throw this: it is
+ * fail-open by design, so an application/interview save never fails because
+ * a calendar happened to be unreachable.
+ */
+export class CalendarProviderError extends DomainError {
+  constructor(message = 'The calendar provider could not complete the request') {
+    super(message, ERROR_CODES.CALENDAR_PROVIDER_ERROR);
+  }
+}

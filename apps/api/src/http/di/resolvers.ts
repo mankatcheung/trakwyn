@@ -23,6 +23,7 @@ import { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkEx
 import { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
 import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
+import { CalendarResolver } from '#src/interface-adapters/resolvers/CalendarResolver.js';
 import { McpController } from '#src/interface-adapters/mcp/McpController.js';
 
 import type { Cradle } from './types.js';
@@ -51,5 +52,6 @@ export const resolvers = {
   educationResolver: asClass(EducationResolver, { lifetime: Lifetime.SINGLETON }),
   skillResolver: asClass(SkillResolver, { lifetime: Lifetime.SINGLETON }),
   offerResolver: asClass(OfferResolver, { lifetime: Lifetime.SINGLETON }),
+  calendarResolver: asClass(CalendarResolver, { lifetime: Lifetime.SINGLETON }),
   mcpController: asClass(McpController, { lifetime: Lifetime.SINGLETON }),
 } satisfies NameAndRegistrationPair<Cradle>;

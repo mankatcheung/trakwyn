@@ -108,6 +108,13 @@ export class AiProviderAppError extends AppError {
   }
 }
 
+/** 502: mirrors AiProviderAppError — the user's calendar provider failed, not this server. */
+export class CalendarProviderAppError extends AppError {
+  constructor(message = 'The calendar provider could not complete the request') {
+    super(message, 502, ERROR_CODES.CALENDAR_PROVIDER_ERROR);
+  }
+}
+
 export function fromCodedError(err: unknown): AppError {
   if (err instanceof AppError) return err;
   if (err instanceof Error) {
@@ -145,6 +152,8 @@ export function fromCodedError(err: unknown): AppError {
         return new AiProviderAppError(err.message);
       case ERROR_CODES.STEP_UP_REQUIRED:
         return new StepUpRequiredError(err.message);
+      case ERROR_CODES.CALENDAR_PROVIDER_ERROR:
+        return new CalendarProviderAppError(err.message);
     }
   }
   return new AppError('Internal server error', 500, ERROR_CODES.INTERNAL_ERROR);
