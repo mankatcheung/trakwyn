@@ -388,7 +388,6 @@ export interface Cradle {
   calendarSyncedEventRepository: DrizzleCalendarSyncedEventRepository;
   calendarOAuthStateService: CalendarOAuthStateService;
   googleCalendarProvider: ICalendarProvider;
-  microsoftCalendarProvider: ICalendarProvider;
   calendarProviderRegistry: CalendarProviderRegistry;
 
   applicationMapper: ApplicationMapper;

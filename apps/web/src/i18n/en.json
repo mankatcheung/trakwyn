@@ -536,7 +536,6 @@
   "integrations.calendarSyncTitle": "Calendar sync",
   "integrations.calendarSyncDescription": "Connect a calendar and Trakwyn will keep your applied, follow-up, and interview dates in sync there automatically.",
   "integrations.calendarGoogle": "Google Calendar",
-  "integrations.calendarMicrosoft": "Outlook Calendar",
   "integrations.calendarConnected": "Connected",
   "integrations.calendarNotConnected": "Not connected",
   "integrations.calendarConnect": "Connect",

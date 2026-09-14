@@ -5,7 +5,6 @@ import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 
 interface Deps {
   googleCalendarProvider: ICalendarProvider;
-  microsoftCalendarProvider: ICalendarProvider;
 }
 
 export class CalendarProviderRegistry implements ICalendarProviderRegistry {
@@ -15,8 +14,6 @@ export class CalendarProviderRegistry implements ICalendarProviderRegistry {
     switch (provider) {
       case 'google':
         return this.deps.googleCalendarProvider;
-      case 'microsoft':
-        return this.deps.microsoftCalendarProvider;
       default:
         throw Object.assign(new Error(`Unknown calendar provider: ${String(provider)}`), {
           code: ERROR_CODES.VALIDATION,

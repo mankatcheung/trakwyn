@@ -58,7 +58,7 @@ describe('DrizzleCalendarConnectionRepository', () => {
     });
 
     it('returns null when there is none', async () => {
-      expect(await repo.findByUserIdAndProvider('user-1', 'microsoft')).toBeNull();
+      expect(await repo.findByUserIdAndProvider('user-1', 'google')).toBeNull();
     });
   });
 

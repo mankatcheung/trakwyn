@@ -26,11 +26,7 @@ import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsent
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { CalendarOAuthStateService } from '#src/infrastructure/auth/CalendarOAuthStateService.js';
 import { GoogleCalendarProvider } from '#src/infrastructure/calendar/GoogleCalendarProvider.js';
-import { MicrosoftCalendarProvider } from '#src/infrastructure/calendar/MicrosoftCalendarProvider.js';
-import {
-  FakeGoogleCalendarProvider,
-  FakeMicrosoftCalendarProvider,
-} from '#src/infrastructure/calendar/FakeCalendarProvider.js';
+import { FakeGoogleCalendarProvider } from '#src/infrastructure/calendar/FakeCalendarProvider.js';
 import { CalendarProviderRegistry } from '#src/infrastructure/calendar/CalendarProviderRegistry.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import { BrevoEmailService } from '#src/infrastructure/email/BrevoEmailService.js';
@@ -82,14 +78,9 @@ const GitHubOAuthProviderImpl: GitHubOAuthProviderConstructor = useFakeOAuth
 const useFakeCalendar = process.env[ENV.CALENDAR_PROVIDER_MODE] === CALENDAR_PROVIDER_MODE.FAKE;
 type GoogleCalendarProviderConstructor = new () =>
   GoogleCalendarProvider | FakeGoogleCalendarProvider;
-type MicrosoftCalendarProviderConstructor = new () =>
-  MicrosoftCalendarProvider | FakeMicrosoftCalendarProvider;
 const GoogleCalendarProviderImpl: GoogleCalendarProviderConstructor = useFakeCalendar
   ? FakeGoogleCalendarProvider
   : GoogleCalendarProvider;
-const MicrosoftCalendarProviderImpl: MicrosoftCalendarProviderConstructor = useFakeCalendar
-  ? FakeMicrosoftCalendarProvider
-  : MicrosoftCalendarProvider;
 
 function buildCache(): ICache {
   const redis = getRedisClient();
@@ -130,9 +121,6 @@ export const infrastructure = {
   oauthStateService: asClass(OAuthStateService, { lifetime: Lifetime.SINGLETON }),
   calendarOAuthStateService: asClass(CalendarOAuthStateService, { lifetime: Lifetime.SINGLETON }),
   googleCalendarProvider: asClass(GoogleCalendarProviderImpl, { lifetime: Lifetime.SINGLETON }),
-  microsoftCalendarProvider: asClass(MicrosoftCalendarProviderImpl, {
-    lifetime: Lifetime.SINGLETON,
-  }),
   calendarProviderRegistry: asClass(CalendarProviderRegistry, { lifetime: Lifetime.SINGLETON }),
   mobileOAuthHandoffService: asClass(MobileOAuthHandoffService, { lifetime: Lifetime.SINGLETON }),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),

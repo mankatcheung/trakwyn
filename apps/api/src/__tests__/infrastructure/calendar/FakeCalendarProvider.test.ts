@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  FakeGoogleCalendarProvider,
-  FakeMicrosoftCalendarProvider,
-} from '#src/infrastructure/calendar/FakeCalendarProvider.js';
+import { FakeGoogleCalendarProvider } from '#src/infrastructure/calendar/FakeCalendarProvider.js';
 import { ROUTES } from '#src/http/constants.js';
 
 describe('FakeCalendarProvider', () => {
@@ -18,14 +15,6 @@ describe('FakeCalendarProvider', () => {
       expect(parsed.pathname).toBe(ROUTES.CALENDAR_OAUTH_FAKE_CONSENT);
       expect(parsed.searchParams.get('provider')).toBe('google');
       expect(parsed.searchParams.get('state')).toBe('my-state');
-    });
-
-    it('names the right provider for Microsoft', () => {
-      const url = new URL(
-        new FakeMicrosoftCalendarProvider().getAuthorizationUrl('s', 'https://api/cb', 'c'),
-        'http://localhost',
-      );
-      expect(url.searchParams.get('provider')).toBe('microsoft');
     });
   });
 

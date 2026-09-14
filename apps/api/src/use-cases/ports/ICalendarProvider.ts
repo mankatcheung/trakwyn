@@ -2,7 +2,7 @@ export interface CalendarTokens {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: Date;
-  /** The calendar to write events to — the user's primary calendar for both Google and Microsoft. */
+  /** The calendar to write events to — the user's primary calendar. */
   externalCalendarId: string;
 }
 

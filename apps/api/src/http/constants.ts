@@ -175,10 +175,9 @@ export const OAUTH_PROVIDER = {
   GITHUB: 'github',
 } as const;
 
-/** Calendar provider names (mirrors the `CalendarProvider` domain union). */
+/** Calendar provider names (mirrors the `CalendarProvider` domain union). Google-only for now (JEF-331). */
 export const CALENDAR_PROVIDER = {
   GOOGLE: 'google',
-  MICROSOFT: 'microsoft',
 } as const;
 
 /**

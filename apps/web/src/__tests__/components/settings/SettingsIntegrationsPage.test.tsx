@@ -461,7 +461,7 @@ describe('SettingsIntegrationsPage', () => {
       render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
 
       const links = await screen.findAllByRole('link', { name: 'Connect' });
-      expect(links).toHaveLength(2);
+      expect(links).toHaveLength(1);
       expect(links[0]).toHaveAttribute(
         'href',
         expect.stringContaining('/auth/calendar/google/start'),

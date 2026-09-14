@@ -41,11 +41,11 @@ describe('CalendarResolver', () => {
     it('delegates to disconnectCalendarUseCase and returns true', async () => {
       const deps = makeDeps();
 
-      const result = await new CalendarResolver(deps).disconnect('user-1', 'microsoft');
+      const result = await new CalendarResolver(deps).disconnect('user-1', 'google');
 
       expect(deps.disconnectCalendarUseCase.execute).toHaveBeenCalledWith({
         userId: 'user-1',
-        provider: 'microsoft',
+        provider: 'google',
       });
       expect(result).toBe(true);
     });

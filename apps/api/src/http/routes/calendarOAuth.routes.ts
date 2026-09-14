@@ -85,11 +85,7 @@ export function calendarOAuthRoutes(getCradle: () => Cradle): RouteDefinition[] 
 
         const usingFakeProvider =
           process.env[ENV.CALENDAR_PROVIDER_MODE] === CALENDAR_PROVIDER_MODE.FAKE;
-        const clientIdEnv =
-          provider === CALENDAR_PROVIDER.GOOGLE
-            ? ENV.GOOGLE_CALENDAR_CLIENT_ID
-            : ENV.MICROSOFT_CALENDAR_CLIENT_ID;
-        if (!usingFakeProvider && !process.env[clientIdEnv]) {
+        if (!usingFakeProvider && !process.env[ENV.GOOGLE_CALENDAR_CLIENT_ID]) {
           res.status(503).send({ error: `${provider} Calendar is not configured` });
           return;
         }

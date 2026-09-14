@@ -5,16 +5,15 @@ import type {
   ICalendarProvider,
   RefreshedCalendarTokens,
 } from '#src/use-cases/ports/ICalendarProvider.js';
-import type { CalendarProvider } from '#src/domain/calendarConnection/CalendarConnection.js';
 import { FAKE_CALENDAR, CALENDAR_OAUTH } from '#src/infrastructure/config/constants.js';
 
 /**
- * A same-origin stand-in for Google/Microsoft Calendar, selected by
+ * A same-origin stand-in for Google Calendar, selected by
  * `CALENDAR_PROVIDER_MODE=fake` (mirrors `FakeOAuthProvider` and
  * `OAUTH_PROVIDER_MODE=fake` — see that class for the full rationale). No
- * real Google/Microsoft app is registered yet (JEF-331 decision), so this is
- * the only calendar provider exercised in dev/CI; `GoogleCalendarProvider`/
- * `MicrosoftCalendarProvider` exist ready for when real credentials land.
+ * real Google app is registered yet (JEF-331 decision), so this is the only
+ * calendar provider exercised in dev/CI; `GoogleCalendarProvider` exists
+ * ready for when real credentials land.
  *
  * `exchangeCodeForTokens` decodes the token bundle the fake consent route
  * encoded into the code itself, same trick as `FakeOAuthProvider`. Event
@@ -22,11 +21,9 @@ import { FAKE_CALENDAR, CALENDAR_OAUTH } from '#src/infrastructure/config/consta
  * `CalendarSyncedEvent` rows behave exactly like the real thing from the
  * rest of the app's point of view.
  */
-abstract class FakeCalendarProvider implements ICalendarProvider {
-  protected abstract readonly provider: CalendarProvider;
-
+export class FakeGoogleCalendarProvider implements ICalendarProvider {
   getAuthorizationUrl(state: string, _redirectUri: string, _codeChallenge: string): string {
-    const params = new URLSearchParams({ provider: this.provider, state });
+    const params = new URLSearchParams({ provider: 'google', state });
     return `${FAKE_CALENDAR.CONSENT_PATH}?${params.toString()}`;
   }
 
@@ -80,12 +77,4 @@ abstract class FakeCalendarProvider implements ICalendarProvider {
   ): Promise<void> {
     // No backing store to delete from.
   }
-}
-
-export class FakeGoogleCalendarProvider extends FakeCalendarProvider {
-  protected readonly provider: CalendarProvider = 'google';
-}
-
-export class FakeMicrosoftCalendarProvider extends FakeCalendarProvider {
-  protected readonly provider: CalendarProvider = 'microsoft';
 }

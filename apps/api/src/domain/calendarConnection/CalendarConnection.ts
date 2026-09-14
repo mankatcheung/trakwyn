@@ -1,4 +1,6 @@
-export type CalendarProvider = 'google' | 'microsoft';
+// Google-only for now (JEF-331) — Outlook/Microsoft support is deferred to a
+// follow-up ticket rather than half-built behind an unreachable union member.
+export type CalendarProvider = 'google';
 
 export interface CalendarConnection {
   id: string;

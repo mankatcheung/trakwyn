@@ -49,8 +49,6 @@ export const ENV = {
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   GOOGLE_CALENDAR_CLIENT_ID: 'GOOGLE_CALENDAR_CLIENT_ID',
   GOOGLE_CALENDAR_CLIENT_SECRET: 'GOOGLE_CALENDAR_CLIENT_SECRET',
-  MICROSOFT_CALENDAR_CLIENT_ID: 'MICROSOFT_CALENDAR_CLIENT_ID',
-  MICROSOFT_CALENDAR_CLIENT_SECRET: 'MICROSOFT_CALENDAR_CLIENT_SECRET',
   CALENDAR_PROVIDER_MODE: 'CALENDAR_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
@@ -103,20 +101,17 @@ export const OAUTH = {
 } as const;
 
 /**
- * Google Calendar / Microsoft Graph Calendar settings — a separate OAuth app
- * (and broader scope) from `OAUTH`'s Google sign-in above, since granting
- * calendar write access is a distinct consent from "sign in with Google".
+ * Google Calendar settings — a separate OAuth app (and broader scope) from
+ * `OAUTH`'s Google sign-in above, since granting calendar write access is a
+ * distinct consent from "sign in with Google". Google-only for now
+ * (JEF-331) — Outlook/Microsoft support is a follow-up ticket.
  */
 export const CALENDAR_OAUTH = {
   GOOGLE_AUTHORIZATION_URL: 'https://accounts.google.com/o/oauth2/v2/auth',
   GOOGLE_TOKEN_URL: 'https://oauth2.googleapis.com/token',
   GOOGLE_SCOPE: 'https://www.googleapis.com/auth/calendar.events',
   GOOGLE_EVENTS_URL: 'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-  MICROSOFT_AUTHORIZATION_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-  MICROSOFT_TOKEN_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-  MICROSOFT_SCOPE: 'offline_access Calendars.ReadWrite',
-  MICROSOFT_EVENTS_URL: 'https://graph.microsoft.com/v1.0/me/events',
-  /** Both APIs treat the signed-in user's default calendar as "primary"/"me" — no separate calendar id to discover. */
+  /** Google treats the signed-in user's default calendar as "primary" — no separate calendar id to discover. */
   PRIMARY_CALENDAR_ID: 'primary',
   STATE_TTL_MS: 5 * 60 * 1000, // 5 minutes
   callbackPath: (provider: string) => `/auth/calendar/${provider}/callback`,
@@ -125,7 +120,7 @@ export const CALENDAR_OAUTH = {
 /** `CALENDAR_PROVIDER_MODE` values — mirrors `OAUTH_PROVIDER_MODE`. */
 export const CALENDAR_PROVIDER_MODE = {
   REAL: 'real',
-  /** Same-origin stand-in, no live Google/Microsoft calls — dev/CI until a real OAuth app is registered (JEF-331). */
+  /** Same-origin stand-in, no live Google calls — dev/CI until a real OAuth app is registered (JEF-331). */
   FAKE: 'fake',
 } as const;
 

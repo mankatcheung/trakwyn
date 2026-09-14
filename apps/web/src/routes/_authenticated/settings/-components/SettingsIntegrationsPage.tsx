@@ -29,7 +29,7 @@ import {
   extractGqlError,
 } from './shared';
 
-const CALENDAR_PROVIDERS: CalendarProvider[] = ['google', 'microsoft'];
+const CALENDAR_PROVIDERS: CalendarProvider[] = ['google'];
 
 export function SettingsIntegrationsPage() {
   const { t } = useLocale();
@@ -571,9 +571,7 @@ export function SettingsIntegrationsPage() {
         {calendarConnected && (
           <Alert tone="success">
             {t('integrations.calendarConnectedSuccess', {
-              provider: t(
-                `integrations.calendar${calendarConnected === 'google' ? 'Google' : 'Microsoft'}`,
-              ),
+              provider: t('integrations.calendarGoogle'),
             })}
           </Alert>
         )}
@@ -587,9 +585,7 @@ export function SettingsIntegrationsPage() {
           <div className="space-y-2">
             {CALENDAR_PROVIDERS.map((provider) => {
               const connected = calendarConnections.find((c) => c.provider === provider);
-              const providerLabel = t(
-                `integrations.calendar${provider === 'google' ? 'Google' : 'Microsoft'}`,
-              );
+              const providerLabel = t('integrations.calendarGoogle');
               return (
                 <div
                   key={provider}

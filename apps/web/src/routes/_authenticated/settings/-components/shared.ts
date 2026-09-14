@@ -682,7 +682,8 @@ export type LinkedOAuthAccount = {
   createdAt: string;
 };
 
-export type CalendarProvider = 'google' | 'microsoft';
+// Google-only for now (JEF-331) — Outlook/Microsoft support is deferred to a follow-up ticket.
+export type CalendarProvider = 'google';
 
 export type CalendarConnection = {
   provider: CalendarProvider;
