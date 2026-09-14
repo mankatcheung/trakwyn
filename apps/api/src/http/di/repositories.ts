@@ -36,6 +36,8 @@ import { DrizzleEmailVerificationTokenRepository } from '#src/infrastructure/db/
 import { DrizzleTotpBackupCodeRepository } from '#src/infrastructure/db/repositories/DrizzleTotpBackupCodeRepository.js';
 import { DrizzleBackupEmailVerificationTokenRepository } from '#src/infrastructure/db/repositories/DrizzleBackupEmailVerificationTokenRepository.js';
 import { DrizzleOAuthAccountRepository } from '#src/infrastructure/db/repositories/DrizzleOAuthAccountRepository.js';
+import { DrizzleCalendarConnectionRepository } from '#src/infrastructure/db/repositories/DrizzleCalendarConnectionRepository.js';
+import { DrizzleCalendarSyncedEventRepository } from '#src/infrastructure/db/repositories/DrizzleCalendarSyncedEventRepository.js';
 import { DrizzleApiTokenRepository } from '#src/infrastructure/db/repositories/DrizzleApiTokenRepository.js';
 import { DrizzleMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthTokenRepository.js';
 import { CachedMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/CachedMcpOAuthTokenRepository.js';
@@ -163,4 +165,10 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   offerRepository: asClass(DrizzleOfferRepository, { lifetime: Lifetime.SINGLETON }),
+  calendarConnectionRepository: asClass(DrizzleCalendarConnectionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  calendarSyncedEventRepository: asClass(DrizzleCalendarSyncedEventRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
 } satisfies NameAndRegistrationPair<Cradle>;

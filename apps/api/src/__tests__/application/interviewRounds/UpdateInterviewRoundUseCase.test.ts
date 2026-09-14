@@ -5,6 +5,7 @@ import {
   makeInterviewRoundRepository,
 } from '#src/__tests__/helpers/mocks/interviews.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('UpdateInterviewRoundUseCase', () => {
   it('throws NOT_FOUND when the round does not exist', async () => {
@@ -89,6 +90,70 @@ describe('UpdateInterviewRoundUseCase', () => {
       interviewerName: undefined,
       notes: undefined,
       outcome: 'passed',
+    });
+  });
+
+  it('syncs an updated calendar event when the round still has a scheduled date', async () => {
+    const scheduledAt = new Date('2024-06-02T09:00:00.000Z');
+    const existing = makeInterviewRound({ applicationId: 'app-1' });
+    const updated = makeInterviewRound({ id: 'round-1', applicationId: 'app-1', scheduledAt });
+    const interviewRoundRepository = makeInterviewRoundRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(updated),
+    });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication({ company: 'Acme', role: 'SWE' })),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateInterviewRoundUseCase({
+      applicationRepository,
+      interviewRoundRepository,
+      syncCalendarEventUseCase,
+    });
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1', scheduledAt });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: {
+        title: 'Interview: Acme — SWE',
+        description: updated.notes,
+        startAt: scheduledAt,
+        endAt: new Date(scheduledAt.getTime() + 60 * 60 * 1000),
+      },
+    });
+  });
+
+  it('syncs a deletion when the scheduled date is cleared', async () => {
+    const existing = makeInterviewRound({ applicationId: 'app-1' });
+    const updated = makeInterviewRound({
+      id: 'round-1',
+      applicationId: 'app-1',
+      scheduledAt: null,
+    });
+    const interviewRoundRepository = makeInterviewRoundRepository({
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn().mockResolvedValue(updated),
+    });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new UpdateInterviewRoundUseCase({
+      applicationRepository,
+      interviewRoundRepository,
+      syncCalendarEventUseCase,
+    });
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1', scheduledAt: null });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: null,
     });
   });
 });

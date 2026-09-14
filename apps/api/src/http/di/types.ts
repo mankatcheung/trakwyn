@@ -41,6 +41,8 @@ import type { DrizzleEmailVerificationTokenRepository } from '#src/infrastructur
 import type { DrizzleTotpBackupCodeRepository } from '#src/infrastructure/db/repositories/DrizzleTotpBackupCodeRepository.js';
 import type { DrizzleBackupEmailVerificationTokenRepository } from '#src/infrastructure/db/repositories/DrizzleBackupEmailVerificationTokenRepository.js';
 import type { DrizzleOAuthAccountRepository } from '#src/infrastructure/db/repositories/DrizzleOAuthAccountRepository.js';
+import type { DrizzleCalendarConnectionRepository } from '#src/infrastructure/db/repositories/DrizzleCalendarConnectionRepository.js';
+import type { DrizzleCalendarSyncedEventRepository } from '#src/infrastructure/db/repositories/DrizzleCalendarSyncedEventRepository.js';
 import type { DrizzleApiTokenRepository } from '#src/infrastructure/db/repositories/DrizzleApiTokenRepository.js';
 import type { DrizzleMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthTokenRepository.js';
 import type { CachedMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/CachedMcpOAuthTokenRepository.js';
@@ -54,6 +56,9 @@ import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import type { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import type { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import type { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
+import type { CalendarOAuthStateService } from '#src/infrastructure/auth/CalendarOAuthStateService.js';
+import type { ICalendarProvider } from '#src/use-cases/ports/ICalendarProvider.js';
+import type { CalendarProviderRegistry } from '#src/infrastructure/calendar/CalendarProviderRegistry.js';
 import type { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import type { IOAuthProvider } from '#src/use-cases/ports/IOAuthProvider.js';
 import type { LoginOrSignupWithOAuthUseCase } from '#src/use-cases/oauth/LoginOrSignupWithOAuthUseCase.js';
@@ -275,6 +280,12 @@ import type { UpdateSkillUseCase } from '#src/use-cases/skill/UpdateSkillUseCase
 import type { DeleteSkillUseCase } from '#src/use-cases/skill/DeleteSkillUseCase.js';
 import type { OfferMapper } from '#src/interface-adapters/mappers/OfferMapper.js';
 import type { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
+import type { CalendarConnectionMapper } from '#src/interface-adapters/mappers/CalendarConnectionMapper.js';
+import type { CalendarResolver } from '#src/interface-adapters/resolvers/CalendarResolver.js';
+import type { ConnectCalendarUseCase } from '#src/use-cases/calendar/ConnectCalendarUseCase.js';
+import type { DisconnectCalendarUseCase } from '#src/use-cases/calendar/DisconnectCalendarUseCase.js';
+import type { ListCalendarConnectionsUseCase } from '#src/use-cases/calendar/ListCalendarConnectionsUseCase.js';
+import type { SyncCalendarEventUseCase } from '#src/use-cases/calendar/SyncCalendarEventUseCase.js';
 import type { CreateOfferUseCase } from '#src/use-cases/offers/CreateOfferUseCase.js';
 import type { UpdateOfferUseCase } from '#src/use-cases/offers/UpdateOfferUseCase.js';
 import type { DeleteOfferUseCase } from '#src/use-cases/offers/DeleteOfferUseCase.js';
@@ -373,6 +384,11 @@ export interface Cradle {
   oauthStateService: OAuthStateService;
   mobileOAuthHandoffService: MobileOAuthHandoffService;
   mcpOAuthConsentService: McpOAuthConsentService;
+  calendarConnectionRepository: DrizzleCalendarConnectionRepository;
+  calendarSyncedEventRepository: DrizzleCalendarSyncedEventRepository;
+  calendarOAuthStateService: CalendarOAuthStateService;
+  googleCalendarProvider: ICalendarProvider;
+  calendarProviderRegistry: CalendarProviderRegistry;
 
   applicationMapper: ApplicationMapper;
   apiTokenMapper: ApiTokenMapper;
@@ -398,6 +414,7 @@ export interface Cradle {
   skillMapper: SkillMapper;
   offerMapper: OfferMapper;
   oauthAccountMapper: OAuthAccountMapper;
+  calendarConnectionMapper: CalendarConnectionMapper;
 
   authResolver: AuthResolver;
   applicationResolver: ApplicationResolver;
@@ -421,6 +438,7 @@ export interface Cradle {
   skillResolver: SkillResolver;
   offerResolver: OfferResolver;
   oauthResolver: OAuthResolver;
+  calendarResolver: CalendarResolver;
   mcpController: McpController;
 
   loginOrSignupWithOAuthUseCase: LoginOrSignupWithOAuthUseCase;
@@ -428,6 +446,10 @@ export interface Cradle {
   unlinkOAuthAccountUseCase: UnlinkOAuthAccountUseCase;
   listLinkedOAuthAccountsUseCase: ListLinkedOAuthAccountsUseCase;
   exchangeMobileOAuthCodeUseCase: ExchangeMobileOAuthCodeUseCase;
+  connectCalendarUseCase: ConnectCalendarUseCase;
+  disconnectCalendarUseCase: DisconnectCalendarUseCase;
+  listCalendarConnectionsUseCase: ListCalendarConnectionsUseCase;
+  syncCalendarEventUseCase: SyncCalendarEventUseCase;
 
   authenticateRequestUseCase: AuthenticateRequestUseCase;
   authenticateMcpRequestUseCase: AuthenticateMcpRequestUseCase;

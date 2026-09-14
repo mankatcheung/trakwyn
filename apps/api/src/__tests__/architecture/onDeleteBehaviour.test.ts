@@ -22,6 +22,8 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'ApiToken -> User': 'cascade',
   'ApplicationTag -> JobApplication': 'cascade',
   'BackupEmailVerificationToken -> User': 'cascade',
+  'CalendarConnection -> User': 'cascade',
+  'CalendarSyncedEvent -> CalendarConnection': 'cascade', // meaningless without the connection it was synced through
   'CompanyBriefing -> JobApplication': 'cascade', // research about the company, meaningless without the application
   'Contact -> JobApplication': 'cascade',
   'Conversation -> User': 'cascade',

@@ -25,6 +25,7 @@ import { NotificationMapper } from '#src/interface-adapters/mappers/Notification
 import { LlmApiKeyMapper } from '#src/interface-adapters/mappers/LlmApiKeyMapper.js';
 import { LlmUsageSummaryMapper } from '#src/interface-adapters/mappers/LlmUsageSummaryMapper.js';
 import { OfferMapper } from '#src/interface-adapters/mappers/OfferMapper.js';
+import { CalendarConnectionMapper } from '#src/interface-adapters/mappers/CalendarConnectionMapper.js';
 
 import type { Cradle } from './types.js';
 
@@ -53,5 +54,6 @@ export const mappers = {
   educationMapper: asClass(EducationMapper, { lifetime: Lifetime.SINGLETON }),
   skillMapper: asClass(SkillMapper, { lifetime: Lifetime.SINGLETON }),
   offerMapper: asClass(OfferMapper, { lifetime: Lifetime.SINGLETON }),
+  calendarConnectionMapper: asClass(CalendarConnectionMapper, { lifetime: Lifetime.SINGLETON }),
   oauthAccountMapper: asClass(OAuthAccountMapper, { lifetime: Lifetime.SINGLETON }),
 } satisfies NameAndRegistrationPair<Cradle>;

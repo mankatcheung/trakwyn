@@ -1,6 +1,7 @@
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
 import type {
   IDeleteInterviewRoundUseCase,
   DeleteInterviewRoundInput,
@@ -9,6 +10,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   interviewRoundRepository: IInterviewRoundRepository;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
 }
 
 export class DeleteInterviewRoundUseCase implements IDeleteInterviewRoundUseCase {
@@ -22,5 +24,12 @@ export class DeleteInterviewRoundUseCase implements IDeleteInterviewRoundUseCase
     if (!app || app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
     await this.deps.interviewRoundRepository.delete(input.roundId, round.applicationId);
+
+    await this.deps.syncCalendarEventUseCase?.execute({
+      userId: input.userId,
+      sourceType: 'interview',
+      sourceId: input.roundId,
+      event: null,
+    });
   }
 }
