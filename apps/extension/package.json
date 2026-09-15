@@ -10,16 +10,16 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.324",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
-    "@vitejs/plugin-react": "^4.5.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^28.1.0",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3",
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   }
 }
