@@ -14,10 +14,12 @@ import {
   StarIcon,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { OnboardingChecklist } from './OnboardingChecklist';
 import {
   applicationsQueryOptions,
   calendarEventsQueryOptions,
   weeklyApplicationGoalQueryOptions,
+  onboardingChecklistQueryOptions,
   type CalendarEventKind,
 } from '../dashboard';
 
@@ -37,6 +39,7 @@ export function DashboardPage() {
   const { data, isLoading, isError, error, refetch } = useQuery(applicationsQueryOptions);
   const { data: calendarData } = useQuery(calendarEventsQueryOptions);
   const { data: goalData } = useQuery(weeklyApplicationGoalQueryOptions);
+  const { data: onboardingData } = useQuery(onboardingChecklistQueryOptions);
   const goal = goalData?.weeklyApplicationGoal;
 
   const apps = data?.applications ?? [];
@@ -100,6 +103,10 @@ export function DashboardPage() {
           <span className="hidden sm:inline">{t('dashboard.newApplication')}</span>
         </Link>
       </div>
+
+      {onboardingData && (
+        <OnboardingChecklist data={onboardingData} hasApplications={apps.length > 0} />
+      )}
 
       {/* Mobile: horizontal scrollable strip so 5 stats don't leave an orphaned card; sm+: grid */}
       <div className="-mx-4 mb-8 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-10 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">

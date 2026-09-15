@@ -45,6 +45,7 @@ export const makeUser = (overrides?: Partial<User>): User => ({
   llmFallbackWhenLimited: false,
   backupEmail: null,
   backupEmailVerifiedAt: null,
+  onboardingChecklistDismissedAt: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   ...overrides,

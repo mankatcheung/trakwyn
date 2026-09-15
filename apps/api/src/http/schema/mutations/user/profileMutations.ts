@@ -140,6 +140,22 @@ builder.mutationField('updateNotificationPreferences', (t) =>
   }),
 );
 
+builder.mutationField('dismissOnboardingChecklist', (t) =>
+  t.boolean({
+    resolve: async (_root, _args, ctx) => {
+      if (!ctx.user)
+        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
+      const { userResolver } = ctx.diScope.cradle;
+      try {
+        await userResolver.dismissOnboardingChecklist(ctx.user.sub);
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
+    },
+  }),
+);
+
 builder.mutationField('importUserData', (t) =>
   t.field({
     type: ImportSummaryRef,

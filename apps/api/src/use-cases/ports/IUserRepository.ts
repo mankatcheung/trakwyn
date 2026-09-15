@@ -35,6 +35,7 @@ export interface IUserRepository {
       llmFallbackWhenLimited?: boolean;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
+      onboardingChecklistDismissedAt?: Date | null;
     },
   ): Promise<User>;
   delete(id: string): Promise<void>;

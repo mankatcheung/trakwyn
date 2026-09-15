@@ -20,6 +20,7 @@ import { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.j
 import { GetLlmUsageSummaryUseCase } from '#src/use-cases/user/GetLlmUsageSummaryUseCase.js';
 import { GetNotificationPreferencesUseCase } from '#src/use-cases/user/GetNotificationPreferencesUseCase.js';
 import { UpdateNotificationPreferencesUseCase } from '#src/use-cases/user/UpdateNotificationPreferencesUseCase.js';
+import { DismissOnboardingChecklistUseCase } from '#src/use-cases/user/DismissOnboardingChecklistUseCase.js';
 import { UpdateProfileUseCase } from '#src/use-cases/user/UpdateProfileUseCase.js';
 import { GetUserUseCase } from '#src/use-cases/user/GetUserUseCase.js';
 import { RequestAvatarUploadUrlUseCase } from '#src/use-cases/user/RequestAvatarUploadUrlUseCase.js';
@@ -67,6 +68,9 @@ export const user = {
     lifetime: Lifetime.TRANSIENT,
   }),
   updateNotificationPreferencesUseCase: asClass(UpdateNotificationPreferencesUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  dismissOnboardingChecklistUseCase: asClass(DismissOnboardingChecklistUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
   updateProfileUseCase: asClass(UpdateProfileUseCase, { lifetime: Lifetime.TRANSIENT }),

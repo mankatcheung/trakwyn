@@ -70,6 +70,7 @@ export class DrizzleUserRepository implements IUserRepository {
       llmFallbackWhenLimited?: boolean;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
+      onboardingChecklistDismissedAt?: Date | null;
     },
   ): Promise<User> {
     const [row] = await this.db
@@ -112,6 +113,7 @@ export class DrizzleUserRepository implements IUserRepository {
       llmFallbackWhenLimited: row.llmFallbackWhenLimited,
       backupEmail: row.backupEmail,
       backupEmailVerifiedAt: row.backupEmailVerifiedAt,
+      onboardingChecklistDismissedAt: row.onboardingChecklistDismissedAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

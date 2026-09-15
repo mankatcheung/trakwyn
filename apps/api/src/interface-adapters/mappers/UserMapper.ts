@@ -13,6 +13,7 @@ export interface UserDTO {
   llmFallbackWhenLimited: boolean;
   backupEmail: string | null;
   backupEmailVerifiedAt: Date | null;
+  onboardingChecklistDismissedAt: Date | null;
 }
 
 export class UserMapper {
@@ -30,6 +31,7 @@ export class UserMapper {
       llmFallbackWhenLimited: user.llmFallbackWhenLimited,
       backupEmail: user.backupEmail,
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
+      onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,
     };
   }
 }
