@@ -1,0 +1,116 @@
+# Render Blueprint for apps/api — https://render.com/docs/blueprint-spec
+#
+# Defines the API web service plus the admin cron jobs that replace Vercel
+# Cron's path-triggered `crons` block (formerly apps/api/vercel.json,
+# removed in JEF-334). All commands run from the repo root since this is a
+# pnpm workspace — `--filter @trakwyn/api` scopes each command to this
+# package. To apply: connect this file as a Blueprint in the Render
+# dashboard (New -> Blueprint), then set the production secrets listed in
+# apps/api/.env.example on the trakwyn-api web service (they're intentionally
+# not committed here).
+services:
+  - type: web
+    name: trakwyn-api
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @trakwyn/api build
+    startCommand: pnpm --filter @trakwyn/api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      # Everything else (DATABASE_URL, JWT_SECRET, CRON_SECRET, CORS_ORIGIN,
+      # COOKIE_DOMAIN, ...) is set directly in the Render dashboard — see
+      # apps/api/.env.example for the full list.
+
+  # Vercel Cron couldn't send custom headers, so CRON_SECRET was invented as
+  # a reserved env var name Vercel auto-injected as a bearer token. Render
+  # Cron Jobs run an arbitrary command instead, so each job below just curls
+  # the route with that same secret — same auth check on the API side
+  # (isAuthorizedCronTrigger in src/http/routes/cronAuth.ts), just triggered
+  # differently.
+  - type: cron
+    name: trakwyn-api-digest-send
+    runtime: node
+    plan: starter
+    region: oregon
+    schedule: '0 9 * * *'
+    buildCommand: 'true'
+    startCommand: >-
+      curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET"
+      "https://$API_HOST/admin/digest/send"
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: trakwyn-api
+          property: host
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: trakwyn-api-reminders-send
+    runtime: node
+    plan: starter
+    region: oregon
+    schedule: '0 9 * * *'
+    buildCommand: 'true'
+    startCommand: >-
+      curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET"
+      "https://$API_HOST/admin/reminders/send"
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: trakwyn-api
+          property: host
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: trakwyn-api-trash-purge
+    runtime: node
+    plan: starter
+    region: oregon
+    schedule: '0 9 * * *'
+    buildCommand: 'true'
+    startCommand: >-
+      curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET"
+      "https://$API_HOST/admin/trash/purge"
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: trakwyn-api
+          property: host
+      - key: CRON_SECRET
+        sync: false
+
+  # NOTE: not part of the original Vercel Cron block (apps/api/vercel.json
+  # only ever scheduled the three jobs above), even though this route
+  # requires the same CRON_SECRET and follows the identical pattern
+  # (src/http/routes/pushNotifications.routes.ts). Added here so the
+  # migration doesn't silently drop scheduled push delivery — but the
+  # schedule below is a guess (matched to the other jobs' cadence, not a
+  # known requirement). Confirm the intended cadence before relying on this.
+  - type: cron
+    name: trakwyn-api-push-notifications-send
+    runtime: node
+    plan: starter
+    region: oregon
+    schedule: '0 9 * * *'
+    buildCommand: 'true'
+    startCommand: >-
+      curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET"
+      "https://$API_HOST/admin/push-notifications/send"
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: trakwyn-api
+          property: host
+      - key: CRON_SECRET
+        sync: false

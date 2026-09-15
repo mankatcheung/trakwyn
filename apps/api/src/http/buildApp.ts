@@ -46,23 +46,25 @@ import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
  * app via `.inject()` without starting a real server — `index.ts` is reduced
  * to constructing the instance and calling this, then `.listen(...)`.
  *
- * Takes the instance as a parameter rather than constructing it here:
- * Vercel's zero-config Fastify build detection scans the entrypoint file
- * itself for a literal `import fastify` + constructor call to know how to
- * wrap the serverless function — moving that construction in here broke
- * preview deploys with "No entrypoint found which imports fastify" even
- * though `index.ts` still used Fastify transitively through this function.
+ * Takes the instance as a parameter rather than constructing it here so
+ * `index.ts` stays the single place that owns process-level concerns
+ * (listen(), signal handling) while this function stays a pure "wire
+ * everything onto this instance" step that tests can call directly.
  */
 export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstance> {
   if (isObservabilityEnabled) {
     await fastify.register(fastifyOtelInstrumentation.plugin());
 
-    // Vercel freezes the function shortly after the response is sent, well
-    // before the OTel SDK's default ~5s batch-export timer fires, so most
-    // spans would never reach Axiom. Force-flush after every response while
-    // the invocation is still alive. Runs after @fastify/otel's per-route
-    // hooks have ended the request span (they're onSend-hook based), so the
-    // flush captures complete spans.
+    // Originally required because Vercel freezes the function shortly after
+    // the response is sent, well before the OTel SDK's default ~5s
+    // batch-export timer fires, so most spans would never reach Axiom.
+    // Harmless overhead now that apps/api runs as a long-lived Render
+    // process — the SDK's own batch timer and the SIGTERM/SIGINT shutdown
+    // flush in tracing.ts would export anyway — but keeping the per-response
+    // flush means traces show up in Axiom near-instantly rather than on a
+    // ~5s delay, which is worth the small per-request cost. Runs after
+    // @fastify/otel's per-route hooks have ended the request span (they're
+    // onSend-hook based), so the flush captures complete spans.
     fastify.addHook('onResponse', () => flushObservability());
   }
 

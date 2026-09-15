@@ -45,7 +45,7 @@ cd apps/web && pnpm codegen
 
 ### API (`apps/api`) — Clean Architecture + GraphQL
 
-The API is a **Fastify + Mercurius + Pothos** GraphQL server following Clean Architecture layers:
+The API is a **Fastify + Mercurius + Pothos** GraphQL server following Clean Architecture layers, deployed as a long-running Render Web Service (`apps/api/render.yaml` — JEF-334; `apps/web` stays on Vercel). The admin/cron routes (`/admin/digest/send`, `/admin/reminders/send`, `/admin/trash/purge`, `/admin/push-notifications/send`) are triggered by Render Cron Jobs defined in the same blueprint, each `curl`ing its route with `Authorization: Bearer $CRON_SECRET` — see `cronAuth.ts`'s `isAuthorizedCronTrigger()`. Layers:
 
 ```
 domain/           Pure domain entities (no dependencies)

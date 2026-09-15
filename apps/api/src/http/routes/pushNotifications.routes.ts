@@ -5,8 +5,9 @@ import { ROUTES } from '#src/http/constants.js';
 import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
 
 /**
- * Push notification delivery triggered by an external cron job (Vercel Cron
- * in production), same pattern as reminders.routes.ts and digest.routes.ts.
+ * Push notification delivery triggered by an external cron job (a Render
+ * Cron Job in production — see apps/api/render.yaml), same pattern as
+ * reminders.routes.ts and digest.routes.ts.
  *
  * Also serves the VAPID public key so the web client can create push
  * subscriptions without baking the key into the client bundle.

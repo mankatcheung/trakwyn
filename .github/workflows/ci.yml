@@ -15,22 +15,31 @@ name: CI & Deploy
 # web deploy still runs — that's a minor waste, but Vercel's cache makes
 # it fast, and the simplicity gain is worth it.
 #
+# apps/api deploys to Render, apps/web stays on Vercel (JEF-334).
+#
 # One-time setup required before this workflow can deploy:
-#   1. Create a Vercel project for each app (from repo root, run `vercel link`
-#      for apps/api and apps/web separately). Do NOT connect either to this
-#      GitHub repo in the Vercel dashboard (Settings -> Git) — leaving it
-#      disconnected stops Vercel's own integration from also deploying.
-#   2. In each project's Settings -> Build & Deployment -> Root Directory,
-#      set it to the app's directory (apps/api or apps/web).
-#   3. `vercel link` writes .vercel/project.json (gitignored) containing
-#      orgId/projectId — copy those into the repo secrets below.
-#   4. Attach a Blob store to the api project (Storage tab) — this sets
-#      BLOB_READ_WRITE_TOKEN automatically.
-#   5. Set each project's production env vars in the Vercel dashboard.
-#   6. Create a Vercel access token (https://vercel.com/account/tokens) and
-#      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_API_PROJECT_ID,
-#      VERCEL_WEB_PROJECT_ID.
-#   7. Add repository secrets (in GitHub Settings > Secrets > Actions):
+#   1. apps/web (Vercel): create a Vercel project (from repo root, run
+#      `vercel link` for apps/web). Do NOT connect it to this GitHub repo in
+#      the Vercel dashboard (Settings -> Git) — leaving it disconnected stops
+#      Vercel's own integration from also deploying. Set Settings -> Build &
+#      Deployment -> Root Directory to apps/web. `vercel link` writes
+#      .vercel/project.json (gitignored) containing orgId/projectId — copy
+#      those into the repo secrets below. Set the project's production env
+#      vars in the Vercel dashboard.
+#   2. apps/api (Render): create a Render Blueprint from apps/api/render.yaml
+#      (New -> Blueprint in the Render dashboard, pointed at this repo).
+#      Set the trakwyn-api web service's production env vars in the Render
+#      dashboard (see apps/api/.env.example for the full list) and the
+#      CRON_SECRET env var on each of the four trakwyn-api-*-send/purge cron
+#      jobs it creates. Grab a deploy hook URL for the trakwyn-api web
+#      service (Settings -> Deploy Hook) — deploys are triggered from this
+#      workflow via that hook rather than Render's own auto-deploy-on-push,
+#      to keep the same "never deploy before tests pass" guarantee Vercel
+#      Cron had.
+#   3. Create a Vercel access token (https://vercel.com/account/tokens) and
+#      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_WEB_PROJECT_ID.
+#   4. Add repository secrets (in GitHub Settings > Secrets > Actions):
+#      RENDER_API_DEPLOY_HOOK_URL — the trakwyn-api web service's deploy hook
 #      PRODUCTION_DATABASE_URL — the libsql:// URL for your production Turso DB
 #      PRODUCTION_DATABASE_AUTH_TOKEN — the auth token for the production Turso DB
 #      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
@@ -173,20 +182,14 @@ jobs:
         run: pnpm --filter @trakwyn/api db:migrate:apply
 
   deploy-api:
-    name: Deploy api to Vercel
+    name: Deploy api to Render
     needs: [quality, build-test, migrate-db, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup-project
-
-      - uses: ./.github/actions/vercel-deploy-production
+      - uses: ./.github/actions/render-deploy-production
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_API_PROJECT_ID }}
+          deploy-hook-url: ${{ secrets.RENDER_API_DEPLOY_HOOK_URL }}
 
   deploy-web:
     name: Deploy web to Vercel

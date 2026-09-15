@@ -1,0 +1,21 @@
+name: Deploy Render production
+description: >-
+  Trigger a Render deploy hook for the target service. Fire-and-forget —
+  Render pulls, builds, and deploys from git itself once triggered; this
+  action only starts that process and doesn't wait for it to finish. Deploy
+  status is visible in the Render dashboard.
+
+inputs:
+  deploy-hook-url:
+    description: Render deploy hook URL for the target service
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Trigger deploy hook
+      shell: bash
+      run: |
+        curl -fsS -X POST "$DEPLOY_HOOK_URL"
+      env:
+        DEPLOY_HOOK_URL: ${{ inputs.deploy-hook-url }}
