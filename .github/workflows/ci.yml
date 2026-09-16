@@ -26,16 +26,16 @@ name: CI & Deploy
 #      .vercel/project.json (gitignored) containing orgId/projectId — copy
 #      those into the repo secrets below. Set the project's production env
 #      vars in the Vercel dashboard.
-#   2. apps/api (Render): create a Render Blueprint from apps/api/render.yaml
+#   2. apps/api (Render): create a Render Blueprint from render.yaml
 #      (New -> Blueprint in the Render dashboard, pointed at this repo).
 #      Set the trakwyn-api web service's production env vars in the Render
 #      dashboard (see apps/api/.env.example for the full list) and the
 #      CRON_SECRET env var on each of the four trakwyn-api-*-send/purge cron
 #      jobs it creates. Grab a deploy hook URL for the trakwyn-api web
 #      service (Settings -> Deploy Hook) — deploys are triggered from this
-#      workflow via that hook rather than Render's own auto-deploy-on-push,
-#      to keep the same "never deploy before tests pass" guarantee Vercel
-#      Cron had.
+#      workflow via that hook rather than Render's own auto-deploy-on-push
+#      (disabled with `autoDeploy: false` in render.yaml), to keep the same
+#      "never deploy before tests pass" guarantee the Vercel deploy had.
 #   3. Create a Vercel access token (https://vercel.com/account/tokens) and
 #      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_WEB_PROJECT_ID.
 #   4. Add repository secrets (in GitHub Settings > Secrets > Actions):
@@ -54,6 +54,7 @@ on:
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - 'render.yaml'
       - '.github/workflows/ci.yml'
       - '.github/actions/**'
   pull_request:

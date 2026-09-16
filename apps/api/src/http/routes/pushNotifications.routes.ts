@@ -6,7 +6,7 @@ import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
 
 /**
  * Push notification delivery triggered by an external cron job (a Render
- * Cron Job in production — see apps/api/render.yaml), same pattern as
+ * Cron Job in production — see render.yaml), same pattern as
  * reminders.routes.ts and digest.routes.ts.
  *
  * Also serves the VAPID public key so the web client can create push

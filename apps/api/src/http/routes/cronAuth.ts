@@ -5,7 +5,7 @@ import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
  * Shared auth check for the admin/cron-triggered routes (digest, reminders,
  * trash purge, push notifications). Accepts either the route's own
  * dedicated secret (for manual/external triggering) or CRON_SECRET — the
- * shared secret Render's Cron Job resources (see apps/api/render.yaml) send
+ * shared secret Render's Cron Job resources (see render.yaml) send
  * as `Authorization: Bearer $CRON_SECRET` via a curl command, mirroring how
  * Vercel Cron used to auto-inject the same header.
  */
