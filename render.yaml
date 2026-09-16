@@ -12,7 +12,7 @@ services:
     name: trakwyn-api
     runtime: node
     plan: starter
-    region: oregon
+    region: frankfurt
     # Deploys are triggered by CI's deploy-api job through the service's
     # deploy hook, after tests and migrate-db pass. Render's default
     # deploy-on-push would ship a commit before either has run.
@@ -50,7 +50,7 @@ services:
     name: trakwyn-api-digest-send
     runtime: node
     plan: starter
-    region: oregon
+    region: frankfurt
     schedule: '0 9 * * *'
     buildCommand: 'true'
     startCommand: >-
@@ -69,7 +69,7 @@ services:
     name: trakwyn-api-reminders-send
     runtime: node
     plan: starter
-    region: oregon
+    region: frankfurt
     schedule: '0 9 * * *'
     buildCommand: 'true'
     startCommand: >-
@@ -88,7 +88,7 @@ services:
     name: trakwyn-api-trash-purge
     runtime: node
     plan: starter
-    region: oregon
+    region: frankfurt
     schedule: '0 9 * * *'
     buildCommand: 'true'
     startCommand: >-
@@ -114,7 +114,7 @@ services:
     name: trakwyn-api-push-notifications-send
     runtime: node
     plan: starter
-    region: oregon
+    region: frankfurt
     schedule: '0 9 * * *'
     buildCommand: 'true'
     startCommand: >-
