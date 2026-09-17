@@ -16,3 +16,10 @@ export interface WeeklyApplicationGoal {
   currentWeekStart: string;
   streakWeeks: number;
 }
+
+export interface OnboardingChecklistData {
+  me: { onboardingChecklistDismissedAt: string | null } | null;
+  apiTokens: { id: string }[];
+  llmApiKeys: { provider: string }[];
+  workExperiences: { id: string }[];
+}

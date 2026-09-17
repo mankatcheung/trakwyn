@@ -8,6 +8,8 @@ jest.mock('../../../applications/hooks/useApplicationQueries', () => ({
 jest.mock('../../hooks/useDashboardQueries', () => ({
   useDashboardCalendarEvents: jest.fn(),
   useWeeklyApplicationGoal: jest.fn(),
+  useOnboardingChecklist: jest.fn(),
+  useDismissOnboardingChecklist: jest.fn(),
 }));
 jest.mock('../../../settings/hooks/useProfile', () => ({ useProfile: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
@@ -17,6 +19,8 @@ import { useRouter } from 'expo-router';
 import { useApplications } from '../../../applications/hooks/useApplicationQueries';
 import {
   useDashboardCalendarEvents,
+  useDismissOnboardingChecklist,
+  useOnboardingChecklist,
   useWeeklyApplicationGoal,
 } from '../../hooks/useDashboardQueries';
 import { useProfile } from '../../../settings/hooks/useProfile';
@@ -29,6 +33,8 @@ const mockedUseApplications = jest.mocked(useApplications);
 const mockedUseCalendarEvents = jest.mocked(useDashboardCalendarEvents);
 const mockedUseGoal = jest.mocked(useWeeklyApplicationGoal);
 const mockedUseProfile = jest.mocked(useProfile);
+const mockedUseOnboardingChecklist = jest.mocked(useOnboardingChecklist);
+const mockedUseDismissOnboardingChecklist = jest.mocked(useDismissOnboardingChecklist);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 
@@ -71,6 +77,8 @@ describe('DashboardScreen', () => {
     mockedUseCalendarEvents.mockReturnValue({ data: [] } as never);
     mockedUseGoal.mockReturnValue({ data: undefined } as never);
     mockedUseProfile.mockReturnValue({ data: { name: 'Alex Morgan' } } as never);
+    mockedUseOnboardingChecklist.mockReturnValue({ data: undefined } as never);
+    mockedUseDismissOnboardingChecklist.mockReturnValue({ mutate: jest.fn() } as never);
   });
 
   it('shows stat counts and recent applications', async () => {
@@ -207,6 +215,28 @@ describe('DashboardScreen', () => {
     await fireEvent.press(await findByTestId('dashboard-view-analytics'));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('./analytics'));
+  });
+
+  it('shows the onboarding checklist when data is loaded and incomplete', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+    mockedUseOnboardingChecklist.mockReturnValue({
+      data: {
+        me: { onboardingChecklistDismissedAt: null },
+        apiTokens: [],
+        llmApiKeys: [],
+        workExperiences: [],
+      },
+    } as never);
+
+    const { findByTestId } = await renderScreen();
+
+    await findByTestId('onboarding-checklist');
   });
 
   it('shows an empty state when there are no applications', async () => {

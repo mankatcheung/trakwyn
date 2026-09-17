@@ -69,3 +69,33 @@ export function AlertCircleIcon({ color }: DashboardIconProps) {
     </Svg>
   );
 }
+
+export function OutlineCircleIcon({ color }: DashboardIconProps) {
+  return (
+    <Svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={STROKE} />
+    </Svg>
+  );
+}
+
+export function CloseIcon({ color }: DashboardIconProps) {
+  return (
+    <Svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={STROKE} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function ChevronDownIcon({ color }: DashboardIconProps) {
+  return (
+    <Svg width={SIZE} height={SIZE} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 9l6 6 6-6"
+        stroke={color}
+        strokeWidth={STROKE}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

@@ -3,10 +3,15 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useApplications } from '../../applications/hooks/useApplicationQueries';
-import { useDashboardCalendarEvents, useWeeklyApplicationGoal } from '../hooks/useDashboardQueries';
+import {
+  useDashboardCalendarEvents,
+  useOnboardingChecklist,
+  useWeeklyApplicationGoal,
+} from '../hooks/useDashboardQueries';
 import { useProfile } from '../../settings/hooks/useProfile';
 import { computeSummaryStats } from '../../analytics/lib/analyticsSummary';
 import { StatCard } from '../components/StatCard';
+import { OnboardingChecklistCard } from '../components/OnboardingChecklistCard';
 import {
   AlertCircleIcon,
   BriefcaseIcon,
@@ -42,6 +47,7 @@ export function DashboardScreen() {
   const { data: calendarEvents } = useDashboardCalendarEvents();
   const { data: goal } = useWeeklyApplicationGoal();
   const { data: profile } = useProfile();
+  const { data: onboardingData } = useOnboardingChecklist();
 
   const EVENT_LABEL: Record<CalendarEventKind, string> = {
     interview: t('eventLabel.interview'),
@@ -81,6 +87,10 @@ export function DashboardScreen() {
           </View>
         ) : null}
       </View>
+
+      {onboardingData && (
+        <OnboardingChecklistCard data={onboardingData} hasApplications={apps.length > 0} />
+      )}
 
       <ScrollView
         horizontal
