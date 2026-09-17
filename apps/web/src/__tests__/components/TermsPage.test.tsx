@@ -38,4 +38,11 @@ describe('TermsPage', () => {
 
     expect(screen.getByRole('link', { name: 'Back to Trakwyn' })).toHaveAttribute('href', '/');
   });
+
+  it('provides a contact email', () => {
+    render(<TermsPage />);
+
+    const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
+    expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
+  });
 });
