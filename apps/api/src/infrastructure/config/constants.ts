@@ -135,6 +135,7 @@ export const AXIOM = {
   API_URL: 'https://eu-central-1.aws.edge.axiom.co',
   TRACES_PATH: '/v1/traces',
   METRICS_PATH: '/v1/metrics',
+  LOGS_PATH: '/v1/logs',
   /** Header carrying the dataset name for logs and traces. */
   DATASET_HEADER: 'X-Axiom-Dataset',
   /** Metrics use a distinct dataset (and header) from logs/traces — Axiom requires a Metrics-type dataset. */

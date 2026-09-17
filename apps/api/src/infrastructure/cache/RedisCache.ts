@@ -59,8 +59,8 @@ function reviveDates<T>(value: T): T {
 
 /**
  * Redis-backed ICache, shared across every serverless instance — fixes the
- * cross-instance invalidation gap a per-instance MemoryCache has on Vercel
- * (JEF-127).
+ * cross-instance invalidation gap a per-instance MemoryCache has once more
+ * than one instance is serving (JEF-127).
  *
  * getOrSet also guards against cache stampedes: on a miss, only the caller
  * that wins a short-lived NX lock actually calls `fetch`. Concurrent misses

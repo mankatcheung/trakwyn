@@ -7,8 +7,8 @@ import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
 export function digestRoutes(getCradle: () => Cradle): RouteDefinition[] {
   return [
     {
-      // GET so Vercel Cron (which only issues GET requests) can trigger this
-      // directly; POST kept for manual/external triggering.
+      // POST is what the Cloud Scheduler job sends (infra/gcp/scheduler.tf);
+      // GET kept so the route can be triggered by hand from a browser or curl.
       method: ['GET', 'POST'],
       path: ROUTES.DIGEST_SEND,
       handler: async (req, res) => {

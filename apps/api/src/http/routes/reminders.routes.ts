@@ -6,9 +6,10 @@ import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
 
 /**
  * Was an in-process setInterval poll; converted to an external-trigger route
- * (mirrors digest.routes.ts) because a setInterval can't survive Vercel's
- * serverless model — the process doesn't stay alive between requests, so
- * nothing would ever fire it. Driven by Vercel Cron in production.
+ * (mirrors digest.routes.ts) because a setInterval can't survive a
+ * scale-to-zero host — Cloud Run throttles CPU between requests and removes
+ * idle instances, so nothing would reliably fire it. Driven by Cloud
+ * Scheduler in production (infra/gcp/scheduler.tf).
  */
 export function remindersRoutes(getCradle: () => Cradle): RouteDefinition[] {
   return [

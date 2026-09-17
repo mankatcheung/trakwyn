@@ -9,18 +9,28 @@ const {
   nodeSDKConstructorMock,
   nodeSDKStartMock,
   otlpTraceExporterMock,
+  nodeSDKShutdownMock,
   otlpMetricExporterMock,
+  otlpLogExporterMock,
   periodicReaderMock,
   batchSpanProcessorInstances,
+  batchLogProcessorInstances,
   metricReaderInstances,
   getNodeAutoInstrumentationsMock,
 } = vi.hoisted(() => ({
   nodeSDKConstructorMock: vi.fn(),
   nodeSDKStartMock: vi.fn(),
+  nodeSDKShutdownMock: vi.fn().mockResolvedValue(undefined),
   otlpTraceExporterMock: vi.fn(),
   otlpMetricExporterMock: vi.fn(),
+  otlpLogExporterMock: vi.fn(),
   periodicReaderMock: vi.fn(),
   batchSpanProcessorInstances: [] as Array<{
+    exporter: unknown;
+    config: unknown;
+    forceFlush: ReturnType<typeof vi.fn>;
+  }>,
+  batchLogProcessorInstances: [] as Array<{
     exporter: unknown;
     config: unknown;
     forceFlush: ReturnType<typeof vi.fn>;
@@ -41,7 +51,7 @@ vi.mock('@opentelemetry/sdk-node', () => ({
       nodeSDKStartMock();
     }
     shutdown() {
-      return Promise.resolve();
+      return nodeSDKShutdownMock();
     }
   },
 }));
@@ -58,6 +68,28 @@ vi.mock('@opentelemetry/exporter-metrics-otlp-proto', () => ({
   OTLPMetricExporter: class {
     constructor(config: unknown) {
       otlpMetricExporterMock(config);
+    }
+  },
+}));
+
+vi.mock('@opentelemetry/exporter-logs-otlp-proto', () => ({
+  OTLPLogExporter: class {
+    constructor(config: unknown) {
+      otlpLogExporterMock(config);
+    }
+  },
+}));
+
+vi.mock('@opentelemetry/sdk-logs', () => ({
+  BatchLogRecordProcessor: class {
+    forceFlush: ReturnType<typeof vi.fn>;
+    constructor(options: { exporter: unknown; scheduledDelayMillis?: number }) {
+      this.forceFlush = vi.fn().mockResolvedValue(undefined);
+      batchLogProcessorInstances.push({
+        exporter: options.exporter,
+        config: { scheduledDelayMillis: options.scheduledDelayMillis },
+        forceFlush: this.forceFlush,
+      });
     }
   },
 }));
@@ -117,6 +149,7 @@ describe('tracing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     batchSpanProcessorInstances.length = 0;
+    batchLogProcessorInstances.length = 0;
     metricReaderInstances.length = 0;
     consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     for (const key of ENV_KEYS) delete process.env[key];
@@ -288,6 +321,64 @@ describe('tracing', () => {
     });
   });
 
+  describe('startObservability log export', () => {
+    it('configures the log exporter against the logs endpoint with the events dataset header', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      expect(otlpLogExporterMock).toHaveBeenCalledWith({
+        url: `${AXIOM.API_URL}${AXIOM.LOGS_PATH}`,
+        headers: {
+          Authorization: 'Bearer secret-token',
+          [AXIOM.DATASET_HEADER]: 'my-dataset',
+        },
+      });
+    });
+
+    it('passes a BatchLogRecordProcessor via logRecordProcessors with a near-0 scheduled delay', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      const [sdkConfig] = nodeSDKConstructorMock.mock.calls[0] as [
+        { logRecordProcessors: unknown[] },
+      ];
+      expect(sdkConfig.logRecordProcessors).toHaveLength(1);
+      const [processor] = batchLogProcessorInstances;
+      expect(processor.exporter).toBeInstanceOf(
+        (await import('@opentelemetry/exporter-logs-otlp-proto')).OTLPLogExporter,
+      );
+      expect(processor.config).toEqual({ scheduledDelayMillis: 0 });
+    });
+
+    it('does not construct the log pipeline when Axiom is not configured', async () => {
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      expect(otlpLogExporterMock).not.toHaveBeenCalled();
+      expect(batchLogProcessorInstances).toHaveLength(0);
+    });
+
+    it('leaves process signal handling to the entrypoint', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const onceSpy = vi.spyOn(process, 'once');
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      expect(onceSpy).not.toHaveBeenCalledWith('SIGTERM', expect.any(Function));
+      expect(onceSpy).not.toHaveBeenCalledWith('SIGINT', expect.any(Function));
+      onceSpy.mockRestore();
+    });
+  });
+
   describe('flushObservability', () => {
     it('no-ops when the SDK has not started', async () => {
       const mod = await loadTracingModule();
@@ -305,6 +396,7 @@ describe('tracing', () => {
       await mod.flushObservability();
 
       expect(batchSpanProcessorInstances[0].forceFlush).toHaveBeenCalledTimes(1);
+      expect(batchLogProcessorInstances[0].forceFlush).toHaveBeenCalledTimes(1);
       expect(metricReaderInstances[0].forceFlush).toHaveBeenCalledTimes(1);
     });
 
@@ -318,6 +410,42 @@ describe('tracing', () => {
 
       expect(batchSpanProcessorInstances[0].forceFlush).toHaveBeenCalledTimes(1);
       expect(metricReaderInstances).toHaveLength(0);
+    });
+  });
+
+  describe('shutdownObservability', () => {
+    it('no-ops when the SDK has not started', async () => {
+      const mod = await loadTracingModule();
+
+      await expect(mod.shutdownObservability()).resolves.toBeUndefined();
+      expect(nodeSDKShutdownMock).not.toHaveBeenCalled();
+    });
+
+    it('shuts the SDK down, which flushes every pipeline', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+      mod.startObservability();
+
+      await mod.shutdownObservability();
+
+      expect(nodeSDKShutdownMock).toHaveBeenCalledOnce();
+    });
+
+    it('logs rather than rejects when the SDK fails to shut down', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      nodeSDKShutdownMock.mockRejectedValueOnce(new Error('export timed out'));
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const mod = await loadTracingModule();
+      mod.startObservability();
+
+      await expect(mod.shutdownObservability()).resolves.toBeUndefined();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[observability] shutdown error',
+        expect.any(Error),
+      );
+      consoleErrorSpy.mockRestore();
     });
   });
 });

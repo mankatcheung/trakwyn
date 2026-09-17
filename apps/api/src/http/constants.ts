@@ -75,6 +75,15 @@ export const CHAT_STREAM = {
   BODY_LIMIT_BYTES: 64 * 1024,
 } as const;
 
+/**
+ * Process shutdown budget. Cloud Run SIGKILLs an instance 10 seconds after
+ * SIGTERM; draining in-flight requests gets 8 of them so the telemetry flush
+ * that follows (see gracefulShutdown.ts) still fits in the remainder.
+ */
+export const SHUTDOWN = {
+  SERVER_CLOSE_TIMEOUT_MS: 8_000,
+} as const;
+
 /** Rate limits for auth endpoints prone to abuse (in-process, fixed-window). */
 export const RATE_LIMIT = {
   PASSWORD_RESET_REQUEST: {

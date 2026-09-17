@@ -2,12 +2,11 @@ import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
 
 /**
- * Shared auth check for the admin/cron-triggered routes (digest, reminders).
- * Accepts either the route's own dedicated secret (for manual/external
- * triggering) or CRON_SECRET (Vercel Cron's reserved env var name — Vercel
- * auto-injects it as `Authorization: Bearer $CRON_SECRET` on scheduled
- * invocations, and it never has to be committed anywhere since Vercel Cron
- * can't send custom headers of its own).
+ * Shared auth check for the admin/cron-triggered routes (digest, reminders,
+ * trash purge, push notifications). Accepts either the route's own dedicated
+ * secret (for manual/external triggering) or CRON_SECRET — the shared secret
+ * the Cloud Scheduler jobs in infra/gcp/scheduler.tf send as
+ * `Authorization: Bearer $CRON_SECRET`.
  */
 export function isAuthorizedCronTrigger(request: IHttpRequest, ownSecretEnvKey: string): boolean {
   const auth = request.headers.authorization;

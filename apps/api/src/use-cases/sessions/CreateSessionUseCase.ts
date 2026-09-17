@@ -49,8 +49,8 @@ export class CreateSessionUseCase {
     });
 
     // Check if this is a new device. Awaited so the alert completes before the
-    // response is sent — Vercel freezes the process shortly after responding, so
-    // a fire-and-forget promise can be silently dropped before it exports. Errors
+    // response is sent — Cloud Run throttles CPU once no request is in flight, so
+    // a fire-and-forget promise can stall or be dropped before it finishes. Errors
     // are still swallowed so session creation is never blocked by the alert path.
     await this.detectNewDeviceAndAlert(
       input.userId,
