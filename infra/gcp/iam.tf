@@ -18,14 +18,14 @@ resource "google_artifact_registry_repository_iam_member" "deployer_push" {
   member     = google_service_account.github_deployer.member
 }
 
-# Project-wide rather than on the one service: `gcloud run deploy` also reads
-# project-level Cloud Run state while rolling out, and a deploy that fails on
-# permissions is hard to diagnose from CI. The project holds nothing but this
-# API, so the wider grant reaches nothing else.
-resource "google_project_iam_member" "deployer_deploy" {
-  project = var.project_id
-  role    = "roles/run.developer"
-  member  = google_service_account.github_deployer.member
+# On the one service rather than the project: the project (job-finder-503217)
+# is not dedicated to this API, and a deploy only needs to update this
+# service.
+resource "google_cloud_run_v2_service_iam_member" "deployer_deploy" {
+  location = google_cloud_run_v2_service.api.location
+  name     = google_cloud_run_v2_service.api.name
+  role     = "roles/run.developer"
+  member   = google_service_account.github_deployer.member
 }
 
 resource "google_service_account_iam_member" "deployer_acts_as_runtime" {

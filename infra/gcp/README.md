@@ -18,17 +18,19 @@ Terraform for everything `apps/api` needs on Google Cloud (JEF-335). `apps/web` 
 
 ## First-time setup
 
-You need `gcloud`, Terraform ≥ 1.9, Docker, and owner access to a billing account. Run everything from `infra/gcp/`.
+You need `gcloud`, Terraform ≥ 1.9, Docker, and owner access to the project and its billing account. Run everything from `infra/gcp/`.
+
+The API goes into the existing **trakwyn** project, ID `job-finder-503217`. gcloud does not start under Python 3.13+; point it at an older interpreter first (`export CLOUDSDK_PYTHON=/usr/bin/python3`).
 
 ### 1. Bootstrap (by hand, once)
 
 ```bash
-export PROJECT_ID=trakwyn-prod           # globally unique
+export PROJECT_ID=job-finder-503217
 export REGION=europe-west1
 
-gcloud projects create "$PROJECT_ID"
-gcloud billing projects link "$PROJECT_ID" --billing-account=<BILLING_ACCOUNT_ID>
+gcloud auth login
 gcloud config set project "$PROJECT_ID"
+gcloud billing projects describe "$PROJECT_ID" --format="value(billingEnabled)"   # must print True
 
 # Budget alert: emails billing admins at 50/90/100% of £20 a month. The
 # currency must match the billing account's own.
@@ -44,6 +46,17 @@ gcloud storage buckets update "gs://$PROJECT_ID-tfstate" --versioning
 ```
 
 Verify ownership of `trakwyn.com` for the account that will run Terraform, in [Google Search Console](https://search.google.com/search-console). The domain mapping fails without it.
+
+The project isn't new, so check that nothing already uses a name this configuration creates. A clash fails the apply; import the existing resource or rename the new one before going on. An error saying an API is not enabled means nothing of that kind exists yet.
+
+```bash
+gcloud iam service-accounts list --format="value(email)"                  # trakwyn-api@, github-deployer@
+gcloud iam workload-identity-pools list --location=global --format="value(name)"   # .../github
+gcloud artifacts repositories list --location="$REGION" --format="value(name)"     # trakwyn
+gcloud secrets list --format="value(name)"                                # jwt-secret, cron-secret, ...
+gcloud run services list --region="$REGION" --format="value(metadata.name)"        # trakwyn-api
+gcloud scheduler jobs list --location="$REGION" --format="value(name)"             # trakwyn-api-*
+```
 
 ### 2. Configure and create the repository and secret containers
 
@@ -126,7 +139,7 @@ curl -fsS "$URL/health"
 curl -fsS -X POST "$URL/graphql" -H 'content-type: application/json' -d '{"query":"{ __typename }"}'
 ```
 
-Also check `/mcp` with an API token, and send a chat message to confirm the SSE stream. Cookie login can't be checked here: the cookies are scoped to `.trakwyn.com`.
+Also check `/mcp` with an API token. Cookie login and chat can't be checked here, because the cookies are scoped to `.trakwyn.com`; those checks come at cutover.
 
 ### 8. Cut over
 
@@ -139,7 +152,7 @@ Also check `/mcp` with an API token, and send a chat message to confirm the SSE 
    done
    ```
    This sends the day's digest and reminder emails early. Do it after 09:00 UTC, when they have already gone out for the day, or skip the first two.
-4. From `https://www.trakwyn.com`, check password login, TOTP, Google and GitHub sign-in, and a document upload.
+4. From `https://www.trakwyn.com`, check password login, TOTP, Google and GitHub sign-in, that a chat reply streams in, and a document upload.
 5. Check that traces, logs and metrics arrive in Axiom.
 6. Remove the Vercel API project.
 
