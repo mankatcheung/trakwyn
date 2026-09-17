@@ -3,6 +3,8 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
@@ -31,33 +33,59 @@ export const isObservabilityEnabled = Boolean(
 
 let sdk: NodeSDK | undefined;
 let spanProcessor: BatchSpanProcessor | undefined;
+let logProcessor: BatchLogRecordProcessor | undefined;
 let metricReader: PeriodicExportingMetricReader | undefined;
 
 /**
- * Awaitably flushes all buffered spans and metrics to their Axiom exporters.
+ * Awaitably flushes all buffered spans, log records and metrics to their Axiom
+ * exporters.
  *
- * Vercel freezes the serverless function shortly after the HTTP response is
- * sent, so a `BatchSpanProcessor` relying on its own ~5s export timer (or the
- * default 60s metric collection interval) almost never gets to export before
- * the process is frozen. This is the primary export path: it's awaited in a
- * Fastify `onResponse` hook in buildApp(), which runs after each response is
- * written to the client but while the invocation is still alive. Combined with
- * the near-0 scheduled delay on the span processor, no buffered telemetry
- * survives a freeze. No-ops when the SDK never started.
+ * Cloud Run's request-based billing throttles an instance's CPU to near zero
+ * as soon as it has no request in flight, so a batch processor relying on its
+ * own export timer (or the default 60s metric collection interval) may not
+ * get to run until the next request arrives — or ever, if the instance scales
+ * to zero first. This is the primary export path: it's awaited in a Fastify
+ * `onResponse` hook in buildApp(), which runs after each response is written
+ * to the client but while the request still counts as in flight. Combined
+ * with the near-0 scheduled delay on the span and log processors, telemetry
+ * leaves the instance while it still has CPU. No-ops when the SDK never
+ * started.
  */
 export async function flushObservability(): Promise<void> {
   if (!sdk) return;
 
   try {
-    await Promise.all([spanProcessor?.forceFlush(), metricReader?.forceFlush()]);
+    await Promise.all([
+      spanProcessor?.forceFlush(),
+      logProcessor?.forceFlush(),
+      metricReader?.forceFlush(),
+    ]);
   } catch (err: unknown) {
     console.error('[observability] flush error', err);
   }
 }
 
 /**
- * Starts the OpenTelemetry SDK, exporting traces (and, when configured,
- * metrics) to Axiom via OTLP. No-ops when AXIOM_TOKEN/AXIOM_DATASET aren't
+ * Shuts the SDK down, which flushes and closes every pipeline. Called once by
+ * the entrypoint's SIGTERM/SIGINT handler (see gracefulShutdown.ts) after the
+ * server has stopped taking requests, so the last requests' telemetry is
+ * included. Never rejects: the process is exiting either way. No-ops when the
+ * SDK never started.
+ */
+export async function shutdownObservability(): Promise<void> {
+  if (!sdk) return;
+
+  try {
+    await sdk.shutdown();
+  } catch (err: unknown) {
+    console.error('[observability] shutdown error', err);
+  }
+}
+
+/**
+ * Starts the OpenTelemetry SDK, exporting traces and logs (and, when
+ * configured, metrics) to Axiom via OTLP. Logs reach the SDK through the
+ * pino destination in otelLogDestination.ts. No-ops when AXIOM_TOKEN/AXIOM_DATASET aren't
  * set, so local dev works unchanged without Axiom credentials.
  *
  * Must be called before any instrumented module (http, fastify, etc.) is
@@ -87,9 +115,19 @@ export function startObservability(): void {
   // Constructed explicitly (instead of letting NodeSDK build one from
   // `traceExporter`) so we hold the instance and can forceFlush() it from
   // flushObservability(). The near-0 scheduled delay is defense-in-depth for
-  // the serverless freeze window — see flushObservability()'s doc.
+  // the CPU-throttling window — see flushObservability()'s doc.
   spanProcessor = new BatchSpanProcessor({
     exporter: traceExporter,
+    scheduledDelayMillis: 0,
+  });
+
+  // Logs share the Events-type dataset with traces, so Axiom can correlate a
+  // log line with the span it was written under.
+  logProcessor = new BatchLogRecordProcessor({
+    exporter: new OTLPLogExporter({
+      url: `${AXIOM.API_URL}${AXIOM.LOGS_PATH}`,
+      headers: { ...authHeader, [AXIOM.DATASET_HEADER]: dataset },
+    }),
     scheduledDelayMillis: 0,
   });
 
@@ -108,6 +146,7 @@ export function startObservability(): void {
       [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: process.env[ENV.NODE_ENV] ?? 'development',
     }),
     spanProcessors: [spanProcessor],
+    logRecordProcessors: [logProcessor],
     metricReaders: metricReader ? [metricReader] : [],
     instrumentations: [
       getNodeAutoInstrumentations({
@@ -126,12 +165,6 @@ export function startObservability(): void {
       '[observability] AXIOM_METRICS_DATASET not set — metrics export is disabled (traces and logs are still active).',
     );
   }
-
-  const shutdown = () => {
-    sdk?.shutdown().catch((err: unknown) => console.error('[observability] shutdown error', err));
-  };
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
 
   console.info(`[observability] Axiom tracing enabled${metricsDataset ? ' with metrics' : ''}.`);
 }

@@ -6,7 +6,8 @@ import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
 
 /**
  * Removes applications that have served their thirty days in Trash. Driven by
- * Vercel Cron, alongside the digest and reminder routes it is modelled on.
+ * Cloud Scheduler (infra/gcp/scheduler.tf), alongside the digest and reminder
+ * routes it is modelled on.
  *
  * Reports the failure count rather than swallowing it: the use case keeps going
  * past a failure so one unreachable blob cannot strand everything behind it,

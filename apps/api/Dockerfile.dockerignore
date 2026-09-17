@@ -1,0 +1,33 @@
+# BuildKit reads <Dockerfile>.dockerignore for this build; the context is the
+# repo root, so everything the API image doesn't need is excluded here.
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/.env
+**/.env.*
+**/*.db
+**/*.db-*
+**/*.db.*
+.git
+.github
+.claude
+.design
+.design-sync
+graphify-out
+docs
+infra
+apps/api/uploads
+apps/api/src/__tests__
+# Other workspace projects: only their manifests are needed (for the
+# frozen-lockfile check), not their sources.
+apps/cli/*
+!apps/cli/package.json
+apps/extension/*
+!apps/extension/package.json
+apps/mobile/*
+!apps/mobile/package.json
+apps/web/*
+!apps/web/package.json
+packages/ui/*
+!packages/ui/package.json

@@ -19,7 +19,7 @@ interface Deps {
 /**
  * Redis-backed IRateLimiter, shared across every serverless instance
  * (JEF-160). The in-memory `RateLimiter`'s buckets reset per-instance and
- * per-cold-start, so under Vercel's normal horizontal scaling the effective
+ * per-cold-start, so under Cloud Run's normal horizontal scaling the effective
  * limit becomes `maxAttempts × (warm instance count)`, not `maxAttempts` —
  * the same coherence bug `MemoryCache` had before JEF-127, except here it
  * means the rate limit doesn't actually limit anything.

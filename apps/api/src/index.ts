@@ -4,31 +4,40 @@
 // as they go — dotenv/config's side effect has to run before any of that.
 import 'dotenv/config';
 import Fastify from 'fastify';
+import { logs } from '@opentelemetry/api-logs';
 import { buildApp } from '#src/http/buildApp.js';
-import { startObservability } from '#src/infrastructure/observability/tracing.js';
-import { ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
+import { SHUTDOWN } from '#src/http/constants.js';
+import { createShutdownHandler } from '#src/http/gracefulShutdown.js';
+import {
+  shutdownObservability,
+  startObservability,
+} from '#src/infrastructure/observability/tracing.js';
+import { createOtelLogDestination } from '#src/infrastructure/observability/otelLogDestination.js';
+import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 
 startObservability();
 
-// Constructed here, not inside buildApp(), so this file keeps a literal
-// `import fastify` + constructor call — Vercel's zero-config Fastify build
-// detection scans the entrypoint for exactly that to know how to wrap the
-// serverless function; buildApp() takes the instance as a parameter instead
-// of constructing its own (see buildApp.ts's own comment for the failure
-// this avoids).
 const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
 
 const fastify = Fastify({
-  logger: {
-    level: isProduction ? 'warn' : 'info',
-    // Raw NDJSON is what Axiom's OTel ingestion expects in production, but
-    // it's unreadable in a dev terminal — every request/error is one dense
-    // JSON line with no color and no formatted stack trace, so a genuine
-    // error is easy to miss scrolling past. pino-pretty only reformats for
-    // the local stream; nothing about what gets logged changes.
-    transport: isProduction
-      ? undefined
-      : {
+  logger: isProduction
+    ? {
+        level: 'warn',
+        // Raw NDJSON on stdout (which Cloud Logging collects) and the same
+        // lines as OTel log records for Axiom — see otelLogDestination.ts.
+        stream: createOtelLogDestination({
+          stdout: process.stdout,
+          logger: logs.getLogger(AXIOM.SERVICE_NAME),
+        }),
+      }
+    : {
+        level: 'info',
+        // Raw NDJSON is unreadable in a dev terminal — every request/error is
+        // one dense JSON line with no color and no formatted stack trace, so a
+        // genuine error is easy to miss scrolling past. pino-pretty only
+        // reformats for the local stream; nothing about what gets logged
+        // changes.
+        transport: {
           target: 'pino-pretty',
           options: {
             colorize: true,
@@ -36,34 +45,39 @@ const fastify = Fastify({
             ignore: 'pid,hostname',
           },
         },
-  },
-  // Vercel's edge terminates TLS and forwards to this function over what
-  // Node sees as a plain connection, setting X-Forwarded-Proto/-Host to
-  // record the original request. Without trustProxy, Fastify's
-  // request.protocol ignores those and falls back to the raw socket's
-  // encryption state — always 'http' here — so oauth.routes.ts's
-  // callbackUrl() built redirect_uri as http://api.trakwyn.com/... instead
-  // of https://..., which GitHub/Google reject outright ("redirect_uri is
-  // not associated with this application") since it must match the
-  // registered callback URL exactly, scheme included.
+      },
+  // Cloud Run's front end terminates TLS and forwards to this container over
+  // what Node sees as a plain connection, setting X-Forwarded-Proto to record
+  // the original request. Without trustProxy, Fastify's request.protocol
+  // ignores it and falls back to the raw socket's encryption state — always
+  // 'http' here — so oauth.routes.ts's callbackUrl() would build redirect_uri
+  // as http://api.trakwyn.com/... instead of https://..., which GitHub/Google
+  // reject outright ("redirect_uri is not associated with this application")
+  // since it must match the registered callback URL exactly, scheme included.
   trustProxy: true,
 });
 
 await buildApp(fastify);
 
+const shutdown = createShutdownHandler({
+  closeServer: () => fastify.close(),
+  shutdownTelemetry: shutdownObservability,
+  exit: (code) => process.exit(code),
+  logError: (err) => fastify.log.error(err),
+  closeTimeoutMs: SHUTDOWN.SERVER_CLOSE_TIMEOUT_MS,
+});
+process.once('SIGTERM', shutdown);
+process.once('SIGINT', shutdown);
+
+// Cloud Run injects PORT (8080); 3001 is the local default.
 const port = Number(process.env[ENV.PORT] ?? 3001);
 
-// Callback form, deliberately NOT `await`ed. Vercel's launcher imports this
-// module and intercepts `listen()` to capture the server rather than truly
-// binding it, so Fastify's ready callback never fires under that runtime.
-// Awaiting it at the top level leaves the module permanently unresolved and
-// every request hangs with no response on any path. This matches Vercel's
-// documented Fastify entrypoint, which calls `listen()` as a bare statement.
-fastify.listen({ port, host: '0.0.0.0' }, (err) => {
-  if (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
+try {
+  await fastify.listen({ port, host: '0.0.0.0' });
   console.log(`API server listening on http://localhost:${port}`);
   console.log(`GraphiQL available at http://localhost:${port}/graphiql`);
-});
+} catch (err) {
+  fastify.log.error(err);
+  await shutdownObservability();
+  process.exit(1);
+}

@@ -2,7 +2,8 @@ name: CI & Deploy
 
 # Consolidated workflow: CI runs for every PR and push to main. On push to
 # main, deploy-api and deploy-web run only after quality, build-test, and
-# e2e all pass.
+# e2e all pass. apps/api deploys to Google Cloud Run (infra/gcp/, JEF-335);
+# apps/web deploys to Vercel.
 #
 # Why three files became one:
 #   - Removed duplicate test gates (CI tests once, deploy reuses result)
@@ -16,21 +17,23 @@ name: CI & Deploy
 # it fast, and the simplicity gain is worth it.
 #
 # One-time setup required before this workflow can deploy:
-#   1. Create a Vercel project for each app (from repo root, run `vercel link`
-#      for apps/api and apps/web separately). Do NOT connect either to this
-#      GitHub repo in the Vercel dashboard (Settings -> Git) — leaving it
-#      disconnected stops Vercel's own integration from also deploying.
-#   2. In each project's Settings -> Build & Deployment -> Root Directory,
-#      set it to the app's directory (apps/api or apps/web).
+#   1. apps/api: follow infra/gcp/README.md (bootstrap, secrets, terraform
+#      apply). Then add repository *variables* (Settings > Secrets and
+#      variables > Actions > Variables) from its terraform outputs:
+#      GCP_PROJECT_ID, GCP_WIF_PROVIDER (workload_identity_provider),
+#      GCP_DEPLOYER_SA (deployer_service_account). No GCP key is stored:
+#      deploy-api authenticates through Workload Identity Federation, which
+#      only accepts workflows running on this repository's main branch.
+#   2. apps/web: create a Vercel project (from repo root, `vercel link` in
+#      apps/web). Do NOT connect it to this GitHub repo in the Vercel
+#      dashboard (Settings -> Git) — leaving it disconnected stops Vercel's
+#      own integration from also deploying. Set its Root Directory to
+#      apps/web and its production env vars in the Vercel dashboard.
 #   3. `vercel link` writes .vercel/project.json (gitignored) containing
 #      orgId/projectId — copy those into the repo secrets below.
-#   4. Attach a Blob store to the api project (Storage tab) — this sets
-#      BLOB_READ_WRITE_TOKEN automatically.
-#   5. Set each project's production env vars in the Vercel dashboard.
-#   6. Create a Vercel access token (https://vercel.com/account/tokens) and
-#      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_API_PROJECT_ID,
-#      VERCEL_WEB_PROJECT_ID.
-#   7. Add repository secrets (in GitHub Settings > Secrets > Actions):
+#   4. Create a Vercel access token (https://vercel.com/account/tokens) and
+#      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_WEB_PROJECT_ID.
+#   5. Add repository secrets (in GitHub Settings > Secrets > Actions):
 #      PRODUCTION_DATABASE_URL — the libsql:// URL for your production Turso DB
 #      PRODUCTION_DATABASE_AUTH_TOKEN — the auth token for the production Turso DB
 #      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
@@ -43,6 +46,7 @@ on:
       - 'apps/api/**'
       - 'apps/web/**'
       - 'packages/**'
+      - 'infra/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/ci.yml'
@@ -91,6 +95,61 @@ jobs:
 
       - run: pnpm build
       - run: pnpm test
+
+  terraform:
+    name: Terraform fmt & validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/gcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.3
+
+      - run: terraform fmt -check -recursive
+      # No backend and no credentials: validate checks the configuration
+      # against the provider schema only. `plan` needs GCP access, which
+      # Workload Identity Federation grants to main-branch workflows alone,
+      # so it is run by hand (infra/gcp/README.md).
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  api-image:
+    name: API image builds
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect API changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git diff --quiet "origin/${BASE_REF}...HEAD" -- apps/api package.json pnpm-lock.yaml pnpm-workspace.yaml; then
+            echo "api=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "api=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.changes.outputs.api == 'true'
+
+      # Build only, so a Dockerfile or dependency change that breaks the image
+      # fails on the PR rather than in deploy-api after merge.
+      - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.api == 'true'
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha,scope=api-image
+          cache-to: type=gha,mode=max,scope=api-image
 
   e2e:
     name: Playwright E2E
@@ -173,20 +232,55 @@ jobs:
         run: pnpm --filter @trakwyn/api db:migrate:apply
 
   deploy-api:
-    name: Deploy api to Vercel
+    name: Deploy api to Cloud Run
     needs: [quality, build-test, migrate-db, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets google-github-actions/auth request the GitHub OIDC token it
+      # exchanges for short-lived GCP credentials.
+      id-token: write
+    env:
+      REGION: europe-west1
+      REGISTRY: europe-west1-docker.pkg.dev
+      IMAGE: europe-west1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/trakwyn/api:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-project
-
-      - uses: ./.github/actions/vercel-deploy-production
+      - id: auth
+        uses: google-github-actions/auth@v2
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_API_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+          token_format: access_token
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha,scope=api-image
+          cache-to: type=gha,mode=max,scope=api-image
+
+      # Changes the image only; every other setting stays as infra/gcp
+      # declares it. skip_default_labels keeps the action's labels off the
+      # service, which Terraform would otherwise report as drift.
+      - uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: trakwyn-api
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE }}
+          skip_default_labels: true
 
   deploy-web:
     name: Deploy web to Vercel
