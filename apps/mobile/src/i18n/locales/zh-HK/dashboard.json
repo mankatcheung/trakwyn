@@ -31,5 +31,14 @@
     "title": "分析",
     "responseRate": "回覆率 {{rate}}%",
     "viewAnalytics": "查看分析"
+  },
+  "onboardingChecklist": {
+    "title": "開始使用 Trakwyn",
+    "description": "幾個簡單步驟,充分利用 Trakwyn。",
+    "dismiss": "關閉清單",
+    "createApplication": "新增你嘅第一個求職申請",
+    "connectMcp": "生成 API 權杖以連接 MCP",
+    "addAiKey": "新增 AI 供應商嘅 API 金鑰",
+    "addExperience": "新增你嘅工作經驗同技能"
   }
 }

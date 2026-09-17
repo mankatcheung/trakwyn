@@ -53,6 +53,10 @@ export const user = sqliteTable('User', {
   backupEmail: text('backupEmail'),
   /** When the backup email was verified; null until verification completes. */
   backupEmailVerifiedAt: integer('backupEmailVerifiedAt', { mode: 'timestamp_ms' }),
+  /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
+  onboardingChecklistDismissedAt: integer('onboardingChecklistDismissedAt', {
+    mode: 'timestamp_ms',
+  }),
   createdAt: integer('createdAt', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),

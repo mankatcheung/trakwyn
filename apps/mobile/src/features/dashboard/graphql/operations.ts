@@ -28,3 +28,26 @@ export const WEEKLY_APPLICATION_GOAL_QUERY = `
     }
   }
 `;
+
+export const ONBOARDING_CHECKLIST_QUERY = `
+  query OnboardingChecklist {
+    me {
+      onboardingChecklistDismissedAt
+    }
+    apiTokens {
+      id
+    }
+    llmApiKeys {
+      provider
+    }
+    workExperiences {
+      id
+    }
+  }
+`;
+
+export const DISMISS_ONBOARDING_CHECKLIST_MUTATION = `
+  mutation DismissOnboardingChecklist {
+    dismissOnboardingChecklist
+  }
+`;

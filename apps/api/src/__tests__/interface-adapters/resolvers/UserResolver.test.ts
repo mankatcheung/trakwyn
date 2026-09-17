@@ -19,6 +19,7 @@ import type { IGetLlmUsageSummaryUseCase } from '#src/use-cases/user/IGetLlmUsag
 import type { IImportUserDataUseCase } from '#src/use-cases/user/IImportUserDataUseCase.js';
 import type { IGetNotificationPreferencesUseCase } from '#src/use-cases/user/IGetNotificationPreferencesUseCase.js';
 import type { IUpdateNotificationPreferencesUseCase } from '#src/use-cases/user/IUpdateNotificationPreferencesUseCase.js';
+import type { IDismissOnboardingChecklistUseCase } from '#src/use-cases/user/IDismissOnboardingChecklistUseCase.js';
 import type { IUpdateProfileUseCase } from '#src/use-cases/user/IUpdateProfileUseCase.js';
 import type { IGetUserUseCase } from '#src/use-cases/user/IGetUserUseCase.js';
 import type { IRequestAvatarUploadUrlUseCase } from '#src/use-cases/user/IRequestAvatarUploadUrlUseCase.js';
@@ -84,6 +85,9 @@ const makeDeps = (overrides?: object) => ({
     execute: vi.fn(),
   }),
   updateNotificationPreferencesUseCase: stub<IUpdateNotificationPreferencesUseCase>({
+    execute: vi.fn().mockResolvedValue(undefined),
+  }),
+  dismissOnboardingChecklistUseCase: stub<IDismissOnboardingChecklistUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   updateProfileUseCase: stub<IUpdateProfileUseCase>({
@@ -584,6 +588,16 @@ describe('UserResolver', () => {
         weeklyDigestEnabled: false,
         followUpRemindersEnabled: true,
       });
+    });
+  });
+
+  describe('dismissOnboardingChecklist', () => {
+    it('delegates to dismissOnboardingChecklistUseCase', async () => {
+      const deps = makeDeps();
+
+      await new UserResolver(deps).dismissOnboardingChecklist('user-1');
+
+      expect(deps.dismissOnboardingChecklistUseCase.execute).toHaveBeenCalledWith('user-1');
     });
   });
 
