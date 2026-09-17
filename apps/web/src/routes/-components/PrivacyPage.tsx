@@ -1,8 +1,8 @@
 import { LegalPageLayout } from '#/components/LegalPageLayout';
+import { CONTACT_EMAIL } from '#/constants';
 import { useLocale } from '#/lib/i18n';
 
 const LAST_UPDATED = 'August 22, 2026';
-const CONTACT_EMAIL = 'privacy@trakwyn.com';
 
 /**
  * Drafted from what the app actually collects and does, per JEF-202 — not

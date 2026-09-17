@@ -160,7 +160,7 @@ export const METRICS = {
 /** Email provider (Brevo) defaults. */
 export const EMAIL = {
   BREVO_API_URL: 'https://api.brevo.com/v3/smtp/email',
-  DEFAULT_FROM_EMAIL: 'noreply@trakwyn.app',
+  DEFAULT_FROM_EMAIL: 'noreply@trakwyn.com',
   DEFAULT_FROM_NAME: 'Trakwyn',
 } as const;
 
