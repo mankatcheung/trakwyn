@@ -74,7 +74,17 @@ The targeted apply comes first because the full apply needs two things that don'
 
 ### 3. Secrets
 
-Add a version to every secret. Secret IDs are the env var names in lower-kebab-case:
+Every secret needs a version before Cloud Run will start a revision. The production values already live in the API's production env file, so load them from it rather than by hand. Pull a current copy first — the Vercel dashboard is the source of truth, not whatever file is on disk:
+
+```bash
+cd apps/api && vercel env pull .env.production --environment=production && cd -
+./load-secrets.sh ../../apps/api/.env.production            # dry run: what it would upload
+./load-secrets.sh ../../apps/api/.env.production --apply    # upload
+```
+
+The dry run never prints a value. It reports anything missing or left as a placeholder, and exits non-zero until every secret has one. Two are **not** in that file and have to come from their own dashboards: `UPSTASH_REDIS_REST_TOKEN` (Upstash) and `BLOB_PUBLIC_READ_WRITE_TOKEN` (the Vercel Blob store's public-access token — note the app ignores `BLOB_READ_WRITE_TOKEN`, which is the one the file carries). `UPSTASH_REDIS_REST_URL` is not secret and belongs in `terraform.tfvars`.
+
+Secret IDs are the env var names in lower-kebab-case:
 
 | Secret ID                      | Value                                                                    |
 | ------------------------------ | ------------------------------------------------------------------------ |
@@ -92,6 +102,8 @@ Add a version to every secret. Secret IDs are the env var names in lower-kebab-c
 | `github-oauth-client-secret`   | GitHub OAuth app secret                                                  |
 | `vapid-private-key`            | copy from the current production config, or push subscriptions break     |
 | `axiom-token`                  | Axiom ingest token                                                       |
+
+To set one by hand instead:
 
 ```bash
 printf '%s' "<value>" | gcloud secrets versions add jwt-secret --data-file=-
