@@ -156,6 +156,25 @@ describe('refresh token deduplication', () => {
     expect(mockLocationHref).toHaveBeenCalledWith('/login');
   });
 
+  it.each(['/login', '/register'])(
+    'stays put when the dead session is discovered on %s',
+    async (pathname) => {
+      fetchSpy.mockResolvedValue(
+        new Response(JSON.stringify({ data: { refreshToken: null } }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      stubWindowLocation({ pathname });
+      const { gqlClient } = await import('#/graphql/client');
+      const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+        .responseMiddleware;
+
+      await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+      expect(mockLocationHref).not.toHaveBeenCalled();
+    },
+  );
+
   it('does not refresh when response has no UNAUTHORIZED error', async () => {
     const { gqlClient } = await import('#/graphql/client');
     const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })

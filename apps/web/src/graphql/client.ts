@@ -111,11 +111,21 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
       await queryClient.invalidateQueries();
     } else {
       queryClient.clear();
+      const { pathname, search, hash } = window.location;
+
+      // Already on an auth page — a late UNAUTHORIZED (a query left over from
+      // the session that just ended, say after deleting the account) would
+      // otherwise hard-reload the page the user is already on, discarding
+      // whatever they have typed into the sign-in form. Worse, assigning
+      // `location.href` while the browser is navigating aborts that
+      // navigation, which is how this surfaced: an E2E run leaving /login for
+      // /dashboard died with ERR_ABORTED.
+      if (pathname === '/login' || pathname === '/register') return;
+
       // The session died mid-app. Carry the current URL to /login so signing
       // in lands the user back where they were (JEF-233); the marketing root
       // isn't a destination worth returning to, and environments without a
       // readable location (tests) just get plain /login.
-      const { pathname, search, hash } = window.location;
       const intended =
         typeof pathname === 'string' && pathname !== '/' ? `${pathname}${search}${hash}` : '';
       window.location.href = intended
