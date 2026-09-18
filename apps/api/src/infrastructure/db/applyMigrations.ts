@@ -68,6 +68,11 @@ function readStatements(
  * tracking row — the next run starts from the same clean state. (The libSQL
  * version of this runner needed drift-tolerant skips for exactly the
  * half-applied states that this rules out.)
+ *
+ * The cost: a migration may not contain a statement Postgres refuses inside a
+ * transaction — `CREATE INDEX CONCURRENTLY`, `ALTER TYPE … ADD VALUE` used in
+ * the same run, `VACUUM`. Nothing generated today does; one that needs to must
+ * change this runner first, or it fails on every deploy.
  */
 export async function applyMigrations(
   db: DrizzleDb,

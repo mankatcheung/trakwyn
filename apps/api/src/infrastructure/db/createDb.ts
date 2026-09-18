@@ -30,6 +30,12 @@ export interface DbHandle {
  * numbers. PGlite already returns `int8` as a number, so this makes the two
  * drivers agree.
  *
+ * It is process-wide and not limited to aggregates: every `bigint` column
+ * (salaries, `monthlyTokenLimit` — declared `mode: 'number'` anyway) and any
+ * raw query returning `int8` is parsed through it. A future column that can
+ * exceed 2^53 (e.g. money in minor units at scale) must not rely on it —
+ * declare it `mode: 'bigint'` and cast in SQL, or it loses precision silently.
+ *
  * `numeric` (`avg()`, `sum()` over a `bigint`) is deliberately left a string
  * on both: drizzle's PGlite session replaces any parser for it on every query,
  * so parsing it here would make production and the tests disagree. Nothing
