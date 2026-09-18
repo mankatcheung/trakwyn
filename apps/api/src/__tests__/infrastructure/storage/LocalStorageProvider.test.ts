@@ -5,10 +5,23 @@ vi.mock('fs', () => ({
   promises: {
     mkdir: vi.fn().mockResolvedValue(undefined),
     unlink: vi.fn().mockResolvedValue(undefined),
+    stat: vi.fn(),
   },
+  createReadStream: vi.fn(),
 }));
 
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream, type Stats } from 'fs';
+import { join } from 'path';
+
+const UPLOAD_DIR = join(process.cwd(), 'uploads');
+
+function fileStats(size: number): Stats {
+  return { isFile: () => true, size } as Stats;
+}
+
+function errnoError(code: string): NodeJS.ErrnoException {
+  return Object.assign(new Error(code), { code });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -98,6 +111,87 @@ describe('LocalStorageProvider', () => {
 
       await expect(provider.deleteMany(['gone.pdf', 'here.pdf'])).resolves.toBeUndefined();
       expect(fs.unlink).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('resolveKeyPath', () => {
+    it('maps a key to a path inside the upload dir', () => {
+      const provider = new LocalStorageProvider();
+
+      expect(provider.resolveKeyPath('documents/app-1/doc-1.pdf')).toBe(
+        join(UPLOAD_DIR, 'documents/app-1/doc-1.pdf'),
+      );
+    });
+
+    it.each([
+      ['a parent-directory segment', '../secret.txt'],
+      ['a nested parent-directory segment', 'users/u1/../../../etc/passwd'],
+      ['a backslash traversal', 'users\\..\\..\\secret.txt'],
+      ['an absolute path', '/etc/passwd'],
+      ['a NUL byte', 'users/u1/file.pdf\0.txt'],
+      ['an empty key', ''],
+      ['the upload dir itself', '.'],
+    ])('rejects %s', (_label, key) => {
+      const provider = new LocalStorageProvider();
+
+      expect(provider.resolveKeyPath(key)).toBeNull();
+    });
+  });
+
+  describe('openObject', () => {
+    it('returns a stream, size and content type for a stored file', async () => {
+      const stream = { fake: 'stream' };
+      vi.mocked(fs.stat).mockResolvedValueOnce(fileStats(42));
+      vi.mocked(createReadStream).mockReturnValueOnce(stream as never);
+      const provider = new LocalStorageProvider();
+
+      const object = await provider.openObject('documents/app-1/doc-1.pdf');
+
+      expect(object).toEqual({ stream, size: 42, contentType: 'application/pdf' });
+      expect(createReadStream).toHaveBeenCalledWith(join(UPLOAD_DIR, 'documents/app-1/doc-1.pdf'));
+    });
+
+    it.each([
+      ['report.DOCX', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+      ['notes.txt', 'text/plain; charset=utf-8'],
+      ['archive.zip', 'application/octet-stream'],
+      ['no-extension', 'application/octet-stream'],
+    ])('derives the content type of %s from its extension', async (name, contentType) => {
+      vi.mocked(fs.stat).mockResolvedValueOnce(fileStats(1));
+      const provider = new LocalStorageProvider();
+
+      const object = await provider.openObject(`users/u1/applications/a1/${name}`);
+
+      expect(object?.contentType).toBe(contentType);
+    });
+
+    it('returns null without touching the filesystem for an invalid key', async () => {
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.openObject('../secret.txt')).resolves.toBeNull();
+      expect(fs.stat).not.toHaveBeenCalled();
+    });
+
+    it('returns null when no file exists at the key', async () => {
+      vi.mocked(fs.stat).mockRejectedValueOnce(errnoError('ENOENT'));
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.openObject('users/u1/missing.pdf')).resolves.toBeNull();
+      expect(createReadStream).not.toHaveBeenCalled();
+    });
+
+    it('returns null when the key names a directory', async () => {
+      vi.mocked(fs.stat).mockResolvedValueOnce({ isFile: () => false, size: 0 } as Stats);
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.openObject('users/u1')).resolves.toBeNull();
+    });
+
+    it('rethrows a filesystem error other than a missing file', async () => {
+      vi.mocked(fs.stat).mockRejectedValueOnce(errnoError('EACCES'));
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.openObject('users/u1/locked.pdf')).rejects.toThrow('EACCES');
     });
   });
 });
