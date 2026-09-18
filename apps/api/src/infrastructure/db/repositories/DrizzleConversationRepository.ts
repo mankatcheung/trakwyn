@@ -44,9 +44,10 @@ export class DrizzleConversationRepository implements IConversationRepository {
     // the literal string, not every title containing "50" plus anything
     // ending in a digit.
     const pattern = `%${searchTerm.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
-    // Drizzle's like() helper has no escape-char parameter, so the ESCAPE
-    // clause that makes those escapes meaningful is spelled out here.
-    const titleMatch = sql`${conversation.title} LIKE ${pattern} ESCAPE '\\'`;
+    // Drizzle's ilike() helper has no escape-char parameter, so the ESCAPE
+    // clause that makes those escapes meaningful is spelled out here. ILIKE
+    // keeps the search case-insensitive, as SQLite's LIKE was.
+    const titleMatch = sql`${conversation.title} ILIKE ${pattern} ESCAPE '\\'`;
     const contentMatch = exists(
       this.db
         .select({ one: sql`1` })
@@ -54,7 +55,7 @@ export class DrizzleConversationRepository implements IConversationRepository {
         .where(
           and(
             eq(message.conversationId, conversation.id),
-            sql`${message.content} LIKE ${pattern} ESCAPE '\\'`,
+            sql`${message.content} ILIKE ${pattern} ESCAPE '\\'`,
           ),
         ),
     );

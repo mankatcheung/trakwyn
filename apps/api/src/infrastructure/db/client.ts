@@ -1,33 +1,14 @@
-import { createClient, type ResultSet } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
-import type { ExtractTablesWithRelations } from 'drizzle-orm';
-import type { SQLiteTransaction } from 'drizzle-orm/sqlite-core';
 import { ENV } from '#src/infrastructure/config/constants.js';
-import * as schema from './schema.js';
+import { createDb } from './createDb.js';
 
-const client = createClient({
-  url: process.env[ENV.DATABASE_URL]!,
-  authToken: process.env[ENV.DATABASE_AUTH_TOKEN] ?? undefined,
-});
+export type { DrizzleDb, DrizzleTransaction, DrizzleClient } from './createDb.js';
 
-// libsql does not enforce foreign keys by default; ON DELETE CASCADE in the
-// schema silently no-ops without this, leaving orphaned rows behind.
-await client.execute('PRAGMA foreign_keys = ON');
-console.log('Database connected');
+const databaseUrl = process.env[ENV.DATABASE_URL];
+if (!databaseUrl) {
+  throw new Error(`${ENV.DATABASE_URL} is not set`);
+}
 
-export const db = drizzle(client, { schema });
-
-export type DrizzleDb = typeof db;
-
-// The object inside a db.transaction() callback is a different (structurally
-// narrower — no .batch()) type than DrizzleDb itself, so repositories that
-// need to work against either the top-level db or an ambient transaction
-// (see transactionContext.ts) are typed against this union rather than
-// DrizzleDb alone.
-export type DrizzleTransaction = SQLiteTransaction<
-  'async',
-  ResultSet,
-  typeof schema,
-  ExtractTablesWithRelations<typeof schema>
->;
-export type DrizzleClient = DrizzleDb | DrizzleTransaction;
+// The process-wide database. Postgres enforces foreign keys unconditionally,
+// so the `PRAGMA foreign_keys = ON` the libSQL client needed is gone — every
+// `ON DELETE CASCADE` in the schema is live on every connection.
+export const { db, close: closeDb } = await createDb(databaseUrl);

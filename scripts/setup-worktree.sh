@@ -40,9 +40,14 @@ for app in api web; do
 
   # DATABASE_URL (and anything else) that embeds an absolute path to the main
   # checkout needs to point at this worktree instead, so each worktree gets
-  # its own SQLite file rather than sharing (and corrupting) one across
-  # branches with different pending migrations.
-  sed "s#$MAIN_ROOT#$WORKTREE_ROOT#g" "$SRC" > "$DEST"
+  # its own database rather than sharing (and corrupting) one across branches
+  # with different pending migrations. A pre-JEF-342 SQLite `file:` URL is
+  # swapped for this worktree's own PGlite directory; the relative
+  # `pglite:./.pglite` default is already per-worktree.
+  sed -e "s#$MAIN_ROOT#$WORKTREE_ROOT#g" \
+      -e 's#^DATABASE_URL=file:.*#DATABASE_URL=pglite:./.pglite#' \
+      -e '/^DATABASE_AUTH_TOKEN=/d' \
+      "$SRC" > "$DEST"
   echo "wrote apps/$app/.env"
 done
 

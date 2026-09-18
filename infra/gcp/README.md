@@ -1,6 +1,6 @@
 # infra/gcp: the API on Google Cloud Run
 
-Terraform for everything `apps/api` needs on Google Cloud (JEF-335). `apps/web` stays on Vercel. Turso, Upstash, Vercel Blob, Brevo and Axiom stay where they are; the API reaches them over the internet exactly as before.
+Terraform for everything `apps/api` needs on Google Cloud (JEF-335). `apps/web` stays on Vercel. The database is Neon Postgres in `aws-eu-central-1` (Frankfurt) since JEF-342; it, Upstash, Vercel Blob, Brevo and Axiom are reached over the internet.
 
 | File                   | What it declares                                                                                      |
 | ---------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -86,22 +86,22 @@ The dry run never prints a value. It reports anything missing or left as a place
 
 Secret IDs are the env var names in lower-kebab-case:
 
-| Secret ID                      | Value                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| `jwt-secret`                   | copy from the current production config, or sessions are invalidated     |
-| `jwt-refresh-secret`           | copy from the current production config                                  |
-| `totp-encryption-key`          | copy from the current production config, or 2FA secrets can't be read    |
-| `llm-api-key-encryption-key`   | copy from the current production config, or users' AI keys can't be read |
-| `database-auth-token`          | Turso production token                                                   |
-| `upstash-redis-rest-token`     | Upstash token                                                            |
-| `blob-public-read-write-token` | Vercel Blob store token                                                  |
-| `brevo-api-key`                | Brevo API key                                                            |
-| `cron-secret`                  | a new random value (`openssl rand -hex 32`)                              |
-| `digest-admin-secret`          | a new random value                                                       |
-| `google-oauth-client-secret`   | Google OAuth client secret                                               |
-| `github-oauth-client-secret`   | GitHub OAuth app secret                                                  |
-| `vapid-private-key`            | copy from the current production config, or push subscriptions break     |
-| `axiom-token`                  | Axiom ingest token                                                       |
+| Secret ID                      | Value                                                                                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `jwt-secret`                   | copy from the current production config, or sessions are invalidated                             |
+| `jwt-refresh-secret`           | copy from the current production config                                                          |
+| `totp-encryption-key`          | copy from the current production config, or 2FA secrets can't be read                            |
+| `llm-api-key-encryption-key`   | copy from the current production config, or users' AI keys can't be read                         |
+| `database-url`                 | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below |
+| `upstash-redis-rest-token`     | Upstash token                                                                                    |
+| `blob-public-read-write-token` | Vercel Blob store token                                                                          |
+| `brevo-api-key`                | Brevo API key                                                                                    |
+| `cron-secret`                  | a new random value (`openssl rand -hex 32`)                                                      |
+| `digest-admin-secret`          | a new random value                                                                               |
+| `google-oauth-client-secret`   | Google OAuth client secret                                                                       |
+| `github-oauth-client-secret`   | GitHub OAuth app secret                                                                          |
+| `vapid-private-key`            | copy from the current production config, or push subscriptions break                             |
+| `axiom-token`                  | Axiom ingest token                                                                               |
 
 To set one by hand instead:
 
@@ -110,6 +110,14 @@ printf '%s' "<value>" | gcloud secrets versions add jwt-secret --data-file=-
 ```
 
 `printf '%s'` rather than `echo`, so no trailing newline becomes part of the secret. To leave a feature unconfigured instead (GitHub sign-in, say), remove its name from `secret_env_vars` in `terraform.tfvars`: Cloud Run refuses to start a revision that references a secret with no version.
+
+**`database-url` is not in the Vercel file.** It is the Neon connection string, which embeds the database password — the reason it is a secret rather than a `terraform.tfvars` value (JEF-342). Use the _pooled_ URL here: every Cloud Run instance keeps its own small `pg` pool, and Neon's pooler multiplexes them all onto the compute. Migrations use the _direct_ URL instead, from CI's `PRODUCTION_DATABASE_URL` secret, because the pooler runs in transaction mode.
+
+```bash
+printf '%s' "$NEON_POOLED_URL" | gcloud secrets versions add database-url --data-file=-
+```
+
+The one-off move of existing data from Turso is `apps/api/scripts/migrate-turso-to-postgres.ts`; its header lists the order to run it in.
 
 ### 4. The first image
 

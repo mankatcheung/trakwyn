@@ -1,7 +1,17 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+  pgTable,
+  text,
+  integer,
+  bigint,
+  boolean,
+  timestamp,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const llmApiKey = sqliteTable(
+export const llmApiKey = pgTable(
   'LlmApiKey',
   {
     id: text('id').primaryKey(),
@@ -22,11 +32,11 @@ export const llmApiKey = sqliteTable(
      * before this column existed. Deliberately not touched by the key
      * upsert, so re-saving an API key keeps the limit already set on it.
      */
-    monthlyTokenLimit: integer('monthlyTokenLimit'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    monthlyTokenLimit: bigint('monthlyTokenLimit', { mode: 'number' }),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -37,7 +47,7 @@ export const llmApiKey = sqliteTable(
   ],
 );
 
-export const llmUsageEvent = sqliteTable(
+export const llmUsageEvent = pgTable(
   'LlmUsageEvent',
   {
     id: text('id').primaryKey(),
@@ -68,8 +78,8 @@ export const llmUsageEvent = sqliteTable(
      * limit like any other event (the prompt was billed), but marked so the
      * meter can say how much of it is exact.
      */
-    estimated: integer('estimated', { mode: 'boolean' }).notNull().default(false),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    estimated: boolean('estimated').notNull().default(false),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -79,7 +89,7 @@ export const llmUsageEvent = sqliteTable(
   ],
 );
 
-export const apiToken = sqliteTable(
+export const apiToken = pgTable(
   'ApiToken',
   {
     id: text('id').primaryKey(),
@@ -89,15 +99,15 @@ export const apiToken = sqliteTable(
     name: text('name').notNull(),
     tokenHash: text('tokenHash').notNull().unique(),
     scope: text('scope').notNull().default('full'),
-    lastUsedAt: integer('lastUsedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    lastUsedAt: timestamp('lastUsedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('ApiToken_userId_idx').on(table.userId)],
 );
 
-export const mcpOAuthAccessToken = sqliteTable(
+export const mcpOAuthAccessToken = pgTable(
   'McpOAuthAccessToken',
   {
     id: text('id').primaryKey(),
@@ -115,10 +125,10 @@ export const mcpOAuthAccessToken = sqliteTable(
     tokenHash: text('tokenHash').notNull().unique(),
     scope: text('scope').notNull(),
     audience: text('audience').notNull(),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    revokedAt: integer('revokedAt', { mode: 'timestamp_ms' }),
-    lastUsedAt: integer('lastUsedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    revokedAt: timestamp('revokedAt', TIMESTAMP),
+    lastUsedAt: timestamp('lastUsedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -130,21 +140,21 @@ export const mcpOAuthAccessToken = sqliteTable(
   ],
 );
 
-export const mcpOAuthClient = sqliteTable(
+export const mcpOAuthClient = pgTable(
   'McpOAuthClient',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     redirectUris: text('redirectUris').notNull(),
-    revokedAt: integer('revokedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    revokedAt: timestamp('revokedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('McpOAuthClient_createdAt_idx').on(table.createdAt)],
 );
 
-export const mcpOAuthAuthorizationCode = sqliteTable(
+export const mcpOAuthAuthorizationCode = pgTable(
   'McpOAuthAuthorizationCode',
   {
     id: text('id').primaryKey(),
@@ -161,9 +171,9 @@ export const mcpOAuthAuthorizationCode = sqliteTable(
     scope: text('scope').notNull(),
     codeChallenge: text('codeChallenge').notNull(),
     codeChallengeMethod: text('codeChallengeMethod').notNull(),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    consumedAt: integer('consumedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    consumedAt: timestamp('consumedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -175,7 +185,7 @@ export const mcpOAuthAuthorizationCode = sqliteTable(
   ],
 );
 
-export const mcpOAuthRefreshToken = sqliteTable(
+export const mcpOAuthRefreshToken = pgTable(
   'McpOAuthRefreshToken',
   {
     id: text('id').primaryKey(),
@@ -186,10 +196,10 @@ export const mcpOAuthRefreshToken = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     scope: text('scope').notNull(),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    usedAt: integer('usedAt', { mode: 'timestamp_ms' }),
-    revokedAt: integer('revokedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    revokedAt: timestamp('revokedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -200,7 +210,7 @@ export const mcpOAuthRefreshToken = sqliteTable(
   ],
 );
 
-export const shareLink = sqliteTable(
+export const shareLink = pgTable(
   'ShareLink',
   {
     id: text('id').primaryKey(),
@@ -209,8 +219,8 @@ export const shareLink = sqliteTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     tokenHash: text('tokenHash').notNull().unique(),
-    lastUsedAt: integer('lastUsedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    lastUsedAt: timestamp('lastUsedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },

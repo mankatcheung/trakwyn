@@ -1,7 +1,8 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const pushSubscription = sqliteTable(
+export const pushSubscription = pgTable(
   'PushSubscription',
   {
     id: text('id').primaryKey(),
@@ -20,10 +21,10 @@ export const pushSubscription = sqliteTable(
     endpoint: text('endpoint').notNull().unique(),
     p256dh: text('p256dh'),
     auth: text('auth'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -31,7 +32,7 @@ export const pushSubscription = sqliteTable(
   (table) => [index('PushSubscription_userId_idx').on(table.userId)],
 );
 
-export const notification = sqliteTable(
+export const notification = pgTable(
   'Notification',
   {
     id: text('id').primaryKey(),
@@ -47,8 +48,8 @@ export const notification = sqliteTable(
     /** Where clicking the notification navigates to; null if not actionable. */
     url: text('url'),
     /** Null = unread. Set to the time the user marked it read. */
-    readAt: integer('readAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    readAt: timestamp('readAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },

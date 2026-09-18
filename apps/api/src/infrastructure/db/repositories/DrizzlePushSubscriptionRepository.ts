@@ -1,11 +1,11 @@
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import type { DrizzleDb } from '#src/infrastructure/db/client.js';
 import { eq } from 'drizzle-orm';
 import { pushSubscription } from '#src/infrastructure/db/schema.js';
 import type { IPushSubscriptionRepository } from '#src/use-cases/ports/IPushSubscriptionRepository.js';
 import type { PushSubscription } from '#src/domain/pushSubscription/PushSubscription.js';
 
 interface Deps {
-  db: LibSQLDatabase<Record<string, never>>;
+  db: DrizzleDb;
   generateId: () => string;
 }
 

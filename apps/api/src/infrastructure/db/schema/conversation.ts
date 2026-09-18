@@ -1,7 +1,8 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const conversation = sqliteTable(
+export const conversation = pgTable(
   'Conversation',
   {
     id: text('id').primaryKey(),
@@ -17,10 +18,10 @@ export const conversation = sqliteTable(
      */
     llmProvider: text('llmProvider'),
     llmModel: text('llmModel'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -28,7 +29,7 @@ export const conversation = sqliteTable(
   (table) => [index('Conversation_userId_idx').on(table.userId)],
 );
 
-export const message = sqliteTable(
+export const message = pgTable(
   'Message',
   {
     id: text('id').primaryKey(),
@@ -45,7 +46,7 @@ export const message = sqliteTable(
      * messages and on replies that needed no tools.
      */
     toolTrace: text('toolTrace'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },

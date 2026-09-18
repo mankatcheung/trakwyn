@@ -34,8 +34,8 @@ name: CI & Deploy
 #   4. Create a Vercel access token (https://vercel.com/account/tokens) and
 #      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_WEB_PROJECT_ID.
 #   5. Add repository secrets (in GitHub Settings > Secrets > Actions):
-#      PRODUCTION_DATABASE_URL — the libsql:// URL for your production Turso DB
-#      PRODUCTION_DATABASE_AUTH_TOKEN — the auth token for the production Turso DB
+#      PRODUCTION_DATABASE_URL — the production Neon Postgres *direct*
+#        (non-pooled) connection string, with ?sslmode=require
 #      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
 #        both apps finish deploying to production
 
@@ -155,6 +155,23 @@ jobs:
     name: Playwright E2E
     needs: [quality, build-test]
     runs-on: ubuntu-latest
+    # A real Postgres rather than PGlite, so the API under test talks to the
+    # database through the same `pg` pool production uses (unit and
+    # integration tests already cover PGlite).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: trakwyn
+          POSTGRES_PASSWORD: trakwyn
+          POSTGRES_DB: trakwyn_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trakwyn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -176,8 +193,7 @@ jobs:
           cat > apps/api/.env <<'EOF'
           PORT=3001
           NODE_ENV=development
-          DATABASE_URL=file:${{ runner.temp }}/trakwyn-e2e.db
-          DATABASE_AUTH_TOKEN=
+          DATABASE_URL=postgres://trakwyn:trakwyn@localhost:5432/trakwyn_e2e
           JWT_SECRET=e2e-only-jwt-secret
           JWT_REFRESH_SECRET=e2e-only-refresh-secret
           TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
@@ -227,8 +243,8 @@ jobs:
 
       - name: Run Drizzle migrations
         env:
+          # Neon's *direct* URL, not the -pooler one — see src/migrate.ts.
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-          DATABASE_AUTH_TOKEN: ${{ secrets.PRODUCTION_DATABASE_AUTH_TOKEN }}
         run: pnpm --filter @trakwyn/api db:migrate:apply
 
   deploy-api:

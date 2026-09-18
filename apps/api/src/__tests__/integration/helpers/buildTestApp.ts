@@ -1,11 +1,7 @@
-import { createClient } from '@libsql/client';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { unlinkSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { vi } from 'vitest';
 import { ENV } from '#src/infrastructure/config/constants.js';
-import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
+import { createMigratedPglite } from '../../helpers/pgliteTemplate.js';
 
 export interface TestApp {
   app: FastifyInstance;
@@ -14,30 +10,27 @@ export interface TestApp {
 
 /**
  * Builds a real, fully-wired Fastify app (`buildApp()`) against a fresh,
- * isolated temp-file SQLite DB with the real migrations applied — for
+ * isolated in-memory PGlite database with the real migrations applied — for
  * GraphQL/HTTP integration tests driven via `app.inject()`.
  *
- * `infrastructure/db/client.ts` constructs its singleton libsql client at
- * module-evaluation time from `process.env.DATABASE_URL`, so `DATABASE_URL`
- * must be set — and `buildApp`/`buildContainer` dynamically imported — before
- * that module is ever evaluated (same approach `__tests__/http/container.test.ts`
- * already uses). This relies on Vitest's default per-test-file module
- * isolation: call this once per test file (in `beforeAll`), not per `it()` —
- * a second call within the same file would hit the already-cached
- * `client.ts` module and silently keep talking to the first call's temp DB.
+ * `infrastructure/db/client.ts` builds its singleton database at module
+ * evaluation from `DATABASE_URL`. Here that singleton is replaced with a clone
+ * of the migrated template (`helpers/pgliteTemplate.ts`) via `vi.doMock`, so
+ * `buildApp`/`buildContainer` — dynamically imported afterwards — wire every
+ * repository to it, exactly as they would to the production pool.
+ *
+ * The module registry is reset first, so every call gets its own app and its
+ * own database — a file with several `describe` blocks can build (and clean
+ * up) one app per block. Without the reset, the second call would reuse the
+ * first call's cached modules, whose database the first cleanup has already
+ * closed.
  */
 export async function buildTestApp(): Promise<TestApp> {
-  const dbPath = join(tmpdir(), `trakwyn-integration-${randomUUID()}.db`);
-  const databaseUrl = `file:${dbPath}`;
+  vi.resetModules();
+  const { db, close: closeDb } = await createMigratedPglite();
+  vi.doMock('#src/infrastructure/db/client.js', () => ({ db, closeDb }));
+  process.env[ENV.DATABASE_URL] = 'pglite:memory';
 
-  // Apply the real migrations via a throwaway client before the app's own
-  // singleton client ever connects — so the schema matches production
-  // exactly, with no hand-maintained duplicate DDL to keep in sync.
-  const migrationClient = createClient({ url: databaseUrl });
-  await applyMigrations(migrationClient);
-  migrationClient.close();
-
-  process.env[ENV.DATABASE_URL] = databaseUrl;
   process.env[ENV.JWT_SECRET] ??= 'test-secret';
   process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
   // Needed by any integration test that saves an LLM API key (LlmApiKeyCipher
@@ -60,7 +53,7 @@ export async function buildTestApp(): Promise<TestApp> {
     app,
     cleanup: async () => {
       await app.close();
-      if (existsSync(dbPath)) unlinkSync(dbPath);
+      await closeDb();
     },
   };
 }

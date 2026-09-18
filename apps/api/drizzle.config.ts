@@ -2,41 +2,36 @@ import path from 'node:path';
 import { defineConfig } from 'drizzle-kit';
 import { config as loadEnv } from 'dotenv';
 
-// `db:generate`/`db:push`/`db:studio` only work here against a local `file:`
-// DATABASE_URL. `db:migrate` (drizzle-kit migrate) does support a remote
-// libsql:// Turso URL directly — unlike Prisma 7's CLI, drizzle-kit's
-// migrator connects through the same libsql client used at runtime, so
-// applying generated migrations to Turso in production works with this same
-// config (see README for the deploy step).
+// `db:generate` only diffs the schema against the snapshots in `drizzle/`,
+// so it needs no database. `db:push`/`db:studio` connect to DATABASE_URL —
+// the local PGlite directory (stop `pnpm dev` first: PGlite allows one
+// process at a time) or a Postgres URL. Migrations are applied by
+// `db:migrate` (src/migrate.ts), never by drizzle-kit, so there is one
+// migrator and one tracking table.
 // No explicit `path` option: dotenv's own default (`process.cwd() + '.env'`)
-// is what we want here, and is actually more reliable than resolving off
-// `import.meta.dirname` — drizzle-kit loads this file through its own
-// loader, under which `import.meta.dirname` comes back `undefined` (this
-// was a real, silent bug in the `process.loadEnvFile()` version this
-// replaces: `path.join(undefined, '.env')` threw, and the try/catch around
-// it swallowed that thrown error identically to a genuinely-missing-file
-// case, silently no-op'ing .env loading here on every drizzle-kit
-// invocation). `pnpm --filter @trakwyn/api db:generate`/etc. always run
-// with cwd set to this package directory, so the default resolves
-// correctly. dotenv itself silently no-ops if no .env file is found (e.g.
-// CI, where env vars are expected to already be set).
+// is what we want here, and is more reliable than resolving off
+// `import.meta.dirname` — drizzle-kit loads this file through its own loader,
+// under which `import.meta.dirname` comes back `undefined`. `pnpm --filter
+// @trakwyn/api db:*` always runs with cwd set to this package directory, so
+// the default resolves correctly. dotenv silently no-ops if no .env file is
+// found (e.g. CI, where env vars are expected to already be set).
 loadEnv();
 
-const databaseUrl = process.env.DATABASE_URL ?? 'file:./local.db';
-const isLocalFile = databaseUrl.startsWith('file:');
+// Mirrors `createDb`'s schemes. Not imported from it: drizzle-kit loads this
+// file outside the app's `#src/*` import map.
+const PGLITE_SCHEME = 'pglite:';
+const databaseUrl = process.env.DATABASE_URL ?? `${PGLITE_SCHEME}./.pglite`;
 
-// drizzle-kit's 'turso' dialect requires an authToken even though local file:
-// URLs don't actually use it. Provide a harmless local-only token so the same
-// config works for both local SQLite files and remote Turso databases.
-const localCredentials = { url: databaseUrl, authToken: 'local' };
-const remoteCredentials = {
-  url: databaseUrl,
-  authToken: process.env.DATABASE_AUTH_TOKEN,
-};
-
-export default defineConfig({
-  dialect: 'turso',
+const shared = {
+  dialect: 'postgresql',
   schema: path.join('src', 'infrastructure', 'db', 'schema.ts'),
   out: path.join('drizzle'),
-  dbCredentials: isLocalFile ? localCredentials : remoteCredentials,
-});
+} as const;
+
+export default databaseUrl.startsWith(PGLITE_SCHEME)
+  ? defineConfig({
+      ...shared,
+      driver: 'pglite',
+      dbCredentials: { url: databaseUrl.slice(PGLITE_SCHEME.length) },
+    })
+  : defineConfig({ ...shared, dbCredentials: { url: databaseUrl } });

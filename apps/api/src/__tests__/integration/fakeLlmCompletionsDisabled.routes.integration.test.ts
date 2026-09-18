@@ -15,7 +15,7 @@ describe('fake LLM completions route — absent unless LLM_PROVIDER_MODE=fake', 
   beforeAll(async () => {
     delete process.env[ENV.LLM_PROVIDER_MODE];
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     await testApp.cleanup();

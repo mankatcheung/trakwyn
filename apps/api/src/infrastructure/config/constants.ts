@@ -24,7 +24,6 @@ export const ENV = {
   JWT_SECRET: 'JWT_SECRET',
   JWT_REFRESH_SECRET: 'JWT_REFRESH_SECRET',
   DATABASE_URL: 'DATABASE_URL',
-  DATABASE_AUTH_TOKEN: 'DATABASE_AUTH_TOKEN',
   STORAGE_PROVIDER: 'STORAGE_PROVIDER',
   BLOB_READ_WRITE_TOKEN: 'BLOB_READ_WRITE_TOKEN',
   BLOB_PUBLIC_READ_WRITE_TOKEN: 'BLOB_PUBLIC_READ_WRITE_TOKEN',
@@ -66,6 +65,33 @@ export const NODE_ENV = {
  * `LlmApiKeyCipher` refuses to start with it there.
  */
 export const PLACEHOLDER_SECRET = 'change-me-in-production';
+
+/**
+ * Postgres connection handling (JEF-342).
+ *
+ * `DATABASE_URL` selects the driver by scheme: `postgres://`/`postgresql://`
+ * connect through a `pg` pool (production is Neon's pooled URL);
+ * `pglite:<dir>` or `pglite:memory` run PGlite in-process, for local dev and
+ * tests without a Postgres server.
+ *
+ * The pool is sized per Cloud Run instance, not globally — Neon's pooler
+ * multiplexes every instance's connections onto the compute. Idle clients are
+ * released quickly because Neon scales to zero after five idle minutes and
+ * drops whatever sockets are still open when it does; a released client is
+ * re-opened on the next request instead of failing it. The connect timeout
+ * bounds a request that arrives while the compute is waking.
+ */
+export const DATABASE = {
+  PGLITE_SCHEME: 'pglite:',
+  PGLITE_IN_MEMORY: 'memory',
+  /** Pre-JEF-342 local SQLite URLs — rejected with instructions, not treated as a Postgres host. */
+  LEGACY_SQLITE_SCHEME: 'file:',
+  POOL_MAX: 10,
+  POOL_IDLE_TIMEOUT_MS: 10_000,
+  POOL_CONNECTION_TIMEOUT_MS: 10_000,
+  /** OID of `int8` — what `count(*)` and `sum()` over `integer` return; parsed to a JS number. */
+  INT8_OID: 20,
+} as const;
 
 /** HTTP Authorization header. */
 export const AUTH_HEADER = {
