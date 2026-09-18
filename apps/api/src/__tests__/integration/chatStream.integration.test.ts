@@ -103,7 +103,7 @@ describe('chat stream integration (JEF-239)', () => {
 
   beforeAll(async () => {
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     await testApp.cleanup();

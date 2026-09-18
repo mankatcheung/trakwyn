@@ -22,7 +22,7 @@ describe('oauth login callback destination — OAUTH_PROVIDER_MODE=fake', () => 
     // but the client id gates the route itself.
     process.env[ENV.GOOGLE_OAUTH_CLIENT_ID] = 'test-google-client-id';
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GOOGLE_OAUTH_CLIENT_ID];

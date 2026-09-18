@@ -9,7 +9,6 @@ locals {
       WEB_APP_ORIGIN         = var.web_app_origin
       CORS_ORIGIN            = var.web_app_origin
       COOKIE_DOMAIN          = var.cookie_domain
-      DATABASE_URL           = var.database_url
       CACHE_PROVIDER         = "redis"
       UPSTASH_REDIS_REST_URL = var.upstash_redis_rest_url
       STORAGE_PROVIDER       = "vercel-blob"

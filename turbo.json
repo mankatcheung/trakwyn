@@ -5,7 +5,6 @@
     "NODE_ENV",
     "PORT",
     "DATABASE_URL",
-    "DATABASE_AUTH_TOKEN",
     "JWT_SECRET",
     "JWT_REFRESH_SECRET",
     "STORAGE_PROVIDER",

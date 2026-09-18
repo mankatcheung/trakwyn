@@ -14,7 +14,7 @@ interface Deps {
 /**
  * Caches the token lookup every MCP request performs.
  *
- * Uncached, `POST /mcp` cost two Turso round trips — a read to identify the
+ * Uncached, `POST /mcp` cost two database round trips — a read to identify the
  * caller and a write to stamp lastUsedAt — before any tool ran.
  *
  * Caching a bearer credential is only safe because the cached row carries its

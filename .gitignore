@@ -5,6 +5,7 @@ dist
 coverage
 *.db
 local.db.*
+.pglite/
 *.db-shm
 *.db-wal
 uploads/

@@ -13,7 +13,6 @@ export class ConsoleEmailService implements IEmailService {
     role: string,
     followUpAt: Date,
   ): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(
       `[email:console] follow-up reminder to ${to}: ${role} at ${company}, ${followUpAt.toISOString()}`,
     );
@@ -24,22 +23,18 @@ export class ConsoleEmailService implements IEmailService {
     _data: WeeklyDigestData,
     frequency: 'daily' | 'weekly' = 'weekly',
   ): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(`[email:console] ${frequency} digest to ${to}`);
   }
 
   async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(`[email:console] password reset to ${to}: ${resetUrl}`);
   }
 
   async sendEmailVerification(to: string, verifyUrl: string): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(`[email:console] email verification to ${to}: ${verifyUrl}`);
   }
 
   async sendBackupEmailVerification(to: string, verifyUrl: string): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(`[email:console] backup email verification to ${to}: ${verifyUrl}`);
   }
 
@@ -50,7 +45,6 @@ export class ConsoleEmailService implements IEmailService {
     ipAddress: string | null,
     loginTime: Date,
   ): Promise<void> {
-    // eslint-disable-next-line no-console
     console.log(
       `[email:console] new device login alert to ${to}: ${deviceLabel} · ${location ?? 'unknown location'} · ${ipAddress ?? 'unknown IP'} · ${loginTime.toISOString()}`,
     );

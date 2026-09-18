@@ -2,12 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vites
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ENV } from '#src/infrastructure/config/constants.js';
 import { ROUTES } from '#src/http/constants.js';
-import { createClient } from '@libsql/client';
 import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { unlinkSync, existsSync } from 'node:fs';
 
 const { flushObservabilityMock } = vi.hoisted(() => ({
   flushObservabilityMock: vi.fn().mockResolvedValue(undefined),
@@ -21,7 +16,7 @@ vi.mock('#src/infrastructure/observability/tracing.js', () => ({
 
 describe('buildApp observability flush hook', () => {
   let app: FastifyInstance | undefined;
-  let dbPath: string | undefined;
+  let closeDb: (() => Promise<void>) | undefined;
   const previousEnv: Record<string, string | undefined> = {};
 
   beforeAll(async () => {
@@ -29,20 +24,18 @@ describe('buildApp observability flush hook', () => {
       previousEnv[key] = process.env[key];
     }
 
-    dbPath = join(tmpdir(), `trakwyn-tracing-${randomUUID()}.db`);
-    const databaseUrl = `file:${dbPath}`;
-    const migrationClient = createClient({ url: databaseUrl });
-    await applyMigrations(migrationClient);
-    migrationClient.close();
+    process.env[ENV.DATABASE_URL] = 'pglite:memory';
+    const client = await import('#src/infrastructure/db/client.js');
+    closeDb = client.closeDb;
+    await applyMigrations(client.db);
 
-    process.env[ENV.DATABASE_URL] = databaseUrl;
     process.env[ENV.JWT_SECRET] = 'test-secret';
     process.env[ENV.JWT_REFRESH_SECRET] = 'test-refresh-secret';
 
     const { buildApp } = await import('#src/http/buildApp.js');
     app = await buildApp(Fastify({ logger: false }));
     await app.ready();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     for (const key of [ENV.AXIOM_TOKEN, ENV.AXIOM_DATASET]) {
@@ -50,7 +43,7 @@ describe('buildApp observability flush hook', () => {
       else process.env[key] = previousEnv[key];
     }
     await app?.close();
-    if (dbPath && existsSync(dbPath)) unlinkSync(dbPath);
+    await closeDb?.();
   });
 
   beforeEach(() => {

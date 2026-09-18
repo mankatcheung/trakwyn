@@ -50,11 +50,6 @@ variable "max_instances" {
   default     = 3
 }
 
-variable "database_url" {
-  description = "libsql:// URL of the production Turso database. Its auth token is a secret."
-  type        = string
-}
-
 variable "upstash_redis_rest_url" {
   description = "Upstash Redis REST URL. Its token is a secret."
   type        = string
@@ -74,7 +69,7 @@ variable "secret_env_vars" {
     "JWT_REFRESH_SECRET",
     "TOTP_ENCRYPTION_KEY",
     "LLM_API_KEY_ENCRYPTION_KEY",
-    "DATABASE_AUTH_TOKEN",
+    "DATABASE_URL",
     "UPSTASH_REDIS_REST_TOKEN",
     "BLOB_PUBLIC_READ_WRITE_TOKEN",
     "BREVO_API_KEY",
@@ -89,5 +84,13 @@ variable "secret_env_vars" {
   validation {
     condition     = contains(var.secret_env_vars, "CRON_SECRET")
     error_message = "CRON_SECRET is required: the Cloud Scheduler jobs authenticate with it."
+  }
+
+  # A Postgres connection string carries its password, so it is a secret
+  # (JEF-342) — unlike the old Turso URL, whose credential was a separate
+  # auth token.
+  validation {
+    condition     = contains(var.secret_env_vars, "DATABASE_URL")
+    error_message = "DATABASE_URL is required: it is the Neon connection string, password included."
   }
 }

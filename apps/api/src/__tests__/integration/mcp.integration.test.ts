@@ -92,7 +92,7 @@ describe('mcp integration', () => {
 
   beforeAll(async () => {
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     await testApp.cleanup();

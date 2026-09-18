@@ -14,7 +14,7 @@ describe('oauth routes — redirect_uri behind Vercel-style reverse proxy', () =
     // from the DI container) — set before the first request that touches
     // an oauth route in this file.
     process.env[ENV.GITHUB_OAUTH_CLIENT_ID] = 'test-github-client-id';
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GITHUB_OAUTH_CLIENT_ID];
@@ -65,7 +65,7 @@ describe('oauth routes — state is bound to the browser that started the flow',
   beforeAll(async () => {
     testApp = await buildTestApp();
     process.env[ENV.GITHUB_OAUTH_CLIENT_ID] = 'test-github-client-id';
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GITHUB_OAUTH_CLIENT_ID];
@@ -172,7 +172,7 @@ describe('oauth routes — PKCE', () => {
   beforeAll(async () => {
     testApp = await buildTestApp();
     process.env[ENV.GITHUB_OAUTH_CLIENT_ID] = 'test-github-client-id';
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GITHUB_OAUTH_CLIENT_ID];
@@ -255,7 +255,7 @@ describe('oauth routes — mobile platform (JEF-275)', () => {
   beforeAll(async () => {
     testApp = await buildTestApp();
     process.env[ENV.GITHUB_OAUTH_CLIENT_ID] = 'test-github-client-id';
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GITHUB_OAUTH_CLIENT_ID];
@@ -372,7 +372,7 @@ describe('oauth routes — the callback never leaks internal error detail', () =
   beforeAll(async () => {
     testApp = await buildTestApp();
     process.env[ENV.GITHUB_OAUTH_CLIENT_ID] = 'test-github-client-id';
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalClientId === undefined) delete process.env[ENV.GITHUB_OAUTH_CLIENT_ID];

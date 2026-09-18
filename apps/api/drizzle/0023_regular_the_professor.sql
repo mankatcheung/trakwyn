@@ -1,1 +1,0 @@
-ALTER TABLE `JobApplication` ADD `boardPosition` integer DEFAULT 0 NOT NULL;

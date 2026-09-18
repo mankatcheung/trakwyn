@@ -53,14 +53,24 @@ const FORBIDDEN: Array<{ layer: string; mayNotImport: string[] }> = [
  * and nothing imports them for their exports. They are the only files allowed
  * to sit at the root of `src/`.
  */
-const ROOT_ENTRYPOINTS = ['index.ts', 'migrate.ts', 'seed.ts'];
+// copyFromTurso.ts is the one-off JEF-342 data copy; it goes when Turso is retired.
+const ROOT_ENTRYPOINTS = ['index.ts', 'migrate.ts', 'seed.ts', 'copyFromTurso.ts'];
 
 /**
  * Frameworks belong at the edges. A domain entity or a use case that imports
  * Drizzle or Fastify has stopped being testable without them, which is the
  * practical cost the rule exists to prevent.
  */
-const FRAMEWORKS = ['drizzle-orm', 'fastify', 'graphql', '@pothos/', '@libsql/', 'web-push'];
+const FRAMEWORKS = [
+  'drizzle-orm',
+  'fastify',
+  'graphql',
+  '@pothos/',
+  'pg',
+  '@electric-sql/',
+  '@libsql/',
+  'web-push',
+];
 const FRAMEWORK_FREE = ['domain', 'use-cases'];
 
 /**

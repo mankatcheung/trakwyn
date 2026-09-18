@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Adds a Secret Manager version for each sensitive value in an env file —
-# step 3 of README.md. Everything else in that file (DATABASE_URL,
-# CORS_ORIGIN, the OAuth client IDs...) is not secret and belongs in
-# terraform.tfvars instead.
+# step 3 of README.md. Everything else in that file (CORS_ORIGIN, the OAuth
+# client IDs...) is not secret and belongs in terraform.tfvars instead.
+# DATABASE_URL is a secret: a Postgres URL embeds its password (JEF-342).
 #
 #   ./load-secrets.sh ../../apps/api/.env.production            # dry run
 #   ./load-secrets.sh ../../apps/api/.env.production --apply    # upload
@@ -22,7 +22,7 @@ SECRET_KEYS=(
   JWT_REFRESH_SECRET
   TOTP_ENCRYPTION_KEY
   LLM_API_KEY_ENCRYPTION_KEY
-  DATABASE_AUTH_TOKEN
+  DATABASE_URL
   UPSTASH_REDIS_REST_TOKEN
   BLOB_PUBLIC_READ_WRITE_TOKEN
   BREVO_API_KEY

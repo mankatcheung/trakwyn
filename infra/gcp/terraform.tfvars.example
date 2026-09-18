@@ -2,7 +2,6 @@
 # secrets go to Secret Manager (README.md, "Secrets").
 project_id             = "job-finder-503217"
 initial_image          = "europe-west1-docker.pkg.dev/job-finder-503217/trakwyn/api:bootstrap"
-database_url           = "libsql://<db>-<org>.aws-eu-west-1.turso.io"
 upstash_redis_rest_url = "https://<name>.upstash.io"
 
 plain_env = {

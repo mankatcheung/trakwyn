@@ -1,1 +1,0 @@
-ALTER TABLE `User` ADD `useCrossApplicationContext` integer DEFAULT false NOT NULL;

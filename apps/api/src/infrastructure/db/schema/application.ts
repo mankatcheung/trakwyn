@@ -1,14 +1,18 @@
 import {
-  sqliteTable,
+  type AnyPgColumn,
+  pgTable,
   text,
   integer,
+  bigint,
+  boolean,
+  timestamp,
   index,
   uniqueIndex,
-  type AnySQLiteColumn,
-} from 'drizzle-orm/sqlite-core';
+} from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const jobApplication = sqliteTable(
+export const jobApplication = pgTable(
   'JobApplication',
   {
     id: text('id').primaryKey(),
@@ -22,11 +26,11 @@ export const jobApplication = sqliteTable(
     location: text('location'),
     salaryRange: text('salaryRange'),
     description: text('description'),
-    appliedAt: integer('appliedAt', { mode: 'timestamp_ms' }),
-    starred: integer('starred', { mode: 'boolean' }).notNull().default(false),
+    appliedAt: timestamp('appliedAt', TIMESTAMP),
+    starred: boolean('starred').notNull().default(false),
     source: text('source'),
-    followUpAt: integer('followUpAt', { mode: 'timestamp_ms' }),
-    reminderSentAt: integer('reminderSentAt', { mode: 'timestamp_ms' }),
+    followUpAt: timestamp('followUpAt', TIMESTAMP),
+    reminderSentAt: timestamp('reminderSentAt', TIMESTAMP),
     /**
      * Rank within its kanban column, ascending. Scoped to (userId, status) —
      * a card moving to another column is renumbered there, and the gap it
@@ -49,11 +53,11 @@ export const jobApplication = sqliteTable(
      * because their parent is, not because anything happened to them, which is
      * what makes restore a single UPDATE.
      */
-    deletedAt: integer('deletedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    deletedAt: timestamp('deletedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -66,7 +70,7 @@ export const jobApplication = sqliteTable(
   ],
 );
 
-export const applicationTag = sqliteTable(
+export const applicationTag = pgTable(
   'ApplicationTag',
   {
     id: text('id').primaryKey(),
@@ -81,7 +85,7 @@ export const applicationTag = sqliteTable(
   ],
 );
 
-export const activityLog = sqliteTable(
+export const activityLog = pgTable(
   'ActivityLog',
   {
     id: text('id').primaryKey(),
@@ -91,14 +95,14 @@ export const activityLog = sqliteTable(
     actorId: text('actorId').notNull(),
     eventType: text('eventType').notNull(),
     payload: text('payload').notNull(),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('ActivityLog_applicationId_idx').on(table.applicationId)],
 );
 
-export const interviewRound = sqliteTable(
+export const interviewRound = pgTable(
   'InterviewRound',
   {
     id: text('id').primaryKey(),
@@ -106,16 +110,16 @@ export const interviewRound = sqliteTable(
       .notNull()
       .references(() => jobApplication.id, { onDelete: 'cascade' }),
     type: text('type').notNull().default('other'),
-    scheduledAt: integer('scheduledAt', { mode: 'timestamp_ms' }),
-    completedAt: integer('completedAt', { mode: 'timestamp_ms' }),
+    scheduledAt: timestamp('scheduledAt', TIMESTAMP),
+    completedAt: timestamp('completedAt', TIMESTAMP),
     interviewerName: text('interviewerName'),
     notes: text('notes'),
     outcome: text('outcome').notNull().default('pending'),
-    pushNotificationSentAt: integer('pushNotificationSentAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    pushNotificationSentAt: timestamp('pushNotificationSentAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -123,7 +127,7 @@ export const interviewRound = sqliteTable(
   (table) => [index('InterviewRound_applicationId_idx').on(table.applicationId)],
 );
 
-export const note = sqliteTable(
+export const note = pgTable(
   'Note',
   {
     id: text('id').primaryKey(),
@@ -131,10 +135,10 @@ export const note = sqliteTable(
       .notNull()
       .references(() => jobApplication.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -142,7 +146,7 @@ export const note = sqliteTable(
   (table) => [index('Note_applicationId_idx').on(table.applicationId)],
 );
 
-export const document = sqliteTable(
+export const document = pgTable(
   'Document',
   {
     id: text('id').primaryKey(),
@@ -155,35 +159,35 @@ export const document = sqliteTable(
     storageKey: text('storageKey').notNull().unique(),
     documentType: text('documentType').notNull().default('other'),
     version: text('version'),
-    sourceDraftId: text('sourceDraftId').references((): AnySQLiteColumn => documentDraft.id, {
+    sourceDraftId: text('sourceDraftId').references((): AnyPgColumn => documentDraft.id, {
       onDelete: 'set null',
     }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('Document_applicationId_idx').on(table.applicationId)],
 );
 
-export const offer = sqliteTable(
+export const offer = pgTable(
   'Offer',
   {
     id: text('id').primaryKey(),
     applicationId: text('applicationId')
       .notNull()
       .references(() => jobApplication.id, { onDelete: 'cascade' }),
-    baseSalary: integer('baseSalary').notNull(),
-    bonus: integer('bonus'),
+    baseSalary: bigint('baseSalary', { mode: 'number' }).notNull(),
+    bonus: bigint('bonus', { mode: 'number' }),
     equity: text('equity'),
     benefits: text('benefits'),
-    costOfLivingAdjustment: integer('costOfLivingAdjustment'),
+    costOfLivingAdjustment: bigint('costOfLivingAdjustment', { mode: 'number' }),
     currency: text('currency').notNull().default('USD'),
     period: text('period').notNull().default('yearly'),
     notes: text('notes'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -191,7 +195,7 @@ export const offer = sqliteTable(
   (table) => [index('Offer_applicationId_idx').on(table.applicationId)],
 );
 
-export const documentDraft = sqliteTable(
+export const documentDraft = pgTable(
   'DocumentDraft',
   {
     id: text('id').primaryKey(),
@@ -205,10 +209,10 @@ export const documentDraft = sqliteTable(
     sourceDocumentId: text('sourceDocumentId').references(() => document.id, {
       onDelete: 'set null',
     }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -219,7 +223,7 @@ export const documentDraft = sqliteTable(
   ],
 );
 
-export const companyBriefing = sqliteTable(
+export const companyBriefing = pgTable(
   'CompanyBriefing',
   {
     id: text('id').primaryKey(),
@@ -231,7 +235,7 @@ export const companyBriefing = sqliteTable(
       .unique()
       .references(() => jobApplication.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
-    generatedAt: integer('generatedAt', { mode: 'timestamp_ms' })
+    generatedAt: timestamp('generatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -240,7 +244,7 @@ export const companyBriefing = sqliteTable(
   () => [],
 );
 
-export const contact = sqliteTable(
+export const contact = pgTable(
   'Contact',
   {
     id: text('id').primaryKey(),
@@ -253,10 +257,10 @@ export const contact = sqliteTable(
     phone: text('phone'),
     linkedinUrl: text('linkedinUrl'),
     notes: text('notes'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),

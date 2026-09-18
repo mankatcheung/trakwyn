@@ -9,7 +9,7 @@ describe('fake LLM completions route — LLM_PROVIDER_MODE=fake', () => {
   beforeAll(async () => {
     process.env[ENV.LLM_PROVIDER_MODE] = LLM_PROVIDER_MODE.FAKE;
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalMode === undefined) delete process.env[ENV.LLM_PROVIDER_MODE];

@@ -1,7 +1,8 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const oauthAccount = sqliteTable(
+export const oauthAccount = pgTable(
   'OAuthAccount',
   {
     id: text('id').primaryKey(),
@@ -11,7 +12,7 @@ export const oauthAccount = sqliteTable(
     provider: text('provider').notNull(),
     providerAccountId: text('providerAccountId').notNull(),
     email: text('email'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -24,7 +25,7 @@ export const oauthAccount = sqliteTable(
   ],
 );
 
-export const totpBackupCode = sqliteTable(
+export const totpBackupCode = pgTable(
   'TotpBackupCode',
   {
     id: text('id').primaryKey(),
@@ -32,15 +33,15 @@ export const totpBackupCode = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     codeHash: text('codeHash').notNull().unique(),
-    usedAt: integer('usedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('TotpBackupCode_userId_idx').on(table.userId)],
 );
 
-export const loginEvent = sqliteTable(
+export const loginEvent = pgTable(
   'LoginEvent',
   {
     id: text('id').primaryKey(),
@@ -49,14 +50,14 @@ export const loginEvent = sqliteTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     ipAddress: text('ipAddress'),
     userAgent: text('userAgent'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('LoginEvent_userId_idx').on(table.userId)],
 );
 
-export const securityEvent = sqliteTable(
+export const securityEvent = pgTable(
   'SecurityEvent',
   {
     id: text('id').primaryKey(),
@@ -66,14 +67,14 @@ export const securityEvent = sqliteTable(
     eventType: text('eventType').notNull(),
     ipAddress: text('ipAddress'),
     userAgent: text('userAgent'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('SecurityEvent_userId_idx').on(table.userId)],
 );
 
-export const session = sqliteTable(
+export const session = pgTable(
   'Session',
   {
     id: text('id').primaryKey(),
@@ -84,22 +85,22 @@ export const session = sqliteTable(
     ipAddress: text('ipAddress'),
     deviceLabel: text('deviceLabel'),
     location: text('location'),
-    lastUsedAt: integer('lastUsedAt', { mode: 'timestamp_ms' })
+    lastUsedAt: timestamp('lastUsedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    revokedAt: integer('revokedAt', { mode: 'timestamp_ms' }),
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    revokedAt: timestamp('revokedAt', TIMESTAMP),
     currentRefreshTokenId: text('currentRefreshTokenId'),
     previousRefreshTokenId: text('previousRefreshTokenId'),
-    previousRotatedAt: integer('previousRotatedAt', { mode: 'timestamp_ms' }),
+    previousRotatedAt: timestamp('previousRotatedAt', TIMESTAMP),
   },
   (table) => [index('Session_userId_idx').on(table.userId)],
 );
 
-export const emailVerificationToken = sqliteTable(
+export const emailVerificationToken = pgTable(
   'EmailVerificationToken',
   {
     id: text('id').primaryKey(),
@@ -108,16 +109,16 @@ export const emailVerificationToken = sqliteTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     tokenHash: text('tokenHash').notNull().unique(),
     newEmail: text('newEmail'),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    usedAt: integer('usedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('EmailVerificationToken_userId_idx').on(table.userId)],
 );
 
-export const passwordResetToken = sqliteTable(
+export const passwordResetToken = pgTable(
   'PasswordResetToken',
   {
     id: text('id').primaryKey(),
@@ -125,16 +126,16 @@ export const passwordResetToken = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     tokenHash: text('tokenHash').notNull().unique(),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    usedAt: integer('usedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('PasswordResetToken_userId_idx').on(table.userId)],
 );
 
-export const backupEmailVerificationToken = sqliteTable(
+export const backupEmailVerificationToken = pgTable(
   'BackupEmailVerificationToken',
   {
     id: text('id').primaryKey(),
@@ -143,9 +144,9 @@ export const backupEmailVerificationToken = sqliteTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     tokenHash: text('tokenHash').notNull().unique(),
     newBackupEmail: text('newBackupEmail').notNull(),
-    expiresAt: integer('expiresAt', { mode: 'timestamp_ms' }).notNull(),
-    usedAt: integer('usedAt', { mode: 'timestamp_ms' }),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },

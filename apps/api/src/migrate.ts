@@ -1,42 +1,33 @@
 #!/usr/bin/env tsx
 /**
- * CLI entry point for applying Drizzle SQL migrations using `@libsql/client`
- * (which supports WebSocket connections to Turso), ensuring DDL statements
- * are reliably executed against remote Turso databases.
+ * CLI entry point for applying the Drizzle SQL migrations in `drizzle/` —
+ * what CI's `migrate-db` job runs before every deploy.
  *
- * `drizzle-kit migrate` with `dialect: 'turso'` connects over HTTP only.
- * Turso's HTTP API silently drops DDL statements that contain foreign-key
- * references, so multi-table CREATE TABLE migrations appear to succeed
- * (the `__drizzle_migrations` tracking row is written) but the tables are
- * never actually created.
- *
- * This uses the same `@libsql/client` the runtime uses, which negotiates
- * WebSocket when available and reliably executes DDL. Migration history is
- * preserved in the standard `__drizzle_migrations` table so `drizzle-kit
- * migrate` can still read it later if needed.
- *
- * The actual migration-applying logic lives in `applyMigrations.ts`, shared
- * with the integration-test DB helper (`__tests__/integration/helpers/buildTestApp.ts`).
+ * The migration logic lives in `applyMigrations.ts`, shared with the test DB
+ * helpers. Point it at Neon's *direct* URL, not the `-pooler` one: the pooler
+ * runs in transaction mode, and a migration is exactly the long, lock-taking
+ * session work it is not meant for.
  *
  * Usage:
- *   DATABASE_URL=libsql://... DATABASE_AUTH_TOKEN=... pnpm db:migrate:apply
+ *   DATABASE_URL=postgres://... pnpm db:migrate:apply
+ *   DATABASE_URL=pglite:./.pglite pnpm db:migrate:apply   # local dev
  */
 
 import 'dotenv/config';
-import { createClient } from '@libsql/client';
+import { ENV } from '#src/infrastructure/config/constants.js';
+import { createDb } from '#src/infrastructure/db/createDb.js';
 import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
 
-const DATABASE_URL = process.env.DATABASE_URL;
-const DATABASE_AUTH_TOKEN = process.env.DATABASE_AUTH_TOKEN;
+const databaseUrl = process.env[ENV.DATABASE_URL];
 
-if (!DATABASE_URL) {
-  console.error('DATABASE_URL is required');
+if (!databaseUrl) {
+  console.error(`${ENV.DATABASE_URL} is required`);
   process.exit(1);
 }
 
-const client = createClient({
-  url: DATABASE_URL,
-  authToken: DATABASE_AUTH_TOKEN ?? undefined,
-});
-
-await applyMigrations(client);
+const { db, close } = await createDb(databaseUrl);
+try {
+  await applyMigrations(db);
+} finally {
+  await close();
+}
