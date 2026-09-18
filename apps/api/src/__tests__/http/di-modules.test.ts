@@ -5,7 +5,7 @@ describe('DI modules', () => {
   beforeAll(() => {
     // client.ts constructs the real libSQL client at module-evaluation
     // time, so these must be set before the di modules are imported below.
-    process.env[ENV.DATABASE_URL] ??= 'file:di-modules-test.db';
+    process.env[ENV.DATABASE_URL] ??= 'pglite:memory';
     process.env[ENV.JWT_SECRET] ??= 'test-secret';
     process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
   });
