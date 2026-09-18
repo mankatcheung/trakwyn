@@ -30,7 +30,6 @@
     "setLimit": "Set monthly limit",
     "editLimit": "Edit monthly limit",
     "usageThisMonth": "This month",
-    "usageRequests_one": "{{count}} request",
     "usageRequests_other": "{{count}} requests",
     "usageTokens": "{{count}} tokens",
     "usageLastUsed": "last used {{date}}",
@@ -75,9 +74,7 @@
     "importTitle": "导入数据",
     "importDescription": "从此前导出的 JSON 文件恢复求职申请和备注。",
     "chooseFileToImport": "选择要导入的文件",
-    "applicationsImported_one": "已导入 {{count}} 份求职申请",
     "applicationsImported_other": "已导入 {{count}} 份求职申请",
-    "notesImported_one": "已导入 {{count}} 条备注",
     "notesImported_other": "已导入 {{count}} 条备注",
     "applicationsSkipped": "已跳过 {{count}} 份求职申请",
     "documentsSkipped": "已跳过 {{count}} 份文件"
@@ -130,13 +127,17 @@
     "delete": "删除"
   },
   "notifications": {
+    "emailNotifications": "邮件通知",
     "digestEmails": "摘要邮件",
+    "digestEmailsHint": "你的求职进展摘要",
     "digestOff": "关闭",
     "digestDaily": "每日",
     "digestWeekly": "每周",
     "followUpReminders": "跟进提醒",
+    "pushNotificationsTitle": "推送通知",
     "pushNotifications": "推送通知",
     "weeklyGoal": "每周求职申请目标",
+    "weeklyGoalHint": "进度落后时提醒你",
     "weeklyGoalPlaceholder": "例如 5"
   },
   "profile": {
@@ -156,9 +157,12 @@
     "save": "保存",
     "uploadPhoto": "上传照片",
     "changePhoto": "更换照片",
+    "photoHint": "JPG、PNG 或 WebP",
     "removePhoto": "移除",
     "uploading": "正在上传…",
     "emailSectionTitle": "邮箱",
+    "emailSectionDescription": "更改邮箱需要输入当前密码。",
+    "change": "更改",
     "currentPasswordPlaceholder": "当前密码",
     "newEmailPlaceholder": "新邮箱",
     "updateEmail": "更新邮箱",

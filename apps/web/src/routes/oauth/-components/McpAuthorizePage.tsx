@@ -68,7 +68,7 @@ export function McpAuthorizePage() {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('mcp.authorizeTitle', { defaultValue: 'Authorize MCP access' })}
+          {t('mcp.authorizeTitle')}
         </h1>
         {error ? (
           <div className="mt-4 space-y-4">
@@ -86,21 +86,17 @@ export function McpAuthorizePage() {
         ) : clientName ? (
           <div className="mt-5 space-y-5">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              <strong>{clientName}</strong>{' '}
-              {t('mcp.authorizationRequest', {
-                defaultValue: 'is requesting access to your Trakwyn data.',
-              })}
+              <strong>{clientName}</strong> {t('mcp.authorizationRequest')}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              {t('mcp.requestedScope', { defaultValue: 'Requested scope:' })}{' '}
-              <strong>{search.scope}</strong>
+              {t('mcp.requestedScope')} <strong>{search.scope}</strong>
             </p>
             <div className="flex gap-3">
               <Button onClick={() => submit(false)} disabled={submitting} variant="secondary">
                 {t('common.cancel', { defaultValue: 'Deny' })}
               </Button>
               <Button onClick={() => submit(true)} disabled={submitting}>
-                {t('mcp.allowAccess', { defaultValue: 'Allow access' })}
+                {t('mcp.allowAccess')}
               </Button>
             </div>
           </div>
