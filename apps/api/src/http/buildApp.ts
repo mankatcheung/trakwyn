@@ -24,6 +24,7 @@ import { mcpOAuthMetadataRoutes } from '#src/http/routes/mcpOAuth.routes.js';
 import { buildContainer } from '#src/http/container.js';
 import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
+import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
 import {
   fastifyOtelInstrumentation,
@@ -38,6 +39,9 @@ import {
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
 import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
+
+/** Key prefix of the dev upload route, never a stored object's key. */
+const LOCAL_UPLOAD_PATH_PREFIX = '_upload/';
 
 /**
  * Fully configures an already-constructed Fastify instance (cors/cookie/
@@ -115,6 +119,36 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
         return reply.code(204).send();
       },
     );
+
+    // Serves the URLs LocalStorageProvider.getSignedUrl hands out, so an
+    // uploaded document or exported PDF opens in dev and e2e. Unauthenticated,
+    // like the upload route above: local mode is a dev convenience, and
+    // production (Vercel Blob) serves its own URLs.
+    fastify.get<{ Params: { '*': string } }>('/uploads/*', async (request, reply) => {
+      const { storageProvider } = container.cradle;
+      // Fastify has already percent-decoded the wildcard, so an encoded
+      // `%2e%2e` arrives here as `..` and is caught by the same check.
+      const storageKey = request.params['*'];
+      if (
+        !(storageProvider instanceof LocalStorageProvider) ||
+        storageKey.startsWith(LOCAL_UPLOAD_PATH_PREFIX)
+      ) {
+        return reply.code(404).send({ error: 'Not found' });
+      }
+      if (storageProvider.resolveKeyPath(storageKey) === null) {
+        return reply.code(400).send({ error: 'Invalid storage key' });
+      }
+
+      const object = await storageProvider.openObject(storageKey);
+      if (object === null) return reply.code(404).send({ error: 'Not found' });
+
+      return reply
+        .header('Content-Type', object.contentType)
+        .header('Content-Length', object.size)
+        .header('Content-Disposition', 'inline')
+        .header('X-Content-Type-Options', 'nosniff')
+        .send(object.stream);
+    });
   }
 
   registerRoutes(fastify, [
