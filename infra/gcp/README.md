@@ -2,19 +2,19 @@
 
 Terraform for everything `apps/api` needs on Google Cloud (JEF-335). `apps/web` stays on Vercel. The database is Neon Postgres in `aws-eu-central-1` (Frankfurt) since JEF-342; it, Upstash, Vercel Blob, Brevo and Axiom are reached over the internet.
 
-| File                   | What it declares                                                                                      |
-| ---------------------- | ----------------------------------------------------------------------------------------------------- |
-| `apis.tf`              | The Google APIs the rest depends on                                                                   |
-| `artifact_registry.tf` | Docker repository `trakwyn`, keeping the five newest images                                           |
-| `secrets.tf`           | One Secret Manager secret per sensitive env var, containers only                                      |
-| `iam.tf`               | Runtime service account (reads its secrets) and CI's deployer account                                 |
-| `wif.tf`               | Workload Identity Federation: this repo's `main` branch may act as the deployer, and nothing else can |
-| `cloud_run.tf`         | The `trakwyn-api` service, public invoker binding, and the `api.trakwyn.com` domain mapping           |
-| `scheduler.tf`         | The three daily `/admin/*` jobs that replaced Vercel Cron                                             |
+| File                   | What it declares                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `apis.tf`              | The Google APIs the rest depends on                                                                    |
+| `artifact_registry.tf` | Docker repository `trakwyn`, keeping the five newest images                                            |
+| `secrets.tf`           | One Secret Manager secret per sensitive env var, containers only                                       |
+| `iam.tf`               | Runtime service account (reads its secrets), CI's deployer account, and the scheduler's `cron-invoker` |
+| `wif.tf`               | Workload Identity Federation: this repo's `main` branch may act as the deployer, and nothing else can  |
+| `cloud_run.tf`         | The `trakwyn-api` service, public invoker binding, and the `api.trakwyn.com` domain mapping            |
+| `scheduler.tf`         | The three daily `/admin/*` jobs that replaced Vercel Cron, authenticated by OIDC token                 |
 
 **Who owns what.** Terraform owns configuration; CI owns releases. After the first apply, the service's image is in `ignore_changes`, and every merge to `main` builds, pushes and rolls out a new image through `.github/workflows/ci.yml`'s `deploy-api` job. Change scaling, env vars or IAM here; never click them into the console, or the next `terraform apply` will revert them.
 
-**Secrets never enter Terraform state, with one exception:** `scheduler.tf` reads `CRON_SECRET` to put it in the jobs' `Authorization` header. Keep access to the state bucket limited to the people who could read that secret anyway.
+**Secrets never enter Terraform state.** Terraform creates the secret containers and Cloud Run references them by name; the values are added out of band. The scheduler jobs hold no secret either: each request carries a Google-signed OIDC ID token for the `cron-invoker` service account, with `API_ORIGIN` as its audience, and `cronAuth.ts` checks the signature, audience and that the email is `CRON_INVOKER_SA` (JEF-336). Before that, `scheduler.tf` read `CRON_SECRET` into state to set a bearer header.
 
 ## First-time setup
 
@@ -50,7 +50,7 @@ Verify ownership of `trakwyn.com` for the account that will run Terraform, in [G
 The project isn't new, so check that nothing already uses a name this configuration creates. A clash fails the apply; import the existing resource or rename the new one before going on. An error saying an API is not enabled means nothing of that kind exists yet.
 
 ```bash
-gcloud iam service-accounts list --format="value(email)"                  # trakwyn-api@, github-deployer@
+gcloud iam service-accounts list --format="value(email)"                  # trakwyn-api@, github-deployer@, cron-invoker@
 gcloud iam workload-identity-pools list --location=global --format="value(name)"   # .../github
 gcloud artifacts repositories list --location="$REGION" --format="value(name)"     # trakwyn
 gcloud secrets list --format="value(name)"                                # jwt-secret, cron-secret, ...
@@ -70,7 +70,7 @@ terraform apply \
   -target=google_secret_manager_secret.api
 ```
 
-The targeted apply comes first because the full apply needs two things that don't exist yet: an image to create the service with, and a `CRON_SECRET` version for the scheduler jobs to read.
+The targeted apply comes first because the full apply needs things that don't exist yet: an image to create the service with, and a version of every secret the service references.
 
 ### 3. Secrets
 
@@ -96,7 +96,7 @@ Secret IDs are the env var names in lower-kebab-case:
 | `upstash-redis-rest-token`     | Upstash token                                                                                    |
 | `blob-public-read-write-token` | Vercel Blob store token                                                                          |
 | `brevo-api-key`                | Brevo API key                                                                                    |
-| `cron-secret`                  | a new random value (`openssl rand -hex 32`)                                                      |
+| `cron-secret`                  | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
 | `digest-admin-secret`          | a new random value                                                                               |
 | `google-oauth-client-secret`   | Google OAuth client secret                                                                       |
 | `github-oauth-client-secret`   | GitHub OAuth app secret                                                                          |
@@ -185,7 +185,9 @@ gcloud run revisions list --service=trakwyn-api --region="$REGION"
 gcloud run services update-traffic trakwyn-api --region="$REGION" --to-revisions=<revision>=100
 ```
 
-**Rotate a secret:** add a new version. Running instances keep the value they started with, so roll out a new revision by re-running the latest `deploy-api` job in GitHub Actions. Don't do it with an ad-hoc `gcloud run services update --update-env-vars`, which Terraform would report as drift. For `cron-secret`, also run `terraform apply` so the scheduler jobs send the new value.
+**Rotate a secret:** add a new version. Running instances keep the value they started with, so roll out a new revision by re-running the latest `deploy-api` job in GitHub Actions. Don't do it with an ad-hoc `gcloud run services update --update-env-vars`, which Terraform would report as drift. The scheduler jobs don't use `cron-secret` — Google mints them a fresh ID token on every run — so rotating it touches nothing else, and there is nothing of theirs to rotate.
+
+**Trigger an admin route by hand:** either run the scheduler job (`gcloud scheduler jobs run trakwyn-api-digest-send --location="$REGION"`), which authenticates exactly as the schedule does, or call the route with `Authorization: Bearer <cron-secret>`. To remove the secret path entirely, drop `CRON_SECRET` and `DIGEST_ADMIN_SECRET` from `secret_env_vars` and apply; the scheduled jobs are unaffected.
 
 **Keep an instance warm:** set `min_instances = 1` in `terraform.tfvars` and apply. This costs about $10 a month more and removes cold starts.
 

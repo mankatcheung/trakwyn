@@ -64,6 +64,7 @@
     "fastify": "^5.12.4",
     "fastify-plugin": "^5.1.0",
     "graphql": "^16.14.2",
+    "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.12.3",
     "mercurius": "^16.10.0",

@@ -59,4 +59,14 @@ describe('buildContainer', () => {
     expect(container.resolve('saveLlmApiKeyUseCase')).toBeDefined();
     expect(container.resolve('testLlmApiKeyUseCase')).toBeDefined();
   });
+
+  it('resolves the OIDC token verifier the admin cron routes use (JEF-336)', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { GoogleOidcTokenVerifier } =
+      await import('#src/infrastructure/auth/GoogleOidcTokenVerifier.js');
+
+    const container = buildContainer();
+
+    expect(container.resolve('oidcTokenVerifier')).toBeInstanceOf(GoogleOidcTokenVerifier);
+  });
 });
