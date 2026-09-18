@@ -9,14 +9,6 @@ locals {
   }
 }
 
-# Reads the current CRON_SECRET so the jobs can send it as a bearer token
-# (cronAuth.ts). This puts the value in Terraform state, an accepted trade-off
-# for now that is tracked separately against moving the routes to Cloud
-# Scheduler OIDC tokens. Keep the state bucket's IAM tight.
-data "google_secret_manager_secret_version" "cron_secret" {
-  secret = google_secret_manager_secret.api["CRON_SECRET"].secret_id
-}
-
 resource "google_cloud_scheduler_job" "admin" {
   for_each = local.admin_jobs
 
@@ -38,8 +30,16 @@ resource "google_cloud_scheduler_job" "admin" {
     # The run.app URL rather than the custom domain, so the jobs keep working
     # whatever state the domain mapping's DNS and certificate are in.
     uri = "${google_cloud_run_v2_service.api.uri}${each.value}"
-    headers = {
-      Authorization = "Bearer ${data.google_secret_manager_secret_version.cron_secret.secret_data}"
+
+    # A Google-signed ID token for the cron-invoker account, minted per
+    # request (JEF-336). It replaced a CRON_SECRET bearer header, which had to
+    # be read into Terraform state to be set here. The audience is API_ORIGIN
+    # rather than the run.app URI the request goes to: the service cannot be
+    # handed its own URI as an env var without a dependency cycle, and Google
+    # signs whatever audience the job asks for.
+    oidc_token {
+      service_account_email = google_service_account.cron_invoker.email
+      audience              = local.plain_env.API_ORIGIN
     }
   }
 

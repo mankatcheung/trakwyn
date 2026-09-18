@@ -1,0 +1,142 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
+import { isAuthorizedCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
+import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
+import { ENV } from '#src/infrastructure/config/constants.js';
+import { createOidcTestKeys, type OidcTestKeys } from '../../helpers/oidcTokens.js';
+
+const API_ORIGIN = 'https://api.example.com';
+const INVOKER = 'cron-invoker@project.iam.gserviceaccount.com';
+
+function requestWith(authorization?: string): IHttpRequest {
+  return {
+    method: 'POST',
+    path: '/admin/reminders/send',
+    headers: authorization === undefined ? {} : { authorization },
+    cookies: {},
+    params: {},
+    query: {},
+    body: undefined,
+    ip: null,
+    protocol: 'https',
+  };
+}
+
+describe('cronAuth', () => {
+  let google: OidcTestKeys;
+  let verifier: GoogleOidcTokenVerifier;
+
+  beforeAll(async () => {
+    google = await createOidcTestKeys();
+    verifier = new GoogleOidcTokenVerifier({ keys: google.keys });
+  });
+
+  beforeEach(() => {
+    vi.stubEnv(ENV.CRON_SECRET, undefined);
+    vi.stubEnv(ENV.DIGEST_ADMIN_SECRET, undefined);
+    vi.stubEnv(ENV.CRON_INVOKER_SA, INVOKER);
+    vi.stubEnv(ENV.API_ORIGIN, API_ORIGIN);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const authorize = (authorization?: string, ownSecretEnvKey: string = ENV.CRON_SECRET) =>
+    isAuthorizedCronTrigger(requestWith(authorization), ownSecretEnvKey, verifier);
+
+  describe('OIDC tokens from Cloud Scheduler', () => {
+    it('accepts a valid token for the invoker service account', async () => {
+      const token = await google.sign(INVOKER, API_ORIGIN);
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(true);
+    });
+
+    it('refuses a token minted for another audience', async () => {
+      const token = await google.sign(INVOKER, 'https://trakwyn-api-xyz.a.run.app');
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+    });
+
+    it('refuses a token for a different service account', async () => {
+      const token = await google.sign('someone-else@project.iam.gserviceaccount.com', API_ORIGIN);
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+    });
+
+    it('refuses an expired token', async () => {
+      const token = await google.sign(INVOKER, API_ORIGIN, {
+        expiresAt: Math.floor(Date.now() / 1000) - 60,
+      });
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+    });
+
+    it('refuses every token when CRON_INVOKER_SA is not set', async () => {
+      vi.stubEnv(ENV.CRON_INVOKER_SA, undefined);
+      const token = await google.sign(INVOKER, API_ORIGIN);
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+    });
+
+    it('refuses every token when API_ORIGIN, the expected audience, is not set', async () => {
+      vi.stubEnv(ENV.API_ORIGIN, undefined);
+      const token = await google.sign(INVOKER, API_ORIGIN);
+
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+    });
+  });
+
+  describe('shared secrets for manual triggering', () => {
+    it('accepts CRON_SECRET', async () => {
+      vi.stubEnv(ENV.CRON_SECRET, 'the-cron-secret');
+
+      await expect(authorize('Bearer the-cron-secret')).resolves.toBe(true);
+    });
+
+    it("accepts the route's own secret", async () => {
+      vi.stubEnv(ENV.DIGEST_ADMIN_SECRET, 'the-digest-secret');
+
+      await expect(authorize('Bearer the-digest-secret', ENV.DIGEST_ADMIN_SECRET)).resolves.toBe(
+        true,
+      );
+    });
+
+    it('refuses a wrong secret', async () => {
+      vi.stubEnv(ENV.CRON_SECRET, 'the-cron-secret');
+
+      await expect(authorize('Bearer wrong')).resolves.toBe(false);
+    });
+  });
+
+  it('refuses a request with no bearer token', async () => {
+    await expect(authorize()).resolves.toBe(false);
+    await expect(authorize('Basic abc')).resolves.toBe(false);
+  });
+
+  describe('isCronTriggerConfigured', () => {
+    it('is true with only the OIDC invoker configured', () => {
+      expect(isCronTriggerConfigured(ENV.CRON_SECRET)).toBe(true);
+    });
+
+    it('is true with only CRON_SECRET', () => {
+      vi.stubEnv(ENV.CRON_INVOKER_SA, undefined);
+      vi.stubEnv(ENV.CRON_SECRET, 'the-cron-secret');
+
+      expect(isCronTriggerConfigured(ENV.CRON_SECRET)).toBe(true);
+    });
+
+    it("is true with only the route's own secret", () => {
+      vi.stubEnv(ENV.CRON_INVOKER_SA, undefined);
+      vi.stubEnv(ENV.DIGEST_ADMIN_SECRET, 'the-digest-secret');
+
+      expect(isCronTriggerConfigured(ENV.DIGEST_ADMIN_SECRET)).toBe(true);
+    });
+
+    it('is false with nothing configured', () => {
+      vi.stubEnv(ENV.CRON_INVOKER_SA, undefined);
+
+      expect(isCronTriggerConfigured(ENV.CRON_SECRET)).toBe(false);
+    });
+  });
+});

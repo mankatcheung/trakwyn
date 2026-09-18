@@ -81,11 +81,6 @@ variable "secret_env_vars" {
     "AXIOM_TOKEN",
   ]
 
-  validation {
-    condition     = contains(var.secret_env_vars, "CRON_SECRET")
-    error_message = "CRON_SECRET is required: the Cloud Scheduler jobs authenticate with it."
-  }
-
   # A Postgres connection string carries its password, so it is a secret
   # (JEF-342) — unlike the old Turso URL, whose credential was a separate
   # auth token.

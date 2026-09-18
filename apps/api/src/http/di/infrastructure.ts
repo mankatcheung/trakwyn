@@ -22,6 +22,7 @@ import {
   FakeGitHubOAuthProvider,
 } from '#src/infrastructure/auth/FakeOAuthProvider.js';
 import { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
+import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
@@ -121,6 +122,12 @@ export const infrastructure = {
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
   outboundUrlPolicy: asFunction(() => new OutboundUrlPolicy(), { lifetime: Lifetime.SINGLETON }),
+  // Verifies Cloud Scheduler's OIDC tokens on the admin cron routes
+  // (JEF-336). A singleton so jose's cached copy of Google's JWKS is shared;
+  // asFunction for the same options-object reason as outboundUrlPolicy.
+  oidcTokenVerifier: asFunction(() => new GoogleOidcTokenVerifier(), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   userLlmProviderFactory: asClass(UserLLMProviderFactory, { lifetime: Lifetime.SINGLETON }),
   // Decorates the factory so a key past its monthly token limit is refused

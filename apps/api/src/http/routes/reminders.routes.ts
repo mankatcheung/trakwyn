@@ -2,7 +2,7 @@ import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
 import { ROUTES } from '#src/http/constants.js';
-import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
+import { isAuthorizedCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
 
 /**
  * Was an in-process setInterval poll; converted to an external-trigger route
@@ -17,12 +17,14 @@ export function remindersRoutes(getCradle: () => Cradle): RouteDefinition[] {
       method: ['GET', 'POST'],
       path: ROUTES.REMINDERS_SEND,
       handler: async (req, res) => {
-        if (!process.env[ENV.CRON_SECRET]) {
-          res.status(503).send({ error: 'Reminders not configured (CRON_SECRET missing)' });
+        if (!isCronTriggerConfigured(ENV.CRON_SECRET)) {
+          res
+            .status(503)
+            .send({ error: 'Reminders not configured (CRON_SECRET/CRON_INVOKER_SA missing)' });
           return;
         }
 
-        if (!isAuthorizedCronTrigger(req, ENV.CRON_SECRET)) {
+        if (!(await isAuthorizedCronTrigger(req, ENV.CRON_SECRET, getCradle().oidcTokenVerifier))) {
           res.status(401).send({ error: 'Unauthorized' });
           return;
         }

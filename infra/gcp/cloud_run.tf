@@ -13,6 +13,8 @@ locals {
       UPSTASH_REDIS_REST_URL = var.upstash_redis_rest_url
       STORAGE_PROVIDER       = "vercel-blob"
       EMAIL_PROVIDER         = "brevo"
+      # Whose OIDC tokens the admin cron routes accept (scheduler.tf).
+      CRON_INVOKER_SA = google_service_account.cron_invoker.email
     },
     var.plain_env,
   )

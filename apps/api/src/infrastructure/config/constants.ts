@@ -37,6 +37,11 @@ export const ENV = {
   LLM_API_KEY_ENCRYPTION_KEY: 'LLM_API_KEY_ENCRYPTION_KEY',
   DIGEST_ADMIN_SECRET: 'DIGEST_ADMIN_SECRET',
   CRON_SECRET: 'CRON_SECRET',
+  /**
+   * Email of the service account Cloud Scheduler mints OIDC ID tokens for
+   * (JEF-336). A token for any other principal is refused by the admin routes.
+   */
+  CRON_INVOKER_SA: 'CRON_INVOKER_SA',
   AXIOM_TOKEN: 'AXIOM_TOKEN',
   AXIOM_DATASET: 'AXIOM_DATASET',
   AXIOM_METRICS_DATASET: 'AXIOM_METRICS_DATASET',
@@ -96,6 +101,16 @@ export const DATABASE = {
 /** HTTP Authorization header. */
 export const AUTH_HEADER = {
   BEARER_PREFIX: 'Bearer ',
+} as const;
+
+/**
+ * Google-signed OIDC ID tokens, as Cloud Scheduler sends them to the admin
+ * cron routes (JEF-336). Google issues both spellings of the issuer.
+ */
+export const GOOGLE_OIDC = {
+  JWKS_URL: 'https://www.googleapis.com/oauth2/v3/certs',
+  ISSUERS: ['https://accounts.google.com', 'accounts.google.com'],
+  ALGORITHMS: ['RS256'],
 } as const;
 
 /** OAuth (Google/GitHub) sign-in settings. */
