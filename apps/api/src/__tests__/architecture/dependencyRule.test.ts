@@ -53,8 +53,15 @@ const FORBIDDEN: Array<{ layer: string; mayNotImport: string[] }> = [
  * and nothing imports them for their exports. They are the only files allowed
  * to sit at the root of `src/`.
  */
+// instrumentation.ts is preloaded with `node --import` ahead of index.ts (JEF-346).
 // copyFromTurso.ts is the one-off JEF-342 data copy; it goes when Turso is retired.
-const ROOT_ENTRYPOINTS = ['index.ts', 'migrate.ts', 'seed.ts', 'copyFromTurso.ts'];
+const ROOT_ENTRYPOINTS = [
+  'index.ts',
+  'instrumentation.ts',
+  'migrate.ts',
+  'seed.ts',
+  'copyFromTurso.ts',
+];
 
 /**
  * Frameworks belong at the edges. A domain entity or a use case that imports

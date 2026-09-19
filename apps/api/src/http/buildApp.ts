@@ -26,6 +26,7 @@ import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
 import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
+import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
 import {
   fastifyOtelInstrumentation,
   flushObservability,
@@ -39,6 +40,19 @@ import {
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
 import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
+import type { GraphQLContext } from '#src/http/context.js';
+import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
+
+/**
+ * The `operationName` a GraphQL request selected, if it named one: from the
+ * query string on GET, the JSON body on POST. A batched (array) body names
+ * none, so the document's only operation is used, if it has one.
+ */
+function operationNameOf(request: IHttpRequest): string | undefined {
+  const source = request.method === 'GET' ? request.query : request.body;
+  const name = (source as { operationName?: unknown } | null)?.operationName;
+  return typeof name === 'string' ? name : undefined;
+}
 
 /** Key prefix of the dev upload route, never a stored object's key. */
 const LOCAL_UPLOAD_PATH_PREFIX = '_upload/';
@@ -228,6 +242,15 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     },
     context: buildGraphQLContext,
   });
+
+  if (isObservabilityEnabled) {
+    // Names the trace after the operation, e.g. `POST /graphql query
+    // applications`, instead of every one being `POST /graphql` (JEF-346).
+    fastify.graphql.addHook('preExecution', async (_schema, document, context) => {
+      const { request } = context as unknown as GraphQLContext;
+      recordGraphQLOperation(document, operationNameOf(request));
+    });
+  }
 
   return fastify;
 }

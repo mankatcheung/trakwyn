@@ -16,6 +16,7 @@ import {
 // class, so import the named export instead.
 import { FastifyOtelInstrumentation } from '@fastify/otel';
 import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
+import { applyGraphQLOperationSpanName } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
 
 /**
  * Must be registered as a Fastify plugin in buildApp() *before* routes and
@@ -95,7 +96,9 @@ export async function shutdownObservability(): Promise<void> {
  * when AXIOM_TOKEN/AXIOM_DATASET aren't set.
  *
  * Must be called before any instrumented module (http, fastify, etc.) is
- * imported anywhere in the process — see the import order in index.ts.
+ * imported anywhere in the process, which is why it is called from the
+ * `--import` preload (instrumentation.ts via registerInstrumentation.ts)
+ * rather than from index.ts, whose static imports ESM evaluates first.
  */
 export function startObservability(): void {
   if (!isObservabilityEnabled) {
@@ -161,6 +164,18 @@ export function startObservability(): void {
         // Disabled: fires on every file read/write (module loading, temp
         // files, log writes) and drowns out application-relevant spans.
         '@opentelemetry/instrumentation-fs': { enabled: false },
+        // One span per resolver that does real work (e.g. Query.applications)
+        // rather than one per scalar field, and one per list field rather
+        // than one per item.
+        // Every GraphQL request is `POST /graphql`; this renames its span
+        // after the operation — see graphqlOperationSpanName.ts.
+        '@opentelemetry/instrumentation-http': {
+          applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
+        },
+        '@opentelemetry/instrumentation-graphql': {
+          ignoreTrivialResolveSpans: true,
+          mergeItems: true,
+        },
       }),
       fastifyOtelInstrumentation,
     ],

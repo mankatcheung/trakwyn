@@ -4,14 +4,19 @@ import { ENV } from '#src/infrastructure/config/constants.js';
 import { ROUTES } from '#src/http/constants.js';
 import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
 
-const { flushObservabilityMock } = vi.hoisted(() => ({
+const { flushObservabilityMock, recordGraphQLOperationMock } = vi.hoisted(() => ({
   flushObservabilityMock: vi.fn().mockResolvedValue(undefined),
+  recordGraphQLOperationMock: vi.fn(),
 }));
 
 vi.mock('#src/infrastructure/observability/tracing.js', () => ({
   fastifyOtelInstrumentation: { plugin: () => vi.fn() },
   isObservabilityEnabled: true,
   flushObservability: flushObservabilityMock,
+}));
+
+vi.mock('#src/infrastructure/observability/graphqlOperationSpanName.js', () => ({
+  recordGraphQLOperation: recordGraphQLOperationMock,
 }));
 
 describe('buildApp observability flush hook', () => {
@@ -48,6 +53,7 @@ describe('buildApp observability flush hook', () => {
 
   beforeEach(() => {
     flushObservabilityMock.mockClear();
+    recordGraphQLOperationMock.mockClear();
   });
 
   it('awaits a flush after every response when observability is enabled', async () => {
@@ -55,5 +61,36 @@ describe('buildApp observability flush hook', () => {
 
     expect(res.statusCode).toBe(200);
     expect(flushObservabilityMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('records the GraphQL operation a POST request selected, for the span name', async () => {
+    const res = await app!.inject({
+      method: 'POST',
+      url: '/graphql',
+      payload: {
+        query: 'query first { __typename } query second { __typename }',
+        operationName: 'second',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(recordGraphQLOperationMock).toHaveBeenCalledOnce();
+    const [document, operationName] = recordGraphQLOperationMock.mock.calls[0] as [
+      { definitions: unknown[] },
+      string | undefined,
+    ];
+    expect(document.definitions).toHaveLength(2);
+    expect(operationName).toBe('second');
+  });
+
+  it('reads the operation name from the query string on a GET request', async () => {
+    const res = await app!.inject({
+      method: 'GET',
+      url: '/graphql',
+      query: { query: 'query probe { __typename }', operationName: 'probe' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(recordGraphQLOperationMock).toHaveBeenCalledWith(expect.anything(), 'probe');
   });
 });

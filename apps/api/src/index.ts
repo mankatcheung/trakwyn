@@ -8,14 +8,9 @@ import { logs } from '@opentelemetry/api-logs';
 import { buildApp } from '#src/http/buildApp.js';
 import { SHUTDOWN } from '#src/http/constants.js';
 import { createShutdownHandler } from '#src/http/gracefulShutdown.js';
-import {
-  shutdownObservability,
-  startObservability,
-} from '#src/infrastructure/observability/tracing.js';
+import { shutdownObservability } from '#src/infrastructure/observability/tracing.js';
 import { createOtelLogDestination } from '#src/infrastructure/observability/otelLogDestination.js';
 import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
-
-startObservability();
 
 const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
 
