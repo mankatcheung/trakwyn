@@ -2,7 +2,8 @@ import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
-import { DEFAULTS } from '#src/use-cases/constants.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
+import { DEFAULTS, CALENDAR_SYNC } from '#src/use-cases/constants.js';
 import type {
   ICreateInterviewRoundUseCase,
   CreateInterviewRoundInput,
@@ -13,6 +14,7 @@ interface Deps {
   applicationRepository: IApplicationRepository;
   interviewRoundRepository: IInterviewRoundRepository;
   activityLogRepository?: IActivityLogRepository;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
   generateId: () => string;
 }
 
@@ -42,6 +44,20 @@ export class CreateInterviewRoundUseCase implements ICreateInterviewRoundUseCase
       eventType: 'interview_added',
       payload: JSON.stringify({ roundId: round.id, type: round.type }),
     });
+
+    if (round.scheduledAt) {
+      await this.deps.syncCalendarEventUseCase?.execute({
+        userId: input.userId,
+        sourceType: 'interview',
+        sourceId: round.id,
+        event: {
+          title: `Interview: ${app.company} — ${app.role}`,
+          description: round.notes,
+          startAt: round.scheduledAt,
+          endAt: new Date(round.scheduledAt.getTime() + CALENDAR_SYNC.INTERVIEW_DURATION_MS),
+        },
+      });
+    }
 
     return round;
   }

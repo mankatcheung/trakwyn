@@ -6,3 +6,4 @@ export * from './schema/conversation.js';
 export * from './schema/notification.js';
 export * from './schema/profile.js';
 export * from './schema/consent.js';
+export * from './schema/calendar.js';

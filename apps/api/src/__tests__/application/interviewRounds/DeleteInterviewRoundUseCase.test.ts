@@ -5,6 +5,7 @@ import {
   makeInterviewRoundRepository,
 } from '#src/__tests__/helpers/mocks/interviews.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('DeleteInterviewRoundUseCase', () => {
   it('throws NOT_FOUND when the round does not exist', async () => {
@@ -75,5 +76,29 @@ describe('DeleteInterviewRoundUseCase', () => {
     await useCase.execute({ userId: 'user-1', roundId: 'round-1' });
 
     expect(interviewRoundRepository.delete).toHaveBeenCalledWith('round-1', 'app-1');
+  });
+
+  it('syncs the calendar deletion after removing the round', async () => {
+    const interviewRoundRepository = makeInterviewRoundRepository({
+      findById: vi.fn().mockResolvedValue(makeInterviewRound({ applicationId: 'app-1' })),
+    });
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+    });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+
+    const useCase = new DeleteInterviewRoundUseCase({
+      applicationRepository,
+      interviewRoundRepository,
+      syncCalendarEventUseCase,
+    });
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1' });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: null,
+    });
   });
 });

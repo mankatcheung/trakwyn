@@ -8,6 +8,13 @@
       "when": 1789725341006,
       "tag": "0000_postgres_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1789258106202,
+      "tag": "0035_regular_dazzler",
+      "breakpoints": true
     }
   ]
 }
