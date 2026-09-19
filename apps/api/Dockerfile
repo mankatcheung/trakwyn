@@ -53,4 +53,6 @@ USER node
 EXPOSE 8080
 # Plain node rather than `pnpm start`: no package manager in the runtime
 # image, and the default `#src/*` import condition resolves to dist/.
-CMD ["node", "dist/index.js"]
+# --import preloads OpenTelemetry before the app is imported, which is the
+# only way its instrumentations can patch ESM modules (JEF-346).
+CMD ["node", "--import", "./dist/instrumentation.js", "dist/index.js"]

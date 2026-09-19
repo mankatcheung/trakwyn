@@ -319,9 +319,46 @@ describe('tracing', () => {
 
       mod.startObservability();
 
-      expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith({
-        '@opentelemetry/instrumentation-fs': { enabled: false },
-      });
+      expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          '@opentelemetry/instrumentation-fs': { enabled: false },
+        }),
+      );
+    });
+
+    it('keeps GraphQL resolve spans to resolvers that do real work', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          '@opentelemetry/instrumentation-graphql': {
+            ignoreTrivialResolveSpans: true,
+            mergeItems: true,
+          },
+        }),
+      );
+    });
+
+    it('names HTTP server spans after the GraphQL operation they served', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+      const { applyGraphQLOperationSpanName } =
+        await import('#src/infrastructure/observability/graphqlOperationSpanName.js');
+
+      mod.startObservability();
+
+      expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          '@opentelemetry/instrumentation-http': {
+            applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
+          },
+        }),
+      );
     });
 
     it('passes the BatchSpanProcessor via spanProcessors with a near-0 scheduled delay', async () => {
