@@ -16,7 +16,7 @@
     "dev": "tsx watch -C development src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "start": "node --import ./dist/instrumentation.js dist/index.js",
+    "start": "node --enable-source-maps --import ./dist/instrumentation.js dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

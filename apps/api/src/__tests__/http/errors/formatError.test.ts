@@ -1,10 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GraphQLError } from 'graphql';
 import { formatError } from '#src/http/errors/formatError.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 
+const { recordRequestFailureMock } = vi.hoisted(() => ({
+  recordRequestFailureMock: vi.fn(),
+}));
+
+vi.mock('#src/infrastructure/observability/recordRequestFailure.js', () => ({
+  recordRequestFailure: recordRequestFailureMock,
+}));
+
 describe('formatError', () => {
+  beforeEach(() => {
+    recordRequestFailureMock.mockClear();
+  });
+
   it('returns the error unchanged when there is no originalError', () => {
     const logger = makeLogger();
     const err = new GraphQLError('Syntax error');
@@ -126,5 +138,46 @@ describe('formatError', () => {
     formatError(wrapper, logger);
 
     expect(logger.error).toHaveBeenCalledWith('[GraphQL error]', original);
+  });
+
+  describe('trace annotation', () => {
+    it('marks the trace failed for an unexpected error, alongside logging it', () => {
+      const logger = makeLogger();
+      const original = new Error('connect ECONNREFUSED');
+      const wrapper = new GraphQLError('wrapped', { originalError: original });
+
+      formatError(wrapper, logger);
+
+      expect(logger.error).toHaveBeenCalled();
+      expect(recordRequestFailureMock).toHaveBeenCalledWith(original, undefined);
+    });
+
+    it('leaves the trace green for an expected client error', () => {
+      const logger = makeLogger();
+      const original = Object.assign(new Error('Invalid credentials'), {
+        code: ERROR_CODES.UNAUTHORIZED,
+      });
+      const wrapper = new GraphQLError('wrapped', { originalError: original });
+
+      formatError(wrapper, logger);
+
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(recordRequestFailureMock).not.toHaveBeenCalled();
+    });
+
+    it('passes an unexpected coded error through with its code, for grouping', () => {
+      const logger = makeLogger();
+      const original = Object.assign(new Error('the database is unreachable'), {
+        code: ERROR_CODES.SERVICE_UNAVAILABLE,
+      });
+      const wrapper = new GraphQLError('wrapped', { originalError: original });
+
+      formatError(wrapper, logger);
+
+      expect(recordRequestFailureMock).toHaveBeenCalledWith(
+        original,
+        ERROR_CODES.SERVICE_UNAVAILABLE,
+      );
+    });
   });
 });

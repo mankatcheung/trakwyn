@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { fromCodedError } from '#src/http/errors/AppError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import { recordRequestFailure } from '#src/infrastructure/observability/recordRequestFailure.js';
 
 // Expected client-facing error codes — these are not logged as server errors.
 const EXPECTED_ERROR_CODES: string[] = [
@@ -33,6 +34,8 @@ export function formatError(err: GraphQLError, logger: ILogger): GraphQLError {
   const coded = (original as { code?: string }).code;
   if (!coded || !EXPECTED_ERROR_CODES.includes(coded)) {
     logger.error('[GraphQL error]', original);
+    // ...and mark the trace failed, which the 200 this responds with cannot.
+    recordRequestFailure(original, coded);
   }
 
   const appError = fromCodedError(original);

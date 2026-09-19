@@ -55,4 +55,6 @@ EXPOSE 8080
 # image, and the default `#src/*` import condition resolves to dist/.
 # --import preloads OpenTelemetry before the app is imported, which is the
 # only way its instrumentations can patch ESM modules (JEF-346).
-CMD ["node", "--import", "./dist/instrumentation.js", "dist/index.js"]
+# --enable-source-maps makes a logged stack name the .ts file and line that
+# threw; tsc emits the maps into dist/ and they ship with it.
+CMD ["node", "--enable-source-maps", "--import", "./dist/instrumentation.js", "dist/index.js"]
