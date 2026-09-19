@@ -198,6 +198,16 @@ export const METRICS = {
   CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
 } as const;
 
+/**
+ * OpenTelemetry span conventions for the application's own spans (JEF-347).
+ * Namespaced under `app.` so they're distinguishable from the attributes the
+ * auto-instrumentations set.
+ */
+export const TRACING = {
+  /** `DomainError.code` on a failed use-case span — absent when the failure was not a DomainError. */
+  ERROR_CODE_ATTRIBUTE: 'app.error.code',
+} as const;
+
 /** Email provider (Brevo) defaults. */
 export const EMAIL = {
   BREVO_API_URL: 'https://api.brevo.com/v3/smtp/email',

@@ -168,6 +168,9 @@ importers:
       '@libsql/client':
         specifier: ^0.17.4
         version: 0.17.4
+      '@opentelemetry/context-async-hooks':
+        specifier: ^2.10.0
+        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@react-pdf/types':
         specifier: ^2.14.0
         version: 2.14.0
