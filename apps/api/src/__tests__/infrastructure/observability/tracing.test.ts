@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AXIOM, ENV } from '#src/infrastructure/config/constants.js';
+import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 import {
   ATTR_SERVICE_NAME,
   ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
@@ -153,6 +153,9 @@ describe('tracing', () => {
     metricReaderInstances.length = 0;
     consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     for (const key of ENV_KEYS) delete process.env[key];
+    // Telemetry only ever runs in production, so that is the baseline; the
+    // cases that exercise the non-production gate unset or override it.
+    process.env[ENV.NODE_ENV] = NODE_ENV.PRODUCTION;
   });
 
   afterEach(() => {
@@ -184,6 +187,25 @@ describe('tracing', () => {
       const mod = await loadTracingModule();
       expect(mod.isObservabilityEnabled).toBe(true);
     });
+
+    it.each(['development', 'test'])(
+      'is false when Axiom is configured but NODE_ENV is %s',
+      async (nodeEnv) => {
+        process.env[ENV.AXIOM_TOKEN] = 'token';
+        process.env[ENV.AXIOM_DATASET] = 'dataset';
+        process.env[ENV.NODE_ENV] = nodeEnv;
+        const mod = await loadTracingModule();
+        expect(mod.isObservabilityEnabled).toBe(false);
+      },
+    );
+
+    it('is false when Axiom is configured but NODE_ENV is unset', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'token';
+      process.env[ENV.AXIOM_DATASET] = 'dataset';
+      delete process.env[ENV.NODE_ENV];
+      const mod = await loadTracingModule();
+      expect(mod.isObservabilityEnabled).toBe(false);
+    });
   });
 
   describe('startObservability', () => {
@@ -195,6 +217,20 @@ describe('tracing', () => {
       expect(nodeSDKStartMock).not.toHaveBeenCalled();
       expect(consoleInfoSpy).toHaveBeenCalledWith(
         expect.stringContaining('AXIOM_TOKEN/AXIOM_DATASET not set'),
+      );
+    });
+
+    it('does not construct the SDK outside production, even with Axiom configured', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'token';
+      process.env[ENV.AXIOM_DATASET] = 'dataset';
+      process.env[ENV.NODE_ENV] = 'development';
+      const mod = await loadTracingModule();
+      mod.startObservability();
+
+      expect(nodeSDKConstructorMock).not.toHaveBeenCalled();
+      expect(nodeSDKStartMock).not.toHaveBeenCalled();
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        expect.stringContaining('NODE_ENV is not production'),
       );
     });
 
@@ -228,19 +264,6 @@ describe('tracing', () => {
       ];
       expect(config.resource.attributes[ATTR_SERVICE_NAME]).toBe(AXIOM.SERVICE_NAME);
       expect(config.resource.attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME]).toBe('production');
-    });
-
-    it('defaults the deployment environment to "development" when NODE_ENV is unset', async () => {
-      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
-      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
-      const mod = await loadTracingModule();
-
-      mod.startObservability();
-
-      const [config] = nodeSDKConstructorMock.mock.calls[0] as [
-        { resource: { attributes: Record<string, unknown> } },
-      ];
-      expect(config.resource.attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME]).toBe('development');
     });
 
     it('omits metric export and logs a notice when AXIOM_METRICS_DATASET is not set', async () => {

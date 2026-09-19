@@ -15,21 +15,27 @@ import {
 // default-import synthesis resolves to that whole namespace rather than the
 // class, so import the named export instead.
 import { FastifyOtelInstrumentation } from '@fastify/otel';
-import { AUTH_HEADER, AXIOM, ENV } from '#src/infrastructure/config/constants.js';
+import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 
 /**
  * Must be registered as a Fastify plugin in buildApp() *before* routes and
  * other plugins are defined (see app.ts) — that's how it's able to wrap every
  * route handler and lifecycle hook. Created unconditionally so app.ts always
- * has something to register; when Axiom isn't configured it just traces
+ * has something to register; when observability is disabled it just traces
  * against the global no-op tracer, so registering it costs nothing extra.
  */
 export const fastifyOtelInstrumentation = new FastifyOtelInstrumentation();
 
-/** True when enough config is present to ship traces and logs to Axiom. */
-export const isObservabilityEnabled = Boolean(
-  process.env[ENV.AXIOM_TOKEN] && process.env[ENV.AXIOM_DATASET],
-);
+const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
+const isAxiomConfigured = Boolean(process.env[ENV.AXIOM_TOKEN] && process.env[ENV.AXIOM_DATASET]);
+
+/**
+ * True when this is a production process with enough config to ship
+ * telemetry to Axiom. Telemetry is production-only by design (JEF-345): a
+ * developer's `.env` carrying an Axiom token must not send local traffic
+ * into the production datasets, so dev and test stay off regardless.
+ */
+export const isObservabilityEnabled = isProduction && isAxiomConfigured;
 
 let sdk: NodeSDK | undefined;
 let spanProcessor: BatchSpanProcessor | undefined;
@@ -85,8 +91,8 @@ export async function shutdownObservability(): Promise<void> {
 /**
  * Starts the OpenTelemetry SDK, exporting traces and logs (and, when
  * configured, metrics) to Axiom via OTLP. Logs reach the SDK through the
- * pino destination in otelLogDestination.ts. No-ops when AXIOM_TOKEN/AXIOM_DATASET aren't
- * set, so local dev works unchanged without Axiom credentials.
+ * pino destination in otelLogDestination.ts. No-ops outside production, and
+ * when AXIOM_TOKEN/AXIOM_DATASET aren't set.
  *
  * Must be called before any instrumented module (http, fastify, etc.) is
  * imported anywhere in the process — see the import order in index.ts.
@@ -94,7 +100,9 @@ export async function shutdownObservability(): Promise<void> {
 export function startObservability(): void {
   if (!isObservabilityEnabled) {
     console.info(
-      '[observability] AXIOM_TOKEN/AXIOM_DATASET not set — tracing and metrics are disabled.',
+      isAxiomConfigured
+        ? '[observability] NODE_ENV is not production — tracing, logs and metrics are disabled.'
+        : '[observability] AXIOM_TOKEN/AXIOM_DATASET not set — tracing and metrics are disabled.',
     );
     return;
   }
@@ -143,7 +151,7 @@ export function startObservability(): void {
   sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: AXIOM.SERVICE_NAME,
-      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: process.env[ENV.NODE_ENV] ?? 'development',
+      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: NODE_ENV.PRODUCTION,
     }),
     spanProcessors: [spanProcessor],
     logRecordProcessors: [logProcessor],
