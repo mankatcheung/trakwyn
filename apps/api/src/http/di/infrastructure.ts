@@ -121,7 +121,9 @@ export const infrastructure = {
   // asFunction, not asClass: the constructor takes an options object, and
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
-  outboundUrlPolicy: asFunction(() => new OutboundUrlPolicy(), { lifetime: Lifetime.SINGLETON }),
+  outboundUrlPolicy: asFunction(({ logger }: Cradle) => new OutboundUrlPolicy({ logger }), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   // Verifies Cloud Scheduler's OIDC tokens on the admin cron routes
   // (JEF-336). A singleton so jose's cached copy of Google's JWKS is shared;
   // asFunction for the same options-object reason as outboundUrlPolicy.

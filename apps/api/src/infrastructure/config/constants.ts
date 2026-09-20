@@ -202,6 +202,25 @@ export const METRICS = {
    * is out of step with how long Neon actually keeps a connection.
    */
   DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
+  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
+  RATE_LIMITED: 'trakwyn.security.rate_limited',
+  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
+  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+} as const;
+
+/**
+ * Names for the log lines the security mechanisms emit (JEF-350).
+ *
+ * Kept as stable dotted identifiers on an `event` field rather than left to
+ * the wording of the message, so an Axiom monitor can key on the event
+ * without matching prose that a later edit would quietly break. A fixed pair,
+ * unlike the per-job `job.<name>.completed` names `runScheduledJob` builds
+ * from the job it was handed (JEF-352), which is why these are declared and
+ * those are not.
+ */
+export const SECURITY_EVENTS = {
+  RATE_LIMITED: 'security.rate_limited',
+  OUTBOUND_URL_REFUSED: 'security.outbound_url.refused',
 } as const;
 
 /**

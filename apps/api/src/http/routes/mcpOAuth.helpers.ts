@@ -215,7 +215,13 @@ export async function allowRequest(
   response: IHttpResponse,
   suffix = '',
 ): Promise<boolean> {
-  const key = `mcp-oauth:${request.ip ?? request.headers['user-agent'] ?? 'unknown'}:${suffix}`;
+  // `<route>:<subject category>:<value…>` — the category comes before
+  // anything variable so a rejection can be logged as "an IP was limited on
+  // mcp-oauth" without the address reaching the log (JEF-350). `suffix` is
+  // the client id on /authorize, i.e. user-supplied, so it stays behind the
+  // category too; it partitions buckets exactly as it did before.
+  const subject = request.ip ?? request.headers['user-agent'] ?? 'unknown';
+  const key = `mcp-oauth:ip:${subject}:${suffix}`;
   if (await limiter.consume(key)) return true;
   response.status(429).send({ error: 'rate_limited' });
   return false;

@@ -52,6 +52,32 @@ describe('DI modules', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
+  /**
+   * JEF-350: rejections are logged and counted by a decorator rather than by
+   * the nineteen use cases that consume a limiter, which is only true for as
+   * long as every registration goes through `limiter()`. A new limiter added
+   * with a bare `asValue(new RateLimiter(...))` would rate-limit correctly
+   * and report nothing — silently, which is the failure mode the ticket
+   * exists to remove. So it is asserted rather than described.
+   */
+  it('wraps every rate limiter in the instrumented decorator', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { InstrumentedRateLimiter } =
+      await import('#src/infrastructure/rateLimit/InstrumentedRateLimiter.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
+    const { rateLimiters } = await loadModules();
+
+    const container = buildContainer();
+    container.register({ logger: asValue(makeLogger()) });
+
+    const names = Object.keys(rateLimiters);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) {
+      expect(container.resolve(name), name).toBeInstanceOf(InstrumentedRateLimiter);
+    }
+  });
+
   it('buildContainer registers exactly the union of the DI module keys', async () => {
     const modules = await loadModules();
     const { buildContainer } = await import('#src/http/container.js');

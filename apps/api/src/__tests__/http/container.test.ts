@@ -47,8 +47,14 @@ describe('buildContainer', () => {
   it('resolves the outbound URL policy and the factories that take it (S1)', async () => {
     const { buildContainer } = await import('#src/http/container.js');
     const { OutboundUrlPolicy } = await import('#src/infrastructure/net/OutboundUrlPolicy.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
 
     const container = buildContainer();
+    // `logger` is supplied by buildApp, not by buildContainer — the policy
+    // reports its refusals through it (JEF-350), as rotateRefreshTokenUseCase
+    // already did.
+    container.register({ logger: asValue(makeLogger()) });
 
     // Registered with asFunction: asClass would proxy-inject the cradle as
     // the options object and fail resolving `strict` as a dependency — which
