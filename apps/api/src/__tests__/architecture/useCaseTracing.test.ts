@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   asClass,
   asValue,
@@ -10,13 +10,43 @@ import {
 
 import { useCases } from '#src/http/di/use-cases/index.js';
 import { applyUseCaseTracing, UNTRACED_USE_CASES } from '#src/http/di/useCaseTracing.js';
-import { buildContainer } from '#src/http/di/index.js';
-import { infrastructure } from '#src/http/di/infrastructure.js';
-import { repositories } from '#src/http/di/repositories.js';
-import { rateLimiters } from '#src/http/di/rate-limiters.js';
-import { mappers } from '#src/http/di/mappers.js';
-import { resolvers } from '#src/http/di/resolvers.js';
+import { ENV } from '#src/infrastructure/config/constants.js';
 import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
+
+/**
+ * `useCases` is safe to import statically — the dependency rule keeps use
+ * cases away from infrastructure, so nothing it pulls in touches a database.
+ * The other DI modules are not: `http/di/infrastructure.js` reaches
+ * `db/client.ts`, which constructs the real client at module-evaluation time
+ * and throws without `DATABASE_URL`. They are loaded through `loadDiModules`
+ * below, after the env is set, the same way `container.test.ts` and
+ * `di-modules.test.ts` do it.
+ */
+async function loadDiModules(): Promise<{
+  buildContainer: () => AwilixContainer<never>;
+  modules: Record<string, Record<string, unknown>>;
+}> {
+  const [
+    { buildContainer },
+    { infrastructure },
+    { repositories },
+    { rateLimiters },
+    { mappers },
+    { resolvers },
+  ] = await Promise.all([
+    import('#src/http/di/index.js'),
+    import('#src/http/di/infrastructure.js'),
+    import('#src/http/di/repositories.js'),
+    import('#src/http/di/rate-limiters.js'),
+    import('#src/http/di/mappers.js'),
+    import('#src/http/di/resolvers.js'),
+  ]);
+
+  return {
+    buildContainer: buildContainer as unknown as () => AwilixContainer<never>,
+    modules: { infrastructure, repositories, rateLimiters, mappers, resolvers },
+  };
+}
 
 /**
  * Tracing every use case is only true by construction for as long as every
@@ -77,6 +107,14 @@ const useCaseEntries = Object.entries(plainByName).filter(
 );
 
 describe('use-case tracing', () => {
+  beforeAll(() => {
+    // `db/client.ts` constructs the real client at module-evaluation time, so
+    // these must be set before the DI modules are imported in the tests below.
+    process.env[ENV.DATABASE_URL] ??= 'pglite:memory';
+    process.env[ENV.JWT_SECRET] ??= 'test-secret';
+    process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
+  });
+
   it('registers every use case under a name ending in UseCase', () => {
     const misnamed = useCaseEntries.filter(([name]) => !name.endsWith('UseCase')).map(([n]) => n);
 
@@ -143,16 +181,10 @@ describe('use-case tracing', () => {
    * `applyUseCaseTracing`, so it would be silently untraced with nothing to
    * catch it. Keeping them all in one map is what makes the mapping total.
    */
-  it('registers no use case outside the useCases map', () => {
-    const others = {
-      infrastructure,
-      repositories,
-      rateLimiters,
-      mappers,
-      resolvers,
-    };
+  it('registers no use case outside the useCases map', async () => {
+    const { modules } = await loadDiModules();
 
-    const strays = Object.entries(others).flatMap(([module, registrations]) =>
+    const strays = Object.entries(modules).flatMap(([module, registrations]) =>
       Object.keys(registrations)
         .filter((name) => name.endsWith('UseCase'))
         .map((name) => `${module}.${name}`),
@@ -166,15 +198,16 @@ describe('use-case tracing', () => {
    * the very same resolver objects, so there is no proxy in the hot path at
    * all — not merely a proxy around a no-op tracer.
    */
-  it('registers the unwrapped resolvers when observability is disabled', () => {
+  it('registers the unwrapped resolvers when observability is disabled', async () => {
     expect(isObservabilityEnabled).toBe(false);
+    const { buildContainer } = await loadDiModules();
 
     const registrations = buildContainer().registrations as Record<string, Resolver<unknown>>;
 
     for (const [name, resolver] of useCaseEntries) {
       expect(registrations[name]).toBe(resolver);
     }
-  });
+  }, 15_000);
 
   it('wraps the resolvers when tracing is applied', () => {
     for (const [name, resolver] of useCaseEntries) {
