@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { getErrorMessage } from '#/lib/errors';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
 import { Alert, Button, Checkbox, FormLabel, Input, Textarea } from '@trakwyn/ui';
@@ -81,6 +82,9 @@ export function NewApplicationPage() {
         CREATE_MUTATION,
         { input },
       );
+      // What was created, never what it contains — no company, role or
+      // description leaves the device (JEF-349).
+      captureEvent(ANALYTICS_EVENTS.APPLICATION_CREATED, { has_tags: tags.length > 0 });
       await queryClient.invalidateQueries({ queryKey: ['applications'] });
       await navigate({
         to: '/applications/$applicationId',

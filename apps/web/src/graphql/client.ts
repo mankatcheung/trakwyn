@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { queryClient } from '#/lib/queryClient';
 import { DEFAULT_API_URL, ERROR_CODES } from '#/constants';
+import { captureException, isApiRequest, newTraceContext, rememberTraceId } from '#/lib/analytics';
 
 const API_URL = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL;
 
@@ -61,7 +62,7 @@ async function doRefresh(): Promise<boolean> {
     const raw = await fetch(API_URL, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...traceHeaders(API_URL) },
       body: JSON.stringify({ query: REFRESH_MUTATION }),
     });
     const json = (await raw.json()) as {
@@ -85,9 +86,73 @@ function getOrStartRefresh(): Promise<boolean> {
   return refreshPromise!;
 }
 
+/**
+ * The `traceparent` header for a request to `url`, or nothing at all when
+ * `url` is not the API's own origin (JEF-349).
+ *
+ * The origin check is the point of the function, not a formality: the same
+ * header sent to Vercel Blob during a document upload would be a
+ * cross-request correlation id handed to a third party, and would fail CORS
+ * preflight against any endpoint that does not echo it back. The id is also
+ * remembered here, so an exception captured moments later can name the
+ * request it most likely followed.
+ */
+export function traceHeaders(url: string): Record<string, string> {
+  if (!isApiRequest(url, API_URL)) return {};
+  const { traceId, traceparent } = newTraceContext();
+  rememberTraceId(traceId);
+  return { traceparent };
+}
+
+/**
+ * Adds `traceparent` to an outbound graphql-request, preserving everything
+ * the client already set.
+ *
+ * `request.headers` arrives as a **`Headers` instance** — graphql-request
+ * builds one (`new Headers(params.headers)`) and sets `Accept` and
+ * `Content-Type` on it before any middleware runs. A `Headers` object has no
+ * own enumerable properties, so spreading it into an object literal silently
+ * yields `{}`: doing that here stripped the content type from every request
+ * and broke all of them. Copying through the `Headers` constructor is what
+ * makes this correct for all three shapes `HeadersInit` can take.
+ */
+export function addTraceparent<T extends { url: string; headers?: HeadersInit }>(request: T): T {
+  const headers = new Headers(request.headers);
+  for (const [name, value] of Object.entries(traceHeaders(request.url))) {
+    headers.set(name, value);
+  }
+  return { ...request, headers };
+}
+
+/** The HTTP status a graphql-request failure carries, when it carries one at all. */
+function statusOf(response: unknown): number | undefined {
+  const status = (response as { response?: { status?: unknown } } | undefined)?.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+/**
+ * Reports the failures that say something is wrong with the deployment
+ * rather than with the request: the API unreachable, or answering 5xx.
+ *
+ * Deliberately not reported: a 4xx or a GraphQL error with a domain code —
+ * NOT_FOUND, VALIDATION, a wrong password — which are the API working
+ * correctly and would bury the real faults under everyday noise.
+ */
+function reportTransportFailure(response: unknown, operationName: string | undefined): void {
+  if (!(response instanceof Error)) return;
+  const status = statusOf(response);
+  if (status !== undefined && status < 500) return;
+  captureException(response, {
+    kind: 'graphql_request_failed',
+    ...(status === undefined ? { network_error: true } : { status }),
+    ...(operationName ? { operation: operationName } : {}),
+  });
+}
+
 export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
   credentials: 'include',
-  responseMiddleware: async (response) => {
+  requestMiddleware: addTraceparent,
+  responseMiddleware: async (response, request) => {
     // graphql-request v7 wraps GraphQL errors in a ClientError (extends Error).
     // The errors live on response.response.errors, not directly on response.
     const payload =
@@ -103,13 +168,29 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
       (e) => e.extensions?.code === ERROR_CODES.UNAUTHORIZED,
     );
 
-    if (!hasUnauthorized) return;
+    if (!hasUnauthorized) {
+      reportTransportFailure(response, request.operationName);
+      return;
+    }
+
+    // Whether the browser believed it had a session going into this. The
+    // hint cookie and the refresh disagreeing is the fingerprint of a
+    // COOKIE_DOMAIN or CORS_ORIGIN misconfiguration (see CLAUDE.md, Auth):
+    // login "succeeds", the hint cookie is readable, and the real HttpOnly
+    // cookies never arrive — which looks to the user like being signed out
+    // at random and looks like nothing at all on the server.
+    const believedSignedIn = hasSessionCookie();
 
     const ok = await getOrStartRefresh();
     if (ok) {
       // Fresh access-token cookie is set — re-run all active queries so they pick it up.
       await queryClient.invalidateQueries();
     } else {
+      if (believedSignedIn) {
+        captureException(new Error('Refresh failed while the session hint cookie was present'), {
+          kind: 'auth_session_hint_mismatch',
+        });
+      }
       queryClient.clear();
       const { pathname, search, hash } = window.location;
 

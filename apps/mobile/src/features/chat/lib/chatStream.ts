@@ -1,6 +1,11 @@
 import fetch from './expoFetch';
 import { CHAT_STREAM_URL, ERROR_CODES } from '../../../constants';
-import { getValidAccessToken, recoverFromUnauthorized } from '../../../graphql/client';
+import {
+  getValidAccessToken,
+  recoverFromUnauthorized,
+  traceHeaders,
+} from '../../../graphql/client';
+import { ANALYTICS_EVENTS, addBreadcrumb, captureEvent } from '../../../lib/analytics';
 import { getNetworkMessage } from '../../../lib/errors';
 import { buildUserAgent } from '../../../lib/userAgent';
 
@@ -66,6 +71,7 @@ function openStream(accessToken: string | null, body: string, signal?: AbortSign
       'Content-Type': 'application/json',
       ...(userAgent ? { 'user-agent': userAgent } : {}),
       ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+      ...traceHeaders(CHAT_STREAM_URL),
     },
     body,
     signal,
@@ -90,6 +96,11 @@ export async function streamChatMessage({
 }: StreamChatMessageParams): Promise<void> {
   const body = JSON.stringify({ conversationId, message });
 
+  // Counted at the send, not at a successful reply: how often the assistant
+  // is reached for is the question, and a send that errors is part of it.
+  // The message itself is never included.
+  captureEvent(ANALYTICS_EVENTS.ASSISTANT_USED, { new_conversation: !conversationId });
+
   // This is not gqlRequest, so none of its refresh-on-UNAUTHORIZED applies:
   // the route answers an expired bearer with a plain 401 JSON body, and a
   // user who has sat in the chat screen for fifteen minutes holds exactly
@@ -98,6 +109,11 @@ export async function streamChatMessage({
   const sentWith = await getValidAccessToken();
   let response = await openStream(sentWith, body, signal);
   if (response.status === 401 && sentWith) {
+    // The stream reopening is the mobile equivalent of a reconnect, and it
+    // is worth having in the trail behind a later crash: a chat screen that
+    // reopens its stream repeatedly is a session going wrong, not a slow
+    // reply.
+    addBreadcrumb('Chat stream reopening after 401');
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind === 'unreachable') {
       throw new ChatStreamError(getNetworkMessage(), ERROR_CODES.NETWORK_ERROR);

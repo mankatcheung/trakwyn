@@ -7,13 +7,26 @@ jest.mock('../expoFetch', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('../../../../graphql/client', () => ({
   getValidAccessToken: jest.fn(async () => 'token-123'),
   recoverFromUnauthorized: jest.fn(),
+  traceHeaders: jest.fn(() => ({ traceparent: `00-${'a'.repeat(32)}-${'b'.repeat(16)}-01` })),
+}));
+// The chat stream reports a product event and a reconnect breadcrumb on
+// every send (JEF-349); stubbed here so these tests stay about the SSE
+// protocol.
+jest.mock('../../../../lib/analytics', () => ({
+  ANALYTICS_EVENTS: { ASSISTANT_USED: 'assistant_used' },
+  captureEvent: jest.fn(),
+  addBreadcrumb: jest.fn(),
 }));
 jest.mock('../../../../lib/userAgent', () => ({
   buildUserAgent: () => 'TrakwynMobile/test (Test; TestOS 1)',
 }));
 
 import { ChatStreamError, streamChatMessage } from '../chatStream';
-import { getValidAccessToken, recoverFromUnauthorized } from '../../../../graphql/client';
+import {
+  getValidAccessToken,
+  recoverFromUnauthorized,
+  traceHeaders,
+} from '../../../../graphql/client';
 import expoFetch from '../expoFetch';
 
 // Cast away expo/fetch's real (large, internal) FetchResponse type — these
@@ -54,6 +67,25 @@ describe('streamChatMessage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetValidAccessToken.mockResolvedValue('token-123');
+  });
+
+  // JEF-349: the SSE route is the API under another path, so it carries the
+  // same trace header as every GraphQL request rather than being the one
+  // client call that arrives untraced.
+  it('asks for a traceparent for the chat stream URL and sends what comes back', async () => {
+    mockFetch.mockResolvedValueOnce(encodedStreamResponse(['event: done\ndata: {}\n\n']));
+
+    await send(() => {});
+
+    expect(jest.mocked(traceHeaders)).toHaveBeenCalledWith(expect.stringContaining('/chat/stream'));
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          traceparent: expect.stringMatching(/^00-[0-9a-f]{32}-/),
+        }),
+      }),
+    );
   });
 
   it('attaches a known-good bearer token and the app User-Agent, and delivers delta chunks in order', async () => {

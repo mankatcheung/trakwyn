@@ -52,3 +52,18 @@ export const ACCESS_TOKEN_REFRESH_LEEWAY_S = 30;
  * first queries simply 401 and join the same in-flight refresh.
  */
 export const RESTORE_REFRESH_WAIT_MS = 3000;
+
+/**
+ * Error and crash reporting (JEF-349). Unset in development and CI, which
+ * leaves the SDK unstarted and every capture a no-op — the intended state,
+ * not a broken config. Set for a real build via EAS environment variables.
+ */
+export const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
+
+/**
+ * PostHog's EU ingestion host, used when `EXPO_PUBLIC_POSTHOG_HOST` is
+ * unset. EU Cloud rather than US, matching apps/web.
+ */
+export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
+
+export const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST;

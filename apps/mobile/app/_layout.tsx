@@ -8,9 +8,19 @@ import { I18nextProvider } from 'react-i18next';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeContext';
 import { LanguageProvider } from '../src/i18n/LanguageContext';
+import { NavigationBreadcrumbs } from '../src/components/NavigationBreadcrumbs';
+import { ScreenErrorBoundary } from '../src/components/ScreenErrorBoundary';
+import { initAnalytics } from '../src/lib/analytics';
 import i18n from '../src/i18n';
 
 const queryClient = new QueryClient();
+
+// Started at module load rather than in an effect (JEF-349): an effect runs
+// after the first render, and the errors worth catching most — a provider
+// throwing, a native crash during startup — happen before that. It is a
+// no-op without EXPO_PUBLIC_POSTHOG_KEY, which is the normal state in
+// development and in CI.
+initAnalytics();
 
 export function RootNavigator() {
   const { isLoading, isAuthenticated, sessionExpired } = useAuth();
@@ -105,11 +115,17 @@ export default function RootLayout() {
       <I18nextProvider i18n={i18n}>
         <LanguageProvider>
           <ThemeProvider>
-            <QueryClientProvider client={queryClient}>
-              <AuthProvider>
-                <RootNavigator />
-              </AuthProvider>
-            </QueryClientProvider>
+            {/* Inside ThemeProvider and I18nextProvider so its fallback is
+                themed and translated, and around everything below so a throw
+                in any screen is reported rather than blanking the app. */}
+            <ScreenErrorBoundary>
+              <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                  <NavigationBreadcrumbs />
+                  <RootNavigator />
+                </AuthProvider>
+              </QueryClientProvider>
+            </ScreenErrorBoundary>
             <AppStatusBar />
           </ThemeProvider>
         </LanguageProvider>
