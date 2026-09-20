@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
-import { isAuthorizedCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
+import { authorizeCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
 import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
 import { createOidcTestKeys, type OidcTestKeys } from '../../helpers/oidcTokens.js';
@@ -43,25 +43,25 @@ describe('cronAuth', () => {
   });
 
   const authorize = (authorization?: string, ownSecretEnvKey: string = ENV.CRON_SECRET) =>
-    isAuthorizedCronTrigger(requestWith(authorization), ownSecretEnvKey, verifier);
+    authorizeCronTrigger(requestWith(authorization), ownSecretEnvKey, verifier);
 
   describe('OIDC tokens from Cloud Scheduler', () => {
     it('accepts a valid token for the invoker service account', async () => {
       const token = await google.sign(INVOKER, API_ORIGIN);
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(true);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBe('oidc');
     });
 
     it('refuses a token minted for another audience', async () => {
       const token = await google.sign(INVOKER, 'https://trakwyn-api-xyz.a.run.app');
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBeNull();
     });
 
     it('refuses a token for a different service account', async () => {
       const token = await google.sign('someone-else@project.iam.gserviceaccount.com', API_ORIGIN);
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBeNull();
     });
 
     it('refuses an expired token', async () => {
@@ -69,21 +69,21 @@ describe('cronAuth', () => {
         expiresAt: Math.floor(Date.now() / 1000) - 60,
       });
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBeNull();
     });
 
     it('refuses every token when CRON_INVOKER_SA is not set', async () => {
       vi.stubEnv(ENV.CRON_INVOKER_SA, undefined);
       const token = await google.sign(INVOKER, API_ORIGIN);
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBeNull();
     });
 
     it('refuses every token when API_ORIGIN, the expected audience, is not set', async () => {
       vi.stubEnv(ENV.API_ORIGIN, undefined);
       const token = await google.sign(INVOKER, API_ORIGIN);
 
-      await expect(authorize(`Bearer ${token}`)).resolves.toBe(false);
+      await expect(authorize(`Bearer ${token}`)).resolves.toBeNull();
     });
   });
 
@@ -91,27 +91,27 @@ describe('cronAuth', () => {
     it('accepts CRON_SECRET', async () => {
       vi.stubEnv(ENV.CRON_SECRET, 'the-cron-secret');
 
-      await expect(authorize('Bearer the-cron-secret')).resolves.toBe(true);
+      await expect(authorize('Bearer the-cron-secret')).resolves.toBe('secret');
     });
 
     it("accepts the route's own secret", async () => {
       vi.stubEnv(ENV.DIGEST_ADMIN_SECRET, 'the-digest-secret');
 
       await expect(authorize('Bearer the-digest-secret', ENV.DIGEST_ADMIN_SECRET)).resolves.toBe(
-        true,
+        'secret',
       );
     });
 
     it('refuses a wrong secret', async () => {
       vi.stubEnv(ENV.CRON_SECRET, 'the-cron-secret');
 
-      await expect(authorize('Bearer wrong')).resolves.toBe(false);
+      await expect(authorize('Bearer wrong')).resolves.toBeNull();
     });
   });
 
   it('refuses a request with no bearer token', async () => {
-    await expect(authorize()).resolves.toBe(false);
-    await expect(authorize('Basic abc')).resolves.toBe(false);
+    await expect(authorize()).resolves.toBeNull();
+    await expect(authorize('Basic abc')).resolves.toBeNull();
   });
 
   describe('isCronTriggerConfigured', () => {

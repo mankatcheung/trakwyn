@@ -14,6 +14,12 @@ export interface DigestSummary {
   totalUsers: number;
   sent: number;
   skipped: number;
+  /**
+   * Users whose digest threw. `Promise.allSettled` already kept the rest of
+   * the run going past them; counting the rejections is what stops a partial
+   * run reporting as a clean one in the route's summary line (JEF-352).
+   */
+  failed: number;
 }
 
 const SEVEN_DAYS_MS = DURATIONS_MS.WEEK;
@@ -27,7 +33,7 @@ export class SendWeeklyDigestUseCase {
     let sent = 0;
     let skipped = 0;
 
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       users.map(async (user) => {
         const frequency = user.digestFrequency ?? (user.weeklyDigestEnabled ? 'weekly' : 'off');
         if (
@@ -113,6 +119,8 @@ export class SendWeeklyDigestUseCase {
       }),
     );
 
-    return { totalUsers: users.length, sent, skipped };
+    const failed = results.filter((result) => result.status === 'rejected').length;
+
+    return { totalUsers: users.length, sent, skipped, failed };
   }
 }

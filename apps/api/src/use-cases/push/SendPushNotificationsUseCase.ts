@@ -28,10 +28,17 @@ interface NotificationPayload {
   url: string;
 }
 
+export interface PushNotificationsSummary {
+  /** Individual pushes accepted by web-push or Expo, counted per subscription. */
+  delivered: number;
+  /** Pushes that threw; the run continued past each one. */
+  failed: number;
+}
+
 export class SendPushNotificationsUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(): Promise<void> {
+  async execute(): Promise<PushNotificationsSummary> {
     const notificationsByUser = new Map<string, NotificationPayload[]>();
     const notifiedRoundIds: string[] = [];
 
@@ -94,6 +101,8 @@ export class SendPushNotificationsUseCase {
     }
 
     // Send notifications
+    let delivered = 0;
+    let failed = 0;
     for (const [userId, notifications] of notificationsByUser) {
       const user = await this.deps.userRepository.findById(userId);
       if (!user || !user.pushNotificationsEnabled) continue;
@@ -112,7 +121,9 @@ export class SendPushNotificationsUseCase {
                 notification,
               );
             }
+            delivered++;
           } catch (err) {
+            failed++;
             this.deps.logger.error('Failed to send push notification', err);
             // If the subscription is expired/invalid, remove it — a web-push
             // 410 or an Expo 'DeviceNotRegistered' ticket both mean the same
@@ -138,5 +149,7 @@ export class SendPushNotificationsUseCase {
         // Best-effort — don't let a single failure block the whole batch
       }
     }
+
+    return { delivered, failed };
   }
 }
