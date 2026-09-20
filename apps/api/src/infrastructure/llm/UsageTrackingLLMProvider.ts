@@ -8,12 +8,14 @@ import type {
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import { estimatePromptTokens } from '#src/use-cases/shared/tokenEstimate.js';
 
 interface Deps {
   inner: ILLMProvider;
   usageEventRepository: ILlmUsageEventRepository;
   generateId: () => string;
+  logger: ILogger;
   userId: string;
   provider: string;
   model: string | null;
@@ -112,7 +114,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         estimated,
       });
     } catch (err) {
-      console.error('[llm-usage] failed to record usage event — continuing', err);
+      this.deps.logger.error('[llm-usage] failed to record usage event — continuing', err);
     }
   }
 }

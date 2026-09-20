@@ -20,6 +20,7 @@ export interface FakeMetrics extends IMetrics {
   misses: number;
   failOpens: FailOpenEvent[];
   circuitTransitions: CircuitTransitionEvent[];
+  databasePoolErrors: number;
 }
 
 /**
@@ -32,6 +33,7 @@ export function makeFakeMetrics(): FakeMetrics {
     misses: 0,
     failOpens: [],
     circuitTransitions: [],
+    databasePoolErrors: 0,
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -43,6 +45,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordCircuitTransition: (component, from, to) => {
       fake.circuitTransitions.push({ component, from, to });
+    },
+    recordDatabasePoolError: () => {
+      fake.databasePoolErrors++;
     },
   };
   return fake;

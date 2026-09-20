@@ -19,4 +19,13 @@ export class PinoLogger implements ILogger {
     }
     this.logger.error({ err: serializeLoggedError(err) }, message);
   }
+
+  /** Same shape, and the same serializer, one level down. */
+  warn(message: string, err?: unknown): void {
+    if (err === undefined) {
+      this.logger.warn(message);
+      return;
+    }
+    this.logger.warn({ err: serializeLoggedError(err) }, message);
+  }
 }

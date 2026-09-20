@@ -26,6 +26,7 @@ import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
 import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
+import { setRootLogger } from '#src/infrastructure/observability/rootLogger.js';
 import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
 import {
   fastifyOtelInstrumentation,
@@ -106,6 +107,10 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   // redundant, not meaningfully different.
   const logger = new PinoLogger(fastify.log);
   container.register({ logger: asValue(logger) });
+  // The same logger for the infrastructure singletons built before this
+  // container existed — the Postgres pool, the cache, the session
+  // blocklist. See rootLogger.ts (JEF-351).
+  setRootLogger(logger);
 
   await fastify.register(fastifyAwilixPlugin, {
     container,
