@@ -10,14 +10,25 @@ import { SHUTDOWN } from '#src/http/constants.js';
 import { createShutdownHandler } from '#src/http/gracefulShutdown.js';
 import { shutdownObservability } from '#src/infrastructure/observability/tracing.js';
 import { createOtelLogDestination } from '#src/infrastructure/observability/otelLogDestination.js';
+import { serializeLoggedErrorForPino } from '#src/infrastructure/observability/serializeLoggedError.js';
 import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 
 const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
+
+// Replaces pino's default error serializer, which keeps every enumerable
+// property an error carries — for a failed Drizzle query that is the bound
+// parameters, i.e. the user data the query was looking up (JEF-348). Set on
+// the logger rather than on the destination so both copies of a line, the
+// OTLP one and the stdout one Cloud Logging collects, are serialized once.
+// PinoLogger applies the same function, for anything not logged through
+// Fastify's own logger.
+const serializers = { err: serializeLoggedErrorForPino };
 
 const fastify = Fastify({
   logger: isProduction
     ? {
         level: 'warn',
+        serializers,
         // Raw NDJSON on stdout (which Cloud Logging collects) and the same
         // lines as OTel log records for Axiom — see otelLogDestination.ts.
         stream: createOtelLogDestination({
@@ -27,6 +38,7 @@ const fastify = Fastify({
       }
     : {
         level: 'info',
+        serializers,
         // Raw NDJSON is unreadable in a dev terminal — every request/error is
         // one dense JSON line with no color and no formatted stack trace, so a
         // genuine error is easy to miss scrolling past. pino-pretty only

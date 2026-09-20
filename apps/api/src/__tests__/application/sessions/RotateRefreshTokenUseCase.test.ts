@@ -212,8 +212,7 @@ describe('RotateRefreshTokenUseCase', () => {
     expect((err as { code: string }).code).toBe(ERROR_CODES.UNAUTHORIZED);
     expect(sessionRepository.revoke).toHaveBeenCalledWith(session.id);
     expect(logger.error).toHaveBeenCalledWith(
-      'Refresh token reuse detected',
-      expect.objectContaining({ sessionId: session.id, userId: session.userId }),
+      `Refresh token reuse detected for session ${session.id} (user ${session.userId})`,
     );
   });
 });
