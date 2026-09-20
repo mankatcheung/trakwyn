@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { useTranslation } from 'react-i18next';
 import { getTokens, setTokens, clearTokens, type TokenPair } from './tokenStorage';
+import { addBreadcrumb, captureException } from '../lib/analytics';
 import {
   gqlRequest,
   getValidAccessToken,
@@ -151,11 +152,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let tokens: TokenPair | null = null;
       try {
         tokens = await getTokens();
-      } catch {
+      } catch (error) {
         // expo-secure-store can throw on read — on Android, any keystore
         // failure it does not recognise surfaces as a DecryptException. An
         // unreadable pair is no session: clear it and start clean, rather
         // than leave isLoading true and the app on its launch spinner forever.
+        //
+        // Reported as well as recovered from (JEF-349): from the user's side
+        // this is being signed out for no reason at app launch, and it is
+        // invisible everywhere else — the API never hears about a session
+        // that was never presented.
+        addBreadcrumb('Secure storage read failed at launch');
+        captureException(error, { kind: 'token_storage_read_failed' });
         await clearTokens().catch(() => {});
       }
       if (cancelled) return;

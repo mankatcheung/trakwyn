@@ -2,6 +2,13 @@ import { GraphQLClient, ClientError } from 'graphql-request';
 import { ACCESS_TOKEN_REFRESH_LEEWAY_S, API_URL, ERROR_CODES } from '../constants';
 import { getTokens, setTokens, clearTokens, type TokenPair } from '../auth/tokenStorage';
 import { buildUserAgent } from '../lib/userAgent';
+import {
+  addBreadcrumb,
+  captureException,
+  isApiRequest,
+  newTraceContext,
+  rememberTraceId,
+} from '../lib/analytics';
 
 const REFRESH_TOKEN_MOBILE_MUTATION = `
   mutation RefreshTokenMobile($refreshToken: String!) {
@@ -53,8 +60,30 @@ function expiresWithin(token: string, seconds: number): boolean {
 }
 
 const userAgent = buildUserAgent();
+
+/**
+ * The `traceparent` header for a request to `url`, or nothing when `url`
+ * is not the API's own origin (JEF-349).
+ *
+ * The origin check matters even though this client only ever talks to one
+ * endpoint: the same helper is used by the chat SSE stream and by document
+ * uploads, and a correlation id across a user's requests is not something
+ * to hand to a third-party host by accident. The id is remembered here so
+ * an exception captured moments later can name the request it followed.
+ */
+export function traceHeaders(url: string): Record<string, string> {
+  if (!isApiRequest(url, API_URL)) return {};
+  const { traceId, traceparent } = newTraceContext();
+  rememberTraceId(traceId);
+  return { traceparent };
+}
+
 const rawClient = new GraphQLClient(API_URL, {
   headers: userAgent ? { 'user-agent': userAgent } : undefined,
+  requestMiddleware: (request) => ({
+    ...request,
+    headers: { ...request.headers, ...traceHeaders(request.url) },
+  }),
 });
 
 type RefreshOutcome =
@@ -70,6 +99,7 @@ async function endSession(): Promise<void> {
   await clearTokens().catch(() => {
     // The pair is being abandoned either way; a storage error must not stop
     // the rest of the app from hearing that the session is over.
+    addBreadcrumb('Secure storage delete failed');
   });
   setAccessToken(null);
   sessionExpiredListener?.();
@@ -80,9 +110,16 @@ async function doRefresh(): Promise<RefreshOutcome> {
   try {
     tokens = await getTokens();
   } catch {
+    // A SecureStore read that throws is indistinguishable from having no
+    // session, and is handled the same way — but it is a very different
+    // thing to see in the trail behind a crash.
+    addBreadcrumb('Secure storage read failed');
     tokens = null;
   }
-  if (!tokens) return { status: 'rejected' };
+  if (!tokens) {
+    addBreadcrumb('Token refresh skipped: no stored session');
+    return { status: 'rejected' };
+  }
 
   let data: { refreshTokenMobile: TokenPair };
   try {
@@ -93,20 +130,32 @@ async function doRefresh(): Promise<RefreshOutcome> {
   } catch (error) {
     // Deleting a still-valid refresh token because the subway ate the request
     // costs the user the whole session — so only an actual rejection ends it.
-    return isUnauthorized(error) ? { status: 'rejected' } : { status: 'unreachable' };
+    const rejected = isUnauthorized(error);
+    addBreadcrumb(rejected ? 'Token refresh rejected' : 'Token refresh unreachable');
+    if (rejected) {
+      // A refresh the server actively rejected is the one outcome worth an
+      // event: it signs the user out, and it is also what refresh-token reuse
+      // detection looks like from this side. An unreachable server is an
+      // ordinary bad network and stays a breadcrumb.
+      captureException(error, { kind: 'token_refresh_rejected' });
+    }
+    return rejected ? { status: 'rejected' } : { status: 'unreachable' };
   }
 
   setAccessToken(data.refreshTokenMobile.accessToken);
   try {
     await setTokens(data.refreshTokenMobile);
-  } catch {
+  } catch (error) {
     // The server has already rotated. If the device cannot keep the new pair,
     // the old one on disk will be presented on the next launch and — past the
     // API's 10-second rotation grace — read as a stolen token: the session
     // gets revoked and an error logged. A deliberate sign-out is the better
     // outcome, so this reports the session as over.
+    addBreadcrumb('Token refresh succeeded but the new pair could not be stored');
+    captureException(error, { kind: 'token_storage_write_failed' });
     return { status: 'rejected' };
   }
+  addBreadcrumb('Token refresh succeeded');
   return { status: 'refreshed', tokens: data.refreshTokenMobile };
 }
 

@@ -8,16 +8,44 @@ vi.mock('@tanstack/react-start/server', () => ({
   getCookie: vi.fn(),
 }));
 
-type Middleware = (response: unknown) => Promise<void>;
+interface RequestStub {
+  url: string;
+  operationName?: string;
+  headers?: Record<string, string>;
+}
+
+type Middleware = (response: unknown, request?: RequestStub) => Promise<void>;
+type RealMiddleware = (response: unknown, request: RequestStub) => Promise<void>;
+type RequestMiddleware = (request: RequestStub) => RequestStub;
+
+const DEFAULT_REQUEST: RequestStub = { url: 'http://localhost:3000/graphql' };
+
+const { mockPosthog } = vi.hoisted(() => ({
+  mockPosthog: {
+    init: vi.fn(),
+    capture: vi.fn(),
+    captureException: vi.fn(),
+    opt_in_capturing: vi.fn(),
+    opt_out_capturing: vi.fn(),
+  },
+}));
+
+vi.mock('posthog-js', () => ({ default: mockPosthog }));
 
 // GraphQLClient must be a real constructor (not an arrow fn) to support `new`
 vi.mock('graphql-request', () => ({
   GraphQLClient: vi.fn(function (
-    this: { responseMiddleware: Middleware },
+    this: { responseMiddleware: Middleware; requestMiddleware?: RequestMiddleware },
     _url: string,
-    opts: { responseMiddleware?: Middleware },
+    opts: { responseMiddleware?: RealMiddleware; requestMiddleware?: RequestMiddleware },
   ) {
-    this.responseMiddleware = opts?.responseMiddleware ?? (() => Promise.resolve());
+    const real = opts?.responseMiddleware;
+    // graphql-request always supplies the request alongside the response;
+    // defaulting it here keeps the call sites below to a single argument.
+    this.responseMiddleware = real
+      ? (response, request = DEFAULT_REQUEST) => real(response, request)
+      : () => Promise.resolve();
+    this.requestMiddleware = opts?.requestMiddleware;
   }),
 }));
 
@@ -230,5 +258,215 @@ describe('hasSessionCookie', () => {
     document.cookie = 'trakwyn_logged_in_other=1';
     const { hasSessionCookie } = await import('#/graphql/client');
     expect(hasSessionCookie()).toBe(false);
+  });
+});
+
+/**
+ * JEF-349. Two separate promises are being kept here: that the API gets a
+ * W3C `traceparent` it can adopt as the root of its own trace, and that
+ * nobody else does.
+ */
+describe('traceparent propagation', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('VITE_API_URL', '/graphql');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  async function loadClient() {
+    const { GraphQLClient } = await import('graphql-request');
+    const module = await import('#/graphql/client');
+    const instance = vi.mocked(GraphQLClient).mock.instances.at(-1) as unknown as {
+      requestMiddleware: RequestMiddleware;
+    };
+    return { ...module, requestMiddleware: instance.requestMiddleware };
+  }
+
+  it('sends a valid traceparent on every GraphQL request', async () => {
+    const { requestMiddleware } = await loadClient();
+
+    const out = requestMiddleware({ url: 'http://localhost:3000/graphql' });
+
+    expect(out.headers?.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+  });
+
+  it('gives each request its own trace id rather than reusing one per page', async () => {
+    const { requestMiddleware } = await loadClient();
+
+    const first = requestMiddleware({ url: 'http://localhost:3000/graphql' }).headers?.traceparent;
+    const second = requestMiddleware({ url: 'http://localhost:3000/graphql' }).headers?.traceparent;
+
+    expect(first).not.toBe(second);
+  });
+
+  it('keeps the headers the caller already set', async () => {
+    const { requestMiddleware } = await loadClient();
+
+    const out = requestMiddleware({
+      url: 'http://localhost:3000/graphql',
+      headers: { 'content-type': 'application/json' },
+    });
+
+    expect(out.headers?.['content-type']).toBe('application/json');
+  });
+
+  it('sends nothing to a third-party origin — the blob upload host is the live case', async () => {
+    const { traceHeaders } = await loadClient();
+
+    expect(traceHeaders('https://abc.public.blob.vercel-storage.com/upload')).toEqual({});
+  });
+
+  it('sends the header to the chat SSE route, which is the API under another path', async () => {
+    const { traceHeaders, CHAT_STREAM_URL } = await loadClient();
+
+    expect(traceHeaders(CHAT_STREAM_URL)).toHaveProperty('traceparent');
+  });
+
+  it('attaches the header to the raw refresh fetch too, not only to gqlClient', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: 'new' } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const { gqlClient } = await loadClient();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).traceparent).toMatch(/^00-[0-9a-f]{32}-/);
+    fetchSpy.mockRestore();
+  });
+});
+
+describe('failure reporting', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    Object.values(mockPosthog).forEach((fn) => fn.mockReset());
+    vi.stubEnv('VITE_API_URL', '/graphql');
+    vi.stubEnv('VITE_POSTHOG_KEY', 'phc_test');
+    stubWindowLocation();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    mockLocationHref.mockClear();
+  });
+
+  async function loadInitialised() {
+    const module = await import('#/graphql/client');
+    await (await import('#/lib/analytics/analytics')).initAnalytics();
+    return module;
+  }
+
+  it('reports a network failure, which is the API being unreachable', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware(new Error('Failed to fetch'), {
+      url: 'http://localhost:3000/graphql',
+      operationName: 'Applications',
+    });
+
+    expect(mockPosthog.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ kind: 'graphql_request_failed', network_error: true }),
+    );
+  });
+
+  it('names the operation, which is the one identifying detail that is safe to send', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware(new Error('Failed to fetch'), {
+      url: 'http://localhost:3000/graphql',
+      operationName: 'Applications',
+    });
+
+    const [, properties] = mockPosthog.captureException.mock.calls[0] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(properties.operation).toBe('Applications');
+  });
+
+  it('reports a 5xx', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware(Object.assign(new Error('Server error'), { response: { status: 503 } }));
+
+    expect(mockPosthog.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ kind: 'graphql_request_failed', status: 503 }),
+    );
+  });
+
+  it('stays quiet about a 4xx — that is the API working correctly', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware(Object.assign(new Error('Bad request'), { response: { status: 400 } }));
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet about a successful response', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware({ data: { applications: [] } });
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+  });
+
+  // The fingerprint of a COOKIE_DOMAIN or CORS_ORIGIN misconfiguration: the
+  // hint cookie says signed in, the real HttpOnly cookies never arrive, and
+  // the server sees nothing wrong at all.
+  it('reports a failed refresh that happened while the session hint cookie was present', async () => {
+    document.cookie = 'trakwyn_logged_in=1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: null } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    expect(mockPosthog.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ kind: 'auth_session_hint_mismatch' }),
+    );
+
+    document.cookie = 'trakwyn_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    fetchSpy.mockRestore();
+  });
+
+  it('stays quiet when the refresh fails with no hint cookie — an ordinary signed-out visitor', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: null } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });

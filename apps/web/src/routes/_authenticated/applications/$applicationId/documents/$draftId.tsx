@@ -6,6 +6,7 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { downloadUrl } from '#/lib/downloadUrl';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor } from '../-components/DocumentDraftEditor';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
@@ -165,6 +166,7 @@ export function DocumentDraftEditPage() {
         { draftId: draft.id },
       );
       const pdf = res.exportDocumentDraftToPdf;
+      captureEvent(ANALYTICS_EVENTS.PDF_EXPORTED);
       void queryClient.invalidateQueries({ queryKey: ['documents', applicationId] });
       downloadUrl(pdf.url, pdf.name);
       // The automatic download can be blocked (it follows an await, so the

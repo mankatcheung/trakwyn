@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
-const { mockGqlRequest, mockGetRequiresCookieConsent } = vi.hoisted(() => ({
-  mockGqlRequest: vi.fn(),
-  mockGetRequiresCookieConsent: vi.fn(),
-}));
+const { mockGqlRequest, mockGetRequiresCookieConsent, mockInitAnalytics, mockShutdownAnalytics } =
+  vi.hoisted(() => ({
+    mockGqlRequest: vi.fn(),
+    mockGetRequiresCookieConsent: vi.fn(),
+    mockInitAnalytics: vi.fn(),
+    mockShutdownAnalytics: vi.fn(),
+  }));
 
 vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
@@ -14,8 +17,9 @@ vi.mock('#/lib/consentRegion', () => ({
   getRequiresCookieConsent: mockGetRequiresCookieConsent,
 }));
 
-vi.mock('@vercel/analytics/react', () => ({
-  Analytics: () => <div data-testid="analytics" />,
+vi.mock('#/lib/analytics', () => ({
+  initAnalytics: mockInitAnalytics,
+  shutdownAnalytics: mockShutdownAnalytics,
 }));
 
 import { CookieConsent } from '#/components/CookieConsent';
@@ -26,13 +30,15 @@ describe('CookieConsent', () => {
     localStorage.clear();
     mockGqlRequest.mockReset().mockResolvedValue({ recordCookieConsent: true });
     mockGetRequiresCookieConsent.mockReset();
+    mockInitAnalytics.mockReset().mockResolvedValue(null);
+    mockShutdownAnalytics.mockReset();
   });
 
   it('loads analytics immediately outside a consent-required region, with no banner', async () => {
     mockGetRequiresCookieConsent.mockResolvedValue(false);
     render(<CookieConsent />);
 
-    await waitFor(() => expect(screen.getByTestId('analytics')).toBeInTheDocument());
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
     expect(screen.queryByText(/necessary cookies to keep you signed in/i)).not.toBeInTheDocument();
   });
 
@@ -43,7 +49,7 @@ describe('CookieConsent', () => {
     await waitFor(() =>
       expect(screen.getByText(/necessary cookies to keep you signed in/i)).toBeInTheDocument(),
     );
-    expect(screen.queryByTestId('analytics')).not.toBeInTheDocument();
+    expect(mockInitAnalytics).not.toHaveBeenCalled();
   });
 
   it('does not show the banner when a choice is already stored, even in a consent-required region', async () => {
@@ -54,7 +60,7 @@ describe('CookieConsent', () => {
     mockGetRequiresCookieConsent.mockResolvedValue(true);
     render(<CookieConsent />);
 
-    await waitFor(() => expect(screen.getByTestId('analytics')).toBeInTheDocument());
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
     expect(screen.queryByText(/necessary cookies to keep you signed in/i)).not.toBeInTheDocument();
   });
 
@@ -67,7 +73,7 @@ describe('CookieConsent', () => {
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockGetRequiresCookieConsent).toHaveBeenCalled());
-    expect(screen.queryByTestId('analytics')).not.toBeInTheDocument();
+    expect(mockInitAnalytics).not.toHaveBeenCalled();
   });
 
   it('"Accept all" dismisses the banner, loads analytics, and records the choice', async () => {
@@ -76,7 +82,7 @@ describe('CookieConsent', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /accept all/i }));
 
-    await waitFor(() => expect(screen.getByTestId('analytics')).toBeInTheDocument());
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /accept all/i })).not.toBeInTheDocument();
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('recordCookieConsent'), {
@@ -96,7 +102,7 @@ describe('CookieConsent', () => {
         screen.queryByRole('button', { name: /reject non-essential/i }),
       ).not.toBeInTheDocument(),
     );
-    expect(screen.queryByTestId('analytics')).not.toBeInTheDocument();
+    expect(mockInitAnalytics).not.toHaveBeenCalled();
   });
 
   it('"Manage preferences" opens a panel that saves the chosen category', async () => {
@@ -110,7 +116,7 @@ describe('CookieConsent', () => {
     fireEvent.click(analyticsToggle);
     fireEvent.click(screen.getByRole('button', { name: /save preferences/i }));
 
-    await waitFor(() => expect(screen.getByTestId('analytics')).toBeInTheDocument());
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
   });
 
   it('the "Necessary" category is always on and cannot be unchecked', async () => {
@@ -136,5 +142,49 @@ describe('CookieConsent', () => {
     requestOpenCookiePreferences();
 
     expect(await screen.findByRole('button', { name: /save preferences/i })).toBeInTheDocument();
+  });
+  // JEF-349: PostHog does error reporting as well as analytics, which makes
+  // it tempting to start it early "just for errors". These two tests pin the
+  // decision that it does not.
+  it('starts nothing while the region check is still in flight', async () => {
+    let resolveRegion: (requiresConsent: boolean) => void = () => {};
+    mockGetRequiresCookieConsent.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        resolveRegion = resolve;
+      }),
+    );
+
+    render(<CookieConsent />);
+
+    // The window before the region is known is exactly when a naive
+    // implementation would have loaded the SDK.
+    expect(mockInitAnalytics).not.toHaveBeenCalled();
+
+    resolveRegion(true);
+    await waitFor(() =>
+      expect(screen.getByText(/necessary cookies to keep you signed in/i)).toBeInTheDocument(),
+    );
+    expect(mockInitAnalytics).not.toHaveBeenCalled();
+  });
+
+  it('shuts analytics down when a previously-granted consent is withdrawn', async () => {
+    localStorage.setItem(
+      'trakwyn_cookie_consent',
+      JSON.stringify({ analytics: true, consentedAt: new Date().toISOString() }),
+    );
+    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    render(<CookieConsent />);
+
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
+
+    requestOpenCookiePreferences();
+    const analyticsToggle = await screen.findByRole('checkbox', { name: /^analytics$/i });
+    expect(analyticsToggle).toBeChecked();
+    fireEvent.click(analyticsToggle);
+    fireEvent.click(screen.getByRole('button', { name: /save preferences/i }));
+
+    // Not merely "stops sending": opting out is what clears the cookies and
+    // localStorage PostHog had already written.
+    await waitFor(() => expect(mockShutdownAnalytics).toHaveBeenCalled());
   });
 });

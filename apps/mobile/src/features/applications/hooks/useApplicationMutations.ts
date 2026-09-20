@@ -9,6 +9,7 @@ import {
   MOVE_APPLICATION_ON_BOARD_MUTATION,
 } from '../graphql/operations';
 import type { Application, CreateApplicationInput, UpdateApplicationInput } from '../types';
+import { ANALYTICS_EVENTS, captureEvent } from '../../../lib/analytics';
 
 function useInvalidateApplications() {
   const queryClient = useQueryClient();
@@ -22,7 +23,14 @@ export function useCreateApplication() {
       gqlRequest<{ createApplication: Application }>(CREATE_APPLICATION_MUTATION, {
         input,
       }).then((data) => data.createApplication),
-    onSuccess: invalidate,
+    onSuccess: (application) => {
+      // What was created, never what it contains — no company, role or
+      // description leaves the device (JEF-349).
+      captureEvent(ANALYTICS_EVENTS.APPLICATION_CREATED, {
+        has_tags: (application.tags?.length ?? 0) > 0,
+      });
+      invalidate();
+    },
   });
 }
 

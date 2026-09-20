@@ -16,6 +16,9 @@ allowBuilds:
   '@parcel/watcher': true
   '@prisma/client': true
   '@prisma/engines': true
+  # A transitive dependency of posthog-js (JEF-349). Its postinstall script
+  # only prints a sponsorship banner, so it is never run.
+  core-js: false
   esbuild: true
   prisma: true
   protobufjs: true

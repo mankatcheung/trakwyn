@@ -9,6 +9,18 @@ jest.mock('../../lib/userAgent', () => ({
   buildUserAgent: () => 'TrakwynMobile/test (Test; TestOS 1)',
 }));
 
+const mockCaptureException = jest.fn();
+const mockAddBreadcrumb = jest.fn();
+
+// Only the reporting half is replaced: `isApiRequest` and `newTraceContext`
+// stay real, so the traceparent assertions below exercise the actual
+// origin check rather than a stub of it.
+jest.mock('../../lib/analytics', () => ({
+  ...(jest.requireActual('../../lib/analytics') as object),
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
+  addBreadcrumb: (...args: unknown[]) => mockAddBreadcrumb(...args),
+}));
+
 import { getTokens, setTokens, clearTokens } from '../../auth/tokenStorage';
 import {
   gqlRequest,
@@ -16,6 +28,7 @@ import {
   recoverFromUnauthorized,
   setAccessToken,
   onSessionExpired,
+  traceHeaders,
 } from '../client';
 
 const mockedGetTokens = jest.mocked(getTokens);
@@ -351,5 +364,109 @@ describe('recoverFromUnauthorized', () => {
       kind: 'unreachable',
     });
     expect(mockedClearTokens).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * JEF-349. Two things the mobile app now does on its own behalf: it tells
+ * PostHog when a session ends for a reason the API will never hear about,
+ * and it gives the API a trace id it can root its own trace on.
+ */
+describe('reporting a rejected refresh', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    setAccessToken(null);
+    mockedSetTokens.mockResolvedValue(undefined);
+    mockedClearTokens.mockResolvedValue(undefined);
+  });
+
+  it('reports the rejection, which is what signs the user out', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockResolvedValueOnce(storedPair);
+    requestSpy.mockRejectedValueOnce(unauthorizedError());
+
+    await recoverFromUnauthorized('stale-token');
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ kind: 'token_refresh_rejected' }),
+    );
+  });
+
+  it('stays quiet when the refresh merely could not reach the server', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockResolvedValueOnce(storedPair);
+    requestSpy.mockRejectedValueOnce(new TypeError('Network request failed'));
+
+    await recoverFromUnauthorized('stale-token');
+
+    // The session survives an unreachable server, so there is nothing to
+    // report — only a breadcrumb, for the trail behind a later crash.
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mockAddBreadcrumb).toHaveBeenCalledWith('Token refresh unreachable');
+  });
+
+  it('reports a refresh that succeeded but could not be stored', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockResolvedValueOnce(storedPair);
+    requestSpy.mockResolvedValueOnce(refreshResponse);
+    mockedSetTokens.mockRejectedValueOnce(new Error('SecureStore unavailable'));
+
+    await recoverFromUnauthorized('stale-token');
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ kind: 'token_storage_write_failed' }),
+    );
+  });
+
+  it('leaves a breadcrumb for a secure-storage read that threw', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockRejectedValueOnce(new Error('DecryptException'));
+
+    await recoverFromUnauthorized('stale-token');
+
+    expect(mockAddBreadcrumb).toHaveBeenCalledWith('Secure storage read failed');
+  });
+
+  // The whole point of the scrubber, checked at the one call site most
+  // likely to carry a token: the error being reported *is* about tokens.
+  it('never lets a token value into the payload', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockResolvedValueOnce(storedPair);
+    requestSpy.mockRejectedValueOnce(unauthorizedError());
+
+    await recoverFromUnauthorized('stale-token');
+
+    const serialised = JSON.stringify(mockCaptureException.mock.calls);
+    expect(serialised).not.toContain(storedPair.refreshToken);
+    expect(serialised).not.toContain(storedPair.accessToken);
+  });
+
+  it('never lets a token value into a breadcrumb either', () => {
+    const serialised = JSON.stringify(mockAddBreadcrumb.mock.calls);
+    expect(serialised).not.toContain(storedPair.refreshToken);
+  });
+});
+
+describe('traceparent propagation', () => {
+  it('sends a valid traceparent to the API', () => {
+    expect(traceHeaders('http://localhost:3001/graphql').traceparent).toMatch(
+      /^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/,
+    );
+  });
+
+  it('sends the header to the chat SSE route, which is the API under another path', () => {
+    expect(traceHeaders('http://localhost:3001/chat/stream')).toHaveProperty('traceparent');
+  });
+
+  it('sends nothing to a third-party origin', () => {
+    expect(traceHeaders('https://abc.public.blob.vercel-storage.com/upload')).toEqual({});
+  });
+
+  it('gives each request its own trace id', () => {
+    const first = traceHeaders('http://localhost:3001/graphql').traceparent;
+    const second = traceHeaders('http://localhost:3001/graphql').traceparent;
+    expect(first).not.toBe(second);
   });
 });
