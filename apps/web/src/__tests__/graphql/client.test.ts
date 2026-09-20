@@ -11,12 +11,29 @@ vi.mock('@tanstack/react-start/server', () => ({
 interface RequestStub {
   url: string;
   operationName?: string;
-  headers?: Record<string, string>;
+  // A `Headers` instance, because that is what graphql-request actually
+  // passes: its fetcher does `new Headers(params.headers)` and sets Accept
+  // and Content-Type on it *before* any middleware runs. A plain object here
+  // would let a middleware that spreads `{...request.headers}` pass the
+  // tests while stripping every header in production.
+  headers?: Headers;
 }
 
 type Middleware = (response: unknown, request?: RequestStub) => Promise<void>;
 type RealMiddleware = (response: unknown, request: RequestStub) => Promise<void>;
 type RequestMiddleware = (request: RequestStub) => RequestStub;
+
+/** The request graphql-request hands to `requestMiddleware`, headers and all. */
+function graphqlRequestStub(overrides: Partial<RequestStub> = {}): RequestStub {
+  return {
+    url: 'http://localhost:3000/graphql',
+    headers: new Headers({
+      accept: 'application/graphql-response+json, application/json',
+      'content-type': 'application/json',
+    }),
+    ...overrides,
+  };
+}
 
 const DEFAULT_REQUEST: RequestStub = { url: 'http://localhost:3000/graphql' };
 
@@ -288,29 +305,53 @@ describe('traceparent propagation', () => {
   it('sends a valid traceparent on every GraphQL request', async () => {
     const { requestMiddleware } = await loadClient();
 
-    const out = requestMiddleware({ url: 'http://localhost:3000/graphql' });
+    const out = requestMiddleware(graphqlRequestStub());
 
-    expect(out.headers?.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+    expect(out.headers?.get('traceparent')).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
   });
 
   it('gives each request its own trace id rather than reusing one per page', async () => {
     const { requestMiddleware } = await loadClient();
 
-    const first = requestMiddleware({ url: 'http://localhost:3000/graphql' }).headers?.traceparent;
-    const second = requestMiddleware({ url: 'http://localhost:3000/graphql' }).headers?.traceparent;
+    const first = requestMiddleware(graphqlRequestStub()).headers?.get('traceparent');
+    const second = requestMiddleware(graphqlRequestStub()).headers?.get('traceparent');
 
     expect(first).not.toBe(second);
   });
 
-  it('keeps the headers the caller already set', async () => {
+  // Regression: `{ ...request.headers }` on a `Headers` instance yields `{}`,
+  // which dropped Content-Type and Accept from every GraphQL request and
+  // broke all of them. Nothing the caller set may be lost.
+  it('keeps the headers graphql-request already set', async () => {
+    const { requestMiddleware } = await loadClient();
+
+    const out = requestMiddleware(graphqlRequestStub());
+
+    expect(out.headers?.get('content-type')).toBe('application/json');
+    expect(out.headers?.get('accept')).toBe('application/graphql-response+json, application/json');
+  });
+
+  it('keeps headers given as a plain object, the other shape HeadersInit allows', async () => {
     const { requestMiddleware } = await loadClient();
 
     const out = requestMiddleware({
       url: 'http://localhost:3000/graphql',
-      headers: { 'content-type': 'application/json' },
+      headers: new Headers({ authorization: 'Bearer token-123' }),
     });
 
-    expect(out.headers?.['content-type']).toBe('application/json');
+    expect(out.headers?.get('authorization')).toBe('Bearer token-123');
+    expect(out.headers?.get('traceparent')).toMatch(/^00-/);
+  });
+
+  it('leaves the rest of the request init untouched', async () => {
+    const { requestMiddleware } = await loadClient();
+
+    const out = requestMiddleware(
+      graphqlRequestStub({ operationName: 'Applications' }),
+    ) as RequestStub & { url: string };
+
+    expect(out.url).toBe('http://localhost:3000/graphql');
+    expect(out.operationName).toBe('Applications');
   });
 
   it('sends nothing to a third-party origin — the blob upload host is the live case', async () => {

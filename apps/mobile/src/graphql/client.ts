@@ -78,12 +78,30 @@ export function traceHeaders(url: string): Record<string, string> {
   return { traceparent };
 }
 
+/**
+ * Adds `traceparent` to an outbound graphql-request, preserving everything
+ * the client already set.
+ *
+ * `request.headers` arrives as a **`Headers` instance** — graphql-request
+ * builds one (`new Headers(params.headers)`) and sets `Accept` and
+ * `Content-Type` on it before any middleware runs. A `Headers` object has no
+ * own enumerable properties, so spreading it into an object literal silently
+ * yields `{}`: doing that here stripped the content type and the User-Agent
+ * from every request and broke all of them. Copying through the `Headers`
+ * constructor is what makes this correct for all three shapes `HeadersInit`
+ * can take.
+ */
+export function addTraceparent<T extends { url: string; headers?: HeadersInit }>(request: T): T {
+  const headers = new Headers(request.headers);
+  for (const [name, value] of Object.entries(traceHeaders(request.url))) {
+    headers.set(name, value);
+  }
+  return { ...request, headers };
+}
+
 const rawClient = new GraphQLClient(API_URL, {
   headers: userAgent ? { 'user-agent': userAgent } : undefined,
-  requestMiddleware: (request) => ({
-    ...request,
-    headers: { ...request.headers, ...traceHeaders(request.url) },
-  }),
+  requestMiddleware: addTraceparent,
 });
 
 type RefreshOutcome =

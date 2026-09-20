@@ -29,6 +29,7 @@ import {
   setAccessToken,
   onSessionExpired,
   traceHeaders,
+  addTraceparent,
 } from '../client';
 
 const mockedGetTokens = jest.mocked(getTokens);
@@ -468,5 +469,71 @@ describe('traceparent propagation', () => {
     const first = traceHeaders('http://localhost:3001/graphql').traceparent;
     const second = traceHeaders('http://localhost:3001/graphql').traceparent;
     expect(first).not.toBe(second);
+  });
+});
+
+/**
+ * The middleware graphql-request actually calls. The `gqlRequest` tests
+ * above spy on `GraphQLClient.prototype.request`, which bypasses the
+ * fetcher entirely, so nothing there exercises this — which is how a
+ * middleware that dropped every header shipped green.
+ */
+describe('addTraceparent', () => {
+  /** The request graphql-request hands to `requestMiddleware`, headers and all. */
+  function graphqlRequestStub(overrides: Partial<{ url: string; headers: Headers }> = {}) {
+    return {
+      url: 'http://localhost:3001/graphql',
+      headers: new Headers({
+        accept: 'application/graphql-response+json, application/json',
+        'content-type': 'application/json',
+        'user-agent': 'TrakwynMobile/test (Test; TestOS 1)',
+      }),
+      ...overrides,
+    };
+  }
+
+  it('adds a valid traceparent', () => {
+    const out = addTraceparent(graphqlRequestStub());
+
+    expect(out.headers.get('traceparent')).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+  });
+
+  // Regression: `{ ...request.headers }` on a `Headers` instance yields `{}`.
+  // graphql-request passes a `Headers` (its fetcher does
+  // `new Headers(params.headers)` and sets Accept and Content-Type before any
+  // middleware runs), so spreading dropped the content type and the
+  // User-Agent the API turns into the session's device label.
+  it('keeps every header graphql-request already set', () => {
+    const out = addTraceparent(graphqlRequestStub());
+
+    expect(out.headers.get('content-type')).toBe('application/json');
+    expect(out.headers.get('accept')).toBe('application/graphql-response+json, application/json');
+    expect(out.headers.get('user-agent')).toBe('TrakwynMobile/test (Test; TestOS 1)');
+  });
+
+  it('keeps the bearer token a request carries', () => {
+    const out = addTraceparent({
+      url: 'http://localhost:3001/graphql',
+      headers: new Headers({ authorization: 'Bearer token-123' }),
+    });
+
+    expect(out.headers.get('authorization')).toBe('Bearer token-123');
+    expect(out.headers.get('traceparent')).toMatch(/^00-/);
+  });
+
+  it('adds nothing when the request is not to the API', () => {
+    const out = addTraceparent(
+      graphqlRequestStub({ url: 'https://abc.public.blob.vercel-storage.com/upload' }),
+    );
+
+    expect(out.headers.get('traceparent')).toBeNull();
+    expect(out.headers.get('content-type')).toBe('application/json');
+  });
+
+  it('leaves the rest of the request init untouched', () => {
+    const out = addTraceparent({ ...graphqlRequestStub(), operationName: 'Applications' });
+
+    expect(out.url).toBe('http://localhost:3001/graphql');
+    expect(out.operationName).toBe('Applications');
   });
 });

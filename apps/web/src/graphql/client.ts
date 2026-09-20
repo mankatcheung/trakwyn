@@ -104,6 +104,26 @@ export function traceHeaders(url: string): Record<string, string> {
   return { traceparent };
 }
 
+/**
+ * Adds `traceparent` to an outbound graphql-request, preserving everything
+ * the client already set.
+ *
+ * `request.headers` arrives as a **`Headers` instance** — graphql-request
+ * builds one (`new Headers(params.headers)`) and sets `Accept` and
+ * `Content-Type` on it before any middleware runs. A `Headers` object has no
+ * own enumerable properties, so spreading it into an object literal silently
+ * yields `{}`: doing that here stripped the content type from every request
+ * and broke all of them. Copying through the `Headers` constructor is what
+ * makes this correct for all three shapes `HeadersInit` can take.
+ */
+export function addTraceparent<T extends { url: string; headers?: HeadersInit }>(request: T): T {
+  const headers = new Headers(request.headers);
+  for (const [name, value] of Object.entries(traceHeaders(request.url))) {
+    headers.set(name, value);
+  }
+  return { ...request, headers };
+}
+
 /** The HTTP status a graphql-request failure carries, when it carries one at all. */
 function statusOf(response: unknown): number | undefined {
   const status = (response as { response?: { status?: unknown } } | undefined)?.response?.status;
@@ -131,10 +151,7 @@ function reportTransportFailure(response: unknown, operationName: string | undef
 
 export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
   credentials: 'include',
-  requestMiddleware: (request) => ({
-    ...request,
-    headers: { ...request.headers, ...traceHeaders(request.url) },
-  }),
+  requestMiddleware: addTraceparent,
   responseMiddleware: async (response, request) => {
     // graphql-request v7 wraps GraphQL errors in a ClientError (extends Error).
     // The errors live on response.response.errors, not directly on response.
