@@ -196,6 +196,12 @@ export const METRICS = {
   REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
   /** Circuit breaker state change — attributes: component, from, to. */
   CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+  /**
+   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
+   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
+   * is out of step with how long Neon actually keeps a connection.
+   */
+  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
 } as const;
 
 /**

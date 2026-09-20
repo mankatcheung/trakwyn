@@ -81,8 +81,13 @@ const port = Number(process.env[ENV.PORT] ?? 3001);
 
 try {
   await fastify.listen({ port, host: '0.0.0.0' });
-  console.log(`API server listening on http://localhost:${port}`);
-  console.log(`GraphiQL available at http://localhost:${port}/graphiql`);
+  // fastify.log, not console: in production that stream is teed to Axiom
+  // (otelLogDestination.ts), so a bare console line would land in Cloud
+  // Logging only. Note the production logger's level is 'warn', so these two
+  // are a dev convenience there rather than a startup record — the platform
+  // reports a started revision itself.
+  fastify.log.info(`API server listening on http://localhost:${port}`);
+  fastify.log.info(`GraphiQL available at http://localhost:${port}/graphiql`);
 } catch (err) {
   fastify.log.error(err);
   await shutdownObservability();

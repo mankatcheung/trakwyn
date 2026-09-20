@@ -20,6 +20,13 @@ export interface IMetrics {
   /** A Redis call failed (or was short-circuited) and the caller degraded gracefully instead of erroring. */
   recordFailOpen(component: MetricComponent, reason: FailOpenReason): void;
   recordCircuitTransition(component: MetricComponent, from: string, to: string): void;
+  /**
+   * The Postgres pool reported an error on an idle client — its socket was
+   * closed from the other end (JEF-351). Charted alongside the fail-open
+   * counters for the same reason: the pool recovers on its own, so without a
+   * count a worsening rate is invisible.
+   */
+  recordDatabasePoolError(): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -28,6 +35,7 @@ export const noopMetrics: IMetrics = {
   recordCacheMiss: () => {},
   recordFailOpen: () => {},
   recordCircuitTransition: () => {},
+  recordDatabasePoolError: () => {},
 };
 
 /**
@@ -46,6 +54,7 @@ class OtelMetrics implements IMetrics {
   private cacheMisses?: Counter;
   private failOpens?: Counter;
   private circuitTransitions?: Counter;
+  private databasePoolErrors?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -77,6 +86,13 @@ class OtelMetrics implements IMetrics {
       description: 'Circuit breaker state changes',
     });
     this.circuitTransitions.add(1, { component, from, to });
+  }
+
+  recordDatabasePoolError(): void {
+    this.databasePoolErrors ??= this.meter.createCounter(METRICS.DB_POOL_ERRORS, {
+      description: 'Postgres pool errors on an idle client, whose connection was already discarded',
+    });
+    this.databasePoolErrors.add(1);
   }
 }
 
