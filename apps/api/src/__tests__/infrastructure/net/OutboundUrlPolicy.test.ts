@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { OutboundUrlPolicy, isPrivateAddress } from '#src/infrastructure/net/OutboundUrlPolicy.js';
+import {
+  OutboundUrlPolicy,
+  classifyAddress,
+  isPrivateAddress,
+} from '#src/infrastructure/net/OutboundUrlPolicy.js';
+import { SECURITY_EVENTS } from '#src/infrastructure/config/constants.js';
+import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
+import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 
 const resolving = (addresses: Record<string, string[]>) =>
   vi.fn(async (hostname: string) => {
@@ -40,6 +47,153 @@ describe('isPrivateAddress', () => {
 
   it('treats something that is not an IP as private (fail closed)', () => {
     expect(isPrivateAddress('not-an-ip')).toBe(true);
+  });
+});
+
+describe('classifyAddress', () => {
+  it.each([
+    ['127.0.0.1', 'loopback'],
+    ['::1', 'loopback'],
+    ['10.1.2.3', 'rfc1918'],
+    ['172.16.0.1', 'rfc1918'],
+    ['192.168.1.1', 'rfc1918'],
+    ['169.254.169.254', 'link_local'],
+    ['fe80::1', 'link_local'],
+    ['100.64.0.1', 'cgnat'],
+    ['fd12::1', 'ula'],
+    ['fc00::1', 'ula'],
+    ['224.0.0.1', 'multicast'],
+    ['ff02::1', 'multicast'],
+    ['0.0.0.0', 'unspecified'],
+    ['::', 'unspecified'],
+    ['::ffff:10.0.0.1', 'rfc1918'],
+    ['8.8.8.8', 'public'],
+    ['2606:4700::1111', 'public'],
+    ['not-an-ip', 'not_an_ip'],
+  ])('classifies %s as %s', (ip, expected) => {
+    expect(classifyAddress(ip)).toBe(expected);
+  });
+});
+
+/**
+ * JEF-350. The refusal already worked; nobody found out it had happened.
+ * These assert the two halves of finding out — and, just as importantly,
+ * that finding out does not itself ship the URL to Axiom (JEF-348).
+ */
+describe('OutboundUrlPolicy reporting', () => {
+  const reporting = (addresses: Record<string, string[]> = {}) => {
+    const logger = makeLogger();
+    const metrics = makeFakeMetrics();
+    const policy = new OutboundUrlPolicy({
+      strict: true,
+      lookup: resolving(addresses),
+      logger,
+      metrics,
+    });
+    return { policy, logger, metrics };
+  };
+
+  const fields = (logger: ReturnType<typeof makeLogger>) =>
+    vi.mocked(logger.warn).mock.calls[0]?.[1];
+
+  it('records nothing when the URL is allowed', async () => {
+    const { policy, logger, metrics } = reporting({ 'api.example.com': ['93.184.216.34'] });
+
+    await policy.assertAllowed('https://api.example.com/v1', 'llm-provider');
+
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect(metrics.outboundUrlRefused).toEqual([]);
+  });
+
+  it('reports the hostname, port, address class and reason of a metadata probe', async () => {
+    const { policy, logger, metrics } = reporting({ 'metadata.example.com': ['169.254.169.254'] });
+
+    await expect(
+      policy.assertAllowed('http://metadata.example.com/latest/meta-data/', 'job-posting'),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(fields(logger)).toEqual({
+      event: SECURITY_EVENTS.OUTBOUND_URL_REFUSED,
+      reason: 'private_address',
+      purpose: 'job-posting',
+      hostname: 'metadata.example.com',
+      port: 80,
+      addressClass: 'link_local',
+    });
+    expect(metrics.outboundUrlRefused).toEqual([
+      { reason: 'private_address', purpose: 'job-posting' },
+    ]);
+  });
+
+  it.each([
+    ['not a url', 'invalid_url'],
+    ['file:///etc/passwd', 'unsupported_scheme'],
+    ['https://user:pw@example.com/', 'embedded_credentials'],
+    ['http://example.com/v1', 'insecure_provider_url'],
+    ['https://example.com:6379/', 'blocked_port'],
+    ['https://redis.internal/', 'reserved_hostname'],
+    ['https://nope.invalid/', 'unresolvable_host'],
+    ['https://127.0.0.1/', 'private_address'],
+  ])('reports %s with reason %s', async (url, reason) => {
+    const { policy, logger, metrics } = reporting({ 'example.com': ['93.184.216.34'] });
+
+    await expect(policy.assertAllowed(url, 'llm-provider')).rejects.toMatchObject({
+      code: 'VALIDATION',
+    });
+
+    expect(fields(logger)).toMatchObject({ reason });
+    expect(metrics.outboundUrlRefused).toEqual([{ reason, purpose: 'llm-provider' }]);
+  });
+
+  /**
+   * A job-posting URL carries a query string and a query string carries user
+   * data, so the path and query must never reach the log — the hostname is
+   * the whole of what is reported about where the request was headed.
+   */
+  it('never logs the path, query string or full URL', async () => {
+    const { policy, logger } = reporting();
+
+    await expect(
+      policy.assertAllowed(
+        'http://169.254.169.254/latest/meta-data/iam/?token=s3cret&email=someone@example.com',
+        'job-posting',
+      ),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+
+    const logged = JSON.stringify(fields(logger));
+    expect(logged).not.toContain('s3cret');
+    expect(logged).not.toContain('someone@example.com');
+    expect(logged).not.toContain('meta-data');
+    expect(logged).not.toContain('/latest');
+  });
+
+  it('reports a refusal in permissive mode too — the checks that still run are still refusals', async () => {
+    const logger = makeLogger();
+    const metrics = makeFakeMetrics();
+    const policy = new OutboundUrlPolicy({
+      strict: false,
+      lookup: resolving({}),
+      logger,
+      metrics,
+    });
+
+    await expect(policy.assertAllowed('file:///etc/hosts', 'job-posting')).rejects.toMatchObject({
+      code: 'VALIDATION',
+    });
+
+    expect(metrics.outboundUrlRefused).toEqual([
+      { reason: 'unsupported_scheme', purpose: 'job-posting' },
+    ]);
+  });
+
+  it('still refuses when no logger is supplied', async () => {
+    await expect(
+      new OutboundUrlPolicy({ strict: true, lookup: resolving({}) }).assertAllowed(
+        'http://127.0.0.1/',
+        'job-posting',
+      ),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
   });
 });
 

@@ -196,6 +196,22 @@ export const METRICS = {
   REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
   /** Circuit breaker state change — attributes: component, from, to. */
   CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
+  RATE_LIMITED: 'trakwyn.security.rate_limited',
+  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
+  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+} as const;
+
+/**
+ * Names for the log lines the security mechanisms emit (JEF-350).
+ *
+ * Kept as stable dotted identifiers on an `event` field rather than left to
+ * the wording of the message, so an Axiom monitor can key on the event
+ * without matching prose that a later edit would quietly break.
+ */
+export const SECURITY_EVENTS = {
+  RATE_LIMITED: 'security.rate_limited',
+  OUTBOUND_URL_REFUSED: 'security.outbound_url.refused',
 } as const;
 
 /**

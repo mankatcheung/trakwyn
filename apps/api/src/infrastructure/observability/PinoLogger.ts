@@ -1,5 +1,5 @@
 import type { FastifyBaseLogger } from 'fastify';
-import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { ILogger, LogFields } from '#src/use-cases/ports/ILogger.js';
 import { serializeLoggedError } from '#src/infrastructure/observability/serializeLoggedError.js';
 
 export class PinoLogger implements ILogger {
@@ -18,5 +18,17 @@ export class PinoLogger implements ILogger {
       return;
     }
     this.logger.error({ err: serializeLoggedError(err) }, message);
+  }
+
+  /**
+   * `fields` go through untouched — unlike `error`, there is no error object
+   * to reduce, and the caller has already decided each value is safe to log.
+   */
+  warn(message: string, fields?: LogFields): void {
+    if (fields === undefined) {
+      this.logger.warn(message);
+      return;
+    }
+    this.logger.warn(fields, message);
   }
 }

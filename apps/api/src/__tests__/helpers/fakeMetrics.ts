@@ -2,7 +2,10 @@ import type {
   FailOpenReason,
   IMetrics,
   MetricComponent,
+  OutboundUrlRefusalReason,
+  RateLimitSubject,
 } from '#src/infrastructure/observability/metrics.js';
+import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 
 export interface FailOpenEvent {
   component: MetricComponent;
@@ -15,11 +18,23 @@ export interface CircuitTransitionEvent {
   to: string;
 }
 
+export interface RateLimitedEvent {
+  route: string;
+  subject: RateLimitSubject;
+}
+
+export interface OutboundUrlRefusedEvent {
+  reason: OutboundUrlRefusalReason;
+  purpose: OutboundUrlPurpose;
+}
+
 export interface FakeMetrics extends IMetrics {
   hits: number;
   misses: number;
   failOpens: FailOpenEvent[];
   circuitTransitions: CircuitTransitionEvent[];
+  rateLimited: RateLimitedEvent[];
+  outboundUrlRefused: OutboundUrlRefusedEvent[];
 }
 
 /**
@@ -32,6 +47,8 @@ export function makeFakeMetrics(): FakeMetrics {
     misses: 0,
     failOpens: [],
     circuitTransitions: [],
+    rateLimited: [],
+    outboundUrlRefused: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -43,6 +60,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordCircuitTransition: (component, from, to) => {
       fake.circuitTransitions.push({ component, from, to });
+    },
+    recordRateLimited: (route, subject) => {
+      fake.rateLimited.push({ route, subject });
+    },
+    recordOutboundUrlRefused: (reason, purpose) => {
+      fake.outboundUrlRefused.push({ reason, purpose });
     },
   };
   return fake;

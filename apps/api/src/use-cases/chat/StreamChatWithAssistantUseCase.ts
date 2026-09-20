@@ -92,7 +92,7 @@ export class StreamChatWithAssistantUseCase {
       );
     }
 
-    if (!(await this.deps.chatRateLimiter.consume(`chat:${input.userId}`))) {
+    if (!(await this.deps.chatRateLimiter.consume(`chat:user:${input.userId}`))) {
       throw new RateLimitedError('Too many messages — please wait a moment and try again');
     }
 

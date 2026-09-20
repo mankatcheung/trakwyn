@@ -52,7 +52,9 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: TestLlmApiKeyInput): Promise<TestLlmApiKeyResult> {
-    if (!(await this.deps.testLlmApiKeyRateLimiter.consume(`testLlmApiKey:${input.userId}`))) {
+    if (
+      !(await this.deps.testLlmApiKeyRateLimiter.consume(`test-llm-api-key:user:${input.userId}`))
+    ) {
       throw new RateLimitedError('Too many test attempts — please wait a moment and try again');
     }
 

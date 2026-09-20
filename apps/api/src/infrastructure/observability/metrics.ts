@@ -1,5 +1,6 @@
 import { metrics, type Counter } from '@opentelemetry/api';
 import { AXIOM, METRICS } from '#src/infrastructure/config/constants.js';
+import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 
 /** Which Redis-backed subsystem a resilience event came from. */
 export type MetricComponent = 'cache' | 'rate_limit' | 'session_blocklist';
@@ -8,7 +9,27 @@ export type MetricComponent = 'cache' | 'rate_limit' | 'session_blocklist';
 export type FailOpenReason = 'error' | 'circuit_open';
 
 /**
- * Counters for cache effectiveness and Redis resilience (JEF-129).
+ * What a rate-limit bucket is keyed on, as a category rather than the value
+ * (JEF-350). The raw key holds a user id, an email or an IP address; only
+ * which *kind* of subject was limited is ever recorded.
+ */
+export type RateLimitSubject = 'user' | 'ip' | 'email' | 'unknown';
+
+/** Why `OutboundUrlPolicy` refused a URL — one stable code per rejection branch. */
+export type OutboundUrlRefusalReason =
+  | 'invalid_url'
+  | 'unsupported_scheme'
+  | 'embedded_credentials'
+  | 'insecure_provider_url'
+  | 'blocked_port'
+  | 'reserved_hostname'
+  | 'unresolvable_host'
+  | 'private_address';
+
+/**
+ * Counters for cache effectiveness and Redis resilience (JEF-129), and for
+ * the security mechanisms that would otherwise refuse a request silently
+ * (JEF-350).
  *
  * An interface rather than direct OTel calls so tests can assert on
  * recorded events by injecting a fake, the same way `CircuitBreaker` is
@@ -20,6 +41,10 @@ export interface IMetrics {
   /** A Redis call failed (or was short-circuited) and the caller degraded gracefully instead of erroring. */
   recordFailOpen(component: MetricComponent, reason: FailOpenReason): void;
   recordCircuitTransition(component: MetricComponent, from: string, to: string): void;
+  /** A rate limiter rejected a request (JEF-350). `route` and `subject` are both bounded sets. */
+  recordRateLimited(route: string, subject: RateLimitSubject): void;
+  /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
+  recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -28,6 +53,8 @@ export const noopMetrics: IMetrics = {
   recordCacheMiss: () => {},
   recordFailOpen: () => {},
   recordCircuitTransition: () => {},
+  recordRateLimited: () => {},
+  recordOutboundUrlRefused: () => {},
 };
 
 /**
@@ -46,6 +73,8 @@ class OtelMetrics implements IMetrics {
   private cacheMisses?: Counter;
   private failOpens?: Counter;
   private circuitTransitions?: Counter;
+  private rateLimited?: Counter;
+  private outboundUrlRefused?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -77,6 +106,20 @@ class OtelMetrics implements IMetrics {
       description: 'Circuit breaker state changes',
     });
     this.circuitTransitions.add(1, { component, from, to });
+  }
+
+  recordRateLimited(route: string, subject: RateLimitSubject): void {
+    this.rateLimited ??= this.meter.createCounter(METRICS.RATE_LIMITED, {
+      description: 'Requests rejected by a rate limiter',
+    });
+    this.rateLimited.add(1, { route, subject });
+  }
+
+  recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void {
+    this.outboundUrlRefused ??= this.meter.createCounter(METRICS.OUTBOUND_URL_REFUSED, {
+      description: 'Outbound URLs refused before the server connected to them',
+    });
+    this.outboundUrlRefused.add(1, { reason, purpose });
   }
 }
 
