@@ -41,6 +41,13 @@ export interface IMetrics {
   /** A Redis call failed (or was short-circuited) and the caller degraded gracefully instead of erroring. */
   recordFailOpen(component: MetricComponent, reason: FailOpenReason): void;
   recordCircuitTransition(component: MetricComponent, from: string, to: string): void;
+  /**
+   * The Postgres pool reported an error on an idle client — its socket was
+   * closed from the other end (JEF-351). Charted alongside the fail-open
+   * counters for the same reason: the pool recovers on its own, so without a
+   * count a worsening rate is invisible.
+   */
+  recordDatabasePoolError(): void;
   /** A rate limiter rejected a request (JEF-350). `route` and `subject` are both bounded sets. */
   recordRateLimited(route: string, subject: RateLimitSubject): void;
   /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
@@ -53,6 +60,7 @@ export const noopMetrics: IMetrics = {
   recordCacheMiss: () => {},
   recordFailOpen: () => {},
   recordCircuitTransition: () => {},
+  recordDatabasePoolError: () => {},
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
 };
@@ -73,6 +81,7 @@ class OtelMetrics implements IMetrics {
   private cacheMisses?: Counter;
   private failOpens?: Counter;
   private circuitTransitions?: Counter;
+  private databasePoolErrors?: Counter;
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
 
@@ -106,6 +115,13 @@ class OtelMetrics implements IMetrics {
       description: 'Circuit breaker state changes',
     });
     this.circuitTransitions.add(1, { component, from, to });
+  }
+
+  recordDatabasePoolError(): void {
+    this.databasePoolErrors ??= this.meter.createCounter(METRICS.DB_POOL_ERRORS, {
+      description: 'Postgres pool errors on an idle client, whose connection was already discarded',
+    });
+    this.databasePoolErrors.add(1);
   }
 
   recordRateLimited(route: string, subject: RateLimitSubject): void {

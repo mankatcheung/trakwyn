@@ -19,7 +19,7 @@ const build = (allowed: boolean, name = 'totpRateLimiter') => {
 
 /** Every field the decorator logs, so a leak shows up as a failing assertion. */
 const loggedFields = (logger: ReturnType<typeof makeLogger>) =>
-  vi.mocked(logger.warn).mock.calls[0]?.[1];
+  vi.mocked(logger.warn).mock.calls[0]?.[2];
 
 describe('describeRateLimitKey', () => {
   it.each([

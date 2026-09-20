@@ -196,6 +196,12 @@ export const METRICS = {
   REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
   /** Circuit breaker state change — attributes: component, from, to. */
   CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+  /**
+   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
+   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
+   * is out of step with how long Neon actually keeps a connection.
+   */
+  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
   /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
   RATE_LIMITED: 'trakwyn.security.rate_limited',
   /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
@@ -207,7 +213,10 @@ export const METRICS = {
  *
  * Kept as stable dotted identifiers on an `event` field rather than left to
  * the wording of the message, so an Axiom monitor can key on the event
- * without matching prose that a later edit would quietly break.
+ * without matching prose that a later edit would quietly break. A fixed pair,
+ * unlike the per-job `job.<name>.completed` names `runScheduledJob` builds
+ * from the job it was handed (JEF-352), which is why these are declared and
+ * those are not.
  */
 export const SECURITY_EVENTS = {
   RATE_LIMITED: 'security.rate_limited',

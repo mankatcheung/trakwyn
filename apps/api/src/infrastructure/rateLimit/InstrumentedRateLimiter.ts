@@ -72,7 +72,9 @@ export class InstrumentedRateLimiter implements IRateLimiter {
     if (await this.inner.consume(key)) return true;
 
     const { route, subject } = describeRateLimitKey(key);
-    this.logger.warn('Rate limit exceeded', {
+    // No `err`: nothing was thrown. The limiter refused on purpose, and the
+    // facts are all in the fields — same shape as `logScheduledJobMisconfigured`.
+    this.logger.warn('Rate limit exceeded', undefined, {
       event: SECURITY_EVENTS.RATE_LIMITED,
       limiter: this.name,
       route,

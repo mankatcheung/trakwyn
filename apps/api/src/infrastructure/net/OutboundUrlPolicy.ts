@@ -153,13 +153,14 @@ export class OutboundUrlPolicy implements IOutboundUrlPolicy {
     purpose: OutboundUrlPurpose,
     context: RefusalContext = {},
   ): never {
-    this.logger?.warn('Outbound URL refused', {
+    // No `err`: the policy refused on purpose, nothing was thrown yet, and
+    // everything worth knowing is a field. `context` is spread whole — it
+    // holds only the narrow set above, never the URL.
+    this.logger?.warn('Outbound URL refused', undefined, {
       event: SECURITY_EVENTS.OUTBOUND_URL_REFUSED,
       reason,
       purpose,
-      ...(context.hostname === undefined ? {} : { hostname: context.hostname }),
-      ...(context.port === undefined ? {} : { port: context.port }),
-      ...(context.addressClass === undefined ? {} : { addressClass: context.addressClass }),
+      ...context,
     });
     this.metrics.recordOutboundUrlRefused(reason, purpose);
     throw new ValidationError(message);

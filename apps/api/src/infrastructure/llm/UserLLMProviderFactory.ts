@@ -5,6 +5,7 @@ import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
@@ -21,6 +22,7 @@ interface Deps {
   llmUsageEventRepository: ILlmUsageEventRepository;
   outboundUrlPolicy: IOutboundUrlPolicy;
   generateId: () => string;
+  logger: ILogger;
 }
 
 export class UserLLMProviderFactory implements ILLMProviderFactory {
@@ -85,6 +87,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       inner: rawProvider,
       usageEventRepository: this.deps.llmUsageEventRepository,
       generateId: this.deps.generateId,
+      logger: this.deps.logger,
       userId,
       provider: resolvedProvider,
       model: resolvedModel,

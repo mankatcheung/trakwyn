@@ -94,7 +94,7 @@ describe('OutboundUrlPolicy reporting', () => {
   };
 
   const fields = (logger: ReturnType<typeof makeLogger>) =>
-    vi.mocked(logger.warn).mock.calls[0]?.[1];
+    vi.mocked(logger.warn).mock.calls[0]?.[2];
 
   it('records nothing when the URL is allowed', async () => {
     const { policy, logger, metrics } = reporting({ 'api.example.com': ['93.184.216.34'] });
