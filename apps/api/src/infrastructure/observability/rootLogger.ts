@@ -1,4 +1,4 @@
-import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { ILogger, LogFields } from '#src/use-cases/ports/ILogger.js';
 
 /**
  * The process-wide `ILogger`, for the infrastructure singletons that have no
@@ -26,12 +26,23 @@ import type { ILogger } from '#src/use-cases/ports/ILogger.js';
  * a pool error thrown during it would be worse than logging it somewhere that
  * reaches Cloud Logging but not Axiom.
  */
+/**
+ * Only what was actually given: pino reads a leading object as its merge
+ * target, so a trailing `undefined` would cost the message on the real
+ * logger, and on the console it is one more word of noise in a line someone
+ * is reading during startup.
+ */
+const consoleArgs = (message: string, err: unknown, fields?: LogFields): unknown[] => {
+  const args: unknown[] = [message];
+  if (err !== undefined) args.push(err);
+  if (fields !== undefined) args.push(fields);
+  return args;
+};
+
 const consoleFallback: ILogger = {
-  error: (message, err) => console.error(message, err),
-  warn: (message, err) => {
-    if (err === undefined) console.warn(message);
-    else console.warn(message, err);
-  },
+  error: (message, err, fields) => console.error(...consoleArgs(message, err, fields)),
+  warn: (message, err, fields) => console.warn(...consoleArgs(message, err, fields)),
+  info: (message, fields) => console.info(...consoleArgs(message, undefined, fields)),
 };
 
 let current: ILogger = consoleFallback;
@@ -47,6 +58,7 @@ export function resetRootLogger(): void {
 }
 
 export const rootLogger: ILogger = {
-  error: (message, err) => current.error(message, err),
-  warn: (message, err) => current.warn(message, err),
+  error: (message, err, fields) => current.error(message, err, fields),
+  warn: (message, err, fields) => current.warn(message, err, fields),
+  info: (message, fields) => current.info(message, fields),
 };

@@ -3,8 +3,17 @@ import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier
 import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
 
 /**
+ * Which of the two paths let a request in. Reported rather than discarded
+ * because a production run that authenticated by shared secret means something
+ * — Cloud Scheduler sends an OIDC token, so `secret` in production is either a
+ * manual trigger or the scheduler's identity no longer verifying (JEF-352).
+ */
+export type CronAuthMethod = 'oidc' | 'secret';
+
+/**
  * Shared auth check for the admin/cron-triggered routes (digest, reminders,
- * trash purge, push notifications). Accepts any of:
+ * trash purge, push notifications). Returns how the caller was authorized, or
+ * null if it was not. Accepts any of:
  *
  * - a Google-signed OIDC ID token for the `CRON_INVOKER_SA` service account,
  *   with `API_ORIGIN` as its audience — what the Cloud Scheduler jobs in
@@ -13,18 +22,20 @@ import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
  * - the route's own dedicated secret, for manual/external triggering;
  * - CRON_SECRET, kept as the manual-trigger path for every route.
  */
-export async function isAuthorizedCronTrigger(
+export async function authorizeCronTrigger(
   request: IHttpRequest,
   ownSecretEnvKey: string,
   oidcTokenVerifier: IOidcTokenVerifier,
-): Promise<boolean> {
+): Promise<CronAuthMethod | null> {
   const auth = request.headers.authorization;
-  if (typeof auth !== 'string' || !auth.startsWith(AUTH_HEADER.BEARER_PREFIX)) return false;
+  if (typeof auth !== 'string' || !auth.startsWith(AUTH_HEADER.BEARER_PREFIX)) return null;
 
   const token = auth.slice(AUTH_HEADER.BEARER_PREFIX.length);
-  if (matchesSecret(token, ownSecretEnvKey) || matchesSecret(token, ENV.CRON_SECRET)) return true;
+  if (matchesSecret(token, ownSecretEnvKey) || matchesSecret(token, ENV.CRON_SECRET)) {
+    return 'secret';
+  }
 
-  return isScheduledInvoker(token, oidcTokenVerifier);
+  return (await isScheduledInvoker(token, oidcTokenVerifier)) ? 'oidc' : null;
 }
 
 /**

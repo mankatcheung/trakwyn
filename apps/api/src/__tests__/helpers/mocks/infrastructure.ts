@@ -39,5 +39,6 @@ export const makeTransactionManager = (
 export const makeLogger = (overrides?: Partial<ILogger>): ILogger => ({
   error: vi.fn(),
   warn: vi.fn(),
+  info: vi.fn(),
   ...overrides,
 });

@@ -27,23 +27,28 @@ describe('rootLogger', () => {
     const err = new Error('late');
     captured.error('after the fact', err);
     captured.warn('degraded');
+    captured.info('job.trash_purge.completed', { job: 'trash_purge' });
 
-    expect(logger.error).toHaveBeenCalledWith('after the fact', err);
-    expect(logger.warn).toHaveBeenCalledWith('degraded', undefined);
+    expect(logger.error).toHaveBeenCalledWith('after the fact', err, undefined);
+    expect(logger.warn).toHaveBeenCalledWith('degraded', undefined, undefined);
+    expect(logger.info).toHaveBeenCalledWith('job.trash_purge.completed', { job: 'trash_purge' });
   });
 
   it('uses the console until one is set, rather than dropping the line', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
 
     const err = new Error('during startup');
     rootLogger.error('too early for pino', err);
     rootLogger.warn('also too early');
+    rootLogger.info('job.digest.completed', { job: 'digest' });
 
     expect(error).toHaveBeenCalledWith('too early for pino', err);
     // No second argument: pino reads a leading object as its merge target, so
     // passing `undefined` through would cost the message on the real logger.
     expect(warn).toHaveBeenCalledWith('also too early');
+    expect(info).toHaveBeenCalledWith('job.digest.completed', { job: 'digest' });
   });
 
   it('follows a later replacement rather than the first logger it was given', () => {

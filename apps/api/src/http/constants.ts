@@ -66,6 +66,21 @@ export const ROUTES = {
 } as const;
 
 /**
+ * Names of the Cloud Scheduler-driven `/admin/*` jobs, as they appear in the
+ * `job` field and the `job.<name>.completed` / `.failed` / `.misconfigured`
+ * event names of each run's summary line (JEF-352).
+ *
+ * Snake case rather than the route path: the name is what dashboards and
+ * alerts group on, so it should survive a route being moved.
+ */
+export const ADMIN_JOBS = {
+  DIGEST: 'digest',
+  TRASH_PURGE: 'trash_purge',
+  REMINDERS: 'reminders',
+  PUSH_NOTIFICATIONS: 'push_notifications',
+} as const;
+
+/**
  * `/chat/stream` request bodies. Fastify's default is 1 MB, sized for file
  * uploads; a chat turn is one id and one message of at most
  * `CHAT.MAX_MESSAGE_CHARS` (64 KB leaves room for 4-byte characters and JSON

@@ -29,7 +29,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 0, sent: 0, skipped: 0 });
+    expect(result).toEqual({ totalUsers: 0, sent: 0, skipped: 0, failed: 0 });
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
   });
 
@@ -47,7 +47,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1 });
+    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
   });
 
@@ -63,7 +63,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1 });
+    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
     expect(applicationRepository.findAllByUserId).not.toHaveBeenCalled();
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
   });
@@ -80,7 +80,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1 });
+    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
   });
 
@@ -130,7 +130,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 2, sent: 1, skipped: 1 });
+    expect(result).toEqual({ totalUsers: 2, sent: 1, skipped: 1, failed: 0 });
     expect(emailService.sendWeeklyDigest).toHaveBeenCalledOnce();
     expect(emailService.sendWeeklyDigest).toHaveBeenCalledWith('a@test.com', expect.any(Object));
     expect(userRepository.updateLastDigestSentAt).toHaveBeenCalledOnce();
@@ -151,7 +151,7 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1 });
+    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
     expect(applicationRepository.findAllByUserId).not.toHaveBeenCalled();
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
     expect(userRepository.updateLastDigestSentAt).not.toHaveBeenCalled();
@@ -171,9 +171,30 @@ describe('SendWeeklyDigestUseCase', () => {
       emailService,
     }).execute();
 
-    expect(result).toEqual({ totalUsers: 1, sent: 1, skipped: 0 });
+    expect(result).toEqual({ totalUsers: 1, sent: 1, skipped: 0, failed: 0 });
     expect(emailService.sendWeeklyDigest).toHaveBeenCalledOnce();
     expect(userRepository.updateLastDigestSentAt).toHaveBeenCalledWith(user.id, expect.any(Date));
+  });
+
+  it("counts a user whose digest threw, rather than losing it in allSettled's shadow", async () => {
+    const users = [makeUser({ id: 'user-1' }), makeUser({ id: 'user-2' })];
+    const userRepository = makeUserRepository({ findAll: vi.fn().mockResolvedValue(users) });
+    const applicationRepository = makeApplicationRepository({
+      findAllByUserId: vi.fn().mockResolvedValue([makeApplication()]),
+    });
+    const emailService = makeEmailService();
+    emailService.sendWeeklyDigest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Brevo timeout'))
+      .mockResolvedValueOnce(undefined);
+
+    const result = await new SendWeeklyDigestUseCase({
+      userRepository,
+      applicationRepository,
+      emailService,
+    }).execute();
+
+    expect(result).toEqual({ totalUsers: 2, sent: 1, skipped: 0, failed: 1 });
   });
 
   it('categorises new applications created in the last 7 days', async () => {

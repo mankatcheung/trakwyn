@@ -1,8 +1,9 @@
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
-import { ROUTES } from '#src/http/constants.js';
-import { isAuthorizedCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
+import { ADMIN_JOBS, ROUTES } from '#src/http/constants.js';
+import { authorizeCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
+import { logScheduledJobMisconfigured, runScheduledJob } from '#src/http/routes/runScheduledJob.js';
 
 /**
  * Push notification delivery triggered by an external cron job, same pattern
@@ -20,7 +21,14 @@ export function pushNotificationsRoutes(getCradle: () => Cradle): RouteDefinitio
       method: ['GET', 'POST'],
       path: ROUTES.PUSH_NOTIFICATIONS_SEND,
       handler: async (req, res) => {
+        const { logger, oidcTokenVerifier } = getCradle();
+
         if (!isCronTriggerConfigured(ENV.CRON_SECRET)) {
+          logScheduledJobMisconfigured(
+            logger,
+            ADMIN_JOBS.PUSH_NOTIFICATIONS,
+            'no_trigger_configured',
+          );
           res.status(503).send({
             error: 'Push notifications not configured (CRON_SECRET/CRON_INVOKER_SA missing)',
           });
@@ -28,23 +36,33 @@ export function pushNotificationsRoutes(getCradle: () => Cradle): RouteDefinitio
         }
 
         if (!process.env[ENV.VAPID_PUBLIC_KEY] || !process.env[ENV.VAPID_PRIVATE_KEY]) {
+          logScheduledJobMisconfigured(logger, ADMIN_JOBS.PUSH_NOTIFICATIONS, 'vapid_keys_missing');
           res.status(503).send({ error: 'Push notifications not configured (VAPID keys missing)' });
           return;
         }
 
-        if (!(await isAuthorizedCronTrigger(req, ENV.CRON_SECRET, getCradle().oidcTokenVerifier))) {
+        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier);
+        if (!auth) {
           res.status(401).send({ error: 'Unauthorized' });
           return;
         }
 
-        const { sendPushNotificationsUseCase, logger } = getCradle();
-        try {
-          await sendPushNotificationsUseCase.execute();
-          res.send({ ok: true });
-        } catch (err) {
-          logger.error('Push notifications failed', err);
+        const { sendPushNotificationsUseCase } = getCradle();
+        const outcome = await runScheduledJob({
+          job: ADMIN_JOBS.PUSH_NOTIFICATIONS,
+          auth,
+          logger,
+          execute: () => sendPushNotificationsUseCase.execute(),
+          summarize: ({ delivered, failed }) => ({ processed: delivered, failed }),
+        });
+
+        if (outcome.status === 'failed') {
           res.status(500).send({ error: 'Push notifications failed' });
+          return;
         }
+
+        const { delivered, failed } = outcome.result;
+        res.send({ ok: failed === 0, delivered, failed });
       },
     },
 
