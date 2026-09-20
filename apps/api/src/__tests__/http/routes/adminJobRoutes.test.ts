@@ -196,10 +196,15 @@ describe('admin job routes', () => {
       const state = await runRoute(pushNotificationsRoutes(getCradle(cradle)), cradle);
 
       expect(state.status).toBe(503);
-      expect(state.logger.warn).toHaveBeenCalledWith('job.push_notifications.misconfigured', {
-        job: ADMIN_JOBS.PUSH_NOTIFICATIONS,
-        reason: 'vapid_keys_missing',
-      });
+      expect(state.logger.warn).toHaveBeenCalledWith(
+        'job.push_notifications.misconfigured',
+        undefined,
+        {
+          event: 'job.push_notifications.misconfigured',
+          job: ADMIN_JOBS.PUSH_NOTIFICATIONS,
+          reason: 'vapid_keys_missing',
+        },
+      );
     });
   });
 
@@ -256,7 +261,8 @@ describe('admin job routes', () => {
       const state = await runRoute(routes(getCradle(cradle)), cradle);
 
       expect(state.status).toBe(503);
-      expect(state.logger.warn).toHaveBeenCalledWith(`job.${job}.misconfigured`, {
+      expect(state.logger.warn).toHaveBeenCalledWith(`job.${job}.misconfigured`, undefined, {
+        event: `job.${job}.misconfigured`,
         job,
         reason: 'no_trigger_configured',
       });

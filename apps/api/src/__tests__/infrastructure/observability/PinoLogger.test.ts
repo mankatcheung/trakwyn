@@ -39,6 +39,26 @@ describe('PinoLogger', () => {
     expect(error).toHaveBeenCalledWith('Refresh token reuse detected for session s_1 (user u_1)');
   });
 
+  it('serializes the error on warn too', () => {
+    const { warn, logger } = makePinoLogger();
+    const err = Object.assign(new Error('redis down'), { params: ['someone@example.com'] });
+
+    logger.warn('Cache fail-open', err);
+
+    const [payload, message] = warn.mock.calls[0] as [{ err: unknown }, string];
+    expect(message).toBe('Cache fail-open');
+    expect(payload.err).toMatchObject({ name: 'Error', message: 'redis down' });
+    expect(JSON.stringify(payload)).not.toContain('someone@example.com');
+  });
+
+  it('logs a warn message alone when nothing was thrown', () => {
+    const { warn, logger } = makePinoLogger();
+
+    logger.warn('Circuit breaker opened');
+
+    expect(warn).toHaveBeenCalledWith('Circuit breaker opened');
+  });
+
   it('keeps structured fields alongside the serialized error', () => {
     const { error, logger } = makePinoLogger();
 
@@ -53,18 +73,14 @@ describe('PinoLogger', () => {
     expect(payload.err).toMatchObject({ name: 'Error', message: 'boom' });
   });
 
-  it('logs fields with no error at all when none is given', () => {
-    const { error, logger } = makePinoLogger();
-
-    logger.error('Something failed', undefined, { job: 'digest' });
-
-    expect(error).toHaveBeenCalledWith({ job: 'digest' }, 'Something failed');
-  });
-
-  it('records the event name as both the field and the message', () => {
+  it('carries fields on a warn with nothing thrown behind it', () => {
     const { warn, logger } = makePinoLogger();
 
-    logger.warn('job.digest.misconfigured', { job: 'digest', reason: 'no_trigger_configured' });
+    logger.warn('job.digest.misconfigured', undefined, {
+      event: 'job.digest.misconfigured',
+      job: 'digest',
+      reason: 'no_trigger_configured',
+    });
 
     expect(warn).toHaveBeenCalledWith(
       { event: 'job.digest.misconfigured', job: 'digest', reason: 'no_trigger_configured' },
@@ -75,7 +91,11 @@ describe('PinoLogger', () => {
   it('sends info lines through a child pinned to info, since production logs at warn', () => {
     const { child, info, logger } = makePinoLogger();
 
-    logger.info('job.digest.completed', { job: 'digest', processed: 3 });
+    logger.info('job.digest.completed', {
+      event: 'job.digest.completed',
+      job: 'digest',
+      processed: 3,
+    });
 
     expect(child).toHaveBeenCalledWith({}, { level: 'info' });
     expect(info).toHaveBeenCalledWith(

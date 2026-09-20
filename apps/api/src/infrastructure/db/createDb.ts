@@ -3,6 +3,9 @@ import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT, PgTransaction } from 'drizzle-orm/pg-core';
 import { DATABASE } from '#src/infrastructure/config/constants.js';
+import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
+import { rootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import * as schema from './schema.js';
 
 type Schema = typeof schema;
@@ -55,7 +58,8 @@ function pgliteDataDir(url: string): string {
   return target === DATABASE.PGLITE_IN_MEMORY ? 'memory://' : target;
 }
 
-function createPoolDb(url: string): DbHandle {
+function createPoolDb(url: string, options: CreateDbOptions): DbHandle {
+  const { logger = rootLogger, metrics = otelMetrics } = options;
   const pool = new pg.Pool({
     connectionString: url,
     max: DATABASE.POOL_MAX,
@@ -67,9 +71,16 @@ function createPoolDb(url: string): DbHandle {
   // to zero, the pooler recycling a server connection — is reported here.
   // Without a listener, `pg` re-emits it as an unhandled 'error' event and
   // the process exits. The pool has already discarded that client; the next
-  // query opens a fresh one, so logging is all that is needed.
+  // query opens a fresh one, so recording it is all that is needed.
+  //
+  // Through the logger rather than console.error (JEF-351): only Fastify's
+  // pino stream is teed to Axiom, so a bare console line reached Cloud
+  // Logging and nothing else. The counter is the part that makes a *rate*
+  // visible — one of these is routine, a climbing rate means
+  // POOL_IDLE_TIMEOUT_MS no longer matches what the server allows.
   pool.on('error', (err) => {
-    console.error('Postgres pool: idle client error', err);
+    metrics.recordDatabasePoolError();
+    logger.error('Postgres pool: idle client error', err);
   });
 
   return {
@@ -85,6 +96,15 @@ export interface CreateDbOptions {
    * template this way — several times faster than migrating per database.
    */
   pgliteSnapshot?: Blob;
+  /**
+   * Postgres pool only: where the pool's `'error'` events go. Defaults to
+   * `rootLogger`, because the process database is built at module load in
+   * `db/client.ts`, before there is a container to be injected from — see
+   * rootLogger.ts. Passed explicitly by tests.
+   */
+  logger?: ILogger;
+  /** Postgres pool only: counts those same errors. Defaults to `otelMetrics`. */
+  metrics?: IMetrics;
 }
 
 async function createPgliteDb(url: string, options: CreateDbOptions): Promise<DbHandle> {
@@ -112,5 +132,5 @@ export async function createDb(url: string, options: CreateDbOptions = {}): Prom
         `Set DATABASE_URL=pglite:./.pglite for local dev, then run pnpm db:migrate and pnpm db:seed.`,
     );
   }
-  return isPgliteUrl(url) ? createPgliteDb(url, options) : createPoolDb(url);
+  return isPgliteUrl(url) ? createPgliteDb(url, options) : createPoolDb(url, options);
 }

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
 import type { ILLMProvider, LLMStreamEvent } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
+import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 
 function makeInner(overrides?: Partial<ILLMProvider>): ILLMProvider {
   return {
@@ -26,12 +27,6 @@ function makeRepo(overrides?: Partial<ILlmUsageEventRepository>): ILlmUsageEvent
 }
 
 describe('UsageTrackingLLMProvider', () => {
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
   describe('complete', () => {
     it('records a usage event when the inner provider reports usage', async () => {
       const inner = makeInner({
@@ -43,6 +38,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-1',
         userId: 'user-1',
         provider: 'openai',
@@ -71,6 +67,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-1',
         userId: 'user-1',
         provider: 'openai',
@@ -91,9 +88,11 @@ describe('UsageTrackingLLMProvider', () => {
       const usageEventRepository = makeRepo({
         record: vi.fn().mockRejectedValue(new Error('db down')),
       });
+      const logger = makeLogger();
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger,
         generateId: () => 'evt-1',
         userId: 'user-1',
         provider: 'openai',
@@ -103,7 +102,13 @@ describe('UsageTrackingLLMProvider', () => {
       const result = await provider.complete([{ role: 'user', content: 'hi' }]);
 
       expect(result.content).toBe('ok');
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      // Through the injected logger, not console.error (JEF-351) — a
+      // swallowed usage write is precisely the kind of thing that has to be
+      // visible in Axiom next to the request it happened in.
+      expect(logger.error).toHaveBeenCalledWith(
+        '[llm-usage] failed to record usage event — continuing',
+        expect.any(Error),
+      );
     });
   });
 
@@ -124,6 +129,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-2',
         userId: 'user-1',
         provider: 'anthropic',
@@ -164,6 +170,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-3',
         userId: 'user-1',
         provider: 'anthropic',
@@ -207,6 +214,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-4',
         userId: 'user-1',
         provider: 'anthropic',
@@ -232,6 +240,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-5',
         userId: 'user-1',
         provider: 'openai',
@@ -259,6 +268,7 @@ describe('UsageTrackingLLMProvider', () => {
       const provider = new UsageTrackingLLMProvider({
         inner,
         usageEventRepository,
+        logger: makeLogger(),
         generateId: () => 'evt-6',
         userId: 'user-1',
         provider: 'openai',

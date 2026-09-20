@@ -50,7 +50,9 @@ export async function runScheduledJob<T>({
 
   try {
     const result = await execute();
-    logger.info(`job.${job}.completed`, {
+    const event = `job.${job}.completed`;
+    logger.info(event, {
+      event,
       job,
       auth,
       durationMs: Date.now() - startedAt,
@@ -75,8 +77,11 @@ export async function runScheduledJob<T>({
  * fired, which is exactly what these lines exist to tell apart.
  *
  * `reason` is a short stable token rather than the sentence sent to the
- * caller, so it can be grouped on.
+ * caller, so it can be grouped on. Nothing was thrown — the route refused the
+ * request on purpose — so the `err` argument is empty and the facts are all
+ * in the fields.
  */
 export function logScheduledJobMisconfigured(logger: ILogger, job: string, reason: string): void {
-  logger.warn(`job.${job}.misconfigured`, { job, reason });
+  const event = `job.${job}.misconfigured`;
+  logger.warn(event, undefined, { event, job, reason });
 }

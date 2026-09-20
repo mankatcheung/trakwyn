@@ -15,7 +15,7 @@ export class PinoLogger implements ILogger {
    * idempotent by design.
    */
   error(message: string, err?: unknown, fields?: LogFields): void {
-    const context = err === undefined ? fields : { ...fields, err: serializeLoggedError(err) };
+    const context = this.context(err, fields);
     if (context === undefined) {
       this.logger.error(message);
       return;
@@ -23,8 +23,14 @@ export class PinoLogger implements ILogger {
     this.logger.error(context, message);
   }
 
-  warn(event: string, fields?: LogFields): void {
-    this.logger.warn({ event, ...fields }, event);
+  /** Same shape, and the same serializer, one level down. */
+  warn(message: string, err?: unknown, fields?: LogFields): void {
+    const context = this.context(err, fields);
+    if (context === undefined) {
+      this.logger.warn(message);
+      return;
+    }
+    this.logger.warn(context, message);
   }
 
   /**
@@ -36,8 +42,22 @@ export class PinoLogger implements ILogger {
    * request log as well. Created on first use, so a caller that never logs at
    * `info` needs nothing but the logger it was given.
    */
-  info(event: string, fields?: LogFields): void {
+  info(message: string, fields?: LogFields): void {
     this.infoLogger ??= this.logger.child({}, { level: 'info' });
-    this.infoLogger.info({ event, ...fields }, event);
+    if (fields === undefined) {
+      this.infoLogger.info(message);
+      return;
+    }
+    this.infoLogger.info(fields, message);
+  }
+
+  /**
+   * pino reads a bare message differently from one with a context object, so
+   * a line carrying neither an error nor fields keeps the single-argument
+   * form it had before either existed.
+   */
+  private context(err: unknown, fields?: LogFields): Record<string, unknown> | undefined {
+    if (err === undefined) return fields;
+    return { ...fields, err: serializeLoggedError(err) };
   }
 }

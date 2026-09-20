@@ -68,6 +68,10 @@ export async function flushObservability(): Promise<void> {
       metricReader?.forceFlush(),
     ]);
   } catch (err: unknown) {
+    // console, not the logger, and deliberately so (JEF-351): a log line
+    // emitted here would be handed to the very log processor whose flush just
+    // failed, so the report of the failure would be the next thing at risk of
+    // being lost. stdout is the one path that does not depend on what broke.
     console.error('[observability] flush error', err);
   }
 }
@@ -85,6 +89,8 @@ export async function shutdownObservability(): Promise<void> {
   try {
     await sdk.shutdown();
   } catch (err: unknown) {
+    // Same reasoning as flushObservability, and more so: the SDK is being
+    // torn down, so its log pipeline is already closing (JEF-351).
     console.error('[observability] shutdown error', err);
   }
 }
@@ -102,6 +108,10 @@ export async function shutdownObservability(): Promise<void> {
  */
 export function startObservability(): void {
   if (!isObservabilityEnabled) {
+    // Every console line in this function stays console on purpose
+    // (JEF-351). It runs from the `--import` preload, before Fastify — and
+    // therefore before any pino logger — exists, and before the exporter it
+    // is reporting on has started. There is no pipe to Axiom yet to use.
     console.info(
       isAxiomConfigured
         ? '[observability] NODE_ENV is not production — tracing, logs and metrics are disabled.'

@@ -19,6 +19,7 @@ describe('runScheduledJob', () => {
     expect(logger.info).toHaveBeenCalledWith(
       'job.trash_purge.completed',
       expect.objectContaining({
+        event: 'job.trash_purge.completed',
         job: 'trash_purge',
         auth: 'oidc',
         processed: 7,
@@ -101,7 +102,8 @@ describe('logScheduledJobMisconfigured', () => {
 
     logScheduledJobMisconfigured(logger, 'push_notifications', 'vapid_keys_missing');
 
-    expect(logger.warn).toHaveBeenCalledWith('job.push_notifications.misconfigured', {
+    expect(logger.warn).toHaveBeenCalledWith('job.push_notifications.misconfigured', undefined, {
+      event: 'job.push_notifications.misconfigured',
       job: 'push_notifications',
       reason: 'vapid_keys_missing',
     });
