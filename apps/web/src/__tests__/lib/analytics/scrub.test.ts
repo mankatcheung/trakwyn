@@ -35,6 +35,31 @@ describe('scrubString', () => {
     expect(scrubString('https://api.trakwyn.com/graphql')).toBe('https://api.trakwyn.com/graphql');
   });
 
+  it('redacts a quoted filename whole, spaces included — names and companies live there', () => {
+    expect(scrubString(`Failed to upload "Jane Doe CV.pdf"`)).toBe(
+      'Failed to upload "[redacted-filename]"',
+    );
+    expect(scrubString(`can't read 'Acme cover letter.DOCX' now`)).toBe(
+      `can't read '[redacted-filename]' now`,
+    );
+  });
+
+  it('redacts the filename at the end of a storage key, and the query string after it', () => {
+    expect(
+      scrubString(
+        'PUT https://x.public.blob.vercel-storage.com/users/u1/applications/a1/xYz-Jane-Doe-CV.pdf?token=1 failed',
+      ),
+    ).toBe(
+      'PUT https://x.public.blob.vercel-storage.com/users/u1/applications/a1/[redacted-filename]?[redacted] failed',
+    );
+  });
+
+  it('leaves source files in a stack frame and look-alike words readable', () => {
+    const frame = 'at handleFileChange (https://www.trakwyn.com/assets/DocumentsTab-abc.js:12:3)';
+    expect(scrubString(frame)).toBe(frame);
+    expect(scrubString('window.document is undefined')).toBe('window.document is undefined');
+  });
+
   it('clips free text, which in this app is user content', () => {
     const clipped = scrubString('a'.repeat(900));
     expect(clipped).toHaveLength(500 + '…[clipped]'.length);
