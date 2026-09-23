@@ -111,6 +111,7 @@ export const GOOGLE_OIDC = {
   JWKS_URL: 'https://www.googleapis.com/oauth2/v3/certs',
   ISSUERS: ['https://accounts.google.com', 'accounts.google.com'],
   ALGORITHMS: ['RS256'],
+  JWKS_UNAVAILABLE_EVENT: 'oidc.jwks_unavailable', // key fetch failed, not a bad token (JEF-356)
 } as const;
 
 /** OAuth (Google/GitHub) sign-in settings. */
@@ -206,6 +207,7 @@ export const METRICS = {
   RATE_LIMITED: 'trakwyn.security.rate_limited',
   /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
   OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+  EMAILS_SENT: 'trakwyn.email.sent', // one Brevo send — attributes: template, outcome (JEF-356)
 } as const;
 
 /**

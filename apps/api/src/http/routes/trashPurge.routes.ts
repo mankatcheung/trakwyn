@@ -30,7 +30,10 @@ export function trashPurgeRoutes(getCradle: () => Cradle): RouteDefinition[] {
           return;
         }
 
-        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier);
+        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier, {
+          job: ADMIN_JOBS.TRASH_PURGE,
+          logger,
+        });
         if (!auth) {
           res.status(401).send({ error: 'Unauthorized' });
           return;

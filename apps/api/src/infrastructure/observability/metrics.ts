@@ -26,6 +26,18 @@ export type OutboundUrlRefusalReason =
   | 'unresolvable_host'
   | 'private_address';
 
+/** Which transactional email a send was — one per `IEmailService` method (JEF-356). */
+export type EmailTemplate =
+  | 'follow_up_reminder'
+  | 'weekly_digest'
+  | 'password_reset'
+  | 'email_verification'
+  | 'backup_email_verification'
+  | 'new_device_login_alert';
+
+/** Whether the provider accepted the message. `failed` covers a non-2xx answer and a request that never got one. */
+export type EmailOutcome = 'sent' | 'failed';
+
 /**
  * Counters for cache effectiveness and Redis resilience (JEF-129), and for
  * the security mechanisms that would otherwise refuse a request silently
@@ -52,6 +64,8 @@ export interface IMetrics {
   recordRateLimited(route: string, subject: RateLimitSubject): void;
   /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
   recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void;
+  /** One attempt to hand an email to the provider (JEF-356). No recipient: `template` is the only label. */
+  recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -63,6 +77,7 @@ export const noopMetrics: IMetrics = {
   recordDatabasePoolError: () => {},
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
+  recordEmailSent: () => {},
 };
 
 /**
@@ -84,6 +99,7 @@ class OtelMetrics implements IMetrics {
   private databasePoolErrors?: Counter;
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
+  private emailsSent?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -136,6 +152,13 @@ class OtelMetrics implements IMetrics {
       description: 'Outbound URLs refused before the server connected to them',
     });
     this.outboundUrlRefused.add(1, { reason, purpose });
+  }
+
+  recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void {
+    this.emailsSent ??= this.meter.createCounter(METRICS.EMAILS_SENT, {
+      description: 'Transactional emails handed to the provider, by template and outcome',
+    });
+    this.emailsSent.add(1, { template, outcome });
   }
 }
 

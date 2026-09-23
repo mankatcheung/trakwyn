@@ -4,7 +4,9 @@ import { buildWeeklyDigestHtml } from '#src/infrastructure/email/templates/weekl
 import { buildPasswordResetHtml } from '#src/infrastructure/email/templates/passwordResetTemplate.js';
 import { buildEmailVerificationHtml } from '#src/infrastructure/email/templates/emailVerificationTemplate.js';
 import { EMAIL, ENV } from '#src/infrastructure/config/constants.js';
-import type { WeeklyDigestData } from '#src/use-cases/ports/IEmailService.js';
+import type { IEmailService, WeeklyDigestData } from '#src/use-cases/ports/IEmailService.js';
+import type { EmailTemplate } from '#src/infrastructure/observability/metrics.js';
+import { makeFakeMetrics } from '../../helpers/fakeMetrics.js';
 
 const jsonResponse = (ok: boolean, status: number, body = '') => ({
   ok,
@@ -98,7 +100,7 @@ describe('BrevoEmailService', () => {
       expect(body.htmlContent).toContain('Software Engineer');
     });
 
-    it('throws with the status and body when the response fails', async () => {
+    it('throws with the status when the response fails', async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 500, 'server error') as never);
       const service = new BrevoEmailService();
 
@@ -152,7 +154,7 @@ describe('BrevoEmailService', () => {
       expect(body.htmlContent).toBe(buildWeeklyDigestHtml(data, weekLabel));
     });
 
-    it('throws with the status and body when the response fails', async () => {
+    it('throws with the status when the response fails', async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 503, 'unavailable') as never);
       const service = new BrevoEmailService();
 
@@ -180,7 +182,7 @@ describe('BrevoEmailService', () => {
       expect(body.htmlContent).toBe(buildPasswordResetHtml(resetUrl));
     });
 
-    it('throws with the status and body when the response fails', async () => {
+    it('throws with the status when the response fails', async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 503, 'unavailable') as never);
       const service = new BrevoEmailService();
 
@@ -208,13 +210,98 @@ describe('BrevoEmailService', () => {
       expect(body.htmlContent).toBe(buildEmailVerificationHtml(verifyUrl));
     });
 
-    it('throws with the status and body when the response fails', async () => {
+    it('throws with the status when the response fails', async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 503, 'unavailable') as never);
       const service = new BrevoEmailService();
 
       await expect(service.sendEmailVerification('user@example.com', verifyUrl)).rejects.toThrow(
         /Brevo API error 503/,
       );
+    });
+  });
+
+  describe('send outcomes (JEF-356)', () => {
+    const RECIPIENT = 'person@example.com';
+    const digest: WeeklyDigestData = {
+      totalApplications: 0,
+      byStatus: {},
+      newThisWeek: [],
+      overdueFollowUps: [],
+      upcomingFollowUps: [],
+    };
+
+    const sends: [EmailTemplate, (service: IEmailService) => Promise<void>][] = [
+      [
+        'follow_up_reminder',
+        (s) => s.sendFollowUpReminder(RECIPIENT, 'Acme', 'Engineer', new Date()),
+      ],
+      ['weekly_digest', (s) => s.sendWeeklyDigest(RECIPIENT, digest)],
+      ['password_reset', (s) => s.sendPasswordReset(RECIPIENT, 'https://x.test/reset')],
+      ['email_verification', (s) => s.sendEmailVerification(RECIPIENT, 'https://x.test/verify')],
+      [
+        'backup_email_verification',
+        (s) => s.sendBackupEmailVerification(RECIPIENT, 'https://x.test/verify'),
+      ],
+      [
+        'new_device_login_alert',
+        (s) => s.sendNewDeviceLoginAlert(RECIPIENT, 'Chrome on macOS', null, null, new Date()),
+      ],
+    ];
+
+    it.each(sends)('counts an accepted %s as sent', async (template, send) => {
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(true, 201) as never);
+      const metrics = makeFakeMetrics();
+
+      await send(new BrevoEmailService({ metrics }));
+
+      expect(metrics.emailsSent).toEqual([{ template, outcome: 'sent' }]);
+    });
+
+    it.each(sends)('counts a refused %s as failed', async (template, send) => {
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 400) as never);
+      const metrics = makeFakeMetrics();
+
+      await expect(send(new BrevoEmailService({ metrics }))).rejects.toThrow();
+
+      expect(metrics.emailsSent).toEqual([{ template, outcome: 'failed' }]);
+    });
+
+    it('counts a request that never got a response as failed, and rethrows it', async () => {
+      const networkError = new TypeError('fetch failed');
+      vi.mocked(fetch).mockRejectedValue(networkError);
+      const metrics = makeFakeMetrics();
+
+      await expect(
+        new BrevoEmailService({ metrics }).sendPasswordReset(RECIPIENT, 'https://x.test/reset'),
+      ).rejects.toBe(networkError);
+
+      expect(metrics.emailsSent).toEqual([{ template: 'password_reset', outcome: 'failed' }]);
+    });
+
+    it("reports Brevo's error code but never its body or the recipient", async () => {
+      const body = JSON.stringify({
+        code: 'invalid_parameter',
+        message: `email ${RECIPIENT} is not valid`,
+      });
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 400, body) as never);
+
+      const error = await new BrevoEmailService()
+        .sendPasswordReset(RECIPIENT, 'https://x.test/reset')
+        .catch((err: Error) => err);
+
+      expect((error as Error).message).toBe('Brevo API error 400 (invalid_parameter)');
+    });
+
+    it.each([
+      ['not JSON', 'Service Unavailable'],
+      ['JSON without a code', JSON.stringify({ message: 'down' })],
+      ['a code that is not a token', JSON.stringify({ code: `bad ${RECIPIENT}` })],
+    ])('reports the status alone when the body is %s', async (_label, body) => {
+      vi.mocked(fetch).mockResolvedValue(jsonResponse(false, 503, body) as never);
+
+      await expect(
+        new BrevoEmailService().sendPasswordReset(RECIPIENT, 'https://x.test/reset'),
+      ).rejects.toThrow(/^Brevo API error 503$/);
     });
   });
 });
