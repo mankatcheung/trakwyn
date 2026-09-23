@@ -78,6 +78,25 @@ describe('DI modules', () => {
     }
   });
 
+  /**
+   * JEF-354: every security event reaches the logs only because every writer
+   * resolves `securityEventRepository` through the logging decorator.
+   */
+  it('wraps the security event repository in the logging decorator', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { LoggingSecurityEventRepository } =
+      await import('#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
+
+    const container = buildContainer();
+    container.register({ logger: asValue(makeLogger()), db: asValue({}) });
+
+    expect(container.resolve('securityEventRepository')).toBeInstanceOf(
+      LoggingSecurityEventRepository,
+    );
+  });
+
   it('buildContainer registers exactly the union of the DI module keys', async () => {
     const modules = await loadModules();
     const { buildContainer } = await import('#src/http/container.js');

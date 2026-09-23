@@ -206,6 +206,8 @@ export const METRICS = {
   RATE_LIMITED: 'trakwyn.security.rate_limited',
   /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
   OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+  /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
+  SECURITY_EVENTS: 'trakwyn.security.events',
 } as const;
 
 /**
