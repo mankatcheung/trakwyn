@@ -97,11 +97,14 @@ jobs:
       - run: pnpm test
 
   terraform:
-    name: Terraform fmt & validate
+    name: Terraform fmt & validate (${{ matrix.root }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        root: [infra/gcp, infra/axiom]
     defaults:
       run:
-        working-directory: infra/gcp
+        working-directory: ${{ matrix.root }}
     steps:
       - uses: actions/checkout@v4
 
@@ -113,7 +116,8 @@ jobs:
       # No backend and no credentials: validate checks the configuration
       # against the provider schema only. `plan` needs GCP access, which
       # Workload Identity Federation grants to main-branch workflows alone,
-      # so it is run by hand (infra/gcp/README.md).
+      # so it is run by hand (infra/gcp/README.md). infra/axiom's plan also
+      # needs an Axiom token, which CI deliberately does not hold.
       - run: terraform init -backend=false -input=false
       - run: terraform validate
 
