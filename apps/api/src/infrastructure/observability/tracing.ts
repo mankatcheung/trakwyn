@@ -17,6 +17,7 @@ import {
 import { FastifyOtelInstrumentation } from '@fastify/otel';
 import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 import { applyGraphQLOperationSpanName } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
+import { coldStartSpanAttributes } from '#src/infrastructure/observability/coldStart.js';
 
 /**
  * Must be registered as a Fastify plugin in buildApp() *before* routes and
@@ -178,9 +179,12 @@ export function startObservability(): void {
         // rather than one per scalar field, and one per list field rather
         // than one per item.
         // Every GraphQL request is `POST /graphql`; this renames its span
-        // after the operation — see graphqlOperationSpanName.ts.
+        // after the operation — see graphqlOperationSpanName.ts. The
+        // incoming-span hook flags the first request a process serves as a
+        // cold start — see coldStart.ts.
         '@opentelemetry/instrumentation-http': {
           applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
+          startIncomingSpanHook: coldStartSpanAttributes,
         },
         '@opentelemetry/instrumentation-graphql': {
           ignoreTrivialResolveSpans: true,

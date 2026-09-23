@@ -111,6 +111,7 @@ export const GOOGLE_OIDC = {
   JWKS_URL: 'https://www.googleapis.com/oauth2/v3/certs',
   ISSUERS: ['https://accounts.google.com', 'accounts.google.com'],
   ALGORITHMS: ['RS256'],
+  JWKS_UNAVAILABLE_EVENT: 'oidc.jwks_unavailable', // key fetch failed, not a bad token (JEF-356)
 } as const;
 
 /** OAuth (Google/GitHub) sign-in settings. */
@@ -185,30 +186,6 @@ export const AXIOM = {
 } as const;
 
 /**
- * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
- * convention, and prefixed so they're distinguishable from the metrics the
- * auto-instrumentations emit.
- */
-export const METRICS = {
-  CACHE_HITS: 'trakwyn.cache.hits',
-  CACHE_MISSES: 'trakwyn.cache.misses',
-  /** Redis call degraded gracefully rather than failing the request — attributes: component, reason. */
-  REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
-  /** Circuit breaker state change — attributes: component, from, to. */
-  CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
-  /**
-   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
-   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
-   * is out of step with how long Neon actually keeps a connection.
-   */
-  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
-  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
-  RATE_LIMITED: 'trakwyn.security.rate_limited',
-  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
-  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
-} as const;
-
-/**
  * Names for the log lines the security mechanisms emit (JEF-350).
  *
  * Kept as stable dotted identifiers on an `event` field rather than left to
@@ -224,13 +201,13 @@ export const SECURITY_EVENTS = {
 } as const;
 
 /**
- * OpenTelemetry span conventions for the application's own spans (JEF-347).
- * Namespaced under `app.` so they're distinguishable from the attributes the
- * auto-instrumentations set.
+ * OTel conventions for the app's own spans (JEF-347) and cold starts (JEF-357, see coldStart.ts).
  */
 export const TRACING = {
   /** `DomainError.code` on a failed use-case span — absent when the failure was not a DomainError. */
   ERROR_CODE_ATTRIBUTE: 'app.error.code',
+  PROCESS_UPTIME_ATTRIBUTE: 'app.process_uptime_ms',
+  STARTUP_PROBE_PATH: '/health',
 } as const;
 
 /** Email provider (Brevo) defaults. */

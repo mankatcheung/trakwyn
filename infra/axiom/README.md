@@ -18,7 +18,7 @@ All of them notify the one email notifier, `trakwyn-api alerts (email)`.
 
 Things worth knowing about how they are written:
 
-- **Metric names come from `METRICS` in `apps/api/src/infrastructure/config/constants.ts`**, and job names from `ADMIN_JOBS` in `apps/api/src/http/constants.ts`. Renaming one there silently breaks its monitor here. Nothing checks the two against each other, so change both in the same PR.
+- **Metric names come from `METRICS` in `apps/api/src/infrastructure/observability/metrics.ts`**, and job names from `ADMIN_JOBS` in `apps/api/src/http/constants.ts`. Renaming one there silently breaks its monitor here. Nothing checks the two against each other, so change both in the same PR.
 - **Metric monitors are MPL and take `increase`.** The OTel counters are cumulative per Cloud Run instance and restart at zero whenever an instance is scaled in; `increase` turns them into deltas and reads a drop as a reset.
 - **Log monitors read `event` through one expression**, `local.log_event` (`['attributes.custom']['event']`). Pino fields reach Axiom as OTel log attributes, and Axiom files the ones that aren't OTel semantic conventions under `attributes.custom`. If Axiom ever moves them, only that line changes.
 - **The absence monitors are the only ones that can see Cloud Scheduler not firing**, an OIDC token rejected before the handler runs, or a deploy that broke an `/admin/*` route. None of those leave a `failed` line. `push_notifications` has no absence monitor because it is not scheduled.

@@ -110,7 +110,9 @@ export const infrastructure = {
   oauthStateService: asClass(OAuthStateService, { lifetime: Lifetime.SINGLETON }),
   mobileOAuthHandoffService: asClass(MobileOAuthHandoffService, { lifetime: Lifetime.SINGLETON }),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
-  emailService: asClass(EmailService, { lifetime: Lifetime.SINGLETON }),
+  // asFunction for the same options-object reason as outboundUrlPolicy below:
+  // BrevoEmailService takes optional `{ metrics }` (JEF-356).
+  emailService: asFunction(() => new EmailService(), { lifetime: Lifetime.SINGLETON }),
   deviceLabeler: asClass(DeviceLabelService, { lifetime: Lifetime.SINGLETON }),
   ipLocationResolver: asClass(IpLocationService, { lifetime: Lifetime.SINGLETON }),
   webPushService: asClass(WebPushService, { lifetime: Lifetime.SINGLETON }),
@@ -127,7 +129,7 @@ export const infrastructure = {
   // Verifies Cloud Scheduler's OIDC tokens on the admin cron routes
   // (JEF-336). A singleton so jose's cached copy of Google's JWKS is shared;
   // asFunction for the same options-object reason as outboundUrlPolicy.
-  oidcTokenVerifier: asFunction(() => new GoogleOidcTokenVerifier(), {
+  oidcTokenVerifier: asFunction(({ logger }: Cradle) => new GoogleOidcTokenVerifier({ logger }), {
     lifetime: Lifetime.SINGLETON,
   }),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
