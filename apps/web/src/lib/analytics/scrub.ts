@@ -153,9 +153,16 @@ export interface ScrubbableEvent {
  * is what PostHog's own examples do) rather than a copy, and passes `null`
  * straight through — an earlier hook in the chain may already have dropped
  * the event.
+ *
+ * The one value exempt from the deny-list is the top-level `token`: posthog-js
+ * puts the public `phc_…` project key there, and ingestion uses it to decide
+ * which project the event belongs to. Redacted, every request still returns
+ * 200 and no event ever appears. A `token` anywhere deeper is still denied.
  */
 export function scrubEvent<T extends ScrubbableEvent | null>(event: T): T {
   if (!event?.properties) return event;
-  event.properties = scrubValue(event.properties) as Record<string, unknown>;
+  const projectKey = event.properties.token;
+  const scrubbed = scrubValue(event.properties) as Record<string, unknown>;
+  event.properties = typeof projectKey === 'string' ? { ...scrubbed, token: projectKey } : scrubbed;
   return event;
 }
