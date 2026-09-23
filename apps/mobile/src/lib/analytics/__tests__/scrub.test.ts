@@ -108,4 +108,13 @@ describe('scrubEvent', () => {
     const event = {};
     expect(scrubEvent(event)).toBe(event);
   });
+
+  it('keeps the SDK’s own project key, which is how PostHog routes the event to a project', () => {
+    // posthog-js sets `properties.token` to the public `phc_…` project key on
+    // every event (this SDK sends it as the batch's `api_key` instead, but the
+    // scrubber is shared, so it must not redact it either way).
+    const event = { properties: { token: 'phc_project', nested: { token: 'secret' } } };
+    scrubEvent(event);
+    expect(event.properties).toEqual({ token: 'phc_project', nested: { token: REDACTED } });
+  });
 });
