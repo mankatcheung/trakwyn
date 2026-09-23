@@ -224,13 +224,15 @@ export const SECURITY_EVENTS = {
 } as const;
 
 /**
- * OpenTelemetry span conventions for the application's own spans (JEF-347).
- * Namespaced under `app.` so they're distinguishable from the attributes the
- * auto-instrumentations set.
+ * OpenTelemetry span conventions for the application's own spans (JEF-347) and
+ * cold starts (JEF-357 — see coldStart.ts). Namespaced under `app.` so they're
+ * distinguishable from the attributes the auto-instrumentations set.
  */
 export const TRACING = {
   /** `DomainError.code` on a failed use-case span — absent when the failure was not a DomainError. */
   ERROR_CODE_ATTRIBUTE: 'app.error.code',
+  PROCESS_UPTIME_ATTRIBUTE: 'app.process_uptime_ms',
+  STARTUP_PROBE_PATH: '/health',
 } as const;
 
 /** Email provider (Brevo) defaults. */
