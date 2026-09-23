@@ -104,9 +104,10 @@ resource "axiom_monitor" "job_failed" {
     | where event startswith "job." and event endswith ".failed"
   APL
 
-  range_minutes    = 5
-  interval_minutes = 5
-  notifier_ids     = [axiom_notifier.email.id]
+  # No range_minutes/interval_minutes: a match monitor fires per matching
+  # event, and Axiom stores both as 1 whatever is sent, which the provider
+  # then reports as an inconsistent result after apply.
+  notifier_ids = [axiom_notifier.email.id]
 }
 
 # Absence, not failure: catches Cloud Scheduler not firing, an OIDC token
@@ -178,7 +179,8 @@ resource "axiom_monitor" "outbound_url_refused" {
     | where ${local.log_event} == "security.outbound_url.refused"
   APL
 
-  range_minutes    = 5
-  interval_minutes = 5
-  notifier_ids     = [axiom_notifier.email.id]
+  # No range_minutes/interval_minutes: a match monitor fires per matching
+  # event, and Axiom stores both as 1 whatever is sent, which the provider
+  # then reports as an inconsistent result after apply.
+  notifier_ids = [axiom_notifier.email.id]
 }

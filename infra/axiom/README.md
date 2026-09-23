@@ -31,7 +31,14 @@ The monitors could live in `infra/gcp/`, but its state would then be one step aw
 
 ## Applying
 
-You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `infra/gcp/README.md`), and an Axiom API token that can manage monitors and notifiers. Create it under **Settings → API tokens**. Don't reuse the ingest-only `AXIOM_TOKEN` the API runs with.
+You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `infra/gcp/README.md`), and an Axiom API token for Terraform. Don't reuse the ingest-only `AXIOM_TOKEN` the API runs with.
+
+Create the token under **Settings → API tokens → New API token**, as an **Advanced** token with custom permissions. A Basic token can only ingest, and `apply` then fails with `403: token does not have access to resource: notifiers with action: create`. Grant:
+
+- **Organisation:** `Notifiers` and `Monitors`, each with create, read, update and delete. Terraform needs read and update for every later `plan`, and delete for `destroy` or a removed monitor.
+- **Datasets:** `Query` on the logs/traces dataset (`dataset`) and the metrics dataset (`metrics_dataset`), so the monitors' queries can be checked when they are saved.
+
+Axiom does not let you add permissions to an existing token. If a token is missing one, delete it and create a new one.
 
 ```bash
 cd infra/axiom
