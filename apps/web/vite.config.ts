@@ -7,6 +7,15 @@ import { nitro } from 'nitro/vite';
 import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+// PostHog tags every event with `release` (lib/analytics). Vite only exposes
+// VITE_-prefixed vars to the client, and Vercel does not expand
+// `$VERCEL_GIT_COMMIT_SHA` inside a dashboard value, so derive it here. An
+// explicitly set VITE_APP_RELEASE still wins. Guarded because assigning
+// `undefined` to process.env stores the string "undefined".
+if (!process.env.VITE_APP_RELEASE && process.env.VERCEL_GIT_COMMIT_SHA) {
+  process.env.VITE_APP_RELEASE = process.env.VERCEL_GIT_COMMIT_SHA;
+}
+
 const config = defineConfig(({ command }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
