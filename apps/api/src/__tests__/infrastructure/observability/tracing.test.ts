@@ -354,11 +354,31 @@ describe('tracing', () => {
 
       expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          '@opentelemetry/instrumentation-http': {
+          '@opentelemetry/instrumentation-http': expect.objectContaining({
             applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
-          },
+          }),
         }),
       );
+    });
+
+    it('flags cold starts on incoming HTTP spans only', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+      const { coldStartSpanAttributes } =
+        await import('#src/infrastructure/observability/coldStart.js');
+
+      mod.startObservability();
+
+      const [[config]] = getNodeAutoInstrumentationsMock.mock.calls as [
+        [Record<string, Record<string, unknown>>],
+      ];
+      const httpConfig = config['@opentelemetry/instrumentation-http'];
+      expect(httpConfig.startIncomingSpanHook).toBe(coldStartSpanAttributes);
+      // The outgoing-span and request hooks see client requests too; the
+      // flag must not ride on a call the API makes to Postgres or Redis.
+      expect(httpConfig.startOutgoingSpanHook).toBeUndefined();
+      expect(httpConfig.requestHook).toBeUndefined();
     });
 
     it('passes the BatchSpanProcessor via spanProcessors with a near-0 scheduled delay', async () => {

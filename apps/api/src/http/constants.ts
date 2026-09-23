@@ -3,13 +3,13 @@
  * rate limits the DI container registers.
  *
  * The outermost layer, so this file may import from anywhere — it derives
- * cookie lifetimes from `use-cases` policy and the fake-consent path from
- * `infrastructure` config rather than restating either.
+ * cookie lifetimes from `use-cases` policy and the fake-consent and health
+ * paths from `infrastructure` config rather than restating them.
  *
  * Split out of the former root-level `src/constants.ts` (JEF-253).
  */
 
-import { FAKE_OAUTH } from '#src/infrastructure/config/constants.js';
+import { FAKE_OAUTH, TRACING } from '#src/infrastructure/config/constants.js';
 import { TOKEN_LIFETIME_S } from '#src/use-cases/constants.js';
 
 /** Auth cookie names. */
@@ -34,7 +34,8 @@ export const COOKIE_SAME_SITE = 'lax' as const;
 /** HTTP route paths registered outside the GraphQL endpoint. */
 export const ROUTES = {
   GRAPHQL: '/graphql',
-  HEALTH: '/health',
+  /** Also Cloud Run's startup probe, which is why the path is declared there. */
+  HEALTH: TRACING.STARTUP_PROBE_PATH,
   MCP: '/mcp',
   /**
    * Streams the assistant's chat reply (JEF-239) — not GraphQL, since

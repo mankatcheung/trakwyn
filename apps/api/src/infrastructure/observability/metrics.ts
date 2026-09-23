@@ -1,6 +1,38 @@
 import { metrics, type Counter } from '@opentelemetry/api';
-import { AXIOM, METRICS } from '#src/infrastructure/config/constants.js';
+import { AXIOM } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
+
+/**
+ * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
+ * convention, and prefixed so they're distinguishable from the metrics the
+ * auto-instrumentations emit.
+ *
+ * Kept beside the counters rather than in `infrastructure/config/constants.ts`:
+ * this module is their only reader (JEF-356).
+ */
+export const METRICS = {
+  CACHE_HITS: 'trakwyn.cache.hits',
+  CACHE_MISSES: 'trakwyn.cache.misses',
+  /** Redis call degraded gracefully rather than failing the request — attributes: component, reason. */
+  REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
+  /** Circuit breaker state change — attributes: component, from, to. */
+  CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+  /**
+   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
+   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
+   * is out of step with how long Neon actually keeps a connection.
+   */
+  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
+  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
+  RATE_LIMITED: 'trakwyn.security.rate_limited',
+  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
+  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+  /** One Brevo send attempt — attributes: template, outcome (JEF-356). */
+  EMAILS_SENT: 'trakwyn.email.sent',
+  /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
+  SECURITY_EVENTS: 'trakwyn.security.events',
+} as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
 export type MetricComponent = 'cache' | 'rate_limit' | 'session_blocklist';
@@ -66,6 +98,8 @@ export interface IMetrics {
   recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void;
   /** One attempt to hand an email to the provider (JEF-356). No recipient: `template` is the only label. */
   recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void;
+  /** A security event was written to the audit table (JEF-354). `type` is a bounded set. */
+  recordSecurityEvent(type: SecurityEventType): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -78,6 +112,7 @@ export const noopMetrics: IMetrics = {
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
   recordEmailSent: () => {},
+  recordSecurityEvent: () => {},
 };
 
 /**
@@ -100,6 +135,7 @@ class OtelMetrics implements IMetrics {
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
   private emailsSent?: Counter;
+  private securityEvents?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -159,6 +195,13 @@ class OtelMetrics implements IMetrics {
       description: 'Transactional emails handed to the provider, by template and outcome',
     });
     this.emailsSent.add(1, { template, outcome });
+  }
+
+  recordSecurityEvent(type: SecurityEventType): void {
+    this.securityEvents ??= this.meter.createCounter(METRICS.SECURITY_EVENTS, {
+      description: 'Security events written to the audit table, by type',
+    });
+    this.securityEvents.add(1, { event_type: type });
   }
 }
 

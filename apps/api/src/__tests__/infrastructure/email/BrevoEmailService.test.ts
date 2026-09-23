@@ -24,6 +24,7 @@ describe('BrevoEmailService', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
@@ -222,6 +223,12 @@ describe('BrevoEmailService', () => {
 
   describe('send outcomes (JEF-356)', () => {
     const RECIPIENT = 'person@example.com';
+
+    beforeEach(() => {
+      // The new-device alert refuses to render without a trusted origin for its
+      // link; set it here rather than depend on a developer's .env.
+      vi.stubEnv(ENV.WEB_APP_ORIGIN, 'https://app.example.com');
+    });
     const digest: WeeklyDigestData = {
       totalApplications: 0,
       byStatus: {},

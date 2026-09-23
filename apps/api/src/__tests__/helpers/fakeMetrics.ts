@@ -8,6 +8,7 @@ import type {
   RateLimitSubject,
 } from '#src/infrastructure/observability/metrics.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
 
 export interface FailOpenEvent {
   component: MetricComponent;
@@ -44,6 +45,7 @@ export interface FakeMetrics extends IMetrics {
   rateLimited: RateLimitedEvent[];
   outboundUrlRefused: OutboundUrlRefusedEvent[];
   emailsSent: EmailSentEvent[];
+  securityEvents: SecurityEventType[];
 }
 
 /**
@@ -60,6 +62,7 @@ export function makeFakeMetrics(): FakeMetrics {
     rateLimited: [],
     outboundUrlRefused: [],
     emailsSent: [],
+    securityEvents: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -83,6 +86,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordEmailSent: (template, outcome) => {
       fake.emailsSent.push({ template, outcome });
+    },
+    recordSecurityEvent: (type) => {
+      fake.securityEvents.push(type);
     },
   };
   return fake;
