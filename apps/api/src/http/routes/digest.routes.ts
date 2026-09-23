@@ -24,7 +24,10 @@ export function digestRoutes(getCradle: () => Cradle): RouteDefinition[] {
           return;
         }
 
-        const auth = await authorizeCronTrigger(req, ENV.DIGEST_ADMIN_SECRET, oidcTokenVerifier);
+        const auth = await authorizeCronTrigger(req, ENV.DIGEST_ADMIN_SECRET, oidcTokenVerifier, {
+          job: ADMIN_JOBS.DIGEST,
+          logger,
+        });
         if (!auth) {
           res.status(401).send({ error: 'Unauthorized' });
           return;

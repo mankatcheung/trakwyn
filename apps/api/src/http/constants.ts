@@ -82,6 +82,15 @@ export const ADMIN_JOBS = {
 } as const;
 
 /**
+ * Log event for a request a configured `/admin/*` route refused (JEF-356).
+ * Rejection happens before `runScheduledJob`, so without this a scheduler
+ * whose token stopped verifying leaves no line at all.
+ */
+export const CRON_AUTH_EVENTS = {
+  REJECTED: 'cron.auth.rejected',
+} as const;
+
+/**
  * `/chat/stream` request bodies. Fastify's default is 1 MB, sized for file
  * uploads; a chat turn is one id and one message of at most
  * `CHAT.MAX_MESSAGE_CHARS` (64 KB leaves room for 4-byte characters and JSON

@@ -1,4 +1,6 @@
 import type {
+  EmailOutcome,
+  EmailTemplate,
   FailOpenReason,
   IMetrics,
   MetricComponent,
@@ -29,6 +31,11 @@ export interface OutboundUrlRefusedEvent {
   purpose: OutboundUrlPurpose;
 }
 
+export interface EmailSentEvent {
+  template: EmailTemplate;
+  outcome: EmailOutcome;
+}
+
 export interface FakeMetrics extends IMetrics {
   hits: number;
   misses: number;
@@ -37,6 +44,7 @@ export interface FakeMetrics extends IMetrics {
   databasePoolErrors: number;
   rateLimited: RateLimitedEvent[];
   outboundUrlRefused: OutboundUrlRefusedEvent[];
+  emailsSent: EmailSentEvent[];
   securityEvents: SecurityEventType[];
 }
 
@@ -53,6 +61,7 @@ export function makeFakeMetrics(): FakeMetrics {
     databasePoolErrors: 0,
     rateLimited: [],
     outboundUrlRefused: [],
+    emailsSent: [],
     securityEvents: [],
     recordCacheHit: () => {
       fake.hits++;
@@ -74,6 +83,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordOutboundUrlRefused: (reason, purpose) => {
       fake.outboundUrlRefused.push({ reason, purpose });
+    },
+    recordEmailSent: (template, outcome) => {
+      fake.emailsSent.push({ template, outcome });
     },
     recordSecurityEvent: (type) => {
       fake.securityEvents.push(type);

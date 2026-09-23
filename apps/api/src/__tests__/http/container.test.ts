@@ -70,8 +70,12 @@ describe('buildContainer', () => {
     const { buildContainer } = await import('#src/http/container.js');
     const { GoogleOidcTokenVerifier } =
       await import('#src/infrastructure/auth/GoogleOidcTokenVerifier.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
 
     const container = buildContainer();
+    // Supplied by buildApp; the verifier reports JWKS outages through it (JEF-356).
+    container.register({ logger: asValue(makeLogger()) });
 
     expect(container.resolve('oidcTokenVerifier')).toBeInstanceOf(GoogleOidcTokenVerifier);
   });

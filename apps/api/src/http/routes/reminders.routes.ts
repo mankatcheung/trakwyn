@@ -28,7 +28,10 @@ export function remindersRoutes(getCradle: () => Cradle): RouteDefinition[] {
           return;
         }
 
-        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier);
+        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier, {
+          job: ADMIN_JOBS.REMINDERS,
+          logger,
+        });
         if (!auth) {
           res.status(401).send({ error: 'Unauthorized' });
           return;

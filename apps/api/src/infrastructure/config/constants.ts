@@ -111,6 +111,7 @@ export const GOOGLE_OIDC = {
   JWKS_URL: 'https://www.googleapis.com/oauth2/v3/certs',
   ISSUERS: ['https://accounts.google.com', 'accounts.google.com'],
   ALGORITHMS: ['RS256'],
+  JWKS_UNAVAILABLE_EVENT: 'oidc.jwks_unavailable', // key fetch failed, not a bad token (JEF-356)
 } as const;
 
 /** OAuth (Google/GitHub) sign-in settings. */
@@ -182,32 +183,6 @@ export const AXIOM = {
   /** Metrics use a distinct dataset (and header) from logs/traces — Axiom requires a Metrics-type dataset. */
   METRICS_DATASET_HEADER: 'X-Axiom-Metrics-Dataset',
   SERVICE_NAME: 'trakwyn-api',
-} as const;
-
-/**
- * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
- * convention, and prefixed so they're distinguishable from the metrics the
- * auto-instrumentations emit.
- */
-export const METRICS = {
-  CACHE_HITS: 'trakwyn.cache.hits',
-  CACHE_MISSES: 'trakwyn.cache.misses',
-  /** Redis call degraded gracefully rather than failing the request — attributes: component, reason. */
-  REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
-  /** Circuit breaker state change — attributes: component, from, to. */
-  CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
-  /**
-   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
-   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
-   * is out of step with how long Neon actually keeps a connection.
-   */
-  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
-  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
-  RATE_LIMITED: 'trakwyn.security.rate_limited',
-  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
-  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
-  /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
-  SECURITY_EVENTS: 'trakwyn.security.events',
 } as const;
 
 /**

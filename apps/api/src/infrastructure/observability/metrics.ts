@@ -1,7 +1,38 @@
 import { metrics, type Counter } from '@opentelemetry/api';
-import { AXIOM, METRICS } from '#src/infrastructure/config/constants.js';
+import { AXIOM } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
+
+/**
+ * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
+ * convention, and prefixed so they're distinguishable from the metrics the
+ * auto-instrumentations emit.
+ *
+ * Kept beside the counters rather than in `infrastructure/config/constants.ts`:
+ * this module is their only reader (JEF-356).
+ */
+export const METRICS = {
+  CACHE_HITS: 'trakwyn.cache.hits',
+  CACHE_MISSES: 'trakwyn.cache.misses',
+  /** Redis call degraded gracefully rather than failing the request — attributes: component, reason. */
+  REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
+  /** Circuit breaker state change — attributes: component, from, to. */
+  CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+  /**
+   * Postgres pool errors on an idle client (JEF-351). Neon closes idle
+   * sockets, so a non-zero rate is normal; a rising one means POOL_IDLE_TIMEOUT_MS
+   * is out of step with how long Neon actually keeps a connection.
+   */
+  DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
+  /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
+  RATE_LIMITED: 'trakwyn.security.rate_limited',
+  /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
+  OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+  /** One Brevo send attempt — attributes: template, outcome (JEF-356). */
+  EMAILS_SENT: 'trakwyn.email.sent',
+  /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
+  SECURITY_EVENTS: 'trakwyn.security.events',
+} as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
 export type MetricComponent = 'cache' | 'rate_limit' | 'session_blocklist';
@@ -26,6 +57,18 @@ export type OutboundUrlRefusalReason =
   | 'reserved_hostname'
   | 'unresolvable_host'
   | 'private_address';
+
+/** Which transactional email a send was — one per `IEmailService` method (JEF-356). */
+export type EmailTemplate =
+  | 'follow_up_reminder'
+  | 'weekly_digest'
+  | 'password_reset'
+  | 'email_verification'
+  | 'backup_email_verification'
+  | 'new_device_login_alert';
+
+/** Whether the provider accepted the message. `failed` covers a non-2xx answer and a request that never got one. */
+export type EmailOutcome = 'sent' | 'failed';
 
 /**
  * Counters for cache effectiveness and Redis resilience (JEF-129), and for
@@ -53,6 +96,8 @@ export interface IMetrics {
   recordRateLimited(route: string, subject: RateLimitSubject): void;
   /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
   recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void;
+  /** One attempt to hand an email to the provider (JEF-356). No recipient: `template` is the only label. */
+  recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void;
   /** A security event was written to the audit table (JEF-354). `type` is a bounded set. */
   recordSecurityEvent(type: SecurityEventType): void;
 }
@@ -66,6 +111,7 @@ export const noopMetrics: IMetrics = {
   recordDatabasePoolError: () => {},
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
+  recordEmailSent: () => {},
   recordSecurityEvent: () => {},
 };
 
@@ -88,6 +134,7 @@ class OtelMetrics implements IMetrics {
   private databasePoolErrors?: Counter;
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
+  private emailsSent?: Counter;
   private securityEvents?: Counter;
 
   private get meter() {
@@ -141,6 +188,13 @@ class OtelMetrics implements IMetrics {
       description: 'Outbound URLs refused before the server connected to them',
     });
     this.outboundUrlRefused.add(1, { reason, purpose });
+  }
+
+  recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void {
+    this.emailsSent ??= this.meter.createCounter(METRICS.EMAILS_SENT, {
+      description: 'Transactional emails handed to the provider, by template and outcome',
+    });
+    this.emailsSent.add(1, { template, outcome });
   }
 
   recordSecurityEvent(type: SecurityEventType): void {

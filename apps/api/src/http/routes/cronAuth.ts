@@ -1,6 +1,8 @@
 import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
+import { CRON_AUTH_EVENTS } from '#src/http/constants.js';
 
 /**
  * Which of the two paths let a request in. Reported rather than discarded
@@ -9,6 +11,20 @@ import { AUTH_HEADER, ENV } from '#src/infrastructure/config/constants.js';
  * manual trigger or the scheduler's identity no longer verifying (JEF-352).
  */
 export type CronAuthMethod = 'oidc' | 'secret';
+
+/**
+ * Why a request was refused: it carried no bearer token at all, or carried
+ * one that matched neither secret nor verified as the invoker. Which of the
+ * three checks a token failed is deliberately not said — that is the
+ * difference between a log line and an oracle.
+ */
+export type CronAuthRejection = 'missing' | 'invalid';
+
+export interface CronAuthContext {
+  /** One of `ADMIN_JOBS`. */
+  job: string;
+  logger: ILogger;
+}
 
 /**
  * Shared auth check for the admin/cron-triggered routes (digest, reminders,
@@ -21,21 +37,39 @@ export type CronAuthMethod = 'oidc' | 'secret';
  *   nothing sensitive reaches Terraform state;
  * - the route's own dedicated secret, for manual/external triggering;
  * - CRON_SECRET, kept as the manual-trigger path for every route.
+ *
+ * A refusal is logged as `cron.auth.rejected` (JEF-356): it happens before
+ * `runScheduledJob`, so otherwise a scheduler whose token stopped verifying
+ * leaves no trace at all. Logged here rather than in each route so that no
+ * route can forget to. The token is never logged.
  */
 export async function authorizeCronTrigger(
   request: IHttpRequest,
   ownSecretEnvKey: string,
   oidcTokenVerifier: IOidcTokenVerifier,
+  context: CronAuthContext,
 ): Promise<CronAuthMethod | null> {
   const auth = request.headers.authorization;
-  if (typeof auth !== 'string' || !auth.startsWith(AUTH_HEADER.BEARER_PREFIX)) return null;
+  if (typeof auth !== 'string' || !auth.startsWith(AUTH_HEADER.BEARER_PREFIX)) {
+    return reject(context, 'missing');
+  }
 
   const token = auth.slice(AUTH_HEADER.BEARER_PREFIX.length);
   if (matchesSecret(token, ownSecretEnvKey) || matchesSecret(token, ENV.CRON_SECRET)) {
     return 'secret';
   }
 
-  return (await isScheduledInvoker(token, oidcTokenVerifier)) ? 'oidc' : null;
+  if (await isScheduledInvoker(token, oidcTokenVerifier)) return 'oidc';
+  return reject(context, 'invalid');
+}
+
+function reject({ job, logger }: CronAuthContext, reason: CronAuthRejection): null {
+  logger.warn('Cron trigger rejected', undefined, {
+    event: CRON_AUTH_EVENTS.REJECTED,
+    job,
+    reason,
+  });
+  return null;
 }
 
 /**
