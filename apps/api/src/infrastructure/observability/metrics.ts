@@ -1,6 +1,7 @@
 import { metrics, type Counter } from '@opentelemetry/api';
 import { AXIOM, METRICS } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
 
 /** Which Redis-backed subsystem a resilience event came from. */
 export type MetricComponent = 'cache' | 'rate_limit' | 'session_blocklist';
@@ -52,6 +53,8 @@ export interface IMetrics {
   recordRateLimited(route: string, subject: RateLimitSubject): void;
   /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
   recordOutboundUrlRefused(reason: OutboundUrlRefusalReason, purpose: OutboundUrlPurpose): void;
+  /** A security event was written to the audit table (JEF-354). `type` is a bounded set. */
+  recordSecurityEvent(type: SecurityEventType): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -63,6 +66,7 @@ export const noopMetrics: IMetrics = {
   recordDatabasePoolError: () => {},
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
+  recordSecurityEvent: () => {},
 };
 
 /**
@@ -84,6 +88,7 @@ class OtelMetrics implements IMetrics {
   private databasePoolErrors?: Counter;
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
+  private securityEvents?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -136,6 +141,13 @@ class OtelMetrics implements IMetrics {
       description: 'Outbound URLs refused before the server connected to them',
     });
     this.outboundUrlRefused.add(1, { reason, purpose });
+  }
+
+  recordSecurityEvent(type: SecurityEventType): void {
+    this.securityEvents ??= this.meter.createCounter(METRICS.SECURITY_EVENTS, {
+      description: 'Security events written to the audit table, by type',
+    });
+    this.securityEvents.add(1, { event_type: type });
   }
 }
 

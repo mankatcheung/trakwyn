@@ -28,6 +28,7 @@ import type { DrizzleContactRepository } from '#src/infrastructure/db/repositori
 import type { DrizzlePasswordResetTokenRepository } from '#src/infrastructure/db/repositories/DrizzlePasswordResetTokenRepository.js';
 import type { DrizzleLoginEventRepository } from '#src/infrastructure/db/repositories/DrizzleLoginEventRepository.js';
 import type { DrizzleSecurityEventRepository } from '#src/infrastructure/db/repositories/DrizzleSecurityEventRepository.js';
+import type { LoggingSecurityEventRepository } from '#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js';
 import type { DrizzleCookieConsentRepository } from '#src/infrastructure/db/repositories/DrizzleCookieConsentRepository.js';
 import type { DrizzleSessionRepository } from '#src/infrastructure/db/repositories/DrizzleSessionRepository.js';
 import type { BlocklistingSessionRepository } from '#src/infrastructure/db/repositories/BlocklistingSessionRepository.js';
@@ -339,7 +340,8 @@ export interface Cradle {
   contactRepository: CachedContactRepository;
   passwordResetTokenRepository: DrizzlePasswordResetTokenRepository;
   loginEventRepository: DrizzleLoginEventRepository;
-  securityEventRepository: DrizzleSecurityEventRepository;
+  drizzleSecurityEventRepository: DrizzleSecurityEventRepository;
+  securityEventRepository: LoggingSecurityEventRepository;
   cookieConsentRepository: DrizzleCookieConsentRepository;
   messageRepository: DrizzleMessageRepository;
   conversationRepository: DrizzleConversationRepository;

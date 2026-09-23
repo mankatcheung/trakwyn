@@ -206,6 +206,8 @@ export const METRICS = {
   RATE_LIMITED: 'trakwyn.security.rate_limited',
   /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
   OUTBOUND_URL_REFUSED: 'trakwyn.security.outbound_url.refused',
+  /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
+  SECURITY_EVENTS: 'trakwyn.security.events',
 } as const;
 
 /**
@@ -224,9 +226,7 @@ export const SECURITY_EVENTS = {
 } as const;
 
 /**
- * OpenTelemetry span conventions for the application's own spans (JEF-347) and
- * cold starts (JEF-357 — see coldStart.ts). Namespaced under `app.` so they're
- * distinguishable from the attributes the auto-instrumentations set.
+ * OTel conventions for the app's own spans (JEF-347) and cold starts (JEF-357, see coldStart.ts).
  */
 export const TRACING = {
   /** `DomainError.code` on a failed use-case span — absent when the failure was not a DomainError. */

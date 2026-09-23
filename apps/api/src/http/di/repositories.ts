@@ -1,4 +1,4 @@
-import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
+import { asClass, asFunction, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { DrizzleUserRepository } from '#src/infrastructure/db/repositories/DrizzleUserRepository.js';
 import { DrizzleApplicationRepository } from '#src/infrastructure/db/repositories/DrizzleApplicationRepository.js';
@@ -24,6 +24,7 @@ import { DrizzleContactRepository } from '#src/infrastructure/db/repositories/Dr
 import { DrizzlePasswordResetTokenRepository } from '#src/infrastructure/db/repositories/DrizzlePasswordResetTokenRepository.js';
 import { DrizzleLoginEventRepository } from '#src/infrastructure/db/repositories/DrizzleLoginEventRepository.js';
 import { DrizzleSecurityEventRepository } from '#src/infrastructure/db/repositories/DrizzleSecurityEventRepository.js';
+import { LoggingSecurityEventRepository } from '#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js';
 import { DrizzleCookieConsentRepository } from '#src/infrastructure/db/repositories/DrizzleCookieConsentRepository.js';
 import { DrizzleSessionRepository } from '#src/infrastructure/db/repositories/DrizzleSessionRepository.js';
 import { BlocklistingSessionRepository } from '#src/infrastructure/db/repositories/BlocklistingSessionRepository.js';
@@ -130,9 +131,18 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   loginEventRepository: asClass(DrizzleLoginEventRepository, { lifetime: Lifetime.SINGLETON }),
-  securityEventRepository: asClass(DrizzleSecurityEventRepository, {
+  drizzleSecurityEventRepository: asClass(DrizzleSecurityEventRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
+  // Logs and counts every security event as it is written (JEF-354) — see
+  // LoggingSecurityEventRepository. `asFunction` rather than `asClass`, as
+  // with `outboundUrlPolicy`: under proxy injection `metrics` would be
+  // resolved as a registration instead of falling back to its default.
+  securityEventRepository: asFunction(
+    ({ drizzleSecurityEventRepository, logger }: Cradle) =>
+      new LoggingSecurityEventRepository({ inner: drizzleSecurityEventRepository, logger }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   cookieConsentRepository: asClass(DrizzleCookieConsentRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
