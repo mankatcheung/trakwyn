@@ -8,7 +8,7 @@ import {
   makeTotpBackupCodeRepository,
   makeTotpProvider,
 } from '#src/__tests__/helpers/mocks/auth.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 vi.mock('bcryptjs', () => ({
@@ -29,6 +29,11 @@ function generateValidCode(secret: string): Promise<string> {
 
 describe('LoginWithTotpUseCase', () => {
   const totpProvider = makeTotpProvider();
+  const logger = makeLogger();
+
+  /** The single `auth.totp.failed` line, or undefined if none was written. */
+  const failureLog = () =>
+    vi.mocked(logger.warn).mock.calls.find(([, , fields]) => fields?.event === 'auth.totp.failed');
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,11 +56,17 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute(input)
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
+    expect(failureLog()?.[2]).toEqual({
+      event: 'auth.totp.failed',
+      reason: 'invalid_credentials',
+      userId: undefined,
+    });
   });
 
   it('throws UNAUTHORIZED when the password is wrong', async () => {
@@ -70,11 +81,19 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute(input)
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
+    // Same reason and no user id as an unknown email, so the log cannot tell
+    // the two apart either.
+    expect(failureLog()?.[2]).toEqual({
+      event: 'auth.totp.failed',
+      reason: 'invalid_credentials',
+      userId: undefined,
+    });
   });
 
   it('throws UNAUTHORIZED when 2FA is not enabled for the user', async () => {
@@ -89,6 +108,7 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute(input)
       .catch((e) => e);
@@ -109,6 +129,7 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute(input)
       .catch((e) => e);
@@ -129,11 +150,19 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute({ ...input, code: '000000' })
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
+    expect(failureLog()?.[2]).toEqual({
+      event: 'auth.totp.failed',
+      reason: 'invalid_code',
+      userId: user.id,
+    });
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain(input.email);
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain(input.ipAddress);
   });
 
   it('returns the user for valid credentials and a valid code', async () => {
@@ -150,12 +179,14 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     }).execute({
       ...input,
       code: validCode,
     });
 
     expect(result).toEqual(user);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('accepts a valid, unused backup code as a fallback and marks it used', async () => {
@@ -176,6 +207,7 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     }).execute({ ...input, code: rawBackupCode });
 
     expect(result).toEqual(user);
@@ -205,6 +237,7 @@ describe('LoginWithTotpUseCase', () => {
       totpBackupCodeRepository,
       totpRateLimiter,
       totpProvider,
+      logger,
     })
       .execute({ ...input, code: rawBackupCode })
       .catch((e) => e);

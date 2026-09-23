@@ -457,3 +457,14 @@ export const MCP_OAUTH = {
   /** How long a rendered consent screen stays submittable. */
   CONSENT_TOKEN_TTL_MS: 10 * 60 * 1000,
 } as const;
+
+/**
+ * Stable names for the failed-authentication log lines (JEF-354), carried as
+ * `fields.event` so an Axiom monitor can key on them. These live with the use
+ * cases that emit them; the repository-level `security.<type>` lines and the
+ * JEF-350 pair are named in `infrastructure/config/constants.ts`.
+ */
+export const AUTH_FAILURE_EVENTS = {
+  LOGIN_FAILED: 'auth.login.failed',
+  TOTP_FAILED: 'auth.totp.failed',
+} as const;
