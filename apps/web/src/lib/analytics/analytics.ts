@@ -33,6 +33,7 @@ export const ANALYTICS_EVENTS = {
   APPLICATION_CREATED: 'application_created',
   PDF_EXPORTED: 'pdf_exported',
   ASSISTANT_USED: 'assistant_used',
+  DOCUMENT_UPLOADED: 'document_uploaded',
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
