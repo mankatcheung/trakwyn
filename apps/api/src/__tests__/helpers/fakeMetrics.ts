@@ -3,6 +3,8 @@ import type {
   EmailTemplate,
   FailOpenReason,
   IMetrics,
+  LlmCallMetric,
+  LlmTokenDirection,
   MetricComponent,
   OutboundUrlRefusalReason,
   RateLimitSubject,
@@ -36,6 +38,12 @@ export interface EmailSentEvent {
   outcome: EmailOutcome;
 }
 
+export interface LlmTokensEvent {
+  provider: string;
+  direction: LlmTokenDirection;
+  count: number;
+}
+
 export interface FakeMetrics extends IMetrics {
   hits: number;
   misses: number;
@@ -46,6 +54,8 @@ export interface FakeMetrics extends IMetrics {
   outboundUrlRefused: OutboundUrlRefusedEvent[];
   emailsSent: EmailSentEvent[];
   securityEvents: SecurityEventType[];
+  llmCalls: LlmCallMetric[];
+  llmTokens: LlmTokensEvent[];
 }
 
 /**
@@ -63,6 +73,8 @@ export function makeFakeMetrics(): FakeMetrics {
     outboundUrlRefused: [],
     emailsSent: [],
     securityEvents: [],
+    llmCalls: [],
+    llmTokens: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -89,6 +101,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordSecurityEvent: (type) => {
       fake.securityEvents.push(type);
+    },
+    recordLlmCall: (call) => {
+      fake.llmCalls.push(call);
+    },
+    recordLlmTokens: (provider, direction, count) => {
+      fake.llmTokens.push({ provider, direction, count });
     },
   };
   return fake;
