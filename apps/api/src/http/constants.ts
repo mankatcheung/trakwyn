@@ -3,13 +3,13 @@
  * rate limits the DI container registers.
  *
  * The outermost layer, so this file may import from anywhere — it derives
- * cookie lifetimes from `use-cases` policy and the fake-consent path from
- * `infrastructure` config rather than restating either.
+ * cookie lifetimes from `use-cases` policy and the fake-consent and health
+ * paths from `infrastructure` config rather than restating them.
  *
  * Split out of the former root-level `src/constants.ts` (JEF-253).
  */
 
-import { FAKE_OAUTH } from '#src/infrastructure/config/constants.js';
+import { FAKE_OAUTH, TRACING } from '#src/infrastructure/config/constants.js';
 import { TOKEN_LIFETIME_S } from '#src/use-cases/constants.js';
 
 /** Auth cookie names. */
@@ -34,7 +34,8 @@ export const COOKIE_SAME_SITE = 'lax' as const;
 /** HTTP route paths registered outside the GraphQL endpoint. */
 export const ROUTES = {
   GRAPHQL: '/graphql',
-  HEALTH: '/health',
+  /** Also Cloud Run's startup probe, which is why the path is declared there. */
+  HEALTH: TRACING.STARTUP_PROBE_PATH,
   MCP: '/mcp',
   /**
    * Streams the assistant's chat reply (JEF-239) — not GraphQL, since
@@ -66,6 +67,30 @@ export const ROUTES = {
 } as const;
 
 /**
+ * Names of the Cloud Scheduler-driven `/admin/*` jobs, as they appear in the
+ * `job` field and the `job.<name>.completed` / `.failed` / `.misconfigured`
+ * event names of each run's summary line (JEF-352).
+ *
+ * Snake case rather than the route path: the name is what dashboards and
+ * alerts group on, so it should survive a route being moved.
+ */
+export const ADMIN_JOBS = {
+  DIGEST: 'digest',
+  TRASH_PURGE: 'trash_purge',
+  REMINDERS: 'reminders',
+  PUSH_NOTIFICATIONS: 'push_notifications',
+} as const;
+
+/**
+ * Log event for a request a configured `/admin/*` route refused (JEF-356).
+ * Rejection happens before `runScheduledJob`, so without this a scheduler
+ * whose token stopped verifying leaves no line at all.
+ */
+export const CRON_AUTH_EVENTS = {
+  REJECTED: 'cron.auth.rejected',
+} as const;
+
+/**
  * `/chat/stream` request bodies. Fastify's default is 1 MB, sized for file
  * uploads; a chat turn is one id and one message of at most
  * `CHAT.MAX_MESSAGE_CHARS` (64 KB leaves room for 4-byte characters and JSON
@@ -73,6 +98,15 @@ export const ROUTES = {
  */
 export const CHAT_STREAM = {
   BODY_LIMIT_BYTES: 64 * 1024,
+} as const;
+
+/**
+ * Process shutdown budget. Cloud Run SIGKILLs an instance 10 seconds after
+ * SIGTERM; draining in-flight requests gets 8 of them so the telemetry flush
+ * that follows (see gracefulShutdown.ts) still fits in the remainder.
+ */
+export const SHUTDOWN = {
+  SERVER_CLOSE_TIMEOUT_MS: 8_000,
 } as const;
 
 /** Rate limits for auth endpoints prone to abuse (in-process, fixed-window). */

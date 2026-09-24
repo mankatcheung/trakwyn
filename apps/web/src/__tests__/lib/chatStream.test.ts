@@ -1,7 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const { mockTraceHeaders } = vi.hoisted(() => ({
+  mockTraceHeaders: vi.fn(() => ({
+    traceparent: '00-' + 'a'.repeat(32) + '-' + 'b'.repeat(16) + '-01',
+  })),
+}));
+
 vi.mock('#/graphql/client', () => ({
   CHAT_STREAM_URL: 'https://api.example.com/chat/stream',
+  traceHeaders: mockTraceHeaders,
+}));
+
+// The chat stream fires a product event on every send (JEF-349); stubbed
+// here so these tests stay about the SSE protocol.
+vi.mock('#/lib/analytics', () => ({
+  ANALYTICS_EVENTS: { ASSISTANT_USED: 'assistant_used' },
+  captureEvent: vi.fn(),
 }));
 
 import { streamChatMessage, ChatStreamError } from '#/lib/chatStream';
@@ -37,6 +51,19 @@ describe('streamChatMessage', () => {
     expect(url).toBe('https://api.example.com/chat/stream');
     expect(options.credentials).toBe('include');
     expect(JSON.parse(options.body as string)).toEqual({ conversationId: 'conv-1', message: 'hi' });
+  });
+
+  // JEF-349: the SSE route is the API under another path, so it gets the
+  // same trace header as every GraphQL request rather than being the one
+  // client call that arrives at the API untraced.
+  it('asks for a traceparent for the chat stream URL and sends what comes back', async () => {
+    vi.mocked(fetch).mockResolvedValue(streamResponse('event: done\ndata: {}\n\n') as never);
+
+    await streamChatMessage({ conversationId: 'c1', message: 'hi', onDelta: () => {} });
+
+    expect(mockTraceHeaders).toHaveBeenCalledWith('https://api.example.com/chat/stream');
+    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).traceparent).toMatch(/^00-[0-9a-f]{32}-/);
   });
 
   it('calls onDelta for each delta frame, in order', async () => {

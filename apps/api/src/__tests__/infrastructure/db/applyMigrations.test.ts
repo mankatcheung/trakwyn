@@ -1,55 +1,95 @@
-import { createClient } from '@libsql/client';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import { unlinkSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import { describe, it, expect, afterEach } from 'vitest';
 import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
+import { createDb, type DbHandle } from '#src/infrastructure/db/createDb.js';
 
-const MIGRATIONS_DIR = join(import.meta.dirname, '..', '..', '..', '..', 'drizzle');
+async function tableNames(handle: DbHandle): Promise<string[]> {
+  const result = (await handle.db.execute(
+    sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`,
+  )) as unknown as { rows: { tablename: string }[] };
+  return result.rows.map((row) => row.tablename);
+}
 
-describe('applyMigrations', () => {
-  let dbPath: string;
+/** Writes a throwaway migrations directory in drizzle-kit's layout. */
+function writeMigrations(migrations: Record<string, string>): string {
+  const dir = mkdtempSync(join(tmpdir(), 'trakwyn-migrations-'));
+  mkdirSync(join(dir, 'meta'));
+  const entries = Object.keys(migrations).map((tag, idx) => ({ idx, tag }));
+  writeFileSync(join(dir, 'meta', '_journal.json'), JSON.stringify({ entries }));
+  for (const [tag, source] of Object.entries(migrations)) {
+    writeFileSync(join(dir, `${tag}.sql`), source);
+  }
+  return dir;
+}
 
-  afterEach(() => {
-    if (dbPath && existsSync(dbPath)) {
-      unlinkSync(dbPath);
-    }
+// These boot fresh, empty PGlite databases — `initdb` included, which the
+// template clone the other suites use skips — and that is slow under a
+// fully loaded runner, so they get the hook-sized ceiling rather than 20s.
+describe('applyMigrations', { timeout: 60_000 }, () => {
+  let handle: DbHandle | undefined;
+  let fixtureDir: string | undefined;
+
+  afterEach(async () => {
+    await handle?.close();
+    handle = undefined;
+    if (fixtureDir) rmSync(fixtureDir, { recursive: true, force: true });
+    fixtureDir = undefined;
   });
 
-  it('tolerates an index that has already drifted away when a later migration drops it', async () => {
-    dbPath = join(tmpdir(), `trakwyn-applyMigrations-test-${randomUUID()}.db`);
-    const client = createClient({ url: `file:${dbPath}` });
-    await client.execute('PRAGMA foreign_keys = ON');
+  it('applies the real migrations to an empty database, then skips them on a re-run', async () => {
+    handle = await createDb('pglite:memory');
 
-    // Full run: reproduces production up to the point right before the
-    // incident (every migration applied cleanly on a fresh database).
-    const first = await applyMigrations(client);
+    const first = await applyMigrations(handle.db);
     expect(first.applied).toBeGreaterThan(0);
+    expect(first.skipped).toBe(0);
+    expect(await tableNames(handle)).toEqual(expect.arrayContaining(['User', 'JobApplication']));
 
-    // Simulate drift: something outside the migration system removed an
-    // index that a later migration's journal entry still expects to DROP by
-    // name (this is what happened in production with `User_email_unique`
-    // ahead of migration 0031).
-    await client.execute('DROP INDEX `User_email_unique`');
+    const second = await applyMigrations(handle.db);
+    expect(second).toEqual({ applied: 0, skipped: first.applied });
+  });
 
-    // Force the migration that drops it to be re-attempted, as if its hash
-    // had never been recorded.
-    const migrationFile = readFileSync(join(MIGRATIONS_DIR, '0031_optimal_luke_cage.sql'), 'utf-8');
-    const hash = createHash('sha256').update(migrationFile).digest('hex');
-    await client.execute({
-      sql: 'DELETE FROM __drizzle_migrations WHERE hash = ?',
-      args: [hash],
+  it('applies only the migrations added since the last run', async () => {
+    handle = await createDb('pglite:memory');
+    fixtureDir = writeMigrations({ '0000_a': 'CREATE TABLE "A" (id text PRIMARY KEY);' });
+    await applyMigrations(handle.db, fixtureDir);
+
+    writeFileSync(
+      join(fixtureDir, 'meta', '_journal.json'),
+      JSON.stringify({
+        entries: [
+          { idx: 0, tag: '0000_a' },
+          { idx: 1, tag: '0001_b' },
+        ],
+      }),
+    );
+    writeFileSync(join(fixtureDir, '0001_b.sql'), 'CREATE TABLE "B" (id text PRIMARY KEY);');
+
+    expect(await applyMigrations(handle.db, fixtureDir)).toEqual({ applied: 1, skipped: 1 });
+    expect(await tableNames(handle)).toEqual(expect.arrayContaining(['A', 'B']));
+  });
+
+  it('rolls the whole run back when a migration fails part-way', async () => {
+    handle = await createDb('pglite:memory');
+    fixtureDir = writeMigrations({
+      '0000_ok': 'CREATE TABLE "Kept" (id text PRIMARY KEY);',
+      '0001_broken': [
+        'CREATE TABLE "HalfDone" (id text PRIMARY KEY);',
+        '--> statement-breakpoint',
+        'ALTER TABLE "DoesNotExist" ADD COLUMN x text;',
+      ].join('\n'),
     });
 
-    const second = await applyMigrations(client);
+    await expect(applyMigrations(handle.db, fixtureDir)).rejects.toThrow();
 
-    expect(second.applied).toBe(1);
-    const indexCheck = await client.execute(
-      "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'User_email_unique'",
-    );
-    expect(indexCheck.rows).toHaveLength(1);
+    // Nothing from the failed run survives — not the migration that
+    // succeeded before it, not the first statement of the broken one, and no
+    // tracking rows claiming either was applied.
+    const tables = await tableNames(handle);
+    expect(tables).not.toContain('Kept');
+    expect(tables).not.toContain('HalfDone');
+    expect(tables).not.toContain('__drizzle_migrations');
   });
 });

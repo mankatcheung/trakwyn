@@ -20,5 +20,10 @@ UserRef.implement({
     customAiPrompt: t.exposeString('customAiPrompt', { nullable: true }),
     useCrossApplicationContext: t.exposeBoolean('useCrossApplicationContext'),
     llmFallbackWhenLimited: t.exposeBoolean('llmFallbackWhenLimited'),
+    onboardingChecklistDismissedAt: t.field({
+      type: 'String',
+      nullable: true,
+      resolve: (user) => user.onboardingChecklistDismissedAt?.toISOString() ?? null,
+    }),
   }),
 });

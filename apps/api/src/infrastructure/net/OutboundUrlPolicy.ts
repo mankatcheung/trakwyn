@@ -5,11 +5,18 @@ import type {
   IOutboundUrlPolicy,
   OutboundUrlPurpose,
 } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import {
+  otelMetrics,
+  type IMetrics,
+  type OutboundUrlRefusalReason,
+} from '#src/infrastructure/observability/metrics.js';
 import {
   ENV,
   NODE_ENV,
   OUTBOUND_URL,
   OUTBOUND_URL_POLICY,
+  SECURITY_EVENTS,
 } from '#src/infrastructure/config/constants.js';
 
 type Lookup = (hostname: string) => Promise<string[]>;
@@ -29,6 +36,9 @@ export interface OutboundUrlPolicyOptions {
   strict?: boolean;
   /** Injectable for tests; defaults to a real DNS lookup returning every address. */
   lookup?: Lookup;
+  /** Where refusals are reported (JEF-350). Optional so tests that only assert the throw need not supply one. */
+  logger?: ILogger;
+  metrics?: IMetrics;
 }
 
 function strictFromEnv(): boolean {
@@ -42,44 +52,67 @@ const defaultLookup: Lookup = async (hostname) =>
   (await dnsLookup(hostname, { all: true })).map((entry) => entry.address);
 
 /**
- * IPv4 ranges that are never a legitimate LLM endpoint or job board: this
- * host, RFC1918, link-local (where cloud metadata services live), CGNAT,
- * and multicast/reserved.
+ * Which reserved range an address falls in. Reported alongside a refusal so
+ * a probe at cloud metadata (`link_local`) is distinguishable from someone
+ * pointing at their own laptop (`loopback`) — the two mean very different
+ * things when they show up in production.
  */
-function isPrivateV4(ip: string): boolean {
+export type AddressClass =
+  | 'loopback'
+  | 'rfc1918'
+  | 'link_local'
+  | 'cgnat'
+  | 'ula'
+  | 'multicast'
+  | 'unspecified'
+  | 'public'
+  | 'not_an_ip';
+
+function classifyV4(ip: string): AddressClass {
   const [a, b] = ip.split('.').map(Number);
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    a >= 224
-  );
+  if (a === 0) return 'unspecified';
+  if (a === 127) return 'loopback';
+  if (a === 169 && b === 254) return 'link_local';
+  if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return 'rfc1918';
+  if (a === 100 && b >= 64 && b <= 127) return 'cgnat';
+  if (a >= 224) return 'multicast';
+  return 'public';
 }
 
-function isPrivateV6(ip: string): boolean {
+function classifyV6(ip: string): AddressClass {
   const v6 = ip.toLowerCase();
-  // IPv4-mapped addresses (::ffff:10.0.0.1) are checked as the IPv4 they wrap.
+  // IPv4-mapped addresses (::ffff:10.0.0.1) are classified as the IPv4 they wrap.
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(v6);
-  if (mapped) return isPrivateV4(mapped[1]);
-  return (
-    v6 === '::' ||
-    v6 === '::1' ||
-    v6.startsWith('fc') ||
-    v6.startsWith('fd') ||
-    v6.startsWith('fe80') ||
-    v6.startsWith('ff')
-  );
+  if (mapped) return classifyV4(mapped[1] as string);
+  if (v6 === '::') return 'unspecified';
+  if (v6 === '::1') return 'loopback';
+  if (v6.startsWith('fe80')) return 'link_local';
+  if (v6.startsWith('fc') || v6.startsWith('fd')) return 'ula';
+  if (v6.startsWith('ff')) return 'multicast';
+  return 'public';
+}
+
+/**
+ * The single source of truth for both the allow/deny decision and the class
+ * reported with a refusal — so the two can never disagree about what an
+ * address is. Anything unparseable is `not_an_ip`, which fails closed.
+ */
+export function classifyAddress(ip: string): AddressClass {
+  const version = isIP(ip);
+  if (version === 4) return classifyV4(ip);
+  if (version === 6) return classifyV6(ip);
+  return 'not_an_ip';
 }
 
 export function isPrivateAddress(ip: string): boolean {
-  const version = isIP(ip);
-  if (version === 4) return isPrivateV4(ip);
-  if (version === 6) return isPrivateV6(ip);
-  return true;
+  return classifyAddress(ip) !== 'public';
+}
+
+/** What a refusal is allowed to say about the URL. Never the URL itself. */
+interface RefusalContext {
+  hostname?: string;
+  port?: number;
+  addressClass?: AddressClass;
 }
 
 /**
@@ -90,14 +123,47 @@ export function isPrivateAddress(ip: string): boolean {
  * name that points at 169.254.169.254 is refused the same as the literal.
  * The check is repeated at request time by the callers precisely because a
  * resolution can change after the URL was saved.
+ *
+ * Every refusal is logged and counted (JEF-350). Because all four check
+ * sites — `SaveLlmApiKeyUseCase` and `TestLlmApiKeyUseCase` at save time,
+ * `OpenAICompatibleLLMProvider` and `FetchJobPostingSourceResolver` (per
+ * redirect hop) at call time — share this one injected instance, doing it
+ * here covers all of them without any of them knowing.
+ *
+ * **What is reported is deliberately narrow:** hostname, port, the resolved
+ * address class and a reason code. Not the URL — a job-posting link carries
+ * a query string, and query strings carry user data (JEF-348).
  */
 export class OutboundUrlPolicy implements IOutboundUrlPolicy {
   private readonly strict: boolean;
   private readonly lookup: Lookup;
+  private readonly logger?: ILogger;
+  private readonly metrics: IMetrics;
 
   constructor(options: OutboundUrlPolicyOptions = {}) {
     this.strict = options.strict ?? strictFromEnv();
     this.lookup = options.lookup ?? defaultLookup;
+    this.logger = options.logger;
+    this.metrics = options.metrics ?? otelMetrics;
+  }
+
+  private refuse(
+    message: string,
+    reason: OutboundUrlRefusalReason,
+    purpose: OutboundUrlPurpose,
+    context: RefusalContext = {},
+  ): never {
+    // No `err`: the policy refused on purpose, nothing was thrown yet, and
+    // everything worth knowing is a field. `context` is spread whole — it
+    // holds only the narrow set above, never the URL.
+    this.logger?.warn('Outbound URL refused', undefined, {
+      event: SECURITY_EVENTS.OUTBOUND_URL_REFUSED,
+      reason,
+      purpose,
+      ...context,
+    });
+    this.metrics.recordOutboundUrlRefused(reason, purpose);
+    throw new ValidationError(message);
   }
 
   async assertAllowed(raw: string, purpose: OutboundUrlPurpose): Promise<void> {
@@ -105,14 +171,19 @@ export class OutboundUrlPolicy implements IOutboundUrlPolicy {
     try {
       url = new URL(raw);
     } catch {
-      throw new ValidationError('URL is not valid');
+      // No hostname to report: it did not parse into one.
+      this.refuse('URL is not valid', 'invalid_url', purpose);
     }
 
+    const hostname = url.hostname.replace(/^\[|\]$/g, '');
+    const port = Number(url.port || (url.protocol === 'https:' ? 443 : 80));
+    const where: RefusalContext = { hostname, port };
+
     if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-      throw new ValidationError('URL must use http or https');
+      this.refuse('URL must use http or https', 'unsupported_scheme', purpose, where);
     }
     if (url.username || url.password) {
-      throw new ValidationError('URL must not contain credentials');
+      this.refuse('URL must not contain credentials', 'embedded_credentials', purpose, where);
     }
     if (!this.strict) return;
 
@@ -121,22 +192,20 @@ export class OutboundUrlPolicy implements IOutboundUrlPolicy {
     // http is not an acceptable transport for that. A job posting is a
     // public page read once, and plenty of them are still served over http.
     if (purpose === 'llm-provider' && url.protocol !== 'https:') {
-      throw new ValidationError('Provider base URL must use https');
+      this.refuse('Provider base URL must use https', 'insecure_provider_url', purpose, where);
     }
 
-    const port = Number(url.port || (url.protocol === 'https:' ? 443 : 80));
     if ((OUTBOUND_URL.BLOCKED_PORTS as readonly number[]).includes(port)) {
-      throw new ValidationError('URL port is not allowed');
+      this.refuse('URL port is not allowed', 'blocked_port', purpose, where);
     }
 
-    const hostname = url.hostname.replace(/^\[|\]$/g, '');
     if (
       hostname === 'localhost' ||
       hostname.endsWith('.localhost') ||
       hostname.endsWith('.internal') ||
       hostname.endsWith('.local')
     ) {
-      throw new ValidationError('URL host is not allowed');
+      this.refuse('URL host is not allowed', 'reserved_hostname', purpose, where);
     }
 
     let addresses: string[];
@@ -146,11 +215,18 @@ export class OutboundUrlPolicy implements IOutboundUrlPolicy {
       try {
         addresses = await this.lookup(hostname);
       } catch {
-        throw new ValidationError('URL host could not be resolved');
+        this.refuse('URL host could not be resolved', 'unresolvable_host', purpose, where);
       }
     }
-    if (addresses.length === 0 || addresses.some(isPrivateAddress)) {
-      throw new ValidationError('URL host is not allowed');
+
+    // An empty answer is reported as `not_an_ip` for the same reason
+    // `classifyAddress` returns it: nothing usable came back, so fail closed.
+    const blocked = addresses.map(classifyAddress).find((cls) => cls !== 'public');
+    if (addresses.length === 0 || blocked) {
+      this.refuse('URL host is not allowed', 'private_address', purpose, {
+        ...where,
+        addressClass: blocked ?? 'not_an_ip',
+      });
     }
   }
 }

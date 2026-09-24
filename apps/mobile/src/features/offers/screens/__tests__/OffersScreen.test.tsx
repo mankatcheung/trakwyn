@@ -1,33 +1,20 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import '../../../../i18n';
 
 jest.mock('../../hooks/useOfferQueries', () => ({
   useOffers: jest.fn(),
-  useCreateOffer: jest.fn(),
-  useUpdateOffer: jest.fn(),
   useDeleteOffer: jest.fn(),
 }));
 jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
   useLocalSearchParams: jest.fn(),
-  // The real Stack.Screen hands `options` to React Navigation's header, which
-  // isn't mounted in these tests — rendering `headerRight()` here instead
-  // keeps the add-offer button reachable by testID.
-  Stack: {
-    Screen: ({ options }: { options?: { headerRight?: () => React.ReactNode } }) =>
-      options?.headerRight ? options.headerRight() : null,
-  },
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 jest.mock('../../../../i18n/LanguageContext', () => ({ useLanguage: jest.fn() }));
-import { useLocalSearchParams } from 'expo-router';
-import {
-  useCreateOffer,
-  useDeleteOffer,
-  useOffers,
-  useUpdateOffer,
-} from '../../hooks/useOfferQueries';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useDeleteOffer, useOffers } from '../../hooks/useOfferQueries';
 import { OffersScreen } from '../OffersScreen';
 import type { Offer } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -35,10 +22,9 @@ import { lightColors } from '../../../../theme/colors';
 import { useLanguage } from '../../../../i18n/LanguageContext';
 
 const mockedUseOffers = jest.mocked(useOffers);
-const mockedUseCreateOffer = jest.mocked(useCreateOffer);
-const mockedUseUpdateOffer = jest.mocked(useUpdateOffer);
 const mockedUseDeleteOffer = jest.mocked(useDeleteOffer);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseLanguage = jest.mocked(useLanguage);
 
@@ -59,8 +45,9 @@ const offers: Offer[] = [
   },
 ];
 
-function renderScreen() {
+function renderScreen(push = jest.fn()) {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
+  mockedUseRouter.mockReturnValue({ push } as never);
   return render(<OffersScreen />);
 }
 
@@ -79,8 +66,6 @@ describe('OffersScreen', () => {
       setMode: jest.fn(),
     });
     jest.clearAllMocks();
-    mockedUseCreateOffer.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
-    mockedUseUpdateOffer.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
     mockedUseDeleteOffer.mockReturnValue({ mutate: jest.fn() } as never);
   });
 
@@ -104,18 +89,24 @@ describe('OffersScreen', () => {
     expect(mutate).toHaveBeenCalledWith('offer-1');
   });
 
-  it('creates a new offer via the form', async () => {
+  it('navigates to the new-offer screen when the FAB is pressed', async () => {
     mockedUseOffers.mockReturnValue({ data: [], isLoading: false, isError: false } as never);
-    const mutateAsync = jest.fn().mockResolvedValue({ id: '1' });
-    mockedUseCreateOffer.mockReturnValue({ mutateAsync, isPending: false } as never);
+    const push = jest.fn();
 
-    const { getByTestId } = await renderScreen();
+    const { getByTestId } = await renderScreen(push);
 
     await fireEvent.press(getByTestId('add-offer-button'));
-    await fireEvent.changeText(getByTestId('offer-base-salary-input'), '150000');
-    await fireEvent.press(getByTestId('offer-form-save-button'));
+    expect(push).toHaveBeenCalledWith('/applications/app-1/offers/new');
+  });
 
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+  it('navigates to the edit-offer screen when the edit icon is pressed', async () => {
+    mockedUseOffers.mockReturnValue({ data: offers, isLoading: false, isError: false } as never);
+    const push = jest.fn();
+
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('edit-offer-offer-1'));
+    expect(push).toHaveBeenCalledWith('/applications/app-1/offers/offer-1/edit');
   });
 
   it('does not show a compare action even with 2+ offers — compare lives on the all-offers page now', async () => {

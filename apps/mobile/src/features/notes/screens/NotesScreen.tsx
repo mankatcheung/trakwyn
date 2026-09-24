@@ -266,6 +266,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 14,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     multiline: { minHeight: 70, textAlignVertical: 'top' },
     modalContainer: { flex: 1, backgroundColor: colors.background },

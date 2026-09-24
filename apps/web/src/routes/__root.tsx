@@ -11,6 +11,7 @@ import { THEME_INIT_SCRIPT, ThemeProvider, useTheme } from '#/lib/theme';
 import { LOCALE_INIT_SCRIPT, LocaleProvider, useLocale } from '#/lib/i18n';
 import { NavigationProgressBar } from '#/components/NavigationProgressBar';
 import { watchForServiceWorkerUpdate } from '#/lib/swUpdateToast';
+import { RouteErrorReporter } from '#/components/RouteErrorReporter';
 import { replayPendingOperations } from '#/lib/pendingOperations';
 
 import appCss from '../styles.css?url';
@@ -59,11 +60,15 @@ function NotFound() {
 }
 
 // TanStack Router's catch-all for a render-time exception anywhere in the
-// route tree — without this, an uncaught error just blanks the page.
-function RouteError() {
+// route tree — without this, an uncaught error just blanks the page. The
+// error is also the only one PostHog's own autocapture cannot see: React
+// swallows it at the boundary rather than letting it reach `window.onerror`,
+// so RouteErrorReporter reports it explicitly (JEF-349).
+function RouteError({ error }: { error: unknown }) {
   const { t } = useLocale();
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <RouteErrorReporter error={error} />
       <div className="space-y-4 text-center">
         <AlertTriangleIcon size={40} className="mx-auto text-red-500" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">

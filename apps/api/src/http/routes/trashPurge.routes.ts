@@ -1,12 +1,14 @@
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
-import { ROUTES } from '#src/http/constants.js';
-import { isAuthorizedCronTrigger } from '#src/http/routes/cronAuth.js';
+import { ADMIN_JOBS, ROUTES } from '#src/http/constants.js';
+import { authorizeCronTrigger, isCronTriggerConfigured } from '#src/http/routes/cronAuth.js';
+import { logScheduledJobMisconfigured, runScheduledJob } from '#src/http/routes/runScheduledJob.js';
 
 /**
  * Removes applications that have served their thirty days in Trash. Driven by
- * Vercel Cron, alongside the digest and reminder routes it is modelled on.
+ * Cloud Scheduler (infra/gcp/scheduler.tf), alongside the digest and reminder
+ * routes it is modelled on.
  *
  * Reports the failure count rather than swallowing it: the use case keeps going
  * past a failure so one unreachable blob cannot strand everything behind it,
@@ -18,24 +20,41 @@ export function trashPurgeRoutes(getCradle: () => Cradle): RouteDefinition[] {
       method: ['GET', 'POST'],
       path: ROUTES.TRASH_PURGE,
       handler: async (req, res) => {
-        if (!process.env[ENV.CRON_SECRET]) {
-          res.status(503).send({ error: 'Purge not configured (CRON_SECRET missing)' });
+        const { logger, oidcTokenVerifier } = getCradle();
+
+        if (!isCronTriggerConfigured(ENV.CRON_SECRET)) {
+          logScheduledJobMisconfigured(logger, ADMIN_JOBS.TRASH_PURGE, 'no_trigger_configured');
+          res
+            .status(503)
+            .send({ error: 'Purge not configured (CRON_SECRET/CRON_INVOKER_SA missing)' });
           return;
         }
 
-        if (!isAuthorizedCronTrigger(req, ENV.CRON_SECRET)) {
+        const auth = await authorizeCronTrigger(req, ENV.CRON_SECRET, oidcTokenVerifier, {
+          job: ADMIN_JOBS.TRASH_PURGE,
+          logger,
+        });
+        if (!auth) {
           res.status(401).send({ error: 'Unauthorized' });
           return;
         }
 
-        const { purgeExpiredApplicationsUseCase, logger } = getCradle();
-        try {
-          const { purged, failed } = await purgeExpiredApplicationsUseCase.execute();
-          res.send({ ok: failed === 0, purged, failed });
-        } catch (err) {
-          logger.error('Trash purge failed', err);
+        const { purgeExpiredApplicationsUseCase } = getCradle();
+        const outcome = await runScheduledJob({
+          job: ADMIN_JOBS.TRASH_PURGE,
+          auth,
+          logger,
+          execute: () => purgeExpiredApplicationsUseCase.execute(),
+          summarize: ({ purged, failed }) => ({ processed: purged, failed }),
+        });
+
+        if (outcome.status === 'failed') {
           res.status(500).send({ error: 'Purge failed' });
+          return;
         }
+
+        const { purged, failed } = outcome.result;
+        res.send({ ok: failed === 0, purged, failed });
       },
     },
   ];

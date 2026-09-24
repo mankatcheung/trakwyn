@@ -22,6 +22,7 @@ import {
   FakeGitHubOAuthProvider,
 } from '#src/infrastructure/auth/FakeOAuthProvider.js';
 import { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
+import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
@@ -35,10 +36,14 @@ import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransac
 import { LlmApiKeyCipher } from '#src/infrastructure/llm/LlmApiKeyCipher.js';
 import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
+import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
+import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
+import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
+import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
 
 import {
   EMAIL_PROVIDER,
@@ -109,7 +114,9 @@ export const infrastructure = {
   oauthStateService: asClass(OAuthStateService, { lifetime: Lifetime.SINGLETON }),
   mobileOAuthHandoffService: asClass(MobileOAuthHandoffService, { lifetime: Lifetime.SINGLETON }),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
-  emailService: asClass(EmailService, { lifetime: Lifetime.SINGLETON }),
+  // asFunction for the same options-object reason as outboundUrlPolicy below:
+  // BrevoEmailService takes optional `{ metrics }` (JEF-356).
+  emailService: asFunction(() => new EmailService(), { lifetime: Lifetime.SINGLETON }),
   deviceLabeler: asClass(DeviceLabelService, { lifetime: Lifetime.SINGLETON }),
   ipLocationResolver: asClass(IpLocationService, { lifetime: Lifetime.SINGLETON }),
   webPushService: asClass(WebPushService, { lifetime: Lifetime.SINGLETON }),
@@ -120,9 +127,51 @@ export const infrastructure = {
   // asFunction, not asClass: the constructor takes an options object, and
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
-  outboundUrlPolicy: asFunction(() => new OutboundUrlPolicy(), { lifetime: Lifetime.SINGLETON }),
+  outboundUrlPolicy: asFunction(({ logger }: Cradle) => new OutboundUrlPolicy({ logger }), {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  // Verifies Cloud Scheduler's OIDC tokens on the admin cron routes
+  // (JEF-336). A singleton so jose's cached copy of Google's JWKS is shared;
+  // asFunction for the same options-object reason as outboundUrlPolicy.
+  oidcTokenVerifier: asFunction(({ logger }: Cradle) => new GoogleOidcTokenVerifier({ logger }), {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  // Every MCP and chat tool call passes through this (JEF-365). It is handed
+  // the whole catalogue, not a surface's subset, because it only looks up
+  // each tool's access tag and checks that a name is real. Spans are gated
+  // on `isObservabilityEnabled` like use-case tracing; the refusal log is not.
+  toolCallObserver: asFunction(
+    ({ logger }: Cradle) =>
+      new ToolCallObserver({ tools: TOOL_CATALOGUE, logger, tracing: isObservabilityEnabled }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
-  userLlmProviderFactory: asClass(UserLLMProviderFactory, { lifetime: Lifetime.SINGLETON }),
+  // asFunction for the same options-object reason as outboundUrlPolicy: the
+  // factory's optional `traceLlmCalls`/`metrics` (JEF-113) are not
+  // registrations, and proxy injection would try to resolve them.
+  userLlmProviderFactory: asFunction(
+    ({
+      userRepository,
+      llmApiKeyRepository,
+      llmApiKeyCipher,
+      llmUsageEventRepository,
+      outboundUrlPolicy,
+      generateId,
+      logger,
+    }: Cradle) =>
+      new UserLLMProviderFactory({
+        userRepository,
+        llmApiKeyRepository,
+        llmApiKeyCipher,
+        llmUsageEventRepository,
+        outboundUrlPolicy,
+        generateId,
+        logger,
+        traceLlmCalls: isObservabilityEnabled,
+        metrics: otelMetrics,
+      }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   // Decorates the factory so a key past its monthly token limit is refused
   // before any AI feature can use it (JEF-258) — same inner/outer shape as
   // BlocklistingSessionRepository and the Cached*Repository family, so every

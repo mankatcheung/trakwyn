@@ -39,7 +39,7 @@ describe('PrivacyPage', () => {
   it('provides a contact email', () => {
     render(<PrivacyPage />);
 
-    const link = screen.getByRole('link', { name: 'privacy@trakwyn.com' });
-    expect(link).toHaveAttribute('href', 'mailto:privacy@trakwyn.com');
+    const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
+    expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
   });
 });

@@ -42,6 +42,29 @@ const WEEKLY_APPLICATION_GOAL_QUERY = `
   }
 `;
 
+const ONBOARDING_CHECKLIST_QUERY = `
+  query OnboardingChecklist {
+    me {
+      onboardingChecklistDismissedAt
+    }
+    apiTokens {
+      id
+    }
+    llmApiKeys {
+      provider
+    }
+    workExperiences {
+      id
+    }
+  }
+`;
+
+export const DISMISS_ONBOARDING_CHECKLIST = `
+  mutation DismissOnboardingChecklist {
+    dismissOnboardingChecklist
+  }
+`;
+
 type Application = {
   id: string;
   company: string;
@@ -82,6 +105,11 @@ export const weeklyApplicationGoalQueryOptions = queryOptions({
     ),
 });
 
+export const onboardingChecklistQueryOptions = queryOptions({
+  queryKey: ['onboardingChecklist'],
+  queryFn: () => gqlClient.request<OnboardingChecklistData>(ONBOARDING_CHECKLIST_QUERY),
+});
+
 type WeeklyApplicationGoal = {
   weeklyApplicationGoal: number;
   currentWeekCount: number;
@@ -89,7 +117,20 @@ type WeeklyApplicationGoal = {
   streakWeeks: number;
 };
 
-export type { Application, CalendarEventKind, CalendarEvent, WeeklyApplicationGoal };
+type OnboardingChecklistData = {
+  me: { onboardingChecklistDismissedAt: string | null } | null;
+  apiTokens: { id: string }[];
+  llmApiKeys: { provider: string }[];
+  workExperiences: { id: string }[];
+};
+
+export type {
+  Application,
+  CalendarEventKind,
+  CalendarEvent,
+  WeeklyApplicationGoal,
+  OnboardingChecklistData,
+};
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   loader: ({ context: { queryClient } }) =>
@@ -97,6 +138,7 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
       queryClient.ensureQueryData(applicationsQueryOptions),
       queryClient.ensureQueryData(calendarEventsQueryOptions),
       queryClient.ensureQueryData(weeklyApplicationGoalQueryOptions),
+      queryClient.ensureQueryData(onboardingChecklistQueryOptions),
     ]),
   component: DashboardPage,
 });

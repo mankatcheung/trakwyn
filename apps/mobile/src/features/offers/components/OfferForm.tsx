@@ -178,6 +178,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       fontSize: 14,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     multiline: { minHeight: 60, textAlignVertical: 'top' },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { APPLICATION_STATUSES, type ApplicationStatus } from '../types';
 import { statusLabel } from './StatusBadge';
+import { statusDotColor } from '../lib/statusColors';
 import { CheckIcon, ChevronDownIcon, FilterIcon } from './ApplicationIcons';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -36,6 +37,12 @@ export function StatusFilterButton({ value, onChange }: Props) {
         testID="applications-status-filter-button"
       >
         <FilterIcon color={value !== 'all' ? colors.primary : colors.textSubtle} />
+        {value !== 'all' ? (
+          <View
+            style={[styles.dot, { backgroundColor: statusDotColor(value, colors) }]}
+            testID={`status-filter-dot-${value}`}
+          />
+        ) : null}
         <Text style={[styles.buttonText, value !== 'all' && styles.buttonTextActive]}>
           {t('list.statusFilterLabel', { status: currentLabel })}
         </Text>
@@ -60,6 +67,8 @@ export function StatusFilterButton({ value, onChange }: Props) {
                 selected={value === status}
                 onPress={() => select(status)}
                 testID={`status-filter-option-${status}`}
+                dotColor={statusDotColor(status, colors)}
+                dotTestID={`status-filter-dot-${status}`}
               />
             ))}
           </Pressable>
@@ -74,17 +83,26 @@ function StatusOption({
   selected,
   onPress,
   testID,
+  dotColor,
+  dotTestID,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   testID: string;
+  dotColor?: string;
+  dotTestID?: string;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable style={styles.row} onPress={onPress} testID={testID}>
-      <Text style={[styles.rowText, selected && styles.rowTextSelected]}>{label}</Text>
+      <View style={styles.rowLabel}>
+        {dotColor ? (
+          <View style={[styles.dot, { backgroundColor: dotColor }]} testID={dotTestID} />
+        ) : null}
+        <Text style={[styles.rowText, selected && styles.rowTextSelected]}>{label}</Text>
+      </View>
       {selected ? <CheckIcon color={colors.primary} /> : null}
     </Pressable>
   );
@@ -142,7 +160,9 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'space-between',
       minHeight: 48,
     },
+    rowLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     rowText: { fontSize: 15, color: colors.text },
     rowTextSelected: { color: colors.primary, fontWeight: '600' },
+    dot: { width: 8, height: 8, borderRadius: 9999 },
   });
 }

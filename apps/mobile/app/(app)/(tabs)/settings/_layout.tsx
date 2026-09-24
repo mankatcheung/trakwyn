@@ -23,7 +23,6 @@ export default function SettingsStackLayout() {
       <Stack.Screen name="integrations" options={{ title: t('screenTitles.integrations') }} />
       <Stack.Screen name="data" options={{ title: t('screenTitles.data') }} />
       <Stack.Screen name="danger-zone" options={{ title: t('screenTitles.dangerZone') }} />
-      <Stack.Screen name="analytics" options={{ title: t('screenTitles.analytics') }} />
       <Stack.Screen name="trash" options={{ title: t('screenTitles.trash') }} />
     </Stack>
   );

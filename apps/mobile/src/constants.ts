@@ -52,3 +52,26 @@ export const ACCESS_TOKEN_REFRESH_LEEWAY_S = 30;
  * first queries simply 401 and join the same in-flight refresh.
  */
 export const RESTORE_REFRESH_WAIT_MS = 3000;
+
+/**
+ * How long a GraphQL request may go unanswered before it is abandoned as a
+ * network failure (JEF-367). Without a limit a request on a dead connection
+ * waits for the OS to give up, which is often a minute or more. Generous
+ * enough for the slowest legitimate call on a poor cellular link.
+ */
+export const GQL_REQUEST_TIMEOUT_MS = 20_000;
+
+/**
+ * Error and crash reporting (JEF-349). Unset in development and CI, which
+ * leaves the SDK unstarted and every capture a no-op — the intended state,
+ * not a broken config. Set for a real build via EAS environment variables.
+ */
+export const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
+
+/**
+ * PostHog's EU ingestion host, used when `EXPO_PUBLIC_POSTHOG_HOST` is
+ * unset. EU Cloud rather than US, matching apps/web.
+ */
+export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
+
+export const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST;

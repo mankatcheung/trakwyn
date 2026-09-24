@@ -5,7 +5,7 @@ describe('DI modules', () => {
   beforeAll(() => {
     // client.ts constructs the real libSQL client at module-evaluation
     // time, so these must be set before the di modules are imported below.
-    process.env[ENV.DATABASE_URL] ??= 'file:di-modules-test.db';
+    process.env[ENV.DATABASE_URL] ??= 'pglite:memory';
     process.env[ENV.JWT_SECRET] ??= 'test-secret';
     process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
   });
@@ -50,6 +50,51 @@ describe('DI modules', () => {
 
     const keys = Object.values(modules).flatMap((module) => Object.keys(module));
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  /**
+   * JEF-350: rejections are logged and counted by a decorator rather than by
+   * the nineteen use cases that consume a limiter, which is only true for as
+   * long as every registration goes through `limiter()`. A new limiter added
+   * with a bare `asValue(new RateLimiter(...))` would rate-limit correctly
+   * and report nothing — silently, which is the failure mode the ticket
+   * exists to remove. So it is asserted rather than described.
+   */
+  it('wraps every rate limiter in the instrumented decorator', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { InstrumentedRateLimiter } =
+      await import('#src/infrastructure/rateLimit/InstrumentedRateLimiter.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
+    const { rateLimiters } = await loadModules();
+
+    const container = buildContainer();
+    container.register({ logger: asValue(makeLogger()) });
+
+    const names = Object.keys(rateLimiters);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) {
+      expect(container.resolve(name), name).toBeInstanceOf(InstrumentedRateLimiter);
+    }
+  });
+
+  /**
+   * JEF-354: every security event reaches the logs only because every writer
+   * resolves `securityEventRepository` through the logging decorator.
+   */
+  it('wraps the security event repository in the logging decorator', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { LoggingSecurityEventRepository } =
+      await import('#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
+
+    const container = buildContainer();
+    container.register({ logger: asValue(makeLogger()), db: asValue({}) });
+
+    expect(container.resolve('securityEventRepository')).toBeInstanceOf(
+      LoggingSecurityEventRepository,
+    );
   });
 
   it('buildContainer registers exactly the union of the DI module keys', async () => {

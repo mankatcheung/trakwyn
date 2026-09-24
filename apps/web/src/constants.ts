@@ -32,3 +32,33 @@ export const CHAT_MESSAGE_MAX_CHARS = 8000;
 
 /** Fallback GraphQL endpoint when `VITE_API_URL` is unset (dev proxy path). */
 export const DEFAULT_API_URL = '/graphql';
+
+/**
+ * Public contact address rendered on /privacy, /terms and /accessibility.
+ * Declared once here rather than per page: all three link to the same
+ * mailbox, and it was previously duplicated in each of them (JEF-338).
+ */
+export const CONTACT_EMAIL = 'contact@trakwyn.com';
+
+/**
+ * PostHog's EU ingestion host, used when `VITE_POSTHOG_HOST` is unset
+ * (JEF-349). EU Cloud rather than US: the app already takes region-aware
+ * consent seriously enough to gate analytics behind it (JEF-211), and
+ * keeping the events in the EU is the other half of that.
+ */
+export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
+
+/**
+ * How many exceptions are held in memory while the consent check is still
+ * resolving. Small on purpose: this exists so the first error of a page
+ * load isn't lost, not to replay a whole session once consent lands.
+ */
+export const POSTHOG_PENDING_EXCEPTION_LIMIT = 10;
+
+/**
+ * The Core Web Vitals reported to PostHog (JEF-360) — every metric its SDK
+ * supports, stated here so the set is decided in review rather than by the
+ * project's remote setting. TTFB is not among them: posthog-js does not
+ * report it.
+ */
+export const WEB_VITALS_METRICS = ['LCP', 'INP', 'CLS', 'FCP'] as const;

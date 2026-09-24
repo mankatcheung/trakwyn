@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppState } from 'react-native';
-import { act, render } from '@testing-library/react-native';
+import { act, cleanup, render } from '@testing-library/react-native';
 
 jest.mock('../../src/auth/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -69,6 +69,9 @@ describe('RootNavigator returning to the foreground', () => {
 
   afterEach(() => {
     AppState.addEventListener = originalAddEventListener;
+    // Unmount so a mount-time redirect effect's pending setTimeout doesn't
+    // fire asynchronously into a later test.
+    cleanup();
   });
 
   function emitAppStateChange(nextState: 'active' | 'background' | 'inactive') {
@@ -79,6 +82,9 @@ describe('RootNavigator returning to the foreground', () => {
     mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
     mockedUsePathname.mockReturnValue('/conversations');
     await render(<RootNavigator />);
+    // Mounting already-authenticated triggers the initial-resolution redirect
+    // (see _layout.test.tsx) — clear it so only the foreground transition below is asserted.
+    replace.mockClear();
 
     act(() => {
       emitAppStateChange('background');
@@ -92,6 +98,7 @@ describe('RootNavigator returning to the foreground', () => {
     mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
     mockedUsePathname.mockReturnValue('/conversations');
     await render(<RootNavigator />);
+    replace.mockClear();
 
     act(() => {
       emitAppStateChange('inactive');
@@ -104,6 +111,7 @@ describe('RootNavigator returning to the foreground', () => {
     mockedUseAuth.mockReturnValue(authState({ isAuthenticated: false }));
     mockedUsePathname.mockReturnValue('/login');
     await render(<RootNavigator />);
+    replace.mockClear();
 
     act(() => {
       emitAppStateChange('background');

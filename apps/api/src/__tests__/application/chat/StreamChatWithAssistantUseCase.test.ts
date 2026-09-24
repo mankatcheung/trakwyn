@@ -9,7 +9,10 @@ import {
   makeMessage,
   makeMessageRepository,
 } from '#src/__tests__/helpers/mocks/chat.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import {
+  makeRateLimiter,
+  makeToolCallObserver,
+} from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
@@ -49,6 +52,7 @@ function makeDeps(overrides?: Record<string, unknown>) {
       findById: vi.fn().mockResolvedValue(makeUser({ defaultLlmProvider: null })),
     }),
     generateId: vi.fn().mockReturnValue('generated-id'),
+    toolCallObserver: makeToolCallObserver(),
     ...overrides,
   };
 }

@@ -7,7 +7,7 @@ import {
   gte,
   lte,
   lt,
-  like,
+  ilike,
   isNull,
   isNotNull,
   inArray,
@@ -99,12 +99,14 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
       );
     }
     if (search) {
+      // ILIKE, not LIKE: SQLite's LIKE ignored case, Postgres's does not,
+      // and the search box has always been case-insensitive.
       conditions.push(
         or(
-          like(jobApplication.company, `%${search}%`),
-          like(jobApplication.role, `%${search}%`),
-          like(jobApplication.location, `%${search}%`),
-          like(jobApplication.description, `%${search}%`),
+          ilike(jobApplication.company, `%${search}%`),
+          ilike(jobApplication.role, `%${search}%`),
+          ilike(jobApplication.location, `%${search}%`),
+          ilike(jobApplication.description, `%${search}%`),
         )!,
       );
     }
@@ -334,7 +336,7 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
       // One statement rather than a write per card: a CASE over the id maps
       // each row to its index in `orderedIds`.
       const positions = sql.join(
-        orderedIds.map((id, index) => sql`when ${id} then ${index}`),
+        orderedIds.map((id, index) => sql`when ${id} then ${index}::integer`),
         sql` `,
       );
 

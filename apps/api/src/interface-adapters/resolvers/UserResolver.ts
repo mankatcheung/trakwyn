@@ -48,6 +48,7 @@ import type {
   NotificationPreferences,
 } from '#src/use-cases/user/IGetNotificationPreferencesUseCase.js';
 import type { IUpdateNotificationPreferencesUseCase } from '#src/use-cases/user/IUpdateNotificationPreferencesUseCase.js';
+import type { IDismissOnboardingChecklistUseCase } from '#src/use-cases/user/IDismissOnboardingChecklistUseCase.js';
 import type { IUpdateProfileUseCase } from '#src/use-cases/user/IUpdateProfileUseCase.js';
 import type { IGetUserUseCase } from '#src/use-cases/user/IGetUserUseCase.js';
 import type {
@@ -89,6 +90,7 @@ interface Deps {
   importUserDataUseCase: IImportUserDataUseCase;
   getNotificationPreferencesUseCase: IGetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: IUpdateNotificationPreferencesUseCase;
+  dismissOnboardingChecklistUseCase: IDismissOnboardingChecklistUseCase;
   updateProfileUseCase: IUpdateProfileUseCase;
   getUserUseCase: IGetUserUseCase;
   requestAvatarUploadUrlUseCase: IRequestAvatarUploadUrlUseCase;
@@ -291,6 +293,10 @@ export class UserResolver {
           ? weeklyApplicationGoalOrDigestFrequency
           : digestFrequency,
     });
+  }
+
+  async dismissOnboardingChecklist(userId: string): Promise<void> {
+    await this.deps.dismissOnboardingChecklistUseCase.execute(userId);
   }
 
   async updateProfile(

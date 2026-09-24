@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, cleanup, render } from '@testing-library/react-native';
 
 jest.mock('../../src/auth/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -57,6 +57,10 @@ describe('RootNavigator', () => {
     mockedUsePathname.mockReturnValue('/');
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
   it('shows a loading indicator while auth state is being restored', async () => {
     mockedUseAuth.mockReturnValue(authState({ isLoading: true }));
 
@@ -76,6 +80,62 @@ describe('RootNavigator', () => {
 
     const { queryByTestId } = await render(<RootNavigator />);
     expect(queryByTestId('root-loading')).toBeNull();
+  });
+
+  describe('resolving auth on a cold start or full reload', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+    afterEach(() => {
+      // Unmount while the fake clock that scheduled any pending timer is
+      // still installed, so its cleanup's clearTimeout targets that clock
+      // rather than leaking an unresolved fake timer into a later test.
+      jest.useRealTimers();
+    });
+
+    it('lands on the dashboard tab once an already-signed-in session resolves', async () => {
+      // Mirrors a cold start or full reload: auth resolves as valid while
+      // Expo Router is still sitting on whatever URL it launched with, e.g.
+      // a deep link into the assistant tab.
+      mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
+      mockedUsePathname.mockReturnValue('/conversations');
+      await render(<RootNavigator />);
+      await act(async () => {
+        jest.runAllTimers();
+      });
+
+      expect(replace).toHaveBeenCalledWith('/(tabs)/(home)');
+    });
+
+    it('does nothing when the resolved session is signed out', async () => {
+      mockedUseAuth.mockReturnValue(authState({ isAuthenticated: false }));
+      mockedUsePathname.mockReturnValue('/login');
+      await render(<RootNavigator />);
+      await act(async () => {
+        jest.runAllTimers();
+      });
+
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    it('only redirects once per app lifetime, not on every later navigation', async () => {
+      mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
+      mockedUsePathname.mockReturnValue('/conversations');
+      const { rerender } = await render(<RootNavigator />);
+      await act(async () => {
+        jest.runAllTimers();
+      });
+      expect(replace).toHaveBeenCalledTimes(1);
+
+      // The user navigates elsewhere afterward — that must not trigger another reset.
+      mockedUsePathname.mockReturnValue('/conversations');
+      await rerender(<RootNavigator />);
+      await act(async () => {
+        jest.runAllTimers();
+      });
+
+      expect(replace).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('returning after a session expires', () => {
@@ -101,7 +161,7 @@ describe('RootNavigator', () => {
       mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
       mockedUsePathname.mockReturnValue('/');
       await rerender(<RootNavigator />);
-      act(() => {
+      await act(async () => {
         jest.runAllTimers();
       });
 
@@ -120,7 +180,7 @@ describe('RootNavigator', () => {
       mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
       mockedUsePathname.mockReturnValue('/');
       await rerender(<RootNavigator />);
-      act(() => {
+      await act(async () => {
         jest.runAllTimers();
       });
 
@@ -139,7 +199,7 @@ describe('RootNavigator', () => {
       mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
       mockedUsePathname.mockReturnValue('/');
       await rerender(<RootNavigator />);
-      act(() => {
+      await act(async () => {
         jest.runAllTimers();
       });
 

@@ -42,7 +42,7 @@ describe('AccessibilityPage', () => {
   it('provides a contact email', () => {
     render(<AccessibilityPage />);
 
-    const link = screen.getByRole('link', { name: 'privacy@trakwyn.com' });
-    expect(link).toHaveAttribute('href', 'mailto:privacy@trakwyn.com');
+    const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
+    expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
   });
 });

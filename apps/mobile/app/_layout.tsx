@@ -8,9 +8,20 @@ import { I18nextProvider } from 'react-i18next';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeContext';
 import { LanguageProvider } from '../src/i18n/LanguageContext';
+import { NavigationBreadcrumbs } from '../src/components/NavigationBreadcrumbs';
+import { NetworkBreadcrumbs } from '../src/components/NetworkBreadcrumbs';
+import { ScreenErrorBoundary } from '../src/components/ScreenErrorBoundary';
+import { initAnalytics } from '../src/lib/analytics';
 import i18n from '../src/i18n';
 
 const queryClient = new QueryClient();
+
+// Started at module load rather than in an effect (JEF-349): an effect runs
+// after the first render, and the errors worth catching most — a provider
+// throwing, a native crash during startup — happen before that. It is a
+// no-op without EXPO_PUBLIC_POSTHOG_KEY, which is the normal state in
+// development and in CI.
+initAnalytics();
 
 export function RootNavigator() {
   const { isLoading, isAuthenticated, sessionExpired } = useAuth();
@@ -22,6 +33,7 @@ export function RootNavigator() {
   // A freshly launched app is always in the foreground, so this doesn't
   // need to read AppState.currentState at mount.
   const appState = useRef<AppStateStatus>('active');
+  const initialAuthResolved = useRef(false);
 
   // Bringing the app back to the foreground should always land on the
   // dashboard tab, not wherever the tab navigator happened to be left —
@@ -51,15 +63,27 @@ export function RootNavigator() {
     if (lastAppPath.current && lastAppPath.current !== '/') returnTo.current = lastAppPath.current;
   }, [isAuthenticated, sessionExpired]);
 
+  // Fires once auth resolves. A returnTo path (above) wins when there is one;
+  // otherwise, the *first* time auth ever resolves — a cold start or full
+  // reload, which remounts this component instead of firing an AppState
+  // transition, so the foreground effect above never runs for it — the
+  // router is left sitting on whatever URL it launched with (e.g. a
+  // conversation), so send it to the dashboard instead. Later logins in the
+  // same app lifetime that aren't a returnTo restore navigate nowhere: the
+  // (app) group already mounts at its root.
   useEffect(() => {
-    if (!isAuthenticated || !returnTo.current) return;
-    const target = returnTo.current;
+    if (isLoading) return;
+    const isColdStart = !initialAuthResolved.current;
+    initialAuthResolved.current = true;
+    if (!isAuthenticated) return;
+    const target = returnTo.current ?? (isColdStart ? '/(tabs)/(home)' : null);
+    if (!target) return;
     returnTo.current = null;
     // Deferred a tick so Stack.Protected has mounted the (app) group before
     // the navigation into it is dispatched.
     const timer = setTimeout(() => router.replace(target as Href), 0);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (
@@ -92,11 +116,18 @@ export default function RootLayout() {
       <I18nextProvider i18n={i18n}>
         <LanguageProvider>
           <ThemeProvider>
-            <QueryClientProvider client={queryClient}>
-              <AuthProvider>
-                <RootNavigator />
-              </AuthProvider>
-            </QueryClientProvider>
+            {/* Inside ThemeProvider and I18nextProvider so its fallback is
+                themed and translated, and around everything below so a throw
+                in any screen is reported rather than blanking the app. */}
+            <ScreenErrorBoundary>
+              <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                  <NavigationBreadcrumbs />
+                  <NetworkBreadcrumbs />
+                  <RootNavigator />
+                </AuthProvider>
+              </QueryClientProvider>
+            </ScreenErrorBoundary>
             <AppStatusBar />
           </ThemeProvider>
         </LanguageProvider>

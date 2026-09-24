@@ -18,7 +18,7 @@ export class WebPushService implements IWebPushService {
   constructor() {
     this.publicKey = process.env[ENV.VAPID_PUBLIC_KEY] ?? '';
     this.privateKey = process.env[ENV.VAPID_PRIVATE_KEY] ?? '';
-    this.subject = process.env[ENV.VAPID_SUBJECT] ?? 'mailto:noreply@trakwyn.app';
+    this.subject = process.env[ENV.VAPID_SUBJECT] ?? 'mailto:noreply@trakwyn.com';
     this.isConfigured = Boolean(this.publicKey && this.privateKey);
   }
 

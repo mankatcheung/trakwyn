@@ -1,7 +1,8 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
-export const workExperience = sqliteTable(
+export const workExperience = pgTable(
   'WorkExperience',
   {
     id: text('id').primaryKey(),
@@ -11,13 +12,13 @@ export const workExperience = sqliteTable(
     company: text('company').notNull(),
     title: text('title').notNull(),
     location: text('location'),
-    startDate: integer('startDate', { mode: 'timestamp_ms' }).notNull(),
-    endDate: integer('endDate', { mode: 'timestamp_ms' }),
+    startDate: timestamp('startDate', TIMESTAMP).notNull(),
+    endDate: timestamp('endDate', TIMESTAMP),
     description: text('description'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -25,7 +26,7 @@ export const workExperience = sqliteTable(
   (table) => [index('WorkExperience_userId_idx').on(table.userId)],
 );
 
-export const education = sqliteTable(
+export const education = pgTable(
   'Education',
   {
     id: text('id').primaryKey(),
@@ -35,13 +36,13 @@ export const education = sqliteTable(
     institution: text('institution').notNull(),
     degree: text('degree'),
     field: text('field'),
-    startDate: integer('startDate', { mode: 'timestamp_ms' }).notNull(),
-    endDate: integer('endDate', { mode: 'timestamp_ms' }),
+    startDate: timestamp('startDate', TIMESTAMP).notNull(),
+    endDate: timestamp('endDate', TIMESTAMP),
     description: text('description'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date())
       .$onUpdate(() => new Date()),
@@ -49,7 +50,7 @@ export const education = sqliteTable(
   (table) => [index('Education_userId_idx').on(table.userId)],
 );
 
-export const skill = sqliteTable(
+export const skill = pgTable(
   'Skill',
   {
     id: text('id').primaryKey(),
@@ -59,7 +60,7 @@ export const skill = sqliteTable(
     name: text('name').notNull(),
     category: text('category'),
     proficiency: text('proficiency'),
-    createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+    createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
   },

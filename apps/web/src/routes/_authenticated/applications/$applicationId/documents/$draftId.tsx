@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
+import { downloadUrl } from '#/lib/downloadUrl';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor } from '../-components/DocumentDraftEditor';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
@@ -63,10 +67,22 @@ export const Route = createFileRoute(
   component: DocumentDraftEditPage,
 });
 
-function DocumentDraftEditPage() {
+interface ExportedPdf {
+  id: string;
+  name: string;
+  url: string;
+}
+
+export function DocumentDraftEditPage() {
   const { t } = useLocale();
   const { applicationId, draftId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  // The editor debounces saves, and a save can still be on the wire when the
+  // user clicks Export — which renders what the server has, not what is on
+  // screen. Export flushes the first and waits out the second.
+  const flushEditorRef = useRef<(() => void) | null>(null);
+  const pendingSaveRef = useRef<Promise<boolean> | null>(null);
   const [draft, setDraft] = useState<{
     id: string;
     type: string;
@@ -108,30 +124,61 @@ function DocumentDraftEditPage() {
       .finally(() => setLoading(false));
   }, [draftId, t]);
 
-  const handleUpdate = async (contentJson: string, plainText: string) => {
-    if (!draft) return;
+  const saveContent = async (contentJson: string, plainText: string): Promise<boolean> => {
     setSaving(true);
     try {
       await gqlClient.request(UPDATE_CONTENT_MUTATION, {
-        input: { draftId: draft.id, contentJson, plainText },
+        input: { draftId, contentJson, plainText },
       });
       setLastSaved(new Date());
       setDraft((prev) => (prev ? { ...prev, contentJson, plainText } : prev));
+      return true;
     } catch (err) {
       console.error('Failed to save:', err);
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
+  const handleUpdate = (contentJson: string, plainText: string) => {
+    const save = saveContent(contentJson, plainText);
+    pendingSaveRef.current = save;
+    void save.finally(() => {
+      if (pendingSaveRef.current === save) pendingSaveRef.current = null;
+    });
+  };
+
   const handleExportPdf = async () => {
     if (!draft) return;
     setExporting(true);
+    setError(null);
     try {
-      await gqlClient.request(EXPORT_PDF_MUTATION, { draftId: draft.id });
-      await navigate({ to: '/applications/$applicationId', params: { applicationId } });
+      flushEditorRef.current?.();
+      const saved = await (pendingSaveRef.current ?? Promise.resolve(true));
+      if (!saved) {
+        setError(t('documentDraftEdit.exportUnsaved'));
+        return;
+      }
+
+      const res = await gqlClient.request<{ exportDocumentDraftToPdf: ExportedPdf }>(
+        EXPORT_PDF_MUTATION,
+        { draftId: draft.id },
+      );
+      const pdf = res.exportDocumentDraftToPdf;
+      captureEvent(ANALYTICS_EVENTS.PDF_EXPORTED);
+      void queryClient.invalidateQueries({ queryKey: ['documents', applicationId] });
+      downloadUrl(pdf.url, pdf.name);
+      // The automatic download can be blocked (it follows an await, so the
+      // click's user activation may have lapsed) — the toast keeps a way to it.
+      toast.success(t('documentDraftEdit.exportSucceeded'), {
+        action: {
+          label: t('documentDraftEdit.openPdf'),
+          onClick: () => window.open(pdf.url, '_blank', 'noopener'),
+        },
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('documentDraftEdit.exportFailed'));
+      setError(getErrorMessage(err));
     } finally {
       setExporting(false);
     }
@@ -232,7 +279,11 @@ function DocumentDraftEditPage() {
 
       {error && <Alert className="mb-4">{error}</Alert>}
 
-      <DocumentDraftEditor contentJson={draft.contentJson} onUpdate={handleUpdate} />
+      <DocumentDraftEditor
+        contentJson={draft.contentJson}
+        onUpdate={handleUpdate}
+        flushRef={flushEditorRef}
+      />
     </div>
   );
 }

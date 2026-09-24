@@ -1,27 +1,24 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { TIMESTAMP } from './columns.js';
 
-export const user = sqliteTable('User', {
+export const user = pgTable('User', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('passwordHash'),
   name: text('name'),
   timezone: text('timezone'),
   targetRole: text('targetRole'),
-  emailVerifiedAt: integer('emailVerifiedAt', { mode: 'timestamp_ms' }),
+  emailVerifiedAt: timestamp('emailVerifiedAt', TIMESTAMP),
   avatarKey: text('avatarKey'),
-  weeklyDigestEnabled: integer('weeklyDigestEnabled', { mode: 'boolean' }).notNull().default(true),
+  weeklyDigestEnabled: boolean('weeklyDigestEnabled').notNull().default(true),
   digestFrequency: text('digestFrequency').notNull().default('weekly'),
-  lastDigestSentAt: integer('lastDigestSentAt', { mode: 'timestamp_ms' }),
-  followUpRemindersEnabled: integer('followUpRemindersEnabled', { mode: 'boolean' })
-    .notNull()
-    .default(true),
-  pushNotificationsEnabled: integer('pushNotificationsEnabled', { mode: 'boolean' })
-    .notNull()
-    .default(false),
+  lastDigestSentAt: timestamp('lastDigestSentAt', TIMESTAMP),
+  followUpRemindersEnabled: boolean('followUpRemindersEnabled').notNull().default(true),
+  pushNotificationsEnabled: boolean('pushNotificationsEnabled').notNull().default(false),
   weeklyApplicationGoal: integer('weeklyApplicationGoal').notNull().default(5),
   applicationCount: integer('applicationCount').notNull().default(0),
   totpSecret: text('totpSecret'),
-  totpEnabled: integer('totpEnabled', { mode: 'boolean' }).notNull().default(false),
+  totpEnabled: boolean('totpEnabled').notNull().default(false),
   /**
    * Which of the user's configured LlmApiKey rows (see below) is used for
    * automatic AI features (cover letter, JD parsing, resume match) — the
@@ -36,9 +33,7 @@ export const user = sqliteTable('User', {
    * match voice/tone. Off by default — it reaches into application data the
    * user didn't ask about when generating a single letter.
    */
-  useCrossApplicationContext: integer('useCrossApplicationContext', { mode: 'boolean' })
-    .notNull()
-    .default(false),
+  useCrossApplicationContext: boolean('useCrossApplicationContext').notNull().default(false),
   /**
    * When a key hits its monthly token limit (JEF-258), fall through to the
    * user's next key that still has headroom instead of stopping.
@@ -46,17 +41,17 @@ export const user = sqliteTable('User', {
    * Off by default: spending on a provider the user did not pick for this
    * task is the surprising behaviour, so it is opted into rather than out of.
    */
-  llmFallbackWhenLimited: integer('llmFallbackWhenLimited', { mode: 'boolean' })
-    .notNull()
-    .default(false),
+  llmFallbackWhenLimited: boolean('llmFallbackWhenLimited').notNull().default(false),
   /** Secondary email for account recovery when primary inbox is inaccessible. */
   backupEmail: text('backupEmail'),
   /** When the backup email was verified; null until verification completes. */
-  backupEmailVerifiedAt: integer('backupEmailVerifiedAt', { mode: 'timestamp_ms' }),
-  createdAt: integer('createdAt', { mode: 'timestamp_ms' })
+  backupEmailVerifiedAt: timestamp('backupEmailVerifiedAt', TIMESTAMP),
+  /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
+  onboardingChecklistDismissedAt: timestamp('onboardingChecklistDismissedAt', TIMESTAMP),
+  createdAt: timestamp('createdAt', TIMESTAMP)
     .notNull()
     .$defaultFn(() => new Date()),
-  updatedAt: integer('updatedAt', { mode: 'timestamp_ms' })
+  updatedAt: timestamp('updatedAt', TIMESTAMP)
     .notNull()
     .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),

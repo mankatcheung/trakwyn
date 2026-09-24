@@ -26,5 +26,19 @@
     "title": "最近的求職申請",
     "empty": "尚無求職申請，新增您的第一筆吧。"
   },
-  "viewAllOffers": "查看全部聘書"
+  "viewAllOffers": "查看全部聘書",
+  "analytics": {
+    "title": "分析",
+    "responseRate": "回覆率 {{rate}}%",
+    "viewAnalytics": "查看分析"
+  },
+  "onboardingChecklist": {
+    "title": "開始使用 Trakwyn",
+    "description": "幾個簡單步驟,充分利用 Trakwyn。",
+    "dismiss": "關閉清單",
+    "createApplication": "新增你的第一個求職申請",
+    "connectMcp": "生成 API 權杖以連接 MCP",
+    "addAiKey": "新增 AI 供應商的 API 金鑰",
+    "addExperience": "新增你的工作經驗和技能"
+  }
 }

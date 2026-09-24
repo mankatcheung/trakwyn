@@ -24,7 +24,15 @@ import { mcpOAuthMetadataRoutes } from '#src/http/routes/mcpOAuth.routes.js';
 import { buildContainer } from '#src/http/container.js';
 import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
+import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
+import { setRootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
+import {
+  INBOUND_TRACEPARENT_MESSAGE,
+  inboundTraceparentFields,
+  isInboundTraceparentLoggingEnabled,
+} from '#src/infrastructure/observability/inboundTraceparent.js';
 import {
   fastifyOtelInstrumentation,
   flushObservability,
@@ -38,6 +46,22 @@ import {
   STORAGE_PROVIDER,
 } from '#src/infrastructure/config/constants.js';
 import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
+import type { GraphQLContext } from '#src/http/context.js';
+import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
+
+/**
+ * The `operationName` a GraphQL request selected, if it named one: from the
+ * query string on GET, the JSON body on POST. A batched (array) body names
+ * none, so the document's only operation is used, if it has one.
+ */
+function operationNameOf(request: IHttpRequest): string | undefined {
+  const source = request.method === 'GET' ? request.query : request.body;
+  const name = (source as { operationName?: unknown } | null)?.operationName;
+  return typeof name === 'string' ? name : undefined;
+}
+
+/** Key prefix of the dev upload route, never a stored object's key. */
+const LOCAL_UPLOAD_PATH_PREFIX = '_upload/';
 
 /**
  * Fully configures an already-constructed Fastify instance (cors/cookie/
@@ -46,24 +70,37 @@ import { CHAT_STREAM, ROUTES } from '#src/http/constants.js';
  * app via `.inject()` without starting a real server — `index.ts` is reduced
  * to constructing the instance and calling this, then `.listen(...)`.
  *
- * Takes the instance as a parameter rather than constructing it here:
- * Vercel's zero-config Fastify build detection scans the entrypoint file
- * itself for a literal `import fastify` + constructor call to know how to
- * wrap the serverless function — moving that construction in here broke
- * preview deploys with "No entrypoint found which imports fastify" even
- * though `index.ts` still used Fastify transitively through this function.
+ * Takes the instance as a parameter rather than constructing it here so
+ * `index.ts` stays the single owner of process-level concerns (logger
+ * destination, `listen()`, signal handling) while this function stays a pure
+ * "wire everything onto this instance" step that tests can call directly.
  */
 export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstance> {
   if (isObservabilityEnabled) {
     await fastify.register(fastifyOtelInstrumentation.plugin());
 
-    // Vercel freezes the function shortly after the response is sent, well
-    // before the OTel SDK's default ~5s batch-export timer fires, so most
-    // spans would never reach Axiom. Force-flush after every response while
-    // the invocation is still alive. Runs after @fastify/otel's per-route
+    // Cloud Run's request-based billing throttles CPU as soon as no request
+    // is in flight, well before the OTel SDK's batch-export timers would
+    // fire, so telemetry could sit unexported until the next request — or be
+    // lost when the instance scales to zero. Force-flush after every response
+    // while the request still holds CPU. Runs after @fastify/otel's per-route
     // hooks have ended the request span (they're onSend-hook based), so the
     // flush captures complete spans.
     fastify.addHook('onResponse', () => flushObservability());
+
+    // JEF-353, temporary. The SDK samples ParentBased, so an inbound
+    // traceparent's sampled flag decides whether a trace is recorded at all,
+    // and Cloud Run's front end injects one. A trace dropped that way leaves
+    // nothing behind, so the only way to know how many we lose is to log what
+    // arrives. `warn`, not `info`: production pino runs at `warn`
+    // (`index.ts`), and this hook logs through Fastify's logger directly
+    // rather than through `PinoLogger`'s pinned `info` child.
+    if (isInboundTraceparentLoggingEnabled()) {
+      fastify.addHook('onRequest', (request, _reply, done) => {
+        request.log.warn(inboundTraceparentFields(request.headers), INBOUND_TRACEPARENT_MESSAGE);
+        done();
+      });
+    }
   }
 
   await fastify.register(corsPlugin);
@@ -89,6 +126,10 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   // redundant, not meaningfully different.
   const logger = new PinoLogger(fastify.log);
   container.register({ logger: asValue(logger) });
+  // The same logger for the infrastructure singletons built before this
+  // container existed — the Postgres pool, the cache, the session
+  // blocklist. See rootLogger.ts (JEF-351).
+  setRootLogger(logger);
 
   await fastify.register(fastifyAwilixPlugin, {
     container,
@@ -116,6 +157,36 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
         return reply.code(204).send();
       },
     );
+
+    // Serves the URLs LocalStorageProvider.getSignedUrl hands out, so an
+    // uploaded document or exported PDF opens in dev and e2e. Unauthenticated,
+    // like the upload route above: local mode is a dev convenience, and
+    // production (Vercel Blob) serves its own URLs.
+    fastify.get<{ Params: { '*': string } }>('/uploads/*', async (request, reply) => {
+      const { storageProvider } = container.cradle;
+      // Fastify has already percent-decoded the wildcard, so an encoded
+      // `%2e%2e` arrives here as `..` and is caught by the same check.
+      const storageKey = request.params['*'];
+      if (
+        !(storageProvider instanceof LocalStorageProvider) ||
+        storageKey.startsWith(LOCAL_UPLOAD_PATH_PREFIX)
+      ) {
+        return reply.code(404).send({ error: 'Not found' });
+      }
+      if (storageProvider.resolveKeyPath(storageKey) === null) {
+        return reply.code(400).send({ error: 'Invalid storage key' });
+      }
+
+      const object = await storageProvider.openObject(storageKey);
+      if (object === null) return reply.code(404).send({ error: 'Not found' });
+
+      return reply
+        .header('Content-Type', object.contentType)
+        .header('Content-Length', object.size)
+        .header('Content-Disposition', 'inline')
+        .header('X-Content-Type-Options', 'nosniff')
+        .send(object.stream);
+    });
   }
 
   registerRoutes(fastify, [
@@ -195,6 +266,15 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     },
     context: buildGraphQLContext,
   });
+
+  if (isObservabilityEnabled) {
+    // Names the trace after the operation, e.g. `POST /graphql query
+    // applications`, instead of every one being `POST /graphql` (JEF-346).
+    fastify.graphql.addHook('preExecution', async (_schema, document, context) => {
+      const { request } = context as unknown as GraphQLContext;
+      recordGraphQLOperation(document, operationNameOf(request));
+    });
+  }
 
   return fastify;
 }

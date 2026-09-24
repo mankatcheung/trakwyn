@@ -1,12 +1,5 @@
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
-import { unlinkSync, existsSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { randomUUID } from 'crypto';
-import * as schema from '#src/infrastructure/db/schema.js';
 import type { DrizzleDb } from '#src/infrastructure/db/client.js';
-import { applyMigrations } from '#src/infrastructure/db/applyMigrations.js';
+import { createMigratedPglite } from './pgliteTemplate.js';
 
 export interface TestDb {
   db: DrizzleDb;
@@ -14,8 +7,8 @@ export interface TestDb {
 }
 
 /**
- * A fresh, isolated SQLite database per caller, built by running the **real
- * migrations** — the same ones production runs, and the same thing
+ * A fresh, isolated in-memory Postgres (PGlite) per caller, with the **real
+ * migrations** applied — the same ones production runs, and the same thing
  * `integration/helpers/buildTestApp.ts` does.
  *
  * This used to execute a hand-written list of `CREATE TABLE` statements kept
@@ -24,29 +17,16 @@ export interface TestDb {
  * copied into a second place (JEF-195), and a subtler divergence — a missing
  * `NOT NULL`, a different default — would have gone unnoticed while tests
  * passed against a laxer schema than production has. Running the migrations
- * costs about 20ms more per database and makes the drift impossible (JEF-201).
+ * makes the drift impossible (JEF-201).
+ *
+ * PGlite is real Postgres compiled to WASM, so constraint, cascade and type
+ * behaviour matches Neon without a server or Docker (JEF-342). The database
+ * is a clone of a template `globalSetup.ts` migrates once per run, rather
+ * than migrated here — same schema, a fraction of the start-up cost.
  *
  * Call this once per test file (in `beforeAll`), not per `it()`.
  */
 export async function createTestDb(): Promise<TestDb> {
-  const dbPath = join(tmpdir(), `trakwyn-test-${randomUUID()}.db`);
-  const client = createClient({ url: `file:${dbPath}` });
-
-  // libsql does not enforce foreign keys unless asked, and without this every
-  // `ON DELETE CASCADE` in the suite silently no-ops — the same reason
-  // `infrastructure/db/client.ts` sets it. Applied before the migrations so
-  // their own foreign keys are live from the start.
-  await client.execute('PRAGMA foreign_keys = ON');
-
-  await applyMigrations(client);
-
-  const db = drizzle(client, { schema }) as DrizzleDb;
-
-  return {
-    db,
-    cleanup: async () => {
-      client.close();
-      if (existsSync(dbPath)) unlinkSync(dbPath);
-    },
-  };
+  const { db, close } = await createMigratedPglite();
+  return { db, cleanup: close };
 }

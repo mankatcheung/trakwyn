@@ -28,6 +28,7 @@ import type { DrizzleContactRepository } from '#src/infrastructure/db/repositori
 import type { DrizzlePasswordResetTokenRepository } from '#src/infrastructure/db/repositories/DrizzlePasswordResetTokenRepository.js';
 import type { DrizzleLoginEventRepository } from '#src/infrastructure/db/repositories/DrizzleLoginEventRepository.js';
 import type { DrizzleSecurityEventRepository } from '#src/infrastructure/db/repositories/DrizzleSecurityEventRepository.js';
+import type { LoggingSecurityEventRepository } from '#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js';
 import type { DrizzleCookieConsentRepository } from '#src/infrastructure/db/repositories/DrizzleCookieConsentRepository.js';
 import type { DrizzleSessionRepository } from '#src/infrastructure/db/repositories/DrizzleSessionRepository.js';
 import type { BlocklistingSessionRepository } from '#src/infrastructure/db/repositories/BlocklistingSessionRepository.js';
@@ -179,6 +180,7 @@ import type { GetLlmUsageSummaryUseCase } from '#src/use-cases/user/GetLlmUsageS
 import type { ImportUserDataUseCase } from '#src/use-cases/user/ImportUserDataUseCase.js';
 import type { GetNotificationPreferencesUseCase } from '#src/use-cases/user/GetNotificationPreferencesUseCase.js';
 import type { UpdateNotificationPreferencesUseCase } from '#src/use-cases/user/UpdateNotificationPreferencesUseCase.js';
+import type { DismissOnboardingChecklistUseCase } from '#src/use-cases/user/DismissOnboardingChecklistUseCase.js';
 import type { UpdateProfileUseCase } from '#src/use-cases/user/UpdateProfileUseCase.js';
 import type { GetUserUseCase } from '#src/use-cases/user/GetUserUseCase.js';
 import type { RequestAvatarUploadUrlUseCase } from '#src/use-cases/user/RequestAvatarUploadUrlUseCase.js';
@@ -284,6 +286,8 @@ import type { CompareOffersUseCase } from '#src/use-cases/offers/CompareOffersUs
 
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
+import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
@@ -337,7 +341,8 @@ export interface Cradle {
   contactRepository: CachedContactRepository;
   passwordResetTokenRepository: DrizzlePasswordResetTokenRepository;
   loginEventRepository: DrizzleLoginEventRepository;
-  securityEventRepository: DrizzleSecurityEventRepository;
+  drizzleSecurityEventRepository: DrizzleSecurityEventRepository;
+  securityEventRepository: LoggingSecurityEventRepository;
   cookieConsentRepository: DrizzleCookieConsentRepository;
   messageRepository: DrizzleMessageRepository;
   conversationRepository: DrizzleConversationRepository;
@@ -506,6 +511,7 @@ export interface Cradle {
   importUserDataUseCase: ImportUserDataUseCase;
   getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: UpdateNotificationPreferencesUseCase;
+  dismissOnboardingChecklistUseCase: DismissOnboardingChecklistUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   getUserUseCase: GetUserUseCase;
   requestAvatarUploadUrlUseCase: RequestAvatarUploadUrlUseCase;
@@ -558,6 +564,8 @@ export interface Cradle {
   sendFollowUpRemindersUseCase: SendFollowUpRemindersUseCase;
   transactionManager: DrizzleTransactionManager;
   outboundUrlPolicy: IOutboundUrlPolicy;
+  toolCallObserver: IToolCallObserver;
+  oidcTokenVerifier: IOidcTokenVerifier;
   llmApiKeyCipher: ILlmApiKeyCipher;
   userLlmProviderFactory: ILLMProviderFactory;
   llmProviderFactory: ILLMProviderFactory;

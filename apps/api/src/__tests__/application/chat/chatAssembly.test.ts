@@ -1,13 +1,138 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   buildChatMessages,
   CHAT_SYSTEM_PROMPT,
+  executeChatTool,
   historyToPromptMessages,
   summarizeToolResult,
   trimHistoryToBudget,
+  type ChatToolDeps,
 } from '#src/use-cases/chat/chatAssembly.js';
+import { NotFoundError, ValidationError } from '#src/use-cases/errors/DomainError.js';
+import { CHAT_TOOLS } from '#src/interface-adapters/llm/toolCatalogue.js';
 import { makeMessage } from '#src/__tests__/helpers/mocks/chat.js';
 import { makeUser } from '#src/__tests__/helpers/mocks/user.js';
+import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeToolCallObserver } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import {
+  makeEducationRepository,
+  makeSkillRepository,
+  makeWorkExperienceRepository,
+} from '#src/__tests__/helpers/mocks/profile.js';
+
+function makeToolDeps() {
+  const stub = (result: unknown = []) => ({ execute: vi.fn().mockResolvedValue(result) });
+  return {
+    getApplicationsPageUseCase: stub({ items: [], hasNextPage: false, nextCursor: null }),
+    getApplicationUseCase: stub(makeApplication({ id: 'app-1' })),
+    getNotesUseCase: stub(),
+    getContactsUseCase: stub(),
+    getInterviewRoundsUseCase: stub(),
+    getDocumentsUseCase: stub(),
+    getOffersUseCase: stub(),
+    getActivityLogsUseCase: stub(),
+    getCalendarEventsUseCase: stub(),
+    getResponseTimeAnalyticsUseCase: stub({}),
+    getApplicationChannelAnalyticsUseCase: stub({}),
+    getInterviewRoundAnalyticsUseCase: stub({}),
+    getOfferAnalyticsUseCase: stub({}),
+    workExperienceRepository: makeWorkExperienceRepository(),
+    educationRepository: makeEducationRepository(),
+    skillRepository: makeSkillRepository(),
+    toolCallObserver: makeToolCallObserver(),
+  };
+}
+
+const toolCall = (name: string, args: Record<string, unknown> = {}) => ({
+  id: 'call-1',
+  name,
+  arguments: args,
+});
+
+describe('executeChatTool observation (JEF-365)', () => {
+  it('passes every chat tool through the observer on the chat surface', async () => {
+    const deps = makeToolDeps();
+
+    for (const tool of CHAT_TOOLS) {
+      await executeChatTool(
+        toolCall(tool.name, { applicationId: 'app-1' }),
+        'user-1',
+        deps as unknown as ChatToolDeps,
+      );
+    }
+
+    expect(deps.toolCallObserver.calls.map((c) => [c.meta, c.reports])).toEqual(
+      CHAT_TOOLS.map((tool) => [{ surface: 'chat', name: tool.name }, ['succeeded']]),
+    );
+  });
+
+  it('reports success with the compacted result the model receives', async () => {
+    const deps = makeToolDeps();
+
+    const result = await executeChatTool(
+      toolCall('list_skills'),
+      'user-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(deps.toolCallObserver.calls[0]?.result).toBe(result);
+  });
+
+  it('reports an internal failure, while the model still gets the generic error', async () => {
+    const deps = makeToolDeps();
+    const bug = new Error('relation "skill" does not exist');
+    vi.mocked(deps.skillRepository.findAllByUserId).mockRejectedValue(bug);
+
+    const result = await executeChatTool(
+      toolCall('list_skills'),
+      'user-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(result).toEqual({ error: 'Tool call failed' });
+    expect(deps.toolCallObserver.calls[0]).toMatchObject({ reports: ['failed'], error: bug });
+  });
+
+  it('reports a domain error, and the model gets its message', async () => {
+    const deps = makeToolDeps();
+    const notFound = new NotFoundError('Application');
+    deps.getApplicationUseCase.execute.mockRejectedValue(notFound);
+
+    const result = await executeChatTool(
+      toolCall('get_application', { applicationId: 'missing' }),
+      'user-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(result).toEqual({ error: notFound.message });
+    expect(deps.toolCallObserver.calls[0]).toMatchObject({ reports: ['failed'], error: notFound });
+  });
+
+  it('reports an unknown tool as a ValidationError, keeping the reply the model saw before', async () => {
+    const deps = makeToolDeps();
+
+    const result = await executeChatTool(
+      toolCall('drop_everything'),
+      'user-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(result).toEqual({ error: 'Unknown tool: drop_everything' });
+    expect(deps.toolCallObserver.calls[0]?.error).toBeInstanceOf(ValidationError);
+  });
+
+  it('never passes tool arguments to the observer', async () => {
+    const deps = makeToolDeps();
+
+    await executeChatTool(
+      toolCall('get_application', { applicationId: 'app-secret' }),
+      'user-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(JSON.stringify(deps.toolCallObserver.calls[0]?.meta)).not.toContain('app-secret');
+  });
+});
 
 describe('buildChatMessages cache breakpoints (T2)', () => {
   it('marks the last system block, so tools + system + custom prompt cache as one prefix', () => {

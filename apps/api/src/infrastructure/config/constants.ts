@@ -24,7 +24,6 @@ export const ENV = {
   JWT_SECRET: 'JWT_SECRET',
   JWT_REFRESH_SECRET: 'JWT_REFRESH_SECRET',
   DATABASE_URL: 'DATABASE_URL',
-  DATABASE_AUTH_TOKEN: 'DATABASE_AUTH_TOKEN',
   STORAGE_PROVIDER: 'STORAGE_PROVIDER',
   BLOB_READ_WRITE_TOKEN: 'BLOB_READ_WRITE_TOKEN',
   BLOB_PUBLIC_READ_WRITE_TOKEN: 'BLOB_PUBLIC_READ_WRITE_TOKEN',
@@ -38,9 +37,16 @@ export const ENV = {
   LLM_API_KEY_ENCRYPTION_KEY: 'LLM_API_KEY_ENCRYPTION_KEY',
   DIGEST_ADMIN_SECRET: 'DIGEST_ADMIN_SECRET',
   CRON_SECRET: 'CRON_SECRET',
+  /**
+   * Email of the service account Cloud Scheduler mints OIDC ID tokens for
+   * (JEF-336). A token for any other principal is refused by the admin routes.
+   */
+  CRON_INVOKER_SA: 'CRON_INVOKER_SA',
   AXIOM_TOKEN: 'AXIOM_TOKEN',
   AXIOM_DATASET: 'AXIOM_DATASET',
   AXIOM_METRICS_DATASET: 'AXIOM_METRICS_DATASET',
+  /** `'true'` turns on the JEF-353 diagnostic — see `inboundTraceparent.ts`. */
+  LOG_INBOUND_TRACEPARENT: 'LOG_INBOUND_TRACEPARENT',
   TOTP_ENCRYPTION_KEY: 'TOTP_ENCRYPTION_KEY',
   GOOGLE_OAUTH_CLIENT_ID: 'GOOGLE_OAUTH_CLIENT_ID',
   GOOGLE_OAUTH_CLIENT_SECRET: 'GOOGLE_OAUTH_CLIENT_SECRET',
@@ -67,9 +73,47 @@ export const NODE_ENV = {
  */
 export const PLACEHOLDER_SECRET = 'change-me-in-production';
 
+/**
+ * Postgres connection handling (JEF-342).
+ *
+ * `DATABASE_URL` selects the driver by scheme: `postgres://`/`postgresql://`
+ * connect through a `pg` pool (production is Neon's pooled URL);
+ * `pglite:<dir>` or `pglite:memory` run PGlite in-process, for local dev and
+ * tests without a Postgres server.
+ *
+ * The pool is sized per Cloud Run instance, not globally — Neon's pooler
+ * multiplexes every instance's connections onto the compute. Idle clients are
+ * released quickly because Neon scales to zero after five idle minutes and
+ * drops whatever sockets are still open when it does; a released client is
+ * re-opened on the next request instead of failing it. The connect timeout
+ * bounds a request that arrives while the compute is waking.
+ */
+export const DATABASE = {
+  PGLITE_SCHEME: 'pglite:',
+  PGLITE_IN_MEMORY: 'memory',
+  /** Pre-JEF-342 local SQLite URLs — rejected with instructions, not treated as a Postgres host. */
+  LEGACY_SQLITE_SCHEME: 'file:',
+  POOL_MAX: 10,
+  POOL_IDLE_TIMEOUT_MS: 10_000,
+  POOL_CONNECTION_TIMEOUT_MS: 10_000,
+  /** OID of `int8` — what `count(*)` and `sum()` over `integer` return; parsed to a JS number. */
+  INT8_OID: 20,
+} as const;
+
 /** HTTP Authorization header. */
 export const AUTH_HEADER = {
   BEARER_PREFIX: 'Bearer ',
+} as const;
+
+/**
+ * Google-signed OIDC ID tokens, as Cloud Scheduler sends them to the admin
+ * cron routes (JEF-336). Google issues both spellings of the issuer.
+ */
+export const GOOGLE_OIDC = {
+  JWKS_URL: 'https://www.googleapis.com/oauth2/v3/certs',
+  ISSUERS: ['https://accounts.google.com', 'accounts.google.com'],
+  ALGORITHMS: ['RS256'],
+  JWKS_UNAVAILABLE_EVENT: 'oidc.jwks_unavailable', // key fetch failed, not a bad token (JEF-356)
 } as const;
 
 /** OAuth (Google/GitHub) sign-in settings. */
@@ -135,6 +179,7 @@ export const AXIOM = {
   API_URL: 'https://eu-central-1.aws.edge.axiom.co',
   TRACES_PATH: '/v1/traces',
   METRICS_PATH: '/v1/metrics',
+  LOGS_PATH: '/v1/logs',
   /** Header carrying the dataset name for logs and traces. */
   DATASET_HEADER: 'X-Axiom-Dataset',
   /** Metrics use a distinct dataset (and header) from logs/traces — Axiom requires a Metrics-type dataset. */
@@ -143,23 +188,49 @@ export const AXIOM = {
 } as const;
 
 /**
- * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
- * convention, and prefixed so they're distinguishable from the metrics the
- * auto-instrumentations emit.
+ * Names for the log lines the security mechanisms emit (JEF-350).
+ *
+ * Kept as stable dotted identifiers on an `event` field rather than left to
+ * the wording of the message, so an Axiom monitor can key on the event
+ * without matching prose that a later edit would quietly break. A fixed set,
+ * unlike the per-job `job.<name>.completed` names `runScheduledJob` builds
+ * from the job it was handed (JEF-352), which is why these are declared and
+ * those are not.
  */
-export const METRICS = {
-  CACHE_HITS: 'trakwyn.cache.hits',
-  CACHE_MISSES: 'trakwyn.cache.misses',
-  /** Redis call degraded gracefully rather than failing the request — attributes: component, reason. */
-  REDIS_FAIL_OPEN: 'trakwyn.redis.fail_open',
-  /** Circuit breaker state change — attributes: component, from, to. */
-  CIRCUIT_TRANSITIONS: 'trakwyn.redis.circuit_transitions',
+export const SECURITY_EVENTS = {
+  RATE_LIMITED: 'security.rate_limited',
+  OUTBOUND_URL_REFUSED: 'security.outbound_url.refused',
+  /** A read-scoped MCP token called a write tool and was refused (JEF-365). */
+  MCP_TOOL_REFUSED: 'mcp.tool.refused',
+} as const;
+
+/**
+ * OTel conventions for the app's own spans (JEF-347) and cold starts (JEF-357, see coldStart.ts).
+ */
+export const TRACING = {
+  /** `DomainError.code` on a failed use-case span — absent when the failure was not a DomainError. */
+  ERROR_CODE_ATTRIBUTE: 'app.error.code',
+  PROCESS_UPTIME_ATTRIBUTE: 'app.process_uptime_ms',
+  STARTUP_PROBE_PATH: '/health',
+  /**
+   * One span per MCP or chat tool call (JEF-365), named `<surface>.tool <name>`.
+   * The shape of the call only: never its arguments or its result.
+   */
+  TOOL_SPAN_SUFFIX: '.tool',
+  TOOL_NAME_ATTRIBUTE: 'app.tool.name',
+  TOOL_ACCESS_ATTRIBUTE: 'app.tool.access',
+  TOOL_SURFACE_ATTRIBUTE: 'app.tool.surface',
+  TOOL_OUTCOME_ATTRIBUTE: 'app.tool.outcome',
+  TOOL_RESULT_BYTES_ATTRIBUTE: 'app.tool.result_bytes',
+  MCP_TOKEN_SCOPE_ATTRIBUTE: 'app.mcp.token_scope',
+  /** Stands in for a tool name that is not in the catalogue, so a client cannot mint span names or metric labels. */
+  UNKNOWN_TOOL: 'unknown',
 } as const;
 
 /** Email provider (Brevo) defaults. */
 export const EMAIL = {
   BREVO_API_URL: 'https://api.brevo.com/v3/smtp/email',
-  DEFAULT_FROM_EMAIL: 'noreply@trakwyn.app',
+  DEFAULT_FROM_EMAIL: 'noreply@trakwyn.com',
   DEFAULT_FROM_NAME: 'Trakwyn',
 } as const;
 

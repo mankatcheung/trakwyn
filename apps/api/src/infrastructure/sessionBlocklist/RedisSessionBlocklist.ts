@@ -5,6 +5,8 @@ import {
 import type { IRedisClient } from '#src/infrastructure/cache/IRedisClient.js';
 import { SESSION_BLOCKLIST } from '#src/infrastructure/config/constants.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
+import { rootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { ISessionBlocklist } from '#src/use-cases/ports/ISessionBlocklist.js';
 
 interface Deps {
@@ -12,6 +14,7 @@ interface Deps {
   ttlMs?: number;
   breaker?: CircuitBreaker;
   metrics?: IMetrics;
+  logger?: ILogger;
 }
 
 /**
@@ -41,16 +44,24 @@ export class RedisSessionBlocklist implements ISessionBlocklist {
   private readonly breaker: CircuitBreaker;
 
   private readonly metrics: IMetrics;
+  private readonly logger: ILogger;
 
-  constructor({ redis, ttlMs = SESSION_BLOCKLIST.TTL_MS, breaker, metrics = otelMetrics }: Deps) {
+  constructor({
+    redis,
+    ttlMs = SESSION_BLOCKLIST.TTL_MS,
+    breaker,
+    metrics = otelMetrics,
+    logger = rootLogger,
+  }: Deps) {
     this.redis = redis;
     this.ttlMs = ttlMs;
     this.metrics = metrics;
+    this.logger = logger;
     this.breaker =
       breaker ??
       new CircuitBreaker({
         onStateChange: (from, to) => {
-          console.warn(`[session-blocklist] Redis circuit breaker ${from} -> ${to}`);
+          logger.warn(`[session-blocklist] Redis circuit breaker ${from} -> ${to}`);
           metrics.recordCircuitTransition('session_blocklist', from, to);
         },
       });
@@ -69,7 +80,7 @@ export class RedisSessionBlocklist implements ISessionBlocklist {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error(
+        this.logger.error(
           '[session-blocklist] Redis error while blocklisting a revoked session — its access tokens stay valid until they expire',
           err,
         );
@@ -87,7 +98,7 @@ export class RedisSessionBlocklist implements ISessionBlocklist {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error(
+        this.logger.error(
           '[session-blocklist] Redis error in isRevoked — failing open (request allowed)',
           err,
         );

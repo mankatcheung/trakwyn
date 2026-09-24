@@ -1,1 +1,0 @@
-ALTER TABLE `LlmApiKey` ADD `monthlyTokenLimit` integer;

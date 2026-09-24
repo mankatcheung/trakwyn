@@ -5,7 +5,7 @@ describe('buildContainer', () => {
   beforeAll(() => {
     // client.ts constructs the real libSQL client at module-evaluation
     // time, so these must be set before container.js is imported below.
-    process.env[ENV.DATABASE_URL] ??= 'file:container-test.db';
+    process.env[ENV.DATABASE_URL] ??= 'pglite:memory';
     process.env[ENV.JWT_SECRET] ??= 'test-secret';
     process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
   });
@@ -47,8 +47,14 @@ describe('buildContainer', () => {
   it('resolves the outbound URL policy and the factories that take it (S1)', async () => {
     const { buildContainer } = await import('#src/http/container.js');
     const { OutboundUrlPolicy } = await import('#src/infrastructure/net/OutboundUrlPolicy.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
 
     const container = buildContainer();
+    // `logger` is supplied by buildApp, not by buildContainer — the policy
+    // reports its refusals through it (JEF-350), as rotateRefreshTokenUseCase
+    // already did.
+    container.register({ logger: asValue(makeLogger()) });
 
     // Registered with asFunction: asClass would proxy-inject the cradle as
     // the options object and fail resolving `strict` as a dependency — which
@@ -58,5 +64,19 @@ describe('buildContainer', () => {
     expect(container.resolve('jobPostingSourceResolver')).toBeDefined();
     expect(container.resolve('saveLlmApiKeyUseCase')).toBeDefined();
     expect(container.resolve('testLlmApiKeyUseCase')).toBeDefined();
+  });
+
+  it('resolves the OIDC token verifier the admin cron routes use (JEF-336)', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { GoogleOidcTokenVerifier } =
+      await import('#src/infrastructure/auth/GoogleOidcTokenVerifier.js');
+    const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+    const { asValue } = await import('awilix');
+
+    const container = buildContainer();
+    // Supplied by buildApp; the verifier reports JWKS outages through it (JEF-356).
+    container.register({ logger: asValue(makeLogger()) });
+
+    expect(container.resolve('oidcTokenVerifier')).toBeInstanceOf(GoogleOidcTokenVerifier);
   });
 });

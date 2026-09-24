@@ -3,6 +3,8 @@ import { CircuitBreaker, CircuitBreakerOpenError } from './CircuitBreaker.js';
 import type { ICache } from './ICache.js';
 import type { IRedisClient } from './IRedisClient.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
+import { rootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
 /**
  * Cached values are wrapped in `{ v }` rather than stored raw. Upstash's GET
@@ -22,6 +24,7 @@ interface Deps {
   maxPollAttempts?: number;
   breaker?: CircuitBreaker;
   metrics?: IMetrics;
+  logger?: ILogger;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -59,8 +62,8 @@ function reviveDates<T>(value: T): T {
 
 /**
  * Redis-backed ICache, shared across every serverless instance — fixes the
- * cross-instance invalidation gap a per-instance MemoryCache has on Vercel
- * (JEF-127).
+ * cross-instance invalidation gap a per-instance MemoryCache has once more
+ * than one instance is serving (JEF-127).
  *
  * getOrSet also guards against cache stampedes: on a miss, only the caller
  * that wins a short-lived NX lock actually calls `fetch`. Concurrent misses
@@ -90,6 +93,7 @@ export class RedisCache implements ICache {
   private readonly maxPollAttempts: number;
   private readonly breaker: CircuitBreaker;
   private readonly metrics: IMetrics;
+  private readonly logger: ILogger;
 
   constructor({
     redis,
@@ -98,17 +102,19 @@ export class RedisCache implements ICache {
     maxPollAttempts = CACHE.STAMPEDE_MAX_POLL_ATTEMPTS,
     breaker,
     metrics = otelMetrics,
+    logger = rootLogger,
   }: Deps) {
     this.redis = redis;
     this.lockTtlMs = lockTtlMs;
     this.pollIntervalMs = pollIntervalMs;
     this.maxPollAttempts = maxPollAttempts;
     this.metrics = metrics;
+    this.logger = logger;
     this.breaker =
       breaker ??
       new CircuitBreaker({
         onStateChange: (from, to) => {
-          console.warn(`[cache] Redis circuit breaker ${from} -> ${to}`);
+          logger.warn(`[cache] Redis circuit breaker ${from} -> ${to}`);
           metrics.recordCircuitTransition('cache', from, to);
         },
       });
@@ -127,7 +133,7 @@ export class RedisCache implements ICache {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error('[cache] Redis error in getOrSet — falling back to a direct fetch', err);
+        this.logger.error('[cache] Redis error in getOrSet — falling back to a direct fetch', err);
       }
       // Note: if `fetch` inside getOrSetViaRedis already succeeded and only
       // the write-back to Redis failed, this calls it a second time. Rare
@@ -189,7 +195,10 @@ export class RedisCache implements ICache {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error('[cache] Redis error while deleting a cache key — invalidation skipped', err);
+        this.logger.error(
+          '[cache] Redis error while deleting a cache key — invalidation skipped',
+          err,
+        );
       }
     }
   }
@@ -217,7 +226,7 @@ export class RedisCache implements ICache {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error(
+        this.logger.error(
           '[cache] Redis error while deleting cache keys by prefix — invalidation skipped',
           err,
         );

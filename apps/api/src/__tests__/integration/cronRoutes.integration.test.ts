@@ -8,7 +8,7 @@ describe('cron routes integration', () => {
 
   beforeAll(async () => {
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     await testApp.cleanup();
@@ -18,7 +18,7 @@ describe('cron routes integration', () => {
     vi.unstubAllEnvs();
   });
 
-  describe('shared cron auth (isAuthorizedCronTrigger, exercised via /admin/reminders/send)', () => {
+  describe('shared cron auth (authorizeCronTrigger, exercised via /admin/reminders/send)', () => {
     it('returns 503 when CRON_SECRET is not configured', async () => {
       vi.stubEnv(ENV.CRON_SECRET, undefined);
 
@@ -58,7 +58,7 @@ describe('cron routes integration', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toEqual({ ok: true });
+      expect(res.json()).toEqual({ ok: true, sent: 0, failed: 0, skipped: 0 });
     });
   });
 
@@ -73,7 +73,7 @@ describe('cron routes integration', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toEqual({ ok: true });
+      expect(res.json()).toEqual({ ok: true, sent: 0, failed: 0, skipped: 0 });
     });
   });
 
@@ -159,7 +159,7 @@ describe('cron routes integration', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toEqual({ ok: true });
+      expect(res.json()).toEqual({ ok: true, delivered: 0, failed: 0 });
     });
   });
 

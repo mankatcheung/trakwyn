@@ -87,17 +87,6 @@ describe('SettingsScreen', () => {
     expect(push).toHaveBeenCalledWith('/settings/danger-zone');
   });
 
-  it('navigates to analytics, relocated here from the old sidebar', async () => {
-    const push = jest.fn();
-    mockedUseRouter.mockReturnValue({ push } as never);
-    mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
-
-    const { getByTestId } = await render(<SettingsScreen />);
-
-    await fireEvent.press(getByTestId('settings-analytics-row'));
-    expect(push).toHaveBeenCalledWith('/settings/analytics');
-  });
-
   it('opens the legal pages in the browser', async () => {
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
     mockedUseRouter.mockReturnValue({ push: jest.fn() } as never);

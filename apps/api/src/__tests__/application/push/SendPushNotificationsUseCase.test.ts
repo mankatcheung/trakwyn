@@ -120,9 +120,12 @@ describe('SendPushNotificationsUseCase', () => {
       webPushService,
     });
 
-    await new SendPushNotificationsUseCase(deps).execute();
+    const summary = await new SendPushNotificationsUseCase(deps).execute();
 
     expect(webPushService.send).toHaveBeenCalledTimes(2);
+    // One count per subscription, which is what was actually delivered — the
+    // route reports it as the run's `processed` (JEF-352).
+    expect(summary).toEqual({ delivered: 2, failed: 0 });
   });
 
   it('skips sending when the user has push disabled', async () => {
@@ -209,7 +212,10 @@ describe('SendPushNotificationsUseCase', () => {
       webPushService,
     });
 
-    await expect(new SendPushNotificationsUseCase(deps).execute()).resolves.toBeUndefined();
+    await expect(new SendPushNotificationsUseCase(deps).execute()).resolves.toEqual({
+      delivered: 0,
+      failed: 1,
+    });
 
     expect(pushSubscriptionRepository.deleteByEndpoint).toHaveBeenCalledWith(
       'https://push/expired',
@@ -279,7 +285,10 @@ describe('SendPushNotificationsUseCase', () => {
       expoPushService,
     });
 
-    await expect(new SendPushNotificationsUseCase(deps).execute()).resolves.toBeUndefined();
+    await expect(new SendPushNotificationsUseCase(deps).execute()).resolves.toEqual({
+      delivered: 0,
+      failed: 1,
+    });
 
     expect(pushSubscriptionRepository.deleteByEndpoint).toHaveBeenCalledWith(
       'ExponentPushToken[dead]',

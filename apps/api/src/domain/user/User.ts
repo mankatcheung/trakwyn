@@ -28,6 +28,8 @@ export interface User {
   backupEmail: string | null;
   /** When the backup email was verified; null until verification completes. */
   backupEmailVerifiedAt: Date | null;
+  /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
+  onboardingChecklistDismissedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

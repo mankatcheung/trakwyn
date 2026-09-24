@@ -5,6 +5,7 @@ dist
 coverage
 *.db
 local.db.*
+.pglite/
 *.db-shm
 *.db-wal
 uploads/
@@ -31,3 +32,12 @@ graphify-out/
 
 # agent scratch
 .agents/
+
+# Terraform (infra/*) — state lives in GCS; tfvars hold per-install config
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+# Provider tokens for infra/{axiom,posthog,vercel}, plaintext; see .envrc.example
+.envrc

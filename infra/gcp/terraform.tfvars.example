@@ -1,0 +1,23 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret;
+# secrets go to Secret Manager (README.md, "Secrets").
+project_id             = "job-finder-503217"
+initial_image          = "europe-west1-docker.pkg.dev/job-finder-503217/trakwyn/api:bootstrap"
+upstash_redis_rest_url = "https://<name>.upstash.io"
+
+plain_env = {
+  FROM_EMAIL             = "noreply@trakwyn.com"
+  FROM_NAME              = "Trakwyn"
+  GOOGLE_OAUTH_CLIENT_ID = "<id>.apps.googleusercontent.com"
+  GITHUB_OAUTH_CLIENT_ID = "<id>"
+  VAPID_PUBLIC_KEY       = "<key>"
+  VAPID_SUBJECT          = "mailto:noreply@trakwyn.com"
+  AXIOM_DATASET          = "trakwyn-api"
+  AXIOM_METRICS_DATASET  = "trakwyn-api-metrics"
+
+  # Temporary diagnostic (JEF-353): one warn line per request carrying the
+  # inbound traceparent and its sampled flag. Uncomment, apply, collect over a
+  # representative window, then comment out again — an env change here makes a
+  # new revision without an image build, so switching it on and off costs no
+  # CI deploy.
+  # LOG_INBOUND_TRACEPARENT = "true"
+}

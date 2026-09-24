@@ -106,10 +106,13 @@ export class RotateRefreshTokenUseCase {
     // already been superseded and is being reused, the classic signal that
     // it was stolen. Kill the whole session rather than just rejecting.
     await this.deps.sessionRepository.revoke(session.id);
-    this.deps.logger.error('Refresh token reuse detected', {
-      sessionId: session.id,
-      userId: session.userId,
-    });
+    // The ids go in the message, not in a context object: what the logger
+    // accepts alongside a message is an error, and it is reduced to an
+    // allow-list of error fields before it is written (JEF-348), so a bag of
+    // extra properties would not have survived anyway.
+    this.deps.logger.error(
+      `Refresh token reuse detected for session ${session.id} (user ${session.userId})`,
+    );
     unauthorized();
   }
 }

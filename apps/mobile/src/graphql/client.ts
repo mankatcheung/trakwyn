@@ -1,7 +1,21 @@
 import { GraphQLClient, ClientError } from 'graphql-request';
-import { ACCESS_TOKEN_REFRESH_LEEWAY_S, API_URL, ERROR_CODES } from '../constants';
+import {
+  ACCESS_TOKEN_REFRESH_LEEWAY_S,
+  API_URL,
+  ERROR_CODES,
+  GQL_REQUEST_TIMEOUT_MS,
+} from '../constants';
 import { getTokens, setTokens, clearTokens, type TokenPair } from '../auth/tokenStorage';
 import { buildUserAgent } from '../lib/userAgent';
+import {
+  addBreadcrumb,
+  captureException,
+  isApiRequest,
+  newTraceContext,
+  rememberTraceId,
+  transportFailureProperties,
+} from '../lib/analytics';
+import { operationName, withRequestTimeout } from './requestTimeout';
 
 const REFRESH_TOKEN_MOBILE_MUTATION = `
   mutation RefreshTokenMobile($refreshToken: String!) {
@@ -53,9 +67,65 @@ function expiresWithin(token: string, seconds: number): boolean {
 }
 
 const userAgent = buildUserAgent();
+
+/**
+ * The `traceparent` header for a request to `url`, or nothing when `url`
+ * is not the API's own origin (JEF-349).
+ *
+ * The origin check matters even though this client only ever talks to one
+ * endpoint: the same helper is used by the chat SSE stream and by document
+ * uploads, and a correlation id across a user's requests is not something
+ * to hand to a third-party host by accident. The id is remembered here so
+ * an exception captured moments later can name the request it followed.
+ */
+export function traceHeaders(url: string): Record<string, string> {
+  if (!isApiRequest(url, API_URL)) return {};
+  const { traceId, traceparent } = newTraceContext();
+  rememberTraceId(traceId);
+  return { traceparent };
+}
+
+/**
+ * Adds `traceparent` to an outbound graphql-request, preserving everything
+ * the client already set.
+ *
+ * `request.headers` arrives as a **`Headers` instance** — graphql-request
+ * builds one (`new Headers(params.headers)`) and sets `Accept` and
+ * `Content-Type` on it before any middleware runs. A `Headers` object has no
+ * own enumerable properties, so spreading it into an object literal silently
+ * yields `{}`: doing that here stripped the content type and the User-Agent
+ * from every request and broke all of them. Copying through the `Headers`
+ * constructor is what makes this correct for all three shapes `HeadersInit`
+ * can take.
+ *
+ * A `traceparent` the caller already set is kept: `gqlRequest` mints its
+ * own so it knows which trace id to report a failure under.
+ */
+export function addTraceparent<T extends { url: string; headers?: HeadersInit }>(request: T): T {
+  const headers = new Headers(request.headers);
+  if (headers.has('traceparent')) return { ...request, headers };
+  for (const [name, value] of Object.entries(traceHeaders(request.url))) {
+    headers.set(name, value);
+  }
+  return { ...request, headers };
+}
+
 const rawClient = new GraphQLClient(API_URL, {
   headers: userAgent ? { 'user-agent': userAgent } : undefined,
+  requestMiddleware: addTraceparent,
 });
+
+/**
+ * Every request this module sends, the refresh included, goes through here
+ * so none of them can hang on a dead connection (JEF-367). A refresh that
+ * times out is a TypeError like any other unreachable server, so it keeps
+ * the session rather than ending it.
+ */
+function send<T>(query: string, variables?: object, requestHeaders?: HeadersInit): Promise<T> {
+  return withRequestTimeout(query, GQL_REQUEST_TIMEOUT_MS, (signal) =>
+    rawClient.request<T>({ document: query, variables, requestHeaders, signal }),
+  );
+}
 
 type RefreshOutcome =
   | { status: 'refreshed'; tokens: TokenPair }
@@ -70,6 +140,7 @@ async function endSession(): Promise<void> {
   await clearTokens().catch(() => {
     // The pair is being abandoned either way; a storage error must not stop
     // the rest of the app from hearing that the session is over.
+    addBreadcrumb('Secure storage delete failed');
   });
   setAccessToken(null);
   sessionExpiredListener?.();
@@ -80,33 +151,51 @@ async function doRefresh(): Promise<RefreshOutcome> {
   try {
     tokens = await getTokens();
   } catch {
+    // A SecureStore read that throws is indistinguishable from having no
+    // session, and is handled the same way — but it is a very different
+    // thing to see in the trail behind a crash.
+    addBreadcrumb('Secure storage read failed');
     tokens = null;
   }
-  if (!tokens) return { status: 'rejected' };
+  if (!tokens) {
+    addBreadcrumb('Token refresh skipped: no stored session');
+    return { status: 'rejected' };
+  }
 
   let data: { refreshTokenMobile: TokenPair };
   try {
-    data = await rawClient.request<{ refreshTokenMobile: TokenPair }>(
-      REFRESH_TOKEN_MOBILE_MUTATION,
-      { refreshToken: tokens.refreshToken },
-    );
+    data = await send<{ refreshTokenMobile: TokenPair }>(REFRESH_TOKEN_MOBILE_MUTATION, {
+      refreshToken: tokens.refreshToken,
+    });
   } catch (error) {
     // Deleting a still-valid refresh token because the subway ate the request
     // costs the user the whole session — so only an actual rejection ends it.
-    return isUnauthorized(error) ? { status: 'rejected' } : { status: 'unreachable' };
+    const rejected = isUnauthorized(error);
+    addBreadcrumb(rejected ? 'Token refresh rejected' : 'Token refresh unreachable');
+    if (rejected) {
+      // A refresh the server actively rejected is the one outcome worth an
+      // event: it signs the user out, and it is also what refresh-token reuse
+      // detection looks like from this side. An unreachable server is an
+      // ordinary bad network and stays a breadcrumb.
+      captureException(error, { kind: 'token_refresh_rejected' });
+    }
+    return rejected ? { status: 'rejected' } : { status: 'unreachable' };
   }
 
   setAccessToken(data.refreshTokenMobile.accessToken);
   try {
     await setTokens(data.refreshTokenMobile);
-  } catch {
+  } catch (error) {
     // The server has already rotated. If the device cannot keep the new pair,
     // the old one on disk will be presented on the next launch and — past the
     // API's 10-second rotation grace — read as a stolen token: the session
     // gets revoked and an error logged. A deliberate sign-out is the better
     // outcome, so this reports the session as over.
+    addBreadcrumb('Token refresh succeeded but the new pair could not be stored');
+    captureException(error, { kind: 'token_storage_write_failed' });
     return { status: 'rejected' };
   }
+  addBreadcrumb('Token refresh succeeded');
   return { status: 'refreshed', tokens: data.refreshTokenMobile };
 }
 
@@ -169,8 +258,8 @@ export function isUnauthorized(error: unknown): boolean {
   );
 }
 
-function authHeaders(token: string | null): HeadersInit | undefined {
-  return token ? { authorization: `Bearer ${token}` } : undefined;
+function authHeaders(token: string | null): Record<string, string> {
+  return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 /**
@@ -188,6 +277,11 @@ function authHeaders(token: string | null): HeadersInit | undefined {
  * still never mistaken for a wrong password. loginMobile and registerMobile
  * need no flag: they run without a token, and only a request that carried
  * one can have an expired one.
+ *
+ * The request's final failure — after any retry, so a recovered
+ * UNAUTHORIZED is never seen and a failed retry is reported once — goes to
+ * PostHog when it is the API unreachable, timed out or answering 5xx
+ * (JEF-370).
  */
 export async function gqlRequest<T>(
   query: string,
@@ -195,13 +289,40 @@ export async function gqlRequest<T>(
   { refreshOnUnauthorized = true }: { refreshOnUnauthorized?: boolean } = {},
 ): Promise<T> {
   const sentWith = refreshOnUnauthorized ? accessToken : await getValidAccessToken();
+
+  // Each attempt mints its own trace context here, rather than leaving it to
+  // `addTraceparent`, so a failure can name the request that failed: the
+  // shared last-trace id `captureException` falls back to may by then belong
+  // to another screen's request that started in the meantime.
+  let traceId: string | undefined;
+  const attempt = (token: string | null): Promise<T> => {
+    const trace = newTraceContext();
+    traceId = trace.traceId;
+    rememberTraceId(trace.traceId);
+    return send<T>(query, variables, { ...authHeaders(token), traceparent: trace.traceparent });
+  };
+
   try {
-    return await rawClient.request<T>(query, variables, authHeaders(sentWith));
+    return await attemptRecoveringUnauthorized(attempt, sentWith, refreshOnUnauthorized);
+  } catch (error) {
+    const properties = transportFailureProperties(error, operationName(query));
+    if (properties) captureException(error, { ...properties, trace_id: traceId });
+    throw error;
+  }
+}
+
+async function attemptRecoveringUnauthorized<T>(
+  attempt: (token: string | null) => Promise<T>,
+  sentWith: string | null,
+  refreshOnUnauthorized: boolean,
+): Promise<T> {
+  try {
+    return await attempt(sentWith);
   } catch (error) {
     if (!isUnauthorized(error) || !sentWith || !refreshOnUnauthorized) throw error;
 
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind !== 'retry') throw error;
-    return rawClient.request<T>(query, variables, authHeaders(recovery.token));
+    return attempt(recovery.token);
   }
 }

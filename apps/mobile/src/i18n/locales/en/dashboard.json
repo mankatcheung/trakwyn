@@ -26,5 +26,19 @@
     "title": "Recent applications",
     "empty": "No applications yet. Add your first one."
   },
-  "viewAllOffers": "View all offers"
+  "viewAllOffers": "View all offers",
+  "analytics": {
+    "title": "Analytics",
+    "responseRate": "{{rate}}% response rate",
+    "viewAnalytics": "View analytics"
+  },
+  "onboardingChecklist": {
+    "title": "Get started with Trakwyn",
+    "description": "A few quick steps to get the most out of Trakwyn.",
+    "dismiss": "Dismiss checklist",
+    "createApplication": "Create your first job application",
+    "connectMcp": "Connect MCP by generating an API token",
+    "addAiKey": "Add an AI provider API key",
+    "addExperience": "Add your work experience and skills"
+  }
 }

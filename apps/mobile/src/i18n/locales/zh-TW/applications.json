@@ -119,7 +119,6 @@
     }
   },
   "board": {
-    "title": "看板",
     "move": "移動",
     "moveModalTitle": "移動 {{company}}",
     "cancel": "取消"

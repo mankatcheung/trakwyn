@@ -10,7 +10,6 @@ import type { ThemeColors } from '../../../theme/colors';
 import { WEB_URL } from '../../../constants';
 import {
   BellIcon,
-  ChartIcon,
   ChevronRightIcon,
   DatabaseIcon,
   DocumentIcon,
@@ -33,7 +32,6 @@ const ROW_COLORS = {
   gray: { bg: '#f3f4f6', fg: '#4b5563' },
   indigo: { bg: '#eef2ff', fg: '#4338ca' },
   teal: { bg: '#ecfeff', fg: '#0e7490' },
-  orange: { bg: '#ffedd5', fg: '#c2410c' },
 };
 
 interface MenuItem {
@@ -114,13 +112,6 @@ export function SettingsScreen() {
       testID: 'settings-language-row',
       icon: GlobeIcon,
       iconColor: ROW_COLORS.teal,
-    },
-    {
-      label: t('analytics'),
-      href: '/settings/analytics',
-      testID: 'settings-analytics-row',
-      icon: ChartIcon,
-      iconColor: ROW_COLORS.orange,
     },
   ];
 

@@ -1,22 +1,24 @@
-import type { Client } from '@libsql/client';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { sql } from 'drizzle-orm';
+import type { DrizzleDb } from './createDb.js';
 
-const MIGRATIONS_DIR = join(import.meta.dirname, '..', '..', '..', 'drizzle');
-const JOURNAL_PATH = join(MIGRATIONS_DIR, 'meta', '_journal.json');
+const DEFAULT_MIGRATIONS_DIR = join(import.meta.dirname, '..', '..', '..', 'drizzle');
+
+/**
+ * Arbitrary, fixed key for `pg_advisory_xact_lock`: two concurrent runs (a
+ * re-run CI job overlapping the last one) serialize on it instead of both
+ * applying the same migration. Released automatically at commit/rollback.
+ */
+const MIGRATION_LOCK_KEY = 342_001;
 
 interface JournalEntry {
   idx: number;
-  version: string;
-  when: number;
   tag: string;
-  breakpoints: boolean;
 }
 
 interface Journal {
-  version: string;
-  dialect: string;
   entries: JournalEntry[];
 }
 
@@ -25,118 +27,99 @@ export interface ApplyMigrationsResult {
   skipped: number;
 }
 
-/**
- * Applies every Drizzle SQL migration in `drizzle/*.sql` to `client`, using
- * the same DDL-safe execution path `pnpm db:migrate:apply` uses (see that
- * script's own header comment for why `drizzle-kit migrate` isn't used).
- *
- * Shared between the production migration CLI (`migrate.ts`) and the
- * integration-test DB helper (`buildTestApp.ts`) so both apply the real
- * migrations rather than a hand-maintained duplicate schema — the latter
- * already caused a real miss once (a table added to `createTestDb.ts`'s DDL
- * list had to be added by hand and was initially forgotten).
- */
-export async function applyMigrations(client: Client): Promise<ApplyMigrationsResult> {
-  if (!existsSync(JOURNAL_PATH)) {
-    throw new Error(`Migration journal not found at ${JOURNAL_PATH}`);
+function readJournal(migrationsDir: string): JournalEntry[] {
+  const journalPath = join(migrationsDir, 'meta', '_journal.json');
+  if (!existsSync(journalPath)) {
+    throw new Error(`Migration journal not found at ${journalPath}`);
   }
+  const journal: Journal = JSON.parse(readFileSync(journalPath, 'utf-8'));
+  return [...journal.entries].sort((a, b) => a.idx - b.idx);
+}
 
-  const journal: Journal = JSON.parse(readFileSync(JOURNAL_PATH, 'utf-8'));
-  const entries = [...journal.entries].sort((a, b) => a.idx - b.idx);
-
-  console.log(`Found ${entries.length} migrations in journal\n`);
-
-  // libsql does not enforce foreign keys by default — must be enabled
-  // explicitly so ON DELETE CASCADE works. Applied here so migrations that
-  // add FK constraints will have them enforced correctly.
-  await client.execute('PRAGMA foreign_keys = ON');
-
-  // Ensure the tracking table exists
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      hash TEXT UNIQUE,
-      created_at BIGINT
-    )
-  `);
-
-  // Load already-applied hashes
-  const appliedResult = await client.execute('SELECT hash FROM __drizzle_migrations');
-  const appliedHashes = new Set(appliedResult.rows.map((row) => String(row.hash)));
-
-  let applied = 0;
-  let skipped = 0;
-
-  for (const entry of entries) {
-    const sqlPath = join(MIGRATIONS_DIR, `${entry.tag}.sql`);
-
-    if (!existsSync(sqlPath)) {
-      throw new Error(`Migration file not found: ${sqlPath}`);
-    }
-
-    const sql = readFileSync(sqlPath, 'utf-8');
-    // SHA-256 hash of the SQL content. drizzle-kit uses a different
-    // (proprietary) hash internally, so hashes computed here will NOT match
-    // any hashes that `drizzle-kit migrate` may have written previously.
-    // This is intentional — it ensures migrations that drizzle-kit recorded
-    // but failed to apply (the original Turso HTTP bug) are still
-    // re-attempted here.
-    const hash = createHash('sha256').update(sql).digest('hex');
-
-    if (appliedHashes.has(hash)) {
-      console.log(`  ⏭  ${entry.tag} (already applied)`);
-      skipped++;
-      continue;
-    }
-
-    console.log(`  ▶  ${entry.tag}...`);
-
-    // drizzle-kit separates statements with this marker
-    const statements = sql
+function readStatements(
+  migrationsDir: string,
+  tag: string,
+): { hash: string; statements: string[] } {
+  const sqlPath = join(migrationsDir, `${tag}.sql`);
+  if (!existsSync(sqlPath)) {
+    throw new Error(`Migration file not found: ${sqlPath}`);
+  }
+  const source = readFileSync(sqlPath, 'utf-8');
+  return {
+    hash: createHash('sha256').update(source).digest('hex'),
+    // drizzle-kit separates statements with this marker.
+    statements: source
       .split('--> statement-breakpoint')
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean),
+  };
+}
 
-    for (const stmt of statements) {
-      try {
-        await client.execute(stmt);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        // If a table/index already exists then a previous migration run
-        // (e.g. drizzle-kit migrate) recorded the migration without actually
-        // creating the objects, or the migration was applied by an earlier
-        // run of this script. Either way, the DDL is safe to skip.
-        //
-        // The inverse also happens: drizzle-kit's SQLite dialect regenerates
-        // DROP INDEX/DROP TABLE statements for objects whose on-disk name
-        // has drifted from what the migration history expects (e.g. an
-        // index that no longer exists under the name a later migration
-        // expects to drop). A "no such X" on a DROP means the end state is
-        // already what the migration wants, so it's equally safe to skip.
-        if (
-          msg.includes('already exists') ||
-          msg.includes('duplicate column name') ||
-          msg.includes('no such index') ||
-          msg.includes('no such table') ||
-          msg.includes('no such column')
-        ) {
-          console.log(`    (drift-tolerant skip: ${stmt.slice(0, 80)}…)`);
-          continue;
-        }
-        throw err;
+/**
+ * Applies every Drizzle SQL migration in `drizzle/*.sql` that has not been
+ * applied yet, recording each by content hash in `__drizzle_migrations`.
+ *
+ * Shared between the production migration CLI (`migrate.ts`) and the test DB
+ * helpers (`createTestDb.ts`, `buildTestApp.ts`), so tests run against the
+ * real migrations rather than a hand-maintained duplicate schema (JEF-201).
+ *
+ * The whole run is one transaction. Postgres DDL is transactional, so a
+ * migration that fails part-way leaves no half-created tables behind and no
+ * tracking row — the next run starts from the same clean state. (The libSQL
+ * version of this runner needed drift-tolerant skips for exactly the
+ * half-applied states that this rules out.)
+ *
+ * The cost: a migration may not contain a statement Postgres refuses inside a
+ * transaction — `CREATE INDEX CONCURRENTLY`, `ALTER TYPE … ADD VALUE` used in
+ * the same run, `VACUUM`. Nothing generated today does; one that needs to must
+ * change this runner first, or it fails on every deploy.
+ */
+export async function applyMigrations(
+  db: DrizzleDb,
+  migrationsDir: string = DEFAULT_MIGRATIONS_DIR,
+): Promise<ApplyMigrationsResult> {
+  const entries = readJournal(migrationsDir);
+
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${MIGRATION_LOCK_KEY})`);
+    await tx.execute(sql`
+      CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+        id SERIAL PRIMARY KEY,
+        hash TEXT NOT NULL UNIQUE,
+        created_at BIGINT NOT NULL
+      )
+    `);
+
+    // `execute` is typed per driver; both node-postgres and PGlite return
+    // their rows under `.rows`, which is all this needs.
+    const appliedRows = (await tx.execute(
+      sql`SELECT hash FROM "__drizzle_migrations"`,
+    )) as unknown as {
+      rows: { hash: string }[];
+    };
+    const appliedHashes = new Set(appliedRows.rows.map((row) => row.hash));
+
+    let applied = 0;
+    let skipped = 0;
+
+    for (const entry of entries) {
+      const { hash, statements } = readStatements(migrationsDir, entry.tag);
+      if (appliedHashes.has(hash)) {
+        skipped++;
+        continue;
       }
+
+      console.log(`  ▶  ${entry.tag}`);
+      for (const statement of statements) {
+        await tx.execute(sql.raw(statement));
+      }
+      await tx.execute(
+        sql`INSERT INTO "__drizzle_migrations" (hash, created_at) VALUES (${hash}, ${Date.now()})`,
+      );
+      applied++;
     }
 
-    // Record the migration so future runs skip it
-    await client.execute({
-      sql: 'INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)',
-      args: [hash, Date.now()],
-    });
-
-    applied++;
-    console.log(`    ✓ done`);
-  }
-
-  console.log(`\nMigrations complete: ${applied} applied, ${skipped} skipped`);
-  return { applied, skipped };
+    console.log(`Migrations complete: ${applied} applied, ${skipped} skipped`);
+    return { applied, skipped };
+  });
 }

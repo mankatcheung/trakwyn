@@ -1,3 +1,4 @@
+import { useEffect, type RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
@@ -14,6 +15,12 @@ import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
 interface DocumentDraftEditorProps {
   contentJson: string;
   onUpdate: (json: string, plainText: string) => void;
+  /**
+   * Receives a function that sends any edit still waiting out the save
+   * debounce to `onUpdate` immediately — for actions (export) that must not
+   * run against content the server has not seen yet.
+   */
+  flushRef?: RefObject<(() => void) | null>;
 }
 
 function ToolbarButton({
@@ -43,7 +50,7 @@ function ToolbarButton({
   );
 }
 
-export function DocumentDraftEditor({ contentJson, onUpdate }: DocumentDraftEditorProps) {
+export function DocumentDraftEditor({ contentJson, onUpdate, flushRef }: DocumentDraftEditorProps) {
   let initialContent;
   try {
     initialContent = JSON.parse(contentJson);
@@ -54,6 +61,15 @@ export function DocumentDraftEditor({ contentJson, onUpdate }: DocumentDraftEdit
   const debouncedUpdate = useDebouncedCallback((json: string, plainText: string) => {
     onUpdate(json, plainText);
   }, 1000);
+
+  const flushPendingUpdate = debouncedUpdate.flush;
+  useEffect(() => {
+    if (!flushRef) return;
+    flushRef.current = flushPendingUpdate;
+    return () => {
+      flushRef.current = null;
+    };
+  });
 
   const editor = useEditor({
     extensions: [StarterKit],

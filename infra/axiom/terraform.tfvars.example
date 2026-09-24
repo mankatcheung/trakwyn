@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
+# the Axiom API token comes from the environment (TF_VAR_axiom_api_token).
+dataset         = "trakwyn-api"
+metrics_dataset = "trakwyn-api-metrics"
+web_dataset     = "trakwyn-web"
+alert_emails    = ["you@example.com"]
+
+# Starting thresholds; tighten after a week of real traffic (README.md).
+# db_pool_errors_per_hour    = 20
+# graphql_error_percent      = 5
+# graphql_error_min_requests = 20

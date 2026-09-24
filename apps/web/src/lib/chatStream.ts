@@ -1,4 +1,5 @@
-import { CHAT_STREAM_URL } from '#/graphql/client';
+import { CHAT_STREAM_URL, traceHeaders } from '#/graphql/client';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { ERROR_CODES } from '#/constants';
 
 export class ChatStreamError extends Error {
@@ -76,10 +77,15 @@ export async function streamChatMessage({
   onFallback,
   signal,
 }: StreamChatMessageParams): Promise<void> {
+  // Counted at the send, not at a successful reply: the question of
+  // interest is how often the assistant is reached for, and a send that
+  // errors out is part of that. The message itself is never included.
+  captureEvent(ANALYTICS_EVENTS.ASSISTANT_USED, { new_conversation: !conversationId });
+
   const response = await fetch(CHAT_STREAM_URL, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...traceHeaders(CHAT_STREAM_URL) },
     body: JSON.stringify({ conversationId, message }),
     signal,
   });

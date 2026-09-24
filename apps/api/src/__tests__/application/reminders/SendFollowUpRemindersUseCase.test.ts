@@ -126,4 +126,39 @@ describe('SendFollowUpRemindersUseCase', () => {
       expect.any(Date),
     );
   });
+
+  it('counts what it sent, failed on and skipped, so a partial run reads as partial', async () => {
+    const apps = [
+      makeApplication({ id: 'app-1', followUpAt: new Date() }),
+      makeApplication({ id: 'app-2', followUpAt: new Date() }),
+      makeApplication({ id: 'app-3', userId: 'user-off', followUpAt: new Date() }),
+    ];
+    const applicationRepository = makeApplicationRepository({
+      findDueForReminder: vi.fn().mockResolvedValue(apps),
+      updateReminderSentAt: vi.fn().mockResolvedValue(undefined),
+    });
+    const userRepository = makeUserRepository({
+      findById: vi
+        .fn()
+        .mockImplementation((id: string) =>
+          Promise.resolve(
+            id === 'user-off' ? makeUser({ followUpRemindersEnabled: false }) : makeUser(),
+          ),
+        ),
+    });
+    const emailService = makeEmailService({
+      sendFollowUpReminder: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Brevo timeout'))
+        .mockResolvedValueOnce(undefined),
+    });
+
+    const summary = await new SendFollowUpRemindersUseCase({
+      applicationRepository,
+      userRepository,
+      emailService,
+    }).execute();
+
+    expect(summary).toEqual({ sent: 1, failed: 1, skipped: 1 });
+  });
 });

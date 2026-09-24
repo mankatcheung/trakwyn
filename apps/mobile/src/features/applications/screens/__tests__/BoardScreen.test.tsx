@@ -18,6 +18,8 @@ import { useApplications } from '../../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../../hooks/useApplicationMutations';
 import { BoardScreen } from '../BoardScreen';
 import type { Application } from '../../types';
+import { statusDotColor } from '../../lib/statusColors';
+import { defaultApplicationDisplayFields } from '../../lib/applicationDisplayFields';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
@@ -67,9 +69,9 @@ const applications: Application[] = [
   },
 ];
 
-function renderScreen(push = jest.fn()) {
+function renderScreen(push = jest.fn(), displayFields = defaultApplicationDisplayFields()) {
   mockedUseRouter.mockReturnValue({ push } as never);
-  return render(<BoardScreen />);
+  return render(<BoardScreen displayFields={displayFields} />);
 }
 
 describe('BoardScreen', () => {
@@ -102,18 +104,16 @@ describe('BoardScreen', () => {
     await findByText('Globex');
   });
 
-  it('hides a field on the cards once toggled off via the display fields picker', async () => {
+  it('hides a field on the cards when displayFields marks it off', async () => {
     mockedUseMoveApplicationOnBoard.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
     } as never);
 
-    const { getByTestId, queryByText, findByText } = await renderScreen();
-
-    await findByText('Backend Engineer');
-
-    await fireEvent.press(getByTestId('applications-display-fields-button'));
-    await fireEvent.press(getByTestId('display-field-role'));
+    const { queryByText } = await renderScreen(jest.fn(), {
+      ...defaultApplicationDisplayFields(),
+      role: false,
+    });
 
     expect(queryByText('Backend Engineer')).toBeNull();
     expect(queryByText('Frontend Engineer')).toBeNull();
@@ -145,6 +145,27 @@ describe('BoardScreen', () => {
     await fireEvent.press(getByTestId('board-new-application-button'));
 
     expect(push).toHaveBeenCalledWith('/applications/new');
+  });
+
+  it('shows each column header with a dot and tinted title matching that status', async () => {
+    mockedUseMoveApplicationOnBoard.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+
+    const { getByTestId } = await renderScreen();
+
+    await getByTestId('board-column-applied');
+
+    const appliedDot = getByTestId('column-dot-applied');
+    expect(Object.assign({}, ...[appliedDot.props.style].flat())).toEqual(
+      expect.objectContaining({ backgroundColor: statusDotColor('applied', lightColors) }),
+    );
+
+    const appliedTitle = getByTestId('column-title-applied');
+    expect(Object.assign({}, ...[appliedTitle.props.style].flat())).toEqual(
+      expect.objectContaining({ color: statusDotColor('applied', lightColors) }),
+    );
   });
 
   it('moves a card to a different column via the move modal', async () => {

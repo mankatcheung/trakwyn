@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { LoginUseCase } from '#src/use-cases/auth/LoginUseCase.js';
 import { makeLoginEventRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
 vi.mock('bcryptjs', () => ({
   default: {
@@ -20,8 +22,11 @@ describe('LoginUseCase', () => {
     userRepository: makeUserRepository(),
     loginEventRepository: makeLoginEventRepository(),
     generateId: vi.fn().mockReturnValue('event-1'),
+    logger: makeLogger(),
     ...overrides,
   });
+
+  const warnFields = (logger: ILogger) => vi.mocked(logger.warn).mock.calls.map(([, , f]) => f);
 
   it('returns the user when credentials are valid', async () => {
     const user = makeUser();
@@ -41,6 +46,7 @@ describe('LoginUseCase', () => {
     });
 
     expect(result).toEqual(user);
+    expect(deps.logger.warn).not.toHaveBeenCalled();
     expect(vi.mocked(bcrypt.compare)).toHaveBeenCalledWith('password123', user.passwordHash);
     expect(loginEventRepository.create).toHaveBeenCalledWith({
       id: 'event-1',
@@ -86,6 +92,9 @@ describe('LoginUseCase', () => {
     expect((err as { code: string }).code).toBe('USER_NOT_FOUND');
     expect(vi.mocked(bcrypt.compare)).not.toHaveBeenCalled();
     expect(loginEventRepository.create).not.toHaveBeenCalled();
+    expect(warnFields(deps.logger)).toEqual([
+      { event: 'auth.login.failed', reason: 'invalid_credentials', userId: undefined },
+    ]);
   });
 
   it('throws UNAUTHORIZED when password does not match', async () => {
@@ -98,12 +107,25 @@ describe('LoginUseCase', () => {
 
     const useCase = new LoginUseCase(deps);
     const err = await useCase
-      .execute({ email: 'test@example.com', password: 'wrong' })
+      .execute({
+        email: 'test@example.com',
+        password: 'wrong',
+        ipAddress: '203.0.113.9',
+        userAgent: 'test-agent',
+      })
       .catch((e) => e);
 
     expect(err).toBeInstanceOf(Error);
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
     expect(loginEventRepository.create).not.toHaveBeenCalled();
+    // Indistinguishable from an unknown email: same reason, no user id.
+    expect(warnFields(deps.logger)).toEqual([
+      { event: 'auth.login.failed', reason: 'invalid_credentials', userId: undefined },
+    ]);
+    const logged = JSON.stringify(vi.mocked(deps.logger.warn).mock.calls);
+    for (const pii of ['test@example.com', 'wrong', '203.0.113.9', 'test-agent']) {
+      expect(logged).not.toContain(pii);
+    }
   });
 
   it('throws UNAUTHORIZED (not a bcrypt crash) for an OAuth-only account with no password', async () => {
@@ -123,5 +145,8 @@ describe('LoginUseCase', () => {
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
     expect(vi.mocked(bcrypt.compare)).not.toHaveBeenCalled();
     expect(loginEventRepository.create).not.toHaveBeenCalled();
+    expect(warnFields(deps.logger)).toEqual([
+      { event: 'auth.login.failed', reason: 'no_password', userId: undefined },
+    ]);
   });
 });

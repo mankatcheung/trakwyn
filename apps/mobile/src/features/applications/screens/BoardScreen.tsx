@@ -15,9 +15,9 @@ import { useApplications } from '../hooks/useApplicationQueries';
 import { useMoveApplicationOnBoard } from '../hooks/useApplicationMutations';
 import { groupByStatus } from '../lib/boardOrder';
 import { StatusBadge, statusLabel } from '../components/StatusBadge';
-import { ApplicationDisplayFieldsPicker } from '../components/ApplicationDisplayFieldsPicker';
+import { statusDotColor } from '../lib/statusColors';
 import { StarIcon } from '../components/ApplicationIcons';
-import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
+import type { ApplicationDisplayFields } from '../lib/applicationDisplayFields';
 import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -27,14 +27,17 @@ const STAR_COLOR = '#eab308';
 
 const COLUMN_WIDTH = 220;
 
-export function BoardScreen() {
+interface Props {
+  displayFields: ApplicationDisplayFields;
+}
+
+export function BoardScreen({ displayFields }: Props) {
   const { t } = useTranslation('applications');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { data: applications, isLoading, isError, error } = useApplications();
   const moveOnBoard = useMoveApplicationOnBoard();
-  const { fields: displayFields, toggleField: toggleDisplayField } = useApplicationDisplayFields();
 
   const [movingApp, setMovingApp] = useState<Application | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -73,16 +76,23 @@ export function BoardScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{t('board.title')}</Text>
-        <ApplicationDisplayFieldsPicker fields={displayFields} onToggle={toggleDisplayField} />
-      </View>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.board}>
         {APPLICATION_STATUSES.map((status) => (
           <View key={status} style={styles.column} testID={`board-column-${status}`}>
             <View style={styles.columnHeader}>
-              <Text style={styles.columnTitle}>{statusLabel(status)}</Text>
+              <View style={styles.columnTitleRow}>
+                <View
+                  style={[styles.columnDot, { backgroundColor: statusDotColor(status, colors) }]}
+                  testID={`column-dot-${status}`}
+                />
+                <Text
+                  style={[styles.columnTitle, { color: statusDotColor(status, colors) }]}
+                  numberOfLines={1}
+                  testID={`column-title-${status}`}
+                >
+                  {statusLabel(status)}
+                </Text>
+              </View>
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{columns[status]?.length ?? 0}</Text>
               </View>
@@ -205,14 +215,6 @@ export function BoardScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    headerRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 16,
-      paddingBottom: 8,
-    },
-    title: { fontSize: 20, fontWeight: '700', color: colors.text },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: {
@@ -222,7 +224,7 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 13,
     },
-    board: { flex: 1, paddingHorizontal: 12 },
+    board: { flex: 1, paddingHorizontal: 12, marginTop: 16 },
     column: {
       width: COLUMN_WIDTH,
       marginHorizontal: 4,
@@ -237,6 +239,8 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 4,
       paddingBottom: 8,
     },
+    columnTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+    columnDot: { width: 8, height: 8, borderRadius: 9999, flexShrink: 0 },
     columnTitle: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
     countBadge: {
       backgroundColor: colors.border,

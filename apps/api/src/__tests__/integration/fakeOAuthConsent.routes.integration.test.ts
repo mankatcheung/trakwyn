@@ -9,7 +9,7 @@ describe('fake OAuth consent route — OAUTH_PROVIDER_MODE=fake', () => {
   beforeAll(async () => {
     process.env[ENV.OAUTH_PROVIDER_MODE] = OAUTH_PROVIDER_MODE.FAKE;
     testApp = await buildTestApp();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     if (originalMode === undefined) delete process.env[ENV.OAUTH_PROVIDER_MODE];

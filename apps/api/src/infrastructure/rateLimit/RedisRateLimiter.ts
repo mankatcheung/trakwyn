@@ -5,6 +5,8 @@ import {
 import type { IRedisClient } from '#src/infrastructure/cache/IRedisClient.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
+import { rootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
 const KEY_PREFIX = 'ratelimit:';
 
@@ -14,12 +16,13 @@ interface Deps {
   windowMs: number;
   breaker?: CircuitBreaker;
   metrics?: IMetrics;
+  logger?: ILogger;
 }
 
 /**
  * Redis-backed IRateLimiter, shared across every serverless instance
  * (JEF-160). The in-memory `RateLimiter`'s buckets reset per-instance and
- * per-cold-start, so under Vercel's normal horizontal scaling the effective
+ * per-cold-start, so under Cloud Run's normal horizontal scaling the effective
  * limit becomes `maxAttempts × (warm instance count)`, not `maxAttempts` —
  * the same coherence bug `MemoryCache` had before JEF-127, except here it
  * means the rate limit doesn't actually limit anything.
@@ -43,17 +46,26 @@ export class RedisRateLimiter implements IRateLimiter {
   private readonly breaker: CircuitBreaker;
 
   private readonly metrics: IMetrics;
+  private readonly logger: ILogger;
 
-  constructor({ redis, maxAttempts, windowMs, breaker, metrics = otelMetrics }: Deps) {
+  constructor({
+    redis,
+    maxAttempts,
+    windowMs,
+    breaker,
+    metrics = otelMetrics,
+    logger = rootLogger,
+  }: Deps) {
     this.redis = redis;
     this.maxAttempts = maxAttempts;
     this.windowMs = windowMs;
     this.metrics = metrics;
+    this.logger = logger;
     this.breaker =
       breaker ??
       new CircuitBreaker({
         onStateChange: (from, to) => {
-          console.warn(`[rate-limit] Redis circuit breaker ${from} -> ${to}`);
+          logger.warn(`[rate-limit] Redis circuit breaker ${from} -> ${to}`);
           metrics.recordCircuitTransition('rate_limit', from, to);
         },
       });
@@ -69,7 +81,10 @@ export class RedisRateLimiter implements IRateLimiter {
         err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
       );
       if (!(err instanceof CircuitBreakerOpenError)) {
-        console.error('[rate-limit] Redis error in consume — failing open (request allowed)', err);
+        this.logger.error(
+          '[rate-limit] Redis error in consume — failing open (request allowed)',
+          err,
+        );
       }
       return true;
     }
