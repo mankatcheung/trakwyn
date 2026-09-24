@@ -34,6 +34,9 @@ export function CookieConsent() {
   const { t } = useLocale();
   const [stage, setStage] = useState<Stage>('hidden');
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
+  // Only ever Vercel's `x-vercel-ip-country`, and only sent once analytics
+  // are on — see `ConsentRegion.country` (JEF-366).
+  const [country, setCountry] = useState<string | null>(null);
   const [analyticsDraft, setAnalyticsDraft] = useState(false);
   // Whether the user has edited the draft toggle since the panel last
   // opened — see the sync effect below for why this matters.
@@ -42,9 +45,10 @@ export function CookieConsent() {
   useEffect(() => {
     let cancelled = false;
     getRequiresCookieConsent()
-      .then((requiresConsent) => {
+      .then(({ requiresConsent, country: visitorCountry }) => {
         if (cancelled) return;
         const stored = getStoredConsent();
+        setCountry(visitorCountry);
         // Outside a consent-required region with no explicit choice yet,
         // load analytics by default — opt-in is a GDPR/UK-GDPR concept, not
         // a general requirement. Anyone can still turn it off via "Cookie
@@ -69,9 +73,9 @@ export function CookieConsent() {
   // the visitor's own choice turns it on; turning it back off opts out,
   // which is what clears the cookies PostHog had already set.
   useEffect(() => {
-    if (analyticsEnabled) void initAnalytics();
+    if (analyticsEnabled) void initAnalytics(country);
     else shutdownAnalytics();
-  }, [analyticsEnabled]);
+  }, [analyticsEnabled, country]);
 
   // Keeps the draft toggle in sync with `analyticsEnabled` until the user
   // actually touches it. Without this, opening "Manage preferences" before

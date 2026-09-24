@@ -32,7 +32,9 @@ resource "posthog_project" "web" {
 #
 # Not here, because the provider does not expose it: click autocapture.
 # That opt-out still lives only in the clients (`autocapture: false` on web,
-# no <PostHogProvider autocapture> on mobile). See README.md.
+# no <PostHogProvider autocapture> on mobile). The same goes for dead clicks,
+# product tours and conversations (JEF-366), pinned off in the web client
+# only. See README.md.
 resource "posthog_project_settings" "web" {
   project_id = var.project_id
 
@@ -48,6 +50,13 @@ resource "posthog_project_settings" "web" {
 
   # Surveys inject PostHog UI into the page; nothing uses them.
   surveys_opt_in = false
+
+  # "Discard client IP data" (JEF-366): an IP is personal data, and the only
+  # location this app needs is the country, so storing it fails GDPR data
+  # minimisation. This also turns off PostHog's GeoIP; the web client sends
+  # a `country` property from Vercel's x-vercel-ip-country instead. It is
+  # project-wide, so mobile events lose their IP and GeoIP too.
+  anonymize_ips = true
 
   # On: the web client reports LCP, INP, CLS and FCP as $web_vitals (JEF-360,
   # `capture_performance.web_vitals` in apps/web/src/lib/analytics). URLs on

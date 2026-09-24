@@ -7,6 +7,7 @@ const { mockPosthog } = vi.hoisted(() => ({
     captureException: vi.fn(),
     opt_in_capturing: vi.fn(),
     opt_out_capturing: vi.fn(),
+    register: vi.fn(),
   },
 }));
 
@@ -61,6 +62,88 @@ describe('web analytics', () => {
     expect(options.disable_session_recording).toBe(true);
     expect(options.api_host).toBe('https://eu.i.posthog.com');
     expect(options.before_send).toBeTypeOf('function');
+  });
+
+  it('pins every other dashboard-driven page feature off, so the dashboard cannot turn one on (JEF-366)', async () => {
+    const analytics = await loadModule();
+    await analytics.initAnalytics();
+
+    const [, options] = mockPosthog.init.mock.calls[0] as [string, Record<string, unknown>];
+    // Dead clicks record the clicked element, like autocapture, and have no
+    // project-level backstop.
+    expect(options.capture_dead_clicks).toBe(false);
+    expect(options.capture_heatmaps).toBe(false);
+    expect(options.disable_surveys).toBe(true);
+    expect(options.disable_product_tours).toBe(true);
+    expect(options.disable_conversations).toBe(true);
+  });
+
+  it('keeps its anonymous id in localStorage, never in a cookie the API would receive (JEF-366)', async () => {
+    const analytics = await loadModule();
+    await analytics.initAnalytics();
+
+    const [, options] = mockPosthog.init.mock.calls[0] as [string, Record<string, unknown>];
+    expect(options.persistence).toBe('localStorage');
+  });
+
+  it('deletes the PostHog cookie an earlier visit wrote, on init and on opt-out (JEF-366)', async () => {
+    Object.defineProperty(window, 'location', {
+      value: { origin: 'http://localhost:3000', pathname: '/', hostname: 'localhost' },
+      writable: true,
+      configurable: true,
+    });
+    const cookie = `ph_${KEY}_posthog`;
+    const analytics = await loadModule();
+
+    document.cookie = `${cookie}=legacy; path=/`;
+    await analytics.initAnalytics();
+    expect(document.cookie).not.toContain(cookie);
+
+    document.cookie = `${cookie}=legacy; path=/`;
+    analytics.shutdownAnalytics();
+    expect(document.cookie).not.toContain(cookie);
+  });
+
+  describe('country (JEF-366)', () => {
+    type BeforeSend = (event: unknown) => { properties: Record<string, unknown> } | null;
+
+    async function beforeSendFor(country: string | null): Promise<BeforeSend> {
+      const analytics = await loadModule();
+      await analytics.initAnalytics(country);
+      const [, options] = mockPosthog.init.mock.calls[0] as [string, { before_send: BeforeSend }];
+      return options.before_send;
+    }
+
+    const pageview = () => ({
+      event: '$pageview',
+      properties: { token: KEY, $current_url: 'http://localhost:3000/dashboard' },
+    });
+
+    it('stamps the country on every event, including the $pageview sent during init', async () => {
+      const beforeSend = await beforeSendFor('US');
+
+      expect(beforeSend(pageview())?.properties.country).toBe('US');
+    });
+
+    it('adds no country key when the country is unknown', async () => {
+      const beforeSend = await beforeSendFor(null);
+
+      expect(beforeSend(pageview())?.properties).not.toHaveProperty('country');
+    });
+
+    it('forgets the country when consent is withdrawn', async () => {
+      const beforeSend = await beforeSendFor('US');
+      const analytics = await import('#/lib/analytics/analytics');
+      analytics.shutdownAnalytics();
+
+      expect(beforeSend(pageview())?.properties).not.toHaveProperty('country');
+    });
+
+    it('is not handed to posthog.register, which would store it in localStorage', async () => {
+      await beforeSendFor('US');
+
+      expect(mockPosthog.register).not.toHaveBeenCalled();
+    });
   });
 
   it('turns on Core Web Vitals and nothing else with them (JEF-360)', async () => {

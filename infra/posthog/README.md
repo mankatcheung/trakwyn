@@ -12,14 +12,15 @@ The PostHog project the web and mobile apps report errors and product events to 
 
 ### Project settings
 
-| Setting                         | Value   | Why                                                                                                |
-| ------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| `session_recording_opt_in`      | `false` | Replay records the page: salaries, notes, company names.                                           |
-| `capture_performance_opt_in`    | `false` | Network capture only feeds replay, and would record request bodies.                                |
-| `heatmaps_opt_in`               | `false` | Records where every click lands, which is the exposure autocapture was turned off to avoid.        |
-| `surveys_opt_in`                | `false` | Injects PostHog UI into the page; nothing uses it.                                                 |
-| `autocapture_web_vitals_opt_in` | `true`  | JEF-360 reports LCP, INP, CLS and FCP, with URLs rewritten to route templates and attribution off. |
-| `autocapture_exceptions_opt_in` | `true`  | This is the error reporting PostHog is here for. Exceptions pass the `before_send` scrubber first. |
+| Setting                         | Value   | Why                                                                                                   |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `session_recording_opt_in`      | `false` | Replay records the page: salaries, notes, company names.                                              |
+| `capture_performance_opt_in`    | `false` | Network capture only feeds replay, and would record request bodies.                                   |
+| `heatmaps_opt_in`               | `false` | Records where every click lands, which is the exposure autocapture was turned off to avoid.           |
+| `surveys_opt_in`                | `false` | Injects PostHog UI into the page; nothing uses it.                                                    |
+| `anonymize_ips`                 | `true`  | JEF-366, GDPR data minimisation: no `$ip` stored, so no GeoIP. Location comes from `country` (below). |
+| `autocapture_web_vitals_opt_in` | `true`  | JEF-360 reports LCP, INP, CLS and FCP, with URLs rewritten to route templates and attribution off.    |
+| `autocapture_exceptions_opt_in` | `true`  | This is the error reporting PostHog is here for. Exceptions pass the `before_send` scrubber first.    |
 
 These apply to the whole project, so to mobile too if it sends with the same key.
 
@@ -47,15 +48,24 @@ Trakwyn's screens hold exactly what a job seeker would not want in a third-party
 | Autocapture     | `autocapture: false` on web; `<PostHogProvider autocapture>` never mounted on mobile | Not settable (below). Check by hand. |
 | Session replay  | `disable_session_recording: true` on web; `enableSessionReplay: false` on mobile     | `session_recording_opt_in = false`   |
 | Network capture | `capture_performance.network_timing: false` on web                                   | `capture_performance_opt_in = false` |
+| Dead clicks     | `capture_dead_clicks: false` on web                                                  | Not settable (below).                |
+| Heatmaps        | `capture_heatmaps: false` on web                                                     | `heatmaps_opt_in = false`            |
+| Surveys         | `disable_surveys: true` on web                                                       | `surveys_opt_in = false`             |
+| Product tours   | `disable_product_tours: true` on web                                                 | Not settable (below).                |
+| Conversations   | `disable_conversations: true` on web                                                 | Not settable (below).                |
+| Client IPs      | None: the IP is sent with every request, whatever the client does                    | `anonymize_ips = true`               |
 
-Replay and network capture are guarded twice: if a future client forgets its flag, the project setting still keeps them off, and a dashboard change shows up in `plan`. Autocapture relies on the client alone.
+Replay, network capture, heatmaps and surveys are guarded twice: if a future client forgets its flag, the project setting still keeps them off, and a dashboard change shows up in `plan`. Autocapture, dead clicks, product tours and conversations rely on the client alone. IP discarding is the reverse: only the project can do it.
+
+**Location without IPs (JEF-366).** With `anonymize_ips` on, PostHog stores no `$ip` and adds no `$geoip_*` properties. The web client adds a two-letter `country` to every event in `before_send` instead. It comes from Vercel's `x-vercel-ip-country` header, which `getRequiresCookieConsent` already reads for the consent check, so PostHog never sees the IP. Break down by `country`, not `$geoip_country_name`. City-level location is gone on purpose. Mobile events carry no location at all.
 
 ### What the provider cannot manage
 
 - **Click autocapture.** `posthog_project_settings` (provider `PostHog/posthog` 1.0.21) has no autocapture opt-out; the dashboard's "Autocapture" toggle is not exposed. The opt-out still lives only in the clients: `autocapture: false` in `apps/web/src/lib/analytics/analytics.ts`, and never mounting `<PostHogProvider autocapture>` on mobile. That is the single most important line in the web client, and it has no server-side backstop. Check the toggle by hand after any change to the project, and re-check this list when bumping the provider.
+- **Dead clicks, product tours and conversations.** The provider has no setting for any of them, so the web client's `capture_dead_clicks: false`, `disable_product_tours: true` and `disable_conversations: true` are the only guards. Dead clicks matter most: they record the clicked element, as autocapture would.
 - **Data region.** EU vs. US is fixed when the organization is created. It is a property of the account, not a setting. `posthog_host` here and `VITE_POSTHOG_HOST` in `infra/vercel` both point at the EU cloud.
 
-Deliberately left to the dashboard: the project's timezone, `anonymize_ips` ("Discard client IP data", which would also switch off GeoIP enrichment, so it is a product decision to make on purpose), authorized URLs, and the internal/test user filters.
+Deliberately left to the dashboard: the project's timezone, authorized URLs, and the internal/test user filters.
 
 ## Why a separate root
 

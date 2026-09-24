@@ -56,6 +56,16 @@ let initPromise: Promise<PostHog | null> | null = null;
  */
 let pending: Array<{ error: unknown; properties: Properties }> = [];
 
+/**
+ * The visitor's country from Vercel's edge (`consentRegion.ts`), stamped on
+ * every event in `before_send` (JEF-366). The PostHog project discards
+ * client IPs, and with them its own GeoIP, so this is the only location
+ * PostHog gets. Held here rather than passed to `posthog.register`, which
+ * would miss the `$pageview` sent during `init` and would also write it
+ * into PostHog's localStorage entry.
+ */
+let country: string | null = null;
+
 /** Properties every event carries, so an error can be placed without asking the reporter. */
 function baseProperties(): Properties {
   const traceId = getLastTraceId();
@@ -74,9 +84,13 @@ function baseProperties(): Properties {
  * Resolves to `null` when there is no key configured, which is the normal
  * state in dev and in CI: reporting is a production concern, and a missing
  * key must not turn into a console full of failed requests.
+ *
+ * `visitorCountry` is the two-letter code from the consent region check,
+ * or `null` when it is unknown; see `country` above.
  */
-export function initAnalytics(): Promise<PostHog | null> {
+export function initAnalytics(visitorCountry: string | null = null): Promise<PostHog | null> {
   if (!POSTHOG_KEY || typeof window === 'undefined') return Promise.resolve(null);
+  country = visitorCountry;
   if (client) {
     client.opt_in_capturing();
     flushPending(client);
@@ -125,8 +139,27 @@ async function loadAndInit(): Promise<PostHog | null> {
       web_vitals_attribution: false,
       network_timing: false,
     },
+    // The rest of PostHog's page-level features (JEF-366). Each one follows
+    // the project's dashboard toggle when left unset, so each is pinned here
+    // and what this app collects stays a code-review decision:
+    // - Dead clicks record the clicked element, which is what `autocapture`
+    //   is off to avoid, and the Terraform provider can't set the toggle.
+    capture_dead_clicks: false,
+    // - Heatmaps record click and scroll positions per page. Also off in
+    //   infra/posthog (`heatmaps_opt_in`); this is the second guard.
+    capture_heatmaps: false,
+    // - Surveys, product tours and the support widget inject PostHog-hosted
+    //   scripts and UI into the page. None of them is used.
+    disable_surveys: true,
+    disable_product_tours: true,
+    disable_conversations: true,
+    // localStorage only, not the default `localStorage+cookie`: that cookie
+    // sits on `.trakwyn.com`, so it carries PostHog's anonymous id on every
+    // request to the API, which never reads it.
+    persistence: 'localStorage',
     before_send: beforeSend,
   });
+  removeLegacyCookie();
 
   client = posthog;
   flushPending(posthog);
@@ -140,7 +173,32 @@ async function loadAndInit(): Promise<PostHog | null> {
  * in it has been replaced.
  */
 function beforeSend(event: CaptureResult | null): CaptureResult | null {
-  return scrubEvent(templateEventUrls(event));
+  return scrubEvent(templateEventUrls(withCountry(event)));
+}
+
+function withCountry(event: CaptureResult | null): CaptureResult | null {
+  if (!event || !country) return event;
+  return { ...event, properties: { ...event.properties, country } };
+}
+
+/**
+ * Deletes the cookie PostHog wrote before `persistence: 'localStorage'`
+ * (JEF-366). The SDK never looks at cookies once it isn't using them, so
+ * without this a returning visitor would keep the old cross-subdomain
+ * cookie, and send it to the API, until it expired a year later. PostHog
+ * writes it on the widest domain it can, so every parent of the current
+ * host is tried; clearing one that isn't there is a no-op.
+ */
+function removeLegacyCookie(): void {
+  if (!POSTHOG_KEY || typeof document === 'undefined') return;
+  const name = `ph_${POSTHOG_KEY}_posthog`;
+  if (!document.cookie.split('; ').some((c) => c.startsWith(`${name}=`))) return;
+  const labels = window.location.hostname.split('.');
+  const domains = labels.slice(0, -1).map((_, i) => labels.slice(i).join('.'));
+  for (const domain of ['', ...domains]) {
+    const scope = domain ? `; domain=${domain}` : '';
+    document.cookie = `${name}=; Max-Age=0; path=/${scope}`;
+  }
 }
 
 function flushPending(posthog: PostHog): void {
@@ -162,7 +220,11 @@ function flushPending(posthog: PostHog): void {
  */
 export function shutdownAnalytics(): void {
   pending = [];
+  country = null;
   client?.opt_out_capturing();
+  // opt_out only clears the store PostHog is using now, which is no longer
+  // the cookie.
+  removeLegacyCookie();
 }
 
 /**
@@ -202,4 +264,5 @@ export function resetAnalyticsForTests(): void {
   client = null;
   initPromise = null;
   pending = [];
+  country = null;
 }
