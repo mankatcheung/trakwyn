@@ -186,3 +186,25 @@ resource "axiom_monitor" "outbound_url_refused" {
   # then reports as an inconsistent result after apply.
   notifier_ids = [axiom_notifier.email.id]
 }
+
+# --- Web app server (web dataset, APL) --------------------------------------
+
+# The web app's Vercel function (SSR renders and server functions) writes to
+# its own dataset through Axiom's ingest API as plain JSON, not OTel, so
+# `event` is a top-level field there and local.log_event does not apply
+# (JEF-359). Every reportable event is `web.<what>.failed`
+# (SERVER_LOG_EVENTS in apps/web/src/server/observability/serverLogger.ts).
+# A render error inside a Suspense boundary still answers 200, which is why
+# this keys on the log line rather than on HTTP status.
+resource "axiom_monitor" "web_server_error" {
+  name        = "Web app server error"
+  description = "The web app's Vercel function failed a server render (web.ssr.failed, phase load/render/shell) or a server function (web.server_fn.failed), or a request escaped the handler (web.request.failed). The email carries the event, path and scrubbed error; vercel.request_id finds the same request in Vercel's runtime log."
+  type        = "MatchEvent"
+  apl_query   = <<-APL
+    ['${var.web_dataset}']
+    | where event startswith "web." and event endswith ".failed"
+  APL
+
+  # No range_minutes/interval_minutes: see job_failed above.
+  notifier_ids = [axiom_notifier.email.id]
+}

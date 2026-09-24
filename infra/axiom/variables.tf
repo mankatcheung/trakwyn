@@ -14,6 +14,12 @@ variable "metrics_dataset" {
   type        = string
 }
 
+variable "web_dataset" {
+  description = "The web app's server-side error dataset: AXIOM_WEB_DATASET in the Vercel project (JEF-359). Plain JSON from Axiom's ingest API, not OTel."
+  type        = string
+  default     = "trakwyn-web"
+}
+
 variable "alert_emails" {
   description = "Addresses the one email notifier sends every alert to."
   type        = list(string)
