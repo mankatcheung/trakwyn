@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
 import { OpenAICompatibleLLMProvider } from '#src/infrastructure/llm/OpenAICompatibleLLMProvider.js';
 import { AnthropicLLMProvider } from '#src/infrastructure/llm/AnthropicLLMProvider.js';
@@ -12,6 +12,7 @@ import {
 } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeLogger, makeOutboundUrlPolicy } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 
 describe('UserLLMProviderFactory', () => {
   it('returns null when no provider is given and the user has no default configured', async () => {
@@ -268,6 +269,69 @@ describe('UserLLMProviderFactory', () => {
 
       const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
       expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
+    });
+  });
+
+  describe('call tracing (JEF-113)', () => {
+    function makeFactory(traceLlmCalls?: boolean) {
+      const metrics = makeFakeMetrics();
+      const factory = new UserLLMProviderFactory({
+        userRepository: makeUserRepository(),
+        llmApiKeyRepository: makeLlmApiKeyRepository({
+          findByUserIdAndProvider: vi
+            .fn()
+            .mockResolvedValue(makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI })),
+        }),
+        llmApiKeyCipher: makeLlmApiKeyCipher(),
+        outboundUrlPolicy: makeOutboundUrlPolicy(),
+        llmUsageEventRepository: makeLlmUsageEventRepository(),
+        generateId: () => 'evt-id',
+        logger: makeLogger(),
+        traceLlmCalls,
+        metrics,
+      });
+      return { factory, metrics };
+    }
+
+    beforeEach(() => {
+      vi.spyOn(OpenAICompatibleLLMProvider.prototype, 'complete').mockResolvedValue({
+        content: 'ok',
+        usage: { promptTokens: 3, completionTokens: 1 },
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('measures every tracked call when tracing is on', async () => {
+      const { factory, metrics } = makeFactory(true);
+
+      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI);
+      await provider!.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(metrics.llmCalls).toEqual([
+        expect.objectContaining({ provider: LLM_PROVIDER.OPENAI, outcome: 'success' }),
+      ]);
+    });
+
+    it('measures nothing when tracing is off, as in dev and test', async () => {
+      const { factory, metrics } = makeFactory();
+
+      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI);
+      await provider!.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(metrics.llmCalls).toEqual([]);
+    });
+
+    it('leaves a key test untraced even when tracing is on', async () => {
+      const { factory, metrics } = makeFactory(true);
+
+      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
+      await provider!.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
+      expect(metrics.llmCalls).toEqual([]);
     });
   });
 

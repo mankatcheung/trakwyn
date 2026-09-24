@@ -36,6 +36,8 @@ import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransac
 import { LlmApiKeyCipher } from '#src/infrastructure/llm/LlmApiKeyCipher.js';
 import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
+import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
+import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
@@ -133,7 +135,32 @@ export const infrastructure = {
     lifetime: Lifetime.SINGLETON,
   }),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
-  userLlmProviderFactory: asClass(UserLLMProviderFactory, { lifetime: Lifetime.SINGLETON }),
+  // asFunction for the same options-object reason as outboundUrlPolicy: the
+  // factory's optional `traceLlmCalls`/`metrics` (JEF-113) are not
+  // registrations, and proxy injection would try to resolve them.
+  userLlmProviderFactory: asFunction(
+    ({
+      userRepository,
+      llmApiKeyRepository,
+      llmApiKeyCipher,
+      llmUsageEventRepository,
+      outboundUrlPolicy,
+      generateId,
+      logger,
+    }: Cradle) =>
+      new UserLLMProviderFactory({
+        userRepository,
+        llmApiKeyRepository,
+        llmApiKeyCipher,
+        llmUsageEventRepository,
+        outboundUrlPolicy,
+        generateId,
+        logger,
+        traceLlmCalls: isObservabilityEnabled,
+        metrics: otelMetrics,
+      }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   // Decorates the factory so a key past its monthly token limit is refused
   // before any AI feature can use it (JEF-258) — same inner/outer shape as
   // BlocklistingSessionRepository and the Cached*Repository family, so every
