@@ -52,8 +52,8 @@ while the API log recorded no request at all.
   `src/__tests__/architecture/maestroTestIds.test.ts` checks that every id a
   flow references exists in the app at all; it cannot see nesting.
 - **Every flow registers its own account** via `subflows/register-new-account.yml`
-  and asserts only on what it created. The flows share one API and one SQLite
-  file, so anything that depends on seeded state — or on another flow — fails
+  and asserts only on what it created. The flows share one API and one PGlite
+  database, so anything that depends on seeded state — or on another flow — fails
   the moment two of them run together (R-3).
 - **Flows run serially.** `maestro test` does that by default; keep it that way
   for the same reason `apps/web/playwright.config.ts` pins `workers: 1`.

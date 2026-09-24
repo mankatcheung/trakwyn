@@ -12,7 +12,7 @@ export const BOOT_TIMEOUT_MS = 90_000;
 
 declare global {
   // eslint-disable-next-line no-var
-  var __TRAKWYN_API__: { reused: boolean; pid?: number; dbFile?: string } | undefined;
+  var __TRAKWYN_API__: { reused: boolean; pid?: number; dataDir?: string } | undefined;
 }
 
 /** True once the API answers a real GraphQL request — not merely once the port accepts a socket. */
@@ -31,17 +31,16 @@ export async function pingApi(): Promise<boolean> {
 
 /**
  * The same ephemeral configuration ci.yml writes for the Playwright job:
- * a throwaway SQLite file, fake OAuth and LLM providers, and an email
+ * a throwaway PGlite database, fake OAuth and LLM providers, and an email
  * provider that logs instead of sending. Nothing here is a secret, which is
  * what lets this tier run on a fork's pull request.
  */
-export function apiEnv(dbFile: string): NodeJS.ProcessEnv {
+export function apiEnv(dataDir: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     PORT: new URL(API_BASE_URL).port || '3001',
     NODE_ENV: 'development',
-    DATABASE_URL: `file:${dbFile}`,
-    DATABASE_AUTH_TOKEN: '',
+    DATABASE_URL: `pglite:${dataDir}`,
     JWT_SECRET: 'integration-only-jwt-secret',
     JWT_REFRESH_SECRET: 'integration-only-refresh-secret',
     TOTP_ENCRYPTION_KEY: 'integration-only-totp-encryption-key',

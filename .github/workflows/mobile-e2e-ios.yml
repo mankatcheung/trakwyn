@@ -50,8 +50,7 @@ jobs:
           cat > apps/api/.env <<'EOF'
           PORT=3001
           NODE_ENV=development
-          DATABASE_URL=file:${{ runner.temp }}/trakwyn-mobile-e2e.db
-          DATABASE_AUTH_TOKEN=
+          DATABASE_URL=pglite:${{ runner.temp }}/trakwyn-mobile-e2e-pglite
           JWT_SECRET=e2e-only-jwt-secret
           JWT_REFRESH_SECRET=e2e-only-refresh-secret
           TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key

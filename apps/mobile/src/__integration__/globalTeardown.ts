@@ -21,5 +21,5 @@ export default async function globalTeardown(): Promise<void> {
     }
   }
 
-  if (api.dbFile) rmSync(dirname(api.dbFile), { recursive: true, force: true });
+  if (api.dataDir) rmSync(dirname(api.dataDir), { recursive: true, force: true });
 }

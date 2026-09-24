@@ -7,7 +7,7 @@ import { API_BASE_URL, BOOT_TIMEOUT_MS, apiEnv, pingApi } from './support/apiPro
 const REPO_ROOT = resolve(__dirname, '../../../..');
 
 /**
- * Boots apps/api for the integration tier: a throwaway SQLite file, migrations,
+ * Boots apps/api for the integration tier: a throwaway PGlite data directory, migrations,
  * then the same `pnpm --filter @trakwyn/api dev` command apps/web's Playwright
  * config uses. An API already answering on the port is reused rather than
  * fought over — `reuseExistingServer` in playwright.config.ts makes the same
@@ -25,8 +25,8 @@ export default async function globalSetup(): Promise<void> {
     return;
   }
 
-  const dbFile = join(mkdtempSync(join(tmpdir(), 'trakwyn-integration-')), 'integration.db');
-  const env = apiEnv(dbFile);
+  const dataDir = join(mkdtempSync(join(tmpdir(), 'trakwyn-integration-')), 'pglite');
+  const env = apiEnv(dataDir);
 
   await run('pnpm', ['--filter', '@trakwyn/api', 'db:migrate:apply'], env);
 
@@ -49,7 +49,7 @@ export default async function globalSetup(): Promise<void> {
       throw new Error(`[integration] the API exited during boot (${child.exitCode}):\n${stderr}`);
     }
     if (await pingApi()) {
-      globalThis.__TRAKWYN_API__ = { reused: false, pid: child.pid, dbFile };
+      globalThis.__TRAKWYN_API__ = { reused: false, pid: child.pid, dataDir };
       console.log(`\n[integration] API up at ${API_BASE_URL} (pid ${child.pid})`);
       return;
     }

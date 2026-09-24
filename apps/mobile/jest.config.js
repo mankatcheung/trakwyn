@@ -49,7 +49,7 @@ module.exports = {
       ...base,
       displayName: 'integration',
       testMatch: [`${INTEGRATION_DIR}**/*.test.ts?(x)`],
-      // Boots apps/api against a throwaway SQLite file and tears it down
+      // Boots apps/api against a throwaway PGlite database and tears it down
       // afterwards; the suites themselves assume a server is already up.
       globalSetup: '<rootDir>/src/__integration__/globalSetup.ts',
       globalTeardown: '<rootDir>/src/__integration__/globalTeardown.ts',
