@@ -5,7 +5,7 @@ Guidance for Claude Code in this repository. Subsystem detail lives next to the 
 - `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, database, observability, use-case spans, deployment and testing.
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
 - `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
-- Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover) and `infra/axiom/README.md` (monitors).
+- Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings) and `infra/vercel/README.md` (web project, domains, env vars; apply after `infra/posthog`).
 
 ## Commands
 

@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
+# the personal API key comes from the environment (TF_VAR_posthog_api_key).
+organization_id = "00000000-0000-0000-0000-000000000000"
+project_id      = "12345"
+project_name    = "Trakwyn"
+
+# EU cloud management API; only change for a self-hosted instance.
+# posthog_host = "https://eu.posthog.com"

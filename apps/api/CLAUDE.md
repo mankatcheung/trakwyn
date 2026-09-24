@@ -65,7 +65,7 @@ Access tokens are otherwise stateless, so every revocation also writes the `sid`
 
 ## Deployment (JEF-335)
 
-Cloud Run `europe-west1` (web stays on Vercel). The GCP side is Terraform in `infra/gcp/`, whose `README.md` is the runbook. Terraform owns config; CI owns releases (`deploy-api` builds `apps/api/Dockerfile` from the repo root and authenticates through WIF, which trusts only `main`, so `terraform plan` is run by hand rather than on PRs). CI's `migrate-db` runs migrations before the deploy; they are not in the image.
+Cloud Run `europe-west1` (web stays on Vercel, whose project is Terraform in `infra/vercel/`, JEF-363). The GCP side is Terraform in `infra/gcp/`, whose `README.md` is the runbook. Terraform owns config; CI owns releases (`deploy-api` builds `apps/api/Dockerfile` from the repo root and authenticates through WIF, which trusts only `main`, so `terraform plan` is run by hand rather than on PRs). CI's `migrate-db` runs migrations before the deploy; they are not in the image.
 
 - **Request-based billing throttles CPU once no request is in flight**, so work that must finish is awaited before the response: the telemetry flush in `buildApp.ts`'s `onResponse`, and the new-device alert in `CreateSessionUseCase`. There are no in-process timers or schedulers.
 - **`/admin/*` jobs** are driven by Cloud Scheduler with a Google **OIDC ID token** (JEF-336). `cronAuth.ts` verifies it via `IOidcTokenVerifier` (`GoogleOidcTokenVerifier`) and requires `aud` = `API_ORIGIN` and `email` = `CRON_INVOKER_SA`. `CRON_SECRET`/`DIGEST_ADMIN_SECRET` exist only for manual triggers. With none of the three configured, a route answers 503.
