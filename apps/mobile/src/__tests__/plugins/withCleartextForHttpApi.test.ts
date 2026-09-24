@@ -1,3 +1,11 @@
+/**
+ * @jest-environment node
+ *
+ * Config plugins run in Node during `expo prebuild`, never in the app. jest-expo's
+ * React Native environment resolves packages with browser export conditions,
+ * which hand expo/config-plugins' uuid dependency its ESM-only build and fail
+ * to parse.
+ */
 import type { ExpoConfig } from 'expo/config';
 import withCleartextForHttpApi from '../../../plugins/withCleartextForHttpApi';
 
