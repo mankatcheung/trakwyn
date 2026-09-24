@@ -80,9 +80,13 @@ describe('gqlRequest', () => {
 
     await gqlRequest('query Me { me { id } }');
 
-    expect(requestSpy).toHaveBeenCalledWith('query Me { me { id } }', undefined, {
-      authorization: 'Bearer token-123',
-    });
+    expect(requestSpy).toHaveBeenCalledWith(
+      'query Me { me { id } }',
+      undefined,
+      expect.objectContaining({
+        authorization: 'Bearer token-123',
+      }),
+    );
   });
 
   it('sends no authorization header when unauthenticated', async () => {
@@ -90,7 +94,8 @@ describe('gqlRequest', () => {
 
     await gqlRequest('query { ok }');
 
-    expect(requestSpy).toHaveBeenCalledWith('query { ok }', undefined, undefined);
+    const [, , headers] = (requestSpy.mock.calls[0] ?? []) as unknown[];
+    expect(headers).not.toHaveProperty('authorization');
   });
 
   it('returns the response on success without touching the token store', async () => {
@@ -113,9 +118,13 @@ describe('gqlRequest', () => {
     expect(result).toEqual({ me: { id: '1' } });
     expect(mockedSetTokens).toHaveBeenCalledWith(refreshedPair);
     // Final retry uses the freshly-refreshed access token.
-    expect(requestSpy).toHaveBeenLastCalledWith('query Me { me { id } }', undefined, {
-      authorization: 'Bearer fresh-token',
-    });
+    expect(requestSpy).toHaveBeenLastCalledWith(
+      'query Me { me { id } }',
+      undefined,
+      expect.objectContaining({
+        authorization: 'Bearer fresh-token',
+      }),
+    );
   });
 
   // No token was sent, so UNAUTHORIZED is about the request — a wrong
@@ -157,9 +166,13 @@ describe('gqlRequest', () => {
 
     expect(requestSpy).toHaveBeenCalledTimes(2);
     expect(isRefreshCall(requestSpy.mock.calls[0]!)).toBe(true);
-    expect(requestSpy).toHaveBeenLastCalledWith('mutation { updatePassword }', undefined, {
-      authorization: 'Bearer fresh-token',
-    });
+    expect(requestSpy).toHaveBeenLastCalledWith(
+      'mutation { updatePassword }',
+      undefined,
+      expect.objectContaining({
+        authorization: 'Bearer fresh-token',
+      }),
+    );
   });
 
   it('ends the session when the refresh token itself is rejected', async () => {
@@ -231,9 +244,13 @@ describe('gqlRequest', () => {
     await expect(gqlRequest('query { ok }')).resolves.toEqual({ ok: true });
 
     expect(mockedGetTokens).not.toHaveBeenCalled();
-    expect(requestSpy).toHaveBeenLastCalledWith('query { ok }', undefined, {
-      authorization: 'Bearer fresh-from-elsewhere',
-    });
+    expect(requestSpy).toHaveBeenLastCalledWith(
+      'query { ok }',
+      undefined,
+      expect.objectContaining({
+        authorization: 'Bearer fresh-from-elsewhere',
+      }),
+    );
   });
 
   it('single-flights the refresh across concurrent UNAUTHORIZED responses', async () => {
