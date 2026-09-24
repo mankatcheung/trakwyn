@@ -10,12 +10,12 @@ Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. C
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `project.tf` | `vercel_project.web` (imported): root directory `apps/web`, and **no git connection**. Connecting the repo would make Vercel deploy every push itself, before CI's tests, alongside `deploy-web`. |
 | `domains.tf` | `www.trakwyn.com`, and the apex redirecting to it with a 308 (both imported). Set `apex_domain = null` if the project has no apex.                                                                |
-| `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY`.                                                                                                                      |
+| `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY`, and the server-only `AXIOM_WEB_DATASET` (JEF-359). `AXIOM_WEB_TOKEN` is set by hand; see below.                      |
 | `posthog.tf` | Reads `infra/posthog`'s state for the PostHog project key.                                                                                                                                        |
 
 Things worth knowing:
 
-- **Every env var here is public.** Vite inlines `VITE_*` into the client bundle, so none is secret and none is marked `sensitive`. A sensitive Vercel var cannot be read back, which would hide its drift from `plan`. If a real secret ever needs to be a Vercel env var, give it its own resource with `sensitive = true` and `value_wo`, not an entry in `local.env`.
+- **Every env var here is public.** Vite inlines `VITE_*` into the client bundle, so none is secret and none is marked `sensitive`. `AXIOM_WEB_DATASET` is the one server-only var: no `VITE_` prefix, read from `process.env` inside the function, and not secret either. A sensitive Vercel var cannot be read back, which would hide its drift from `plan`. If a real secret ever needs to be a Vercel env var, give it its own resource with `sensitive = true` and `value_wo`, not an entry in `local.env`.
 - **`VITE_APP_RELEASE` is not managed, on purpose.** `apps/web/vite.config.ts` fills it from `VERCEL_GIT_COMMIT_SHA` when it is unset, and a value set here would win and pin every release to one string. If it is set in the dashboard today, delete it there. JEF-362 owns release tagging.
 - **Production only.** No env var targets `preview` or `development`, because nothing makes preview deployments: the project is not connected to git and `deploy-web` always passes `--prod`.
 - **`VITE_POSTHOG_KEY` is stated once**, as `infra/posthog`'s `project_api_key` output, and read here through `terraform_remote_state`. That couples the roots in one direction: `infra/posthog` must be applied before this root can `plan`, and whoever runs this root needs read access to that state (same bucket, so already true). It is fine because the key is public. Don't pass a secret this way.
@@ -67,9 +67,26 @@ Then read the plan before applying. Expect:
 
 Once the plan shows only changes you mean, `apply`, then empty `env_var_import_ids`. Import blocks are no-ops once the resource is in state, but the map is only needed once.
 
+## Server-side error logging (JEF-359)
+
+The web app's Vercel function (SSR renders and the `getRequiresCookieConsent` server function) sends its errors to Axiom's `trakwyn-web` dataset, separate from the API's. `AXIOM_WEB_DATASET` is in `env.tf`. The token is not, on purpose: it is a secret, and managing it here would put it through a tfvars file or the environment of every `plan`, and into state. It is set once by hand instead.
+
+1. In Axiom, create an **Events** dataset named `trakwyn-web` (it must match `axiom_web_dataset` here and `web_dataset` in `infra/axiom`).
+2. Create an API token under **Settings → API tokens** with **only** `Ingest` on `trakwyn-web`, and no other dataset or organisation permission. It is not the API's `AXIOM_TOKEN`.
+3. Add it to the project as a **sensitive**, **production-only** env var named `AXIOM_WEB_TOKEN`, never with a `VITE_` prefix (that would inline it into the browser bundle):
+
+   ```bash
+   vercel env add AXIOM_WEB_TOKEN production --sensitive
+   ```
+
+4. Deploy. Nothing is sent before `NODE_ENV=production`, so dev and CI never write to the dataset even with a token in `apps/web/.env`.
+
+To rotate, create a new token, replace the var's value in the dashboard, deploy, then delete the old token.
+
 ## After applying
 
 Env vars are read at build time, so nothing changes in production until the next deploy.
 
 1. Trigger `deploy-web`: merge anything to `main`, or re-run the latest `CI & Deploy` run on `main`.
 2. On `https://www.trakwyn.com`, sign in (checks `VITE_API_URL`), accept analytics in the cookie banner, and confirm a `$pageview` reaches PostHog's **Activity** within a minute (checks `VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST`).
+3. Server-side logging has no happy-path signal, since only failures are sent. Check it with the trigger in `infra/axiom/README.md` ("Web app server error").
