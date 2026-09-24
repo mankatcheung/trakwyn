@@ -4,12 +4,18 @@ import { Link } from '@tanstack/react-router';
 import { put as putBlob } from '@vercel/blob/client';
 import { CheckIcon, ExternalLinkIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { showUndoToast } from '#/lib/undoToast';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Button, Card, FormLabel, Input, Select } from '@trakwyn/ui';
 import { DocumentPreviewModal, isPreviewableMimeType } from './DocumentPreviewModal';
 import { invalidateSectionCounts } from '../-sectionCounts';
+import {
+  reportStorageFailure,
+  uploadProviderOf,
+  type UploadProvider,
+} from './documentUploadReporting';
 
 export const DOCUMENTS_QUERY = `
   query Documents($applicationId: ID!) {
@@ -103,6 +109,10 @@ export function DocumentsTab({ applicationId }: { applicationId: string }) {
     if (!file) return;
     setUploading(true);
     setUploadError(null);
+    // Set once the upload URL is in hand. Until then any failure was thrown
+    // by gqlClient, which has already reported what deserves reporting —
+    // see documentUploadReporting.ts.
+    let storageProvider: UploadProvider | null = null;
     try {
       const { requestUploadUrl } = await gqlClient.request<{
         requestUploadUrl: { uploadUrl: string; storageKey: string };
@@ -110,7 +120,8 @@ export function DocumentsTab({ applicationId }: { applicationId: string }) {
         input: { applicationId, filename: file.name, mimeType: file.type },
       });
 
-      if (requestUploadUrl.uploadUrl.includes('/_upload/')) {
+      storageProvider = uploadProviderOf(requestUploadUrl.uploadUrl);
+      if (storageProvider === 'local') {
         const response = await fetch(requestUploadUrl.uploadUrl, {
           method: 'PUT',
           credentials: 'include',
@@ -138,6 +149,7 @@ export function DocumentsTab({ applicationId }: { applicationId: string }) {
       setDocVersion('');
     } catch (err) {
       setUploadError(getErrorMessage(err));
+      if (storageProvider) reportStorageFailure(err, { provider: storageProvider, file });
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -159,10 +171,16 @@ export function DocumentsTab({ applicationId }: { applicationId: string }) {
           ...(docVersion.trim() ? { version: docVersion.trim() } : {}),
         },
       });
+      captureEvent(ANALYTICS_EVENTS.DOCUMENT_UPLOADED, {
+        document_type: docType,
+        mime_type: pendingUpload.mimeType,
+      });
       qc.invalidateQueries({ queryKey: ['documents', applicationId] });
       invalidateSectionCounts(qc, applicationId);
       setPendingUpload(null);
     } catch (err) {
+      // Only confirmDocument can throw here, and gqlClient reports its 5xx
+      // and network failures itself; reporting again would double them.
       setUploadError(getErrorMessage(err));
     } finally {
       setConfirming(false);

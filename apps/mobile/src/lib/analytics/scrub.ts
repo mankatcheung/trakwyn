@@ -97,6 +97,23 @@ const BEARER_PATTERN = /\bBearer\s+[\w\-._~+/]+=*/gi;
  * and `#access_token=…` all arrive here from redirects and stack frames.
  */
 const URL_QUERY_PATTERN = /(https?:\/\/[^\s?#]+)[?#][^\s]*/g;
+/**
+ * A document's filename — it routinely carries a person's name or the
+ * company applied to (JEF-358). Matched by the extensions the API accepts
+ * for upload, so a source file in a stack frame (`.js`, `.tsx`) is left
+ * readable. The quoted form comes first and takes the whole name, spaces
+ * included; the bare form takes one path segment, which is how a filename
+ * arrives inside a storage key (`…/<id>-Jane-Doe-CV.pdf`).
+ */
+const DOCUMENT_EXTENSIONS = 'pdf|docx?|txt|png|jpe?g';
+const QUOTED_FILENAME_PATTERN = new RegExp(
+  `(["'\`])[^"'\`\n]*\\.(?:${DOCUMENT_EXTENSIONS})\\1`,
+  'gi',
+);
+const BARE_FILENAME_PATTERN = new RegExp(
+  `[^\\s/\\\\"'\`?#]+\\.(?:${DOCUMENT_EXTENSIONS})\\b`,
+  'gi',
+);
 
 /**
  * Redacts the patterns above from a single string and clips what is left.
@@ -108,6 +125,8 @@ export function scrubString(value: string): string {
     .replace(JWT_PATTERN, '[redacted-token]')
     .replace(BEARER_PATTERN, 'Bearer [redacted-token]')
     .replace(EMAIL_PATTERN, '[redacted-email]')
+    .replace(QUOTED_FILENAME_PATTERN, '$1[redacted-filename]$1')
+    .replace(BARE_FILENAME_PATTERN, '[redacted-filename]')
     .replace(URL_QUERY_PATTERN, '$1?[redacted]');
   return redacted.length > MAX_STRING_CHARS
     ? `${redacted.slice(0, MAX_STRING_CHARS)}…[clipped]`
