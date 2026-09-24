@@ -80,7 +80,8 @@ Create it under **Account settings → Personal API keys → Create personal API
 ```bash
 cd infra/posthog
 cp terraform.tfvars.example terraform.tfvars      # organization_id, project_id, project_name
-export TF_VAR_posthog_api_key=phx_...              # never in terraform.tfvars
+cp .envrc.example .envrc && chmod 600 .envrc      # set the key; gitignored
+source .envrc                                     # or let direnv load it
 terraform init -backend-config="bucket=job-finder-503217-tfstate"
 terraform plan
 terraform apply

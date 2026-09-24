@@ -35,7 +35,8 @@ Create the token at **Account Settings → Tokens**, scoped to the team that own
 ```bash
 cd infra/vercel
 cp terraform.tfvars.example terraform.tfvars      # team_id, project_id, project_name, state_bucket
-export TF_VAR_vercel_api_token=...                 # never in terraform.tfvars
+cp .envrc.example .envrc && chmod 600 .envrc      # set the token; gitignored
+source .envrc                                     # or let direnv load it
 terraform init -backend-config="bucket=job-finder-503217-tfstate"
 terraform plan
 terraform apply

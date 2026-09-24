@@ -43,7 +43,8 @@ Axiom does not let you add permissions to an existing token. If a token is missi
 ```bash
 cd infra/axiom
 cp terraform.tfvars.example terraform.tfvars      # fill in datasets and alert_emails
-export TF_VAR_axiom_api_token=xaat-...             # never in terraform.tfvars
+cp .envrc.example .envrc && chmod 600 .envrc      # set the token; gitignored
+source .envrc                                     # or let direnv load it
 terraform init -backend-config="bucket=job-finder-503217-tfstate"
 terraform plan
 terraform apply
