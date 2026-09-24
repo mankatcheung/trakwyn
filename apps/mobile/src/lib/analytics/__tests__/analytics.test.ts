@@ -131,6 +131,38 @@ describe('mobile analytics', () => {
     resetTraceContext();
   });
 
+  // JEF-367: lets errors raised while offline be filtered out in PostHog.
+  it('says whether the device was connected, once that is known', () => {
+    const analytics = loadAnalytics('phc_test');
+    const { rememberNetworkConnected } =
+      require('../networkState') as typeof import('../networkState');
+    analytics.initAnalytics();
+
+    analytics.captureException(new Error('before NetInfo reported'));
+    rememberNetworkConnected(false);
+    analytics.captureException(new Error('offline'));
+
+    const [[, unknown], [, offline]] = mockPostHogInstance.captureException.mock.calls as [
+      unknown,
+      Record<string, unknown>,
+    ][];
+    expect(unknown).not.toHaveProperty('$network_connected');
+    expect(offline.$network_connected).toBe(false);
+  });
+
+  it('passes a network breadcrumb through the scrubber intact', () => {
+    const analytics = loadAnalytics('phc_test');
+    analytics.initAnalytics();
+
+    analytics.addBreadcrumb('Network changed', { connected: true, reachable: null, type: 'wifi' });
+
+    expect(mockPostHogInstance.addExceptionStep).toHaveBeenCalledWith('Network changed', {
+      connected: true,
+      reachable: null,
+      type: 'wifi',
+    });
+  });
+
   it('is a no-op rather than a crash when PostHog was never started', () => {
     const analytics = loadAnalytics(undefined);
 
