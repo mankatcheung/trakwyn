@@ -63,6 +63,58 @@ describe('web analytics', () => {
     expect(options.before_send).toBeTypeOf('function');
   });
 
+  it('turns on Core Web Vitals and nothing else with them (JEF-360)', async () => {
+    const analytics = await loadModule();
+    await analytics.initAnalytics();
+
+    const [, options] = mockPosthog.init.mock.calls[0] as [string, Record<string, unknown>];
+    expect(options.capture_performance).toEqual({
+      web_vitals: true,
+      web_vitals_allowed_metrics: ['LCP', 'INP', 'CLS', 'FCP'],
+      web_vitals_attribution: false,
+      network_timing: false,
+    });
+    // Enabling vitals must not have loosened either of these.
+    expect(options.autocapture).toBe(false);
+    expect(options.disable_session_recording).toBe(true);
+  });
+
+  it('reports a web-vitals event by route, with no application id or query string', async () => {
+    const analytics = await loadModule();
+    // After loadModule: it resets the registry, so this must be the same
+    // routeTemplate instance analytics.ts just imported.
+    const { setRouteResolver, resetRouteResolverForTests } =
+      await import('#/lib/analytics/routeTemplate');
+    setRouteResolver((pathname) =>
+      pathname.startsWith('/applications/') ? '/applications/$applicationId/' : undefined,
+    );
+    await analytics.initAnalytics();
+    const [, options] = mockPosthog.init.mock.calls[0] as [
+      string,
+      { before_send: (event: unknown) => { properties: Record<string, unknown> } },
+    ];
+
+    const pageUrl = 'http://localhost:3000/applications/abc123?tab=notes';
+    const sent = options.before_send({
+      event: '$web_vitals',
+      properties: {
+        token: KEY,
+        $current_url: pageUrl,
+        $pathname: '/applications/abc123',
+        $web_vitals_LCP_value: 1800,
+        $web_vitals_LCP_event: { name: 'LCP', value: 1800, $current_url: pageUrl },
+      },
+    });
+
+    expect(JSON.stringify(sent)).not.toContain('abc123');
+    expect(JSON.stringify(sent)).not.toContain('tab=notes');
+    expect(sent.properties.$current_url).toBe('http://localhost:3000/applications/$applicationId');
+    expect(sent.properties.$web_vitals_LCP_value).toBe(1800);
+    // The project key survives, or the event never reaches the project.
+    expect(sent.properties.token).toBe(KEY);
+    resetRouteResolverForTests();
+  });
+
   it('initialises once even when consent is re-granted', async () => {
     const analytics = await loadModule();
     await analytics.initAnalytics();
