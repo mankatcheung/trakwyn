@@ -28,6 +28,10 @@ appId: com.trakwyn.app
     id: 'form-role-input'
 - inputText: 'Backend Engineer'
 - hideKeyboard
+# The form is longer than a small phone's screen and tapOn does not scroll.
+- scrollUntilVisible:
+    element:
+      id: 'form-submit-button'
 - tapOn:
     id: 'form-submit-button'
 

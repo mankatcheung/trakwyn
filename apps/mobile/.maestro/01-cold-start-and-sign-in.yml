@@ -12,6 +12,10 @@ appId: com.trakwyn.app
 
 - tapOn:
     id: 'tab-settings'
+# Sign out is the last row of Settings, below the fold on a small phone.
+- scrollUntilVisible:
+    element:
+      id: 'settings-signout-button'
 - tapOn:
     id: 'settings-signout-button'
 - assertVisible:

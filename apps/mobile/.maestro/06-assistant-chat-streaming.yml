@@ -27,16 +27,22 @@ appId: com.trakwyn.app
     id: 'provider-picker-field'
 - tapOn:
     id: 'provider-option-custom'
+# The add-provider sheet is a bottom-anchored modal that does not scroll, so
+# the open keyboard covers every field below the one being typed into. Enter
+# closes it instead of hideKeyboard: on Android that is a back press, which
+# would dismiss the modal, while a single-line TextInput blurs on submit.
 - tapOn:
     id: 'llm-api-key-input'
 - inputText: 'fake-api-key'
+- pressKey: Enter
 - tapOn:
     id: 'llm-model-input'
 - inputText: 'fake-model'
+- pressKey: Enter
 - tapOn:
     id: 'llm-base-url-input'
 - inputText: 'http://localhost:3001/llm-test/fake'
-- hideKeyboard
+- pressKey: Enter
 - tapOn:
     id: 'save-llm-key-button'
 

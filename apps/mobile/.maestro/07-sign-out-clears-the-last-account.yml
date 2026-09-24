@@ -24,12 +24,20 @@ appId: com.trakwyn.app
     id: 'form-role-input'
 - inputText: 'Backend Engineer'
 - hideKeyboard
+# The form is longer than a small phone's screen and tapOn does not scroll.
+- scrollUntilVisible:
+    element:
+      id: 'form-submit-button'
 - tapOn:
     id: 'form-submit-button'
 - assertVisible: ${output.company}
 
 - tapOn:
     id: 'tab-settings'
+# Sign out is the last row of Settings, below the fold on a small phone.
+- scrollUntilVisible:
+    element:
+      id: 'settings-signout-button'
 - tapOn:
     id: 'settings-signout-button'
 - assertVisible:
