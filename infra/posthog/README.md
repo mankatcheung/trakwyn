@@ -23,6 +23,33 @@ The PostHog project the web and mobile apps report errors and product events to 
 
 These apply to the whole project, so to mobile too if it sends with the same key.
 
+### Why autocapture, replay and network capture stay off
+
+Trakwyn's screens hold exactly what a job seeker would not want in a third-party service: company names, job titles, salaries, interview notes, cover letters and AI assistant conversations. Each of these three features sends some of that to PostHog without any code choosing to.
+
+**Autocapture** records every click and form interaction automatically, with the text of the element clicked and some of the page around it. Clicking an application row could send "Senior Engineer · Acme Ltd · £85,000 · Interview Tuesday" as event data. The `before_send` scrubber does not make this safe. It removes known sensitive property names (`salary`, `email`, `token`…) and redacts anything shaped like an email, a JWT, a bearer token or a URL query string. A company name or a job title matches none of those patterns, so free-form page text passes straight through. The scrubber cleans events whose shape the code knows, not whatever text happens to be on the screen.
+
+**Session replay** records the page itself, its structure and every change to it, so PostHog can play the visit back like a video. That is everything on the screen, whether or not anyone interacts with it, which makes it strictly worse than autocapture. PostHog masks form inputs and password fields by default, but not ordinary page text: a salary in a table or a note on a card is recorded unless every such element is explicitly marked up, and one missed element leaks. The scrubber cannot help, because a page snapshot is not an event property. Mobile replay records the screen the same way. Turning replay on would need input and text masking configured first, as the comment in `apps/web/src/lib/analytics/analytics.ts` says.
+
+**Network capture** records the app's requests as part of a replay: the URL and timing, and optionally headers and request/response bodies.
+
+- Nearly every request goes to `/graphql`. Its request body carries the variables, including note text, salaries, chat messages and **the password on the login mutation**. The response carries the user's data back.
+- The mobile app sends its access token in the `Authorization` header, so recording headers would store working credentials in PostHog.
+- Timing alone tells you little here: with every operation on the same URL, it cannot say _which_ one was slow. The API's Axiom traces already answer that, named per operation (e.g. `POST /graphql query applications`).
+- It exists only to feed replay, so with replay off it adds nothing.
+
+**What that costs.** With these off, there is no history for questions nobody thought to ask in advance ("how many people clicked Archive last month?"), no UI-level funnels, and no rage- or dead-click detection. The app sends named events instead: every event is added deliberately to `ANALYTICS_EVENTS`, with non-identifying properties only. When a new question comes up, add an event for it. That costs a small PR and there is no data before it ships, but every event leaving the app was chosen on purpose and passes the scrubber. It also keeps the cookie banner honest: people agree to a known list of events, not "anything on the screen".
+
+**Where each is enforced:**
+
+| Feature         | Client                                                                               | Project (this root)                  |
+| --------------- | ------------------------------------------------------------------------------------ | ------------------------------------ |
+| Autocapture     | `autocapture: false` on web; `<PostHogProvider autocapture>` never mounted on mobile | Not settable (below). Check by hand. |
+| Session replay  | `disable_session_recording: true` on web; `enableSessionReplay: false` on mobile     | `session_recording_opt_in = false`   |
+| Network capture | `capture_performance.network_timing: false` on web                                   | `capture_performance_opt_in = false` |
+
+Replay and network capture are guarded twice: if a future client forgets its flag, the project setting still keeps them off, and a dashboard change shows up in `plan`. Autocapture relies on the client alone.
+
 ### What the provider cannot manage
 
 - **Click autocapture.** `posthog_project_settings` (provider `PostHog/posthog` 1.0.21) has no autocapture opt-out; the dashboard's "Autocapture" toggle is not exposed. The opt-out still lives only in the clients: `autocapture: false` in `apps/web/src/lib/analytics/analytics.ts`, and never mounting `<PostHogProvider autocapture>` on mobile. That is the single most important line in the web client, and it has no server-side backstop. Check the toggle by hand after any change to the project, and re-check this list when bumping the provider.
