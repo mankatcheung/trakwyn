@@ -1,5 +1,10 @@
 import { GraphQLClient, ClientError } from 'graphql-request';
-import { ACCESS_TOKEN_REFRESH_LEEWAY_S, API_URL, ERROR_CODES } from '../constants';
+import {
+  ACCESS_TOKEN_REFRESH_LEEWAY_S,
+  API_URL,
+  ERROR_CODES,
+  GQL_REQUEST_TIMEOUT_MS,
+} from '../constants';
 import { getTokens, setTokens, clearTokens, type TokenPair } from '../auth/tokenStorage';
 import { buildUserAgent } from '../lib/userAgent';
 import {
@@ -9,6 +14,7 @@ import {
   newTraceContext,
   rememberTraceId,
 } from '../lib/analytics';
+import { withRequestTimeout } from './requestTimeout';
 
 const REFRESH_TOKEN_MOBILE_MUTATION = `
   mutation RefreshTokenMobile($refreshToken: String!) {
@@ -104,6 +110,18 @@ const rawClient = new GraphQLClient(API_URL, {
   requestMiddleware: addTraceparent,
 });
 
+/**
+ * Every request this module sends, the refresh included, goes through here
+ * so none of them can hang on a dead connection (JEF-367). A refresh that
+ * times out is a TypeError like any other unreachable server, so it keeps
+ * the session rather than ending it.
+ */
+function send<T>(query: string, variables?: object, requestHeaders?: HeadersInit): Promise<T> {
+  return withRequestTimeout(query, GQL_REQUEST_TIMEOUT_MS, (signal) =>
+    rawClient.request<T>({ document: query, variables, requestHeaders, signal }),
+  );
+}
+
 type RefreshOutcome =
   | { status: 'refreshed'; tokens: TokenPair }
   /** The session is genuinely over: the server rejected the refresh token, or there is none to present. */
@@ -141,10 +159,9 @@ async function doRefresh(): Promise<RefreshOutcome> {
 
   let data: { refreshTokenMobile: TokenPair };
   try {
-    data = await rawClient.request<{ refreshTokenMobile: TokenPair }>(
-      REFRESH_TOKEN_MOBILE_MUTATION,
-      { refreshToken: tokens.refreshToken },
-    );
+    data = await send<{ refreshTokenMobile: TokenPair }>(REFRESH_TOKEN_MOBILE_MUTATION, {
+      refreshToken: tokens.refreshToken,
+    });
   } catch (error) {
     // Deleting a still-valid refresh token because the subway ate the request
     // costs the user the whole session — so only an actual rejection ends it.
@@ -263,12 +280,12 @@ export async function gqlRequest<T>(
 ): Promise<T> {
   const sentWith = refreshOnUnauthorized ? accessToken : await getValidAccessToken();
   try {
-    return await rawClient.request<T>(query, variables, authHeaders(sentWith));
+    return await send<T>(query, variables, authHeaders(sentWith));
   } catch (error) {
     if (!isUnauthorized(error) || !sentWith || !refreshOnUnauthorized) throw error;
 
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind !== 'retry') throw error;
-    return rawClient.request<T>(query, variables, authHeaders(recovery.token));
+    return send<T>(query, variables, authHeaders(recovery.token));
   }
 }

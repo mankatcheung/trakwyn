@@ -96,6 +96,12 @@ export async function streamChatMessage({
 }: StreamChatMessageParams): Promise<void> {
   const body = JSON.stringify({ conversationId, message });
 
+  // What a stream breadcrumb says about the reply so far (JEF-367): how long
+  // it ran and whether any text had arrived — never the text itself.
+  const startedAt = Date.now();
+  let receivedText = false;
+  const streamState = () => ({ elapsed_ms: Date.now() - startedAt, received_text: receivedText });
+
   // Counted at the send, not at a successful reply: how often the assistant
   // is reached for is the question, and a send that errors is part of it.
   // The message itself is never included.
@@ -136,8 +142,23 @@ export async function streamChatMessage({
 
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) return;
+      let chunk: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        chunk = await reader.read();
+      } catch (error) {
+        // The connection went mid-reply. A read the user cancelled is not a
+        // drop, and saying it was would make every "stop" look like a bad
+        // network.
+        if (!signal?.aborted) addBreadcrumb('Chat stream dropped', streamState());
+        throw error;
+      }
+      const { done, value } = chunk;
+      if (done) {
+        // The server always ends a reply with `done`; a stream that just
+        // stops was cut off somewhere between here and the model.
+        addBreadcrumb('Chat stream closed before done', streamState());
+        return;
+      }
 
       buffer += decoder.decode(value, { stream: true });
       buffer = buffer.replace(/\r\n/g, '\n');
@@ -151,11 +172,14 @@ export async function streamChatMessage({
 
         if (frame.event === 'delta') {
           const { text } = JSON.parse(frame.data) as { text: string };
+          receivedText = true;
           onDelta(text);
         } else if (frame.event === 'fallback') {
           onFallback?.(JSON.parse(frame.data) as { from: string; to: string });
         } else if (frame.event === 'error') {
           const err = JSON.parse(frame.data) as { code: string; message: string };
+          // The code only: the message can quote the user's own provider.
+          addBreadcrumb('Chat stream error frame', { code: err.code, ...streamState() });
           throw new ChatStreamError(err.message, err.code);
         } else if (frame.event === 'done') {
           return;

@@ -28,6 +28,7 @@ import {
   traceHeaders,
 } from '../../../../graphql/client';
 import expoFetch from '../expoFetch';
+import { addBreadcrumb } from '../../../../lib/analytics';
 
 // Cast away expo/fetch's real (large, internal) FetchResponse type — these
 // tests only need the ok/status/body.getReader() shape streamChatMessage
@@ -225,6 +226,97 @@ describe('streamChatMessage', () => {
 
       await expect(send()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
       expect(mockedRecover).not.toHaveBeenCalled();
+    });
+  });
+
+  // JEF-367: a reply that ends badly leaves a trail, but never its content.
+  describe('stream drop breadcrumbs', () => {
+    const mockedAddBreadcrumb = jest.mocked(addBreadcrumb);
+    const SECRET_REPLY = 'the salary is 95000';
+
+    const droppedStream = (frames: string[], failure: Error) => {
+      const response = encodedStreamResponse(frames);
+      const reader = response.body.getReader();
+      let reads = 0;
+      return {
+        ...response,
+        body: {
+          getReader: () => ({
+            read: () => (reads++ < frames.length ? reader.read() : Promise.reject(failure)),
+            releaseLock: jest.fn(),
+          }),
+        },
+      };
+    };
+
+    it('records a stream that closes without its done frame', async () => {
+      mockFetch.mockResolvedValueOnce(
+        encodedStreamResponse([`event: delta\ndata: {"text":"${SECRET_REPLY}"}\n\n`]),
+      );
+
+      await send();
+
+      expect(mockedAddBreadcrumb).toHaveBeenCalledWith('Chat stream closed before done', {
+        elapsed_ms: expect.any(Number),
+        received_text: true,
+      });
+    });
+
+    it('records nothing for a reply that ends with done', async () => {
+      mockFetch.mockResolvedValueOnce(helloStream());
+
+      await send();
+
+      expect(mockedAddBreadcrumb).not.toHaveBeenCalled();
+    });
+
+    it('records an error frame by its code, not its message', async () => {
+      mockFetch.mockResolvedValueOnce(
+        encodedStreamResponse([
+          'event: error\ndata: {"code":"LLM_PROVIDER_ERROR","message":"quota for key sk-abc exceeded"}\n\n',
+        ]),
+      );
+
+      await expect(send()).rejects.toBeInstanceOf(ChatStreamError);
+
+      expect(mockedAddBreadcrumb).toHaveBeenCalledWith('Chat stream error frame', {
+        code: 'LLM_PROVIDER_ERROR',
+        elapsed_ms: expect.any(Number),
+        received_text: false,
+      });
+      expect(JSON.stringify(mockedAddBreadcrumb.mock.calls)).not.toContain('sk-abc');
+    });
+
+    it('records a connection lost mid-reply, and still fails the send', async () => {
+      const failure = new TypeError('Network connection lost');
+      mockFetch.mockResolvedValueOnce(
+        droppedStream([`event: delta\ndata: {"text":"${SECRET_REPLY}"}\n\n`], failure),
+      );
+
+      await expect(send()).rejects.toBe(failure);
+
+      expect(mockedAddBreadcrumb).toHaveBeenCalledWith('Chat stream dropped', {
+        elapsed_ms: expect.any(Number),
+        received_text: true,
+      });
+      expect(JSON.stringify(mockedAddBreadcrumb.mock.calls)).not.toContain(SECRET_REPLY);
+    });
+
+    it('does not call a read the user cancelled a drop', async () => {
+      const controller = new AbortController();
+      controller.abort();
+      mockFetch.mockResolvedValueOnce(droppedStream([], new Error('Aborted')));
+
+      await expect(
+        streamChatMessage({
+          conversationId: 'conv-1',
+          message: 'hi',
+          onDelta: () => {},
+          signal: controller.signal,
+        }),
+      ).rejects.toThrow('Aborted');
+
+      expect(mockedAddBreadcrumb).not.toHaveBeenCalled();
     });
   });
 });

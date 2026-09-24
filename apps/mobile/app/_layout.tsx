@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeContext';
 import { LanguageProvider } from '../src/i18n/LanguageContext';
 import { NavigationBreadcrumbs } from '../src/components/NavigationBreadcrumbs';
+import { NetworkBreadcrumbs } from '../src/components/NetworkBreadcrumbs';
 import { ScreenErrorBoundary } from '../src/components/ScreenErrorBoundary';
 import { initAnalytics } from '../src/lib/analytics';
 import i18n from '../src/i18n';
@@ -122,6 +123,7 @@ export default function RootLayout() {
               <QueryClientProvider client={queryClient}>
                 <AuthProvider>
                   <NavigationBreadcrumbs />
+                  <NetworkBreadcrumbs />
                   <RootNavigator />
                 </AuthProvider>
               </QueryClientProvider>
