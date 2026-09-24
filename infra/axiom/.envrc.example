@@ -1,0 +1,3 @@
+# Copy to .envrc (gitignored) and fill in. Load with `source .envrc`, or let
+# direnv do it on `cd`. Never put the token in terraform.tfvars.
+export TF_VAR_axiom_api_token=xaat-...
