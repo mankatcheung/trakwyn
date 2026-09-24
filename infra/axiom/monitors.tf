@@ -200,9 +200,13 @@ resource "axiom_monitor" "web_server_error" {
   name        = "Web app server error"
   description = "The web app's Vercel function failed a server render (web.ssr.failed, phase load/render/shell) or a server function (web.server_fn.failed), or a request escaped the handler (web.request.failed). The email carries the event, path and scrubbed error; vercel.request_id finds the same request in Vercel's runtime log."
   type        = "MatchEvent"
-  apl_query   = <<-APL
+  # column_ifexists, not a bare `event`: Axiom validates the query against the
+  # dataset's schema on create, and a fresh trakwyn-web has no fields until
+  # its first error, so `event` alone fails the apply with "invalid field".
+  apl_query = <<-APL
     ['${var.web_dataset}']
-    | where event startswith "web." and event endswith ".failed"
+    | extend web_event = tostring(column_ifexists('event', ''))
+    | where web_event startswith "web." and web_event endswith ".failed"
   APL
 
   # No range_minutes/interval_minutes: see job_failed above.
