@@ -343,19 +343,19 @@ describe('tracing', () => {
       );
     });
 
-    it('names HTTP server spans after the GraphQL operation they served', async () => {
+    it('names HTTP server spans after the GraphQL or MCP operation they served', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';
       process.env[ENV.AXIOM_DATASET] = 'my-dataset';
       const mod = await loadTracingModule();
-      const { applyGraphQLOperationSpanName } =
-        await import('#src/infrastructure/observability/graphqlOperationSpanName.js');
+      const { applyOperationSpanName } =
+        await import('#src/infrastructure/observability/operationSpanName.js');
 
       mod.startObservability();
 
       expect(getNodeAutoInstrumentationsMock).toHaveBeenCalledWith(
         expect.objectContaining({
           '@opentelemetry/instrumentation-http': expect.objectContaining({
-            applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
+            applyCustomAttributesOnSpan: applyOperationSpanName,
           }),
         }),
       );

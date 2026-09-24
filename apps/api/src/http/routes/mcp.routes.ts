@@ -4,6 +4,8 @@ import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
 import { ROUTES } from '#src/http/constants.js';
+import { recordOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
+import { mcpOperationName } from '#src/interface-adapters/mcp/mcpOperationName.js';
 import { protectedResourceMetadataUrl } from './mcpOAuth.routes.js';
 
 /**
@@ -23,6 +25,12 @@ export function mcpRoutes(getCradle: () => Cradle): RouteDefinition[] {
       method: 'POST',
       path: ROUTES.MCP,
       handler: async (req, res) => {
+        // Names the trace `POST /mcp tools/call <tool>` rather than every one
+        // being `POST /mcp` (JEF-365). Before auth, so a burst of 401s is
+        // still tellable apart by what it was trying to call.
+        const operation = mcpOperationName(req.body);
+        if (operation) recordOperationSpanName(operation);
+
         const authHeader = req.headers.authorization;
         const rawToken =
           typeof authHeader === 'string' && authHeader.startsWith(AUTH_HEADER.BEARER_PREFIX)

@@ -16,7 +16,7 @@ import {
 // class, so import the named export instead.
 import { FastifyOtelInstrumentation } from '@fastify/otel';
 import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
-import { applyGraphQLOperationSpanName } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
+import { applyOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
 import { coldStartSpanAttributes } from '#src/infrastructure/observability/coldStart.js';
 
 /**
@@ -178,12 +178,12 @@ export function startObservability(): void {
         // One span per resolver that does real work (e.g. Query.applications)
         // rather than one per scalar field, and one per list field rather
         // than one per item.
-        // Every GraphQL request is `POST /graphql`; this renames its span
-        // after the operation — see graphqlOperationSpanName.ts. The
+        // Every GraphQL and MCP request shares one route; this renames its span
+        // after the operation — see operationSpanName.ts. The
         // incoming-span hook flags the first request a process serves as a
         // cold start — see coldStart.ts.
         '@opentelemetry/instrumentation-http': {
-          applyCustomAttributesOnSpan: applyGraphQLOperationSpanName,
+          applyCustomAttributesOnSpan: applyOperationSpanName,
           startIncomingSpanHook: coldStartSpanAttributes,
         },
         '@opentelemetry/instrumentation-graphql': {

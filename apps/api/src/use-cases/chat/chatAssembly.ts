@@ -18,7 +18,8 @@ import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperi
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import type { LLMMessage, LLMToolCall } from '#src/use-cases/ports/ILLMProvider.js';
-import { DomainError } from '#src/use-cases/errors/DomainError.js';
+import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
+import { DomainError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { compactForModel, projectChatToolResult } from '#src/use-cases/chat/chatToolProjection.js';
 import { CHAT } from '#src/use-cases/constants.js';
 
@@ -63,6 +64,7 @@ export interface ChatToolDeps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  toolCallObserver: IToolCallObserver;
 }
 
 /**
@@ -82,20 +84,28 @@ export async function executeChatTool(
   userId: string,
   deps: ChatToolDeps,
 ): Promise<unknown> {
-  try {
-    // Every result is compacted on the way out — see `compactForModel` for
-    // what that costs otherwise — including the error shape below, which
-    // is what the model sees when a tool fails.
-    return compactForModel(
-      projectChatToolResult(call.name, await dispatchChatTool(call, userId, deps)),
-    );
-  } catch (err) {
-    // A DomainError's message was written for a person ("Application not
-    // found") and helps the model recover. Anything else is an internal
-    // failure — a driver error, a stack fragment — whose message the model
-    // would happily paraphrase to the user.
-    return { error: err instanceof DomainError ? err.message : 'Tool call failed' };
-  }
+  return deps.toolCallObserver.observe({ surface: 'chat', name: call.name }, async (observed) => {
+    try {
+      // Every result is compacted on the way out — see `compactForModel` for
+      // what that costs otherwise — including the error shape below, which
+      // is what the model sees when a tool fails.
+      const result = compactForModel(
+        projectChatToolResult(call.name, await dispatchChatTool(call, userId, deps)),
+      );
+      observed.succeeded(result);
+      return result;
+    } catch (err) {
+      // Reported before it is swallowed: the model gets a reply either way,
+      // but a trace should still tell a bug from "Application not found"
+      // (JEF-365).
+      observed.failed(err);
+      // A DomainError's message was written for a person ("Application not
+      // found") and helps the model recover. Anything else is an internal
+      // failure — a driver error, a stack fragment — whose message the model
+      // would happily paraphrase to the user.
+      return { error: err instanceof DomainError ? err.message : 'Tool call failed' };
+    }
+  });
 }
 
 async function dispatchChatTool(
@@ -146,7 +156,9 @@ async function dispatchChatTool(
       return { responseTime, channels, interviewRounds, offers };
     }
     default:
-      return { error: `Unknown tool: ${call.name}` };
+      // Thrown rather than returned so the observer counts it as bad input;
+      // the model still reads the same `{ error: 'Unknown tool: …' }`.
+      throw new ValidationError(`Unknown tool: ${call.name}`);
   }
 }
 

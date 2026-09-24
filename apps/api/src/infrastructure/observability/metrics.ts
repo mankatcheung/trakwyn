@@ -2,6 +2,8 @@ import { metrics, type Counter, type Histogram } from '@opentelemetry/api';
 import { AXIOM } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
+import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
+import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { LlmProviderErrorKind } from '#src/use-cases/errors/DomainError.js';
 
 /**
@@ -33,6 +35,13 @@ export const METRICS = {
   EMAILS_SENT: 'trakwyn.email.sent',
   /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
   SECURITY_EVENTS: 'trakwyn.security.events',
+  /**
+   * One MCP or chat tool call — attributes: surface, tool, outcome (JEF-365).
+   * `tool` is a catalogue name or `unknown`, never what a client made up.
+   */
+  TOOL_CALLS: 'trakwyn.tool.calls',
+  /** A write tool refused to a read-scoped MCP token — attributes: tool, scope (JEF-365). */
+  MCP_TOOL_REFUSED: 'trakwyn.mcp.tool_refused',
   /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
   LLM_CALLS: 'trakwyn.llm.calls',
   /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
@@ -131,6 +140,10 @@ export interface IMetrics {
   recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void;
   /** A security event was written to the audit table (JEF-354). `type` is a bounded set. */
   recordSecurityEvent(type: SecurityEventType): void;
+  /** One MCP or chat tool call and how it ended (JEF-365). `tool` is already bounded to the catalogue. */
+  recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void;
+  /** A write tool refused to an MCP token whose scope does not cover it (JEF-365). */
+  recordMcpToolRefused(tool: string, scope: ApiTokenScope): void;
   /** One LLM call finished, succeeded or not — counted and timed (JEF-113). */
   recordLlmCall(call: LlmCallMetric): void;
   /** Tokens one LLM call used in one direction (JEF-113). */
@@ -148,6 +161,8 @@ export const noopMetrics: IMetrics = {
   recordOutboundUrlRefused: () => {},
   recordEmailSent: () => {},
   recordSecurityEvent: () => {},
+  recordToolCall: () => {},
+  recordMcpToolRefused: () => {},
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
 };
@@ -173,6 +188,8 @@ class OtelMetrics implements IMetrics {
   private outboundUrlRefused?: Counter;
   private emailsSent?: Counter;
   private securityEvents?: Counter;
+  private toolCalls?: Counter;
+  private mcpToolRefused?: Counter;
   private llmCalls?: Counter;
   private llmTokens?: Counter;
   private llmDuration?: Histogram;
@@ -242,6 +259,20 @@ class OtelMetrics implements IMetrics {
       description: 'Security events written to the audit table, by type',
     });
     this.securityEvents.add(1, { event_type: type });
+  }
+
+  recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void {
+    this.toolCalls ??= this.meter.createCounter(METRICS.TOOL_CALLS, {
+      description: 'MCP and chat tool calls, by surface, tool and outcome',
+    });
+    this.toolCalls.add(1, { surface, tool, outcome });
+  }
+
+  recordMcpToolRefused(tool: string, scope: ApiTokenScope): void {
+    this.mcpToolRefused ??= this.meter.createCounter(METRICS.MCP_TOOL_REFUSED, {
+      description: 'Write tools refused to an MCP token whose scope does not cover them',
+    });
+    this.mcpToolRefused.add(1, { tool, scope });
   }
 
   recordLlmCall({

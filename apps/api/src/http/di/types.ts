@@ -286,6 +286,7 @@ import type { CompareOffersUseCase } from '#src/use-cases/offers/CompareOffersUs
 
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
@@ -563,6 +564,7 @@ export interface Cradle {
   sendFollowUpRemindersUseCase: SendFollowUpRemindersUseCase;
   transactionManager: DrizzleTransactionManager;
   outboundUrlPolicy: IOutboundUrlPolicy;
+  toolCallObserver: IToolCallObserver;
   oidcTokenVerifier: IOidcTokenVerifier;
   llmApiKeyCipher: ILlmApiKeyCipher;
   userLlmProviderFactory: ILLMProviderFactory;

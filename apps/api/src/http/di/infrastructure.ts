@@ -42,6 +42,8 @@ import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitE
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
+import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
+import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
 
 import {
   EMAIL_PROVIDER,
@@ -134,6 +136,15 @@ export const infrastructure = {
   oidcTokenVerifier: asFunction(({ logger }: Cradle) => new GoogleOidcTokenVerifier({ logger }), {
     lifetime: Lifetime.SINGLETON,
   }),
+  // Every MCP and chat tool call passes through this (JEF-365). It is handed
+  // the whole catalogue, not a surface's subset, because it only looks up
+  // each tool's access tag and checks that a name is real. Spans are gated
+  // on `isObservabilityEnabled` like use-case tracing; the refusal log is not.
+  toolCallObserver: asFunction(
+    ({ logger }: Cradle) =>
+      new ToolCallObserver({ tools: TOOL_CATALOGUE, logger, tracing: isObservabilityEnabled }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   // asFunction for the same options-object reason as outboundUrlPolicy: the
   // factory's optional `traceLlmCalls`/`metrics` (JEF-113) are not

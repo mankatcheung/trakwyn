@@ -29,8 +29,12 @@ import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js'
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { API_TOKEN_SCOPE } from '#src/use-cases/constants.js';
 import { projectApplicationSummary } from '#src/use-cases/chat/chatToolProjection.js';
-import { JSON_RPC_ERROR, MCP } from '#src/interface-adapters/mcp/constants.js';
+import { JSON_RPC_ERROR, MCP, MCP_METHOD } from '#src/interface-adapters/mcp/constants.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
+import type {
+  IToolCallObserver,
+  ToolCallRecorder,
+} from '#src/use-cases/ports/IToolCallObserver.js';
 import { MCP_TOOLS } from '#src/interface-adapters/llm/toolCatalogue.js';
 
 // Re-exported for convenience: this adapter is where MCP's catalogue is
@@ -122,6 +126,7 @@ interface Deps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  toolCallObserver: IToolCallObserver;
 }
 
 /**
@@ -144,7 +149,7 @@ export class McpController {
 
     const { id, method, params } = body;
 
-    if (method === 'initialize') {
+    if (method === MCP_METHOD.INITIALIZE) {
       return {
         body: {
           jsonrpc: MCP.JSONRPC_VERSION,
@@ -159,7 +164,7 @@ export class McpController {
       };
     }
 
-    if (method === 'tools/list') {
+    if (method === MCP_METHOD.TOOLS_LIST) {
       // A read-only token isn't shown write tools at all. Enforcement still
       // happens in tools/call — hiding them is a convenience for the model,
       // not the security boundary.
@@ -168,7 +173,7 @@ export class McpController {
       return { body: { jsonrpc: MCP.JSONRPC_VERSION, id, result: { tools: advertise(visible) } } };
     }
 
-    if (method === 'tools/call') {
+    if (method === MCP_METHOD.TOOLS_CALL) {
       return { body: await this.callTool(id, params, userId, scope) };
     }
 
@@ -181,14 +186,31 @@ export class McpController {
     userId: string,
     scope: ApiTokenScope,
   ): Promise<unknown> {
-    const toolName = (params as { name?: string } | undefined)?.name;
+    const requested = (params as { name?: unknown } | undefined)?.name;
+    const toolName = typeof requested === 'string' ? requested : undefined;
+    // Wraps the whole call, refusal and argument checks included, so every
+    // tools/call is one span and one count however it ends (JEF-365).
+    return this.deps.toolCallObserver.observe(
+      { surface: 'mcp', name: toolName ?? '', tokenScope: scope },
+      (observed) => this.runTool(id, toolName, params, userId, scope, observed),
+    );
+  }
 
+  private async runTool(
+    id: McpRequest['id'],
+    toolName: string | undefined,
+    params: McpRequest['params'],
+    userId: string,
+    scope: ApiTokenScope,
+    observed: ToolCallRecorder,
+  ): Promise<unknown> {
     // The security boundary. tools/list already hides write tools from a
     // read-only token, but a client can call anything it likes regardless,
     // so refusal has to happen here — otherwise a token the UI and README
     // both describe as unable to change anything could mutate data (JEF-170).
     const tool = MCP_TOOLS.find((t) => t.name === toolName);
     if (tool?.access === 'write' && scope !== API_TOKEN_SCOPE.FULL) {
+      observed.refused(userId);
       return this.error(
         id,
         JSON_RPC_ERROR.INVALID_PARAMS,
@@ -220,7 +242,7 @@ export class McpController {
         }
         case 'get_application':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getApplicationUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -229,7 +251,7 @@ export class McpController {
           break;
         case 'list_notes':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getNotesUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -238,7 +260,7 @@ export class McpController {
           break;
         case 'list_contacts':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getContactsUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -247,7 +269,7 @@ export class McpController {
           break;
         case 'list_interview_rounds':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getInterviewRoundsUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -265,7 +287,7 @@ export class McpController {
           break;
         case 'list_documents':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getDocumentsUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -274,7 +296,7 @@ export class McpController {
           break;
         case 'list_offers':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getOffersUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -283,7 +305,7 @@ export class McpController {
           break;
         case 'list_activity':
           if (!toStr(args.applicationId)) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.getActivityLogsUseCase.execute({
             applicationId: toStr(args.applicationId)!,
@@ -310,7 +332,7 @@ export class McpController {
           const company = toStr(args.company);
           const role = toStr(args.role);
           if (!company || !role) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'company and role are required');
+            return this.invalid(observed, id, 'company and role are required');
           }
           result = await this.deps.createApplicationUseCase.execute({
             userId,
@@ -328,7 +350,7 @@ export class McpController {
         case 'update_application': {
           const applicationId = toStr(args.applicationId);
           if (!applicationId) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.updateApplicationUseCase.execute({
             userId,
@@ -348,11 +370,7 @@ export class McpController {
           const applicationId = toStr(args.applicationId);
           const content = toStr(args.content);
           if (!applicationId || !content) {
-            return this.error(
-              id,
-              JSON_RPC_ERROR.INVALID_PARAMS,
-              'applicationId and content are required',
-            );
+            return this.invalid(observed, id, 'applicationId and content are required');
           }
           result = await this.deps.createNoteUseCase.execute({ userId, applicationId, content });
           break;
@@ -360,7 +378,7 @@ export class McpController {
         case 'create_interview_round': {
           const applicationId = toStr(args.applicationId);
           if (!applicationId) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'applicationId is required');
+            return this.invalid(observed, id, 'applicationId is required');
           }
           result = await this.deps.createInterviewRoundUseCase.execute({
             userId,
@@ -374,7 +392,7 @@ export class McpController {
         }
         case 'create_skill': {
           const name = toStr(args.name);
-          if (!name) return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'name is required');
+          if (!name) return this.invalid(observed, id, 'name is required');
           result = await this.deps.createSkillUseCase.execute({
             userId,
             name,
@@ -385,7 +403,7 @@ export class McpController {
         }
         case 'update_skill': {
           const skillId = toStr(args.skillId);
-          if (!skillId) return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'skillId is required');
+          if (!skillId) return this.invalid(observed, id, 'skillId is required');
           result = await this.deps.updateSkillUseCase.execute({
             id: skillId,
             userId,
@@ -402,9 +420,9 @@ export class McpController {
           // junk, which would otherwise fail confusingly further down.
           const startDate = toDate(args.startDate);
           if (!institution || !startDate) {
-            return this.error(
+            return this.invalid(
+              observed,
               id,
-              JSON_RPC_ERROR.INVALID_PARAMS,
               'institution and a valid ISO 8601 startDate are required',
             );
           }
@@ -422,7 +440,7 @@ export class McpController {
         case 'update_education': {
           const educationId = toStr(args.educationId);
           if (!educationId) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'educationId is required');
+            return this.invalid(observed, id, 'educationId is required');
           }
           result = await this.deps.updateEducationUseCase.execute({
             id: educationId,
@@ -441,9 +459,9 @@ export class McpController {
           const title = toStr(args.title);
           const startDate = toDate(args.startDate);
           if (!company || !title || !startDate) {
-            return this.error(
+            return this.invalid(
+              observed,
               id,
-              JSON_RPC_ERROR.INVALID_PARAMS,
               'company, title and a valid ISO 8601 startDate are required',
             );
           }
@@ -461,7 +479,7 @@ export class McpController {
         case 'update_work_experience': {
           const workExperienceId = toStr(args.workExperienceId);
           if (!workExperienceId) {
-            return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, 'workExperienceId is required');
+            return this.invalid(observed, id, 'workExperienceId is required');
           }
           result = await this.deps.updateWorkExperienceUseCase.execute({
             id: workExperienceId,
@@ -476,11 +494,18 @@ export class McpController {
           break;
         }
         default:
+          observed.invalidParams();
           return this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Unknown tool: ${toolName}`);
       }
 
-      return { jsonrpc: MCP.JSONRPC_VERSION, id, result: this.text(result) };
+      // Compact, not pretty-printed: this goes straight into an LLM's context
+      // window, where two-space indentation on every line of a page of results
+      // is pure token cost with no reader to benefit from it.
+      const text = JSON.stringify(result);
+      observed.succeeded(text);
+      return { jsonrpc: MCP.JSONRPC_VERSION, id, result: this.text(text) };
     } catch (err) {
+      observed.failed(err);
       const code = (err as { code?: string }).code;
       const message = err instanceof Error ? err.message : 'Internal error';
       const isClientError = code === ERROR_CODES.NOT_FOUND || code === ERROR_CODES.FORBIDDEN;
@@ -489,11 +514,14 @@ export class McpController {
     }
   }
 
-  private text(data: unknown) {
-    // Compact, not pretty-printed: this goes straight into an LLM's context
-    // window, where two-space indentation on every line of a page of results
-    // is pure token cost with no reader to benefit from it.
-    return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+  private text(text: string) {
+    return { content: [{ type: 'text', text }] };
+  }
+
+  /** An argument check failed: reported to the observer, then answered as INVALID_PARAMS. */
+  private invalid(observed: ToolCallRecorder, id: McpRequest['id'], message: string) {
+    observed.invalidParams();
+    return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, message);
   }
 
   private error(id: McpRequest['id'], code: number, message: string) {

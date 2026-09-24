@@ -11,6 +11,8 @@ import type {
 } from '#src/infrastructure/observability/metrics.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
+import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
+import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
 
 export interface FailOpenEvent {
   component: MetricComponent;
@@ -38,6 +40,17 @@ export interface EmailSentEvent {
   outcome: EmailOutcome;
 }
 
+export interface ToolCallEvent {
+  surface: ToolSurface;
+  tool: string;
+  outcome: ToolCallOutcome;
+}
+
+export interface McpToolRefusedEvent {
+  tool: string;
+  scope: ApiTokenScope;
+}
+
 export interface LlmTokensEvent {
   provider: string;
   direction: LlmTokenDirection;
@@ -54,6 +67,8 @@ export interface FakeMetrics extends IMetrics {
   outboundUrlRefused: OutboundUrlRefusedEvent[];
   emailsSent: EmailSentEvent[];
   securityEvents: SecurityEventType[];
+  toolCalls: ToolCallEvent[];
+  mcpToolRefused: McpToolRefusedEvent[];
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
 }
@@ -73,6 +88,8 @@ export function makeFakeMetrics(): FakeMetrics {
     outboundUrlRefused: [],
     emailsSent: [],
     securityEvents: [],
+    toolCalls: [],
+    mcpToolRefused: [],
     llmCalls: [],
     llmTokens: [],
     recordCacheHit: () => {
@@ -101,6 +118,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordSecurityEvent: (type) => {
       fake.securityEvents.push(type);
+    },
+    recordToolCall: (surface, tool, outcome) => {
+      fake.toolCalls.push({ surface, tool, outcome });
+    },
+    recordMcpToolRefused: (tool, scope) => {
+      fake.mcpToolRefused.push({ tool, scope });
     },
     recordLlmCall: (call) => {
       fake.llmCalls.push(call);

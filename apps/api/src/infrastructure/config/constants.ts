@@ -190,7 +190,7 @@ export const AXIOM = {
  *
  * Kept as stable dotted identifiers on an `event` field rather than left to
  * the wording of the message, so an Axiom monitor can key on the event
- * without matching prose that a later edit would quietly break. A fixed pair,
+ * without matching prose that a later edit would quietly break. A fixed set,
  * unlike the per-job `job.<name>.completed` names `runScheduledJob` builds
  * from the job it was handed (JEF-352), which is why these are declared and
  * those are not.
@@ -198,6 +198,8 @@ export const AXIOM = {
 export const SECURITY_EVENTS = {
   RATE_LIMITED: 'security.rate_limited',
   OUTBOUND_URL_REFUSED: 'security.outbound_url.refused',
+  /** A read-scoped MCP token called a write tool and was refused (JEF-365). */
+  MCP_TOOL_REFUSED: 'mcp.tool.refused',
 } as const;
 
 /**
@@ -208,6 +210,19 @@ export const TRACING = {
   ERROR_CODE_ATTRIBUTE: 'app.error.code',
   PROCESS_UPTIME_ATTRIBUTE: 'app.process_uptime_ms',
   STARTUP_PROBE_PATH: '/health',
+  /**
+   * One span per MCP or chat tool call (JEF-365), named `<surface>.tool <name>`.
+   * The shape of the call only: never its arguments or its result.
+   */
+  TOOL_SPAN_SUFFIX: '.tool',
+  TOOL_NAME_ATTRIBUTE: 'app.tool.name',
+  TOOL_ACCESS_ATTRIBUTE: 'app.tool.access',
+  TOOL_SURFACE_ATTRIBUTE: 'app.tool.surface',
+  TOOL_OUTCOME_ATTRIBUTE: 'app.tool.outcome',
+  TOOL_RESULT_BYTES_ATTRIBUTE: 'app.tool.result_bytes',
+  MCP_TOKEN_SCOPE_ATTRIBUTE: 'app.mcp.token_scope',
+  /** Stands in for a tool name that is not in the catalogue, so a client cannot mint span names or metric labels. */
+  UNKNOWN_TOOL: 'unknown',
 } as const;
 
 /** Email provider (Brevo) defaults. */
