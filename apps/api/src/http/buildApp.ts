@@ -29,6 +29,11 @@ import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
 import { setRootLogger } from '#src/infrastructure/observability/rootLogger.js';
 import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
 import {
+  INBOUND_TRACEPARENT_MESSAGE,
+  inboundTraceparentFields,
+  isInboundTraceparentLoggingEnabled,
+} from '#src/infrastructure/observability/inboundTraceparent.js';
+import {
   fastifyOtelInstrumentation,
   flushObservability,
   isObservabilityEnabled,
@@ -82,6 +87,20 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     // hooks have ended the request span (they're onSend-hook based), so the
     // flush captures complete spans.
     fastify.addHook('onResponse', () => flushObservability());
+
+    // JEF-353, temporary. The SDK samples ParentBased, so an inbound
+    // traceparent's sampled flag decides whether a trace is recorded at all,
+    // and Cloud Run's front end injects one. A trace dropped that way leaves
+    // nothing behind, so the only way to know how many we lose is to log what
+    // arrives. `warn`, not `info`: production pino runs at `warn`
+    // (`index.ts`), and this hook logs through Fastify's logger directly
+    // rather than through `PinoLogger`'s pinned `info` child.
+    if (isInboundTraceparentLoggingEnabled()) {
+      fastify.addHook('onRequest', (request, _reply, done) => {
+        request.log.warn(inboundTraceparentFields(request.headers), INBOUND_TRACEPARENT_MESSAGE);
+        done();
+      });
+    }
   }
 
   await fastify.register(corsPlugin);

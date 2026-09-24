@@ -13,4 +13,11 @@ plain_env = {
   VAPID_SUBJECT          = "mailto:noreply@trakwyn.com"
   AXIOM_DATASET          = "trakwyn-api"
   AXIOM_METRICS_DATASET  = "trakwyn-api-metrics"
+
+  # Temporary diagnostic (JEF-353): one warn line per request carrying the
+  # inbound traceparent and its sampled flag. Uncomment, apply, collect over a
+  # representative window, then comment out again — an env change here makes a
+  # new revision without an image build, so switching it on and off costs no
+  # CI deploy.
+  # LOG_INBOUND_TRACEPARENT = "true"
 }
