@@ -175,7 +175,7 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
 
     // Whether the browser believed it had a session going into this. The
     // hint cookie and the refresh disagreeing is the fingerprint of a
-    // COOKIE_DOMAIN or CORS_ORIGIN misconfiguration (see CLAUDE.md, Auth):
+    // COOKIE_DOMAIN or CORS_ORIGIN misconfiguration (see apps/api/CLAUDE.md, Auth):
     // login "succeeds", the hint cookie is readable, and the real HttpOnly
     // cookies never arrive — which looks to the user like being signed out
     // at random and looks like nothing at all on the server.
