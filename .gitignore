@@ -33,7 +33,7 @@ graphify-out/
 # agent scratch
 .agents/
 
-# Terraform (infra/gcp, infra/axiom) — state lives in GCS; tfvars hold per-install config
+# Terraform (infra/*) — state lives in GCS; tfvars hold per-install config
 .terraform/
 *.tfstate
 *.tfstate.*

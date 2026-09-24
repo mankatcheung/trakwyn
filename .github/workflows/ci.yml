@@ -24,16 +24,14 @@ name: CI & Deploy
 #      GCP_DEPLOYER_SA (deployer_service_account). No GCP key is stored:
 #      deploy-api authenticates through Workload Identity Federation, which
 #      only accepts workflows running on this repository's main branch.
-#   2. apps/web: create a Vercel project (from repo root, `vercel link` in
-#      apps/web). Do NOT connect it to this GitHub repo in the Vercel
-#      dashboard (Settings -> Git) — leaving it disconnected stops Vercel's
-#      own integration from also deploying. Set its Root Directory to
-#      apps/web and its production env vars in the Vercel dashboard.
-#   3. `vercel link` writes .vercel/project.json (gitignored) containing
-#      orgId/projectId — copy those into the repo secrets below.
-#   4. Create a Vercel access token (https://vercel.com/account/tokens) and
-#      add repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_WEB_PROJECT_ID.
-#   5. Add repository secrets (in GitHub Settings > Secrets > Actions):
+#   2. apps/web: the Vercel project's settings, domains and production env
+#      vars are Terraform (infra/vercel/, after infra/posthog/, JEF-363);
+#      follow infra/vercel/README.md. It stays disconnected from this repo
+#      on purpose, so only deploy-web deploys it.
+#   3. Add repo secrets for deploy-web: VERCEL_TOKEN (a Vercel access
+#      token), VERCEL_ORG_ID and VERCEL_WEB_PROJECT_ID (the team_id and
+#      project_id in infra/vercel's terraform.tfvars).
+#   4. Add repository secrets (in GitHub Settings > Secrets > Actions):
 #      PRODUCTION_DATABASE_URL — the production Neon Postgres *direct*
 #        (non-pooled) connection string, with ?sslmode=require
 #      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
@@ -101,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        root: [infra/gcp, infra/axiom]
+        root: [infra/gcp, infra/axiom, infra/posthog, infra/vercel]
     defaults:
       run:
         working-directory: ${{ matrix.root }}
@@ -116,8 +114,8 @@ jobs:
       # No backend and no credentials: validate checks the configuration
       # against the provider schema only. `plan` needs GCP access, which
       # Workload Identity Federation grants to main-branch workflows alone,
-      # so it is run by hand (infra/gcp/README.md). infra/axiom's plan also
-      # needs an Axiom token, which CI deliberately does not hold.
+      # so it is run by hand (infra/gcp/README.md). The other roots also
+      # need their provider token, which CI deliberately does not hold.
       - run: terraform init -backend=false -input=false
       - run: terraform validate
 

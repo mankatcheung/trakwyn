@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
+# the Vercel token comes from the environment (TF_VAR_vercel_api_token).
+team_id      = "team_xxxxxxxxxxxxxxxxxxxxxxxx" # VERCEL_ORG_ID
+project_id   = "prj_xxxxxxxxxxxxxxxxxxxxxxxxxxxx" # VERCEL_WEB_PROJECT_ID
+project_name = "trakwyn-web"
+state_bucket = "<project-id>-tfstate"
+
+# First apply only: adopt the env vars already set in the dashboard. List
+# their IDs as README.md shows, then empty this map once they are in state.
+# env_var_import_ids = {
+#   VITE_API_URL      = "..."
+#   VITE_POSTHOG_HOST = "..."
+#   VITE_POSTHOG_KEY  = "..."
+# }
+
+# Defaults, shown for reference.
+# production_domain = "www.trakwyn.com"
+# apex_domain       = "trakwyn.com" # null if the project has no apex domain
+# api_url           = "https://api.trakwyn.com/graphql"
+# posthog_host      = "https://eu.i.posthog.com"
