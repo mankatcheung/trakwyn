@@ -24,7 +24,7 @@ export interface TokenPair {
 // exposure apps/web moved to HttpOnly cookies to remove. Shipping this
 // target means switching it to the cookie mutations (`login`/`refreshToken`
 // with `credentials: 'include'`) rather than storing tokens at all — see
-// CLAUDE.md, Mobile.
+// apps/mobile/CLAUDE.md, Auth transport.
 const storage = {
   getItem: (key: string): Promise<string | null> =>
     Platform.OS === 'web'

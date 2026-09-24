@@ -1,5 +1,6 @@
-import type { PostHog } from 'posthog-js';
-import { POSTHOG_EU_HOST, POSTHOG_PENDING_EXCEPTION_LIMIT } from '#/constants';
+import type { CaptureResult, PostHog } from 'posthog-js';
+import { POSTHOG_EU_HOST, POSTHOG_PENDING_EXCEPTION_LIMIT, WEB_VITALS_METRICS } from '#/constants';
+import { templateEventUrls } from './routeTemplate';
 import { scrubEvent, scrubValue } from './scrub';
 import { getLastTraceId } from './traceContext';
 
@@ -112,12 +113,34 @@ async function loadAndInit(): Promise<PostHog | null> {
     // Anonymous events cost nothing against the person-profile allowance and
     // are all this app needs: we never identify a user to PostHog.
     person_profiles: 'never',
-    before_send: scrubEvent,
+    // Core Web Vitals from real sessions (JEF-360). Set here rather than
+    // left to the project's remote toggle, so what this app collects is
+    // decided in review. Attribution is off: it adds CSS selectors of the
+    // elements involved and a second, larger bundle, and the question this
+    // answers is which route is slow, not which element. `network_timing`
+    // only feeds session replay, which stays off.
+    capture_performance: {
+      web_vitals: true,
+      web_vitals_allowed_metrics: [...WEB_VITALS_METRICS],
+      web_vitals_attribution: false,
+      network_timing: false,
+    },
+    before_send: beforeSend,
   });
 
   client = posthog;
   flushPending(posthog);
   return posthog;
+}
+
+/**
+ * Every event's last stop: page URLs become route templates
+ * (routeTemplate.ts), then the scrubber runs over the result. Templating
+ * goes first so the scrubber's clipping can never cut a URL before the id
+ * in it has been replaced.
+ */
+function beforeSend(event: CaptureResult | null): CaptureResult | null {
+  return scrubEvent(templateEventUrls(event));
 }
 
 function flushPending(posthog: PostHog): void {

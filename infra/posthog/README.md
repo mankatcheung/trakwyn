@@ -18,7 +18,7 @@ The PostHog project the web and mobile apps report errors and product events to 
 | `capture_performance_opt_in`    | `false` | Network capture only feeds replay, and would record request bodies.                                |
 | `heatmaps_opt_in`               | `false` | Records where every click lands, which is the exposure autocapture was turned off to avoid.        |
 | `surveys_opt_in`                | `false` | Injects PostHog UI into the page; nothing uses it.                                                 |
-| `autocapture_web_vitals_opt_in` | `false` | Unused; every event is one a call site names (`ANALYTICS_EVENTS`).                                 |
+| `autocapture_web_vitals_opt_in` | `true`  | JEF-360 reports LCP, INP, CLS and FCP, with URLs rewritten to route templates and attribution off. |
 | `autocapture_exceptions_opt_in` | `true`  | This is the error reporting PostHog is here for. Exceptions pass the `before_send` scrubber first. |
 
 These apply to the whole project, so to mobile too if it sends with the same key.

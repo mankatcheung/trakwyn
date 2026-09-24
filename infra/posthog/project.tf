@@ -49,9 +49,12 @@ resource "posthog_project_settings" "web" {
   # Surveys inject PostHog UI into the page; nothing uses them.
   surveys_opt_in = false
 
-  # Web vitals are not used by anything, and every event is one a call site
-  # named on purpose (ANALYTICS_EVENTS).
-  autocapture_web_vitals_opt_in = false
+  # On: the web client reports LCP, INP, CLS and FCP as $web_vitals (JEF-360,
+  # `capture_performance.web_vitals` in apps/web/src/lib/analytics). URLs on
+  # those events are rewritten to route templates before they leave, and
+  # attribution (which element was slow) is off. The client setting wins
+  # over this one; this keeps the project stating the same intent.
+  autocapture_web_vitals_opt_in = true
 
   # On: this is the error reporting JEF-349 set PostHog up for. Both clients
   # pass through the before_send scrubber before an exception leaves.

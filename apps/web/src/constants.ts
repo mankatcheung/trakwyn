@@ -54,3 +54,11 @@ export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
  * load isn't lost, not to replay a whole session once consent lands.
  */
 export const POSTHOG_PENDING_EXCEPTION_LIMIT = 10;
+
+/**
+ * The Core Web Vitals reported to PostHog (JEF-360) — every metric its SDK
+ * supports, stated here so the set is decided in review rather than by the
+ * project's remote setting. TTFB is not among them: posthog-js does not
+ * report it.
+ */
+export const WEB_VITALS_METRICS = ['LCP', 'INP', 'CLS', 'FCP'] as const;

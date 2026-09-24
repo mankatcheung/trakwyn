@@ -1,183 +1,127 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code in this repository. Subsystem detail lives next to the code and loads when you work there:
+
+- `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, database, observability, use-case spans, deployment and testing.
+- `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
+- `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
+- Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings) and `infra/vercel/README.md` (web project, domains, env vars; apply after `infra/posthog`).
 
 ## Commands
 
-All commands run from the monorepo root via Turborepo unless noted.
+Run from the monorepo root (Turborepo) unless noted.
 
 ```bash
-# Development (runs both apps concurrently)
-pnpm dev
-
-# Build all packages
+pnpm dev                 # api + web
 pnpm build
-
-# Type-check all packages
 pnpm typecheck
-
-# Run all tests
-pnpm test
-
-# Run tests for a single app
-pnpm --filter @trakwyn/api test
-pnpm --filter @trakwyn/web test
-
-# Run a single test file (from the app directory)
-cd apps/api && pnpm test -- src/__tests__/application/auth/LoginUseCase.test.ts
-
-# Lint / format
+pnpm test                # or: pnpm --filter @trakwyn/api test / @trakwyn/web
+cd apps/api && pnpm test -- src/__tests__/application/auth/LoginUseCase.test.ts  # single file
 pnpm lint
 pnpm format
 
-# Database (runs against apps/api)
-pnpm db:generate   # generate a migration SQL file after schema.ts changes
-pnpm db:migrate    # apply pending migrations (src/migrate.ts, not drizzle-kit migrate)
-cd apps/api && pnpm db:studio  # open Drizzle Studio (stop `pnpm dev` first when on PGlite)
+pnpm db:generate         # migration SQL after schema.ts changes
+pnpm db:migrate          # apply migrations (src/migrate.ts, not drizzle-kit migrate)
+cd apps/api && pnpm db:studio   # stop `pnpm dev` first when on PGlite
 
-# GraphQL codegen (requires API server running at localhost:3001)
-cd apps/web && pnpm codegen
+cd apps/web && pnpm codegen     # needs the API at localhost:3001
 ```
 
 ## Architecture
 
-**Monorepo layout:** `apps/api` (backend), `apps/web` (frontend), `packages/ui` (`@trakwyn/ui` — shared React component library, styled with Tailwind CSS v4 and developed/tested in isolation via Storybook; consumed by `apps/web`). API types flow through GraphQL codegen rather than a shared package.
+**Monorepo:**
 
-### API (`apps/api`) — Clean Architecture + GraphQL
+- `apps/api`: Fastify + Mercurius + Pothos GraphQL server.
+- `apps/web`: TanStack Start.
+- `apps/mobile`: Expo.
+- `apps/extension`: the "Trakwyn Clipper" browser extension.
+- `apps/cli`: `@trakwyn/cli`.
+- `packages/ui`: `@trakwyn/ui`, a Tailwind v4 component library developed in Storybook.
 
-The API is a **Fastify + Mercurius + Pothos** GraphQL server following Clean Architecture layers:
+API types reach the clients through GraphQL codegen, not a shared package.
+
+**API layers** (Clean Architecture, `apps/api/src/`):
 
 ```
-domain/           Pure domain entities (no dependencies)
-use-cases/        Business logic + repository/storage port interfaces
-  ports/          IApplicationRepository, IUserRepository, IStorageProvider, etc.
-interface-adapters/
-  resolvers/      GraphQL resolvers — call use cases via DI container
-  mappers/        Convert Drizzle rows → domain entities
-infrastructure/
-  db/             Drizzle client + schema.ts; Drizzle repository implementations
-  storage/        LocalStorageProvider (dev) / VercelBlobStorageProvider (prod)
-http/
-  schema/         Pothos schema builder, types, queries, mutations
-  plugins/        Fastify plugins (auth/JWT, CORS)
-  container.ts    Awilix DI container — re-exports buildContainer()/Cradle
-  di/             DI registrations split by layer/domain (see container.ts)
-  context.ts      GraphQL context shape (user, diScope, request, reply)
+domain/              Pure entities, no dependencies
+use-cases/           Business logic; ports/ holds repository/provider interfaces
+interface-adapters/  GraphQL resolvers, mappers (Drizzle row → domain), MCP, LLM tool catalogue
+infrastructure/      Drizzle db + repositories, storage, email, cache, observability, net
+http/                Pothos schema (types/ queries/ mutations/ composed in schema/index.ts),
+                     adapters/fastify/ (plugins, incl. corsPlugin.ts), routes, errors, di/, context.ts
 ```
 
-**Dependency injection:** Awilix (`@fastify/awilix`) wires everything. Repositories and resolvers are `SINGLETON`; use cases are `TRANSIENT`. `container.ts` is a thin re-export; `http/di/index.ts` (`buildContainer`) composes typed registration modules split across `http/di/*.ts` (infrastructure, repositories, rate-limiters, mappers, resolvers) and `http/di/use-cases/*.ts` (one file per domain). The `Cradle` interface lives in `http/di/types.ts`.
-
-**Auth:** All clients authenticate via the same HttpOnly cookies (`trakwyn_access_token`, `trakwyn_refresh_token`) — `setAuthCookies()`/`clearAuthCookies()` (`apps/api/src/http/schema/types/AuthPayloadType.ts`) are called from every auth entry point (`login`, `register`, `loginWithTotp`, `refreshToken`, `reauthenticate`, `logout`, the OAuth callback, delete-account). `buildGraphQLContext.ts` still falls back to an `Authorization: Bearer <token>` header if no cookie is present (`cookieToken ?? bearerToken`), kept for non-cookie clients (e.g. API tokens), but the web app relies solely on the cookie — `apps/web/src/graphql/client.ts`'s `gqlClient` sets `credentials: 'include'` and no longer tracks a token in JS memory. The browser extension reads the same access-token cookie directly via `chrome.cookies.get()`, unaffected by same-origin restrictions since it shares the API's domain.
-
-In production web and api are deployed on subdomains of the same purchased domain (e.g. `www.trakwyn.com` / `api.trakwyn.com`), which the browser treats as the same _site_ — cookies are still `SameSite=None; Secure` (harmless same-site, and avoids relying on same-site classification). **Deploy prerequisite:** `COOKIE_DOMAIN` must be set to the shared registrable domain with a leading dot (e.g. `.trakwyn.com`), or `setAuthCookies()`/`clearAuthCookies()` (`apps/api/src/http/schema/types/AuthPayloadType.ts`) default to host-only cookies scoped to the api subdomain alone — the HttpOnly tokens still work for direct API calls, but the non-HttpOnly `trakwyn_logged_in` hint cookie (below) becomes invisible to `document.cookie` on the web subdomain, breaking client-side session detection even though login "succeeds." (Historical note: when web/api lived on unrelated domains like distinct `*.vercel.app` subdomains — different _sites_ — `SameSite=None` was required just to get cookies attached cross-site at all, and was additionally at the mercy of browsers like Safari's ITP or Chrome's third-party-cookie phase-out blocking/partitioning them regardless of `SameSite` config.)
-
-There's also a third, non-HttpOnly `trakwyn_logged_in` hint cookie (`COOKIES.LOGGED_IN`), set alongside the real ones with the refresh token's lifetime and sharing the same `COOKIE_DOMAIN`. Since the web app can never read the actual (HttpOnly) tokens, this is what protected/auth-gated routes (`/`, `/login`, `/_authenticated`) check client-side via `hasSessionCookie()` (`apps/web/src/graphql/client.ts`) — a synchronous `document.cookie` read, no network call. It only needs to be directionally correct: the real access-token cookie is attached automatically by the browser on every request, and `gqlClient`'s `responseMiddleware` silently refreshes and retries on an `UNAUTHORIZED` response regardless of what the hint said. Routes set `ssr: false` so this check runs client-side — TanStack Start does not re-run `beforeLoad` on initial hydration unless a route opts out of SSR this way. **Deploy prerequisite:** the API's `CORS_ORIGIN` env var must contain the web app's exact deployed origin — `corsPlugin.ts` validates `credentials:true` requests against it, and a mismatch silently breaks cookie delivery regardless of anything else being correct.
-
-**Session revocation (JEF-164):** access-token verification is otherwise stateless (signature + expiry only), so a revoked session's already-issued access tokens would keep working until their own 15-minute expiry. Every revocation path therefore also writes the `sid` to a blocklist that `AuthenticateRequestUseCase` checks on each request. The write side is centralized in `BlocklistingSessionRepository` — a decorator over `DrizzleSessionRepository`, following the same inner/outer DI shape as the `Cached*Repository` family — so all four revocation paths (`RevokeSessionUseCase`, `RevokeOtherSessionsUseCase`, `ResetPasswordUseCase`, and `RotateRefreshTokenUseCase`'s reuse-detected branch) are covered without any call site having to remember. Backed by Redis in production and an in-process map in dev, selected by the same `CACHE_PROVIDER` toggle as the cache and rate limiter. **It fails open by design:** any backing-store error resolves to "not revoked" and the request proceeds, so a Redis outage degrades to the old up-to-15-minute revocation delay rather than unauthenticating the entire API — the DB `revokedAt` remains the source of truth and is still enforced at refresh time.
-
-**MCP server:** `POST /mcp` (`http/routes/mcp.routes.ts`) exposes a read-only Model Context Protocol server — JSON-RPC 2.0, protocol `2024-11-05`, advertised as `trakwyn-mcp`. The route owns only transport and auth; all protocol logic (`initialize`, `tools/list`, `tools/call`, the `MCP_TOOLS` catalogue, JSON-RPC error shaping) lives in `interface-adapters/mcp/McpController.ts`. Auth is deliberately different from GraphQL's: `AuthenticateMcpRequestUseCase` accepts **API tokens of either scope** (`read` or `full`) and rejects JWTs outright, whereas `AuthenticateRequestUseCase` requires `full` — so a `read` token reaches MCP and nothing else, which is the pairing that makes the read-only tool surface meaningful. Every tool is scoped to the authenticated `userId`. **Tools carry an `access: 'read' | 'write'` tag** (JEF-176): `tools/list` hides write tools from a `read`-scoped token and `tools/call` refuses them outright — the refusal is the security boundary, the hiding is only a convenience for the model. The tag is internal and stripped before going over the wire. The catalogue lives in `interface-adapters/llm/toolCatalogue.ts` (JEF-177). It's a presentation contract — names, descriptions, JSON Schema — so it sits with the other outward-facing schemas rather than in `use-cases/`. Nothing in `use-cases/` imports it: `ChatWithAssistantUseCase` receives an injected `chatTools: LLMToolDefinition[]`, so it knows only the port type. **Which surface exposes which tools is a composition decision made in `http/di`** — `MCP_TOOLS` is the whole catalogue (writes gated per request by token scope), `chatTools` is built from `CHAT_TOOLS` (reads only, since chat is session-authenticated and has no scope to gate on). A test walks all of `use-cases/` and fails on any import from `interface-adapters/`, so the direction can't quietly regress. Note it's POST-only JSON-RPC with no `GET`/SSE endpoint or session handling, i.e. a subset of MCP's Streamable HTTP transport. **When adding a tool,** add it to `TOOL_CATALOGUE` _and_ the `tools/call` switch of every surface that exposes it — a tool advertised but unhandled fails at call time. Parity tests on both surfaces catch this.
-
-**Storage:** Toggled by `STORAGE_PROVIDER` env var (`local` | `vercel-blob`). `LocalStorageProvider` writes to disk for dev; `VercelBlobStorageProvider` uses Vercel Blob for prod. Document upload flow: `requestUploadUrl` → client uploads directly to storage → `confirmDocument`. The upload step itself differs by provider: `VercelBlobStorageProvider` returns a Blob client token, uploaded via `@vercel/blob/client`'s `put()`; `LocalStorageProvider` returns a URL under its own `/uploads/_upload/*` path (registered directly on the Fastify instance in `buildApp.ts`, guarded by `STORAGE_PROVIDER === 'local'`), which the web app's `DocumentsTab` detects (`uploadUrl.includes('/_upload/')`) and `PUT`s the file to directly with `fetch` instead of calling `put()`. `corsPlugin.ts` lists `PUT` in `methods` explicitly for this — `@fastify/cors`'s default omits it, since every other route was GraphQL POST. Reading back is local-only too: `GET /uploads/*` (same guard) streams the file behind `getSignedUrl`'s URL via `LocalStorageProvider.openObject`, which resolves the key and refuses anything landing outside `uploads/`; it is unauthenticated like the upload route, and deliberately not on `IStorageProvider` since Blob serves its own URLs (JEF-343).
-
-**Email:** Toggled by `EMAIL_PROVIDER` env var (`brevo` | `console`, defaults to `brevo`). `BrevoEmailService` calls the real Brevo API; `ConsoleEmailService` (dev/CI, when there's no `BREVO_API_KEY`) logs each email — including its confirmation/reset URL — instead of sending it. Every mail-sending flow (email change, backup email, password reset, new-device login alerts, digests) throws if `BrevoEmailService` runs with a blank key, so this isn't just a convenience: `RequestEmailChangeUseCase` and friends propagate that failure as a 500 rather than swallowing it (unlike `RegisterUseCase`'s best-effort verification send, since an account is usable without it).
-
-**Database (JEF-342):** PostgreSQL through Drizzle ORM. Production is Neon in `aws-eu-central-1` (Frankfurt, a few ms from Cloud Run in `europe-west1`), which scales to zero after five idle minutes. `DATABASE_URL` picks the driver by scheme in `infrastructure/db/createDb.ts`: `postgres://…` goes through a `pg` pool (`drizzle-orm/node-postgres`); `pglite:<dir>` or `pglite:memory` runs PGlite — real Postgres compiled to WASM — in-process. Local dev defaults to `pglite:./.pglite` (no server to install; one process at a time, so stop `pnpm dev` before `db:studio`), CI's e2e job uses a Postgres 17 service container so every PR exercises the `pg` path, and tests use in-memory PGlite. Repositories are typed against the driver-neutral `DrizzleDb`/`DrizzleTransaction` (`PgDatabase`/`PgTransaction`), so both drivers fit. In production the API uses Neon's **pooled** (`-pooler`) URL, held in Secret Manager as `database-url` because a Postgres URL embeds the password; migrations use the **direct** URL (CI's `PRODUCTION_DATABASE_URL`), since the pooler runs in transaction mode. Pool policy is `DATABASE` in `infrastructure/config/constants.ts`; the pool's `'error'` handler is what stops Neon closing an idle socket from crashing the process. The driver is `pg`, not `@neondatabase/serverless`: its HTTP mode cannot run `DrizzleTransactionManager`'s interactive transactions, and its WebSocket mode only talks to Neon. Schema lives in `src/infrastructure/db/schema.ts` (timestamps are `timestamptz(3)` via `schema/columns.ts`; salaries and `monthlyTokenLimit` are `bigint`). Migrations are generated into `drizzle/` via `pnpm db:generate` and applied by `applyMigrations.ts` via `pnpm db:migrate`, as one transaction under an advisory lock, so a failed run leaves nothing half-applied. `drizzle/` restarts at `0000_postgres_baseline`; the 37 SQLite migrations before it were dropped (see the JEF-342 PR). Schema: `User → JobApplication → [Note, Document]` (all cascade-delete). SQLite habits that do not carry over: `LIKE` is case-sensitive (search uses `ilike`/`ILIKE`), and a bare parameter inside `CASE` is untyped (cast it, e.g. `${index}::integer`). `count(*)`/`sum()` return `int8`, parsed to `number` on both drivers; `numeric` (`avg`, `sum` over `bigint`) stays a string — see `createDb.ts`. `src/copyFromTurso.ts` and `infrastructure/db/copyToPostgres.ts` are the one-off Turso → Postgres data copy (`pnpm db:copy-from-turso`); delete them once Turso is retired.
-
-**Observability (JEF-129):** traces, logs, and metrics go to Axiom via OTel (`infrastructure/observability/tracing.ts`); metrics additionally require `AXIOM_METRICS_DATASET`. Export is **production-only** (JEF-345): `isObservabilityEnabled` requires `NODE_ENV=production` as well as `AXIOM_TOKEN`/`AXIOM_DATASET`, so dev and test never start the SDK or register the Fastify OTel plugin, even with a token in `.env`. **The SDK starts from a preload, not from `index.ts`** (JEF-346): `node --import ./dist/instrumentation.js dist/index.js` (the Dockerfile `CMD` and `pnpm start`) runs `registerInstrumentation()`, which registers `import-in-the-middle`'s ESM loader and starts the SDK before the app is imported. Both halves matter — the API is ESM, so auto-instrumentations (graphql, pg, ioredis, undici, http) can only patch an `import`ed module through that loader, and ESM hoists static imports, so a start call inside `index.ts` ran after `graphql` and `pg` had loaded. Without either, a trace holds nothing but `@fastify/otel`'s plugin and hook spans. Since every GraphQL request is `POST /graphql`, a Mercurius `preExecution` hook records the operation and the http instrumentation's `applyCustomAttributesOnSpan` renames the root span to e.g. `POST /graphql query applications` (`graphqlOperationSpanName.ts`) — the rename has to wait for that hook, because the http instrumentation resets the name to `<method> <route>` when the response finishes. GraphQL also answers 200 for a failed request (`errorFormatter` pins the status; the real one rides in `extensions`), which would leave every trace's root span green, so `formatError` marks it `ERROR` with an `error.type` — for the errors it already treats as server faults, not for an expected `NOT_FOUND` or a wrong password. No message goes on the span: a failed Drizzle query puts the statement's parameters in its own. Cold starts are flagged the same way (JEF-357): `coldStart.ts` is the http instrumentation's `startIncomingSpanHook` — incoming requests only, so no client span carries it — and sets `faas.coldstart=true` plus `app.process_uptime_ms` on the first request a process serves, `false` after. Cloud Run's `/health` startup probe is always that first request and nobody waits on it, so it is skipped and the flag goes to the first real one. The process also runs with `--enable-source-maps`, so a logged stack names the `.ts` file and line that threw rather than the compiled `dist/` one. Application counters are defined in `infrastructure/observability/metrics.ts` behind an injectable `IMetrics` port (inject `makeFakeMetrics()` from `__tests__/helpers/fakeMetrics.ts` to assert on them). Counters are created lazily on first use, since a meter obtained before `startObservability()` runs would be a no-op that never upgrades. Two things are measured: cache hit/miss, recorded by the `InstrumentedCache` decorator at the `ICache` boundary so `MemoryCache` and `RedisCache` are comparable (it infers hit vs. miss from whether the caller's `fetch` callback ran — `getOrSet` returns a value either way); and Redis fail-open events plus circuit-breaker transitions across all three guarded subsystems (cache, rate limiter, session blocklist). That second set matters most: those paths degrade silently by design, so without a counter an outage looks like normal operation while rate limiting and session revocation are quietly not working. Outbound dependencies get the same treatment (JEF-356): `trakwyn.email.sent` counts every Brevo send by `template` and `outcome`, and Brevo's error carries only its status and `code`, never its body. `GoogleOidcTokenVerifier` logs `oidc.jwks_unavailable` when Google's keys cannot be fetched, which would otherwise be indistinguishable from a forged token, and `authorizeCronTrigger` logs every refusal as `cron.auth.rejected` with `reason: 'missing' | 'invalid'`. **Security events (JEF-354)** are logged and counted by `LoggingSecurityEventRepository`, a decorator over `DrizzleSecurityEventRepository` (same inner/outer DI shape as `BlocklistingSessionRepository`), so every `SecurityEvent` write emits one `security.<eventType>` line (`warn` for `SUSPICIOUS_SECURITY_EVENT_TYPES`, beside `SECURITY_EVENT_TYPES` in the domain; `info` otherwise) and one `trakwyn.security.events` increment. The line carries `userId` and `eventType` only — never the IP or user agent, which live in the table precisely because it cascades on erasure. Failed sign-ins, which `LoginEvent` never records, are logged by `LoginUseCase`/`LoginWithTotpUseCase` as `auth.login.failed`/`auth.totp.failed` at `warn` with a reason category (`logAuthFailure.ts`); an unknown email and a wrong password are both `invalid_credentials`, with no user id, so the log is not an enumeration oracle. **Alerting on these signals is Terraform in `infra/axiom/`** (JEF-355), a separate root from `infra/gcp/` so its Axiom token never reaches the GCP state: email monitors on fail-open, breaker-open, pool errors, `job.<name>.failed`, the _absence_ of each nightly `job.<name>.completed`, the GraphQL root-span error rate, and outbound-URL refusals. The monitors key on `METRICS.*` names, `ADMIN_JOBS` and the `event` field of log lines, so renaming any of those means updating `infra/axiom/monitors.tf` in the same PR; its `README.md` lists every monitor and how to trigger it.
-
-**Use-case spans (JEF-347):** auto-instrumentation only patches libraries, so a trace reached from the HTTP span through the resolver to `pg` without naming any of the application's own steps in between. `traceUseCase` (`infrastructure/observability/tracedUseCase.ts`) wraps a resolved use case in a proxy whose `execute()` runs inside a span named `<ClassName>.execute`, recording `recordException`, `status = ERROR` and — for a `DomainError` — its `code` as `app.error.code`, then rethrowing the original error so `formatError`'s mapping is unaffected. **It records no arguments**: use-case inputs carry passwords, tokens and chat message text, so the span reports the shape of the call and none of its content. It is applied in `http/di/useCaseTracing.ts` by mapping the whole `useCases` map at once, which is what makes coverage total — a new module under `http/di/use-cases/` is traced the moment it is spread in, and `__tests__/architecture/useCaseTracing.test.ts` fails if a registered use case is not traced, if a `*UseCase` is registered in some other DI module where the mapping would miss it, or if an entry in `UNTRACED_USE_CASES` no longer names a real registration. `AuthenticateRequestUseCase` is the one deliberate exemption (it runs on every authenticated request, so it would lengthen every trace to report the same token check). Wrapping spreads the original resolver and overrides only `resolve`, so each registration keeps its `TRANSIENT` lifetime and `http/di/use-cases/*` stay plain `asClass(...)` declarations. Gated on `isObservabilityEnabled`, so dev and test register the unwrapped resolvers themselves rather than a proxy around a no-op tracer. The decorator handles all three shapes `execute` takes — value, promise, and the async generator of `StreamChatWithAssistantUseCase`, whose span stays open and context-active across the whole iteration so the chat loop's tool calls and their queries nest under it instead of ending it at zero milliseconds. No file under `use-cases/` imports any of this; the dependency rule holds by construction.
-
-**Deployment (JEF-335):** the API runs as a container on Google Cloud Run in `europe-west1` (Belgium: Tier 1 pricing, and unlike London it supports the domain mapping that keeps `api.trakwyn.com` on the same site as `www` for the auth cookies); `apps/web` stays on Vercel, whose project settings, domains and production env vars are Terraform in `infra/vercel/` (JEF-363). That project has no git connection, so CI's `deploy-web` is the only thing that deploys it; `VITE_POSTHOG_KEY` is read from `infra/posthog/`'s state through `terraform_remote_state` rather than pasted in; and `VITE_APP_RELEASE` is deliberately not managed, since `vite.config.ts` derives it from the commit SHA. Everything on the GCP side (Artifact Registry, Secret Manager, the service, Cloud Scheduler, Workload Identity Federation) is Terraform in `infra/gcp/` — its `README.md` is the bootstrap and cutover runbook. Terraform owns configuration and CI owns releases: after the first apply the service's image is in `ignore_changes`, and CI's `deploy-api` job builds `apps/api/Dockerfile` (context: repo root), pushes it, and rolls it out with `deploy-cloudrun`, authenticating through WIF — which only trusts `main`, so `terraform plan` is run by hand rather than on PRs. Two consequences of **request-based billing** (`cpu_idle = true`, scale to zero) shape the code: CPU is throttled as soon as no request is in flight, so anything that must finish — the telemetry flush in `buildApp.ts`'s `onResponse` hook, the new-device alert in `CreateSessionUseCase` — is awaited before the response completes rather than left to a background timer; and scheduled work cannot live in the process, so the `/admin/*` routes are driven by Cloud Scheduler. The jobs authenticate with a Google-signed **OIDC ID token** for the `cron-invoker` service account, not a shared secret (JEF-336): `cronAuth.ts` verifies it through the `IOidcTokenVerifier` port (`GoogleOidcTokenVerifier`, `jose` against Google's JWKS) and requires `aud` = `API_ORIGIN` and `email` = `CRON_INVOKER_SA`. The audience is `API_ORIGIN` rather than the run.app URI because the service can't be given its own URI without a Terraform cycle. That is what keeps every secret out of Terraform state; `CRON_SECRET` and `DIGEST_ADMIN_SECRET` survive only as the manual-trigger path. A route with none of the three configured answers 503, not 401. Logs reach Axiom through `otelLogDestination.ts` (Fastify's pino stream, teed to stdout for Cloud Logging) rather than a platform log drain. On SIGTERM, `http/gracefulShutdown.ts` drains the server for at most `SHUTDOWN.SERVER_CLOSE_TIMEOUT_MS`, then shuts OTel down, inside Cloud Run's 10-second grace period. Migrations are not part of the image: CI's `migrate-db` job applies them before `deploy-api` runs.
-
-**Testing:** Vitest. Infrastructure tests use `createTestDb()` (a real in-memory PGlite Postgres per test file with the real migrations applied, no mocks); integration tests use `buildTestApp()`, which resets the module registry so each call gets its own database. Use-case tests use repository mocks from the per-domain modules under `__tests__/helpers/mocks/` (`auth.ts`, `jobs.ts`, `user.ts`, … plus `infrastructure.ts` for the cross-cutting doubles) — split out of a single 816-line module by JEF-254, and kept split by `__tests__/architecture/mockPlacement.test.ts`. GraphQL resolver tests exist under `__tests__/interface-adapters/resolvers/`.
-
-### Web (`apps/web`) — TanStack Start + React Query + GraphQL
-
-**Framework:** TanStack Start (SSR-capable React). Routes live under `src/routes/` using file-based routing via `@tanstack/react-router`.
-
-**Route layout:**
-
-- `/` → index (redirects)
-- `/login`, `/register` → public auth routes
-- `/_authenticated/*` → protected layout route; `beforeLoad` redirects unauthenticated users to `/login`
-- `/_authenticated/dashboard` → dashboard
-- `/_authenticated/applications/*` → CRUD for job applications
-
-**Data fetching:** `graphql-request` (`gqlClient`) with TanStack Query. The client in `src/graphql/client.ts` intercepts `UNAUTHORIZED` GraphQL errors, attempts a token refresh, and redirects to `/login` on failure.
-
-**GraphQL types:** Generated by `graphql-codegen` into `src/graphql/generated/`. Run `pnpm codegen` after changing `.graphql` files or the API schema. **Never edit the `generated/` directory manually.**
-
-**Styling:** Tailwind CSS v4 (via `@tailwindcss/vite`).
-
-**Dev proxy:** Vite proxies `/graphql` → `http://localhost:3001` in development, so `VITE_API_URL` defaults to `/graphql`.
-
-**Path alias:** `#/*` → `./src/*` (configured in `package.json` `imports` and `tsconfig`).
-
-**Error reporting and analytics (JEF-349):** both clients report to **PostHog EU Cloud** (`eu.i.posthog.com`); the API is deliberately not included — server errors stay in Axiom, since sending them to a second place splits the story. PostHog replaced `@vercel/analytics` outright and supersedes the GA4 ticket (JEF-337), so one integration covers errors _and_ product events. Four things about it are load-bearing:
-
-- **Autocapture is off, on both clients.** It records the text of clicked elements and the state of inputs; these pages carry company names, job titles, notes and salaries. Every event is one a call site named explicitly (`ANALYTICS_EVENTS`). On web that is `autocapture: false`; on React Native there is no such option because autocapture is opt-in through `<PostHogProvider autocapture>`, which the app does not mount. Session replay is off on both.
-- **Everything passes a `before_send` scrubber** (`lib/analytics/scrub.ts`) — a deny-list of property names (`variables`, `salary`, `description`, `email`, `token`…) _and_ pattern redaction inside every string it keeps (emails, JWTs, bearer tokens, URL query strings), because a deny-list alone is a list of the places someone thought of. The file exists once per app, since there is no shared runtime package between a Vite app and a React Native one; `scrubParity.test.ts` fails if the two copies drift.
-- **Web initialises inside `CookieConsent.tsx`**, gated on the same `analyticsEnabled` state that used to gate `<Analytics>`. The SDK is behind a dynamic `import()`, so before consent there is no script, no cookie and no request at all — which is what opt-in has to mean in a consent-required region. Exceptions raised before consent resolves are held in a small in-memory buffer and either sent once consent lands or dropped if it does not. Mobile has no gate (no banner in a native app; the scrubber is what makes that defensible).
-- **`traceparent` is sent to the API and to nothing else.** `traceHeaders(url)` in each app's GraphQL client generates `00-<traceId>-<spanId>-01` per request and returns `{}` for any other origin — the header on a third-party request (the Vercel Blob upload is the live case) would hand that party a cross-request correlation id and trip CORS. The API adopts it with no change: OTel's default propagator is W3C trace context and `corsPlugin.ts` sets no `allowedHeaders`. The same trace id rides on exception events as `trace_id`, which is the jump from a PostHog error to the Axiom trace. There are no browser or mobile spans — that is deliberately a separate follow-up.
-
-Mobile additionally captures **native crashes** (`errorTracking.autocapture.nativeCrashes`), the one failure no JS handler can see, and records **breadcrumbs** (`addBreadcrumb` → `$exception_steps`) for token-refresh outcomes, SecureStore failures, chat-stream reopens and navigation. Navigation uses `useSegments()`, not `usePathname()`, so a route arrives as `/(app)/applications/[id]` — the shape of the journey without the identifiers. Native crash capture comes from `@posthog/react-native-plugin`, which is a **plain dependency, not an Expo config plugin**: it ships no `app.plugin.js`, and listing it in `app.json`'s `plugins` makes `expo start` fail to load the config at all. Being a native module, it only works in a dev/EAS build; under Expo Go the JS handlers still run and `nativeCrashes` is inert.
-
-Reporting is **off by default everywhere**: with no `VITE_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_KEY` the SDK is never loaded and every capture is a no-op. The PostHog project's own settings are Terraform (`infra/posthog/`, JEF-363): replay, network capture, heatmaps, surveys and web vitals are switched off on the project as well as in the clients, so a dashboard toggle cannot quietly undo them. Click autocapture is the exception: the provider cannot set it, so `autocapture: false` in the web client has no server-side backstop. That is the intended state for local development and CI, not a broken config.
-
-### Mobile (`apps/mobile`) — Expo Router + React Query + GraphQL
-
-**Framework:** Expo (React Native, web-capable via `react-native-web`). Routes live under `app/` using Expo Router's file-based routing.
-
-**Route layout:**
-
-- `app/_layout.tsx` → root layout; shows a loading indicator while auth state restores, then renders `(app)` or `(auth)` via `Stack.Protected` guards on `isAuthenticated`
-- `(auth)/login`, `(auth)/register` → public auth routes, no header
-- `(app)/index` → applications list (home)
-- `(app)/applications/new`, `(app)/applications/[id]/edit` → create/edit form (same `ApplicationFormScreen`, mode inferred from whether `id` is present)
-- `(app)/applications/[id]`, `(app)/applications/[id]/notes`, `(app)/applications/[id]/documents` → application detail, notes, documents
-- `(app)/applications/trash` → trash
-- `(app)/conversations`, `(app)/conversations/[id]` → assistant chat list and thread (`id` is the literal segment `new` for a not-yet-created conversation)
-- `(app)/settings`, `(app)/settings/profile`, `(app)/settings/security`, `(app)/settings/notifications`, `(app)/settings/ai` → settings and subsections
-
-Each route file is a thin re-export of a screen component from `src/features/*/screens/` or `src/screens/`; screen components use `useRouter`/`useLocalSearchParams`/`Stack.Screen` from `expo-router` directly rather than taking navigation props, so they stay file-path-independent of where the route tree mounts them. Per-route static titles are set centrally in `(app)/_layout.tsx`; the two exceptions needing runtime data (`ApplicationsListScreen`'s header actions, driven by auth/data state) set their own `<Stack.Screen options={{...}} />` inline.
-
-**Data fetching:** `graphql-request` with TanStack Query, mirroring the web app's pattern.
-
-**Path alias:** none — screens import relative to `src/`; route files under `app/` import relative to `../src/...`.
-
-**Auth transport:** the mobile mutations (`registerMobile`, `loginMobile`, `loginWithTotpMobile`, `refreshTokenMobile`, `reauthenticateMobile` — `http/schema/mutations/mobileAuthMutations.ts`) return both tokens in the response body. The app keeps the pair as one JSON value under one SecureStore key (`src/auth/tokenStorage.ts` — a single write, so the pair can never be half-updated into the fresh-access/stale-refresh shape the API's rotation tracking reads as reuse) and holds the access token in memory. `gqlRequest` (`src/graphql/client.ts`) refreshes once and retries on `UNAUTHORIZED` only when the failed request actually carried a token; `{ refreshOnUnauthorized: false }` is for mutations whose `UNAUTHORIZED` means "wrong password" (`updatePassword`, `reauthenticateMobile`), which get a proactively refreshed token instead. A refresh that cannot reach the server keeps the tokens — only a rejected refresh token ends the session, and ending it (like signing out) clears the React Query cache so the next account never sees the last one's data. Non-GraphQL callers (the chat SSE stream) take `getValidAccessToken()` and recover through `recoverFromUnauthorized()`. Every native request sends `TrakwynMobile/<version> (<model>; <os>)` as its User-Agent, which the API's `DeviceLabelService` turns into the session label. `STEP_UP_REQUIRED` is handled by `src/auth/useStepUpReauth.tsx`, a port of the web hook. **The web target (`expo start --web`) is a development preview only:** it keeps the tokens in `localStorage`, the JS-readable exposure apps/web moved to HttpOnly cookies to remove — shipping it means switching it to the cookie mutations first.
+**Dependency injection:** Awilix (`@fastify/awilix`). Repositories and resolvers are `SINGLETON`; use cases are `TRANSIENT`. `http/di/index.ts` (`buildContainer`) composes the modules in `http/di/*.ts` and `http/di/use-cases/*.ts` (one per domain). The `Cradle` type is in `http/di/types.ts`. Decorators such as `Cached*`, `Blocklisting*` and `Logging*` wrap an inner repository in the DI module.
 
 ## Environment Setup
-
-Copy and fill in both env files before running:
 
 ```bash
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 ```
 
-Key API env vars: `DATABASE_URL` is `pglite:./.pglite` for local dev (or any `postgres://` URL). A leftover `file:…local.db` value is rejected with instructions, and `pnpm setup:worktree` rewrites it. `JWT_SECRET` and `JWT_REFRESH_SECRET` must be set.
+`DATABASE_URL` is `pglite:./.pglite` for local dev, or any `postgres://` URL. A leftover `file:…local.db` value is rejected, and `pnpm setup:worktree` rewrites it. `JWT_SECRET` and `JWT_REFRESH_SECRET` must be set.
 
 ## Key Conventions
 
-- **IDs** are `nanoid()` strings, not auto-increment integers.
-- **Domain entities** are plain TypeScript objects/classes with no Drizzle or framework imports. Mappers bridge Drizzle rows ↔ domain.
-- **Adding a new feature** follows the layer order: domain entity → port interface → use case → Drizzle repository implementation → Pothos type/resolver → GraphQL mutation/query → register in the matching `http/di/` module → add `.graphql` file in web → run codegen → build UI.
-- **Failing from a use case:** throw a `DomainError` subclass from `use-cases/errors/DomainError.ts` — `NotFoundError`, `ForbiddenError`, `ConflictError`, `UnauthorizedError`, `ValidationError`, `RateLimitedError`, `StepUpRequiredError`, `UserNotFoundError`, `AiNotConfiguredError`, `AiResponseInvalidError`, `LlmProviderError` (the user's own BYOK provider refused or failed — carries a `kind` such as `auth`/`quota`/`rate_limited`, maps to 502, and is what the three provider adapters throw on a non-2xx response), `ServiceUnavailableError`. They carry a `code` and no HTTP status; `http/errors/formatError.ts` turns the code into a status at the boundary via `fromCodedError`. **Do not** import `http/errors/AppError` from a use case (that puts `404` inside a business rule), **do not** `throw new Error(...)` for anything the client should see, and **do not** hand-roll `Object.assign(new Error(...), { code })` — a bare Error has no code, so it surfaces as `INTERNAL_ERROR`/500 and is logged as a server fault. A new subclass needs a matching `fromCodedError` case or it degrades to a 500 the same way. All three rules are enforced by `__tests__/architecture/domainErrors.test.ts`. `AppError` remains the vocabulary for HTTP routes and resolvers, which legitimately know about status codes.
-- **Deletes are hard, with one exception, and `onDelete` is the retention policy.** The exception is `JobApplication.deletedAt` — deleting an application moves it to Trash and a nightly job (`/admin/trash/purge`) removes it thirty days later. The filter lives in `DrizzleApplicationRepository`, not in use cases, so every consumer is covered by construction: lists, search, analytics, the MCP tools, and the digest and reminder jobs that would otherwise email about something the user deleted. `findById` reports a trashed application as missing; `findByIdIncludingTrashed` is the deliberate opt-out, used only by the detail query and the Trash operations. Nothing else has a `deletedAt`, so for every other table a foreign key's on-delete action decides what survives. 31 of 33 keys cascade; the two exceptions are the mutual `Document` ↔ `DocumentDraft` link, which is `set null` because neither owns the other. The audit tables cascade **deliberately**, not by default: `SecurityEvent` and `LoginEvent` go with the `User` because they hold IP, device and location data that erasure should remove, and `ActivityLog` goes with its `JobApplication` because an application's history is part of the application. One consequence worth knowing: deleting an application leaves no record it ever existed. Every foreign key must be listed in `__tests__/architecture/onDeleteBehaviour.test.ts`, which fails on an unlisted one — so adding a table forces the decision rather than inheriting cascade by copying the table above it.
-- **The layering is enforced, not just described:** `__tests__/architecture/dependencyRule.test.ts` fails if `domain/` reaches outward, if `use-cases/` imports `interface-adapters`/`infrastructure`/`http`/`seed`, if `interface-adapters/` imports `infrastructure`/`http`/`seed`, or if a framework (Drizzle, Fastify, GraphQL, Pothos, pg, PGlite, libsql, web-push) appears in `domain/` or `use-cases/`. It carries a short list of pre-existing violations, each tagged with the ticket that clears it — and fails if an entry stops violating, so a fix cannot leave its exemption behind. It **resolves** each import to the layer it lands in rather than pattern-matching the text (JEF-256), so all three import forms count — `from '…'`, the side-effect `import '…'`, and the dynamic `import('…')` — whether written against the `#src/` alias or as a relative path. It also keeps the root of `src/` empty apart from the `index.ts`/`migrate.ts`/`seed.ts` entrypoints (plus the temporary `copyFromTurso.ts`, JEF-342): a module there is in no layer, so it is reachable from everywhere and accountable to nothing, which is exactly how `src/constants.ts` went unchecked (JEF-253).
-- **Constants belong to a layer.** Application policy (token lifetimes, quotas, TTLs, AI prompt budgets) goes in `use-cases/constants.ts`; `ERROR_CODES` sits with `DomainError` in `use-cases/errors/errorCodes.ts`; env names, provider selectors, vendor endpoints and cache internals in `infrastructure/config/constants.ts`; cookies, routes and rate limits in `http/constants.ts`; MCP identity and JSON-RPC framing in `interface-adapters/mcp/constants.ts`. That placement is what puts constants under the dependency rule at all — a use case importing `#src/http/constants.js` is an ordinary `use-cases -> http` violation. Before JEF-253 all of it lived in one root-level `src/constants.ts` that 23% of the package imported, invisible to the rule because a root module is in no layer; the root is now kept empty by `dependencyRule.test.ts`, and `constantsPlacement.test.ts` covers what that rule cannot express — where each constant belongs, and that no constant is declared twice. Values are stated once and derived, not restated: `COOKIE_MAX_AGE_S` is `TOKEN_LIFETIME_S`, and `ROUTES.OAUTH_FAKE_CONSENT` is `FAKE_OAUTH.CONSENT_PATH` (declared in infrastructure, since `FakeOAuthProvider` must not import `http/`).
-- **A source file over 400 lines has to say why.** `__tests__/architecture/fileSize.test.ts` fails on any non-test file above the guideline unless it is listed in `OVERSIZED_BY_DESIGN` with a reason — and fails again if a listed file shrinks below it, so the exemption cannot outlive the problem. Four are listed deliberately (JEF-255): `http/di/types.ts` (the Awilix Cradle), `interface-adapters/mcp/McpController.ts` (the 23-case `tools/call` dispatch, whose locality the parity tests depend on), `infrastructure/db/repositories/DrizzleApplicationRepository.ts` (one class implementing one port, and the single home of the `deletedAt` Trash filter), and `interface-adapters/llm/toolCatalogue.ts` (a 26-entry declarative table). Being long is not automatically a defect; being long by accident is.
-- **A URL the user typed goes through `IOutboundUrlPolicy` before the server connects to it.** Two features take one — the "Custom (OpenAI-compatible)" provider's base URL and `parseJobDescription(url)` — and both used to hand it straight to `fetch` from inside the server's network, which made cloud metadata endpoints, Redis and the API's own admin routes readable by any authenticated user. `OutboundUrlPolicy` (`infrastructure/net/`) resolves DNS itself and refuses loopback/RFC1918/link-local/CGNAT/ULA targets, internal-service ports, reserved hostnames and embedded credentials; provider endpoints must also be `https`. It is **strict only when `NODE_ENV=production`** — dev and CI point the custom provider at the API's own fake completions route on localhost (`LLM_PROVIDER_MODE=fake`) and at self-hosted models, which strict mode would refuse — and `OUTBOUND_URL_POLICY=strict|permissive` overrides that default explicitly for a self-hosted production instance with a local model. Checked at save time (`SaveLlmApiKeyUseCase`, `TestLlmApiKeyUseCase`) _and_ on every call (`OpenAICompatibleLLMProvider` for the custom entry, `FetchJobPostingSourceResolver` for every redirect hop), because a hostname can be re-pointed after it was saved. Registered with `asFunction`, not `asClass` — its constructor takes an options object, and Awilix's proxy injection would resolve `options.strict` as a dependency named `strict`.
-- **What the chat assistant is sent is shaped, not raw.** Tool results pass through `projectChatToolResult` (application rows get a 300-char description preview in lists, 3 000 in detail, and lose workflow columns) and `compactForModel` (nulls dropped, dates to day/minute precision, strings clipped) in `use-cases/chat/chatToolProjection.ts`, then are fenced in a `<tool_result>` tag that `CHAT_SYSTEM_PROMPT` declares to be data, never instructions. History is capped by count _and_ characters (`CHAT.MAX_HISTORY_MESSAGES`, `CHAT.MAX_HISTORY_CHARS`), the message itself by `CHAT.MAX_MESSAGE_CHARS`. On Anthropic, `cacheBreakpoint` markers sit on the last system block, the last history message and the current round's last tool result (`buildChatMessages`, `StreamChatWithAssistantUseCase`), and `LlmUsageEvent.cacheReadTokens`/`cacheWriteTokens` record whether they hit. MCP output is deliberately not projected: an external client asked for the records.
-- **Pothos schema:** Each resource has its type file (`http/schema/types/`), query file (`queries/`), and mutation file (`mutations/`). All are imported and composed in `http/schema/index.ts`.
+- **IDs** are `nanoid()` strings.
+- **Domain entities** are plain TS with no Drizzle or framework imports. Mappers bridge rows and domain objects.
+- **New feature order:**
+  1. domain entity
+  2. port
+  3. use case
+  4. Drizzle repository
+  5. Pothos type/resolver
+  6. query/mutation
+  7. `http/di/` registration
+  8. web `.graphql` file
+  9. codegen
+  10. UI
+- **Use cases fail with a `DomainError` subclass** (`use-cases/errors/DomainError.ts`). The classes carry a `code`, not an HTTP status; `http/errors/formatError.ts` maps it via `fromCodedError`, and a new subclass needs a case there or it becomes a 500. `LlmProviderError` (with a `kind`, mapped to 502) is what the LLM provider adapters throw when the user's own provider answers non-2xx.
+  - Never import `AppError` into a use case. It is for HTTP routes and resolvers only.
+  - Never `throw new Error()` for anything the client should see.
+  - Never hand-roll `Object.assign(new Error(), { code })`.
+
+  Enforced by `domainErrors.test.ts`.
+
+- **Layering is enforced** by `dependencyRule.test.ts`:
+  - It resolves every import form, `#src/` or relative.
+  - It bans frameworks in `domain/` and `use-cases/`.
+  - It keeps `src/` root to the entrypoints only.
+  - Its exemption list must shrink as violations are fixed.
+- **Constants belong to a layer:**
+  - Policy goes in `use-cases/constants.ts`.
+  - `ERROR_CODES` goes in `use-cases/errors/errorCodes.ts`.
+  - Env names, providers, vendor endpoints and cache internals go in `infrastructure/config/constants.ts`.
+  - Cookies, routes and rate limits go in `http/constants.ts`.
+  - MCP framing goes in `interface-adapters/mcp/constants.ts`.
+
+  State each value once and derive the rest (e.g. `COOKIE_MAX_AGE_S` is `TOKEN_LIFETIME_S`). Enforced by `constantsPlacement.test.ts`.
+
+- **Deletes are hard and `onDelete` is the retention policy.** Every FK must be listed, with its reason, in `onDeleteBehaviour.test.ts`. The audit tables (`SecurityEvent`, `LoginEvent`, `ActivityLog`) cascade deliberately so erasure removes IP and device data. Only `Document` ↔ `DocumentDraft` is `set null`.
+- **One soft delete:** `JobApplication.deletedAt` (Trash, purged after 30 days by `/admin/trash/purge`). The filter lives in `DrizzleApplicationRepository`, so every consumer is covered. `findById` hides trashed rows; `findByIdIncludingTrashed` is only for the detail query and Trash operations.
+- **Source files over 400 lines** need an `OVERSIZED_BY_DESIGN` entry with a reason (`fileSize.test.ts`). The entry must be removed once the file shrinks below the limit.
+- **User-supplied URLs go through `IOutboundUrlPolicy` before any server-side fetch.** Today these are the custom LLM base URL and `parseJobDescription(url)`.
+  - The policy blocks private and loopback ranges, internal ports, reserved hosts and credentials, and requires `https` for providers.
+  - It is strict only when `NODE_ENV=production`, because dev and CI point at the local fake provider (`LLM_PROVIDER_MODE=fake`). `OUTBOUND_URL_POLICY=strict|permissive` overrides that.
+  - Check at save time (`SaveLlmApiKeyUseCase`, `TestLlmApiKeyUseCase`) _and_ on every call or redirect hop (`OpenAICompatibleLLMProvider`, `FetchJobPostingSourceResolver`), since DNS can be re-pointed.
+  - Register it with `asFunction`, not `asClass`.
+- **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow
 
-- **Linear issue lifecycle:** Before an agent starts implementation for a Linear issue, set its status to **In Progress**. Do not begin coding while it remains in Backlog, Planned, Todo, or another status. After implementation is complete, the branch is pushed, and a PR is created, set the issue status to **In Review**. Only move it to **Done** after the PR is merged or the user explicitly asks for completion.
-- **Branch name:** `<feat/fix/chore/...>/<linear-id>-<brief name>` — the Linear ID segment (lowercase, e.g. `jef-67`) is included only when the work maps to a Linear ticket; omit it otherwise.
-  - With a ticket: `feat/jef-67-multi-provider-llm`
-  - Without a ticket: `feat/animated-page-transitions`
-- **Worktrees:** Always create feature worktrees in `.claude/worktrees/`, named the same as the branch with `/` replaced by `-` (e.g. `.claude/worktrees/feat-jef-67-multi-provider-llm`, `.claude/worktrees/feat-animated-page-transitions`). Use `git worktree add .claude/worktrees/<worktree-name> -b <branch-name> main`. A fresh worktree has no `.env` files and an unseeded local database (both gitignored) — run `pnpm setup:worktree` from inside it right after creation to copy env files from the main checkout, install dependencies, apply migrations, and seed the local database (see `scripts/setup-worktree.sh`).
-- **Tests are mandatory, not a follow-up:** Every new or changed use case, resolver, repository, React component/page, or utility function ships with matching tests in the _same_ PR — mirror the existing convention for that layer (use-case tests with the `helpers/mocks/<domain>.ts` repository mocks, `createTestDb()` for Drizzle repositories, mocked-use-case-deps tests under `__tests__/interface-adapters/resolvers/`, `gqlClient`/router-mocked tests under `apps/web/src/__tests__/components/`). A Linear issue's implementation checklist is not done while a "tests" line item is unchecked, and a PR that adds behavior without matching tests should not be opened.
-- **PRs:** After completing work, push the branch and create a PR. The user reviews PRs directly rather than merging from the CLI.
+- **Linear lifecycle:**
+  - Set the issue to **In Progress** before coding. Never code while it is in Backlog, Planned or Todo.
+  - Set it to **In Review** once the branch is pushed and the PR is open.
+  - Set it to **Done** only after the merge or when the user asks.
+- **Branch:** `<feat|fix|chore|…>/<linear-id>-<brief-name>`. Include the lowercase Linear ID only when there is a ticket: `feat/jef-67-multi-provider-llm`, or without one, `feat/animated-page-transitions`.
+- **Worktrees:** create them in `.claude/worktrees/`, named after the branch with `/` replaced by `-`, using `git worktree add .claude/worktrees/<name> -b <branch> main`. Then run `pnpm setup:worktree` inside it to copy the `.env` files, install, migrate and seed.
+- **Tests ship in the same PR** as every new or changed use case, resolver, repository, component/page or utility. Follow the existing convention for that layer:
+  - use-case tests with the `helpers/mocks/<domain>.ts` mocks
+  - `createTestDb()` for repositories
+  - resolver tests under `__tests__/interface-adapters/resolvers/`
+  - web component tests under `apps/web/src/__tests__/components/`
+
+  An unchecked "tests" item means the issue isn't done.
+
+- **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
