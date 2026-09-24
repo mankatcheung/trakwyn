@@ -2,6 +2,8 @@ import { metrics, type Counter } from '@opentelemetry/api';
 import { AXIOM } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
+import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
+import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
 
 /**
  * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
@@ -32,6 +34,13 @@ export const METRICS = {
   EMAILS_SENT: 'trakwyn.email.sent',
   /** A row written to the `SecurityEvent` audit table — attributes: event_type (JEF-354). */
   SECURITY_EVENTS: 'trakwyn.security.events',
+  /**
+   * One MCP or chat tool call — attributes: surface, tool, outcome (JEF-365).
+   * `tool` is a catalogue name or `unknown`, never what a client made up.
+   */
+  TOOL_CALLS: 'trakwyn.tool.calls',
+  /** A write tool refused to a read-scoped MCP token — attributes: tool, scope (JEF-365). */
+  MCP_TOOL_REFUSED: 'trakwyn.mcp.tool_refused',
 } as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
@@ -100,6 +109,10 @@ export interface IMetrics {
   recordEmailSent(template: EmailTemplate, outcome: EmailOutcome): void;
   /** A security event was written to the audit table (JEF-354). `type` is a bounded set. */
   recordSecurityEvent(type: SecurityEventType): void;
+  /** One MCP or chat tool call and how it ended (JEF-365). `tool` is already bounded to the catalogue. */
+  recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void;
+  /** A write tool refused to an MCP token whose scope does not cover it (JEF-365). */
+  recordMcpToolRefused(tool: string, scope: ApiTokenScope): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -113,6 +126,8 @@ export const noopMetrics: IMetrics = {
   recordOutboundUrlRefused: () => {},
   recordEmailSent: () => {},
   recordSecurityEvent: () => {},
+  recordToolCall: () => {},
+  recordMcpToolRefused: () => {},
 };
 
 /**
@@ -136,6 +151,8 @@ class OtelMetrics implements IMetrics {
   private outboundUrlRefused?: Counter;
   private emailsSent?: Counter;
   private securityEvents?: Counter;
+  private toolCalls?: Counter;
+  private mcpToolRefused?: Counter;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -202,6 +219,20 @@ class OtelMetrics implements IMetrics {
       description: 'Security events written to the audit table, by type',
     });
     this.securityEvents.add(1, { event_type: type });
+  }
+
+  recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void {
+    this.toolCalls ??= this.meter.createCounter(METRICS.TOOL_CALLS, {
+      description: 'MCP and chat tool calls, by surface, tool and outcome',
+    });
+    this.toolCalls.add(1, { surface, tool, outcome });
+  }
+
+  recordMcpToolRefused(tool: string, scope: ApiTokenScope): void {
+    this.mcpToolRefused ??= this.meter.createCounter(METRICS.MCP_TOOL_REFUSED, {
+      description: 'Write tools refused to an MCP token whose scope does not cover them',
+    });
+    this.mcpToolRefused.add(1, { tool, scope });
   }
 }
 

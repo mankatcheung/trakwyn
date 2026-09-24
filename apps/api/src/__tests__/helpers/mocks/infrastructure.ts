@@ -11,6 +11,7 @@ import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import type { IToolCallObserver, ToolCallMeta } from '#src/use-cases/ports/IToolCallObserver.js';
 
 export const makeRateLimiter = (overrides?: Partial<IRateLimiter>): IRateLimiter => ({
   consume: vi.fn().mockResolvedValue(true),
@@ -42,3 +43,51 @@ export const makeLogger = (overrides?: Partial<ILogger>): ILogger => ({
   info: vi.fn(),
   ...overrides,
 });
+
+/** One call as a `makeToolCallObserver()` fake saw it: what it was told, and how it ended. */
+export interface ObservedToolCall {
+  meta: ToolCallMeta;
+  /** Recorder methods called, in order: `succeeded`, `failed`, `invalid_params`, `refused`. */
+  reports: string[];
+  result?: unknown;
+  error?: unknown;
+  refusedUserId?: string;
+  /** Set when the observed function threw rather than reporting. */
+  threw?: unknown;
+}
+
+export type FakeToolCallObserver = IToolCallObserver & { calls: ObservedToolCall[] };
+
+/** Runs every call straight through and records what the surface reported about it (JEF-365). */
+export const makeToolCallObserver = (): FakeToolCallObserver => {
+  const calls: ObservedToolCall[] = [];
+  return {
+    calls,
+    async observe(meta, run) {
+      const call: ObservedToolCall = { meta, reports: [] };
+      calls.push(call);
+      try {
+        return await run({
+          succeeded: (result) => {
+            call.reports.push('succeeded');
+            call.result = result;
+          },
+          failed: (error) => {
+            call.reports.push('failed');
+            call.error = error;
+          },
+          invalidParams: () => {
+            call.reports.push('invalid_params');
+          },
+          refused: (userId) => {
+            call.reports.push('refused');
+            call.refusedUserId = userId;
+          },
+        });
+      } catch (error) {
+        call.threw = error;
+        throw error;
+      }
+    },
+  };
+};

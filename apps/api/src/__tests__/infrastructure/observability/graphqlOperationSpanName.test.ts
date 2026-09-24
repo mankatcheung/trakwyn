@@ -2,10 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { ROOT_CONTEXT, type Context, type Span } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { parse } from 'graphql';
-import {
-  applyGraphQLOperationSpanName,
-  recordGraphQLOperation,
-} from '#src/infrastructure/observability/graphqlOperationSpanName.js';
+import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
+import { applyOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
 
 function makeSpan() {
   return {
@@ -33,7 +31,7 @@ describe('graphqlOperationSpanName', () => {
     );
     expect(span.updateName).not.toHaveBeenCalled();
 
-    applyGraphQLOperationSpanName(span, { method: 'POST' });
+    applyOperationSpanName(span, { method: 'POST' });
     expect(span.updateName).toHaveBeenCalledWith('POST /graphql query applications');
   });
 
@@ -51,7 +49,7 @@ describe('graphqlOperationSpanName', () => {
     const document = parse('query first { __typename } query second { __typename }');
 
     recordGraphQLOperation(document, 'second', httpContext(span));
-    applyGraphQLOperationSpanName(span, { method: 'POST' });
+    applyOperationSpanName(span, { method: 'POST' });
 
     expect(span.updateName).toHaveBeenCalledWith('POST /graphql query second');
   });
@@ -60,7 +58,7 @@ describe('graphqlOperationSpanName', () => {
     const span = makeSpan();
 
     recordGraphQLOperation(parse('{ __typename }'), undefined, httpContext(span));
-    applyGraphQLOperationSpanName(span, { method: 'GET' });
+    applyOperationSpanName(span, { method: 'GET' });
 
     expect(span.updateName).toHaveBeenCalledWith('GET /graphql query');
     expect(span.setAttribute).not.toHaveBeenCalledWith('graphql.operation.name', expect.anything());
@@ -71,7 +69,7 @@ describe('graphqlOperationSpanName', () => {
     const document = parse('query first { __typename } query second { __typename }');
 
     recordGraphQLOperation(document, undefined, httpContext(span));
-    applyGraphQLOperationSpanName(span, { method: 'POST' });
+    applyOperationSpanName(span, { method: 'POST' });
 
     expect(span.setAttribute).not.toHaveBeenCalled();
     expect(span.updateName).not.toHaveBeenCalled();
@@ -81,7 +79,7 @@ describe('graphqlOperationSpanName', () => {
     const span = makeSpan();
 
     recordGraphQLOperation(parse('query applications { __typename }'), undefined, ROOT_CONTEXT);
-    applyGraphQLOperationSpanName(span, { method: 'POST' });
+    applyOperationSpanName(span, { method: 'POST' });
 
     expect(span.setAttribute).not.toHaveBeenCalled();
     expect(span.updateName).not.toHaveBeenCalled();
@@ -96,9 +94,9 @@ describe('graphqlOperationSpanName', () => {
       undefined,
       httpContext(graphqlSpan),
     );
-    applyGraphQLOperationSpanName(graphqlSpan, { method: 'POST' });
-    applyGraphQLOperationSpanName(graphqlSpan, { method: 'POST' });
-    applyGraphQLOperationSpanName(otherSpan, { method: 'GET' });
+    applyOperationSpanName(graphqlSpan, { method: 'POST' });
+    applyOperationSpanName(graphqlSpan, { method: 'POST' });
+    applyOperationSpanName(otherSpan, { method: 'GET' });
 
     expect(graphqlSpan.updateName).toHaveBeenCalledOnce();
     expect(otherSpan.updateName).not.toHaveBeenCalled();

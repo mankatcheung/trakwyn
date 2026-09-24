@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeToolCallObserver } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { McpController, MCP_TOOLS } from '#src/interface-adapters/mcp/McpController.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { JSON_RPC_ERROR, MCP } from '#src/interface-adapters/mcp/constants.js';
@@ -69,6 +71,7 @@ const makeDeps = () => ({
   workExperienceRepository: makeWorkExperienceRepository(),
   educationRepository: makeEducationRepository(),
   skillRepository: makeSkillRepository(),
+  toolCallObserver: makeToolCallObserver(),
 });
 
 const rpc = (method: string, params?: Record<string, unknown>, id: string | number = 1) => ({
@@ -734,6 +737,103 @@ describe('McpController', () => {
       expect(body).toMatchObject({
         result: { content: [{ type: 'text', text: JSON.stringify(skills) }] },
       });
+    });
+  });
+
+  describe('tool-call observation (JEF-365)', () => {
+    const call = (name: string, args: Record<string, unknown>, scope: 'read' | 'full' = 'full') =>
+      controller.handle(rpc('tools/call', { name, arguments: args }), USER_ID, scope);
+
+    it('passes every catalogue tool through the observer, by name, surface and token scope', async () => {
+      for (const tool of MCP_TOOLS) {
+        await call(tool.name, { applicationId: 'app-1' });
+      }
+
+      expect(deps.toolCallObserver.calls.map((c) => c.meta)).toEqual(
+        MCP_TOOLS.map((tool) => ({ surface: 'mcp', name: tool.name, tokenScope: 'full' })),
+      );
+    });
+
+    it('covers the repository-backed tools, which have no use-case span of their own', async () => {
+      for (const name of ['list_work_experiences', 'list_educations', 'list_skills']) {
+        await call(name, {});
+      }
+
+      expect(deps.toolCallObserver.calls.map((c) => [c.meta.name, c.reports])).toEqual([
+        ['list_work_experiences', ['succeeded']],
+        ['list_educations', ['succeeded']],
+        ['list_skills', ['succeeded']],
+      ]);
+    });
+
+    it('reports success with the serialised text the client receives', async () => {
+      vi.mocked(deps.getApplicationUseCase.execute).mockResolvedValue(
+        makeApplication({ id: 'app-1' }),
+      );
+
+      const { body } = await call('get_application', { applicationId: 'app-1' });
+
+      const [observed] = deps.toolCallObserver.calls;
+      expect(observed?.reports).toEqual(['succeeded']);
+      expect(observed?.result).toBe(
+        (body as { result: { content: { text: string }[] } }).result.content[0]!.text,
+      );
+    });
+
+    it('reports a refusal with the user when a read token calls a write tool', async () => {
+      await call('create_note', { applicationId: 'app-1', content: 'x' }, 'read');
+
+      expect(deps.toolCallObserver.calls).toEqual([
+        {
+          meta: { surface: 'mcp', name: 'create_note', tokenScope: 'read' },
+          reports: ['refused'],
+          refusedUserId: USER_ID,
+        },
+      ]);
+      expect(deps.createNoteUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('reports invalid params for a failed argument check', async () => {
+      await call('get_application', {});
+
+      expect(deps.toolCallObserver.calls[0]?.reports).toEqual(['invalid_params']);
+    });
+
+    it('reports invalid params for an unknown tool', async () => {
+      await call('nope', {});
+
+      expect(deps.toolCallObserver.calls[0]).toMatchObject({
+        meta: { name: 'nope' },
+        reports: ['invalid_params'],
+      });
+    });
+
+    it('reports a use-case failure with the error, and still answers the client', async () => {
+      const notFound = new NotFoundError('Application');
+      vi.mocked(deps.getApplicationUseCase.execute).mockRejectedValue(notFound);
+
+      const { body } = await call('get_application', { applicationId: 'missing' });
+
+      expect(deps.toolCallObserver.calls[0]).toMatchObject({
+        reports: ['failed'],
+        error: notFound,
+      });
+      expect(body).toMatchObject({ error: { code: JSON_RPC_ERROR.INVALID_PARAMS } });
+    });
+
+    it('never passes tool arguments to the observer', async () => {
+      await call('create_note', { applicationId: 'app-secret', content: 'private text' });
+
+      expect(JSON.stringify(deps.toolCallObserver.calls[0]?.meta)).not.toMatch(
+        /app-secret|private text/,
+      );
+    });
+
+    it('observes only tools/call, not initialize or tools/list', async () => {
+      await controller.handle(rpc('initialize'), USER_ID, 'full');
+      await controller.handle(rpc('tools/list'), USER_ID, 'full');
+
+      expect(deps.toolCallObserver.calls).toEqual([]);
     });
   });
 });
