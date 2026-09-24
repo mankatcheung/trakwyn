@@ -1,10 +1,12 @@
 locals {
   # APL expression for a log line's `event` field. The API's pino fields reach
-  # Axiom as OTel log attributes (otelLogDestination.ts), and Axiom files any
-  # attribute that is not an OTel semantic convention under `attributes.custom`.
+  # Axiom as OTel log attributes (otelLogDestination.ts), which Axiom stores as
+  # top-level `attributes.<key>` fields. The `attributes.custom` map is where it
+  # puts custom *span* attributes, not log ones: reading `event` from there
+  # matched nothing, so every absence monitor fired daily while the jobs ran.
   # Every log-based monitor reads the field through this one expression, so if
   # Axiom ever moves it only this line changes.
-  log_event = "tostring(['attributes.custom']['event'])"
+  log_event = "tostring(['attributes.event'])"
 
   # The /admin/* jobs Cloud Scheduler runs daily (infra/gcp/scheduler.tf), by
   # the `job` name `runScheduledJob` logs them under (ADMIN_JOBS in
