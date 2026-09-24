@@ -21,9 +21,16 @@ appId: com.trakwyn.app
 - tapOn:
     id: 'register-email-input'
 - inputText: ${output.email}
+# Close the keyboard before every next field. On the CI emulator's 320x640
+# screen the open keyboard covers the lower inputs, so a tap on one lands on
+# the keyboard, focus stays put and the next inputText types into the field
+# above ("Passwords do not match"). This is a plain screen, not a modal, so
+# the back press behind hideKeyboard only closes the keyboard.
+- hideKeyboard
 - tapOn:
     id: 'register-password-input'
 - inputText: ${output.password}
+- hideKeyboard
 - tapOn:
     id: 'register-confirm-password-input'
 - inputText: ${output.password}

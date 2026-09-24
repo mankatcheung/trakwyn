@@ -20,6 +20,9 @@ appId: com.trakwyn.app
 - tapOn:
     id: 'login-email-input'
 - inputText: ${output.email}
+# See subflows/register-new-account.yml: the open keyboard can cover the next
+# field, so close it before tapping there.
+- hideKeyboard
 - tapOn:
     id: 'login-password-input'
 - inputText: ${output.password}
