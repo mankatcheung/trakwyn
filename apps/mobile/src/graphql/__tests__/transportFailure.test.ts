@@ -21,7 +21,8 @@ jest.mock('../../lib/analytics', () => ({
 
 import { getTokens, setTokens } from '../../auth/tokenStorage';
 import { getLastTraceId, rememberTraceId } from '../../lib/analytics';
-import { addTraceparent, gqlRequest, operationNameOf, setAccessToken } from '../client';
+import { addTraceparent, gqlRequest, setAccessToken } from '../client';
+import { RequestTimeoutError } from '../requestTimeout';
 
 const requestSpy = jest.spyOn(GraphQLClient.prototype, 'request');
 
@@ -42,11 +43,10 @@ const networkError = () => new TypeError('Network request failed');
 
 /** The trace id the `n`th request (0-based) was sent with. */
 function traceIdOfCall(n: number): string {
-  const headers = (requestSpy.mock.calls[n] as unknown[] | undefined)?.[2] as Record<
-    string,
-    string
-  >;
-  return headers.traceparent.split('-')[1] ?? '';
+  const [options] = requestSpy.mock.calls[n] as unknown as [
+    { requestHeaders: Record<string, string> },
+  ];
+  return options.requestHeaders.traceparent?.split('-')[1] ?? '';
 }
 
 beforeEach(() => {
@@ -161,32 +161,29 @@ describe('gqlRequest failure reporting', () => {
   });
 });
 
-describe('operationNameOf', () => {
-  it.each([
-    ['query Me { me { id } }', 'Me'],
-    [
-      '\n  mutation UpdateApplication($id: ID!) { updateApplication(id: $id) { id } }',
-      'UpdateApplication',
-    ],
-    ['subscription OnEvent { event }', 'OnEvent'],
-    ['fragment F on User { id }\nquery WithFragment { me { ...F } }', 'WithFragment'],
-  ])('reads the operation name from %j', (query, name) => {
-    expect(operationNameOf(query)).toBe(name);
-  });
-
-  it('returns undefined for an anonymous operation', () => {
-    expect(operationNameOf('query { ok }')).toBeUndefined();
-    expect(operationNameOf('{ ok }')).toBeUndefined();
-  });
-
-  it('leaves the operation out of the event when the query is anonymous', async () => {
+describe('operation and timeout', () => {
+  // The name comes from requestTimeout.ts's `operationName`, shared with the
+  // timeout breadcrumb, so both name an unnamed query the same way.
+  it('reports an anonymous query as `anonymous`', async () => {
     requestSpy.mockRejectedValueOnce(networkError());
 
     await expect(gqlRequest('{ ok }')).rejects.toThrow();
 
     expect(mockCaptureException).toHaveBeenCalledWith(
       expect.anything(),
-      expect.not.objectContaining({ operation: expect.anything() }),
+      expect.objectContaining({ operation: 'anonymous' }),
+    );
+  });
+
+  it('reports a request timeout (JEF-367) as a network error', async () => {
+    const error = new RequestTimeoutError('ApplicationDetail');
+    requestSpy.mockRejectedValueOnce(error);
+
+    await expect(gqlRequest(QUERY)).rejects.toBe(error);
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      error,
+      expect.objectContaining({ network_error: true, operation: 'ApplicationDetail' }),
     );
   });
 });

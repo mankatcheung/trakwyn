@@ -31,6 +31,7 @@ import {
   traceHeaders,
   addTraceparent,
 } from '../client';
+import { GQL_REQUEST_TIMEOUT_MS } from '../../constants';
 
 const mockedGetTokens = jest.mocked(getTokens);
 const mockedSetTokens = jest.mocked(setTokens);
@@ -60,7 +61,20 @@ const storedPair = { accessToken: 'stale-token', refreshToken: 'refresh-token' }
 const refreshedPair = { accessToken: 'fresh-token', refreshToken: 'new-refresh-token' };
 const refreshResponse = { refreshTokenMobile: refreshedPair };
 
-const isRefreshCall = (call: unknown[]) => String(call[0]).includes('refreshTokenMobile');
+const isRefreshCall = (call: unknown[]) =>
+  String((call[0] as { document: unknown }).document).includes('refreshTokenMobile');
+
+/**
+ * The object-form request gqlRequest sends: the document, its headers, and
+ * the timeout signal (JEF-367). Every attempt carries its own `traceparent`
+ * (JEF-370) alongside whatever auth header is expected.
+ */
+const sentRequest = (document: string, authHeader: Record<string, string> | undefined) =>
+  expect.objectContaining({
+    document,
+    requestHeaders: expect.objectContaining({ ...authHeader, traceparent: expect.any(String) }),
+    signal: expect.any(AbortSignal),
+  });
 
 describe('gqlRequest', () => {
   let listener: jest.Mock;
@@ -81,11 +95,7 @@ describe('gqlRequest', () => {
     await gqlRequest('query Me { me { id } }');
 
     expect(requestSpy).toHaveBeenCalledWith(
-      'query Me { me { id } }',
-      undefined,
-      expect.objectContaining({
-        authorization: 'Bearer token-123',
-      }),
+      sentRequest('query Me { me { id } }', { authorization: 'Bearer token-123' }),
     );
   });
 
@@ -94,8 +104,9 @@ describe('gqlRequest', () => {
 
     await gqlRequest('query { ok }');
 
-    const [, , headers] = (requestSpy.mock.calls[0] ?? []) as unknown[];
-    expect(headers).not.toHaveProperty('authorization');
+    expect(requestSpy).toHaveBeenCalledWith(sentRequest('query { ok }', undefined));
+    const [options] = requestSpy.mock.calls[0] as unknown as [{ requestHeaders: object }];
+    expect(options.requestHeaders).not.toHaveProperty('authorization');
   });
 
   it('returns the response on success without touching the token store', async () => {
@@ -119,11 +130,7 @@ describe('gqlRequest', () => {
     expect(mockedSetTokens).toHaveBeenCalledWith(refreshedPair);
     // Final retry uses the freshly-refreshed access token.
     expect(requestSpy).toHaveBeenLastCalledWith(
-      'query Me { me { id } }',
-      undefined,
-      expect.objectContaining({
-        authorization: 'Bearer fresh-token',
-      }),
+      sentRequest('query Me { me { id } }', { authorization: 'Bearer fresh-token' }),
     );
   });
 
@@ -167,11 +174,7 @@ describe('gqlRequest', () => {
     expect(requestSpy).toHaveBeenCalledTimes(2);
     expect(isRefreshCall(requestSpy.mock.calls[0]!)).toBe(true);
     expect(requestSpy).toHaveBeenLastCalledWith(
-      'mutation { updatePassword }',
-      undefined,
-      expect.objectContaining({
-        authorization: 'Bearer fresh-token',
-      }),
+      sentRequest('mutation { updatePassword }', { authorization: 'Bearer fresh-token' }),
     );
   });
 
@@ -245,11 +248,7 @@ describe('gqlRequest', () => {
 
     expect(mockedGetTokens).not.toHaveBeenCalled();
     expect(requestSpy).toHaveBeenLastCalledWith(
-      'query { ok }',
-      undefined,
-      expect.objectContaining({
-        authorization: 'Bearer fresh-from-elsewhere',
-      }),
+      sentRequest('query { ok }', { authorization: 'Bearer fresh-from-elsewhere' }),
     );
   });
 
@@ -464,6 +463,56 @@ describe('reporting a rejected refresh', () => {
   it('never lets a token value into a breadcrumb either', () => {
     const serialised = JSON.stringify(mockAddBreadcrumb.mock.calls);
     expect(serialised).not.toContain(storedPair.refreshToken);
+  });
+});
+
+/** A request that never answers, rejecting only when its timeout signal fires — what a dead connection looks like. */
+function hangUntilAborted({ signal }: { signal?: AbortSignal }): Promise<never> {
+  return new Promise((_, reject) => {
+    signal?.addEventListener('abort', () => reject(new Error('Aborted')));
+  });
+}
+
+describe('request timeout (JEF-367)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    setAccessToken(null);
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('gives up on an unanswered request after GQL_REQUEST_TIMEOUT_MS and says which one', async () => {
+    requestSpy.mockImplementationOnce(hangUntilAborted as never);
+
+    const settled = gqlRequest('query Applications { applications { id } }').catch(
+      (e: unknown) => e,
+    );
+    await jest.advanceTimersByTimeAsync(GQL_REQUEST_TIMEOUT_MS);
+    const error = await settled;
+
+    expect(error).toBeInstanceOf(TypeError);
+    expect((error as Error).name).toBe('RequestTimeoutError');
+    expect(mockAddBreadcrumb).toHaveBeenCalledWith('Request timed out', {
+      operation: 'Applications',
+    });
+  });
+
+  it('keeps the session when the refresh itself times out', async () => {
+    setAccessToken('stale-token');
+    mockedGetTokens.mockResolvedValueOnce(storedPair);
+    requestSpy.mockImplementationOnce(hangUntilAborted as never);
+    const listener = jest.fn();
+    onSessionExpired(listener);
+
+    const recovery = recoverFromUnauthorized('stale-token');
+    await jest.advanceTimersByTimeAsync(GQL_REQUEST_TIMEOUT_MS);
+
+    await expect(recovery).resolves.toEqual({ kind: 'unreachable' });
+    expect(mockedClearTokens).not.toHaveBeenCalled();
+    expect(listener).not.toHaveBeenCalled();
+    expect(mockAddBreadcrumb).toHaveBeenCalledWith('Request timed out', {
+      operation: 'RefreshTokenMobile',
+    });
   });
 });
 

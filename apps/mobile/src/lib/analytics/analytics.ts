@@ -1,6 +1,7 @@
 import PostHog from 'posthog-react-native';
 import { POSTHOG_API_KEY, POSTHOG_EU_HOST, POSTHOG_HOST } from '../../constants';
 import { scrubEvent, scrubValue } from './scrub';
+import { getNetworkConnected } from './networkState';
 import { getLastTraceId } from './traceContext';
 
 /**
@@ -56,10 +57,19 @@ function asEventProperties(properties: Properties): EventProperties {
   return properties as EventProperties;
 }
 
-/** Properties every event carries, so an error can be placed without asking the reporter. */
+/**
+ * Properties every event carries, so an error can be placed without asking
+ * the reporter. `$network_connected` (JEF-367) lets errors raised while the
+ * device was offline be filtered out; it is left off while connectivity is
+ * still unknown.
+ */
 function baseProperties(): Properties {
   const traceId = getLastTraceId();
-  return traceId ? { trace_id: traceId } : {};
+  const connected = getNetworkConnected();
+  return {
+    ...(traceId ? { trace_id: traceId } : {}),
+    ...(connected === null ? {} : { $network_connected: connected }),
+  };
 }
 
 /**

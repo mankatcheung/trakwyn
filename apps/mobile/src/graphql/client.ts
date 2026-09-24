@@ -1,5 +1,10 @@
 import { GraphQLClient, ClientError } from 'graphql-request';
-import { ACCESS_TOKEN_REFRESH_LEEWAY_S, API_URL, ERROR_CODES } from '../constants';
+import {
+  ACCESS_TOKEN_REFRESH_LEEWAY_S,
+  API_URL,
+  ERROR_CODES,
+  GQL_REQUEST_TIMEOUT_MS,
+} from '../constants';
 import { getTokens, setTokens, clearTokens, type TokenPair } from '../auth/tokenStorage';
 import { buildUserAgent } from '../lib/userAgent';
 import {
@@ -10,6 +15,7 @@ import {
   rememberTraceId,
   transportFailureProperties,
 } from '../lib/analytics';
+import { operationName, withRequestTimeout } from './requestTimeout';
 
 const REFRESH_TOKEN_MOBILE_MUTATION = `
   mutation RefreshTokenMobile($refreshToken: String!) {
@@ -109,6 +115,18 @@ const rawClient = new GraphQLClient(API_URL, {
   requestMiddleware: addTraceparent,
 });
 
+/**
+ * Every request this module sends, the refresh included, goes through here
+ * so none of them can hang on a dead connection (JEF-367). A refresh that
+ * times out is a TypeError like any other unreachable server, so it keeps
+ * the session rather than ending it.
+ */
+function send<T>(query: string, variables?: object, requestHeaders?: HeadersInit): Promise<T> {
+  return withRequestTimeout(query, GQL_REQUEST_TIMEOUT_MS, (signal) =>
+    rawClient.request<T>({ document: query, variables, requestHeaders, signal }),
+  );
+}
+
 type RefreshOutcome =
   | { status: 'refreshed'; tokens: TokenPair }
   /** The session is genuinely over: the server rejected the refresh token, or there is none to present. */
@@ -146,10 +164,9 @@ async function doRefresh(): Promise<RefreshOutcome> {
 
   let data: { refreshTokenMobile: TokenPair };
   try {
-    data = await rawClient.request<{ refreshTokenMobile: TokenPair }>(
-      REFRESH_TOKEN_MOBILE_MUTATION,
-      { refreshToken: tokens.refreshToken },
-    );
+    data = await send<{ refreshTokenMobile: TokenPair }>(REFRESH_TOKEN_MOBILE_MUTATION, {
+      refreshToken: tokens.refreshToken,
+    });
   } catch (error) {
     // Deleting a still-valid refresh token because the subway ate the request
     // costs the user the whole session — so only an actual rejection ends it.
@@ -245,29 +262,6 @@ function authHeaders(token: string | null): Record<string, string> {
   return token ? { authorization: `Bearer ${token}` } : {};
 }
 
-/** A document's first named operation — `query ApplicationDetail(...)` → `ApplicationDetail`. */
-const OPERATION_NAME_PATTERN = /\b(?:query|mutation|subscription)\s+([_A-Za-z][_0-9A-Za-z]*)/;
-
-/**
- * Keyed by the query string itself: every caller passes a module-level
- * constant, so this holds one entry per operation the app has and cannot
- * grow past that.
- */
-const operationNames = new Map<string, string | undefined>();
-
-/**
- * The operation name to report a failure under. `gqlRequest` takes a bare
- * string rather than a typed document, so there is no `operationName` to
- * read as web's middleware does — a regex rather than `graphql`'s parser,
- * since the name is all that is needed and it is read once per operation.
- */
-export function operationNameOf(query: string): string | undefined {
-  if (!operationNames.has(query)) {
-    operationNames.set(query, OPERATION_NAME_PATTERN.exec(query)?.[1]);
-  }
-  return operationNames.get(query);
-}
-
 /**
  * Every mobile screen goes through this instead of graphql-request directly:
  * it attaches the current access token and, when a request that carried one
@@ -286,7 +280,8 @@ export function operationNameOf(query: string): string | undefined {
  *
  * The request's final failure — after any retry, so a recovered
  * UNAUTHORIZED is never seen and a failed retry is reported once — goes to
- * PostHog when it is the API unreachable or answering 5xx (JEF-370).
+ * PostHog when it is the API unreachable, timed out or answering 5xx
+ * (JEF-370).
  */
 export async function gqlRequest<T>(
   query: string,
@@ -300,37 +295,34 @@ export async function gqlRequest<T>(
   // shared last-trace id `captureException` falls back to may by then belong
   // to another screen's request that started in the meantime.
   let traceId: string | undefined;
-  const send = (token: string | null): Promise<T> => {
+  const attempt = (token: string | null): Promise<T> => {
     const trace = newTraceContext();
     traceId = trace.traceId;
     rememberTraceId(trace.traceId);
-    return rawClient.request<T>(query, variables, {
-      ...authHeaders(token),
-      traceparent: trace.traceparent,
-    });
+    return send<T>(query, variables, { ...authHeaders(token), traceparent: trace.traceparent });
   };
 
   try {
-    return await sendRecoveringUnauthorized(send, sentWith, refreshOnUnauthorized);
+    return await attemptRecoveringUnauthorized(attempt, sentWith, refreshOnUnauthorized);
   } catch (error) {
-    const properties = transportFailureProperties(error, operationNameOf(query));
+    const properties = transportFailureProperties(error, operationName(query));
     if (properties) captureException(error, { ...properties, trace_id: traceId });
     throw error;
   }
 }
 
-async function sendRecoveringUnauthorized<T>(
-  send: (token: string | null) => Promise<T>,
+async function attemptRecoveringUnauthorized<T>(
+  attempt: (token: string | null) => Promise<T>,
   sentWith: string | null,
   refreshOnUnauthorized: boolean,
 ): Promise<T> {
   try {
-    return await send(sentWith);
+    return await attempt(sentWith);
   } catch (error) {
     if (!isUnauthorized(error) || !sentWith || !refreshOnUnauthorized) throw error;
 
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind !== 'retry') throw error;
-    return send(recovery.token);
+    return attempt(recovery.token);
   }
 }
