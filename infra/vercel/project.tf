@@ -20,6 +20,9 @@ import {
 # If the first plan after import proposes clearing one, copy the live value
 # here instead (README.md, "Adopting the live project").
 resource "vercel_project" "web" {
-  name           = var.project_name
-  root_directory = "apps/web"
+  name            = var.project_name
+  root_directory  = "apps/web"
+  build_command   = "pnpm --filter web build"
+  framework       = "tanstack-start"
+  install_command = "pnpm install"
 }
