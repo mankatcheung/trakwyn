@@ -24,6 +24,12 @@ vi.mock('#/lib/analytics', () => ({
 
 import { CookieConsent } from '#/components/CookieConsent';
 import { requestOpenCookiePreferences } from '#/lib/cookieConsent';
+import type { ConsentRegion } from '#/lib/consentRegion';
+
+const region = (requiresConsent: boolean, country: string | null = null): ConsentRegion => ({
+  requiresConsent,
+  country,
+});
 
 describe('CookieConsent', () => {
   beforeEach(() => {
@@ -35,15 +41,32 @@ describe('CookieConsent', () => {
   });
 
   it('loads analytics immediately outside a consent-required region, with no banner', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(false);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(false));
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
     expect(screen.queryByText(/necessary cookies to keep you signed in/i)).not.toBeInTheDocument();
   });
 
+  it("passes the visitor's country to analytics for the location breakdown (JEF-366)", async () => {
+    mockGetRequiresCookieConsent.mockResolvedValue(region(false, 'US'));
+    render(<CookieConsent />);
+
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalledWith('US'));
+  });
+
+  it('passes the country only once consent is given, not with the banner up', async () => {
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true, 'DE'));
+    render(<CookieConsent />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /accept all/i }));
+
+    await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalledWith('DE'));
+    expect(mockInitAnalytics).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the banner and blocks analytics in a consent-required region with no prior choice', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     await waitFor(() =>
@@ -57,7 +80,7 @@ describe('CookieConsent', () => {
       'trakwyn_cookie_consent',
       JSON.stringify({ analytics: true, consentedAt: new Date().toISOString() }),
     );
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
@@ -69,7 +92,7 @@ describe('CookieConsent', () => {
       'trakwyn_cookie_consent',
       JSON.stringify({ analytics: false, consentedAt: new Date().toISOString() }),
     );
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockGetRequiresCookieConsent).toHaveBeenCalled());
@@ -77,7 +100,7 @@ describe('CookieConsent', () => {
   });
 
   it('"Accept all" dismisses the banner, loads analytics, and records the choice', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     fireEvent.click(await screen.findByRole('button', { name: /accept all/i }));
@@ -92,7 +115,7 @@ describe('CookieConsent', () => {
   });
 
   it('"Reject non-essential" dismisses the banner without loading analytics', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     fireEvent.click(await screen.findByRole('button', { name: /reject non-essential/i }));
@@ -106,7 +129,7 @@ describe('CookieConsent', () => {
   });
 
   it('"Manage preferences" opens a panel that saves the chosen category', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     fireEvent.click(await screen.findByRole('button', { name: /manage preferences/i }));
@@ -120,7 +143,7 @@ describe('CookieConsent', () => {
   });
 
   it('the "Necessary" category is always on and cannot be unchecked', async () => {
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     fireEvent.click(await screen.findByRole('button', { name: /manage preferences/i }));
@@ -135,7 +158,7 @@ describe('CookieConsent', () => {
       'trakwyn_cookie_consent',
       JSON.stringify({ analytics: false, consentedAt: new Date().toISOString() }),
     );
-    mockGetRequiresCookieConsent.mockResolvedValue(false);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(false));
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockGetRequiresCookieConsent).toHaveBeenCalled());
@@ -147,9 +170,9 @@ describe('CookieConsent', () => {
   // it tempting to start it early "just for errors". These two tests pin the
   // decision that it does not.
   it('starts nothing while the region check is still in flight', async () => {
-    let resolveRegion: (requiresConsent: boolean) => void = () => {};
+    let resolveRegion: (value: ConsentRegion) => void = () => {};
     mockGetRequiresCookieConsent.mockReturnValue(
-      new Promise<boolean>((resolve) => {
+      new Promise<ConsentRegion>((resolve) => {
         resolveRegion = resolve;
       }),
     );
@@ -160,7 +183,7 @@ describe('CookieConsent', () => {
     // implementation would have loaded the SDK.
     expect(mockInitAnalytics).not.toHaveBeenCalled();
 
-    resolveRegion(true);
+    resolveRegion(region(true));
     await waitFor(() =>
       expect(screen.getByText(/necessary cookies to keep you signed in/i)).toBeInTheDocument(),
     );
@@ -172,7 +195,7 @@ describe('CookieConsent', () => {
       'trakwyn_cookie_consent',
       JSON.stringify({ analytics: true, consentedAt: new Date().toISOString() }),
     );
-    mockGetRequiresCookieConsent.mockResolvedValue(true);
+    mockGetRequiresCookieConsent.mockResolvedValue(region(true));
     render(<CookieConsent />);
 
     await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());

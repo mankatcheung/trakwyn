@@ -86,16 +86,40 @@ function acceptLanguageSuggestsConsentRequired(acceptLanguage: string | undefine
   return primaryTags.length > 0 && CONSENT_REQUIRED_LANGUAGES.has(primaryTags[0]);
 }
 
+/** An ISO 3166-1 alpha-2 code, which is all `x-vercel-ip-country` should ever carry. */
+const COUNTRY_CODE = /^[A-Z]{2}$/;
+
+export interface ConsentRegion {
+  /** Whether analytics wait for an opt-in rather than defaulting on. */
+  requiresConsent: boolean;
+  /**
+   * The visitor's country for PostHog's location breakdown (JEF-366), or
+   * `null` when Vercel didn't say. Only ever the header's value — never
+   * guessed from `Accept-Language`, because a language is not a location,
+   * which is also why that fallback only decides consent.
+   */
+  country: string | null;
+}
+
 /**
  * Whether the current visitor needs to opt in before non-essential cookies
- * load, rather than having them on by default. Vercel injects
- * `x-vercel-ip-country` on every request in production — no external
- * lookup, no added latency — which `Accept-Language` (present on every
- * request everywhere, including local dev) backs up when that header is
- * absent.
+ * load, rather than having them on by default, and which country they are
+ * in. Vercel injects `x-vercel-ip-country` on every request in production —
+ * no external lookup, no added latency — which `Accept-Language` (present
+ * on every request everywhere, including local dev) backs up when that
+ * header is absent.
+ *
+ * The country is what lets the PostHog project discard client IPs
+ * (`anonymize_ips`) and still break events down by location: it is worked
+ * out here, at Vercel's edge, so no IP ever has to reach PostHog.
  */
-export const getRequiresCookieConsent = createServerFn({ method: 'GET' }).handler(async () => {
-  const country = getRequestHeader('x-vercel-ip-country');
-  if (country) return CONSENT_REQUIRED_COUNTRIES.has(country.toUpperCase());
-  return acceptLanguageSuggestsConsentRequired(getRequestHeader('accept-language'));
-});
+export const getRequiresCookieConsent = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<ConsentRegion> => {
+    const header = getRequestHeader('x-vercel-ip-country')?.toUpperCase();
+    const country = header && COUNTRY_CODE.test(header) ? header : null;
+    const requiresConsent = header
+      ? CONSENT_REQUIRED_COUNTRIES.has(header)
+      : acceptLanguageSuggestsConsentRequired(getRequestHeader('accept-language'));
+    return { requiresConsent, country };
+  },
+);
