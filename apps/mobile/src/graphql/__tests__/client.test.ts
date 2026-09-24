@@ -64,9 +64,17 @@ const refreshResponse = { refreshTokenMobile: refreshedPair };
 const isRefreshCall = (call: unknown[]) =>
   String((call[0] as { document: unknown }).document).includes('refreshTokenMobile');
 
-/** The object-form request gqlRequest sends: the document, its headers, and the timeout signal (JEF-367). */
-const sentRequest = (document: string, requestHeaders: Record<string, string> | undefined) =>
-  expect.objectContaining({ document, requestHeaders, signal: expect.any(AbortSignal) });
+/**
+ * The object-form request gqlRequest sends: the document, its headers, and
+ * the timeout signal (JEF-367). Every attempt carries its own `traceparent`
+ * (JEF-370) alongside whatever auth header is expected.
+ */
+const sentRequest = (document: string, authHeader: Record<string, string> | undefined) =>
+  expect.objectContaining({
+    document,
+    requestHeaders: expect.objectContaining({ ...authHeader, traceparent: expect.any(String) }),
+    signal: expect.any(AbortSignal),
+  });
 
 describe('gqlRequest', () => {
   let listener: jest.Mock;
@@ -97,6 +105,8 @@ describe('gqlRequest', () => {
     await gqlRequest('query { ok }');
 
     expect(requestSpy).toHaveBeenCalledWith(sentRequest('query { ok }', undefined));
+    const [options] = requestSpy.mock.calls[0] as unknown as [{ requestHeaders: object }];
+    expect(options.requestHeaders).not.toHaveProperty('authorization');
   });
 
   it('returns the response on success without touching the token store', async () => {

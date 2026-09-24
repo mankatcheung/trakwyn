@@ -1,7 +1,13 @@
 import { GraphQLClient } from 'graphql-request';
 import { queryClient } from '#/lib/queryClient';
 import { DEFAULT_API_URL, ERROR_CODES } from '#/constants';
-import { captureException, isApiRequest, newTraceContext, rememberTraceId } from '#/lib/analytics';
+import {
+  captureException,
+  isApiRequest,
+  newTraceContext,
+  rememberTraceId,
+  transportFailureProperties,
+} from '#/lib/analytics';
 
 const API_URL = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL;
 
@@ -124,29 +130,13 @@ export function addTraceparent<T extends { url: string; headers?: HeadersInit }>
   return { ...request, headers };
 }
 
-/** The HTTP status a graphql-request failure carries, when it carries one at all. */
-function statusOf(response: unknown): number | undefined {
-  const status = (response as { response?: { status?: unknown } } | undefined)?.response?.status;
-  return typeof status === 'number' ? status : undefined;
-}
-
 /**
- * Reports the failures that say something is wrong with the deployment
- * rather than with the request: the API unreachable, or answering 5xx.
- *
- * Deliberately not reported: a 4xx or a GraphQL error with a domain code —
- * NOT_FOUND, VALIDATION, a wrong password — which are the API working
- * correctly and would bury the real faults under everyday noise.
+ * Reports the API unreachable or answering 5xx — which failures qualify is
+ * `transportFailureProperties`, shared with the mobile app.
  */
 function reportTransportFailure(response: unknown, operationName: string | undefined): void {
-  if (!(response instanceof Error)) return;
-  const status = statusOf(response);
-  if (status !== undefined && status < 500) return;
-  captureException(response, {
-    kind: 'graphql_request_failed',
-    ...(status === undefined ? { network_error: true } : { status }),
-    ...(operationName ? { operation: operationName } : {}),
-  });
+  const properties = transportFailureProperties(response, operationName);
+  if (properties) captureException(response, properties);
 }
 
 export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {

@@ -23,3 +23,4 @@ export {
 } from './traceContext';
 export { getNetworkConnected, rememberNetworkConnected, resetNetworkState } from './networkState';
 export { REDACTED, scrubEvent, scrubString, scrubValue } from './scrub';
+export { transportFailureProperties, type TransportFailureProperties } from './transportFailure';

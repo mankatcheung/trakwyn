@@ -13,8 +13,9 @@ import {
   isApiRequest,
   newTraceContext,
   rememberTraceId,
+  transportFailureProperties,
 } from '../lib/analytics';
-import { withRequestTimeout } from './requestTimeout';
+import { operationName, withRequestTimeout } from './requestTimeout';
 
 const REFRESH_TOKEN_MOBILE_MUTATION = `
   mutation RefreshTokenMobile($refreshToken: String!) {
@@ -96,9 +97,13 @@ export function traceHeaders(url: string): Record<string, string> {
  * from every request and broke all of them. Copying through the `Headers`
  * constructor is what makes this correct for all three shapes `HeadersInit`
  * can take.
+ *
+ * A `traceparent` the caller already set is kept: `gqlRequest` mints its
+ * own so it knows which trace id to report a failure under.
  */
 export function addTraceparent<T extends { url: string; headers?: HeadersInit }>(request: T): T {
   const headers = new Headers(request.headers);
+  if (headers.has('traceparent')) return { ...request, headers };
   for (const [name, value] of Object.entries(traceHeaders(request.url))) {
     headers.set(name, value);
   }
@@ -253,8 +258,8 @@ export function isUnauthorized(error: unknown): boolean {
   );
 }
 
-function authHeaders(token: string | null): HeadersInit | undefined {
-  return token ? { authorization: `Bearer ${token}` } : undefined;
+function authHeaders(token: string | null): Record<string, string> {
+  return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 /**
@@ -272,6 +277,11 @@ function authHeaders(token: string | null): HeadersInit | undefined {
  * still never mistaken for a wrong password. loginMobile and registerMobile
  * need no flag: they run without a token, and only a request that carried
  * one can have an expired one.
+ *
+ * The request's final failure — after any retry, so a recovered
+ * UNAUTHORIZED is never seen and a failed retry is reported once — goes to
+ * PostHog when it is the API unreachable, timed out or answering 5xx
+ * (JEF-370).
  */
 export async function gqlRequest<T>(
   query: string,
@@ -279,13 +289,40 @@ export async function gqlRequest<T>(
   { refreshOnUnauthorized = true }: { refreshOnUnauthorized?: boolean } = {},
 ): Promise<T> {
   const sentWith = refreshOnUnauthorized ? accessToken : await getValidAccessToken();
+
+  // Each attempt mints its own trace context here, rather than leaving it to
+  // `addTraceparent`, so a failure can name the request that failed: the
+  // shared last-trace id `captureException` falls back to may by then belong
+  // to another screen's request that started in the meantime.
+  let traceId: string | undefined;
+  const attempt = (token: string | null): Promise<T> => {
+    const trace = newTraceContext();
+    traceId = trace.traceId;
+    rememberTraceId(trace.traceId);
+    return send<T>(query, variables, { ...authHeaders(token), traceparent: trace.traceparent });
+  };
+
   try {
-    return await send<T>(query, variables, authHeaders(sentWith));
+    return await attemptRecoveringUnauthorized(attempt, sentWith, refreshOnUnauthorized);
+  } catch (error) {
+    const properties = transportFailureProperties(error, operationName(query));
+    if (properties) captureException(error, { ...properties, trace_id: traceId });
+    throw error;
+  }
+}
+
+async function attemptRecoveringUnauthorized<T>(
+  attempt: (token: string | null) => Promise<T>,
+  sentWith: string | null,
+  refreshOnUnauthorized: boolean,
+): Promise<T> {
+  try {
+    return await attempt(sentWith);
   } catch (error) {
     if (!isUnauthorized(error) || !sentWith || !refreshOnUnauthorized) throw error;
 
     const recovery = await recoverFromUnauthorized(sentWith);
     if (recovery.kind !== 'retry') throw error;
-    return send<T>(query, variables, authHeaders(recovery.token));
+    return attempt(recovery.token);
   }
 }

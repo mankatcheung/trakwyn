@@ -22,3 +22,4 @@ export {
   type TraceContext,
 } from './traceContext';
 export { REDACTED, scrubEvent, scrubString, scrubValue } from './scrub';
+export { transportFailureProperties, type TransportFailureProperties } from './transportFailure';
