@@ -1,9 +1,10 @@
-import { metrics, type Counter } from '@opentelemetry/api';
+import { metrics, type Counter, type Histogram } from '@opentelemetry/api';
 import { AXIOM } from '#src/infrastructure/config/constants.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
+import type { LlmProviderErrorKind } from '#src/use-cases/errors/DomainError.js';
 
 /**
  * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
@@ -41,6 +42,12 @@ export const METRICS = {
   TOOL_CALLS: 'trakwyn.tool.calls',
   /** A write tool refused to a read-scoped MCP token — attributes: tool, scope (JEF-365). */
   MCP_TOOL_REFUSED: 'trakwyn.mcp.tool_refused',
+  /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
+  LLM_CALLS: 'trakwyn.llm.calls',
+  /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
+  LLM_TOKENS: 'trakwyn.llm.tokens',
+  /** Provider latency of one LLM call, in ms — same attributes as `LLM_CALLS` (JEF-113). */
+  LLM_DURATION: 'trakwyn.llm.duration',
 } as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
@@ -79,6 +86,30 @@ export type EmailTemplate =
 /** Whether the provider accepted the message. `failed` covers a non-2xx answer and a request that never got one. */
 export type EmailOutcome = 'sent' | 'failed';
 
+/** `complete()` or `completeWithToolsStream()` — the two `ILLMProvider` methods (JEF-113). */
+export type LlmOperation = 'complete' | 'stream';
+
+/**
+ * How an LLM call ended. `aborted` is a stream the consumer stopped before
+ * `done` (client disconnect, idle timeout) — not a provider fault, so it is
+ * kept apart from `error` rather than inflating the error rate.
+ */
+export type LlmCallOutcome = 'success' | 'error' | 'aborted';
+
+/** Which side of a call a token count is for. The cache directions break `input` down, as `LLMUsage` does. */
+export type LlmTokenDirection = 'input' | 'output' | 'cache_read' | 'cache_write';
+
+/** One LLM call, as `recordLlmCall` receives it. No content: every field is a bounded label or a number. */
+export interface LlmCallMetric {
+  provider: string;
+  model: string | null;
+  operation: LlmOperation;
+  outcome: LlmCallOutcome;
+  /** `LlmProviderError.kind` on a provider refusal; null otherwise. */
+  errorKind: LlmProviderErrorKind | null;
+  durationMs: number;
+}
+
 /**
  * Counters for cache effectiveness and Redis resilience (JEF-129), and for
  * the security mechanisms that would otherwise refuse a request silently
@@ -113,6 +144,10 @@ export interface IMetrics {
   recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void;
   /** A write tool refused to an MCP token whose scope does not cover it (JEF-365). */
   recordMcpToolRefused(tool: string, scope: ApiTokenScope): void;
+  /** One LLM call finished, succeeded or not — counted and timed (JEF-113). */
+  recordLlmCall(call: LlmCallMetric): void;
+  /** Tokens one LLM call used in one direction (JEF-113). */
+  recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -128,6 +163,8 @@ export const noopMetrics: IMetrics = {
   recordSecurityEvent: () => {},
   recordToolCall: () => {},
   recordMcpToolRefused: () => {},
+  recordLlmCall: () => {},
+  recordLlmTokens: () => {},
 };
 
 /**
@@ -153,6 +190,9 @@ class OtelMetrics implements IMetrics {
   private securityEvents?: Counter;
   private toolCalls?: Counter;
   private mcpToolRefused?: Counter;
+  private llmCalls?: Counter;
+  private llmTokens?: Counter;
+  private llmDuration?: Histogram;
 
   private get meter() {
     return metrics.getMeter(AXIOM.SERVICE_NAME);
@@ -233,6 +273,39 @@ class OtelMetrics implements IMetrics {
       description: 'Write tools refused to an MCP token whose scope does not cover them',
     });
     this.mcpToolRefused.add(1, { tool, scope });
+  }
+
+  recordLlmCall({
+    provider,
+    model,
+    operation,
+    outcome,
+    errorKind,
+    durationMs,
+  }: LlmCallMetric): void {
+    this.llmCalls ??= this.meter.createCounter(METRICS.LLM_CALLS, {
+      description: "LLM calls made on a user's key, by provider, model and outcome",
+    });
+    this.llmDuration ??= this.meter.createHistogram(METRICS.LLM_DURATION, {
+      description: 'Provider latency of LLM calls',
+      unit: 'ms',
+    });
+    const attributes = {
+      provider,
+      model: model ?? 'unknown',
+      operation,
+      outcome,
+      ...(errorKind ? { error_kind: errorKind } : {}),
+    };
+    this.llmCalls.add(1, attributes);
+    this.llmDuration.record(durationMs, attributes);
+  }
+
+  recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void {
+    this.llmTokens ??= this.meter.createCounter(METRICS.LLM_TOKENS, {
+      description: "Tokens used by LLM calls on a user's key, by provider and direction",
+    });
+    this.llmTokens.add(count, { provider, direction });
   }
 }
 

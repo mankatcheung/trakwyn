@@ -1,6 +1,8 @@
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
 import { llmApiKeyCipherContext } from '#src/use-cases/user/llmApiKeyCipherContext.js';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
+import { TracingLLMProvider } from '#src/infrastructure/llm/TracingLLMProvider.js';
+import { noopMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
@@ -23,6 +25,12 @@ interface Deps {
   outboundUrlPolicy: IOutboundUrlPolicy;
   generateId: () => string;
   logger: ILogger;
+  /**
+   * Wrap tracked providers in `TracingLLMProvider` (JEF-113). DI passes
+   * `isObservabilityEnabled`, so dev and test never build the spans.
+   */
+  traceLlmCalls?: boolean;
+  metrics?: IMetrics;
 }
 
 export class UserLLMProviderFactory implements ILLMProviderFactory {
@@ -83,8 +91,18 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       return { provider: rawProvider, providerId: resolvedProvider, fellBackFrom: null };
     }
 
+    // Tracing sits beneath usage tracking, so the span times the provider
+    // rather than the ledger insert that follows it.
+    const measured = this.deps.traceLlmCalls
+      ? new TracingLLMProvider({
+          inner: rawProvider,
+          metrics: this.deps.metrics ?? noopMetrics,
+          provider: resolvedProvider,
+          model: resolvedModel,
+        })
+      : rawProvider;
     const tracked = new UsageTrackingLLMProvider({
-      inner: rawProvider,
+      inner: measured,
       usageEventRepository: this.deps.llmUsageEventRepository,
       generateId: this.deps.generateId,
       logger: this.deps.logger,

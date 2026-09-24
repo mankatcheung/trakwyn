@@ -3,6 +3,8 @@ import type {
   EmailTemplate,
   FailOpenReason,
   IMetrics,
+  LlmCallMetric,
+  LlmTokenDirection,
   MetricComponent,
   OutboundUrlRefusalReason,
   RateLimitSubject,
@@ -49,6 +51,12 @@ export interface McpToolRefusedEvent {
   scope: ApiTokenScope;
 }
 
+export interface LlmTokensEvent {
+  provider: string;
+  direction: LlmTokenDirection;
+  count: number;
+}
+
 export interface FakeMetrics extends IMetrics {
   hits: number;
   misses: number;
@@ -61,6 +69,8 @@ export interface FakeMetrics extends IMetrics {
   securityEvents: SecurityEventType[];
   toolCalls: ToolCallEvent[];
   mcpToolRefused: McpToolRefusedEvent[];
+  llmCalls: LlmCallMetric[];
+  llmTokens: LlmTokensEvent[];
 }
 
 /**
@@ -80,6 +90,8 @@ export function makeFakeMetrics(): FakeMetrics {
     securityEvents: [],
     toolCalls: [],
     mcpToolRefused: [],
+    llmCalls: [],
+    llmTokens: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -112,6 +124,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordMcpToolRefused: (tool, scope) => {
       fake.mcpToolRefused.push({ tool, scope });
+    },
+    recordLlmCall: (call) => {
+      fake.llmCalls.push(call);
+    },
+    recordLlmTokens: (provider, direction, count) => {
+      fake.llmTokens.push({ provider, direction, count });
     },
   };
   return fake;
