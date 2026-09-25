@@ -1,0 +1,42 @@
+# F-2 — Register, then create an application.
+#
+# The first write path through a real resolver, on the mutation the app depends
+# on most. This is the flow that catches GraphQL document drift (G-3) from the
+# outside: the create mutation is hand-written in
+# src/features/applications/graphql/operations.ts and nothing in the Jest tiers
+# ever sends it to a server.
+appId: com.trakwyn.app
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Acme ' + Date.now()}
+
+- tapOn:
+    id: 'tab-applications'
+- tapOn:
+    id: 'add-application-button'
+
+- tapOn:
+    id: 'form-company-input'
+- inputText: ${output.company}
+- tapOn:
+    id: 'form-role-input'
+- inputText: 'Backend Engineer'
+- hideKeyboard
+# The form is longer than a small phone's screen and tapOn does not scroll.
+- scrollUntilVisible:
+    element:
+      id: 'form-submit-button'
+- tapOn:
+    id: 'form-submit-button'
+# Saving pops back to wherever the form was pushed from, and a bare
+# `/applications/new` resolves to (home)'s copy of the route, so that is the
+# dashboard, not the list. Go to the Applications tab explicitly.
+- tapOn:
+    id: 'tab-applications'
+
+# Asserted by text, deliberately: this is the one thing in the flow that must
+# have round-tripped through the API rather than merely rendered.
+- assertVisible: ${output.company}
