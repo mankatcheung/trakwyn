@@ -31,6 +31,11 @@ appId: com.trakwyn.app
       id: 'form-submit-button'
 - tapOn:
     id: 'form-submit-button'
+# Saving pops back to wherever the form was pushed from, and a bare
+# `/applications/new` resolves to (home)'s copy of the route, so that is the
+# dashboard, not the list. Go to the Applications tab explicitly.
+- tapOn:
+    id: 'tab-applications'
 
 # Asserted by text, deliberately: this is the one thing in the flow that must
 # have round-tripped through the API rather than merely rendered.

@@ -130,7 +130,7 @@ describe('BoardScreen', () => {
 
     await fireEvent.press(getByTestId('board-card-app-1'));
 
-    expect(push).toHaveBeenCalledWith('/(tabs)/applications/app-1');
+    expect(push).toHaveBeenCalledWith('/applications/app-1');
   });
 
   it('navigates to the new application form when the new button is pressed', async () => {
@@ -144,7 +144,7 @@ describe('BoardScreen', () => {
 
     await fireEvent.press(getByTestId('board-new-application-button'));
 
-    expect(push).toHaveBeenCalledWith('/(tabs)/applications/new');
+    expect(push).toHaveBeenCalledWith('/applications/new');
   });
 
   it('shows each column header with a dot and tinted title matching that status', async () => {

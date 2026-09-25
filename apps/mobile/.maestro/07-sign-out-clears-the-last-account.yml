@@ -30,6 +30,9 @@ appId: com.trakwyn.app
       id: 'form-submit-button'
 - tapOn:
     id: 'form-submit-button'
+# Saving returns to the dashboard; see 02-register-and-create-application.yml.
+- tapOn:
+    id: 'tab-applications'
 - assertVisible: ${output.company}
 
 - tapOn:
