@@ -43,6 +43,10 @@ function matchesSearch(application: Application, search: string): boolean {
   );
 }
 
+// Routes are pushed as `/(tabs)/applications/...`, not `/applications/...`:
+// (home) and calendar carry their own copies of the application routes, and a
+// bare `/applications/new` resolves to (home)'s, which opens the form in the
+// Home tab and returns to the dashboard on save. The same holds for BoardScreen.
 export function ApplicationsListScreen() {
   const { t } = useTranslation('applications');
   const { colors } = useTheme();
@@ -101,7 +105,7 @@ export function ApplicationsListScreen() {
         <View style={styles.headerActions}>
           <Pressable
             style={styles.trashButton}
-            onPress={() => router.push('/applications/trash')}
+            onPress={() => router.push('/(tabs)/applications/trash')}
             accessibilityLabel={t('list.trashAria')}
             testID="applications-trash-button"
           >
@@ -174,7 +178,7 @@ export function ApplicationsListScreen() {
               renderItem={({ item }) => (
                 <ApplicationListItem
                   application={item}
-                  onPress={() => router.push(`/applications/${item.id}`)}
+                  onPress={() => router.push(`/(tabs)/applications/${item.id}`)}
                   displayFields={displayFields}
                 />
               )}
@@ -183,7 +187,7 @@ export function ApplicationsListScreen() {
           )}
 
           <FloatingActionButton
-            onPress={() => router.push('/applications/new')}
+            onPress={() => router.push('/(tabs)/applications/new')}
             testID="add-application-button"
           />
         </>

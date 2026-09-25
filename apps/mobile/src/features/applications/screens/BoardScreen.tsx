@@ -110,7 +110,7 @@ export function BoardScreen({ displayFields }: Props) {
                   <Pressable
                     key={id}
                     style={styles.card}
-                    onPress={() => router.push(`/applications/${id}`)}
+                    onPress={() => router.push(`/(tabs)/applications/${id}`)}
                     onLongPress={() => setMovingApp(app)}
                     testID={`board-card-${id}`}
                   >
@@ -175,7 +175,7 @@ export function BoardScreen({ displayFields }: Props) {
       </ScrollView>
 
       <FloatingActionButton
-        onPress={() => router.push('/applications/new')}
+        onPress={() => router.push('/(tabs)/applications/new')}
         testID="board-new-application-button"
       />
 

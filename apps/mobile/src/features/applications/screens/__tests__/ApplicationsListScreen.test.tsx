@@ -121,7 +121,7 @@ describe('ApplicationsListScreen', () => {
 
     await fireEvent.press(getByTestId('application-item-1'));
 
-    expect(push).toHaveBeenCalledWith('/applications/1');
+    expect(push).toHaveBeenCalledWith('/(tabs)/applications/1');
   });
 
   it('filters the list by search text', async () => {
@@ -157,7 +157,7 @@ describe('ApplicationsListScreen', () => {
 
     await fireEvent.press(getByTestId('add-application-button'));
 
-    expect(push).toHaveBeenCalledWith('/applications/new');
+    expect(push).toHaveBeenCalledWith('/(tabs)/applications/new');
   });
 
   it('shows an empty state when there are no applications', async () => {
@@ -210,7 +210,7 @@ describe('ApplicationsListScreen', () => {
 
     await fireEvent.press(getByTestId('applications-trash-button'));
 
-    expect(push).toHaveBeenCalledWith('/applications/trash');
+    expect(push).toHaveBeenCalledWith('/(tabs)/applications/trash');
   });
 
   it('filters the list to starred applications only', async () => {

@@ -41,7 +41,7 @@ appId: com.trakwyn.app
 - pressKey: Enter
 - tapOn:
     id: 'llm-base-url-input'
-- inputText: 'http://localhost:3001/llm-test/fake'
+- inputText: 'http://localhost:3001/llm-test/fake/chat/completions'
 - pressKey: Enter
 - tapOn:
     id: 'save-llm-key-button'
