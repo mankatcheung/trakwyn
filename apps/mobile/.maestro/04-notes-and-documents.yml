@@ -58,6 +58,10 @@ appId: com.trakwyn.app
 - assertVisible: ${output.note}
 
 - back
+# Documents sits further down the section index than a small phone shows.
+- scrollUntilVisible:
+    element:
+      id: 'section-index-documents'
 - tapOn:
     id: 'section-index-documents'
 - assertVisible:
