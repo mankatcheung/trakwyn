@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
+# the Cloudflare token comes from the environment (TF_VAR_cloudflare_api_token).
+zone_id = "<32-hex zone id>" # trakwyn.com → Overview → API
+
+# First apply only: adopt the records already in the zone. List their IDs as
+# README.md shows, then empty this map once they are in state.
+# record_import_ids = {
+#   apex_a_1              = "..."
+#   apex_a_2              = "..."
+#   www                   = "..."
+#   api                   = "..."
+#   brevo_dkim_1          = "..."
+#   brevo_dkim_2          = "..."
+#   dmarc                 = "..."
+#   brevo_verification    = "..."
+#   google_verification   = "..."
+# }

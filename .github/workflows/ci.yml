@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        root: [infra/gcp, infra/axiom, infra/posthog, infra/vercel]
+        root: [infra/gcp, infra/axiom, infra/posthog, infra/vercel, infra/cloudflare]
     defaults:
       run:
         working-directory: ${{ matrix.root }}

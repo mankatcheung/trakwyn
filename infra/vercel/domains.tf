@@ -15,9 +15,9 @@ import {
   id       = "${var.team_id}/${var.project_id}/${each.value.domain}"
 }
 
-# DNS for these stays at the registrar (out of scope, JEF-363). A domain
-# that Vercel reports as misconfigured shows up in `terraform show` as
-# misconfigured = true.
+# This attaches the domains to the project; their DNS records are in
+# infra/cloudflare/dns.tf (JEF-371). A domain that Vercel reports as
+# misconfigured shows up in `terraform show` as misconfigured = true.
 resource "vercel_project_domain" "this" {
   for_each = local.domains
 
