@@ -19,3 +19,28 @@ variable "record_import_ids" {
     error_message = "Every key in record_import_ids must be a key of local.records in dns.tf."
   }
 }
+
+variable "email_routing_rules" {
+  description = "Email Routing forwarding rules, keyed by the rule's name as the dashboard shows it (e.g. { hello = { address = \"hello@trakwyn.com\", forward_to = \"me@example.com\" } }). forward_to must already be a verified destination address."
+  type = map(object({
+    address    = string
+    forward_to = string
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for rule in values(var.email_routing_rules) : endswith(rule.address, "@trakwyn.com")])
+    error_message = "Every rule's address must be on trakwyn.com."
+  }
+}
+
+variable "email_routing_rule_import_ids" {
+  description = "One-time bootstrap: Cloudflare IDs of rules that already exist, keyed as in email_routing_rules. Leave {} once they are in state. See README.md for how to list them."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition     = alltrue([for key in keys(var.email_routing_rule_import_ids) : contains(keys(var.email_routing_rules), key)])
+    error_message = "Every key in email_routing_rule_import_ids must be a key of email_routing_rules."
+  }
+}

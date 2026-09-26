@@ -1,5 +1,6 @@
-# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
-# the Cloudflare token comes from the environment (TF_VAR_cloudflare_api_token).
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret
+# (the Cloudflare token comes from the environment, TF_VAR_cloudflare_api_token),
+# but email_routing_rules names personal inboxes, so keep it out of the repo.
 zone_id = "<32-hex zone id>" # trakwyn.com → Overview → API
 
 # First apply only: adopt the records already in the zone. List their IDs as
@@ -14,4 +15,17 @@ zone_id = "<32-hex zone id>" # trakwyn.com → Overview → API
 #   dmarc                 = "..."
 #   brevo_verification    = "..."
 #   google_verification   = "..."
+# }
+
+# Email Routing forwarding rules, keyed by the rule's name in the dashboard.
+# Kept here rather than in email_routing.tf because forward_to is a personal
+# inbox. Each forward_to must already be a verified destination address.
+# email_routing_rules = {
+#   hello = { address = "hello@trakwyn.com", forward_to = "you@example.com" }
+# }
+
+# First apply only: adopt the rules already in the zone (README.md), then
+# empty this map once they are in state.
+# email_routing_rule_import_ids = {
+#   hello = "..."
 # }
