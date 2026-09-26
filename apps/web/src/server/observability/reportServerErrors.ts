@@ -149,7 +149,7 @@ export function reportServerFnErrors(getLogger: GetLogger) {
  * makes from React's `onError` (`Error in renderToReadableStream:` or
  * `…renderToPipeableStream:`). `renderErrorCapture.test.ts` reads the
  * installed TanStack source and fails if that call ever changes shape, since
- * a silent change here would stop render errors reaching Axiom without any
+ * a silent change here would stop render errors reaching PostHog without any
  * other symptom.
  */
 export const RENDER_ERROR_PREFIX = 'Error in renderTo';

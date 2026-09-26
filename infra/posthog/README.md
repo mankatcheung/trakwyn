@@ -63,9 +63,50 @@ Replay, network capture, heatmaps and surveys are guarded twice: if a future cli
 
 - **Click autocapture.** `posthog_project_settings` (provider `PostHog/posthog` 1.0.21) has no autocapture opt-out; the dashboard's "Autocapture" toggle is not exposed. The opt-out still lives only in the clients: `autocapture: false` in `apps/web/src/lib/analytics/analytics.ts`, and never mounting `<PostHogProvider autocapture>` on mobile. That is the single most important line in the web client, and it has no server-side backstop. Check the toggle by hand after any change to the project, and re-check this list when bumping the provider.
 - **Dead clicks, product tours and conversations.** The provider has no setting for any of them, so the web client's `capture_dead_clicks: false`, `disable_product_tours: true` and `disable_conversations: true` are the only guards. Dead clicks matter most: they record the clicked element, as autocapture would.
+- **Error-tracking alerts that email.** See "The alert" above.
 - **Data region.** EU vs. US is fixed when the organization is created. It is a property of the account, not a setting. `posthog_host` here and `VITE_POSTHOG_HOST` in `infra/vercel` both point at the EU cloud.
 
 Deliberately left to the dashboard: the project's timezone, authorized URLs, and the internal/test user filters.
+
+## Server-side errors (JEF-374)
+
+The web app's Vercel function (SSR renders, server functions, and anything that escapes the request handler) reports to this project too, as `$exception` events from `apps/web/src/server/observability/`, so client and server errors are grouped together in **Error Tracking**. They are sent straight to the capture endpoint (`/i/v0/e/`) with the public project key; `posthog-node` is not used.
+
+Tell them apart by `$lib = trakwyn-web-server` or `source = server`. `web_event` holds the failure (`web.ssr.failed`, `web.server_fn.failed`, `web.request.failed`), and `phase` says which part of a render failed (`load`, `render`, `shell`). `vercel.request_id` finds the same request in Vercel's runtime log, and `release` matches the browser's.
+
+**Why no consent gate.** These are operational error reports about the server, not analytics about a visitor, and they carry nothing that identifies one: `$process_person_profile: false`, a `distinct_id` that is Vercel's request id (or a random one), no cookies, headers, query string or server-function input, and messages and stacks through the same `scrubString` the clients use. The IP PostHog sees is the Vercel function's, and `anonymize_ips` discards it anyway (`$geoip_disable` is set as well). The same data went to Axiom before JEF-374 on the same basis; what changes is the processor.
+
+### The alert (set up by hand)
+
+This replaces the Axiom `web_server_error` monitor. PostHog builds error-tracking alerts as `internal_destination` hog functions triggered by `$error_tracking_issue_created` / `$error_tracking_issue_reopened`. The provider has `posthog_hog_function`, but email delivery goes through PostHog's email integration, which it cannot set up, so the alert is managed in the dashboard:
+
+1. **Error tracking → Configuration → Alerts → New alert.**
+2. Trigger **Issue created**; destination **Email** to the same address `infra/axiom`'s `alert_emails` uses. (Slack or a webhook work the same way if email is not offered.)
+3. Leave the filter empty to alert on every web error, or add the event property `$lib` = `trakwyn-web-server` for server errors only. The lifecycle events carry the originating exception's properties, so the filter applies.
+4. Repeat with trigger **Issue reopened**.
+5. Send the test event below and confirm the email arrives.
+
+### Checking it end to end
+
+Production has no safe way to make a render fail on demand, so send one event with the project key (it is public):
+
+```bash
+curl -X POST https://eu.i.posthog.com/i/v0/e/ -H 'Content-Type: application/json' -d "{
+  \"api_key\": \"$(terraform output -raw project_api_key)\",
+  \"event\": \"\$exception\",
+  \"distinct_id\": \"jef-374-test\",
+  \"properties\": {
+    \"\$process_person_profile\": false,
+    \"\$lib\": \"trakwyn-web-server\",
+    \"source\": \"server\",
+    \"web_event\": \"web.ssr.failed\",
+    \"phase\": \"test\",
+    \"\$exception_list\": [{\"type\": \"Error\", \"value\": \"JEF-374 test $(date +%s)\", \"mechanism\": {\"type\": \"generic\", \"handled\": false, \"synthetic\": false}}]
+  }
+}"
+```
+
+A new issue appears in Error Tracking within a minute or two, and the alert emails. Resolve the issue afterwards. The timestamp in `value` makes each run a new issue.
 
 ## Why a separate root
 

@@ -9,7 +9,7 @@ import {
 import { vercelWaitUntil } from '#/server/observability/vercelWaitUntil';
 
 // TanStack Start's default server entry, with server-side errors reported to
-// Axiom's trakwyn-web dataset (JEF-359). Server-function errors are reported
+// PostHog Error Tracking as $exception events (JEF-359, JEF-374). Server-function errors are reported
 // by the function middleware in src/start.ts instead: they never reach here
 // as a throw. See reportServerErrors.ts for which layer sees what.
 installRenderErrorCapture({

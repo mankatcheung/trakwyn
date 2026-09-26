@@ -18,4 +18,3 @@ state_bucket = "<project-id>-tfstate"
 # apex_domain       = "trakwyn.com" # null if the project has no apex domain
 # api_url           = "https://api.trakwyn.com/graphql"
 # posthog_host      = "https://eu.i.posthog.com"
-# axiom_web_dataset = "trakwyn-web" # must match infra/axiom's web_dataset
