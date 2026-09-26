@@ -97,8 +97,8 @@ export async function shutdownObservability(): Promise<void> {
 }
 
 /**
- * Starts the OpenTelemetry SDK, exporting traces and logs (and, when
- * configured, metrics) to Axiom via OTLP. Logs reach the SDK through the
+ * Starts the OpenTelemetry SDK, exporting traces (and, when their datasets are
+ * configured, logs and metrics) to Axiom via OTLP. Logs reach the SDK through the
  * pino destination in otelLogDestination.ts. No-ops outside production, and
  * when AXIOM_TOKEN/AXIOM_DATASET aren't set.
  *
@@ -123,8 +123,10 @@ export function startObservability(): void {
 
   const token = process.env[ENV.AXIOM_TOKEN]!;
   const dataset = process.env[ENV.AXIOM_DATASET]!;
-  // Axiom requires a distinct Metrics-type dataset (and header) from the
-  // Events-type dataset used for traces/logs — see the AXIOM constant docs.
+  // One dataset per signal (JEF-373): traces in AXIOM_DATASET, logs in their
+  // own Events-type dataset, and metrics in a Metrics-type dataset with its
+  // own header — see the AXIOM constant docs.
+  const logsDataset = process.env[ENV.AXIOM_LOGS_DATASET];
   const metricsDataset = process.env[ENV.AXIOM_METRICS_DATASET];
 
   const authHeader = { Authorization: `${AUTH_HEADER.BEARER_PREFIX}${token}` };
@@ -143,15 +145,19 @@ export function startObservability(): void {
     scheduledDelayMillis: 0,
   });
 
-  // Logs share the Events-type dataset with traces, so Axiom can correlate a
-  // log line with the span it was written under.
-  logProcessor = new BatchLogRecordProcessor({
-    exporter: new OTLPLogExporter({
-      url: `${AXIOM.API_URL}${AXIOM.LOGS_PATH}`,
-      headers: { ...authHeader, [AXIOM.DATASET_HEADER]: dataset },
-    }),
-    scheduledDelayMillis: 0,
-  });
+  // Logs get their own dataset rather than sharing the traces one. Each log
+  // record still carries the trace and span IDs it was written under, and the
+  // Axiom correlation group over the logs, traces and metrics datasets joins
+  // them back up (infra/axiom/README.md).
+  if (logsDataset) {
+    logProcessor = new BatchLogRecordProcessor({
+      exporter: new OTLPLogExporter({
+        url: `${AXIOM.API_URL}${AXIOM.LOGS_PATH}`,
+        headers: { ...authHeader, [AXIOM.DATASET_HEADER]: logsDataset },
+      }),
+      scheduledDelayMillis: 0,
+    });
+  }
 
   if (metricsDataset) {
     metricReader = new PeriodicExportingMetricReader({
@@ -168,7 +174,7 @@ export function startObservability(): void {
       [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: NODE_ENV.PRODUCTION,
     }),
     spanProcessors: [spanProcessor],
-    logRecordProcessors: [logProcessor],
+    logRecordProcessors: logProcessor ? [logProcessor] : [],
     metricReaders: metricReader ? [metricReader] : [],
     instrumentations: [
       getNodeAutoInstrumentations({
@@ -197,11 +203,20 @@ export function startObservability(): void {
 
   sdk.start();
 
-  if (!metricsDataset) {
+  if (!logsDataset) {
     console.info(
-      '[observability] AXIOM_METRICS_DATASET not set — metrics export is disabled (traces and logs are still active).',
+      '[observability] AXIOM_LOGS_DATASET not set — log export is disabled (traces are still active).',
     );
   }
 
-  console.info(`[observability] Axiom tracing enabled${metricsDataset ? ' with metrics' : ''}.`);
+  if (!metricsDataset) {
+    console.info(
+      '[observability] AXIOM_METRICS_DATASET not set — metrics export is disabled (traces are still active).',
+    );
+  }
+
+  const extras = [logsDataset && 'logs', metricsDataset && 'metrics'].filter(Boolean);
+  console.info(
+    `[observability] Axiom tracing enabled${extras.length ? ` with ${extras.join(' and ')}` : ''}.`,
+  );
 }

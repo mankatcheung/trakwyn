@@ -47,7 +47,7 @@ Access tokens are otherwise stateless, so every revocation also writes the `sid`
 
 ## Observability (JEF-129)
 
-- **Axiom via OTel** (`infrastructure/observability/tracing.ts`), **production only** (JEF-345): `isObservabilityEnabled` needs `NODE_ENV=production` plus `AXIOM_TOKEN`/`AXIOM_DATASET`. Metrics also need `AXIOM_METRICS_DATASET`.
+- **Axiom via OTel** (`infrastructure/observability/tracing.ts`), **production only** (JEF-345): `isObservabilityEnabled` needs `NODE_ENV=production` plus `AXIOM_TOKEN`/`AXIOM_DATASET`. **One dataset per signal** (JEF-373): traces go to `AXIOM_DATASET`, logs to `AXIOM_LOGS_DATASET` and metrics to `AXIOM_METRICS_DATASET`. Leaving either of the last two unset disables that signal only. An Axiom correlation group links a trace to its log lines (`infra/axiom/README.md`), so don't merge the datasets back to get that link.
 - **The SDK starts from a preload** (JEF-346): `node --import ./dist/instrumentation.js dist/index.js`. ESM hoists imports and only the `import-in-the-middle` loader can patch `graphql`/`pg`/`ioredis`/`undici`/`http`. Do not move the start into `index.ts`.
 - **Root span:** it is renamed to `POST /graphql <op>` (`graphqlOperationSpanName.ts`, via a Mercurius `preExecution` hook) or `POST /mcp tools/call <tool>` / `POST /mcp tools/list` (`interface-adapters/mcp/mcpOperationName.ts`, from the MCP route). Both go through `operationSpanName.ts`. Only our own method and tool names reach a span name; anything else is `unknown`. `formatError` marks it `ERROR` with `error.type` for server faults only (not `NOT_FOUND` or a wrong password), and **never with a message**, since Drizzle errors embed query parameters.
 - **Tool spans (JEF-365):** each MCP and chat tool call gets a `mcp.tool <name>` / `chat.tool <name>` span with `app.tool.name`, `app.tool.access`, `app.tool.surface`, `app.tool.outcome` (`ok`/`domain_error`/`internal_error`/`refused`/`invalid_params`), `app.tool.result_bytes` and, on MCP, `app.mcp.token_scope`. Only `internal_error` marks the span `ERROR`. **Never the arguments or the result.** A name outside the catalogue is recorded as `unknown`. Spans are gated on `isObservabilityEnabled`; the counters and refusal log are not.
@@ -75,7 +75,7 @@ Cloud Run `europe-west1` (web stays on Vercel, whose project is Terraform in `in
 
 - **Request-based billing throttles CPU once no request is in flight**, so work that must finish is awaited before the response: the telemetry flush in `buildApp.ts`'s `onResponse`, and the new-device alert in `CreateSessionUseCase`. There are no in-process timers or schedulers.
 - **`/admin/*` jobs** are driven by Cloud Scheduler with a Google **OIDC ID token** (JEF-336). `cronAuth.ts` verifies it via `IOidcTokenVerifier` (`GoogleOidcTokenVerifier`) and requires `aud` = `API_ORIGIN` and `email` = `CRON_INVOKER_SA`. `CRON_SECRET`/`DIGEST_ADMIN_SECRET` exist only for manual triggers. With none of the three configured, a route answers 503.
-- **Logs** reach Axiom through `otelLogDestination.ts` (teed to stdout). On SIGTERM, `http/gracefulShutdown.ts` drains within `SHUTDOWN.SERVER_CLOSE_TIMEOUT_MS`, inside Cloud Run's 10 s grace period.
+- **Logs** reach Axiom's `AXIOM_LOGS_DATASET` through `otelLogDestination.ts` (teed to stdout). On SIGTERM, `http/gracefulShutdown.ts` drains within `SHUTDOWN.SERVER_CLOSE_TIMEOUT_MS`, inside Cloud Run's 10 s grace period.
 
 ## Testing
 

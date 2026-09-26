@@ -101,7 +101,7 @@ resource "axiom_monitor" "job_failed" {
   description = "A /admin/* job threw: runScheduledJob logged job.<name>.failed. The email carries the event, including which job."
   type        = "MatchEvent"
   apl_query   = <<-APL
-    ['${var.dataset}']
+    ['${var.logs_dataset}']
     | extend event = ${local.log_event}
     | where event startswith "job." and event endswith ".failed"
   APL
@@ -124,7 +124,7 @@ resource "axiom_monitor" "job_missing" {
   description = "No job.${each.key}.completed in the last 26 hours. Check the trakwyn-api-* Cloud Scheduler job, then job.${each.key}.misconfigured and job.${each.key}.failed in the logs."
   type        = "Threshold"
   apl_query   = <<-APL
-    ['${var.dataset}']
+    ['${var.logs_dataset}']
     | where ${local.log_event} == "job.${each.key}.completed"
     | summarize count()
   APL
@@ -177,7 +177,7 @@ resource "axiom_monitor" "outbound_url_refused" {
   description = "OutboundUrlPolicy refused a URL a user supplied (SECURITY_EVENTS.OUTBOUND_URL_REFUSED). Either a misconfigured custom provider or someone probing for SSRF."
   type        = "MatchEvent"
   apl_query   = <<-APL
-    ['${var.dataset}']
+    ['${var.logs_dataset}']
     | where ${local.log_event} == "security.outbound_url.refused"
   APL
 

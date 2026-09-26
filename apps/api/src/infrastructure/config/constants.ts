@@ -45,6 +45,7 @@ export const ENV = {
   AXIOM_TOKEN: 'AXIOM_TOKEN',
   AXIOM_DATASET: 'AXIOM_DATASET',
   AXIOM_METRICS_DATASET: 'AXIOM_METRICS_DATASET',
+  AXIOM_LOGS_DATASET: 'AXIOM_LOGS_DATASET',
   /** `'true'` turns on the JEF-353 diagnostic — see `inboundTraceparent.ts`. */
   LOG_INBOUND_TRACEPARENT: 'LOG_INBOUND_TRACEPARENT',
   TOTP_ENCRYPTION_KEY: 'TOTP_ENCRYPTION_KEY',
@@ -180,9 +181,13 @@ export const AXIOM = {
   TRACES_PATH: '/v1/traces',
   METRICS_PATH: '/v1/metrics',
   LOGS_PATH: '/v1/logs',
-  /** Header carrying the dataset name for logs and traces. */
+  /**
+   * Header carrying an Events-type dataset name. Traces and logs each send
+   * their own dataset in it (JEF-373): Axiom wants one dataset per OTel
+   * signal, and links them back up through a correlation group.
+   */
   DATASET_HEADER: 'X-Axiom-Dataset',
-  /** Metrics use a distinct dataset (and header) from logs/traces — Axiom requires a Metrics-type dataset. */
+  /** Metrics use a distinct header as well — Axiom requires a Metrics-type dataset. */
   METRICS_DATASET_HEADER: 'X-Axiom-Metrics-Dataset',
   SERVICE_NAME: 'trakwyn-api',
 } as const;

@@ -1,30 +1,54 @@
 # infra/axiom: alerting on the API's telemetry
 
-Axiom monitors and their email notifier, as Terraform (JEF-355). The API sends traces, logs and metrics to Axiom (see the Observability section of the root `CLAUDE.md`). This root is what makes somebody find out when those signals go bad. It matters most for the fail-open paths: by design, a Redis outage leaves rate limiting and session revocation quietly off while every request still succeeds.
+Axiom monitors and their email notifier, as Terraform (JEF-355). The API sends traces, logs and metrics to Axiom, each to its own dataset (see the Observability section of `apps/api/CLAUDE.md`). This root is what makes somebody find out when those signals go bad. It matters most for the fail-open paths: by design, a Redis outage leaves rate limiting and session revocation quietly off while every request still succeeds.
+
+## Datasets
+
+One dataset per OTel signal (JEF-373), which is what Axiom's OTel guide asks for:
+
+| Dataset               | Kind    | API env var             | Terraform variable |
+| --------------------- | ------- | ----------------------- | ------------------ |
+| `trakwyn-api`         | Events  | `AXIOM_DATASET`         | `dataset`          |
+| `trakwyn-api-logs`    | Events  | `AXIOM_LOGS_DATASET`    | `logs_dataset`     |
+| `trakwyn-api-metrics` | Metrics | `AXIOM_METRICS_DATASET` | `metrics_dataset`  |
+
+Until JEF-373, logs shared `trakwyn-api` with traces. Log rows written before the cutover stay there until retention ages them out. Query `trakwyn-api-logs` for anything newer.
+
+The datasets themselves are created by hand in Axiom (**Datasets → New dataset**), not in Terraform.
+
+### Correlation group
+
+A trace and its log lines now live in different datasets. An Axiom [correlation group](https://axiom.co/docs/query-data/correlations) joins them back up by trace ID, so opening a trace shows its log lines, and a log line links to its trace. The Axiom Terraform provider (1.6.3) has no resource for correlation groups, so create it by hand once:
+
+1. **Datasets → Correlations → New correlation group**.
+2. Add `trakwyn-api` (traces), `trakwyn-api-logs` (logs) and `trakwyn-api-metrics` (metrics).
+3. Open a recent `POST /graphql …` trace in `trakwyn-api` and check that its log lines appear, then open a log line in `trakwyn-api-logs` and follow it back to its trace.
+
+If the provider gains a resource for it, move the group into this root.
 
 ## Monitors
 
 All of them notify the one email notifier, `trakwyn-api alerts (email)`.
 
-| Monitor                                         | Source                                                                                              | Fires when                                                                   | Kind                       |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------- |
-| Redis fail-open                                 | `trakwyn.redis.fail_open` (metrics)                                                                 | Any fail-open in 5 min, per `component`                                      | Threshold > 0              |
-| Redis circuit breaker opened                    | `trakwyn.redis.circuit_transitions` where `to == "open"` (metrics)                                  | Any breaker opens in 5 min, per `component`                                  | Threshold > 0              |
-| Postgres pool errors above baseline             | `trakwyn.db.pool_errors` (metrics)                                                                  | More than `db_pool_errors_per_hour` (20) in an hour                          | Threshold                  |
-| Scheduled job failed                            | `job.<name>.failed` log line                                                                        | Any job throws                                                               | MatchEvent                 |
-| Scheduled job `<name>` has not completed in 26h | `job.<name>.completed` log line, one monitor per nightly job (`digest`, `reminders`, `trash_purge`) | No completion in 26 hours                                                    | Threshold < 1, and no data |
-| GraphQL server-error rate                       | Root `POST /graphql …` server spans (traces)                                                        | More than `graphql_error_percent` (5%) `ERROR` in 15 min, with ≥ 20 requests | Threshold                  |
-| Outbound URL refused                            | `security.outbound_url.refused` log line                                                            | Any refusal                                                                  | MatchEvent                 |
-| Web app server error                            | `web.*.failed` line in the web dataset (`web_dataset`, JEF-359)                                     | Any server render, server function or request failure in the Vercel function | MatchEvent                 |
+| Monitor                                         | Source                                                                                         | Fires when                                                                   | Kind                       |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------- |
+| Redis fail-open                                 | `trakwyn.redis.fail_open` (metrics)                                                            | Any fail-open in 5 min, per `component`                                      | Threshold > 0              |
+| Redis circuit breaker opened                    | `trakwyn.redis.circuit_transitions` where `to == "open"` (metrics)                             | Any breaker opens in 5 min, per `component`                                  | Threshold > 0              |
+| Postgres pool errors above baseline             | `trakwyn.db.pool_errors` (metrics)                                                             | More than `db_pool_errors_per_hour` (20) in an hour                          | Threshold                  |
+| Scheduled job failed                            | `job.<name>.failed` line (logs)                                                                | Any job throws                                                               | MatchEvent                 |
+| Scheduled job `<name>` has not completed in 26h | `job.<name>.completed` line (logs), one per nightly job (`digest`, `reminders`, `trash_purge`) | No completion in 26 hours                                                    | Threshold < 1, and no data |
+| GraphQL server-error rate                       | Root `POST /graphql …` server spans (traces)                                                   | More than `graphql_error_percent` (5%) `ERROR` in 15 min, with ≥ 20 requests | Threshold                  |
+| Outbound URL refused                            | `security.outbound_url.refused` line (logs)                                                    | Any refusal                                                                  | MatchEvent                 |
+| Web app server error                            | `web.*.failed` line in the web dataset (`web_dataset`, JEF-359)                                | Any server render, server function or request failure in the Vercel function | MatchEvent                 |
 
 Things worth knowing about how they are written:
 
 - **Metric names come from `METRICS` in `apps/api/src/infrastructure/observability/metrics.ts`**, and job names from `ADMIN_JOBS` in `apps/api/src/http/constants.ts`. Renaming one there silently breaks its monitor here. Nothing checks the two against each other, so change both in the same PR.
 - **Metric monitors are MPL and take `increase`.** The OTel counters are cumulative per Cloud Run instance and restart at zero whenever an instance is scaled in; `increase` turns them into deltas and reads a drop as a reset.
-- **Log monitors read `event` through one expression**, `local.log_event` (`['attributes.event']`). Pino fields reach Axiom as OTel log attributes, which Axiom stores as top-level `attributes.<key>` fields. Don't read them from `attributes.custom`: that map holds custom _span_ attributes only, and a query against it matches no log lines, so the absence monitors fire even though the jobs ran. If Axiom ever moves the fields, only that line changes.
+- **Log monitors query `logs_dataset` and read `event` through one expression**, `local.log_event` (`['attributes.event']`). Pino fields reach Axiom as OTel log attributes, which Axiom stores as top-level `attributes.<key>` fields. Don't read them from `attributes.custom`: that map holds custom _span_ attributes only, and a query against it matches no log lines, so the absence monitors fire even though the jobs ran. If Axiom ever moves the fields, only that line changes. Since JEF-373, spans are no longer in the same dataset, so the two schemas can't be confused within one query.
 - **The web monitor reads `event` directly, not through `local.log_event`.** The web app's Vercel function posts plain JSON to Axiom's ingest API rather than OTel records, so its fields are top-level. It reads them through `column_ifexists('event', '')`, because Axiom validates a query against the dataset's schema when the monitor is created, and a new `trakwyn-web` has no fields until its first error. Its event names are `SERVER_LOG_EVENTS` in `apps/web/src/server/observability/serverLogger.ts`, and every reportable one ends `.failed`. It keys on the line, not on HTTP status, because a component that throws during a server render still answers 200 (the browser re-renders it). Setup of the dataset and its ingest-only token is in `infra/vercel/README.md`.
 - **The absence monitors are the only ones that can see Cloud Scheduler not firing**, an OIDC token rejected before the handler runs, or a deploy that broke an `/admin/*` route. None of those leave a `failed` line. `push_notifications` has no absence monitor because it is not scheduled.
-- **The error-rate monitor keys on span status, not HTTP status.** GraphQL answers 200 for a failed request; `formatError` marks the root span `ERROR` only for the errors it treats as server faults, so a `NOT_FOUND` or a wrong password never counts. Root spans are matched by `kind == "server"` and name, not `isnull(parent_span_id)`: Cloud Run's front end and the web client both send `traceparent`, so the API's server span usually has a remote parent.
+- **The error-rate monitor is the one monitor on `dataset` (traces), and it keys on span status, not HTTP status.** GraphQL answers 200 for a failed request; `formatError` marks the root span `ERROR` only for the errors it treats as server faults, so a `NOT_FOUND` or a wrong password never counts. Root spans are matched by `kind == "server"` and name, not `isnull(parent_span_id)`: Cloud Run's front end and the web client both send `traceparent`, so the API's server span usually has a remote parent.
 - **The pool-error and error-rate thresholds are guesses.** They start loose on purpose. After a week of production traffic, look at the real rates and tighten them in `terraform.tfvars`.
 
 ## Why a separate root
@@ -38,7 +62,9 @@ You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `in
 Create the token under **Settings → API tokens → New API token**, as an **Advanced** token with custom permissions. A Basic token can only ingest, and `apply` then fails with `403: token does not have access to resource: notifiers with action: create`. Grant:
 
 - **Organisation:** `Notifiers` and `Monitors`, each with create, read, update and delete. Terraform needs read and update for every later `plan`, and delete for `destroy` or a removed monitor.
-- **Datasets:** `Query` on the logs/traces dataset (`dataset`), the metrics dataset (`metrics_dataset`) and the web dataset (`web_dataset`), so the monitors' queries can be checked when they are saved. A token made before JEF-359 lacks the web dataset and has to be replaced (see below).
+- **Datasets:** `Query` on the traces dataset (`dataset`), the logs dataset (`logs_dataset`), the metrics dataset (`metrics_dataset`) and the web dataset (`web_dataset`), so the monitors' queries can be checked when they are saved. A token made before JEF-359 lacks the web dataset, and one made before JEF-373 lacks the logs dataset. Either has to be replaced (see below).
+
+The API's own ingest `AXIOM_TOKEN` (Secret Manager secret `axiom-token`, `infra/gcp`) needs `Ingest` on all three API datasets. If it is scoped per dataset rather than org-wide, a token made before JEF-373 can't write to `trakwyn-api-logs`, so replace it as well.
 
 Axiom does not let you add permissions to an existing token. If a token is missing one, delete it and create a new one.
 
@@ -53,6 +79,16 @@ terraform apply
 ```
 
 As with `infra/gcp`, CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by hand.
+
+### Cutting over to a new logs dataset (JEF-373)
+
+The order matters. Pointing the absence monitors at an empty dataset makes all three fire, and Axiom rejects a monitor query against a dataset that has no `attributes.event` field yet.
+
+1. Create the `trakwyn-api-logs` Events dataset. If the API's ingest token is scoped per dataset, create a new one with `Ingest` on all three API datasets and add it as a new version of the `axiom-token` secret.
+2. In `infra/gcp`, set `AXIOM_LOGS_DATASET = "trakwyn-api-logs"` in `plain_env`, `terraform apply`, and let the new revision roll out.
+3. Wait for one nightly run of `digest`, `reminders` and `trash_purge`, or trigger them by hand (`infra/gcp/README.md`), until a `job.<name>.completed` line for each is in `trakwyn-api-logs`.
+4. Replace the Terraform token here with one that can also query `trakwyn-api-logs`. Then set `logs_dataset` in `terraform.tfvars`, `plan` (expect the five log monitors to change in place) and `apply`.
+5. Create the correlation group (above), then trigger each moved monitor once (below).
 
 ## Checking each monitor fires
 
