@@ -49,12 +49,6 @@ variable "posthog_host" {
   default     = "https://eu.i.posthog.com"
 }
 
-variable "axiom_web_dataset" {
-  description = "Axiom dataset the web function writes server-side errors to (AXIOM_WEB_DATASET). Must match infra/axiom's web_dataset, which its monitor queries."
-  type        = string
-  default     = "trakwyn-web"
-}
-
 variable "env_var_import_ids" {
   description = "One-time bootstrap: IDs of env vars that already exist on the project, keyed by name (e.g. { VITE_API_URL = \"AbC123\" }), so apply adopts them instead of failing on a duplicate. Leave {} once they are in state. See README.md for how to list them."
   type        = map(string)

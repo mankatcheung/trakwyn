@@ -339,7 +339,7 @@ describe('installRenderErrorCapture', () => {
 describe('TanStack render error hook (drift guard)', () => {
   it("still forwards React's onError through a console.error with the expected prefix", async () => {
     // installRenderErrorCapture depends on this call's shape; if TanStack
-    // changes it, render errors silently stop reaching Axiom. Reads the
+    // changes it, render errors silently stop reaching PostHog. Reads the
     // installed source rather than trusting the version number.
     const { readFileSync } = await import('node:fs');
     const { createRequire } = await import('node:module');

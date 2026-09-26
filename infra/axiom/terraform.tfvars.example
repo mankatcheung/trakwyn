@@ -3,7 +3,6 @@
 dataset         = "trakwyn-api"
 logs_dataset    = "trakwyn-api-logs"
 metrics_dataset = "trakwyn-api-metrics"
-web_dataset     = "trakwyn-web"
 alert_emails    = ["you@example.com"]
 
 # Starting thresholds; tighten after a week of real traffic (README.md).

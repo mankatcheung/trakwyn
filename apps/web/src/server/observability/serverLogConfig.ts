@@ -1,50 +1,52 @@
+import { POSTHOG_EU_HOST } from '#/constants';
+
 /**
- * Where the web app's server-side error lines go (JEF-359).
+ * Where the web app's server-side errors go (JEF-374, was Axiom in JEF-359).
  *
- * The Vercel function (SSR renders and server functions) writes to its own
- * `trakwyn-web` dataset, never the API's `AXIOM_DATASET`, so a web-server
- * line cannot be mistaken for an API one and the two can carry separate
- * ingest-only tokens.
- *
- * Deliberately **not** `VITE_`-prefixed: Vite inlines those into the client
- * bundle, and this token must stay on the server. It is read from
- * `process.env` at request time instead.
+ * The Vercel function (SSR renders and server functions) reports to the same
+ * PostHog project as the browser, as `$exception` events, so client and
+ * server errors share one Error Tracking view. It reuses the client's
+ * `VITE_POSTHOG_KEY`/`VITE_POSTHOG_HOST`: the `phc_` key is public by design
+ * (it ships in the browser bundle and can only send events), so there is no
+ * server-only secret to keep out of the bundle and no extra var to manage.
  */
 export const SERVER_LOG_ENV = {
-  TOKEN: 'AXIOM_WEB_TOKEN',
-  DATASET: 'AXIOM_WEB_DATASET',
+  KEY: 'VITE_POSTHOG_KEY',
+  HOST: 'VITE_POSTHOG_HOST',
 } as const;
 
-/** The same EU edge deployment the API sends to (apps/api `AXIOM.API_URL`). */
-export const AXIOM_INGEST_ORIGIN = 'https://eu-central-1.aws.edge.axiom.co';
+/** PostHog's public capture endpoint, relative to the ingestion host. */
+export const POSTHOG_CAPTURE_PATH = '/i/v0/e/';
 
 /**
- * Upper bound on one ingest POST. The function is frozen once its response
+ * Upper bound on one capture POST. The function is frozen once its response
  * is sent, so the send is awaited on the error path — this caps how long a
- * failing request can be held up by a slow Axiom.
+ * failing request can be held up by a slow PostHog.
  */
 export const INGEST_TIMEOUT_MS = 2_000;
 
 export const SERVICE_NAME = 'trakwyn-web';
 
 export interface ServerLogConfig {
-  ingestUrl: string;
-  token: string;
+  captureUrl: string;
+  apiKey: string;
 }
 
 /**
  * Export is production-only, like the API's (JEF-345): dev and test never
- * send, even with a token in `.env`. Returns `null` when disabled, which the
+ * send, even with a key in `.env`. Returns `null` when disabled, which the
  * logger treats as "write to stdout only".
  */
 export function readServerLogConfig(
   env: Readonly<Record<string, string | undefined>>,
 ): ServerLogConfig | null {
-  const token = env[SERVER_LOG_ENV.TOKEN]?.trim();
-  const dataset = env[SERVER_LOG_ENV.DATASET]?.trim();
-  if (env.NODE_ENV !== 'production' || !token || !dataset) return null;
-  return {
-    ingestUrl: `${AXIOM_INGEST_ORIGIN}/v1/ingest/${encodeURIComponent(dataset)}`,
-    token,
-  };
+  const apiKey = env[SERVER_LOG_ENV.KEY]?.trim();
+  if (env.NODE_ENV !== 'production' || !apiKey) return null;
+  const host = env[SERVER_LOG_ENV.HOST]?.trim() || POSTHOG_EU_HOST;
+  try {
+    return { captureUrl: new URL(POSTHOG_CAPTURE_PATH, host).toString(), apiKey };
+  } catch {
+    // A malformed host must not throw on the error path it exists to report.
+    return null;
+  }
 }
