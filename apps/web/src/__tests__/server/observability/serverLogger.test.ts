@@ -3,10 +3,11 @@ import {
   createServerLogger,
   describeError,
   describeRequest,
+  SERVER_LIB,
   SERVER_LOG_EVENTS,
 } from '#/server/observability/serverLogger';
 
-const CONFIG = { ingestUrl: 'https://axiom.test/v1/ingest/trakwyn-web', token: 'xaat-secret' };
+const CONFIG = { captureUrl: 'https://eu.i.posthog.com/i/v0/e/', apiKey: 'phc_public' };
 const NOW = new Date('2026-09-24T12:00:00.000Z');
 
 function setup(config: typeof CONFIG | null = CONFIG, fetchImpl?: typeof fetch) {
@@ -18,13 +19,22 @@ function setup(config: typeof CONFIG | null = CONFIG, fetchImpl?: typeof fetch) 
     fetchFn,
     write: (line) => lines.push(line),
     now: () => NOW,
+    newId: () => 'random-id',
   });
   return { logger, lines, fetchFn };
 }
 
-function sentRecords(fetchFn: ReturnType<typeof vi.fn>): Record<string, unknown>[] {
+interface CaptureBody {
+  api_key: string;
+  event: string;
+  distinct_id: string;
+  timestamp: string;
+  properties: Record<string, unknown>;
+}
+
+function sentBody(fetchFn: ReturnType<typeof vi.fn>): CaptureBody {
   const [, init] = fetchFn.mock.calls[0] as [string, RequestInit];
-  return JSON.parse(init.body as string) as Record<string, unknown>[];
+  return JSON.parse(init.body as string) as CaptureBody;
 }
 
 /** A request carrying every secret a page request can: query token, cookies, bearer. */
@@ -82,7 +92,7 @@ describe('describeError', () => {
 });
 
 describe('createServerLogger', () => {
-  it('sends one scrubbed record to the ingest URL with the token as a bearer header', async () => {
+  it('sends one $exception event to the capture URL with the project key', async () => {
     const { logger, fetchFn } = setup();
 
     await logger.error(
@@ -93,26 +103,66 @@ describe('createServerLogger', () => {
 
     expect(fetchFn).toHaveBeenCalledOnce();
     const [url, init] = fetchFn.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(CONFIG.ingestUrl);
+    expect(url).toBe(CONFIG.captureUrl);
     expect(init.method).toBe('POST');
-    expect(init.headers).toMatchObject({ Authorization: 'Bearer xaat-secret' });
-    expect(sentRecords(fetchFn)).toEqual([
-      {
-        _time: NOW.toISOString(),
-        level: 'error',
+    expect(init.headers).not.toHaveProperty('Authorization');
+    expect(sentBody(fetchFn)).toEqual({
+      api_key: 'phc_public',
+      event: '$exception',
+      distinct_id: 'fra1::abcde-123',
+      timestamp: NOW.toISOString(),
+      properties: {
+        $exception_list: [
+          {
+            type: 'Error',
+            value: 'boom',
+            mechanism: { type: 'generic', handled: false, synthetic: false },
+            stacktrace: { type: 'raw', frames: expect.any(Array) },
+          },
+        ],
+        $exception_level: 'error',
+        $process_person_profile: false,
+        $geoip_disable: true,
+        $lib: SERVER_LIB,
+        source: 'server',
         service: 'trakwyn-web',
         release: 'abc123',
-        event: 'web.ssr.failed',
+        web_event: 'web.ssr.failed',
         'http.method': 'GET',
         'url.path': '/reset-password',
         'vercel.request_id': 'fra1::abcde-123',
         phase: 'load',
         routeId: '/reset-password',
-        'error.type': 'Error',
-        'error.message': 'boom',
-        'error.stack': expect.stringContaining('Error: boom'),
       },
-    ]);
+    });
+  });
+
+  it('never sends the query string, cookies or authorization header', async () => {
+    const { logger, fetchFn } = setup();
+
+    await logger.error(
+      SERVER_LOG_EVENTS.REQUEST_FAILED,
+      describeRequest(sensitiveRequest()),
+      new Error('boom'),
+    );
+
+    const [, init] = fetchFn.mock.calls[0] as [string, RequestInit];
+    const body = init.body as string;
+    expect(body).not.toContain('RESET-TOKEN-123');
+    expect(body).not.toContain('trakwyn_access_token');
+    expect(body).not.toContain('eyJ');
+    expect(body).not.toContain('Bearer');
+  });
+
+  it('uses a random distinct id, not a person, when there is no Vercel request id', async () => {
+    const { logger, fetchFn } = setup();
+
+    await logger.error(SERVER_LOG_EVENTS.SERVER_FN_FAILED, { 'server_fn.name': 'fn' });
+
+    expect(sentBody(fetchFn)).toMatchObject({
+      distinct_id: 'random-id',
+      properties: { $process_person_profile: false },
+    });
   });
 
   it('applies the deny-list to fields a caller passes', async () => {
@@ -124,28 +174,34 @@ describe('createServerLogger', () => {
       variables: { salary: 90000 },
     });
 
-    expect(sentRecords(fetchFn)[0]).toMatchObject({
+    expect(sentBody(fetchFn).properties).toMatchObject({
       cookie: '[redacted]',
       authorization: '[redacted]',
       variables: '[redacted]',
     });
   });
 
-  it('writes the same record to stdout, so Vercel keeps a scrubbed copy', async () => {
-    const { logger, lines, fetchFn } = setup();
+  it('writes a flat, scrubbed line to stdout, so Vercel keeps a copy', async () => {
+    const { logger, lines } = setup();
 
-    await logger.error(SERVER_LOG_EVENTS.SERVER_FN_FAILED, { 'server_fn.name': 'fn' });
+    await logger.error(
+      SERVER_LOG_EVENTS.SERVER_FN_FAILED,
+      { 'server_fn.name': 'fn' },
+      new Error('boom for jane@example.com'),
+    );
 
     expect(lines).toHaveLength(1);
-    expect(JSON.parse(lines[0])).toEqual(sentRecords(fetchFn)[0]);
-  });
-
-  it('never puts the ingest token in a log line', async () => {
-    const { logger, lines } = setup(CONFIG, async () => new Response(null, { status: 403 }));
-
-    await logger.error(SERVER_LOG_EVENTS.SSR_FAILED, {});
-
-    expect(lines.join('\n')).not.toContain('xaat-secret');
+    expect(JSON.parse(lines[0])).toEqual({
+      _time: NOW.toISOString(),
+      service: 'trakwyn-web',
+      level: 'error',
+      release: 'abc123',
+      event: 'web.server_fn.failed',
+      'server_fn.name': 'fn',
+      'error.type': 'Error',
+      'error.message': expect.not.stringContaining('jane@example.com'),
+      'error.stack': expect.any(String),
+    });
   });
 
   it('only writes to stdout when export is disabled', async () => {
@@ -157,20 +213,20 @@ describe('createServerLogger', () => {
     expect(lines).toHaveLength(1);
   });
 
-  it('reports a rejected ingest by status, and resolves', async () => {
+  it('reports a rejected capture by status, and resolves', async () => {
     const { logger, lines } = setup(
       CONFIG,
-      async () => new Response('{"message":"dataset not found"}', { status: 404 }),
+      async () => new Response('{"detail":"invalid api key"}', { status: 401 }),
     );
 
     await expect(logger.error(SERVER_LOG_EVENTS.SSR_FAILED, {})).resolves.toBeUndefined();
 
     const failure = JSON.parse(lines[1]) as Record<string, unknown>;
-    expect(failure).toMatchObject({ event: 'web.log.ingest_failed', status: 404 });
-    expect(lines[1]).not.toContain('dataset not found');
+    expect(failure).toMatchObject({ event: 'web.log.ingest_failed', status: 401 });
+    expect(lines[1]).not.toContain('invalid api key');
   });
 
-  it('resolves even when the ingest request itself throws', async () => {
+  it('resolves even when the capture request itself throws', async () => {
     const { logger, lines } = setup(CONFIG, async () => {
       throw new TypeError('fetch failed');
     });
@@ -182,7 +238,22 @@ describe('createServerLogger', () => {
     });
   });
 
-  it('bounds the ingest request with a timeout', async () => {
+  it('resolves even when building the event throws', async () => {
+    const lines: string[] = [];
+    const logger = createServerLogger({
+      config: CONFIG,
+      fetchFn: vi.fn(async () => new Response(null, { status: 200 })),
+      write: (line) => lines.push(line),
+      newId: () => {
+        throw new Error('no randomness');
+      },
+    });
+
+    await expect(logger.error(SERVER_LOG_EVENTS.SERVER_FN_FAILED, {})).resolves.toBeUndefined();
+    expect(JSON.parse(lines[1])).toMatchObject({ event: 'web.log.ingest_failed' });
+  });
+
+  it('bounds the capture request with a timeout', async () => {
     const { logger, fetchFn } = setup();
 
     await logger.error(SERVER_LOG_EVENTS.SSR_FAILED, {});
@@ -191,7 +262,7 @@ describe('createServerLogger', () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it('names every reportable event with a .failed suffix, which the Axiom monitor keys on', () => {
+  it('names every reportable event with a .failed suffix', () => {
     const reportable = Object.values(SERVER_LOG_EVENTS).filter(
       (event) => event !== SERVER_LOG_EVENTS.INGEST_FAILED,
     );

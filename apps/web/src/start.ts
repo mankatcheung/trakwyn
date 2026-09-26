@@ -12,7 +12,7 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === 'serverFn',
 });
 
-/** Reports a server function's error to Axiom before the client gets its 500 (JEF-359). */
+/** Reports a server function's error to PostHog before the client gets its 500 (JEF-359, JEF-374). */
 const serverFnErrorReporting = createMiddleware({ type: 'function' }).server(
   reportServerFnErrors(getServerLogger),
 );

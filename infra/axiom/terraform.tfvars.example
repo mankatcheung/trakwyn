@@ -2,7 +2,6 @@
 # the Axiom API token comes from the environment (TF_VAR_axiom_api_token).
 dataset         = "trakwyn-api"
 metrics_dataset = "trakwyn-api-metrics"
-web_dataset     = "trakwyn-web"
 alert_emails    = ["you@example.com"]
 
 # Starting thresholds; tighten after a week of real traffic (README.md).

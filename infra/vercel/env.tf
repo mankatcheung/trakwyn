@@ -41,20 +41,3 @@ resource "vercel_project_environment_variable" "this" {
   target     = ["production"]
   sensitive  = false
 }
-
-# The dataset the web app's Vercel function sends its server-side errors to
-# (JEF-359, apps/web/src/server/observability/serverLogConfig.ts). Read from
-# process.env at request time, never through Vite, so unlike local.env it
-# does not reach the client bundle. Not secret, hence managed here.
-#
-# Its partner AXIOM_WEB_TOKEN is deliberately not a resource: it is an
-# ingest-only secret, set by hand as a sensitive var (README.md, "Server-side
-# error logging"), so it never passes through a tfvars file, a plan or state.
-resource "vercel_project_environment_variable" "axiom_web_dataset" {
-  project_id = vercel_project.web.id
-  key        = "AXIOM_WEB_DATASET"
-  value      = var.axiom_web_dataset
-  comment    = "Axiom dataset for the web function's server-side errors; must match infra/axiom's web_dataset."
-  target     = ["production"]
-  sensitive  = false
-}
