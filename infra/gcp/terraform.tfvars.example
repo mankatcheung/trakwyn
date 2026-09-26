@@ -12,6 +12,7 @@ plain_env = {
   VAPID_PUBLIC_KEY       = "<key>"
   VAPID_SUBJECT          = "mailto:noreply@trakwyn.com"
   AXIOM_DATASET          = "trakwyn-api"
+  AXIOM_LOGS_DATASET     = "trakwyn-api-logs"
   AXIOM_METRICS_DATASET  = "trakwyn-api-metrics"
 
   # Temporary diagnostic (JEF-353): one warn line per request carrying the

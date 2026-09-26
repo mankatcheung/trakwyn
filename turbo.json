@@ -20,7 +20,8 @@
     "API_URL",
     "AXIOM_TOKEN",
     "AXIOM_DATASET",
-    "AXIOM_METRICS_DATASET"
+    "AXIOM_METRICS_DATASET",
+    "AXIOM_LOGS_DATASET"
   ],
   "tasks": {
     "build": {

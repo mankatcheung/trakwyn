@@ -1,6 +1,7 @@
 # Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
 # the Axiom API token comes from the environment (TF_VAR_axiom_api_token).
 dataset         = "trakwyn-api"
+logs_dataset    = "trakwyn-api-logs"
 metrics_dataset = "trakwyn-api-metrics"
 alert_emails    = ["you@example.com"]
 

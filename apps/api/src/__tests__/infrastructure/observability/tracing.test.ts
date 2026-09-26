@@ -135,6 +135,7 @@ const ENV_KEYS = [
   ENV.AXIOM_TOKEN,
   ENV.AXIOM_DATASET,
   ENV.AXIOM_METRICS_DATASET,
+  ENV.AXIOM_LOGS_DATASET,
   ENV.NODE_ENV,
 ] as const;
 
@@ -402,9 +403,10 @@ describe('tracing', () => {
   });
 
   describe('startObservability log export', () => {
-    it('configures the log exporter against the logs endpoint with the events dataset header', async () => {
+    it('configures the log exporter against the logs endpoint with its own dataset header', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';
       process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      process.env[ENV.AXIOM_LOGS_DATASET] = 'my-logs-dataset';
       const mod = await loadTracingModule();
 
       mod.startObservability();
@@ -413,14 +415,46 @@ describe('tracing', () => {
         url: `${AXIOM.API_URL}${AXIOM.LOGS_PATH}`,
         headers: {
           Authorization: 'Bearer secret-token',
-          [AXIOM.DATASET_HEADER]: 'my-dataset',
+          [AXIOM.DATASET_HEADER]: 'my-logs-dataset',
         },
       });
+    });
+
+    it('keeps traces and logs in separate datasets (JEF-373)', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      process.env[ENV.AXIOM_LOGS_DATASET] = 'my-logs-dataset';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      const [[traceConfig]] = otlpTraceExporterMock.mock.calls as [[{ headers: object }]];
+      const [[logConfig]] = otlpLogExporterMock.mock.calls as [[{ headers: object }]];
+      expect(traceConfig.headers).toMatchObject({ [AXIOM.DATASET_HEADER]: 'my-dataset' });
+      expect(logConfig.headers).toMatchObject({ [AXIOM.DATASET_HEADER]: 'my-logs-dataset' });
+    });
+
+    it('omits log export and logs a notice when AXIOM_LOGS_DATASET is not set', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      expect(otlpLogExporterMock).not.toHaveBeenCalled();
+      expect(batchLogProcessorInstances).toHaveLength(0);
+      const [config] = nodeSDKConstructorMock.mock.calls[0] as [{ logRecordProcessors: unknown[] }];
+      expect(config.logRecordProcessors).toEqual([]);
+      expect(otlpTraceExporterMock).toHaveBeenCalledOnce();
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        expect.stringContaining('AXIOM_LOGS_DATASET not set'),
+      );
     });
 
     it('passes a BatchLogRecordProcessor via logRecordProcessors with a near-0 scheduled delay', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';
       process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      process.env[ENV.AXIOM_LOGS_DATASET] = 'my-logs-dataset';
       const mod = await loadTracingModule();
 
       mod.startObservability();
@@ -466,9 +500,10 @@ describe('tracing', () => {
       expect(nodeSDKStartMock).not.toHaveBeenCalled();
     });
 
-    it('awaits forceFlush on the span processor and metric reader', async () => {
+    it('awaits forceFlush on the span processor, log processor and metric reader', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';
       process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      process.env[ENV.AXIOM_LOGS_DATASET] = 'my-logs-dataset';
       process.env[ENV.AXIOM_METRICS_DATASET] = 'my-metrics-dataset';
       const mod = await loadTracingModule();
       mod.startObservability();

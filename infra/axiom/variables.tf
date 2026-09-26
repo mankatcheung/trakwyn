@@ -5,7 +5,12 @@ variable "axiom_api_token" {
 }
 
 variable "dataset" {
-  description = "Logs and traces dataset: the API's AXIOM_DATASET."
+  description = "Traces dataset: the API's AXIOM_DATASET. Logs moved to logs_dataset in JEF-373."
+  type        = string
+}
+
+variable "logs_dataset" {
+  description = "Logs dataset: the API's AXIOM_LOGS_DATASET (JEF-373). Every log-based monitor reads it."
   type        = string
 }
 
