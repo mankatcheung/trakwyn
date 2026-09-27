@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 import {
   ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
   ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
 } from '@opentelemetry/semantic-conventions';
 
@@ -136,6 +137,7 @@ const ENV_KEYS = [
   ENV.AXIOM_DATASET,
   ENV.AXIOM_METRICS_DATASET,
   ENV.AXIOM_LOGS_DATASET,
+  ENV.APP_RELEASE,
   ENV.NODE_ENV,
 ] as const;
 
@@ -266,6 +268,39 @@ describe('tracing', () => {
       expect(config.resource.attributes[ATTR_SERVICE_NAME]).toBe(AXIOM.SERVICE_NAME);
       expect(config.resource.attributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME]).toBe('production');
     });
+
+    it('sets service.version to the APP_RELEASE commit SHA', async () => {
+      process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+      process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+      process.env[ENV.APP_RELEASE] = '0123456789abcdef0123456789abcdef01234567';
+      const mod = await loadTracingModule();
+
+      mod.startObservability();
+
+      const [config] = nodeSDKConstructorMock.mock.calls[0] as [
+        { resource: { attributes: Record<string, unknown> } },
+      ];
+      expect(config.resource.attributes[ATTR_SERVICE_VERSION]).toBe(
+        '0123456789abcdef0123456789abcdef01234567',
+      );
+    });
+
+    it.each([undefined, ''])(
+      'falls back to service.version "dev" when APP_RELEASE is %j',
+      async (release) => {
+        process.env[ENV.AXIOM_TOKEN] = 'secret-token';
+        process.env[ENV.AXIOM_DATASET] = 'my-dataset';
+        if (release !== undefined) process.env[ENV.APP_RELEASE] = release;
+        const mod = await loadTracingModule();
+
+        mod.startObservability();
+
+        const [config] = nodeSDKConstructorMock.mock.calls[0] as [
+          { resource: { attributes: Record<string, unknown> } },
+        ];
+        expect(config.resource.attributes[ATTR_SERVICE_VERSION]).toBe('dev');
+      },
+    );
 
     it('omits metric export and logs a notice when AXIOM_METRICS_DATASET is not set', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';

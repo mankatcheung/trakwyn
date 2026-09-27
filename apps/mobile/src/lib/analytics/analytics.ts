@@ -3,6 +3,7 @@ import { POSTHOG_API_KEY, POSTHOG_EU_HOST, POSTHOG_HOST } from '../../constants'
 import { scrubEvent, scrubValue } from './scrub';
 import { getNetworkConnected } from './networkState';
 import { getLastTraceId } from './traceContext';
+import { getRelease } from '../release';
 
 /**
  * The mobile app's error and crash reporting (JEF-349).
@@ -108,6 +109,11 @@ export function initAnalytics(): PostHog | null {
       },
     },
     before_send: scrubEvent,
+  });
+  // A super property, so autocaptured crashes and lifecycle events carry the
+  // release too, not just the events this module sends (JEF-362).
+  client.register({ release: getRelease() }).catch(() => {
+    // Best-effort: an event without a release is still worth sending.
   });
   return client;
 }

@@ -2,8 +2,13 @@ const mockPostHogInstance = {
   capture: jest.fn(),
   captureException: jest.fn(),
   addExceptionStep: jest.fn(),
+  register: jest.fn(),
 };
 const mockPostHogConstructor = jest.fn(() => mockPostHogInstance);
+
+jest.mock('../../release', () => ({
+  getRelease: () => 'abc123def456',
+}));
 
 jest.mock('posthog-react-native', () => ({
   __esModule: true,
@@ -35,6 +40,23 @@ describe('mobile analytics', () => {
   beforeEach(() => {
     mockPostHogConstructor.mockClear();
     Object.values(mockPostHogInstance).forEach((fn) => fn.mockReset());
+    mockPostHogInstance.register.mockResolvedValue(undefined);
+  });
+
+  it('registers the release as a super property, so every event carries it', () => {
+    const analytics = loadAnalytics('phc_test');
+    analytics.initAnalytics();
+
+    expect(mockPostHogInstance.register).toHaveBeenCalledWith({ release: 'abc123def456' });
+  });
+
+  it('still starts when registering the release fails', async () => {
+    mockPostHogInstance.register.mockRejectedValue(new Error('storage unavailable'));
+    const analytics = loadAnalytics('phc_test');
+
+    expect(analytics.initAnalytics()).not.toBeNull();
+    // Let the rejection settle: an unhandled one would fail the run.
+    await Promise.resolve();
   });
 
   it('starts nothing without a key — the normal state in dev and CI', () => {

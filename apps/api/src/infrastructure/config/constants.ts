@@ -46,6 +46,8 @@ export const ENV = {
   AXIOM_DATASET: 'AXIOM_DATASET',
   AXIOM_METRICS_DATASET: 'AXIOM_METRICS_DATASET',
   AXIOM_LOGS_DATASET: 'AXIOM_LOGS_DATASET',
+  /** Commit SHA the image was built from, baked in by CI (JEF-362). */
+  APP_RELEASE: 'APP_RELEASE',
   /** `'true'` turns on the JEF-353 diagnostic — see `inboundTraceparent.ts`. */
   LOG_INBOUND_TRACEPARENT: 'LOG_INBOUND_TRACEPARENT',
   TOTP_ENCRYPTION_KEY: 'TOTP_ENCRYPTION_KEY',
@@ -190,6 +192,7 @@ export const AXIOM = {
   /** Metrics use a distinct header as well — Axiom requires a Metrics-type dataset. */
   METRICS_DATASET_HEADER: 'X-Axiom-Metrics-Dataset',
   SERVICE_NAME: 'trakwyn-api',
+  DEFAULT_RELEASE: 'dev',
 } as const;
 
 /**
