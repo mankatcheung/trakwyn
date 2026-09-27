@@ -10,7 +10,11 @@ locals {
 
   # APL expression for the release (JEF-362): the commit SHA the API image was
   # built from, which tracing.ts sets as the OTel resource's service.version.
-  release = "tostring(['resource.service.version'])"
+  # Read through column_ifexists because Axiom rejects a monitor query that
+  # names a field the dataset has never had, which is the case until the first
+  # image with APP_RELEASE serves a request. Spans from before then group
+  # under "unknown".
+  release = "tostring(column_ifexists('resource.service.version', 'unknown'))"
 
   # The /admin/* jobs Cloud Scheduler runs daily (infra/gcp/scheduler.tf), by
   # the `job` name `runScheduledJob` logs them under (ADMIN_JOBS in

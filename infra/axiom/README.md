@@ -50,7 +50,7 @@ Things worth knowing about how they are written:
 - **Log monitors query `logs_dataset` and read `event` through one expression**, `local.log_event` (`['attributes.event']`). Pino fields reach Axiom as OTel log attributes, which Axiom stores as top-level `attributes.<key>` fields. Don't read them from `attributes.custom`: that map holds custom _span_ attributes only, and a query against it matches no log lines, so the absence monitors fire even though the jobs ran. If Axiom ever moves the fields, only that line changes. Since JEF-373, spans are no longer in the same dataset, so the two schemas can't be confused within one query.
 - **The absence monitors are the only ones that can see Cloud Scheduler not firing**, an OIDC token rejected before the handler runs, or a deploy that broke an `/admin/*` route. None of those leave a `failed` line. `push_notifications` has no absence monitor because it is not scheduled.
 - **The error-rate monitor is the one monitor on `dataset` (traces), and it keys on span status, not HTTP status.** GraphQL answers 200 for a failed request; `formatError` marks the root span `ERROR` only for the errors it treats as server faults, so a `NOT_FOUND` or a wrong password never counts. Root spans are matched by `kind == "server"` and name, not `isnull(parent_span_id)`: Cloud Run's front end and the web client both send `traceparent`, so the API's server span usually has a remote parent.
-- **The error-rate monitor is grouped by release** (JEF-362), read through `local.release` (`['resource.service.version']`): the commit SHA `deploy-api` bakes into the image. The email then names the deploy, and a bad revision rolling out beside a good one isn't averaged away. The match monitors need no grouping, since their email carries the whole event and the release with it. The absence and metric monitors stay ungrouped: a group-by returns no rows over no data, which would silence the absence monitors.
+- **The error-rate monitor is grouped by release** (JEF-362), read through `local.release` (`resource.service.version`, via `column_ifexists`; see below): the commit SHA `deploy-api` bakes into the image. The email then names the deploy, and a bad revision rolling out beside a good one isn't averaged away. The match monitors need no grouping, since their email carries the whole event and the release with it. The absence and metric monitors stay ungrouped: a group-by returns no rows over no data, which would silence the absence monitors.
 - **The pool-error and error-rate thresholds are guesses.** They start loose on purpose. After a week of production traffic, look at the real rates and tighten them in `terraform.tfvars`.
 
 ## Why a separate root
@@ -84,7 +84,15 @@ As with `infra/gcp`, CI only runs `fmt` and `validate` on this root. `plan` and 
 
 ### Grouping the error rate by release (JEF-362)
 
-Apply this only after `deploy-api` has shipped an image built with `APP_RELEASE` and it has served a `POST /graphql` request. Before that no span has `resource.service.version`, and Axiom rejects a monitor query naming a field the dataset doesn't have yet. `plan` should show only `graphql_error_rate` changing in place.
+Axiom rejects a monitor query that names a field the dataset has never had (`400 … invalid field: "resource.service.version"`), and no span has that field until `deploy-api` ships an image built with `APP_RELEASE` and it serves a request. `local.release` therefore reads the field through `column_ifexists(…, 'unknown')`, so `apply` succeeds either side of that deploy, and spans from before it group under `unknown`. `plan` should show only `graphql_error_rate` changing in place.
+
+Once the new image has served a `POST /graphql`, check that the field name is the one Axiom actually stores. Run this in the traces dataset; it should return the deployed commit SHA, not `unknown`:
+
+```kusto
+['trakwyn-api'] | where kind == "server" | take 1 | project release = column_ifexists('resource.service.version', 'unknown')
+```
+
+If it returns `unknown` while the span's `resource` shows a `service.version`, update `local.release` to the path Axiom shows.
 
 ### Cutting over to a new logs dataset (JEF-373)
 
