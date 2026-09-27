@@ -94,6 +94,51 @@ resource "axiom_monitor" "db_pool_errors" {
   notifier_ids     = [axiom_notifier.email.id]
 }
 
+# The two pool-saturation monitors (JEF-372). The gauges are sampled at each
+# metric export (about once a minute per instance), so `increase` does not
+# apply to them: a gauge is a level, not a running total.
+
+# Sustained, not a burst: each instance's series is reduced to its *lowest*
+# waiting count over the window, so one quiet sample clears it. Then the worst
+# instance is taken, since one saturated instance is enough to slow requests.
+resource "axiom_monitor" "db_pool_saturated" {
+  name        = "Postgres pool saturated for 5 minutes"
+  description = "Requests have queued for a Postgres connection on one instance for 5 minutes straight: every one of its DATABASE.POOL_MAX connections is busy. Check trakwyn.db.pool.connections (state = used) and slow traces; see DATABASE.POOL_MAX before raising it. METRICS.DB_POOL_WAITING_REQUESTS."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.db.pool.waiting_requests`
+    | align to 5m using min
+    | group using max
+  MPL
+
+  operator         = "Above"
+  threshold        = 0
+  range_minutes    = 5
+  interval_minutes = 5
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
+resource "axiom_monitor" "db_pool_acquire_timeout" {
+  name        = "Postgres connection acquire timed out"
+  description = "A query failed because it got no connection within DATABASE.POOL_CONNECTION_TIMEOUT_MS. phase = queued: the pool was saturated. phase = connecting: opening a connection was slow (Neon waking, the network). The db.pool.acquire_timeout log line has the counts. METRICS.DB_POOL_ACQUIRE_TIMEOUTS."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.db.pool_acquire_timeouts`
+    | map increase
+    | align to 15m using sum
+    | group by phase using sum
+  MPL
+
+  operator         = "Above"
+  threshold        = 0
+  range_minutes    = 15
+  interval_minutes = 5
+  notify_by_group  = true
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
 # --- Scheduled jobs (logs dataset, APL) -------------------------------------
 
 resource "axiom_monitor" "job_failed" {

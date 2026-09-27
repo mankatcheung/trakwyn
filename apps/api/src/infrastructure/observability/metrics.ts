@@ -27,6 +27,21 @@ export const METRICS = {
    * is out of step with how long Neon actually keeps a connection.
    */
   DB_POOL_ERRORS: 'trakwyn.db.pool_errors',
+  /**
+   * Postgres pool connections, as a gauge — attribute: state (`used`/`idle`)
+   * (JEF-372). Read from the pool at every export rather than taken from
+   * instrumentation-pg's `db.client.connection.count`, which only moves on a
+   * pool event and so stands still exactly when every client is stuck.
+   */
+  DB_POOL_CONNECTIONS: 'trakwyn.db.pool.connections',
+  /** Requests queued for a Postgres connection, as a gauge (JEF-372). Above 0 for long means the pool is saturated. */
+  DB_POOL_WAITING_REQUESTS: 'trakwyn.db.pool.waiting_requests',
+  /**
+   * A query that failed because it never got a connection — attribute: phase
+   * (JEF-372). Kept apart from other database errors, which all reach the
+   * client as the same INTERNAL_ERROR.
+   */
+  DB_POOL_ACQUIRE_TIMEOUTS: 'trakwyn.db.pool_acquire_timeouts',
   /** A request a rate limiter rejected — attributes: route, subject (JEF-350). */
   RATE_LIMITED: 'trakwyn.security.rate_limited',
   /** A URL `OutboundUrlPolicy` refused — attributes: reason, purpose (JEF-350). */
@@ -73,6 +88,19 @@ export type OutboundUrlRefusalReason =
   | 'reserved_hostname'
   | 'unresolvable_host'
   | 'private_address';
+
+/**
+ * Where a connection acquire timed out: `queued` behind a saturated pool, or
+ * `connecting` a new client (Neon waking, the network).
+ */
+export type PoolAcquirePhase = 'queued' | 'connecting';
+
+/** The pool's own counts at one moment — pg's `totalCount`, `idleCount` and `waitingCount`. */
+export interface DatabasePoolState {
+  total: number;
+  idle: number;
+  waiting: number;
+}
 
 /** Which transactional email a send was — one per `IEmailService` method (JEF-356). */
 export type EmailTemplate =
@@ -132,6 +160,13 @@ export interface IMetrics {
    * count a worsening rate is invisible.
    */
   recordDatabasePoolError(): void;
+  /**
+   * Report the pool's connection and waiting counts as gauges, by calling
+   * `read` at every metric export (JEF-372). Called once per pool.
+   */
+  observeDatabasePool(read: () => DatabasePoolState): void;
+  /** A query never got a connection within POOL_CONNECTION_TIMEOUT_MS (JEF-372). */
+  recordDatabasePoolAcquireTimeout(phase: PoolAcquirePhase): void;
   /** A rate limiter rejected a request (JEF-350). `route` and `subject` are both bounded sets. */
   recordRateLimited(route: string, subject: RateLimitSubject): void;
   /** `OutboundUrlPolicy` refused to let the server connect somewhere (JEF-350). */
@@ -157,6 +192,8 @@ export const noopMetrics: IMetrics = {
   recordFailOpen: () => {},
   recordCircuitTransition: () => {},
   recordDatabasePoolError: () => {},
+  observeDatabasePool: () => {},
+  recordDatabasePoolAcquireTimeout: () => {},
   recordRateLimited: () => {},
   recordOutboundUrlRefused: () => {},
   recordEmailSent: () => {},
@@ -184,6 +221,7 @@ class OtelMetrics implements IMetrics {
   private failOpens?: Counter;
   private circuitTransitions?: Counter;
   private databasePoolErrors?: Counter;
+  private databasePoolAcquireTimeouts?: Counter;
   private rateLimited?: Counter;
   private outboundUrlRefused?: Counter;
   private emailsSent?: Counter;
@@ -231,6 +269,38 @@ class OtelMetrics implements IMetrics {
       description: 'Postgres pool errors on an idle client, whose connection was already discarded',
     });
     this.databasePoolErrors.add(1);
+  }
+
+  observeDatabasePool(read: () => DatabasePoolState): void {
+    const connections = this.meter.createObservableGauge(METRICS.DB_POOL_CONNECTIONS, {
+      description: 'Postgres pool connections, by state',
+      unit: '{connection}',
+    });
+    const waiting = this.meter.createObservableGauge(METRICS.DB_POOL_WAITING_REQUESTS, {
+      description: 'Requests waiting for a Postgres pool connection',
+      unit: '{request}',
+    });
+    // One batch callback, so the three numbers come from a single read of
+    // the pool and always add up.
+    this.meter.addBatchObservableCallback(
+      (result) => {
+        const { total, idle, waiting: queued } = read();
+        result.observe(connections, total - idle, { state: 'used' });
+        result.observe(connections, idle, { state: 'idle' });
+        result.observe(waiting, queued);
+      },
+      [connections, waiting],
+    );
+  }
+
+  recordDatabasePoolAcquireTimeout(phase: PoolAcquirePhase): void {
+    this.databasePoolAcquireTimeouts ??= this.meter.createCounter(
+      METRICS.DB_POOL_ACQUIRE_TIMEOUTS,
+      {
+        description: 'Queries that failed because no Postgres connection was acquired in time',
+      },
+    );
+    this.databasePoolAcquireTimeouts.add(1, { phase });
   }
 
   recordRateLimited(route: string, subject: RateLimitSubject): void {

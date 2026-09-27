@@ -109,6 +109,21 @@ describe('createDb', { timeout: 60_000 }, () => {
     });
   });
 
+  it('instruments the pool it builds, so the saturation gauge follows its first checkout (JEF-372)', async () => {
+    const metrics = makeFakeMetrics();
+    handle = await createDb('postgres://nobody:nothing@127.0.0.1:1/none', {
+      logger: makeLogger(),
+      metrics,
+    });
+
+    // Nothing listens on port 1: the query fails fast, and not as a timeout.
+    await expect(handle.db.execute(sql`SELECT 1`)).rejects.toThrow();
+
+    expect(metrics.databasePoolObservers).toHaveLength(1);
+    expect(metrics.databasePoolObservers[0]()).toEqual({ total: 0, idle: 0, waiting: 0 });
+    expect(metrics.databasePoolAcquireTimeouts).toEqual([]);
+  });
+
   it('parses int8 to a number on the pg driver', () => {
     // Production reads count(*)/sum() through node-postgres; without this
     // parser they arrive as strings and `count + 1` concatenates.
