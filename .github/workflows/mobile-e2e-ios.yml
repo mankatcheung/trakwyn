@@ -161,12 +161,10 @@ jobs:
           curl -fsSL https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      # Diagnostic only: registration's bcrypt cost is the other thing that
-      # could make sign-up slow here, so record what one hash costs on this
-      # runner next to the flows it would affect.
-      - name: Time one bcrypt hash
-        working-directory: apps/api
-        run: node -e "const b=require('bcryptjs');console.time('bcrypt cost 12');b.hashSync('x',12);console.timeEnd('bcrypt cost 12')"
+      # See the flow's header: absorbs the simulator's and Maestro's first-run
+      # cost so the timed flows below do not pay it.
+      - name: Warm up the simulator
+        run: maestro test apps/mobile/.maestro/warm-up/first-launch.yml
 
       - name: Run the Maestro flows
         run: maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"

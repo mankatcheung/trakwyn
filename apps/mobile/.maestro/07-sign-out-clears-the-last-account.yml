@@ -32,7 +32,7 @@ appId: com.trakwyn.app
 # Saving returns to the dashboard; see 02-register-and-create-application.yml.
 - tapOn:
     id: 'tab-applications'
-- assertVisible: ${output.company}
+- assertVisible: '.*${output.company}.*'
 
 - tapOn:
     id: 'tab-settings'
@@ -50,4 +50,4 @@ appId: com.trakwyn.app
 - runFlow: subflows/register-new-account.yml
 - tapOn:
     id: 'tab-applications'
-- assertNotVisible: ${output.company}
+- assertNotVisible: '.*${output.company}.*'

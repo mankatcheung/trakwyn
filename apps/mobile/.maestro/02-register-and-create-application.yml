@@ -38,4 +38,8 @@ appId: com.trakwyn.app
 
 # Asserted by text, deliberately: this is the one thing in the flow that must
 # have round-tripped through the API rather than merely rendered.
-- assertVisible: ${output.company}
+# Wrapped in .* because Maestro matches text as a whole-string regex, and on
+# iOS a pressable row is one accessibility element whose label joins all of
+# its texts ("Backend Engineer, Acme ..., Draft"). The other flows match the
+# same way.
+- assertVisible: '.*${output.company}.*'

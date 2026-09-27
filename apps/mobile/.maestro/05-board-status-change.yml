@@ -50,4 +50,4 @@ appId: com.trakwyn.app
 # animated.
 - tapOn:
     id: 'applications-view-list'
-- assertVisible: ${output.company}
+- assertVisible: '.*${output.company}.*'
