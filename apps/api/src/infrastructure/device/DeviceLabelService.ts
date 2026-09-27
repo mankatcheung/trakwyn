@@ -1,3 +1,5 @@
+import { parseTrakwynClientUserAgent } from '#src/infrastructure/device/trakwynClientUserAgent.js';
+
 /**
  * Parses a raw User-Agent string into a human-readable device label.
  *
@@ -28,13 +30,13 @@ export class DeviceLabelService {
 
   /**
    * apps/mobile sends `TrakwynMobile/<version> (<model>; <os> <version>)`
-   * (src/lib/userAgent.ts). Without this the phone arrives as OkHttp's or
+   * (src/lib/userAgent.ts; parsed by trakwynClientUserAgent.ts). Without this the phone arrives as OkHttp's or
    * CFNetwork's default string, which nothing below recognises.
    */
   private parseMobileApp(ua: string): string | null {
-    const m = ua.match(/^TrakwynMobile\/\S+\s+\(([^;)]*);([^)]*)\)/);
-    if (!m) return null;
-    const device = m[1]?.trim() || m[2]?.trim();
+    const app = parseTrakwynClientUserAgent(ua);
+    if (!app) return null;
+    const device = app.model ?? app.os;
     return device ? `${device} — Trakwyn app` : 'Trakwyn app';
   }
 

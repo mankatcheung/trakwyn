@@ -8,7 +8,9 @@ import { Platform } from 'react-native';
  * DeviceLabelService parses it into the label shown in the sessions list
  * and in the new-device login-alert email — without it the phone arrives
  * as OkHttp's or CFNetwork's default string and is listed as "Unknown
- * device". Null on web, where the browser owns the header (it is a
+ * device". The API also records its parts (version, model, OS) on the
+ * request's trace span, so keep the format in step with the API's
+ * trakwynClientUserAgent.ts. Null on web, where the browser owns the header (it is a
  * forbidden request header there) and already sends one the service reads.
  */
 export function buildUserAgent(): string | null {
