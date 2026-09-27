@@ -15,6 +15,9 @@ appId: com.trakwyn.app
 - scrollUntilVisible:
     element:
       id: 'settings-signout-button'
+# Let the scroll settle: on iOS a tap on a list that is still decelerating
+# only stops it and never reaches the row.
+- waitForAnimationToEnd
 - tapOn:
     id: 'settings-signout-button'
 - assertVisible:

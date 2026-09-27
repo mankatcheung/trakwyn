@@ -14,11 +14,12 @@ appId: com.trakwyn.app
 - evalScript: ${output.password = 'CorrectHorseBatteryStaple1!'}
 
 # A cold launch on a CI emulator can take longer than assertVisible's
-# default wait before the first screen draws.
+# default wait before the first screen draws: a slow Android run has shown a
+# blank screen 30s in.
 - extendedWaitUntil:
     visible:
       id: 'login-email-input'
-    timeout: 30000
+    timeout: 60000
 - tapOn:
     id: 'login-register-link'
 

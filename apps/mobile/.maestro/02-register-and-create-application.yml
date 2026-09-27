@@ -28,6 +28,9 @@ appId: com.trakwyn.app
 - scrollUntilVisible:
     element:
       id: 'form-submit-button'
+# Let the scroll settle: on iOS a tap on a list that is still decelerating
+# only stops it and never reaches the row.
+- waitForAnimationToEnd
 - tapOn:
     id: 'form-submit-button'
 # Saving pops back to wherever the form was pushed from, and a bare
