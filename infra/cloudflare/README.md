@@ -20,7 +20,7 @@ Things worth knowing:
 
 ## What it does not own
 
-**Email Routing's records:** the three `routeN.mx.cloudflare.net` MX records, the `v=spf1 include:_spf.mx.cloudflare.net ~all` TXT on the apex, and the `cf2024-1._domainkey` DKIM TXT. Email Routing creates them when it is enabled, and marks them locked in the dashboard as its own. Managing them here would give the same records two owners. They go away with Email Routing, under **Email → Email Routing → Settings**.
+**Email Routing's records:** the three `routeN.mx.cloudflare.net` MX records, the `v=spf1 include:_spf.mx.cloudflare.net ~all` TXT on the apex, and the `cf2024-1._domainkey` DKIM TXT. Email Routing creates them when it is enabled and marks the MX and DKIM records read-only; the SPF record is editable but is still its own. Managing them here would give the same records two owners. They go away with Email Routing, under **Email → Email Routing → Settings**.
 
 **Email Routing's destination addresses and catch-all.** Destination addresses belong to the Cloudflare account, not the zone, and each needs a click in a verification email, so managing them would widen the token to account scope for something that cannot finish unattended. Add and verify one under **Email → Email Routing → Destination addresses** before using it as a rule's `forward_to`. The catch-all (mail to any other address) keeps whatever the dashboard says.
 
@@ -71,7 +71,7 @@ Match each row to a key of `local.records` in `dns.tf` and put its ID in `record
 
 Then `plan` and read it before applying. It must show **no create and no destroy**, only imports and at most these in-place updates:
 
-- **`ttl`**, when the live record is not Auto (1). Copy the live value into that record in `local.records` rather than changing DNS as part of adoption.
+- **`ttl`**, when the live record's TTL differs from its `ttl` in `local.records`. Copy the live value in rather than changing DNS as part of adoption.
 - **TXT `content` differing only in quotes.** Records entered before Cloudflare started quoting TXT content come back unquoted. Copy the live value as it is.
 - **`comment` or `tags` being cleared**, if someone left one in the dashboard.
 - **A zone setting changing.** Harmless while nothing is proxied (above), so this one can be applied.
@@ -84,7 +84,7 @@ curl -s -H "Authorization: Bearer $TF_VAR_cloudflare_api_token" \
   | jq -r '.result[] | [.id, .name, .enabled, (.matchers | tostring), (.actions | tostring)] | @tsv'
 ```
 
-For each, add an entry to `email_routing_rules` keyed by its `name`, with the matcher's `value` as `address` and the forward action's value as `forward_to`, and put its `id` in `email_routing_rule_import_ids`. The plan must show no create for a rule. It may show `priority`, `enabled` or `source` settling to the API's value; if it proposes changing a rule's `name`, the key does not match the dashboard name exactly.
+For each, add an entry to `email_routing_rules` keyed by its `name` (or a name of your choosing when the rule has none), with the matcher's `value` as `address` and the forward action's value as `forward_to`, and put its `id` in `email_routing_rule_import_ids`. The plan must show no create for a rule. It may show `priority`, `enabled` or `source` settling to the API's value; a `name` change means the key does not match the dashboard name, which is expected (and harmless) only for a rule that had no name. The catch-all is in the same listing, with an `all` matcher; leave it out.
 
 Once the plan shows only changes you mean, `apply`, then empty `record_import_ids` and `email_routing_rule_import_ids`. Import blocks are no-ops once the resource is in state, but the map is only needed once.
 

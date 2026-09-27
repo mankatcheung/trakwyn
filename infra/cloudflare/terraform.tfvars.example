@@ -6,8 +6,7 @@ zone_id = "<32-hex zone id>" # trakwyn.com → Overview → API
 # First apply only: adopt the records already in the zone. List their IDs as
 # README.md shows, then empty this map once they are in state.
 # record_import_ids = {
-#   apex_a_1              = "..."
-#   apex_a_2              = "..."
+#   apex                  = "..."
 #   www                   = "..."
 #   api                   = "..."
 #   brevo_dkim_1          = "..."
