@@ -38,10 +38,18 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'run-ios-e2e')
     # Pinned, not macos-latest: every run regenerates the native project from
     # scratch, so the Xcode version is part of this job's contract (R-4).
-    runs-on: macos-15
+    # macos-15 tops out at Xcode 16.x, which cannot resolve Expo SDK 57's
+    # package dependencies; macos-26 ships Xcode 26, selected explicitly below
+    # so an image update cannot move it underneath us.
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
 
       - uses: ./.github/actions/setup-project
 
