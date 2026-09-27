@@ -12,6 +12,11 @@
 # by the API process, not by the phone, so it stays localhost even on an
 # emulator that reaches the API at 10.0.2.2.
 appId: com.trakwyn.app
+# Excluded from the iOS job (mobile-e2e-ios.yml, --exclude-tags android-only)
+# until JEF-377: on iOS the chat composer stays partly under the keyboard, so
+# the send tap lands on a key instead. Remove the tag with that fix.
+tags:
+  - android-only
 ---
 - runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml

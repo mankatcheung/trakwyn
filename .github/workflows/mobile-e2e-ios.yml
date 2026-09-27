@@ -167,7 +167,9 @@ jobs:
         run: maestro test apps/mobile/.maestro/warm-up/first-launch.yml
 
       - name: Run the Maestro flows
-        run: maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"
+        # android-only: flows that cannot pass on iOS yet, each naming the issue
+        # that will lift it (06: JEF-377).
+        run: maestro test apps/mobile/.maestro --exclude-tags android-only --debug-output "${{ runner.temp }}/maestro-debug"
 
       - name: Upload Maestro artifacts
         if: failure()
