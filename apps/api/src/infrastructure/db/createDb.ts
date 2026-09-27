@@ -6,6 +6,7 @@ import { DATABASE } from '#src/infrastructure/config/constants.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import { rootLogger } from '#src/infrastructure/observability/rootLogger.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import { instrumentPool } from './poolInstrumentation.js';
 import * as schema from './schema.js';
 
 type Schema = typeof schema;
@@ -83,6 +84,10 @@ function createPoolDb(url: string, options: CreateDbOptions): DbHandle {
     logger.error('Postgres pool: idle client error', err);
   });
 
+  // Saturation (JEF-372): in-use/idle/waiting gauges, and acquire timeouts
+  // counted apart from every other database error.
+  instrumentPool(pool, { logger, metrics });
+
   return {
     db: drizzleNodePg({ client: pool, schema }) as unknown as DrizzleDb,
     close: () => pool.end(),
@@ -97,13 +102,16 @@ export interface CreateDbOptions {
    */
   pgliteSnapshot?: Blob;
   /**
-   * Postgres pool only: where the pool's `'error'` events go. Defaults to
+   * Postgres pool only: where the pool's `'error'` events and acquire timeouts go. Defaults to
    * `rootLogger`, because the process database is built at module load in
    * `db/client.ts`, before there is a container to be injected from — see
    * rootLogger.ts. Passed explicitly by tests.
    */
   logger?: ILogger;
-  /** Postgres pool only: counts those same errors. Defaults to `otelMetrics`. */
+  /**
+   * Postgres pool only: counts those same errors, and measures the pool's
+   * saturation (JEF-372). Defaults to `otelMetrics`.
+   */
   metrics?: IMetrics;
 }
 

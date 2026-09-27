@@ -1,4 +1,5 @@
 import type {
+  DatabasePoolState,
   EmailOutcome,
   EmailTemplate,
   FailOpenReason,
@@ -7,6 +8,7 @@ import type {
   LlmTokenDirection,
   MetricComponent,
   OutboundUrlRefusalReason,
+  PoolAcquirePhase,
   RateLimitSubject,
 } from '#src/infrastructure/observability/metrics.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
@@ -63,6 +65,9 @@ export interface FakeMetrics extends IMetrics {
   failOpens: FailOpenEvent[];
   circuitTransitions: CircuitTransitionEvent[];
   databasePoolErrors: number;
+  /** The `read` callbacks handed to `observeDatabasePool` — call one to see what the gauge would export. */
+  databasePoolObservers: Array<() => DatabasePoolState>;
+  databasePoolAcquireTimeouts: PoolAcquirePhase[];
   rateLimited: RateLimitedEvent[];
   outboundUrlRefused: OutboundUrlRefusedEvent[];
   emailsSent: EmailSentEvent[];
@@ -84,6 +89,8 @@ export function makeFakeMetrics(): FakeMetrics {
     failOpens: [],
     circuitTransitions: [],
     databasePoolErrors: 0,
+    databasePoolObservers: [],
+    databasePoolAcquireTimeouts: [],
     rateLimited: [],
     outboundUrlRefused: [],
     emailsSent: [],
@@ -106,6 +113,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordDatabasePoolError: () => {
       fake.databasePoolErrors++;
+    },
+    observeDatabasePool: (read) => {
+      fake.databasePoolObservers.push(read);
+    },
+    recordDatabasePoolAcquireTimeout: (phase) => {
+      fake.databasePoolAcquireTimeouts.push(phase);
     },
     recordRateLimited: (route, subject) => {
       fake.rateLimited.push({ route, subject });
