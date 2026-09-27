@@ -117,7 +117,17 @@ jobs:
         working-directory: apps/mobile
         env:
           EXPO_PUBLIC_API_URL: http://localhost:3001/graphql
-        run: pnpm exec expo run:ios --configuration Release --no-bundler
+        # After installing, `expo run:ios` also opens the app through
+        # `simctl openurl`, which has timed out on a busy runner (code 60)
+        # after a good build and install. Maestro launches the app itself, so
+        # only that last part is allowed to fail: the step still fails unless
+        # the app is really installed, and a fresh runner has nothing
+        # installed beforehand.
+        run: |
+          if ! pnpm exec expo run:ios --configuration Release --no-bundler; then
+            echo "::warning::expo run:ios exited non-zero; checking whether the app was installed anyway"
+          fi
+          xcrun simctl get_app_container booted com.trakwyn.app
 
       # iOS spots a sign-up form (an email and two secure fields) and swaps the
       # keyboard for its "Automatic Strong Password" view, which swallows what
