@@ -6,3 +6,10 @@ project_name    = "Trakwyn"
 
 # EU cloud management API; only change for a self-hosted instance.
 # posthog_host = "https://eu.posthog.com"
+
+# Mobile release health alert (JEF-368). Numeric user IDs, not UUIDs; see
+# README.md for where to find them.
+release_health_alert_user_ids = [12345]
+# crash_free_sessions_alert_percent = 99
+# crash_alert_min_sessions          = 50
+# crash_alert_app_version           = "1.2.0"
