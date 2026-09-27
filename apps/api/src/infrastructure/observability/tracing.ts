@@ -17,7 +17,7 @@ import {
 import { FastifyOtelInstrumentation } from '@fastify/otel';
 import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 import { applyOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
-import { coldStartSpanAttributes } from '#src/infrastructure/observability/coldStart.js';
+import { incomingSpanAttributes } from '#src/infrastructure/observability/incomingSpanAttributes.js';
 
 /**
  * Must be registered as a Fastify plugin in buildApp() *before* routes and
@@ -187,10 +187,11 @@ export function startObservability(): void {
         // Every GraphQL and MCP request shares one route; this renames its span
         // after the operation — see operationSpanName.ts. The
         // incoming-span hook flags the first request a process serves as a
-        // cold start — see coldStart.ts.
+        // cold start and records the mobile app's build — see
+        // incomingSpanAttributes.ts.
         '@opentelemetry/instrumentation-http': {
           applyCustomAttributesOnSpan: applyOperationSpanName,
-          startIncomingSpanHook: coldStartSpanAttributes,
+          startIncomingSpanHook: incomingSpanAttributes,
         },
         '@opentelemetry/instrumentation-graphql': {
           ignoreTrivialResolveSpans: true,

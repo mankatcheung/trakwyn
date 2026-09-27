@@ -362,12 +362,12 @@ describe('tracing', () => {
       );
     });
 
-    it('flags cold starts on incoming HTTP spans only', async () => {
+    it('flags cold starts and the mobile client on incoming HTTP spans only', async () => {
       process.env[ENV.AXIOM_TOKEN] = 'secret-token';
       process.env[ENV.AXIOM_DATASET] = 'my-dataset';
       const mod = await loadTracingModule();
-      const { coldStartSpanAttributes } =
-        await import('#src/infrastructure/observability/coldStart.js');
+      const { incomingSpanAttributes } =
+        await import('#src/infrastructure/observability/incomingSpanAttributes.js');
 
       mod.startObservability();
 
@@ -375,9 +375,9 @@ describe('tracing', () => {
         [Record<string, Record<string, unknown>>],
       ];
       const httpConfig = config['@opentelemetry/instrumentation-http'];
-      expect(httpConfig.startIncomingSpanHook).toBe(coldStartSpanAttributes);
+      expect(httpConfig.startIncomingSpanHook).toBe(incomingSpanAttributes);
       // The outgoing-span and request hooks see client requests too; the
-      // flag must not ride on a call the API makes to Postgres or Redis.
+      // attributes must not ride on a call the API makes to Postgres or Redis.
       expect(httpConfig.startOutgoingSpanHook).toBeUndefined();
       expect(httpConfig.requestHook).toBeUndefined();
     });

@@ -18,7 +18,7 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
   - Pass `{ refreshOnUnauthorized: false }` where `UNAUTHORIZED` means "wrong password" (`updatePassword`, `reauthenticateMobile`).
   - A refresh that can't reach the server keeps the tokens. Only a rejected refresh token ends the session, and ending it (like sign-out) clears the React Query cache.
 - **Non-GraphQL callers** (the chat SSE stream) use `getValidAccessToken()` and `recoverFromUnauthorized()`.
-- **User-Agent:** `TrakwynMobile/<version> (<model>; <os>)`, which the API turns into the session label.
+- **User-Agent:** `TrakwynMobile/<version> (<model>; <os>)`, which the API turns into the session label and records on its request spans as `app.client.version`, `device.model.name`, `os.name` and `os.version`. Change the format only together with `apps/api/src/infrastructure/device/trakwynClientUserAgent.ts`.
 - **Step-up:** `STEP_UP_REQUIRED` is handled by `src/auth/useStepUpReauth.tsx`.
 - **`expo start --web` is a dev preview only.** It keeps tokens in `localStorage`; shipping it would first require switching to the cookie mutations.
 
