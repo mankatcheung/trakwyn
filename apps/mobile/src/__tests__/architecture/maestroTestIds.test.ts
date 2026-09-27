@@ -23,6 +23,17 @@ const PACKAGE_ROOT = resolve(__dirname, '../../..');
 const FLOWS_DIR = join(PACKAGE_ROOT, '.maestro');
 const SOURCE_ROOTS = ['src', 'app'];
 
+/**
+ * Ids that come from the platform, not from a `testID` in the app, so no
+ * source file declares them. Keep this short: each one is an id this check
+ * cannot protect.
+ *
+ * - `BackButton`: the identifier iOS gives the native stack header's back
+ *   button. Maestro's `back` is Android's hardware back press and does
+ *   nothing on iOS, so flows tap this there instead.
+ */
+const PLATFORM_IDS = new Set(['BackButton']);
+
 /** Where a regex id stops being literal — `move-card-.*` is literal up to `.`. */
 const REGEX_METACHAR = /[.*+?^${}()|[\]\\]/;
 
@@ -86,7 +97,7 @@ function declaredTestIds(): { literals: Set<string>; prefixes: string[] } {
 }
 
 function resolves(id: string, declared: { literals: Set<string>; prefixes: string[] }): boolean {
-  if (declared.literals.has(id)) return true;
+  if (PLATFORM_IDS.has(id) || declared.literals.has(id)) return true;
   // `move-to-interviewing` against `move-to-${status}`.
   if (declared.prefixes.some((prefix) => id.startsWith(prefix))) return true;
   // `move-card-.*` — compare only the literal head against everything declared.

@@ -56,7 +56,19 @@ appId: com.trakwyn.app
     id: 'note-modal-save'
 - assertVisible: '.*${output.note}.*'
 
-- back
+# `back` is Android's hardware back press and does nothing on iOS, where the
+# way back is the native header button (identifier BackButton).
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'BackButton'
 # Documents sits further down the section index than a small phone shows.
 - scrollUntilVisible:
     element:
