@@ -57,7 +57,16 @@ appId: com.trakwyn.app
 - tapOn:
     id: 'chat-input'
 - inputText: 'What should I follow up on?'
-- hideKeyboard
+# chat-input is multiline, so Enter would add a newline rather than blur it.
+# On Android the send button sits under the keyboard and hideKeyboard (a back
+# press, harmless on a plain screen) clears it. On iOS the screen's
+# KeyboardAvoidingView keeps the button above the keyboard, and Maestro's
+# hideKeyboard cannot dismiss it there anyway.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - tapOn:
     id: 'chat-send-button'
 

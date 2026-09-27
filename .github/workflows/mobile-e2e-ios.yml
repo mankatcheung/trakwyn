@@ -122,6 +122,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maestro-ios
+          # Maestro writes its screenshots and hierarchy dumps under a hidden
+          # .maestro/tests/ tree, which upload-artifact skips by default (the
+          # Android job in ci.yml has the same setting).
+          include-hidden-files: true
           path: |
             ${{ runner.temp }}/maestro-debug/
             ${{ runner.temp }}/api.log

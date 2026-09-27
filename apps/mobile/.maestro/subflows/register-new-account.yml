@@ -13,8 +13,12 @@ appId: com.trakwyn.app
 - evalScript: ${output.email = 'e2e-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com'}
 - evalScript: ${output.password = 'CorrectHorseBatteryStaple1!'}
 
-- assertVisible:
-    id: 'login-email-input'
+# A cold launch on a CI emulator can take longer than assertVisible's
+# default wait before the first screen draws.
+- extendedWaitUntil:
+    visible:
+      id: 'login-email-input'
+    timeout: 30000
 - tapOn:
     id: 'login-register-link'
 
@@ -24,17 +28,19 @@ appId: com.trakwyn.app
 # Close the keyboard before every next field. On the CI emulator's 320x640
 # screen the open keyboard covers the lower inputs, so a tap on one lands on
 # the keyboard, focus stays put and the next inputText types into the field
-# above ("Passwords do not match"). This is a plain screen, not a modal, so
-# the back press behind hideKeyboard only closes the keyboard.
-- hideKeyboard
+# above ("Passwords do not match"). Enter rather than hideKeyboard: a
+# single-line TextInput blurs on submit on both platforms, while Maestro's
+# hideKeyboard cannot dismiss the iOS keyboard here. None of these inputs
+# has an onSubmitEditing, so Enter submits nothing.
+- pressKey: Enter
 - tapOn:
     id: 'register-password-input'
 - inputText: ${output.password}
-- hideKeyboard
+- pressKey: Enter
 - tapOn:
     id: 'register-confirm-password-input'
 - inputText: ${output.password}
-- hideKeyboard
+- pressKey: Enter
 - tapOn:
     id: 'register-submit-button'
 
