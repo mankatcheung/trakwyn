@@ -9,6 +9,7 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
   ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
 } from '@opentelemetry/semantic-conventions';
 // `@fastify/otel` uses a CJS `export =` of a namespace; esModuleInterop's
@@ -171,6 +172,10 @@ export function startObservability(): void {
   sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: AXIOM.SERVICE_NAME,
+      // The release (JEF-362): the commit SHA, so every span, log and metric
+      // names the deploy that produced it. `dev` without one, as on web and
+      // mobile.
+      [ATTR_SERVICE_VERSION]: process.env[ENV.APP_RELEASE] || AXIOM.DEFAULT_RELEASE,
       [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: NODE_ENV.PRODUCTION,
     }),
     spanProcessors: [spanProcessor],

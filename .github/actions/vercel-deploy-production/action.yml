@@ -31,6 +31,10 @@ runs:
       shell: bash
       run: vercel build --prod --token="$VERCEL_TOKEN"
       env:
+        # The release PostHog events carry (JEF-362). Set explicitly because
+        # this build runs in GitHub Actions, where Vercel's
+        # VERCEL_GIT_COMMIT_SHA (vite.config.ts's fallback) isn't set.
+        VITE_APP_RELEASE: ${{ github.sha }}
         VERCEL_TOKEN: ${{ inputs.vercel-token }}
         VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}

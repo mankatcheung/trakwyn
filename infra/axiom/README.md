@@ -30,17 +30,17 @@ If the provider gains a resource for it, move the group into this root.
 
 All of them notify the one email notifier, `trakwyn-api alerts (email)`.
 
-| Monitor                                         | Source                                                                                         | Fires when                                                                   | Kind                       |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------- |
-| Redis fail-open                                 | `trakwyn.redis.fail_open` (metrics)                                                            | Any fail-open in 5 min, per `component`                                      | Threshold > 0              |
-| Redis circuit breaker opened                    | `trakwyn.redis.circuit_transitions` where `to == "open"` (metrics)                             | Any breaker opens in 5 min, per `component`                                  | Threshold > 0              |
-| Postgres pool errors above baseline             | `trakwyn.db.pool_errors` (metrics)                                                             | More than `db_pool_errors_per_hour` (20) in an hour                          | Threshold                  |
-| Postgres pool saturated for 5 minutes           | `trakwyn.db.pool.waiting_requests` gauge (metrics)                                             | Some instance had requests waiting at every sample for 5 min                 | Threshold > 0              |
-| Postgres connection acquire timed out           | `trakwyn.db.pool_acquire_timeouts` (metrics)                                                   | Any acquire timeout in 15 min, per `phase` (`queued`/`connecting`)           | Threshold > 0              |
-| Scheduled job failed                            | `job.<name>.failed` line (logs)                                                                | Any job throws                                                               | MatchEvent                 |
-| Scheduled job `<name>` has not completed in 26h | `job.<name>.completed` line (logs), one per nightly job (`digest`, `reminders`, `trash_purge`) | No completion in 26 hours                                                    | Threshold < 1, and no data |
-| GraphQL server-error rate                       | Root `POST /graphql …` server spans (traces)                                                   | More than `graphql_error_percent` (5%) `ERROR` in 15 min, with ≥ 20 requests | Threshold                  |
-| Outbound URL refused                            | `security.outbound_url.refused` line (logs)                                                    | Any refusal                                                                  | MatchEvent                 |
+| Monitor                                         | Source                                                                                         | Fires when                                                                                | Kind                       |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------- |
+| Redis fail-open                                 | `trakwyn.redis.fail_open` (metrics)                                                            | Any fail-open in 5 min, per `component`                                                   | Threshold > 0              |
+| Redis circuit breaker opened                    | `trakwyn.redis.circuit_transitions` where `to == "open"` (metrics)                             | Any breaker opens in 5 min, per `component`                                               | Threshold > 0              |
+| Postgres pool errors above baseline             | `trakwyn.db.pool_errors` (metrics)                                                             | More than `db_pool_errors_per_hour` (20) in an hour                                       | Threshold                  |
+| Postgres pool saturated for 5 minutes           | `trakwyn.db.pool.waiting_requests` gauge (metrics)                                             | Some instance had requests waiting at every sample for 5 min                              | Threshold > 0              |
+| Postgres connection acquire timed out           | `trakwyn.db.pool_acquire_timeouts` (metrics)                                                   | Any acquire timeout in 15 min, per `phase` (`queued`/`connecting`)                        | Threshold > 0              |
+| Scheduled job failed                            | `job.<name>.failed` line (logs)                                                                | Any job throws                                                                            | MatchEvent                 |
+| Scheduled job `<name>` has not completed in 26h | `job.<name>.completed` line (logs), one per nightly job (`digest`, `reminders`, `trash_purge`) | No completion in 26 hours                                                                 | Threshold < 1, and no data |
+| GraphQL server-error rate                       | Root `POST /graphql …` server spans (traces)                                                   | More than `graphql_error_percent` (5%) `ERROR` in 15 min, with ≥ 20 requests, per release | Threshold                  |
+| Outbound URL refused                            | `security.outbound_url.refused` line (logs)                                                    | Any refusal                                                                               | MatchEvent                 |
 
 Things worth knowing about how they are written:
 
@@ -50,6 +50,7 @@ Things worth knowing about how they are written:
 - **Log monitors query `logs_dataset` and read `event` through one expression**, `local.log_event` (`['attributes.event']`). Pino fields reach Axiom as OTel log attributes, which Axiom stores as top-level `attributes.<key>` fields. Don't read them from `attributes.custom`: that map holds custom _span_ attributes only, and a query against it matches no log lines, so the absence monitors fire even though the jobs ran. If Axiom ever moves the fields, only that line changes. Since JEF-373, spans are no longer in the same dataset, so the two schemas can't be confused within one query.
 - **The absence monitors are the only ones that can see Cloud Scheduler not firing**, an OIDC token rejected before the handler runs, or a deploy that broke an `/admin/*` route. None of those leave a `failed` line. `push_notifications` has no absence monitor because it is not scheduled.
 - **The error-rate monitor is the one monitor on `dataset` (traces), and it keys on span status, not HTTP status.** GraphQL answers 200 for a failed request; `formatError` marks the root span `ERROR` only for the errors it treats as server faults, so a `NOT_FOUND` or a wrong password never counts. Root spans are matched by `kind == "server"` and name, not `isnull(parent_span_id)`: Cloud Run's front end and the web client both send `traceparent`, so the API's server span usually has a remote parent.
+- **The error-rate monitor is grouped by release** (JEF-362), read through `local.release` (`['resource.service.version']`): the commit SHA `deploy-api` bakes into the image. The email then names the deploy, and a bad revision rolling out beside a good one isn't averaged away. The match monitors need no grouping, since their email carries the whole event and the release with it. The absence and metric monitors stay ungrouped: a group-by returns no rows over no data, which would silence the absence monitors.
 - **The pool-error and error-rate thresholds are guesses.** They start loose on purpose. After a week of production traffic, look at the real rates and tighten them in `terraform.tfvars`.
 
 ## Why a separate root
@@ -80,6 +81,10 @@ terraform apply
 ```
 
 As with `infra/gcp`, CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by hand.
+
+### Grouping the error rate by release (JEF-362)
+
+Apply this only after `deploy-api` has shipped an image built with `APP_RELEASE` and it has served a `POST /graphql` request. Before that no span has `resource.service.version`, and Axiom rejects a monitor query naming a field the dataset doesn't have yet. `plan` should show only `graphql_error_rate` changing in place.
 
 ### Cutting over to a new logs dataset (JEF-373)
 

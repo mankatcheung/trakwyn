@@ -8,6 +8,10 @@ locals {
   # Axiom ever moves it only this line changes.
   log_event = "tostring(['attributes.event'])"
 
+  # APL expression for the release (JEF-362): the commit SHA the API image was
+  # built from, which tracing.ts sets as the OTel resource's service.version.
+  release = "tostring(['resource.service.version'])"
+
   # The /admin/* jobs Cloud Scheduler runs daily (infra/gcp/scheduler.tf), by
   # the `job` name `runScheduledJob` logs them under (ADMIN_JOBS in
   # apps/api/src/http/constants.ts). push_notifications is not scheduled, so a
@@ -192,22 +196,27 @@ resource "axiom_monitor" "job_missing" {
 # means for this API. Root spans are matched by kind and name rather than
 # `isnull(parent_span_id)`: Cloud Run's front end and the web client both
 # send `traceparent`, so the API's server span usually has a remote parent.
+#
+# Grouped by release (JEF-362), so the email names the deploy the errors came
+# from, and a bad deploy rolling out beside a good one isn't averaged away.
 resource "axiom_monitor" "graphql_error_rate" {
   name        = "GraphQL server-error rate"
-  description = "Share of POST /graphql requests whose root span is ERROR, over 15 minutes. Reported as 0 below ${var.graphql_error_min_requests} requests."
+  description = "Share of POST /graphql requests whose root span is ERROR, over 15 minutes, per release (commit SHA). Reported as 0 below ${var.graphql_error_min_requests} requests."
   type        = "Threshold"
   apl_query   = <<-APL
     ['${var.dataset}']
     | where kind == "server" and name startswith "POST /graphql"
-    | summarize total = count(), errors = countif(error == true)
+    | extend release = ${local.release}
+    | summarize total = count(), errors = countif(error == true) by release
     | extend error_percent = iff(total < ${var.graphql_error_min_requests}, 0.0, 100.0 * errors / total)
-    | project error_percent
+    | project release, error_percent
   APL
 
   operator         = "Above"
   threshold        = var.graphql_error_percent
   range_minutes    = 15
   interval_minutes = 5
+  notify_by_group  = true
   alert_on_no_data = false
   notifier_ids     = [axiom_notifier.email.id]
 }

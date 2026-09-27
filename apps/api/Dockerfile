@@ -45,8 +45,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
           /out/tsconfig*.json
 
 FROM node:${NODE_VERSION}-slim AS runtime
+# The commit SHA this image was built from (JEF-362), reported as the OTel
+# service.version. CI passes it as a build arg; baking it into the image
+# rather than setting it on the Cloud Run service keeps Terraform, which owns
+# the service's env, from seeing drift on every deploy.
+ARG APP_RELEASE=dev
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    APP_RELEASE=$APP_RELEASE
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 USER node
