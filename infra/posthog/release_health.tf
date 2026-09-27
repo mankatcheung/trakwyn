@@ -149,7 +149,11 @@ resource "posthog_dashboard_layout" "mobile_release_health" {
 
   tiles = [
     {
-      text_body    = file("${path.module}/release_health_definitions.md")
+      # Trimmed because PostHog trims text tile bodies on save, and the
+      # provider finds this tile again by comparing bodies exactly: with the
+      # file's trailing newline it never matches, and apply fails with
+      # "inconsistent result ... element 5 has vanished".
+      text_body    = trimspace(file("${path.module}/release_health_definitions.md"))
       layouts_json = jsonencode({ sm = { x = 0, y = 0, w = 12, h = 4 } })
     },
     {
