@@ -75,3 +75,23 @@ export const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
 export const POSTHOG_EU_HOST = 'https://eu.i.posthog.com';
 
 export const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST;
+
+/**
+ * JS hang detection (JEF-369). The watchdog ticks every
+ * `HANG_WATCHDOG_INTERVAL_MS`; a tick that arrives late means the JS thread
+ * was busy for the difference. A delay of `HANG_BREADCRUMB_MS` or more is
+ * left as a breadcrumb (a janky frame is worth knowing about before a
+ * crash), and one of `APP_HANG_THRESHOLD_MS` or more is reported as an
+ * `app_hang` exception — long enough that the user saw a frozen screen.
+ */
+export const HANG_WATCHDOG_INTERVAL_MS = 500;
+export const HANG_BREADCRUMB_MS = 500;
+export const APP_HANG_THRESHOLD_MS = 2000;
+
+/**
+ * A tick later than this is read as the process having been suspended, not
+ * a hang: the backgrounding event can fail to reach JS before the OS
+ * freezes it, leaving the timer running across the suspension. No user
+ * waits out a minute-long frozen screen, so nothing real is lost.
+ */
+export const HANG_MAX_PLAUSIBLE_MS = 60_000;

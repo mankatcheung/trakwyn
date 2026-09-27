@@ -33,6 +33,8 @@ import { getRelease } from '../release';
 export const ANALYTICS_EVENTS = {
   APPLICATION_CREATED: 'application_created',
   ASSISTANT_USED: 'assistant_used',
+  /** Once per cold start, when auth has been restored (JEF-369). Mobile only. */
+  APP_STARTED: 'app_started',
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];

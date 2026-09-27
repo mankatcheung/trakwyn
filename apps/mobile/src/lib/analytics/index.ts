@@ -22,5 +22,19 @@ export {
   type TraceContext,
 } from './traceContext';
 export { getNetworkConnected, rememberNetworkConnected, resetNetworkState } from './networkState';
+export {
+  resetHangWatchdogForTests,
+  startHangWatchdog,
+  type HangWatchdogOptions,
+} from './hangWatchdog';
+export {
+  measureColdStart,
+  reportAppStarted,
+  resetStartupTimingForTests,
+  type ColdStartMeasurement,
+  type StartMarker,
+  type StartupClock,
+  type StartupOutcome,
+} from './startupTiming';
 export { REDACTED, scrubEvent, scrubString, scrubValue } from './scrub';
 export { transportFailureProperties, type TransportFailureProperties } from './transportFailure';

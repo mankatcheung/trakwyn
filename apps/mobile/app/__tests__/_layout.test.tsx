@@ -6,6 +6,10 @@ jest.mock('../../src/auth/AuthContext', () => ({
 }));
 
 jest.mock('../../src/theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../src/lib/analytics', () => ({
+  ...jest.requireActual('../../src/lib/analytics'),
+  reportAppStarted: jest.fn(),
+}));
 jest.mock('expo-router', () => {
   const Stack = ({ children }: { children?: React.ReactNode }) => children;
   Stack.Screen = () => null;
@@ -16,6 +20,7 @@ jest.mock('expo-router', () => {
 
 import { usePathname, useRouter } from 'expo-router';
 import { useAuth } from '../../src/auth/AuthContext';
+import { reportAppStarted } from '../../src/lib/analytics';
 import { RootNavigator } from '../_layout';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { lightColors } from '../../src/theme/colors';
@@ -24,6 +29,7 @@ const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUsePathname = jest.mocked(usePathname);
 const mockedUseTheme = jest.mocked(useTheme);
+const mockedReportAppStarted = jest.mocked(reportAppStarted);
 
 type AuthState = ReturnType<typeof useAuth>;
 
@@ -135,6 +141,42 @@ describe('RootNavigator', () => {
       });
 
       expect(replace).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // JEF-369: the end of a cold start is the first render after auth restores.
+  describe('reporting the cold start', () => {
+    it('waits until auth has been restored', async () => {
+      mockedUseAuth.mockReturnValue(authState({ isLoading: true }));
+      await render(<RootNavigator />);
+
+      expect(mockedReportAppStarted).not.toHaveBeenCalled();
+    });
+
+    it('reports a restored session as signed in', async () => {
+      mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
+      await render(<RootNavigator />);
+
+      expect(mockedReportAppStarted).toHaveBeenCalledWith('signed_in');
+    });
+
+    it('reports no session as signed out', async () => {
+      mockedUseAuth.mockReturnValue(authState({ isLoading: true }));
+      const { rerender } = await render(<RootNavigator />);
+      mockedUseAuth.mockReturnValue(authState());
+      await rerender(<RootNavigator />);
+
+      expect(mockedReportAppStarted).toHaveBeenCalledTimes(1);
+      expect(mockedReportAppStarted).toHaveBeenCalledWith('signed_out');
+    });
+
+    it('does not report a later sign-in as another start', async () => {
+      mockedUseAuth.mockReturnValue(authState());
+      const { rerender } = await render(<RootNavigator />);
+      mockedUseAuth.mockReturnValue(authState({ isAuthenticated: true }));
+      await rerender(<RootNavigator />);
+
+      expect(mockedReportAppStarted).toHaveBeenCalledTimes(1);
     });
   });
 
