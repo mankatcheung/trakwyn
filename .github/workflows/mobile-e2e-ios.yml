@@ -109,6 +109,33 @@ jobs:
           EXPO_PUBLIC_API_URL: http://localhost:3001/graphql
         run: pnpm exec expo run:ios --configuration Release --no-bundler
 
+      # iOS spots a sign-up form (an email and two secure fields) and swaps the
+      # keyboard for its "Automatic Strong Password" view, which swallows what
+      # Maestro types: the register flow ended with a short password and an
+      # empty confirmation. Turn Password AutoFill off in the simulator's
+      # configuration profile, the setting Settings > Passwords writes, and
+      # reboot so it takes effect. Real users keep AutoFill; only this
+      # throwaway simulator loses it. Which of these plists exist depends on
+      # the iOS runtime, so every one that does is updated.
+      - name: Turn off Password AutoFill on the simulator
+        run: |
+          udid=$(xcrun simctl list devices booted -j | jq -r '[.devices[][] | select(.state == "Booted")][0].udid')
+          dir="$HOME/Library/Developer/CoreSimulator/Devices/$udid/data/Containers/Shared/SystemGroup/systemgroup.com.apple.configurationprofiles/Library/ConfigurationProfiles"
+          updated=0
+          for f in UserSettings.plist EffectiveUserSettings.plist PublicInfo/PublicEffectiveUserSettings.plist; do
+            if [ -f "$dir/$f" ]; then
+              plutil -replace restrictedBool.allowPasswordAutoFill.value -bool NO "$dir/$f"
+              updated=1
+            fi
+          done
+          if [ "$updated" != 1 ]; then
+            echo "::error::no configuration profile plist under $dir"
+            exit 1
+          fi
+          xcrun simctl shutdown "$udid"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+
       - name: Install Maestro
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
