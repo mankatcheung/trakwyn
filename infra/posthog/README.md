@@ -1,4 +1,4 @@
-# infra/posthog: the PostHog project's privacy settings
+# infra/posthog: the PostHog project's privacy settings and mobile release health
 
 The PostHog project the web and mobile apps report errors and product events to (JEF-349), as Terraform (JEF-363). The clients already switch off everything that could record page content. This root sets the same switches on the project itself, so a dashboard toggle cannot quietly turn one back on, and a `plan` shows it if somebody does. It also publishes the project's public key, which `infra/vercel` reads instead of having it pasted into the Vercel dashboard.
 
@@ -9,6 +9,7 @@ The PostHog project the web and mobile apps report errors and product events to 
 | `posthog_project.web`          | The existing EU project (imported). Managed for its name and its `api_token`. |
 | `posthog_project_settings.web` | The project-level switches below (imported).                                  |
 | Output `project_api_key`       | The public `phc_` key; `infra/vercel` sets it as `VITE_POSTHOG_KEY`.          |
+| `release_health.tf`            | The mobile release health dashboard and its alert (JEF-368, below).           |
 
 ### Project settings
 
@@ -108,6 +109,73 @@ curl -X POST https://eu.i.posthog.com/i/v0/e/ -H 'Content-Type: application/json
 
 A new issue appears in Error Tracking within a minute or two, and the alert emails. Resolve the issue afterwards. The timestamp in `value` makes each run a new issue.
 
+## Mobile release health (JEF-368)
+
+PostHog has no crash-free-rate view like Sentry's Release Health, so `release_health.tf` builds one: a **Mobile release health** dashboard that answers "is 1.2.0 safe to keep rolling out?", and an alert for when it is not.
+
+| Resource                                         | What                                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `posthog_dashboard.mobile_release_health`        | The dashboard. Its first tile is `release_health_definitions.md`.                      |
+| `posthog_insight.crash_free_by_version`          | Crash-free sessions and users per `$app_version`, last 30 days, newest first.          |
+| `posthog_insight.crash_free_by_release`          | The same per `$app_version`, `$app_build` and `release` (the commit SHA, JEF-362).     |
+| `posthog_insight.crash_free_sessions_daily`      | Crash-free sessions %, one line per app version, per day.                              |
+| `posthog_insight.crashed_sessions_alert`         | Crashed sessions %, per day, with the minimum-volume guard. The alert watches this.    |
+| `posthog_insight.top_exceptions`                 | Mobile exception issues in the newest app version vs. the one before, by sessions hit. |
+| `posthog_alert.crashed_sessions`                 | Fires when a day's crash-free sessions fall below `crash_free_sessions_alert_percent`. |
+| `posthog_dashboard_layout.mobile_release_health` | Tile order and sizes. Authoritative: tiles added by hand lose their place on apply.    |
+
+The three tables are plain HogQL in `queries/`, so any of them can be pasted into **SQL editor** to dig further (change the `INTERVAL`, add a `WHERE`). The two charts are trends queries in `release_health.tf`, because PostHog alerts only run on trends insights.
+
+### Definitions
+
+- **Mobile event:** `$lib` is `posthog-react-native` (or `posthog-ios` / `posthog-android`, in case a native SDK reports its own name). Web and the web server send to the same project, so every query filters on this.
+- **Session:** a `$session_id`. The React Native SDK (`@posthog/core`) sets one on every event whether or not replay is on, and starts a new one on every cold start, after 30 minutes without an event, and after 24 hours. A session is therefore roughly one run of the app. Every mobile session counts, not only those with `Application Opened`, which fires on cold start only (a return from background is `Application Became Active`).
+- **Crash:** an `$exception` with `$exception_level = 'fatal'`. Two things produce one:
+  - an uncaught JS error React Native marks fatal (`ErrorUtils` `isFatal`), sent before the app dies;
+  - a native iOS or Android crash, from `@posthog/react-native-plugin`, sent by the native SDK **on the next launch**.
+
+  Handled errors (`captureException`), non-fatal uncaught errors and unhandled promise rejections are `error`, not `fatal`, and do not count.
+
+- **Crashed session:** a session with at least one crash. **Crashed user:** a person (`person_id`, so an anonymous session and a later login are one user) with at least one crashed session in that version or release.
+- **Crash-free %:** `100 × (1 − crashed ÷ all)`, for sessions and for users.
+- **Version and release of a session:** the app version and build of its first event, and the `release` of any event that has one. Native crash events skip the JS pipeline, so they carry no `release` super property (and no `scrubEvent`): the rest of the session supplies it. `unknown` means no event in the session had one, i.e. a build from before JEF-362.
+
+**Unverified until a real crash is seen** (the native SDK sources are not in this repo): that native crash events have `$exception_level = 'fatal'`, and which `$session_id` they carry. If it is the crashed session's (as the iOS plugin does with the distinct ID), everything above holds. If it is the next launch's, the crash is counted against that session instead: the crashed-session count stays right, but it lands on the version the user relaunched into. See "Checking it with a test crash" below.
+
+**Until JEF-300.** `app.json` is fixed at `1.0.0` and there is no EAS release stream, so every build is one row in the version table and "latest vs. previous" has nothing to compare. The release table (per commit SHA) is the useful one until versions are bumped.
+
+### The alert
+
+`posthog_alert.crashed_sessions` checks the previous complete day, once a day. It watches the crashed-session rate (`crashed_sessions_alert`) and fires above `100 − crash_free_sessions_alert_percent`, which is the same thing as crash-free falling below the threshold. It is the inverted rate because trends fill a day with no events with 0: 0% crash-free on a quiet day would alert, 0% crashed does not.
+
+The guard: below `crash_alert_min_sessions` sessions in a day the rate reads 0, so one crash among five sessions on a day-old build does not page anyone. Same idea as `graphql_error_min_requests` in `infra/axiom`.
+
+| Variable                            | Default | Meaning                                                                         |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------- |
+| `release_health_alert_user_ids`     | none    | Who is notified: numeric PostHog user IDs (below). Required.                    |
+| `crash_free_sessions_alert_percent` | `99`    | Alert when a day's crash-free sessions fall below this.                         |
+| `crash_alert_min_sessions`          | `50`    | Fewer sessions than this in a day reads as 0% crashed.                          |
+| `crash_alert_app_version`           | `null`  | Watch one version (e.g. `"1.2.0"` during its rollout); `null` watches them all. |
+
+Both numbers are starting points; there is no real traffic to set them from until JEF-300. With `null`, the alert covers every version together, which is dominated by the latest one once most users have updated. To watch a rollout closely, set `crash_alert_app_version` to the new version and apply; unset it once it is the norm.
+
+PostHog alerts notify subscribed users (by email and in-app), and `subscribed_users` takes numeric user IDs, not the UUIDs the `posthog_user` data source returns. Find yours with the same personal API key:
+
+```bash
+curl -s -H "Authorization: Bearer $TF_VAR_posthog_api_key" \
+  https://eu.posthog.com/api/organizations/@current/members/ | jq '.results[].user | {id, email}'
+```
+
+### Checking it with a test crash
+
+Native crashes only work in a dev or EAS build, not Expo Go (`apps/mobile/CLAUDE.md`).
+
+1. Build and run a dev build with `EXPO_PUBLIC_POSTHOG_KEY` set, and use the app for a moment.
+2. Crash it: for JS, `setTimeout(() => { throw new Error('JEF-368 test crash'); })` from a dev-only button; for native on Android, `adb shell run-as <applicationId> kill -SEGV $(adb shell pidof <applicationId>)` against the debuggable dev build. On iOS, launch from the home screen rather than Xcode: the crash reporter does not run with the debugger attached.
+3. Relaunch the app (a native crash is sent now).
+4. In **Activity**, open the `$exception`: check `$exception_level` is `fatal`, `$lib`, `$app_version`, and whether `$session_id` matches the crashed run's `Application Opened` or the relaunch's. Update "Unverified" above with what you find.
+5. The version and release tables show one crashed session. The alert does not fire: the guard holds it at 0 below `crash_alert_min_sessions`.
+
 ## Why a separate root
 
 For the same reason as `infra/axiom`: the PostHog personal API key is a provider argument, and Terraform never writes provider arguments to state. It lives only in the environment of whoever runs `apply`. The state (same GCS bucket as the other roots, prefix `trakwyn/posthog`) holds the project settings and the public `phc_` key. Nothing in it is secret, which matters because `infra/vercel` reads this state (see its README).
@@ -116,7 +184,7 @@ For the same reason as `infra/axiom`: the PostHog personal API key is a provider
 
 You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `infra/gcp/README.md`), and a PostHog **personal** API key. The project key the clients use cannot manage anything.
 
-Create it under **Account settings → Personal API keys → Create personal API key**. Scope it to the one organization and project, and give it `project:read` and `project:write` (settings live on the project) plus `organization:read` (the project import resolves the organization). If the first `plan` fails with a 403, the message names the missing scope.
+Create it under **Account settings → Personal API keys → Create personal API key**. Scope it to the one organization and project, and give it `project:read` and `project:write` (settings live on the project) plus `organization:read` (the project import resolves the organization). The release health dashboard (JEF-368) also needs `dashboard:write`, `insight:write` and `alert:write`, and `organization_member:read` to look up user IDs. If the first `plan` fails with a 403, the message names the missing scope.
 
 ```bash
 cd infra/posthog
