@@ -20,7 +20,7 @@ Things worth knowing:
 - **Production only.** No env var targets `preview` or `development`, because nothing makes preview deployments: the project is not connected to git and `deploy-web` always passes `--prod`.
 - **`VITE_POSTHOG_KEY` is stated once**, as `infra/posthog`'s `project_api_key` output, and read here through `terraform_remote_state`. That couples the roots in one direction: `infra/posthog` must be applied before this root can `plan`, and whoever runs this root needs read access to that state (same bucket, so already true). It is fine because the key is public. Don't pass a secret this way.
 - **Env vars not listed in `env.tf` are left alone.** The project resource does not use the deprecated inline `environment` block, so Terraform neither reads nor removes vars it does not declare. To stop managing one by hand, add it to `local.env`. Nothing will warn you about one set in the dashboard.
-- **DNS stays at the registrar.** `vercel_project_domain` attaches the domain to the project; it does not create records. `terraform show` reports `misconfigured = true` for a domain whose records are wrong.
+- **DNS records are in `infra/cloudflare`** (JEF-371). `vercel_project_domain` attaches the domain to the project; it does not create records. `terraform show` reports `misconfigured = true` for a domain whose records are wrong.
 
 ## Why a separate root
 

@@ -163,7 +163,7 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 
 ### 8. Cut over
 
-1. `terraform apply -refresh-only && terraform output domain_dns_records`, then create those records at the DNS provider. They replace the records that point `api.trakwyn.com` at Vercel. The managed certificate takes 15 minutes to 24 hours to issue.
+1. `terraform apply -refresh-only && terraform output domain_dns_records`, then check them against the `api` entry in `infra/cloudflare/dns.tf` and apply that root if they differ. Don't edit the record in the Cloudflare dashboard; Terraform owns it (JEF-371). The managed certificate takes 15 minutes to 24 hours to issue.
 2. Once `https://api.trakwyn.com/health` answers from Cloud Run, check that the OAuth callback URLs registered with Google and GitHub are still `https://api.trakwyn.com/auth/oauth/<provider>/callback`. The host hasn't changed, so they should be.
 3. Run each scheduled job once and check the responses in Cloud Logging:
    ```bash
