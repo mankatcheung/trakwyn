@@ -11,7 +11,8 @@ import { LanguageProvider } from '../src/i18n/LanguageContext';
 import { NavigationBreadcrumbs } from '../src/components/NavigationBreadcrumbs';
 import { NetworkBreadcrumbs } from '../src/components/NetworkBreadcrumbs';
 import { ScreenErrorBoundary } from '../src/components/ScreenErrorBoundary';
-import { initAnalytics } from '../src/lib/analytics';
+import { HangWatchdog } from '../src/components/HangWatchdog';
+import { initAnalytics, reportAppStarted } from '../src/lib/analytics';
 import i18n from '../src/i18n';
 
 const queryClient = new QueryClient();
@@ -75,6 +76,9 @@ export function RootNavigator() {
     if (isLoading) return;
     const isColdStart = !initialAuthResolved.current;
     initialAuthResolved.current = true;
+    // The first frame of (app) or (auth) has just committed: the end of a
+    // cold start (JEF-369). Sent once per process, however often this remounts.
+    if (isColdStart) reportAppStarted(isAuthenticated ? 'signed_in' : 'signed_out');
     if (!isAuthenticated) return;
     const target = returnTo.current ?? (isColdStart ? '/(tabs)/(home)' : null);
     if (!target) return;
@@ -124,6 +128,7 @@ export default function RootLayout() {
                 <AuthProvider>
                   <NavigationBreadcrumbs />
                   <NetworkBreadcrumbs />
+                  <HangWatchdog />
                   <RootNavigator />
                 </AuthProvider>
               </QueryClientProvider>
