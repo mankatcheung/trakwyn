@@ -7,8 +7,7 @@
 # ever sends it to a server.
 appId: com.trakwyn.app
 ---
-- launchApp:
-    clearState: true
+- runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml
 
 - evalScript: ${output.company = 'Acme ' + Date.now()}

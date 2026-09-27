@@ -9,8 +9,7 @@
 # gesture the UI does not require.
 appId: com.trakwyn.app
 ---
-- launchApp:
-    clearState: true
+- runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml
 
 - evalScript: ${output.company = 'Board Co ' + Date.now()}

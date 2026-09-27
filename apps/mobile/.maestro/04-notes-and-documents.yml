@@ -10,8 +10,7 @@
 # apps/web's Playwright suite against the same three-step API.
 appId: com.trakwyn.app
 ---
-- launchApp:
-    clearState: true
+- runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml
 
 - evalScript: ${output.company = 'Notes Co ' + Date.now()}

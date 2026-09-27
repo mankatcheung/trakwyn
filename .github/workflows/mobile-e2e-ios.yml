@@ -53,12 +53,22 @@ jobs:
 
       - uses: ./.github/actions/setup-project
 
+      # PGlite commits with fsync, and on this runner's virtual disk every
+      # write-heavy request (registration above all) took 13-17s against well
+      # under 1s on the Linux runner with the same API, long enough to outlast
+      # both Maestro's wait and the app's 20s request timeout. A RAM disk takes
+      # the disk out of it; the migrate step and the API both use this path.
+      - name: Put the E2E database on a RAM disk
+        run: |
+          device=$(hdiutil attach -nomount ram://2097152 | awk '{print $1}')
+          diskutil erasevolume APFS trakwyn-e2e "$device"
+
       - name: Configure ephemeral E2E environment
         run: |
           cat > apps/api/.env <<'EOF'
           PORT=3001
           NODE_ENV=development
-          DATABASE_URL=pglite:${{ runner.temp }}/trakwyn-mobile-e2e-pglite
+          DATABASE_URL=pglite:/Volumes/trakwyn-e2e/pglite
           JWT_SECRET=e2e-only-jwt-secret
           JWT_REFRESH_SECRET=e2e-only-refresh-secret
           TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
@@ -140,6 +150,13 @@ jobs:
         run: |
           curl -fsSL https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # Diagnostic only: registration's bcrypt cost is the other thing that
+      # could make sign-up slow here, so record what one hash costs on this
+      # runner next to the flows it would affect.
+      - name: Time one bcrypt hash
+        working-directory: apps/api
+        run: node -e "const b=require('bcryptjs');console.time('bcrypt cost 12');b.hashSync('x',12);console.timeEnd('bcrypt cost 12')"
 
       - name: Run the Maestro flows
         run: maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"

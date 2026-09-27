@@ -9,8 +9,7 @@
 # token is what the API reads as token reuse, and it revokes the session.
 appId: com.trakwyn.app
 ---
-- launchApp:
-    clearState: true
+- runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml
 
 - stopApp
