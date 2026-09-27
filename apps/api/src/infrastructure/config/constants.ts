@@ -96,8 +96,24 @@ export const DATABASE = {
   PGLITE_IN_MEMORY: 'memory',
   /** Pre-JEF-342 local SQLite URLs — rejected with instructions, not treated as a Postgres host. */
   LEGACY_SQLITE_SCHEME: 'file:',
+  /**
+   * Connections per instance (JEF-372 reviewed it). Cloud Run allows 80
+   * concurrent requests per instance, so a burst can queue behind this; the
+   * `trakwyn.db.pool.connections` and `trakwyn.db.pool.waiting_requests`
+   * gauges show whether it does. Raise it only once they show `used` pinned
+   * at 10 with requests waiting.
+   *
+   * The ceiling is Neon's, and it is generous: the pooled URL goes through
+   * PgBouncer in transaction mode, which accepts up to 10,000 client
+   * connections and holds a server connection only for the length of a
+   * transaction. The server side is capped at 90% of the compute's
+   * `max_connections`, which scales with compute size (around 100 at the
+   * smallest). `max_instances` × `POOL_MAX` is 3 × 10 = 30 today, so
+   * doubling either still fits the smallest compute.
+   */
   POOL_MAX: 10,
   POOL_IDLE_TIMEOUT_MS: 10_000,
+  /** How long a request waits for a connection, queued or opening one, before pg-pool fails it. */
   POOL_CONNECTION_TIMEOUT_MS: 10_000,
   /** OID of `int8` — what `count(*)` and `sum()` over `integer` return; parsed to a JS number. */
   INT8_OID: 20,
