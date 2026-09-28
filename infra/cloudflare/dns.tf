@@ -23,7 +23,8 @@ locals {
     # every mapping, so it is stated here rather than read across roots.
     api = { name = "api.${local.zone}", type = "CNAME", content = "ghs.googlehosted.com", ttl = 1 }
 
-    # Outbound email through Brevo (apps/api BrevoEmailService).
+    # Outbound email through Brevo (apps/api BrevoEmailService). The values
+    # Brevo expects are infra/brevo's outputs; they are stated here, not read.
     brevo_dkim_1       = { name = "brevo1._domainkey.${local.zone}", type = "CNAME", content = "b1.trakwyn-com.dkim.brevo.com", ttl = 3600 }
     brevo_dkim_2       = { name = "brevo2._domainkey.${local.zone}", type = "CNAME", content = "b2.trakwyn-com.dkim.brevo.com", ttl = 3600 }
     dmarc              = { name = "_dmarc.${local.zone}", type = "TXT", content = "\"v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com\"", ttl = 3600 }

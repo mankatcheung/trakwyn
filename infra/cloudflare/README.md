@@ -93,7 +93,7 @@ Once the plan shows only changes you mean, `apply`, then empty `record_import_id
 1. `dig +short www.trakwyn.com`, `dig +short trakwyn.com` and `dig +short api.trakwyn.com` still answer as before.
 2. `https://www.trakwyn.com` loads, `https://trakwyn.com` redirects to it, and `https://api.trakwyn.com/health` answers.
 3. In `infra/vercel`, `terraform show` reports `misconfigured = false` for both domains.
-4. A Brevo test send passes DKIM and DMARC (Brevo's **Senders, Domains & Dedicated IPs → Domains** shows `trakwyn.com` authenticated).
+4. A Brevo test send passes DKIM and DMARC (Brevo's **Senders, Domains & Dedicated IPs → Domains** shows `trakwyn.com` authenticated). `infra/brevo`'s `terraform output` gives the values Brevo expects for the `brevo_*` records.
 5. A mail to each rule's address arrives at its `forward_to` inbox.
 
 ## Changing a record
