@@ -111,7 +111,7 @@ printf '%s' "<value>" | gcloud secrets versions add jwt-secret --data-file=-
 
 `printf '%s'` rather than `echo`, so no trailing newline becomes part of the secret. To leave a feature unconfigured instead (GitHub sign-in, say), remove its name from `secret_env_vars` in `terraform.tfvars`: Cloud Run refuses to start a revision that references a secret with no version.
 
-**`database-url` is not in the Vercel file.** It is the Neon connection string, which embeds the database password — the reason it is a secret rather than a `terraform.tfvars` value (JEF-342). Use the _pooled_ URL here: every Cloud Run instance keeps its own small `pg` pool, and Neon's pooler multiplexes them all onto the compute. Migrations use the _direct_ URL instead, from CI's `PRODUCTION_DATABASE_URL` secret, because the pooler runs in transaction mode.
+**`database-url` is not in the Vercel file.** It is the Neon connection string, which embeds the database password — the reason it is a secret rather than a `terraform.tfvars` value (JEF-342). Use the _pooled_ URL here: every Cloud Run instance keeps its own small `pg` pool, and Neon's pooler multiplexes them all onto the compute. Migrations use the _direct_ URL instead, from CI's `PRODUCTION_DATABASE_URL` secret, because the pooler runs in transaction mode. `infra/neon` manages the branch and compute behind both and outputs the two hosts (`host_pooling`, `host`), but it never reads the password, so both URLs are still set by hand (JEF-379).
 
 ```bash
 printf '%s' "$NEON_POOLED_URL" | gcloud secrets versions add database-url --data-file=-

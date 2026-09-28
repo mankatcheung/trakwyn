@@ -33,7 +33,8 @@ name: CI & Deploy
 #      project_id in infra/vercel's terraform.tfvars).
 #   4. Add repository secrets (in GitHub Settings > Secrets > Actions):
 #      PRODUCTION_DATABASE_URL — the production Neon Postgres *direct*
-#        (non-pooled) connection string, with ?sslmode=require
+#        (non-pooled) connection string, with ?sslmode=require. Its host
+#        is infra/neon's `host` output (JEF-379).
 #      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
 #        both apps finish deploying to production
 
@@ -99,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        root: [infra/gcp, infra/axiom, infra/posthog, infra/vercel, infra/cloudflare]
+        root: [infra/gcp, infra/axiom, infra/posthog, infra/vercel, infra/cloudflare, infra/neon]
     defaults:
       run:
         working-directory: ${{ matrix.root }}
