@@ -1,6 +1,6 @@
 # infra/vercel: the web app's Vercel project
 
-The Vercel project `apps/web` deploys to, as Terraform (JEF-363): its settings, its domains and its production env vars. Before this, the same things were steps in a comment at the top of `.github/workflows/ci.yml`, done once in the dashboard and not visible anywhere after.
+The Vercel project `apps/web` deploys to, as Terraform (JEF-363): its settings, its domains and its production env vars, plus the Blob store the API uploads to (JEF-381). Before this, the same things were steps in a comment at the top of `.github/workflows/ci.yml`, done once in the dashboard and not visible anywhere after.
 
 Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. CI's `deploy-web` job still builds and ships every release (`vercel build` then `vercel deploy --prebuilt --prod`, `.github/actions/vercel-deploy-production`). Nothing here deploys.
 
@@ -12,6 +12,7 @@ Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. C
 | `domains.tf` | `www.trakwyn.com`, and the apex redirecting to it with a 308 (both imported). Set `apex_domain = null` if the project has no apex.                                                                |
 | `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY` (read by the browser bundle and, for error reporting, by the Vercel function).                                        |
 | `posthog.tf` | Reads `infra/posthog`'s state for the PostHog project key.                                                                                                                                        |
+| `blob.tf`    | `vercel_blob_store.uploads` (imported): the public Blob store the API uploads to. Its token is **not** read here; see "The Blob store".                                                           |
 
 Things worth knowing:
 
@@ -67,6 +68,36 @@ Then read the plan before applying. Expect:
 - **`git_repository` being removed.** That means the project is connected to the repo, which it should not be. Applying disconnects it, which is intended.
 
 Once the plan shows only changes you mean, `apply`, then empty `env_var_import_ids`. Import blocks are no-ops once the resource is in state, but the map is only needed once.
+
+## The Blob store (JEF-381)
+
+The store behind `STORAGE_PROVIDER=vercel-blob` is used by the API on Cloud Run, not by this project, so it has no project connection, and the files in it belong to the app (`@vercel/blob`), not to Terraform.
+
+- **It must never be replaced.** In this provider, `name`, `access` and `region` all force a replacement, and replacing the store deletes every upload. `access` and `region` have defaults, so `blob.tf` states all three, and `lifecycle.prevent_destroy` makes a plan that would replace the store fail instead.
+- **Its token is not in state.** `infra/gcp/load-secrets.sh` reads `blob_store_id` and `team_id` from this root's outputs, fetches the token from `GET /v1/storage/stores/{id}/secrets`, and pipes it to Secret Manager. Using the `vercel_blob_store_secrets` data source instead would write the token into this root's state, and into any root that reads it.
+
+### Adopting the Blob store
+
+Find the store's ID, name and region:
+
+```bash
+curl -s -H "Authorization: Bearer $TF_VAR_vercel_api_token" \
+  "https://api.vercel.com/v1/storage/stores?teamId=<team_id>" \
+  | jq '.stores[] | select(.type == "blob") | {id, name, region, access}'
+```
+
+Put `id`, `name` and `region` in `terraform.tfvars` as `blob_store_id`, `blob_store_name` and `blob_store_region`, and check that `access` is `public`. Then `plan`. It must show **1 to import and 0 to add, change or destroy** for the store. A `prevent_destroy` error means one of the three values differs from the live store: fix the value, don't remove the guard.
+
+Before loading the token into Secret Manager for the first time, compare its first characters with the current `blob-public-read-write-token` without printing either value:
+
+```bash
+source .envrc
+curl -s -H @- "https://api.vercel.com/v1/storage/stores/$(terraform output -raw blob_store_id)/secrets?teamId=$(terraform output -raw team_id)" \
+  <<<"Authorization: Bearer $TF_VAR_vercel_api_token" | jq -r .rwToken | cut -c1-24
+gcloud secrets versions access latest --secret=blob-public-read-write-token | cut -c1-24
+```
+
+Both should start with `vercel_blob_rw_` and the same store ID. Then run `load-secrets.sh` (`infra/gcp/README.md`, step 3) and roll out a new revision.
 
 ## Server-side error reporting (JEF-374)
 
