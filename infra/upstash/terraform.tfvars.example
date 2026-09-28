@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars (gitignored) and fill in from the database listing
+# in README.md. Nothing here is secret; the management key comes from the
+# environment (TF_VAR_upstash_api_key).
+database_name = "<name>"
+
+# A global database:
+region         = "global"
+primary_region = "eu-west-1"
+read_regions   = []
+
+# Or a legacy regional one (leave primary_region and read_regions out):
+# region = "eu-west-1"
+
+# First apply only: adopt the live database, then set back to null once it
+# is in state.
+# database_import_id = "<database_id>"

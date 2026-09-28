@@ -82,7 +82,7 @@ cd apps/api && vercel env pull .env.production --environment=production && cd -
 ./load-secrets.sh ../../apps/api/.env.production --apply    # upload
 ```
 
-The dry run never prints a value. It reports anything missing or left as a placeholder, and exits non-zero until every secret has one. Two are **not** in that file and have to come from their own dashboards: `UPSTASH_REDIS_REST_TOKEN` (Upstash) and `BLOB_PUBLIC_READ_WRITE_TOKEN` (the Vercel Blob store's public-access token — note the app ignores `BLOB_READ_WRITE_TOKEN`, which is the one the file carries). `UPSTASH_REDIS_REST_URL` is not secret and belongs in `terraform.tfvars`.
+The dry run never prints a value. It reports anything missing or left as a placeholder, and exits non-zero until every secret has one. Two are **not** in that file and have to come from their own dashboards: `UPSTASH_REDIS_REST_TOKEN` (Upstash) and `BLOB_PUBLIC_READ_WRITE_TOKEN` (the Vercel Blob store's public-access token — note the app ignores `BLOB_READ_WRITE_TOKEN`, which is the one the file carries). `UPSTASH_REDIS_REST_URL` is not secret and belongs in `terraform.tfvars`, copied from `terraform -chdir=../upstash output -raw rest_url`. The database itself is Terraform in `infra/upstash` (JEF-378). Its value is copied rather than read across roots, because reading that root's state would also read the Redis credentials it holds (`infra/upstash/README.md`).
 
 Secret IDs are the env var names in lower-kebab-case:
 
