@@ -5,6 +5,12 @@ project_id   = "prj_xxxxxxxxxxxxxxxxxxxxxxxxxxxx" # VERCEL_WEB_PROJECT_ID
 project_name = "trakwyn-web"
 state_bucket = "<project-id>-tfstate"
 
+# The Blob store the API uploads to. All three must match the live store
+# exactly, or the plan replaces it (README.md, "Adopting the Blob store").
+blob_store_id     = "store_xxxxxxxxxxxxxxxx"
+blob_store_name   = "<name as Vercel shows it>"
+blob_store_region = "<region, e.g. fra1>"
+
 # First apply only: adopt the env vars already set in the dashboard. List
 # their IDs as README.md shows, then empty this map once they are in state.
 # env_var_import_ids = {

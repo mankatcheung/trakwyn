@@ -4,6 +4,11 @@
 # client IDs...) is not secret and belongs in terraform.tfvars instead.
 # DATABASE_URL is a secret: a Postgres URL embeds its password (JEF-342).
 #
+# BLOB_PUBLIC_READ_WRITE_TOKEN is the exception: it is not read from the env
+# file but fetched from the Vercel API for the store infra/vercel manages
+# (JEF-381). That needs infra/vercel applied and initialised on this machine,
+# and TF_VAR_vercel_api_token set (infra/vercel/.envrc).
+#
 #   ./load-secrets.sh ../../apps/api/.env.production            # dry run
 #   ./load-secrets.sh ../../apps/api/.env.production --apply    # upload
 #
@@ -56,6 +61,31 @@ read_value() {
     sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"
 }
 
+# The Blob store's read/write token, from the Vercel API. The store's ID and
+# team come from infra/vercel's outputs; the token itself never enters
+# Terraform state, because vercel_blob_store_secrets would put it there. The
+# API token reaches curl on stdin, so neither is in the process list.
+VERCEL_ROOT="$(cd "$(dirname "$0")/../vercel" && pwd)"
+VERCEL_SOURCED_KEY=BLOB_PUBLIC_READ_WRITE_TOKEN
+
+blob_token() {
+  [ -n "${TF_VAR_vercel_api_token:-}" ] || return 1
+  local store_id team_id
+  store_id="$(terraform -chdir="$VERCEL_ROOT" output -raw blob_store_id 2>/dev/null)" || return 1
+  team_id="$(terraform -chdir="$VERCEL_ROOT" output -raw team_id 2>/dev/null)" || return 1
+  printf 'Authorization: Bearer %s\n' "$TF_VAR_vercel_api_token" |
+    curl -sS --fail -H @- "https://api.vercel.com/v1/storage/stores/${store_id}/secrets?teamId=${team_id}" |
+    jq -er '.rwToken'
+}
+
+secret_value() {
+  if [ "$1" = "$VERCEL_SOURCED_KEY" ]; then
+    blob_token
+  else
+    read_value "$1"
+  fi
+}
+
 secret_id() {
   printf '%s' "$1" | tr '[:upper:]_' '[:lower:]-'
 }
@@ -75,7 +105,13 @@ echo
 
 for key in "${SECRET_KEYS[@]}"; do
   id="$(secret_id "$key")"
-  value="$(read_value "$key" || true)"
+  value="$(secret_value "$key" || true)"
+
+  if [ -z "$value" ] && [ "$key" = "$VERCEL_SOURCED_KEY" ]; then
+    printf '  %-30s MISSING      could not read it from Vercel: set TF_VAR_vercel_api_token and apply infra/vercel\n' "$id"
+    missing=$((missing + 1))
+    continue
+  fi
 
   if [ -z "$value" ]; then
     printf '  %-30s MISSING      set it in the env file, or drop %s from secret_env_vars\n' "$id" "$key"

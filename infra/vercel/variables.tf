@@ -54,3 +54,18 @@ variable "env_var_import_ids" {
   type        = map(string)
   default     = {}
 }
+
+variable "blob_store_id" {
+  description = "ID of the existing Blob store the API uploads to (store_...). Imported, not created."
+  type        = string
+}
+
+variable "blob_store_name" {
+  description = "The Blob store's name, exactly as Vercel shows it. A different value replaces the store, deleting every upload, which prevent_destroy refuses."
+  type        = string
+}
+
+variable "blob_store_region" {
+  description = "The Blob store's region (e.g. fra1), exactly as Vercel reports it. Like the name, a different value replaces the store."
+  type        = string
+}
