@@ -3,4 +3,4 @@
 
 # First apply only: adopt the existing sender. Look its ID up as README.md
 # shows, then remove this line once it is in state.
-# sender_import_id = "1"
+# sender_import_id = "<id of the noreply@trakwyn.com row>"  # not 1: that is the account's own sender

@@ -50,16 +50,18 @@ CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by ha
 
 ### Adopting the live account
 
-The domain imports by name on its own. The sender imports by Brevo's numeric ID, which is only in the API:
+The domain imports by name on its own. The sender imports by its numeric ID, which only Brevo's `/v3/senders` lists:
 
 ```bash
 curl -s -H "api-key: $TF_VAR_brevo_api_key" https://api.brevo.com/v3/senders \
   | jq -r '.senders[] | [.id, .email, .name, .active] | @tsv'
 ```
 
-Put the `noreply@trakwyn.com` row's ID in `sender_import_id` in `terraform.tfvars`. Any other sender in the list is not managed here; delete it in the dashboard if it is dead.
+Put the `noreply@trakwyn.com` row's ID in `sender_import_id` in `terraform.tfvars`. Take it from that row, not the first one: ID `1` is the sender the Brevo account was opened with (the owner's own address), and importing it plans a replacement that `prevent_destroy` refuses. Other senders in the list are not managed here. Leave the account's own one alone.
 
-Then `plan` and read it before applying. It must show **two imports, no create and no destroy**. The only acceptable change is the sender's `name` settling to "Trakwyn" if the dashboard says otherwise. A replacement means `local.domain` or `local.sender.email` does not match the live account: stop and find out why, since `prevent_destroy` will refuse it anyway.
+If there is no `noreply@trakwyn.com` row, the API has been sending from the authenticated domain without a sender entry. Leave `sender_import_id` unset, and the plan creates the sender instead (`1 to import, 1 to add`). The domain is authenticated, so Brevo should accept it without a confirmation email. If it does ask, the code goes to `noreply@trakwyn.com`, which needs an Email Routing rule in `infra/cloudflare` to reach you.
+
+Then `plan` and read it before applying. It must show **two imports (or one import and one add, above) and no destroy**. The only acceptable change is the sender's `name` settling to "Trakwyn" if the dashboard says otherwise. A replacement means `local.domain` or `local.sender.email` does not match the live account: stop and find out why, since `prevent_destroy` will refuse it anyway.
 
 Once applied, remove `sender_import_id` from `terraform.tfvars`. The import block is skipped while it is unset.
 
