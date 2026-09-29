@@ -6,13 +6,13 @@ The Upstash Redis database `apps/api` uses in production (`CACHE_PROVIDER=redis`
 
 | File         | What                                                                                                                  |
 | ------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `redis.tf`   | `upstash_redis_database.this`: TLS on, eviction off, pay-as-you-go capped at a $20 monthly budget, no auto-upgrade.   |
+| `redis.tf`   | `upstash_redis_database.this`: TLS on, eviction off, no auto-upgrade. The budget is left to the console (free tier).  |
 | `outputs.tf` | `rest_url`, the value of `UPSTASH_REDIS_REST_URL`, which `infra/gcp` takes as its `upstash_redis_rest_url` (literal). |
 
 Things worth knowing:
 
 - **Eviction is off on purpose.** Every key the API writes has a TTL, so memory is already bounded. With eviction on, a full database would drop keys early, and a dropped session-blocklist key silently un-revokes that session until its access token expires. With it off, a full database fails writes instead, and the cache, rate limiter and blocklist all fail open and count it (`apps/api/CLAUDE.md`, Metrics), which `infra/axiom`'s monitors alert on.
-- **The budget is the cost cap.** `auto_scale = false` means hitting a quota throttles the database until the next month rather than moving it to a bigger plan. Throttling looks like Redis errors, so the same fail-open monitors are the signal.
+- **It stays on the free tier.** `auto_scale = false` means hitting a quota (the monthly command cap is the likely one) throttles the database rather than moving it to a paid plan. Throttling looks like Redis errors, so the same fail-open monitors are the signal. `budget` is a pay-as-you-go setting, so it is in `ignore_changes` rather than the config: Terraform never sets or clears it. If the database ever moves to pay-as-you-go, set the budget in `redis.tf` and take it out of `ignore_changes` in the same PR.
 - **No IP allowlist.** Cloud Run has no fixed egress IP (there is no NAT gateway in `infra/gcp`), so an allowlist would lock the API out. The REST token is the only boundary.
 - **Identity lives in `terraform.tfvars`, policy in `redis.tf`.** The name and region are facts about the one database that exists, so they sit next to its import ID, like `zone_id` in `infra/cloudflare`. The settings in `redis.tf` are decisions, so they are reviewed in the repo.
 - **`prevent_destroy` is set.** Changing `database_name` or `region` makes the provider replace the database, which would drop every key and change the token Cloud Run holds. `plan` refuses instead. To really move the database, see "Replacing the database" below.
@@ -63,7 +63,7 @@ The production one is the one whose `endpoint` is the host in `infra/gcp`'s `ups
 
 Then `plan` and read it before applying. It must show **one import, no create and no destroy**. A `prevent_destroy` error means `database_name` or `region` doesn't match the live database; fix `terraform.tfvars`, don't remove the lifecycle rule. These in-place updates are the only ones to expect:
 
-- **`eviction`, `auto_scale`, `budget`, `prod_pack` or `tls`**, when the live database was set differently. Each is a real change to production, so decide rather than accept it: apply it if the setting in `redis.tf` is what you want (it's argued for above), or copy the live value into `redis.tf` in a PR first. TLS cannot be turned off on Upstash, so a `tls` change can only be `true` being recorded.
+- **`eviction`, `auto_scale`, `prod_pack` or `tls`**, when the live database was set differently. Each is a real change to production, so decide rather than accept it: apply it if the setting in `redis.tf` is what you want (it's argued for above), or copy the live value into `redis.tf` in a PR first. TLS cannot be turned off on Upstash, so a `tls` change can only be `true` being recorded.
 
 Anything else is unexpected; find out why before applying.
 
