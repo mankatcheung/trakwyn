@@ -10,4 +10,4 @@ endpoint_id = "ep-xxxxxx-xxxxxx-xxxxxxxx"
 # database_name  = "neondb"
 # database_owner = "neondb_owner"
 # region         = "aws-eu-central-1"
-# protect_branch = true # false on the Free plan
+# protect_branch = false # true needs a paid plan
