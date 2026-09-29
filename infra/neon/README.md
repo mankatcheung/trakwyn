@@ -24,7 +24,7 @@ Things worth knowing:
 
 ## Why there is no `neon_project`
 
-`kislerdm/neon`'s `neon_project` resource reads the default database owner's live password on every refresh, not only at creation. It then writes that password, and `connection_uri`/`connection_uri_pooler` built from it, into state. That role is the one the API connects as. Managing the project would put production's database password in the state bucket, which is the one thing the roots here are built to avoid (`infra/gcp/README.md`: secrets never enter Terraform state). `neon_branch`, `neon_endpoint` and `neon_database` read no credentials.
+`kislerdm/neon`'s `neon_project` resource reads the default database owner's live password on every refresh, not only at creation. It then writes that password, and `connection_uri`/`connection_uri_pooler` built from it, into state. That role is the one the API connects as. Managing the project would put production's database password in the state bucket, against the rule `infra/gcp` follows, that secrets never enter Terraform state. `infra/upstash` breaks that rule knowingly, because its provider leaves no alternative (`infra/upstash/README.md`, "Credentials in state"). Here there is one: `neon_branch`, `neon_endpoint` and `neon_database` read no credentials, so leaving the project out keeps this root's state free of secrets.
 
 So the project itself is referenced by `project_id` and not managed. These stay in the dashboard, under the project's **Settings**:
 
@@ -39,7 +39,7 @@ If the provider ever stops reading the password on refresh, `neon_project` can b
 
 ## Why a separate root
 
-For the same reason as `infra/axiom`, `infra/posthog`, `infra/vercel` and `infra/cloudflare`: the Neon API key is a provider argument, Terraform never writes provider arguments to state, and a separate root keeps it out of every other root's `apply`. State lives in the same GCS bucket under prefix `trakwyn/neon`.
+For the same reason as `infra/axiom`, `infra/brevo`, `infra/cloudflare`, `infra/posthog`, `infra/upstash` and `infra/vercel`: the Neon API key is a provider argument, Terraform never writes provider arguments to state, and a separate root keeps it out of every other root's `apply`. State lives in the same GCS bucket under prefix `trakwyn/neon`.
 
 ## Applying
 

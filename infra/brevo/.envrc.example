@@ -1,0 +1,4 @@
+# Copy to .envrc (gitignored) and fill in. Load with `source .envrc`, or let
+# direnv do it on `cd`. Never put the key in terraform.tfvars, and don't reuse
+# the API's runtime BREVO_API_KEY here (README.md).
+export TF_VAR_brevo_api_key=...
