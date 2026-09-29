@@ -19,8 +19,3 @@ output "verified" {
   description = "Whether Brevo considers the domain verified."
   value       = brevo_domain.this.verified
 }
-
-output "sender_id" {
-  description = "Brevo's numeric ID of the noreply sender."
-  value       = brevo_sender.noreply.id
-}
