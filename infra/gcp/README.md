@@ -95,7 +95,7 @@ Secret IDs are the env var names in lower-kebab-case:
 | `database-url`                 | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below |
 | `upstash-redis-rest-token`     | Upstash token                                                                                    |
 | `blob-public-read-write-token` | Vercel Blob store token                                                                          |
-| `brevo-api-key`                | Brevo API key                                                                                    |
+| `brevo-api-key`                | Brevo API key (not the one `infra/brevo` uses)                                                   |
 | `cron-secret`                  | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
 | `digest-admin-secret`          | a new random value                                                                               |
 | `google-oauth-client-secret`   | Google OAuth client secret                                                                       |
