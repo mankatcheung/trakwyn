@@ -44,7 +44,7 @@ variable "region" {
 }
 
 variable "protect_branch" {
-  description = "Mark the default branch protected, so it cannot be deleted or reset from the console. Protected branches need a paid Neon plan; set false on the Free plan."
+  description = "Mark the default branch protected, so it cannot be deleted or reset from the console. Needs a paid Neon plan, so false while production is on Free."
   type        = bool
-  default     = true
+  default     = false
 }

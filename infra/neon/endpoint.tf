@@ -15,11 +15,14 @@ resource "neon_endpoint" "production" {
   branch_id  = neon_branch.production.id
   type       = "read_write"
 
-  # Scale to zero after five minutes idle. infra/axiom's pool-error monitor
-  # is tested by waiting out exactly this timeout (infra/axiom/README.md).
+  # Free plan: a fixed 0.25 CU, and a suspend timeout of 0, which means
+  # Neon's default: scale to zero after five minutes idle, not configurable
+  # on Free. infra/axiom's pool-error monitor is tested by waiting out
+  # exactly those five minutes (infra/axiom/README.md). On a paid plan,
+  # raise the max for autoscaling and set an explicit timeout here.
   autoscaling_limit_min_cu = 0.25
-  autoscaling_limit_max_cu = 2
-  suspend_timeout_seconds  = 300
+  autoscaling_limit_max_cu = 0.25
+  suspend_timeout_seconds  = 0
 
   lifecycle {
     prevent_destroy = true

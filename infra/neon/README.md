@@ -6,21 +6,21 @@ Terraform owns configuration. It never touches data, the schema (that is `apps/a
 
 ## What it owns
 
-| File          | What                                                                                                                                          |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `branch.tf`   | `neon_branch.production` (imported): the project's default branch, its name and whether it is protected.                                      |
-| `endpoint.tf` | `neon_endpoint.production` (imported): the branch's read-write compute, autoscaling 0.25–2 CU, suspended after 300 s idle. Checks the region. |
-| `database.tf` | `neon_database.app` (imported): the API's database and the role that owns it.                                                                 |
-| `outputs.tf`  | The direct and pooled hosts, and the region. No credentials.                                                                                  |
+| File          | What                                                                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branch.tf`   | `neon_branch.production` (imported): the project's default branch, its name and whether it is protected.                                                               |
+| `endpoint.tf` | `neon_endpoint.production` (imported): the branch's read-write compute: a fixed 0.25 CU, suspended after Neon's default 5 minutes idle (Free plan). Checks the region. |
+| `database.tf` | `neon_database.app` (imported): the API's database and the role that owns it.                                                                                          |
+| `outputs.tf`  | The direct and pooled hosts, and the region. No credentials.                                                                                                           |
 
 All three resources have `prevent_destroy`. A plan that would destroy or replace one fails instead of being applied. Replacing the branch or the database loses production's data. Replacing the endpoint gives it a new host, which breaks both connection strings until they are set again.
 
 Things worth knowing:
 
-- **The 300 s suspend timeout is relied on elsewhere.** `infra/axiom`'s pool-error monitor is tested by letting an instance sit idle past it, and the API's pool `'error'` handler exists because of it (`apps/api/CLAUDE.md`, Database). Change them together.
+- **Production is on Neon's Free plan, and the code matches it.** The compute is a fixed 0.25 CU (`autoscaling_limit_min_cu = autoscaling_limit_max_cu`). `suspend_timeout_seconds = 0` means "Neon's default", which is 5 minutes on Free and cannot be changed there. The branch is not protected, because protected branches need a paid plan. After an upgrade, raise `autoscaling_limit_max_cu`, set an explicit timeout if you want one, and set `protect_branch = true`.
+- **The 5-minute suspend is relied on elsewhere.** `infra/axiom`'s pool-error monitor is tested by letting an instance sit idle past it, and the API's pool `'error'` handler exists because of it (`apps/api/CLAUDE.md`, Database). Change them together.
 - **There is no pooler setting.** Neon pools every endpoint. `host_pooling` is the `-pooler` host that the API's `database-url` must use; `host` is the direct one that migrations use (`infra/gcp/README.md`, §3).
 - **The region is checked, not set.** A project's region is fixed when it is created. The endpoint's postcondition fails the plan if the compute is not in `var.region`. That happens only if `project_id` or `endpoint_id` points at the wrong project.
-- **Protected branches need a paid plan.** On the Free plan, set `protect_branch = false`, or apply fails with a plan error from Neon.
 
 ## Why there is no `neon_project`
 
@@ -80,9 +80,9 @@ CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by ha
 
 Every resource has an `import` block, so the first `plan` adopts them. Read it before applying. It must show **three imports and no create, replace or destroy**. A create means an ID or a name in `terraform.tfvars` is wrong; `prevent_destroy` stops a replace from being planned at all.
 
-Then expect in-place updates only where production differs from the code:
+On the Free plan, with the defaults, the plan should be imports only: `3 to import, 0 to add, 0 to change, 0 to destroy`. Otherwise, expect in-place updates only where production differs from the code:
 
-- **`protected`** going to `"yes"`, if the branch was not protected yet. That is intended. With `protect_branch = false` it shows `"no"` once instead: the provider reads the flag back only after it has been set.
+- **`protected`** going to `"yes"`, if you set `protect_branch = true` and the branch was not protected yet. That is intended, and fails on the Free plan.
 - **`pg_settings`** being cleared, if the compute has custom Postgres settings. `endpoint.tf` declares none. Copy them into a `pg_settings` map there rather than applying.
 - **`autoscaling_limit_*` or `suspend_timeout_seconds`**, if the dashboard holds different values. Decide which one is right. To keep the live value, copy it into `endpoint.tf` and plan again.
 - **`name`** on the branch, or **`owner_name`** on the database, if a default is wrong. Set `branch_name` or `database_owner` in `terraform.tfvars` rather than renaming anything.
@@ -91,7 +91,7 @@ Once the plan shows only the changes you mean, `apply`.
 
 ## Day two
 
-- **Change compute sizing or the suspend timeout:** edit `endpoint.tf`, then `plan` and `apply`. Compute changes apply without downtime.
+- **Change compute sizing or the suspend timeout:** edit `endpoint.tf`, then `plan` and `apply`. Compute changes apply without downtime. On the Free plan the timeout cannot be changed; check the plan's compute limits before raising the size.
 - **Roll back:** revert the commit and apply again. Every setting here changes in place and none of them touches data.
 - **Rotate the database password:** in the dashboard, under **Roles**. Then update `database-url` (`infra/gcp/README.md`, "Rotate a secret") and CI's `PRODUCTION_DATABASE_URL`. This root is unaffected, since it never reads the password.
 - **Restore from history:** use the dashboard's point-in-time restore onto a new branch, or a reset of this one. A reset keeps the branch ID, so state stays valid. A restore that makes a different branch the default needs `branch_id` and `endpoint_id` updated, and the old resources removed from state with `terraform state rm` before the new ones are imported.
