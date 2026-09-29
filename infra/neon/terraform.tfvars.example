@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret:
+# the Neon API key comes from the environment (TF_VAR_neon_api_key). README.md
+# shows where to find each ID.
+project_id  = "shiny-cell-00000000"
+branch_id   = "br-xxxxxx-xxxxxx-xxxxxxxx"
+endpoint_id = "ep-xxxxxx-xxxxxx-xxxxxxxx"
+
+# Defaults, shown for reference. Each must match production exactly.
+# branch_name    = "main"
+# database_name  = "neondb"
+# database_owner = "neondb_owner"
+# region         = "aws-eu-central-1"
+# protect_branch = true # false on the Free plan
