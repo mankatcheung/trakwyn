@@ -24,10 +24,9 @@ resource "upstash_redis_database" "this" {
   # counts (apps/api/CLAUDE.md, Metrics), so infra/axiom's monitors see it.
   eviction = false
 
-  # Pay-as-you-go with a hard cap: a runaway client is throttled at the
-  # budget rather than upgraded to a bigger plan.
+  # Never moved to a bigger plan automatically: on the free tier, hitting a
+  # quota throttles the database rather than starting to bill.
   auto_scale = false
-  budget     = 20 # USD a month, Upstash's default
   prod_pack  = false
 
   # No ip_allowlist: Cloud Run has no fixed egress IP without a NAT gateway,
@@ -37,5 +36,10 @@ resource "upstash_redis_database" "this" {
     # A changed region or name replaces the database, which would drop every
     # key and rotate the token Cloud Run holds. Refuse rather than plan it.
     prevent_destroy = true
+
+    # budget is a pay-as-you-go setting, and the database is on the free
+    # tier. Leaving it out of the config alone would plan the imported value
+    # back to null; ignoring it keeps Terraform from touching it either way.
+    ignore_changes = [budget]
   }
 }
