@@ -51,7 +51,7 @@ variable "max_instances" {
 }
 
 variable "upstash_redis_rest_url" {
-  description = "Upstash Redis REST URL. Its token is a secret."
+  description = "Upstash Redis REST URL, copied from infra/upstash's rest_url output. Its token is a secret."
   type        = string
 }
 
