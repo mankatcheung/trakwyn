@@ -2,7 +2,7 @@
 # secrets go to Secret Manager (README.md, "Secrets").
 project_id             = "job-finder-503217"
 initial_image          = "europe-west1-docker.pkg.dev/job-finder-503217/trakwyn/api:bootstrap"
-upstash_redis_rest_url = "https://<name>.upstash.io"
+upstash_redis_rest_url = "https://<name>.upstash.io" # terraform -chdir=../upstash output -raw rest_url
 
 plain_env = {
   FROM_EMAIL             = "noreply@trakwyn.com"

@@ -39,5 +39,5 @@ graphify-out/
 *.tfstate.*
 *.tfplan
 terraform.tfvars
-# Provider tokens for infra/{axiom,brevo,cloudflare,posthog,vercel}, plaintext; see .envrc.example
+# Provider tokens for infra/{axiom,brevo,cloudflare,posthog,upstash,vercel}, plaintext; see .envrc.example
 .envrc
