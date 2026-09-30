@@ -37,6 +37,8 @@ const CONSOLE_BY_DESIGN: Record<string, string> = {
     'Progress output for `pnpm db:migrate`, which CI runs as its own job and a developer runs by hand. It is a CLI process with no Fastify instance and no observability SDK; its record is the job log.',
   'migrate.ts':
     'The `pnpm db:migrate` entrypoint. Same as applyMigrations.ts — a missing DATABASE_URL has to be reported to whoever ran the command, before anything is wired up.',
+  'seed.ts':
+    'The `pnpm db:seed` entrypoint. Same as migrate.ts — a missing DATABASE_URL has to be reported to whoever ran the command, before anything is wired up.',
   'copyFromTurso.ts':
     'The one-off Turso to Postgres copy (JEF-342), a script run by hand and deleted once Turso is retired. Both this file and its exemption go at the same time.',
 };
