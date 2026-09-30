@@ -1,5 +1,5 @@
 import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
-import { AUTH_HEADER, COOKIES } from '../constants';
+import { AUTH_HEADER, COOKIES, API_ERROR_CODES } from '../constants';
 
 export interface JobApplication {
   id: string;
@@ -8,6 +8,28 @@ export interface JobApplication {
   jobUrl?: string;
   description?: string;
   source?: string;
+}
+
+export interface CurrentUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+/** A GraphQL error, carrying the API's `extensions.code` when it sent one. */
+export class ApiError extends Error {
+  readonly code: string | undefined;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
+}
+
+export function isUnauthorizedError(err: unknown): boolean {
+  return err instanceof ApiError && err.code === API_ERROR_CODES.UNAUTHORIZED;
 }
 
 async function gql<T>(
@@ -25,19 +47,26 @@ async function gql<T>(
     body: JSON.stringify({ query, variables }),
   });
 
-  const json = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
-  if (json.errors?.length) throw new Error(json.errors[0].message);
+  const json = (await res.json()) as {
+    data?: T;
+    errors?: Array<{ message: string; extensions?: { code?: string } }>;
+  };
+  if (json.errors?.length) {
+    const [first] = json.errors;
+    throw new ApiError(first.message, first.extensions?.code);
+  }
   if (!json.data) throw new Error('No data returned');
   return json.data;
 }
 
 async function authedGql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   const auth = await getAuth();
-  if (!auth) throw new Error('Not authenticated');
+  if (!auth) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
   return gql<T>(query, variables, auth.token);
 }
 
 const LOGIN = `mutation Login($email: String!, $password: String!) { login(email: $email, password: $password) { success totpRequired accessToken } }`;
+const ME = `query Me { me { id email name avatarUrl } }`;
 const REFRESH = `mutation { refreshToken }`;
 const CREATE_APPLICATION = `
   mutation CreateApplication($input: CreateApplicationInput!) {
@@ -71,6 +100,12 @@ export async function login(email: string, password: string): Promise<void> {
 
 export async function logout(): Promise<void> {
   await clearAuth();
+}
+
+export async function getCurrentUser(): Promise<CurrentUser> {
+  const data = await authedGql<{ me: CurrentUser | null }>(ME);
+  if (!data.me) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
+  return data.me;
 }
 
 export async function refreshToken(): Promise<boolean> {

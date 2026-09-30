@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
-import './popup.css';
+import { ApiUrlForm } from './ApiUrlForm';
+import '../popup/popup.css';
 
 const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
+root.render(<ApiUrlForm />);
