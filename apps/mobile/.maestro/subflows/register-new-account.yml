@@ -1,0 +1,53 @@
+# Registers a brand-new account and leaves the app signed in on the tab bar.
+#
+# Every flow starts here rather than signing into a seeded user: the flows share
+# one API and one database, and sharing an account across them is what turns
+# a suite that passes in isolation into one that fails en masse (JEF-300, R-3 —
+# the same failure apps/web's playwright.config.ts documents in its `workers: 1`
+# comment).
+#
+# The credentials are left on `output` so the calling flow can sign back in as
+# the same person.
+appId: com.trakwyn.app
+---
+- evalScript: ${output.email = 'e2e-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com'}
+- evalScript: ${output.password = 'CorrectHorseBatteryStaple1!'}
+
+# A cold launch on a CI emulator can take longer than assertVisible's
+# default wait before the first screen draws: a slow Android run has shown a
+# blank screen 30s in.
+- extendedWaitUntil:
+    visible:
+      id: 'login-email-input'
+    timeout: 60000
+- tapOn:
+    id: 'login-register-link'
+
+- tapOn:
+    id: 'register-email-input'
+- inputText: ${output.email}
+# Close the keyboard before every next field. On the CI emulator's 320x640
+# screen the open keyboard covers the lower inputs, so a tap on one lands on
+# the keyboard, focus stays put and the next inputText types into the field
+# above ("Passwords do not match"). Enter rather than hideKeyboard: a
+# single-line TextInput blurs on submit on both platforms, while Maestro's
+# hideKeyboard cannot dismiss the iOS keyboard here. None of these inputs
+# has an onSubmitEditing, so Enter submits nothing.
+- pressKey: Enter
+- tapOn:
+    id: 'register-password-input'
+- inputText: ${output.password}
+- pressKey: Enter
+- tapOn:
+    id: 'register-confirm-password-input'
+- inputText: ${output.password}
+- pressKey: Enter
+- tapOn:
+    id: 'register-submit-button'
+
+# The tab bar only mounts inside Stack.Protected's authenticated guard, so
+# seeing one of its buttons is the assertion that registration really signed
+# us in. It has to be a button: the Tabs navigator itself carries no testID,
+# only `tabBarButtonTestID` on each tab (app/(app)/(tabs)/_layout.tsx).
+- assertVisible:
+    id: 'tab-applications'

@@ -1,0 +1,15 @@
+# Not a test: the iOS job runs this once before the suite (config.yaml's
+# `*.yml` only picks up the numbered flows, so the suite never sees it).
+#
+# The first minutes after the simulator reboots, while Maestro installs its
+# XCTest driver and the app launches for the first time, are when the iOS
+# runner is busiest. API requests made then took up to 47s, long enough to
+# outlast the app's 20s request timeout. Paying for that here keeps it out of
+# the flows' timings.
+appId: com.trakwyn.app
+---
+- runFlow: ../subflows/launch-signed-out.yml
+- extendedWaitUntil:
+    visible:
+      id: 'login-email-input'
+    timeout: 120000

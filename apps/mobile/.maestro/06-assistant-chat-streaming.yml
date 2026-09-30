@@ -1,0 +1,79 @@
+# F-6 — Assistant chat, end to end over SSE.
+#
+# The chat stream is the one request path that bypasses gqlRequest entirely:
+# src/features/chat/lib/chatStream.ts takes a raw token from
+# getValidAccessToken() and reads an SSE body itself, so its 401 is a plain
+# JSON payload rather than a GraphQL error. chatStream.test.ts feeds it a
+# hand-built ReadableStream; only this flow feeds it a real one.
+#
+# The provider is configured the way a user configures one: the app's existing
+# "Custom (OpenAI-compatible)" option pointed at the API's own fake completions
+# endpoint, which exists only under LLM_PROVIDER_MODE=fake. That URL is fetched
+# by the API process, not by the phone, so it stays localhost even on an
+# emulator that reaches the API at 10.0.2.2.
+appId: com.trakwyn.app
+# Excluded from the iOS job (mobile-e2e-ios.yml, --exclude-tags android-only)
+# until JEF-377: on iOS the chat composer stays partly under the keyboard, so
+# the send tap lands on a key instead. Remove the tag with that fix.
+tags:
+  - android-only
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- tapOn:
+    id: 'tab-settings'
+- tapOn:
+    id: 'settings-ai-row'
+- tapOn:
+    id: 'open-add-provider-button'
+- tapOn:
+    id: 'provider-picker-field'
+- tapOn:
+    id: 'provider-option-custom'
+# The add-provider sheet is a bottom-anchored modal that does not scroll, so
+# the open keyboard covers every field below the one being typed into. Enter
+# closes it instead of hideKeyboard: on Android that is a back press, which
+# would dismiss the modal, while a single-line TextInput blurs on submit.
+- tapOn:
+    id: 'llm-api-key-input'
+- inputText: 'fake-api-key'
+- pressKey: Enter
+- tapOn:
+    id: 'llm-model-input'
+- inputText: 'fake-model'
+- pressKey: Enter
+- tapOn:
+    id: 'llm-base-url-input'
+- inputText: 'http://localhost:3001/llm-test/fake/chat/completions'
+- pressKey: Enter
+- tapOn:
+    id: 'save-llm-key-button'
+
+- tapOn:
+    id: 'tab-assistant'
+- tapOn:
+    id: 'new-conversation-button'
+# With a key on the account the FAB opens a provider picker (JEF-311) instead
+# of starting the conversation outright; choose the custom key saved above.
+- tapOn:
+    id: 'conversation-provider-option-custom'
+- tapOn:
+    id: 'chat-input'
+- inputText: 'What should I follow up on?'
+# chat-input is multiline, so Enter would add a newline rather than blur it.
+# On Android the send button sits under the keyboard and hideKeyboard (a back
+# press, harmless on a plain screen) clears it. On iOS the screen's
+# KeyboardAvoidingView keeps the button above the keyboard, and Maestro's
+# hideKeyboard cannot dismiss it there anyway.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- tapOn:
+    id: 'chat-send-button'
+
+# fakeLlmCompletions.routes.ts's canned reply, streamed back as SSE frames and
+# reassembled by the app.
+- assertVisible: 'Fake assistant reply for e2e testing.'
