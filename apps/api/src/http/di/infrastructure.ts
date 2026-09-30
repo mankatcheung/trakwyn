@@ -26,6 +26,7 @@ import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcToke
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
+import { parseExtensionOAuthIds } from '#src/infrastructure/auth/extensionOAuthIds.js';
 import { BrevoEmailService } from '#src/infrastructure/email/BrevoEmailService.js';
 import { ConsoleEmailService } from '#src/infrastructure/email/ConsoleEmailService.js';
 import { DeviceLabelService } from '#src/infrastructure/device/DeviceLabelService.js';
@@ -113,6 +114,14 @@ export const infrastructure = {
   oauthProviderRegistry: asClass(OAuthProviderRegistry, { lifetime: Lifetime.SINGLETON }),
   oauthStateService: asClass(OAuthStateService, { lifetime: Lifetime.SINGLETON }),
   mobileOAuthHandoffService: asClass(MobileOAuthHandoffService, { lifetime: Lifetime.SINGLETON }),
+  // Read on first resolve, not at import, so a test can set the env var
+  // before building its app.
+  extensionOAuthIds: asFunction(
+    () => parseExtensionOAuthIds(process.env[ENV.EXTENSION_OAUTH_IDS]),
+    {
+      lifetime: Lifetime.SINGLETON,
+    },
+  ),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
   // asFunction for the same options-object reason as outboundUrlPolicy below:
   // BrevoEmailService takes optional `{ metrics }` (JEF-356).

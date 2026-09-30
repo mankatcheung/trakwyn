@@ -5,11 +5,12 @@ Loaded when working under `apps/api`. The layer map, DI shape and cross-cutting 
 ## Auth
 
 - **Cookies for every client.** Access and refresh tokens are the HttpOnly cookies `trakwyn_access_token` and `trakwyn_refresh_token`. Every auth entry point sets or clears them through `setAuthCookies()`/`clearAuthCookies()` (`http/schema/types/AuthPayloadType.ts`): login, register, TOTP, refresh, reauthenticate, logout, the OAuth callback and delete-account. Cookies are `SameSite=None; Secure`.
-- **Bearer fallback.** `buildGraphQLContext.ts` accepts `Authorization: Bearer` when no cookie is present (`cookieToken ?? bearerToken`), for non-cookie clients such as API tokens. The browser extension reads the access cookie via `chrome.cookies.get()`.
+- **Bearer fallback.** `buildGraphQLContext.ts` accepts `Authorization: Bearer` when no cookie is present (`cookieToken ?? bearerToken`), for non-cookie clients such as API tokens and the browser extension.
 - **`trakwyn_logged_in` hint cookie** (`COOKIES.LOGGED_IN`). It is non-HttpOnly, has the refresh token's lifetime and is what the web app reads to detect a session (see `apps/web/CLAUDE.md`). It only needs to be directionally correct.
 - **Deploy prerequisite:** `COOKIE_DOMAIN` must be the shared registrable domain with a leading dot (`.trakwyn.com`). Without it the cookies are host-only on `api.`, the hint is invisible to `www.`, and login "succeeds" while session detection fails.
 - **Deploy prerequisite:** `CORS_ORIGIN` must contain the web app's exact origin. `corsPlugin.ts` validates `credentials: true` requests against it, and a mismatch silently breaks cookie delivery. The plugin sets no `allowedHeaders`, which is what lets the clients' `traceparent` through; adding a list without it breaks trace propagation.
 - **Mobile** uses `*Mobile` mutations (`http/schema/mutations/mobileAuthMutations.ts`) that return both tokens in the body. `DeviceLabelService` turns the mobile User-Agent into the session label.
+- **The browser extension** uses the same `*Mobile` mutations and keeps both tokens in `chrome.storage.session` (JEF-383). Its Google/GitHub sign-in is the mobile handoff with a different destination: `/auth/oauth/:provider/start?platform=extension&codeChallenge=…&extensionId=…` redirects the handoff code to `https://<id>.chromiumapp.org/`, and `exchangeMobileOAuthCode` redeems it. Only IDs in `EXTENSION_OAUTH_IDS` are accepted, and the ID is checked again at the callback, so the redirect host never rests on the cookie alone.
 
 ## Session revocation (JEF-164)
 

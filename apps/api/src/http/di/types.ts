@@ -299,6 +299,8 @@ export interface Cradle {
   generateId: () => string;
   now: () => Date;
   webAppOrigin: string;
+  /** Chrome extension IDs allowed to finish an OAuth login (JEF-383). */
+  extensionOAuthIds: ReadonlySet<string>;
   logger: ILogger;
   tokenService: JwtTokenService;
   cache: ICache;

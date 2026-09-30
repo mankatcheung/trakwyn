@@ -12,7 +12,7 @@
     "default_popup": "src/popup/popup.html",
     "default_title": "Trakwyn Clipper"
   },
-  "permissions": ["cookies", "storage", "activeTab"],
+  "permissions": ["identity", "storage", "activeTab"],
   "host_permissions": [
     "http://localhost:3001/*",
     "https://*.linkedin.com/*",

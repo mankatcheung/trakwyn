@@ -16,9 +16,34 @@ export const STORAGE_KEYS = {
   API_URL: 'apiUrl',
 } as const;
 
-/** Auth cookie names shared with the API. */
-export const COOKIES = {
-  ACCESS_TOKEN: 'trakwyn_access_token',
+/** OAuth login through the API's handoff-code flow (JEF-383). */
+export const OAUTH = {
+  /** The API's `OAUTH_PLATFORM.EXTENSION`. */
+  PLATFORM: 'extension',
+  startPath: (provider: OAuthProvider) => `/auth/oauth/${provider}/start`,
+  /** The provider's Cancel button. Not a fault, so shown as no error. */
+  CANCELLED_SLUG: 'access_denied',
+  FAILED_SLUG: 'failed',
+} as const;
+
+export const OAUTH_PROVIDERS = [
+  { id: 'google', label: 'Google' },
+  { id: 'github', label: 'GitHub' },
+] as const;
+
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number]['id'];
+
+/** Refresh the access token this long before it expires. */
+export const REFRESH_LEEWAY_MS = 2 * 60 * 1000;
+
+/**
+ * Messages the popup sends the background service worker. OAuth runs there
+ * because the popup closes as soon as Chrome's sign-in window takes focus;
+ * refresh runs there so one context owns the rotating refresh token.
+ */
+export const RUNTIME_MESSAGES = {
+  OAUTH_LOGIN: 'OAUTH_LOGIN',
+  REFRESH_TOKEN: 'REFRESH_TOKEN',
 } as const;
 
 /** HTTP Authorization header. */
