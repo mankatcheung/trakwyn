@@ -56,57 +56,50 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #e5e7eb;
 }
-.logo-sm {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+.user-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
 }
-.app-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  flex: 1;
-}
-.logout {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-/* ── API URL bar ── */
-.api-url-row {
-  display: flex;
+.user-initials {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #9ca3af;
+  justify-content: center;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
 }
-.api-url-label {
+.user-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.user-name,
+.user-email {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.api-url-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.url-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 12px;
-  background: #fff;
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
   color: #111827;
 }
-.url-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+.user-email {
+  font-size: 11px;
+  color: #6b7280;
+}
+.logout {
+  color: #6b7280;
+  font-size: 12px;
 }
 
 /* ── Form ── */
@@ -175,10 +168,6 @@ body {
 }
 .btn-full {
   width: 100%;
-}
-.btn-sm {
-  padding: 5px 10px;
-  font-size: 12px;
 }
 .btn-text {
   background: none;
@@ -258,13 +247,6 @@ body {
 .error-icon,
 .success-icon {
   font-size: 36px;
-}
-.row {
-  display: flex;
-  align-items: center;
-}
-.gap-sm {
-  gap: 8px;
 }
 
 /* ── Spinner ── */
