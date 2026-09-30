@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPkcePair } from '../../lib/pkce';
+import { createPkcePair } from './pkce';
 
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 

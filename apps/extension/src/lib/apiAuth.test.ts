@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { login, loginWithOAuth, refreshToken } from '../../lib/api';
-import { OAuthCancelledError } from '../../lib/oauth';
-import { getAuth, setAuth } from '../../lib/storage';
+import { login, loginWithOAuth, refreshToken } from './api';
+import { OAuthCancelledError } from './oauth';
+import { getAuth, setAuth } from './storage';
 
 const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
 const REDIRECT = `https://${EXTENSION_ID}.chromiumapp.org/`;

@@ -50,3 +50,8 @@ export const RUNTIME_MESSAGES = {
 export const AUTH_HEADER = {
   BEARER_PREFIX: 'Bearer ',
 } as const;
+
+/** GraphQL `extensions.code` values the extension reacts to. */
+export const API_ERROR_CODES = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
+} as const;

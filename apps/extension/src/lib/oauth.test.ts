@@ -4,7 +4,7 @@ import {
   isUserCancellation,
   oauthErrorMessage,
   parseOAuthRedirect,
-} from '../../lib/oauth';
+} from './oauth';
 
 const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
 const REDIRECT = `https://${EXTENSION_ID}.chromiumapp.org/`;

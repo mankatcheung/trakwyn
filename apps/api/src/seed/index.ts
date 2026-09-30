@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
-import { db } from '../infrastructure/db/client.js';
+import type { DrizzleDb } from '../infrastructure/db/client.js';
 import { user } from '../infrastructure/db/schema.js';
 import { seedApplications } from './steps/applications.js';
 import { seedWorkExperiences } from './steps/workExperiences.js';
@@ -13,7 +13,11 @@ import { seedNotifications } from './steps/notifications.js';
 export const DEMO_EMAIL = 'demo@trakwyn.app';
 export const DEMO_PASSWORD = 'demo1234';
 
-export async function runSeed(): Promise<void> {
+/**
+ * Takes the database rather than importing the process-wide client: that
+ * client is never closed, and an open PGlite handle keeps the CLI from exiting.
+ */
+export async function runSeed(db: DrizzleDb): Promise<void> {
   const now = new Date();
 
   // Remove any previous demo user (cascading deletes handle related rows).

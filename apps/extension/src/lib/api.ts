@@ -8,6 +8,7 @@ import {
   parseOAuthRedirect,
 } from './oauth';
 import {
+  API_ERROR_CODES,
   AUTH_HEADER,
   OAUTH,
   REFRESH_LEEWAY_MS,
@@ -22,6 +23,28 @@ export interface JobApplication {
   jobUrl?: string;
   description?: string;
   source?: string;
+}
+
+export interface CurrentUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+/** A GraphQL error, carrying the API's `extensions.code` when it sent one. */
+export class ApiError extends Error {
+  readonly code: string | undefined;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
+}
+
+export function isUnauthorizedError(err: unknown): boolean {
+  return err instanceof ApiError && err.code === API_ERROR_CODES.UNAUTHORIZED;
 }
 
 interface TokenPair {
@@ -44,8 +67,14 @@ async function gql<T>(
     body: JSON.stringify({ query, variables }),
   });
 
-  const json = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
-  if (json.errors?.length) throw new Error(json.errors[0].message);
+  const json = (await res.json()) as {
+    data?: T;
+    errors?: Array<{ message: string; extensions?: { code?: string } }>;
+  };
+  if (json.errors?.length) {
+    const [first] = json.errors;
+    throw new ApiError(first.message, first.extensions?.code);
+  }
   if (!json.data) throw new Error('No data returned');
   return json.data;
 }
@@ -60,7 +89,7 @@ async function authedGql<T>(query: string, variables?: Record<string, unknown>):
     await chrome.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
     auth = await getAuth();
   }
-  if (!auth) throw new Error('Not authenticated');
+  if (!auth) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
   return gql<T>(query, variables, auth.token);
 }
 
@@ -75,6 +104,7 @@ const LOGIN = `
     }
   }
 `;
+const ME = `query Me { me { id email name avatarUrl } }`;
 const REFRESH = `
   mutation RefreshTokenMobile($refreshToken: String!) {
     refreshTokenMobile(refreshToken: $refreshToken) { accessToken refreshToken }
@@ -163,6 +193,12 @@ export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
 
 export async function logout(): Promise<void> {
   await clearAuth();
+}
+
+export async function getCurrentUser(): Promise<CurrentUser> {
+  const data = await authedGql<{ me: CurrentUser | null }>(ME);
+  if (!data.me) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
+  return data.me;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
