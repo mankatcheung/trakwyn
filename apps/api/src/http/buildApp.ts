@@ -14,6 +14,7 @@ import { remindersRoutes } from '#src/http/routes/reminders.routes.js';
 import { pushNotificationsRoutes } from '#src/http/routes/pushNotifications.routes.js';
 import { digestRoutes } from '#src/http/routes/digest.routes.js';
 import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
+import { alertWebhookRoutes } from '#src/http/routes/alertWebhook.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
@@ -195,6 +196,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     ...pushNotificationsRoutes(() => container.cradle),
     ...digestRoutes(() => container.cradle),
     ...trashPurgeRoutes(() => container.cradle),
+    ...alertWebhookRoutes(() => container.cradle),
     ...mcpOAuthMetadataRoutes(() => container.cradle),
     // Never present unless explicitly opted into — see FakeOAuthProvider.
     ...(process.env[ENV.OAUTH_PROVIDER_MODE] === OAUTH_PROVIDER_MODE.FAKE

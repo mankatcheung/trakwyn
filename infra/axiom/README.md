@@ -28,7 +28,7 @@ If the provider gains a resource for it, move the group into this root.
 
 ## Monitors
 
-All of them notify the one email notifier, `trakwyn-api alerts (email)`.
+All of them notify both notifiers: the email notifier `trakwyn-api alerts (email)`, and `trakwyn-api alerts (Linear relay)`, which files a Linear issue (JEF-382, "Linear issues" below). Both are in `local.notifier_ids`.
 
 | Monitor                                         | Source                                                                                         | Fires when                                                                                | Kind                       |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------- |
@@ -41,6 +41,7 @@ All of them notify the one email notifier, `trakwyn-api alerts (email)`.
 | Scheduled job `<name>` has not completed in 26h | `job.<name>.completed` line (logs), one per nightly job (`digest`, `reminders`, `trash_purge`) | No completion in 26 hours                                                                 | Threshold < 1, and no data |
 | GraphQL server-error rate                       | Root `POST /graphql …` server spans (traces)                                                   | More than `graphql_error_percent` (5%) `ERROR` in 15 min, with ≥ 20 requests, per release | Threshold                  |
 | Outbound URL refused                            | `security.outbound_url.refused` line (logs)                                                    | Any refusal                                                                               | MatchEvent                 |
+| Use case failed unexpectedly                    | `<UseCase>.execute` spans with `error` and no `app.error.code` (traces)                        | A use case throws something that is not a `DomainError`                                   | MatchEvent                 |
 
 Things worth knowing about how they are written:
 
@@ -52,6 +53,31 @@ Things worth knowing about how they are written:
 - **The error-rate monitor is the one monitor on `dataset` (traces), and it keys on span status, not HTTP status.** GraphQL answers 200 for a failed request; `formatError` marks the root span `ERROR` only for the errors it treats as server faults, so a `NOT_FOUND` or a wrong password never counts. Root spans are matched by `kind == "server"` and name, not `isnull(parent_span_id)`: Cloud Run's front end and the web client both send `traceparent`, so the API's server span usually has a remote parent.
 - **The error-rate monitor is grouped by release** (JEF-362), read through `local.release` (`resource.service.version`, via `column_ifexists`; see below): the commit SHA `deploy-api` bakes into the image. The email then names the deploy, and a bad revision rolling out beside a good one isn't averaged away. The match monitors need no grouping, since their email carries the whole event and the release with it. The absence and metric monitors stay ungrouped: a group-by returns no rows over no data, which would silence the absence monitors.
 - **The pool-error and error-rate thresholds are guesses.** They start loose on purpose. After a week of production traffic, look at the real rates and tighten them in `terraform.tfvars`.
+
+## Linear issues (JEF-382)
+
+Every monitor also notifies `axiom_notifier.linear_relay`, a custom webhook that posts to the API's `POST /webhooks/axiom-alerts` (`apps/api/src/http/routes/alertWebhook.routes.ts`). The API files the Linear issue itself. Axiom's template can't talk to Linear directly: it JSON-escapes only `MatchedEvent`, `GroupKeys` and `GroupValues`, and pastes every other field in raw.
+
+What the relay does with a notification:
+
+- **`Closed` (recovered):** ignored.
+- **Dedupe:** each alert gets a fingerprint. For an error in a matched span or log line, that is the monitor plus the exception type and the top stack frame, without line numbers so a redeploy keeps it. For a grouped threshold it is the monitor plus the group; otherwise the monitor alone. While a Linear issue carrying that fingerprint is open, later alerts for it file nothing. Once someone completes or cancels the issue, the next alert files a new one.
+- **Rate limit:** at most `RATE_LIMIT.ALERT_ISSUE` (20) new issues an hour across all monitors. Duplicates don't count. Past that, alerts still email.
+- **The issue:** titled `[Axiom] <monitor>: <exception type> — <message>` (or `<monitor> (<group>)`). It lists the monitor, time, window, value, group, release (commit SHA), log event, error code and trace ID. It also includes the exception and stack trace, and the whole matched event as JSON. Drizzle's `params:` lines are redacted first, as in the logs (JEF-348), and long blocks are cut at 8,000 characters.
+
+**The new monitor, "Use case failed unexpectedly",** is what gives the API's errors their own issues. `traceUseCase` records the exception, with message and stack, on every `<UseCase>.execute` span and sets `app.error.code` only for a `DomainError`. So an errored span without that attribute is an unplanned server fault. The expected failures, such as `NOT_FOUND` or a wrong password, never match. It excludes `FileAlertIssueUseCase.execute`, the relay's own span. Otherwise a Linear outage would alert the relay about itself. It is also why the relay's `alerts.webhook.*` log events must never be what a monitor matches.
+
+**The webhook body is plain text with quotes around it**, so a monitor name or description must not contain `"` or `\`. `terraform_data.relay_safe_monitor_text` fails the plan if one does. A new monitor must be added to its `local.relayed_monitor_text` list.
+
+**The relay's secret is in this root's state.** The notifier's `Authorization` header is `sensitive` in the provider, but Terraform still writes it to state, unlike the Axiom token, which is a provider argument. What it guards is only the ability to file issues in one Linear team, through a rate-limited route, and the state bucket's access already limits who can read it. The Linear API key itself never comes near this root: it lives in Secret Manager (`linear-api-key`, `infra/gcp`). To rotate the secret, add a new `alert-webhook-secret` version, roll out a revision, then `apply` here with the new `TF_VAR_alert_webhook_secret`. Alerts sent in between are refused with 401 and still email.
+
+### Turning it on
+
+1. Create a Linear personal API key (**Settings → Account → Security & access → Personal API keys**) with access to the Trakwyn team only, if your plan allows it. Generate the webhook secret with `openssl rand -hex 32`.
+2. Add both to Secret Manager: put `LINEAR_API_KEY` and `ALERT_WEBHOOK_SECRET` in the env file and run `infra/gcp/load-secrets.sh`, or use `gcloud secrets versions add linear-api-key` and `alert-webhook-secret` by hand. Do this first: `infra/gcp` now lists both in `secret_env_vars`, and Cloud Run won't start a revision that references a secret with no version.
+3. In `infra/gcp`, set `LINEAR_TEAM_ID` in `plain_env` (the UUID is in `terraform.tfvars.example`), `apply`, and let the revision roll out. Check it: `curl -s -o /dev/null -w '%{http_code}' -X POST https://api.trakwyn.com/webhooks/axiom-alerts` should print `401`, not `503`.
+4. Here, set `api_origin` in `terraform.tfvars` and `TF_VAR_alert_webhook_secret` in `.envrc`. Run `plan`: expect one notifier, the new monitor and the guard to be created, and every monitor's `notifier_ids` to change in place. Then `apply`.
+5. Trigger "Scheduled job failed" or "Outbound URL refused" once ("Checking each monitor fires"). An issue should appear in the Trakwyn team with the matched event. Trigger it again: the second one must not file a second issue while the first is open. Then close the issue.
 
 ## Why a separate root
 
@@ -123,6 +149,6 @@ Before relying on an MPL monitor, paste its query into Axiom's query editor agai
 ## Adding a monitor
 
 1. Emit the signal first: a counter in `METRICS`, or a log line with a stable `event` field (see `SECURITY_EVENTS`). Prose log messages are not something to alert on; an edit to the wording silently breaks the monitor.
-2. Add an `axiom_monitor` to `monitors.tf` under the matching section, with `notifier_ids = [axiom_notifier.email.id]`. Put the "what to do about it" in `description`, since that is what the email shows.
+2. Add an `axiom_monitor` to `monitors.tf` under the matching section, with `notifier_ids = local.notifier_ids`, and add it to `local.relayed_monitor_text`. Put the "what to do about it" in `description`, since that is what the email and the Linear issue show. Its name and description must not contain `"` or `\` ("Linear issues" above).
 3. Add a row to both tables above.
 4. `terraform fmt && terraform validate`, then `plan`/`apply` and trigger it once.

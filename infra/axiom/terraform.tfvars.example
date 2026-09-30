@@ -5,6 +5,10 @@ logs_dataset    = "trakwyn-api-logs"
 metrics_dataset = "trakwyn-api-metrics"
 alert_emails    = ["you@example.com"]
 
+# The Linear relay (JEF-382) posts to <api_origin>/webhooks/axiom-alerts.
+# Its secret comes from the environment (TF_VAR_alert_webhook_secret).
+api_origin = "https://api.trakwyn.com"
+
 # Starting thresholds; tighten after a week of real traffic (README.md).
 # db_pool_errors_per_hour    = 20
 # graphql_error_percent      = 5

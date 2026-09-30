@@ -64,6 +64,8 @@ export const ROUTES = {
    * self-hosted/OpenAI-compatible endpoints already use.
    */
   LLM_FAKE_COMPLETIONS: '/llm-test/fake/chat/completions',
+  /** Axiom's custom-webhook notifier posts here; each open alert may become a Linear issue (JEF-382). */
+  AXIOM_ALERT_WEBHOOK: '/webhooks/axiom-alerts',
 } as const;
 
 /**
@@ -88,6 +90,18 @@ export const ADMIN_JOBS = {
  */
 export const CRON_AUTH_EVENTS = {
   REJECTED: 'cron.auth.rejected',
+} as const;
+
+/**
+ * Log events of the alert relay (JEF-382). None of them may be what an Axiom
+ * monitor that notifies the relay matches on: a relay failure that alerts
+ * the relay is a loop.
+ */
+export const ALERT_WEBHOOK_EVENTS = {
+  REJECTED: 'alerts.webhook.rejected',
+  INVALID: 'alerts.webhook.invalid',
+  HANDLED: 'alerts.webhook.handled',
+  FAILED: 'alerts.webhook.failed',
 } as const;
 
 /**
@@ -194,6 +208,13 @@ export const RATE_LIMIT = {
   TEST_LLM_API_KEY: {
     MAX_ATTEMPTS: 10,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
+  // New Linear issues from alerts (JEF-382), across all monitors. Duplicates
+  // of an open issue do not count. Past this an incident is producing
+  // distinct errors faster than anyone triages them; the rest stay in Axiom.
+  ALERT_ISSUE: {
+    MAX_ATTEMPTS: 20,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
   },
 } as const;
 

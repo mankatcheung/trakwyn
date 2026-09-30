@@ -79,6 +79,8 @@ variable "secret_env_vars" {
     "GITHUB_OAUTH_CLIENT_SECRET",
     "VAPID_PRIVATE_KEY",
     "AXIOM_TOKEN",
+    "LINEAR_API_KEY",
+    "ALERT_WEBHOOK_SECRET",
   ]
 
   # A Postgres connection string carries its password, so it is a secret

@@ -10,6 +10,7 @@ The PostHog project the web and mobile apps report errors and product events to 
 | `posthog_project_settings.web` | The project-level switches below (imported).                                  |
 | Output `project_api_key`       | The public `phc_` key; `infra/vercel` sets it as `VITE_POSTHOG_KEY`.          |
 | `release_health.tf`            | The mobile release health dashboard and its alert (JEF-368, below).           |
+| `error_tracking_linear.tf`     | Files a Linear issue per new or reopened error issue (JEF-382, below).        |
 
 ### Project settings
 
@@ -108,6 +109,32 @@ curl -X POST https://eu.i.posthog.com/i/v0/e/ -H 'Content-Type: application/json
 ```
 
 A new issue appears in Error Tracking within a minute or two, and the alert emails. Resolve the issue afterwards. The timestamp in `value` makes each run a new issue.
+
+## Linear issues (JEF-382)
+
+Every new or reopened error-tracking issue, from the web client, the web server and mobile, becomes a Linear issue. `error_tracking_linear.tf` is PostHog's own Linear destination (`template-linear`), triggered by `$error_tracking_issue_created` and `$error_tracking_issue_reopened`. PostHog has already grouped exceptions into issues by then, so there is one Linear issue per distinct error, not per occurrence. A reopen (a resolved issue coming back) files a new one, which is how a regression shows up.
+
+Each Linear issue carries:
+
+- the issue name and message;
+- a merge-stable link back to the PostHog issue, also attached by PostHog as a Linear link;
+- `$lib`, `release` (the commit SHA, JEF-362), app version, URL or screen, browser, OS and device;
+- the whole `$exception_list`, pretty-printed: every exception in the chain with its type, message, mechanism and stack frames. Frames are source-mapped only when source maps are uploaded.
+
+It runs alongside the email alert above, not instead of it.
+
+**Setting it up.** The Linear integration is OAuth, which the provider cannot do, so it is connected once by hand:
+
+1. **Error tracking → Configuration → Integrations → Linear → Connect workspace**, and authorise the Trakwyn workspace.
+2. Find the integration's numeric ID with the personal API key: `curl -s -H "Authorization: Bearer $TF_VAR_posthog_api_key" "https://eu.posthog.com/api/environments/<project_id>/integrations/" | jq '.results[] | select(.kind == "linear") | .id'`.
+3. The Trakwyn team's UUID is in `terraform.tfvars.example`. It is the team's UUID, not its `JEF` key, and the same value as `infra/gcp`'s `LINEAR_TEAM_ID`.
+4. Set `linear_integration_id` and `linear_team_id` in `terraform.tfvars`, then `plan` (expect one `posthog_hog_function` to create) and `apply`. The key also needs `hog_function:write`.
+
+Until `linear_integration_id` is set, the resource has `count = 0` and applying changes nothing.
+
+**Checking it.** Send the test exception from "Checking it end to end" above. The new issue should appear in Linear within a minute or two, titled `[PostHog] Error`, with the exception list in its description. Close the Linear issue and resolve the PostHog issue afterwards.
+
+**Privacy.** The issue copies the exception message, stack and URL into Linear. They have been through the clients' `before_send` scrubber and the server's `scrubString` first (above), and nothing here adds a person property.
 
 ## Mobile release health (JEF-368)
 

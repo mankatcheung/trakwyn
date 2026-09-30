@@ -7,6 +7,11 @@ project_name    = "Trakwyn"
 # EU cloud management API; only change for a self-hosted instance.
 # posthog_host = "https://eu.posthog.com"
 
+# Error tracking -> Linear (JEF-382). Leave unset until the Linear integration
+# is connected in the dashboard (README.md, "Linear issues").
+# linear_integration_id = 12345
+# linear_team_id        = "2e320742-82f8-454c-b3c3-09133a022672" # Trakwyn
+
 # Mobile release health alert (JEF-368). Numeric user IDs, not UUIDs; see
 # README.md for where to find them.
 release_health_alert_user_ids = [12345]

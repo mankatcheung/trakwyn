@@ -72,6 +72,7 @@ export const rateLimiters = {
     RATE_LIMIT.GENERATE_COMPANY_BRIEFING,
   ),
   testLlmApiKeyRateLimiter: limiter('testLlmApiKeyRateLimiter', RATE_LIMIT.TEST_LLM_API_KEY),
+  alertIssueRateLimiter: limiter('alertIssueRateLimiter', RATE_LIMIT.ALERT_ISSUE),
   updatePasswordRateLimiter: limiter('updatePasswordRateLimiter', RATE_LIMIT.UPDATE_PASSWORD),
   requestEmailChangeRateLimiter: limiter(
     'requestEmailChangeRateLimiter',

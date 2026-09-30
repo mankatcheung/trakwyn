@@ -29,6 +29,27 @@ variable "alert_emails" {
   }
 }
 
+variable "api_origin" {
+  description = "The API's public origin, e.g. https://api.trakwyn.com. The Linear relay notifier posts to <api_origin>/webhooks/axiom-alerts (JEF-382)."
+  type        = string
+
+  validation {
+    condition     = startswith(var.api_origin, "https://") && !endswith(var.api_origin, "/")
+    error_message = "Must start with https:// and have no trailing slash."
+  }
+}
+
+variable "alert_webhook_secret" {
+  description = "Bearer secret the Linear relay notifier sends; the same value as the API's ALERT_WEBHOOK_SECRET (Secret Manager alert-webhook-secret). Supply as TF_VAR_alert_webhook_secret; never put it in terraform.tfvars. It is written to this root's state (README.md)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.alert_webhook_secret) >= 32
+    error_message = "Use at least 32 characters, e.g. openssl rand -hex 32."
+  }
+}
+
 # The two thresholds below are starting points, not measurements (JEF-355):
 # they need about a week of production traffic to set properly. Both start
 # loose so the first week produces a baseline rather than noise.

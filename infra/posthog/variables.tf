@@ -25,6 +25,26 @@ variable "project_name" {
   type        = string
 }
 
+# Error tracking -> Linear (JEF-382). Null until the Linear integration is
+# connected in the dashboard; see README.md, "Linear issues".
+
+variable "linear_integration_id" {
+  description = "Numeric ID of the PostHog Linear integration (Error tracking -> Configuration -> Integrations). Null leaves the Linear destination uncreated."
+  type        = number
+  default     = null
+}
+
+variable "linear_team_id" {
+  description = "UUID of the Linear team issues are filed in. The same team as infra/gcp's LINEAR_TEAM_ID."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.linear_team_id == null || can(regex("^[0-9a-f-]{36}$", var.linear_team_id))
+    error_message = "Must be the team's UUID, not its key (JEF)."
+  }
+}
+
 # Mobile release health (JEF-368). The threshold and the minimum are starting
 # points: the app has no real release stream until EAS builds exist
 # (JEF-300), so there is no baseline to set them from yet.

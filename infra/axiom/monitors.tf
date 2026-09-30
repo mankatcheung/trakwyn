@@ -24,6 +24,16 @@ locals {
 
   # A daily job, plus two hours of slack for a slow or late run.
   job_absence_window_minutes = 26 * 60
+
+  # Every monitor emails and files a Linear issue through the API's relay
+  # (JEF-382). Email stays: it is the one channel that still works when the
+  # API itself is down.
+  notifier_ids = [axiom_notifier.email.id, axiom_notifier.linear_relay.id]
+
+  # The relay's own use-case span (FileAlertIssueUseCase in apps/api). When
+  # Linear is down that span fails, and a monitor that matched it would call
+  # the relay again about its own failure: a loop.
+  relay_use_case_span = "FileAlertIssueUseCase.execute"
 }
 
 resource "axiom_notifier" "email" {
@@ -31,6 +41,40 @@ resource "axiom_notifier" "email" {
   properties = {
     email = {
       emails = var.alert_emails
+    }
+  }
+}
+
+# The API's Axiom -> Linear relay (JEF-382, apps/api
+# http/routes/alertWebhook.routes.ts). Axiom's template JSON-escapes only
+# MatchedEvent, GroupKeys and GroupValues; every other field is pasted in
+# raw. So value and the times go as strings, and a monitor's name or
+# description must not contain a double quote or a backslash
+# (terraform_data.relay_safe_monitor_text enforces it). .Body is left out:
+# it is Axiom's own rendering and can contain anything.
+resource "axiom_notifier" "linear_relay" {
+  name = "trakwyn-api alerts (Linear relay)"
+  properties = {
+    custom_webhook = {
+      url = "${var.api_origin}/webhooks/axiom-alerts"
+      headers = {
+        Authorization = "Bearer ${var.alert_webhook_secret}"
+      }
+      body = <<-JSON
+        {
+          "action": "{{.Action}}",
+          "monitorId": "{{.MonitorID}}",
+          "title": "{{.Title}}",
+          "description": "{{.Description}}",
+          "timestamp": "{{.Timestamp}}",
+          "queryStartTime": "{{.QueryStartTime}}",
+          "queryEndTime": "{{.QueryEndTime}}",
+          "value": "{{.Value}}",
+          "matchedEvent": {{jsonObject .MatchedEvent}},
+          "groupKeys": {{jsonArray .GroupKeys}},
+          "groupValues": {{jsonArray .GroupValues}}
+        }
+      JSON
     }
   }
 }
@@ -59,7 +103,7 @@ resource "axiom_monitor" "redis_fail_open" {
   interval_minutes = 5
   notify_by_group  = true
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 resource "axiom_monitor" "circuit_breaker_open" {
@@ -80,7 +124,7 @@ resource "axiom_monitor" "circuit_breaker_open" {
   interval_minutes = 5
   notify_by_group  = true
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 resource "axiom_monitor" "db_pool_errors" {
@@ -99,7 +143,7 @@ resource "axiom_monitor" "db_pool_errors" {
   range_minutes    = 60
   interval_minutes = 15
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 # The two pool-saturation monitors (JEF-372). The gauges are sampled at each
@@ -124,7 +168,7 @@ resource "axiom_monitor" "db_pool_saturated" {
   range_minutes    = 5
   interval_minutes = 5
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 resource "axiom_monitor" "db_pool_acquire_timeout" {
@@ -144,7 +188,7 @@ resource "axiom_monitor" "db_pool_acquire_timeout" {
   interval_minutes = 5
   notify_by_group  = true
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 # --- Scheduled jobs (logs dataset, APL) -------------------------------------
@@ -162,7 +206,7 @@ resource "axiom_monitor" "job_failed" {
   # No range_minutes/interval_minutes: a match monitor fires per matching
   # event, and Axiom stores both as 1 whatever is sent, which the provider
   # then reports as an inconsistent result after apply.
-  notifier_ids = [axiom_notifier.email.id]
+  notifier_ids = local.notifier_ids
 }
 
 # Absence, not failure: catches Cloud Scheduler not firing, an OIDC token
@@ -189,7 +233,7 @@ resource "axiom_monitor" "job_missing" {
   # Belt and braces: if Axiom ever treats the empty result as no data rather
   # than zero, that still has to alert.
   alert_on_no_data = true
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 # --- Request health (traces dataset, APL) -----------------------------------
@@ -222,7 +266,7 @@ resource "axiom_monitor" "graphql_error_rate" {
   interval_minutes = 5
   notify_by_group  = true
   alert_on_no_data = false
-  notifier_ids     = [axiom_notifier.email.id]
+  notifier_ids     = local.notifier_ids
 }
 
 # --- Security mechanisms (logs dataset, APL) --------------------------------
@@ -242,5 +286,64 @@ resource "axiom_monitor" "outbound_url_refused" {
   # No range_minutes/interval_minutes: a match monitor fires per matching
   # event, and Axiom stores both as 1 whatever is sent, which the provider
   # then reports as an inconsistent result after apply.
-  notifier_ids = [axiom_notifier.email.id]
+  notifier_ids = local.notifier_ids
+}
+
+# --- Server faults (traces dataset, APL) ------------------------------------
+
+# One Linear issue per distinct server fault, with its stack trace (JEF-382).
+# traceUseCase records the exception on each use case's span, and sets
+# app.error.code only for a DomainError. A span that failed *without* one
+# threw something nobody planned for, which is what "server fault" means
+# here: a NOT_FOUND or a wrong password is a DomainError and never matches.
+#
+# A match monitor fires per span, so a fault on every request fires on every
+# request. The relay fingerprints each by exception type and throw site and
+# files one issue while that issue stays open (README.md, "Linear issues").
+resource "axiom_monitor" "use_case_failed" {
+  name        = "Use case failed unexpectedly"
+  description = "A use case threw an error that is not a DomainError: an unplanned server fault. The Linear issue carries the exception, its stack trace and the trace ID; open the trace in Axiom for the request around it."
+  type        = "MatchEvent"
+  apl_query   = <<-APL
+    ['${var.dataset}']
+    | where error == true and name endswith ".execute" and name != "${local.relay_use_case_span}"
+    | where isempty(tostring(['attributes.custom']['app.error.code']))
+  APL
+
+  # No range_minutes/interval_minutes: see outbound_url_refused.
+  notifier_ids = local.notifier_ids
+}
+
+# The relay's body template pastes .Title and .Description in unescaped. A
+# double quote or backslash in either would turn every notification from
+# that monitor into invalid JSON, which the relay can only refuse, so the
+# plan refuses it first.
+resource "terraform_data" "relay_safe_monitor_text" {
+  input = local.relayed_monitor_text
+
+  lifecycle {
+    precondition {
+      condition     = alltrue([for text in local.relayed_monitor_text : length(regexall("[\"\\\\]", text)) == 0])
+      error_message = "A monitor name or description contains a double quote or a backslash, which the Linear relay's webhook body cannot carry. Reword it."
+    }
+  }
+}
+
+locals {
+  relayed_monitor_text = flatten([
+    for monitor in concat(
+      [
+        axiom_monitor.redis_fail_open,
+        axiom_monitor.circuit_breaker_open,
+        axiom_monitor.db_pool_errors,
+        axiom_monitor.db_pool_saturated,
+        axiom_monitor.db_pool_acquire_timeout,
+        axiom_monitor.job_failed,
+        axiom_monitor.graphql_error_rate,
+        axiom_monitor.outbound_url_refused,
+        axiom_monitor.use_case_failed,
+      ],
+      values(axiom_monitor.job_missing),
+    ) : [monitor.name, monitor.description]
+  ])
 }
