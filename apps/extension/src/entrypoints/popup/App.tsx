@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getAuth, getApiUrl } from '../lib/storage';
+import { browser } from 'wxt/browser';
+import { getAuth, getApiUrl } from '../../lib/storage';
 import {
   login,
   logout,
@@ -7,15 +8,16 @@ import {
   getCurrentUser,
   isUnauthorizedError,
   type CurrentUser,
-} from '../lib/api';
-import type { JobData } from '../lib/parsers/types';
-import type { OAuthLoginResponse } from '../background/background';
+} from '../../lib/api';
+import type { JobData } from '../../lib/parsers/types';
+import type { OAuthLoginResponse } from '../background';
 import {
+  CONTENT_MESSAGES,
   OAUTH_PROVIDERS,
   REFRESH_LEEWAY_MS,
   RUNTIME_MESSAGES,
   type OAuthProvider,
-} from '../constants';
+} from '../../constants';
 import { UserHeader } from './UserHeader';
 
 type Screen =
@@ -27,10 +29,12 @@ type Screen =
   | { type: 'error'; message: string };
 
 async function readActiveTabJobData(): Promise<JobData | null> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return null;
   try {
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_JOB_DATA' });
+    const response = await browser.tabs.sendMessage(tab.id, {
+      type: CONTENT_MESSAGES.GET_JOB_DATA,
+    });
     return response?.jobData ?? null;
   } catch {
     // No content script on this page — there's no job data to clip
@@ -57,7 +61,7 @@ export function App() {
     // An expired access token is renewed up front by the background worker,
     // which owns the rotating refresh token (JEF-383).
     if (Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
-      const refreshed: boolean = await chrome.runtime.sendMessage({
+      const refreshed: boolean = await browser.runtime.sendMessage({
         type: RUNTIME_MESSAGES.REFRESH_TOKEN,
       });
       if (!refreshed) {
@@ -99,9 +103,9 @@ export function App() {
   async function handleOAuthLogin(provider: OAuthProvider) {
     setOAuthPending(provider);
     try {
-      // Run by the background worker: this popup closes when Chrome's sign-in
+      // Run by the background worker: this popup closes when the sign-in
       // window opens, and the worker stores the session either way.
-      const result: OAuthLoginResponse = await chrome.runtime.sendMessage({
+      const result: OAuthLoginResponse = await browser.runtime.sendMessage({
         type: RUNTIME_MESSAGES.OAUTH_LOGIN,
         provider,
       });
@@ -156,7 +160,7 @@ export function App() {
     return (
       <div className="container">
         <div className="header">
-          <img src={chrome.runtime.getURL('icons/icon48.png')} alt="" className="logo" />
+          <img src={browser.runtime.getURL('/icons/icon48.png')} alt="" className="logo" />
           <h1>Trakwyn</h1>
           <p className="subtitle">Sign in to save job postings</p>
         </div>

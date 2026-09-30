@@ -1,9 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"],
+  "include": ["src", "wxt.config.ts", "vitest.config.ts", ".wxt/wxt.d.ts"],
+  "exclude": ["node_modules", ".output"],
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "noEmit": true
   }
 }

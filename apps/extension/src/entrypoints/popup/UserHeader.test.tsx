@@ -1,8 +1,8 @@
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, type Rendered } from '../__tests__/render';
+import { render, type Rendered } from '../../__tests__/render';
 import { UserHeader } from './UserHeader';
-import type { CurrentUser } from '../lib/api';
+import type { CurrentUser } from '../../lib/api';
 
 const baseUser: CurrentUser = {
   id: 'u1',

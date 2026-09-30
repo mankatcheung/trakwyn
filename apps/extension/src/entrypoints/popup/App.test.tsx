@@ -1,17 +1,19 @@
 import { act } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, type Rendered } from '../__tests__/render';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { browser, type Browser } from 'wxt/browser';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
-import { ApiError, getCurrentUser, logout } from '../lib/api';
-import { getAuth } from '../lib/storage';
+import { ApiError, getCurrentUser, logout } from '../../lib/api';
+import { getAuth } from '../../lib/storage';
 
-vi.mock('../lib/storage', () => ({
+vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
   getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
-vi.mock('../lib/api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../lib/api')>();
+vi.mock('../../lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/api')>();
   return {
     ...actual,
     login: vi.fn(),
@@ -30,17 +32,23 @@ const user = {
 
 let rendered: Rendered | undefined;
 
+/**
+ * `browser.*` methods are overloaded (promise and callback forms), and
+ * `vi.spyOn` types them by the last, callback one. The popup uses the promise form.
+ */
+type AsyncSpy = MockInstance<(...args: unknown[]) => Promise<unknown>>;
+
+function spyAsync<T extends object>(target: T, method: keyof T & string): AsyncSpy {
+  return vi.spyOn(target, method as never) as unknown as AsyncSpy;
+}
+
+let runtimeSendMessage: AsyncSpy;
+
 beforeEach(() => {
-  vi.stubGlobal('chrome', {
-    runtime: {
-      getURL: (path: string) => `chrome-extension://id/${path}`,
-      sendMessage: vi.fn(),
-    },
-    tabs: {
-      query: vi.fn(async () => [{ id: 1 }]),
-      sendMessage: vi.fn(async () => ({ jobData: null })),
-    },
-  });
+  fakeBrowser.reset();
+  runtimeSendMessage = spyAsync(browser.runtime, 'sendMessage').mockResolvedValue(undefined);
+  spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1 } as Browser.tabs.Tab]);
+  spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({ jobData: null });
   vi.mocked(getAuth).mockResolvedValue({
     token: 'tok',
     refreshToken: 'refresh',
@@ -51,8 +59,8 @@ beforeEach(() => {
 afterEach(() => {
   rendered?.unmount();
   rendered = undefined;
+  vi.restoreAllMocks();
   vi.clearAllMocks();
-  vi.unstubAllGlobals();
 });
 
 describe('popup App', () => {
@@ -99,18 +107,18 @@ describe('popup App', () => {
 
   it('renews an expired session through the background worker before loading', async () => {
     vi.mocked(getAuth).mockResolvedValue({ token: 'tok', refreshToken: 'r', expiresAt: 0 });
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue(true);
+    runtimeSendMessage.mockResolvedValue(true);
     vi.mocked(getCurrentUser).mockResolvedValue(user);
 
     rendered = await render(<App />);
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'REFRESH_TOKEN' });
+    expect(runtimeSendMessage).toHaveBeenCalledWith({ type: 'REFRESH_TOKEN' });
     expect(rendered.container.textContent).toContain('Ada Lovelace');
   });
 
   it('shows the sign-in form when an expired session cannot be renewed', async () => {
     vi.mocked(getAuth).mockResolvedValue({ token: 'tok', refreshToken: 'r', expiresAt: 0 });
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue(false);
+    runtimeSendMessage.mockResolvedValue(false);
 
     rendered = await render(<App />);
 
@@ -146,13 +154,13 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
   });
 
   it('asks the background worker to run the sign-in, then loads the account', async () => {
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ ok: true });
+    runtimeSendMessage.mockResolvedValue({ ok: true });
     vi.mocked(getCurrentUser).mockResolvedValue(user);
     rendered = await render(<App />);
 
     await click(providerButton('GitHub'));
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+    expect(runtimeSendMessage).toHaveBeenCalledWith({
       type: 'OAUTH_LOGIN',
       provider: 'github',
     });
@@ -160,7 +168,7 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
   });
 
   it('returns to the sign-in screen with no error when the user cancels', async () => {
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ ok: false, cancelled: true });
+    runtimeSendMessage.mockResolvedValue({ ok: false, cancelled: true });
     rendered = await render(<App />);
 
     await click(providerButton('Google'));
@@ -170,7 +178,7 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
   });
 
   it('shows the error when the sign-in fails', async () => {
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({
+    runtimeSendMessage.mockResolvedValue({
       ok: false,
       cancelled: false,
       error: 'That linked account no longer exists.',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { clearAuth, getApiUrl, setApiUrl } from '../lib/storage';
-import { DEFAULT_API_URL } from '../constants';
+import { clearAuth, getApiUrl, setApiUrl } from '../../lib/storage';
+import { DEFAULT_API_URL } from '../../constants';
 
 type Status = { type: 'idle' } | { type: 'saved' } | { type: 'invalid' };
 

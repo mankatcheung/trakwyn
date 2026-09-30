@@ -147,9 +147,10 @@ export async function validateAuthorizationRequest(
  * The consent endpoints are browser-only and only ever called by the Trakwyn
  * web app, so an exact Origin match is both possible and the load-bearing CSRF
  * defence here. It cannot be left to the global CORS policy: that one also
- * allows every `*.vercel.app` and every `chrome-extension://` origin with
- * credentials, which is fine for the API at large and not fine for an endpoint
- * whose response body carries an authorization code.
+ * allows every `*.vercel.app`, `chrome-extension://` and
+ * `safari-web-extension://` origin with credentials, which is fine for the API
+ * at large and not fine for an endpoint whose response body carries an
+ * authorization code.
  */
 export function sameSiteAsWebApp(
   cradle: Cradle,

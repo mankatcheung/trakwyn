@@ -1,10 +1,10 @@
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, type Rendered } from '../__tests__/render';
+import { render, type Rendered } from '../../__tests__/render';
 import { ApiUrlForm } from './ApiUrlForm';
-import { clearAuth, setApiUrl } from '../lib/storage';
+import { clearAuth, setApiUrl } from '../../lib/storage';
 
-vi.mock('../lib/storage', () => ({
+vi.mock('../../lib/storage', () => ({
   getApiUrl: vi.fn(async () => 'http://localhost:3001/graphql'),
   setApiUrl: vi.fn(),
   clearAuth: vi.fn(),

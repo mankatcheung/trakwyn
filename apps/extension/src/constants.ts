@@ -8,18 +8,27 @@
 /** Fallback GraphQL endpoint when the user hasn't configured one. */
 export const DEFAULT_API_URL = 'http://localhost:3001/graphql';
 
-/** `chrome.storage` keys. */
+/** `browser.storage` keys. */
 export const STORAGE_KEYS = {
   /** Session-scoped auth state. */
   AUTH: 'auth',
+  /** Session-scoped Safari tab sign-in in progress (see lib/tabOAuth.ts). */
+  PENDING_TAB_OAUTH: 'pendingTabOAuth',
   /** Sync-scoped configured API URL. */
   API_URL: 'apiUrl',
 } as const;
 
 /** OAuth login through the API's handoff-code flow (JEF-383). */
 export const OAUTH = {
-  /** The API's `OAUTH_PLATFORM.EXTENSION`. */
+  /** The API's `OAUTH_PLATFORM.EXTENSION`: Chrome's `launchWebAuthFlow`. */
   PLATFORM: 'extension',
+  /**
+   * The API's `OAUTH_PLATFORM.EXTENSION_TAB` (JEF-386): Safari has no
+   * `identity` API, so the login runs in a tab that ends on `TAB_DONE_PATH`.
+   */
+  TAB_PLATFORM: 'extension-tab',
+  /** The API's `ROUTES.EXTENSION_OAUTH_DONE`, on the API's own origin. */
+  TAB_DONE_PATH: '/auth/oauth/extension/done',
   startPath: (provider: OAuthProvider) => `/auth/oauth/${provider}/start`,
   /** The provider's Cancel button. Not a fault, so shown as no error. */
   CANCELLED_SLUG: 'access_denied',
@@ -38,12 +47,17 @@ export const REFRESH_LEEWAY_MS = 2 * 60 * 1000;
 
 /**
  * Messages the popup sends the background service worker. OAuth runs there
- * because the popup closes as soon as Chrome's sign-in window takes focus;
+ * because the popup closes as soon as the sign-in window or tab takes focus;
  * refresh runs there so one context owns the rotating refresh token.
  */
 export const RUNTIME_MESSAGES = {
   OAUTH_LOGIN: 'OAUTH_LOGIN',
   REFRESH_TOKEN: 'REFRESH_TOKEN',
+} as const;
+
+/** Messages the popup sends the job-page content script. */
+export const CONTENT_MESSAGES = {
+  GET_JOB_DATA: 'GET_JOB_DATA',
 } as const;
 
 /** HTTP Authorization header. */
