@@ -16,7 +16,7 @@
     "page": "src/options/options.html",
     "open_in_tab": false
   },
-  "permissions": ["cookies", "storage", "activeTab"],
+  "permissions": ["identity", "storage", "activeTab"],
   "host_permissions": [
     "http://localhost:3001/*",
     "https://*.linkedin.com/*",

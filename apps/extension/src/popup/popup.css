@@ -169,6 +169,38 @@ body {
 .btn-full {
   width: 100%;
 }
+.btn-provider {
+  background: #fff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
+.btn-provider:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+.btn-provider:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ── Sign-in options ── */
+.provider-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
 .btn-text {
   background: none;
   border: none;

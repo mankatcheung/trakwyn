@@ -9,6 +9,9 @@ plain_env = {
   FROM_NAME              = "Trakwyn"
   GOOGLE_OAUTH_CLIENT_ID = "<id>.apps.googleusercontent.com"
   GITHUB_OAUTH_CLIENT_ID = "<id>"
+  # Chrome Web Store ID of the Trakwyn Clipper, comma-separated if several.
+  # Unset, the extension's Google/GitHub sign-in is refused (JEF-383).
+  EXTENSION_OAUTH_IDS = "<32-char extension id>"
   VAPID_PUBLIC_KEY       = "<key>"
   VAPID_SUBJECT          = "mailto:noreply@trakwyn.com"
   AXIOM_DATASET          = "trakwyn-api"

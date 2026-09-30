@@ -9,6 +9,13 @@ import {
   type CurrentUser,
 } from '../lib/api';
 import type { JobData } from '../lib/parsers/types';
+import type { OAuthLoginResponse } from '../background/background';
+import {
+  OAUTH_PROVIDERS,
+  REFRESH_LEEWAY_MS,
+  RUNTIME_MESSAGES,
+  type OAuthProvider,
+} from '../constants';
 import { UserHeader } from './UserHeader';
 
 type Screen =
@@ -35,6 +42,7 @@ export function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'loading' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(null);
 
   useEffect(() => {
     init();
@@ -45,6 +53,17 @@ export function App() {
     if (!auth) {
       setScreen({ type: 'login' });
       return;
+    }
+    // An expired access token is renewed up front by the background worker,
+    // which owns the rotating refresh token (JEF-383).
+    if (Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
+      const refreshed: boolean = await chrome.runtime.sendMessage({
+        type: RUNTIME_MESSAGES.REFRESH_TOKEN,
+      });
+      if (!refreshed) {
+        setScreen({ type: 'login' });
+        return;
+      }
     }
     await loadReadyScreen();
   }
@@ -74,6 +93,25 @@ export function App() {
       await loadReadyScreen();
     } catch (err) {
       setScreen({ type: 'login', error: err instanceof Error ? err.message : 'Login failed' });
+    }
+  }
+
+  async function handleOAuthLogin(provider: OAuthProvider) {
+    setOAuthPending(provider);
+    try {
+      // Run by the background worker: this popup closes when Chrome's sign-in
+      // window opens, and the worker stores the session either way.
+      const result: OAuthLoginResponse = await chrome.runtime.sendMessage({
+        type: RUNTIME_MESSAGES.OAUTH_LOGIN,
+        provider,
+      });
+      if (result.ok) {
+        await loadReadyScreen();
+      } else {
+        setScreen({ type: 'login', error: result.cancelled ? undefined : result.error });
+      }
+    } finally {
+      setOAuthPending(null);
     }
   }
 
@@ -122,8 +160,24 @@ export function App() {
           <h1>Trakwyn</h1>
           <p className="subtitle">Sign in to save job postings</p>
         </div>
+        {screen.error && <div className="error-box">{screen.error}</div>}
+        <div className="provider-buttons">
+          {OAUTH_PROVIDERS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleOAuthLogin(id)}
+              disabled={oauthPending !== null}
+              className="btn btn-provider btn-full"
+            >
+              {oauthPending === id ? `Opening ${label}…` : `Continue with ${label}`}
+            </button>
+          ))}
+        </div>
+        <div className="divider">
+          <span>or</span>
+        </div>
         <form onSubmit={handleLogin} className="form">
-          {screen.error && <div className="error-box">{screen.error}</div>}
           <div className="field">
             <label>Email</label>
             <input

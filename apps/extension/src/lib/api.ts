@@ -1,5 +1,20 @@
 import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
-import { AUTH_HEADER, COOKIES, API_ERROR_CODES } from '../constants';
+import { createPkcePair } from './pkce';
+import {
+  OAuthCancelledError,
+  buildOAuthStartUrl,
+  isUserCancellation,
+  oauthErrorMessage,
+  parseOAuthRedirect,
+} from './oauth';
+import {
+  API_ERROR_CODES,
+  AUTH_HEADER,
+  OAUTH,
+  REFRESH_LEEWAY_MS,
+  RUNTIME_MESSAGES,
+  type OAuthProvider,
+} from '../constants';
 
 export interface JobApplication {
   id: string;
@@ -32,6 +47,11 @@ export function isUnauthorizedError(err: unknown): boolean {
   return err instanceof ApiError && err.code === API_ERROR_CODES.UNAUTHORIZED;
 }
 
+interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
 async function gql<T>(
   query: string,
   variables?: Record<string, unknown>,
@@ -59,43 +79,116 @@ async function gql<T>(
   return json.data;
 }
 
+/**
+ * Refresh runs in the background service worker only (see RUNTIME_MESSAGES),
+ * so the popup asks it rather than rotating the refresh token itself.
+ */
 async function authedGql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const auth = await getAuth();
+  let auth = await getAuth();
+  if (auth && Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
+    await chrome.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
+    auth = await getAuth();
+  }
   if (!auth) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
   return gql<T>(query, variables, auth.token);
 }
 
-const LOGIN = `mutation Login($email: String!, $password: String!) { login(email: $email, password: $password) { success totpRequired accessToken } }`;
+// The *Mobile mutations return both tokens in the body: the extension has no
+// cookie jar tied to the API, same as the mobile app.
+const LOGIN = `
+  mutation LoginMobile($email: String!, $password: String!) {
+    loginMobile(email: $email, password: $password) {
+      totpRequired
+      accessToken
+      refreshToken
+    }
+  }
+`;
 const ME = `query Me { me { id email name avatarUrl } }`;
-const REFRESH = `mutation { refreshToken }`;
+const REFRESH = `
+  mutation RefreshTokenMobile($refreshToken: String!) {
+    refreshTokenMobile(refreshToken: $refreshToken) { accessToken refreshToken }
+  }
+`;
+const EXCHANGE_OAUTH_CODE = `
+  mutation ExchangeMobileOAuthCode($code: String!, $codeVerifier: String!) {
+    exchangeMobileOAuthCode(code: $code, codeVerifier: $codeVerifier) { accessToken refreshToken }
+  }
+`;
 const CREATE_APPLICATION = `
   mutation CreateApplication($input: CreateApplicationInput!) {
     createApplication(input: $input) { id company role status }
   }
 `;
 
+/** The access token's `exp`, in epoch ms (the payload is base64url JSON). */
+export function tokenExpiry(accessToken: string): number {
+  const [, payload] = accessToken.split('.');
+  const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+    exp: number;
+  };
+  return exp * 1000;
+}
+
+async function storeTokens(tokens: TokenPair): Promise<void> {
+  await setAuth({
+    token: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    expiresAt: tokenExpiry(tokens.accessToken),
+  });
+}
+
 export async function login(email: string, password: string): Promise<void> {
-  // Sets HttpOnly cookies for the API origin as a side effect; the access
-  // token is also returned directly in the response, which is the
-  // supported way for non-web clients to read it (see LoginResultType.ts).
   const data = await gql<{
-    login: { success: boolean; totpRequired: boolean; accessToken: string | null };
+    loginMobile: {
+      totpRequired: boolean;
+      accessToken: string | null;
+      refreshToken: string | null;
+    };
   }>(LOGIN, { email, password });
 
-  if (data.login.totpRequired) {
+  if (data.loginMobile.totpRequired) {
     throw new Error(
       "This account has two-factor authentication enabled, which the extension doesn't support yet — log in on the web app instead.",
     );
   }
-  if (!data.login.accessToken) throw new Error('Login failed');
+  const { accessToken, refreshToken } = data.loginMobile;
+  if (!accessToken || !refreshToken) throw new Error('Login failed');
+  await storeTokens({ accessToken, refreshToken });
+}
 
-  // Decode the JWT to get its expiry (payload is base64 URL-encoded)
-  const [, payload] = data.login.accessToken.split('.');
-  const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
-    exp: number;
-  };
+/**
+ * Google/GitHub sign-in (JEF-383). Runs in the background service worker: the
+ * popup closes when Chrome's sign-in window takes focus.
+ *
+ * The API finishes the provider round-trip and redirects to this extension's
+ * `chromiumapp.org` URL with a short-lived handoff code, which only this
+ * login's PKCE verifier can redeem.
+ */
+export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
+  const { verifier, challenge } = await createPkcePair();
+  const startUrl = buildOAuthStartUrl(await getApiUrl(), provider, challenge, chrome.runtime.id);
 
-  await setAuth({ token: data.login.accessToken, expiresAt: exp * 1000 });
+  let redirectUrl: string | undefined;
+  try {
+    redirectUrl = await chrome.identity.launchWebAuthFlow({ url: startUrl, interactive: true });
+  } catch (err) {
+    if (isUserCancellation(err)) throw new OAuthCancelledError();
+    throw new Error("Couldn't open the sign-in window. Check the API URL and try again.");
+  }
+  if (!redirectUrl) throw new OAuthCancelledError();
+
+  const result = parseOAuthRedirect(redirectUrl);
+  if ('error' in result) {
+    if (result.error === OAUTH.CANCELLED_SLUG) throw new OAuthCancelledError();
+    throw new Error(oauthErrorMessage(result.error));
+  }
+
+  const data = await gql<{ exchangeMobileOAuthCode: TokenPair }>(EXCHANGE_OAUTH_CODE, {
+    code: result.code,
+    codeVerifier: verifier,
+  });
+  await storeTokens(data.exchangeMobileOAuthCode);
 }
 
 export async function logout(): Promise<void> {
@@ -108,23 +201,33 @@ export async function getCurrentUser(): Promise<CurrentUser> {
   return data.me;
 }
 
-export async function refreshToken(): Promise<boolean> {
-  try {
-    const apiUrl = await getApiUrl();
-    await gql<{ refreshToken: boolean }>(REFRESH);
-    const cookie = await chrome.cookies.get({ url: apiUrl, name: COOKIES.ACCESS_TOKEN });
-    if (!cookie) return false;
+let refreshInFlight: Promise<boolean> | null = null;
 
-    const [, payload] = cookie.value.split('.');
-    const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
-      exp: number;
-    };
-    await setAuth({ token: cookie.value, expiresAt: exp * 1000 });
+async function doRefresh(): Promise<boolean> {
+  const auth = await getAuth();
+  if (!auth) return false;
+  try {
+    const data = await gql<{ refreshTokenMobile: TokenPair }>(REFRESH, {
+      refreshToken: auth.refreshToken,
+    });
+    await storeTokens(data.refreshTokenMobile);
     return true;
   } catch {
     await clearAuth();
     return false;
   }
+}
+
+/**
+ * Renews the session with the stored refresh token. Single-flighted: the API
+ * rotates refresh tokens, so two overlapping refreshes would present the same
+ * token twice.
+ */
+export function refreshToken(): Promise<boolean> {
+  refreshInFlight ??= doRefresh().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 export async function createApplication(input: {

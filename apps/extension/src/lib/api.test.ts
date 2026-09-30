@@ -22,7 +22,11 @@ function respondWith(body: unknown) {
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn());
-  vi.mocked(getAuth).mockResolvedValue({ token: 'tok', expiresAt: Date.now() + 60_000 });
+  vi.mocked(getAuth).mockResolvedValue({
+    token: 'tok',
+    refreshToken: 'refresh',
+    expiresAt: Date.now() + 10 * 60_000,
+  });
 });
 
 afterEach(() => {

@@ -56,7 +56,7 @@ variable "upstash_redis_rest_url" {
 }
 
 variable "plain_env" {
-  description = "Non-secret environment variables that vary by install (OAuth client IDs, VAPID public key, email sender, Axiom datasets)."
+  description = "Non-secret environment variables that vary by install (OAuth client IDs, extension OAuth IDs, VAPID public key, email sender, Axiom datasets)."
   type        = map(string)
   default     = {}
 }

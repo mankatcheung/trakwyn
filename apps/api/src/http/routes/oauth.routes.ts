@@ -2,7 +2,7 @@ import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { setAuthCookies } from '#src/http/schema/types/AuthPayloadType.js';
-import { ENV, NODE_ENV, OAUTH } from '#src/infrastructure/config/constants.js';
+import { ENV, EXTENSION_OAUTH, NODE_ENV, OAUTH } from '#src/infrastructure/config/constants.js';
 import {
   COOKIES,
   COOKIE_PATH,
@@ -23,8 +23,30 @@ import {
 
 type OAuthPlatform = (typeof OAUTH_PLATFORM)[keyof typeof OAUTH_PLATFORM];
 
-function isMobilePlatform(value: unknown): boolean {
-  return value === OAUTH_PLATFORM.MOBILE;
+function parsePlatform(value: unknown): OAuthPlatform {
+  if (value === OAUTH_PLATFORM.MOBILE) return OAUTH_PLATFORM.MOBILE;
+  if (value === OAUTH_PLATFORM.EXTENSION) return OAUTH_PLATFORM.EXTENSION;
+  return OAUTH_PLATFORM.WEB;
+}
+
+/**
+ * Where a non-web login is handed its tokens: the app's deep link for mobile,
+ * or the extension's `chromiumapp.org` URL (JEF-383). `undefined` means web,
+ * which gets cookies instead.
+ *
+ * The extension ID is checked against the allowlist again here, not only at
+ * /start, so the redirect host never rests on the cookie alone.
+ */
+function handoffRedirectBase(
+  platform: OAuthPlatform,
+  extensionId: string,
+  allowedExtensionIds: ReadonlySet<string>,
+): string | undefined {
+  if (platform === OAUTH_PLATFORM.MOBILE) return MOBILE_OAUTH_CALLBACK;
+  if (platform === OAUTH_PLATFORM.EXTENSION && allowedExtensionIds.has(extensionId)) {
+    return EXTENSION_OAUTH.redirectUrl(extensionId);
+  }
+  return undefined;
 }
 
 const KNOWN_PROVIDERS = new Set<string>(Object.values(OAUTH_PROVIDER));
@@ -55,17 +77,18 @@ const STATE_COOKIE_OPTIONS = {
 } as const;
 
 /**
- * The redirect cookie carries four things the callback needs and the
+ * The redirect cookie carries five things the callback needs and the
  * browser must not be able to tamper with: the state's nonce (JEF-198), the
  * provider-facing PKCE verifier (JEF-200), which client started the flow
- * (JEF-275, read even by branches that never verify `state`), and, mobile
- * only, the app's own PKCE code_challenge for the handoff code (JEF-275) —
- * empty for web, which has no handoff code to bind.
+ * (JEF-275, read even by branches that never verify `state`), the client's
+ * own PKCE code_challenge for the handoff code (mobile, JEF-275, and
+ * extension, JEF-383), and, extension only, which extension to hand back to.
+ * The last two are empty for web, which has no handoff code to bind.
  *
  * One cookie rather than several: created, read and cleared together, so it
  * cannot arrive with some parts but not others. Every part is base64url,
- * hex, empty, or a fixed OAUTH_PLATFORM value, so none can contain the
- * separator.
+ * hex, empty, a fixed OAUTH_PLATFORM value or an `[a-p]` extension ID, so
+ * none can contain the separator.
  */
 const COOKIE_SEPARATOR = '.';
 
@@ -73,26 +96,30 @@ function encodeRedirectCookie(
   nonce: string,
   codeVerifier: string,
   platform: OAuthPlatform,
-  mobileCodeChallenge: string,
+  handoffCodeChallenge: string,
+  extensionId: string,
 ): string {
-  return [nonce, codeVerifier, platform, mobileCodeChallenge].join(COOKIE_SEPARATOR);
+  return [nonce, codeVerifier, platform, handoffCodeChallenge, extensionId].join(COOKIE_SEPARATOR);
 }
 
 function decodeRedirectCookie(request: IHttpRequest): {
   nonce: string;
   codeVerifier: string;
   platform: OAuthPlatform;
-  mobileCodeChallenge: string;
+  handoffCodeChallenge: string;
+  extensionId: string;
 } | null {
   const raw = request.cookies[COOKIES.OAUTH_STATE];
   if (typeof raw !== 'string') return null;
-  const [nonce, codeVerifier, platform, mobileCodeChallenge] = raw.split(COOKIE_SEPARATOR);
+  const [nonce, codeVerifier, platform, handoffCodeChallenge, extensionId] =
+    raw.split(COOKIE_SEPARATOR);
   if (!nonce || !codeVerifier) return null;
   return {
     nonce,
     codeVerifier,
-    platform: isMobilePlatform(platform) ? OAUTH_PLATFORM.MOBILE : OAUTH_PLATFORM.WEB,
-    mobileCodeChallenge: mobileCodeChallenge ?? '',
+    platform: parsePlatform(platform),
+    handoffCodeChallenge: handoffCodeChallenge ?? '',
+    extensionId: extensionId ?? '',
   };
 }
 
@@ -126,20 +153,30 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
         // Only meaningful for mode 'login' — linking only ever starts from the
         // web settings page — but read unconditionally so it's always in the
         // cookie the callback reads back.
-        const platform: OAuthPlatform = isMobilePlatform(req.query.platform)
-          ? OAUTH_PLATFORM.MOBILE
-          : OAUTH_PLATFORM.WEB;
+        const platform = parsePlatform(req.query.platform);
 
-        // Mobile's own PKCE, over the handoff code — distinct from the
-        // provider-facing pair below. Required, not optional (JEF-275): an
-        // app that omitted it would get a handoff code nothing binds to it.
-        let mobileCodeChallenge = '';
-        if (platform === OAUTH_PLATFORM.MOBILE) {
+        // The client's own PKCE, over the handoff code — distinct from the
+        // provider-facing pair below. Required, not optional (JEF-275): a
+        // client that omitted it would get a handoff code nothing binds to it.
+        let handoffCodeChallenge = '';
+        if (platform !== OAUTH_PLATFORM.WEB) {
           if (!isWellFormedPkceValue(req.query.codeChallenge)) {
             res.status(400).send({ error: 'Missing or malformed codeChallenge' });
             return;
           }
-          mobileCodeChallenge = req.query.codeChallenge;
+          handoffCodeChallenge = req.query.codeChallenge;
+        }
+
+        // Only an allowlisted extension may be redirected to (JEF-383): the
+        // ID names the host the handoff code is sent to.
+        let extensionId = '';
+        if (platform === OAUTH_PLATFORM.EXTENSION) {
+          const requested = req.query.extensionId;
+          if (typeof requested !== 'string' || !getCradle().extensionOAuthIds.has(requested)) {
+            res.status(400).send({ error: 'Unknown extensionId' });
+            return;
+          }
+          extensionId = requested;
         }
 
         let userId: string | undefined;
@@ -184,7 +221,7 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
         // through the provider and back — see the cookie note above.
         res.setCookie(
           COOKIES.OAUTH_STATE,
-          encodeRedirectCookie(nonce, verifier, platform, mobileCodeChallenge),
+          encodeRedirectCookie(nonce, verifier, platform, handoffCodeChallenge, extensionId),
           STATE_COOKIE_OPTIONS,
         );
         res.redirect(authorizationUrl);
@@ -195,7 +232,7 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
       path: ROUTES.OAUTH_CALLBACK,
       handler: async (req, res) => {
         const { provider } = req.params;
-        const { webAppOrigin, oauthStateService } = getCradle();
+        const { webAppOrigin, oauthStateService, extensionOAuthIds } = getCradle();
         if (!isKnownProvider(provider)) {
           res.status(404).send({ error: 'Unknown OAuth provider' });
           return;
@@ -206,10 +243,16 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
         // where to send the user, including ones that never reach a verified
         // `state`, which is exactly why platform lives here and not in it.
         const redirectCookie = decodeRedirectCookie(req);
-        const platform = redirectCookie?.platform ?? OAUTH_PLATFORM.WEB;
+        const handoffBase = redirectCookie
+          ? handoffRedirectBase(
+              redirectCookie.platform,
+              redirectCookie.extensionId,
+              extensionOAuthIds,
+            )
+          : undefined;
         const loginError = (slug: OAuthErrorSlug): string =>
-          platform === OAUTH_PLATFORM.MOBILE
-            ? `${MOBILE_OAUTH_CALLBACK}?oauthError=${slug}`
+          handoffBase
+            ? `${handoffBase}?oauthError=${slug}`
             : `${webAppOrigin}/login?oauthError=${slug}`;
 
         // Cleared once here rather than on each branch below: this handler has
@@ -308,18 +351,19 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
             session.currentRefreshTokenId!,
             Date.now(),
           );
-          if (platform === OAUTH_PLATFORM.MOBILE) {
-            // No cookies — React Native has no cookie jar tied to the API,
-            // same reasoning as mobileAuthMutations.ts. The tokens cross the
-            // custom-scheme redirect as an opaque, short-lived handoff code
-            // instead; exchangeMobileOAuthCode redeems it. The challenge came
-            // from the cookie — /start already required it for this platform.
+          if (handoffBase) {
+            // No cookies — neither React Native nor the extension has a
+            // cookie jar tied to the API, same reasoning as
+            // mobileAuthMutations.ts. The tokens cross the redirect as an
+            // opaque, short-lived handoff code instead;
+            // exchangeMobileOAuthCode redeems it for both clients. The
+            // challenge came from the cookie — /start already required it.
             const handoffCode = mobileOAuthHandoffService.issue(
               tokens.accessToken,
               tokens.refreshToken,
-              redirectCookie.mobileCodeChallenge,
+              redirectCookie.handoffCodeChallenge,
             );
-            res.redirect(`${MOBILE_OAUTH_CALLBACK}?code=${encodeURIComponent(handoffCode)}`);
+            res.redirect(`${handoffBase}?code=${encodeURIComponent(handoffCode)}`);
           } else {
             setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
             res.redirect(returnToUrl(webAppOrigin, parsedState.returnTo));

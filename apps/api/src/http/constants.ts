@@ -212,6 +212,8 @@ export const OAUTH_PROVIDER = {
 export const OAUTH_PLATFORM = {
   WEB: 'web',
   MOBILE: 'mobile',
+  /** The Trakwyn Clipper browser extension (JEF-383). */
+  EXTENSION: 'extension',
 } as const;
 
 /**

@@ -55,6 +55,11 @@ export const ENV = {
   GOOGLE_OAUTH_CLIENT_SECRET: 'GOOGLE_OAUTH_CLIENT_SECRET',
   GITHUB_OAUTH_CLIENT_ID: 'GITHUB_OAUTH_CLIENT_ID',
   GITHUB_OAUTH_CLIENT_SECRET: 'GITHUB_OAUTH_CLIENT_SECRET',
+  /**
+   * Comma-separated Chrome extension IDs allowed to finish an OAuth login
+   * (JEF-383). Only these IDs' `chromiumapp.org` URLs are ever redirected to.
+   */
+  EXTENSION_OAUTH_IDS: 'EXTENSION_OAUTH_IDS',
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
@@ -158,6 +163,17 @@ export const OAUTH = {
   /** Builds the concrete callback path (Fastify's `:provider` filled in) used as the OAuth redirect_uri. */
   callbackPath: (provider: string) => `/auth/oauth/${provider}/callback`,
   startPath: (provider: string) => `/auth/oauth/${provider}/start`,
+} as const;
+
+/**
+ * Chrome's `chrome.identity.launchWebAuthFlow` redirect target (JEF-383).
+ * Chrome intercepts navigations to this host and hands the URL back to the
+ * extension with that ID, so a handoff code sent here reaches only it.
+ */
+export const EXTENSION_OAUTH = {
+  /** A Chrome extension ID: 32 characters from `a` to `p`. */
+  ID_PATTERN: /^[a-p]{32}$/,
+  redirectUrl: (extensionId: string) => `https://${extensionId}.chromiumapp.org/`,
 } as const;
 
 /** TOTP (RFC 6238) two-factor authentication settings. */
