@@ -173,7 +173,7 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
      gcloud scheduler jobs run "trakwyn-api-$job" --location="$REGION"
    done
    ```
-   This sends the day's digest and reminder emails early. Do it after 09:00 UTC, when they have already gone out for the day, or skip the first two.
+   This sends the day's digest and reminder emails early. Do it after 09:10 UTC, when they have already gone out for the day, or skip the first two.
 4. From `https://www.trakwyn.com`, check password login, TOTP, Google and GitHub sign-in, that a chat reply streams in, and a document upload.
 5. Check that traces, logs and metrics arrive in Axiom.
 6. Remove the Vercel API project.

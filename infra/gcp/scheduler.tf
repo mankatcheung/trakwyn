@@ -1,11 +1,34 @@
 locals {
   # Replaces the `crons` block of the former apps/api/vercel.json: same paths,
-  # same schedule. /admin/push-notifications/send was never scheduled there
-  # and still isn't.
+  # same daily cadence. /admin/push-notifications/send was never scheduled
+  # there and still isn't.
+  #
+  # Staggered five minutes apart rather than all at 09:00. Fired together
+  # against a service scaled to zero, the three requests made Cloud Run start
+  # several instances at once, and a request assigned to one that failed its
+  # startup probe was answered 503 before the app ran. The purge goes first
+  # because it is the one that can be retried, so it absorbs the cold start
+  # and the two email jobs arrive at an instance that is already warm.
+  #
+  # Only the purge retries. It is idempotent: a second run finds nothing left
+  # to remove. The digest and reminder routes send email, so retrying after a
+  # timeout that actually succeeded server-side would email people twice.
   admin_jobs = {
-    "digest-send"    = "/admin/digest/send"
-    "reminders-send" = "/admin/reminders/send"
-    "trash-purge"    = "/admin/trash/purge"
+    "trash-purge" = {
+      path        = "/admin/trash/purge"
+      schedule    = "0 9 * * *"
+      retry_count = 2
+    }
+    "digest-send" = {
+      path        = "/admin/digest/send"
+      schedule    = "5 9 * * *"
+      retry_count = 0
+    }
+    "reminders-send" = {
+      path        = "/admin/reminders/send"
+      schedule    = "10 9 * * *"
+      retry_count = 0
+    }
   }
 }
 
@@ -14,22 +37,23 @@ resource "google_cloud_scheduler_job" "admin" {
 
   name      = "trakwyn-api-${each.key}"
   region    = var.region
-  schedule  = "0 9 * * *"
+  schedule  = each.value.schedule
   time_zone = "Etc/UTC"
   # Matches the service's request timeout.
   attempt_deadline = "600s"
 
-  # No retries: the digest and reminder routes send email, so retrying after a
-  # timeout that actually succeeded server-side would email people twice.
   retry_config {
-    retry_count = 0
+    retry_count = each.value.retry_count
+    # Long enough for the instance that failed to be replaced; the default 5s
+    # would retry into the same cold start.
+    min_backoff_duration = "30s"
   }
 
   http_target {
     http_method = "POST"
     # The run.app URL rather than the custom domain, so the jobs keep working
     # whatever state the domain mapping's DNS and certificate are in.
-    uri = "${google_cloud_run_v2_service.api.uri}${each.value}"
+    uri = "${google_cloud_run_v2_service.api.uri}${each.value.path}"
 
     # A Google-signed ID token for the cron-invoker account, minted per
     # request (JEF-336). It replaced a CRON_SECRET bearer header, which had to
