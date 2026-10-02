@@ -1,30 +1,24 @@
 /**
- * The `before_send` scrubber every PostHog event passes through (JEF-349).
+ * The scrubber every report passes through before it leaves the extension
+ * (JEF-387).
  *
- * Trakwyn's pages carry company names, job titles, notes, salaries and the
- * user's own email, and an error tracker is the easiest place to leak them
- * by accident: an exception message quotes the value that broke, and a
- * GraphQL failure carries the variables that produced it. The same rule the
- * API adopted for its logs (JEF-348) applies here — the payload says what
- * happened and where, never what the user typed.
+ * The Clipper reads job pages and holds the user's session, so an error
+ * report is the easiest place to leak either by accident: an exception
+ * message quotes the value that broke. The payload says what happened and
+ * where, never what the user typed or what the page said.
  *
  * Two mechanisms, deliberately both:
  *
  *  - a **deny-list of property names**, which removes a whole value
- *    regardless of shape (`variables`, `salary`, `description`);
+ *    regardless of shape (`variables`, `description`, `token`);
  *  - **pattern redaction inside every remaining string**, which catches the
- *    same data arriving somewhere we did not anticipate — an email quoted
- *    in an exception message, a JWT in a stack frame's URL.
+ *    same data arriving somewhere we did not anticipate: an email quoted in
+ *    an exception message, a JWT, a URL's query string (where the OAuth
+ *    handoff code travels).
  *
- * A deny-list alone would be a list of the places we happened to think of.
- *
- * Kept in step with apps/mobile/src/lib/analytics/scrub.ts, which is the
- * same rule for the other SDK — mirrored rather than shared, following the
- * repo's existing convention for the handful of values both clients need
- * (`CHAT_MESSAGE_MAX_CHARS`, `ERROR_CODES`); there is no shared runtime
- * package between a Vite app and a React Native app to put it in. The
- * browser extension has a third copy, held to this one by its own parity
- * test: apps/extension/src/lib/observability/scrub.ts (JEF-387).
+ * Mirrored from apps/web/src/lib/analytics/scrub.ts, as mobile's copy is:
+ * there is no shared runtime package between the apps. scrubParity.test.ts
+ * keeps this copy identical to web's below this comment.
  */
 
 /** Replaces a denied property's value, so the key's presence is still visible in PostHog. */

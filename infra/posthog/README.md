@@ -109,6 +109,28 @@ curl -X POST https://eu.i.posthog.com/i/v0/e/ -H 'Content-Type: application/json
 
 A new issue appears in Error Tracking within a minute or two, and the alert emails. Resolve the issue afterwards. The timestamp in `value` makes each run a new issue.
 
+## Browser extension errors (JEF-387)
+
+The Trakwyn Clipper (`apps/extension`) reports to this project too, from its background worker, popup and options page. Like the server-side errors above, the reports go straight to the capture endpoint (`/i/v0/e/`) with the public project key and no SDK. The key is read from `VITE_POSTHOG_KEY` when the extension is built; a build without it sends nothing.
+
+Tell them apart by `$lib = trakwyn-extension`. `context` is `background`, `popup` or `options`, and `release` is the extension's manifest version.
+
+| Event                    | When                                                               | Properties                                                 |
+| ------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `$exception`             | A bug: an uncaught error, an unhandled rejection, a render error.  | `action` when it was caught, `trace_id` of the last call.  |
+| `graphql_request_failed` | The API was unreachable or answered 5xx. Same event as web's.      | `status` or `network_error`, `operation`, `trace_id`.      |
+| `token_refresh_failed`   | The session could not be renewed and the user was signed out.      | `reason` (`rejected`, `transport`, `unexpected`), `code`.  |
+| `oauth_login_failed`     | A Google or GitHub sign-in ended in an error. A cancel is not one. | `reason` (the API's error slug, or a cause), `provider`.   |
+| `parser_result`          | A known job board's page gave the parsers less than a clip needs.  | `board`, `parser`, `site_parser_failed`, `missing_fields`. |
+
+`trace_id` finds the request's trace in Axiom. A rise in `parser_result` for one `board` means that site changed its markup; some are expected at any time, because a search results page with no job open also has nothing to parse.
+
+**Why no consent gate.** The same reasoning as the server-side errors: these are operational reports about the extension, not analytics about a person, and they carry nothing that identifies one. `$process_person_profile: false`, a random `distinct_id` per event (nothing is stored on the device to link two reports), `$geoip_disable`, and `anonymize_ips` on the project. They never hold a token, the email, the OAuth handoff code, GraphQL variables, job content or a page URL: `parser_result` names the board, not the hostname, and every message and stack passes the same scrubber as the web app's. Only faults are sent. Counting clips or sign-ins would be product analytics and would need a consent decision first.
+
+The alert above triggers on new and reopened Error Tracking issues, so it covers the extension's `$exception` events unless it was given a filter that leaves them out (check for one on `$lib` or `web_event`). The other four events are plain events and have no alert yet.
+
+The Chrome Web Store listing's privacy disclosure must say that anonymous error diagnostics are collected before a build with the key is published.
+
 ## Mobile release health (JEF-368)
 
 PostHog has no crash-free-rate view like Sentry's Release Health, so `release_health.tf` builds one: a **Mobile release health** dashboard that answers "is 1.2.0 safe to keep rolling out?", and an alert for when it is not.

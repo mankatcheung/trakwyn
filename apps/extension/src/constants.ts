@@ -69,3 +69,60 @@ export const AUTH_HEADER = {
 export const API_ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
 } as const;
+
+/** From this status up, a response is the API failing rather than answering. */
+export const HTTP_SERVER_ERROR_MIN = 500;
+
+/** Error reporting to PostHog (JEF-387). See lib/observability/report.ts. */
+export const OBSERVABILITY = {
+  /** PostHog's EU ingestion host, used when `VITE_POSTHOG_HOST` is unset. */
+  DEFAULT_HOST: 'https://eu.i.posthog.com',
+  CAPTURE_PATH: '/i/v0/e/',
+  /** `$lib` on every event, so Error Tracking can tell the Clipper's from web's. */
+  LIB: 'trakwyn-extension',
+  EXCEPTION_EVENT: '$exception',
+  /** A report that takes longer than this is dropped. */
+  SEND_TIMEOUT_MS: 5000,
+} as const;
+
+/** The events the Clipper names itself. Faults only, no product analytics. */
+export const OBSERVABILITY_EVENTS = {
+  /** The API was unreachable or answered 5xx. Same name as web and mobile. */
+  GRAPHQL_REQUEST_FAILED: 'graphql_request_failed',
+  /** The session could not be renewed, so the user was signed out. */
+  TOKEN_REFRESH_FAILED: 'token_refresh_failed',
+  /** A Google/GitHub sign-in ended in an error (never a cancel). */
+  OAUTH_LOGIN_FAILED: 'oauth_login_failed',
+  /** A job board's page gave the parsers less than they need. */
+  PARSER_RESULT: 'parser_result',
+} as const;
+
+export type ObservabilityEvent = (typeof OBSERVABILITY_EVENTS)[keyof typeof OBSERVABILITY_EVENTS];
+
+/** The extension contexts that report. The content script does not. */
+export const EXTENSION_CONTEXTS = {
+  BACKGROUND: 'background',
+  POPUP: 'popup',
+  OPTIONS: 'options',
+} as const;
+
+export type ExtensionContext = (typeof EXTENSION_CONTEXTS)[keyof typeof EXTENSION_CONTEXTS];
+
+/**
+ * The job boards the content script runs on, by a suffix of the hostname.
+ * Parser reports name the board, never the hostname: a Workday or Greenhouse
+ * hostname carries the employer's name.
+ */
+export const JOB_BOARDS = [
+  { id: 'linkedin', hostSuffix: 'linkedin.com' },
+  { id: 'indeed', hostSuffix: 'indeed.com' },
+  { id: 'glassdoor', hostSuffix: 'glassdoor.com' },
+  { id: 'greenhouse', hostSuffix: 'greenhouse.io' },
+  { id: 'lever', hostSuffix: 'lever.co' },
+  { id: 'workday', hostSuffix: 'workday.com' },
+  { id: 'workday', hostSuffix: 'myworkdayjobs.com' },
+] as const;
+
+export const UNKNOWN_JOB_BOARD = 'other';
+
+export type JobBoard = (typeof JOB_BOARDS)[number]['id'] | typeof UNKNOWN_JOB_BOARD;
