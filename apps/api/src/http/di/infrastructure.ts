@@ -44,6 +44,7 @@ import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTex
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
 import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
+import { LinearIssueTracker } from '#src/infrastructure/issueTracker/LinearIssueTracker.js';
 import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
 
 import {
@@ -130,6 +131,16 @@ export const infrastructure = {
   ipLocationResolver: asClass(IpLocationService, { lifetime: Lifetime.SINGLETON }),
   webPushService: asClass(WebPushService, { lifetime: Lifetime.SINGLETON }),
   expoPushService: asClass(ExpoPushService, { lifetime: Lifetime.SINGLETON }),
+  // Where alert issues are filed (JEF-382). Built even when unconfigured: the
+  // relay route checks the env and answers 503 before anything reaches it.
+  issueTracker: asFunction(
+    () =>
+      new LinearIssueTracker({
+        apiKey: process.env[ENV.LINEAR_API_KEY] ?? '',
+        teamId: process.env[ENV.LINEAR_TEAM_ID] ?? '',
+      }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   // Where the server may connect on a user's behalf (custom LLM base URLs,
   // job-posting links). Strict in production; see the class for why not
   // elsewhere.

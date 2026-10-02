@@ -17,6 +17,9 @@ plain_env = {
   AXIOM_DATASET          = "trakwyn-api"
   AXIOM_LOGS_DATASET     = "trakwyn-api-logs"
   AXIOM_METRICS_DATASET  = "trakwyn-api-metrics"
+  # Linear team the Axiom alert relay files issues in (JEF-382); its UUID,
+  # not the JEF key. Needs the linear-api-key and alert-webhook-secret secrets.
+  LINEAR_TEAM_ID = "2e320742-82f8-454c-b3c3-09133a022672" # Trakwyn
 
   # Temporary diagnostic (JEF-353): one warn line per request carrying the
   # inbound traceparent and its sampled flag. Uncomment, apply, collect over a

@@ -66,6 +66,12 @@ export const ENV = {
   VAPID_PUBLIC_KEY: 'VAPID_PUBLIC_KEY',
   VAPID_PRIVATE_KEY: 'VAPID_PRIVATE_KEY',
   VAPID_SUBJECT: 'VAPID_SUBJECT',
+  /** Linear personal API key the alert relay files issues with (JEF-382). */
+  LINEAR_API_KEY: 'LINEAR_API_KEY',
+  /** UUID of the Linear team alert issues are filed in. */
+  LINEAR_TEAM_ID: 'LINEAR_TEAM_ID',
+  /** Bearer secret Axiom's webhook notifier sends to the alert relay. */
+  ALERT_WEBHOOK_SECRET: 'ALERT_WEBHOOK_SECRET',
 } as const;
 
 /** `NODE_ENV` values. */
@@ -343,6 +349,13 @@ export const JOB_POSTING_FETCH = {
  * carry a page of HTML — and never repeated verbatim to a client (JEF-S1).
  */
 export const PROVIDER_ERROR_BODY_MAX_CHARS = 300;
+
+/** Linear's GraphQL API, where the alert relay files issues (JEF-382). */
+export const LINEAR = {
+  API_URL: 'https://api.linear.app/graphql',
+  /** An alert delivery waits on this; Axiom's webhook gives up long before a hung socket would. */
+  REQUEST_TIMEOUT_MS: 10_000,
+} as const;
 
 /** Cache configuration, shared by MemoryCache and RedisCache. */
 export const CACHE = {

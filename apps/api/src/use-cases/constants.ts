@@ -468,3 +468,20 @@ export const AUTH_FAILURE_EVENTS = {
   LOGIN_FAILED: 'auth.login.failed',
   TOTP_FAILED: 'auth.totp.failed',
 } as const;
+
+/**
+ * Turning an operational alert into a tracker issue (JEF-382).
+ *
+ * The caps keep one alert's payload from producing an issue nobody can read:
+ * a matched span can carry a stack trace and an event dump well past what a
+ * person scrolls through. Detail blocks are cut, not dropped — the head of a
+ * stack trace is the useful part.
+ */
+export const ALERT_ISSUE = {
+  MAX_TITLE_CHARS: 200,
+  MAX_DETAIL_CHARS: 8_000,
+  /** Every alert shares one rate-limit bucket: the limit is on Linear, not on a caller. */
+  RATE_LIMIT_KEY: 'alert-issues',
+  /** Written into each issue so `findOpenByFingerprint` can search for it. */
+  FINGERPRINT_LABEL: 'Alert fingerprint',
+} as const;

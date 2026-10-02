@@ -237,6 +237,8 @@ import type { UnregisterPushSubscriptionUseCase } from '#src/use-cases/push/Unre
 import type { SendPushNotificationsUseCase } from '#src/use-cases/push/SendPushNotificationsUseCase.js';
 import type { WebPushService } from '#src/infrastructure/push/WebPushService.js';
 import type { ExpoPushService } from '#src/infrastructure/push/ExpoPushService.js';
+import type { IIssueTracker } from '#src/use-cases/ports/IIssueTracker.js';
+import type { FileAlertIssueUseCase } from '#src/use-cases/alerts/FileAlertIssueUseCase.js';
 import type { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransactionManager.js';
 import type { LlmApiKeyMapper } from '#src/interface-adapters/mappers/LlmApiKeyMapper.js';
 import type { LlmUsageSummaryMapper } from '#src/interface-adapters/mappers/LlmUsageSummaryMapper.js';
@@ -362,6 +364,7 @@ export interface Cradle {
   computeResumeMatchScoreRateLimiter: IRateLimiter;
   generateCompanyBriefingRateLimiter: IRateLimiter;
   testLlmApiKeyRateLimiter: IRateLimiter;
+  alertIssueRateLimiter: IRateLimiter;
   updatePasswordRateLimiter: IRateLimiter;
   requestEmailChangeRateLimiter: IRateLimiter;
   backupEmailVerificationTokenRepository: DrizzleBackupEmailVerificationTokenRepository;
@@ -558,6 +561,8 @@ export interface Cradle {
   ipLocationResolver: IIpLocationResolver;
   webPushService: WebPushService;
   expoPushService: ExpoPushService;
+  issueTracker: IIssueTracker;
+  fileAlertIssueUseCase: FileAlertIssueUseCase;
   pushSubscriptionRepository: DrizzlePushSubscriptionRepository;
   registerPushSubscriptionUseCase: RegisterPushSubscriptionUseCase;
   registerExpoPushTokenUseCase: RegisterExpoPushTokenUseCase;
