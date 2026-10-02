@@ -12,3 +12,5 @@ apps/extension/.wxt/
 apps/extension/.output/
 # Xcode template output of scripts/package-safari.sh, regenerated as-is
 apps/extension/safari/
+# Written by release-please in its own format (JEF-389)
+CHANGELOG.md
