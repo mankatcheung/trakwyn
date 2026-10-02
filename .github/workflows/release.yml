@@ -1,0 +1,50 @@
+name: Release
+
+# Versions the artefacts people install: the Clipper (apps/extension), the
+# mobile app (apps/mobile) and the CLI (apps/cli) (JEF-389). apps/api and
+# apps/web are not versioned: they deploy on every merge (ci.yml) and the
+# commit SHA already identifies what is live.
+#
+# On every push to main, release-please reads the squash-commit titles since
+# each package's last release and opens or updates one release PR per package
+# (`fix` is a patch, `feat` a minor, `!` or BREAKING CHANGE a major). A commit
+# belongs to a package by the files it touches, not by the scope in its title.
+# Merging a release PR bumps that package's package.json and CHANGELOG.md,
+# and this workflow then creates the tag (e.g. clipper-v1.1.0) and the GitHub
+# Release. Nothing is built or submitted to a store here.
+#
+# The packages and their starting versions are in release-please-config.json
+# and .release-please-manifest.json. None of the files a release PR touches
+# is in ci.yml's push paths, so merging one does not deploy the API or web
+# (held by releaseVersioning.test.ts).
+#
+# One-time setup: Settings > Actions > General > Workflow permissions >
+# "Allow GitHub Actions to create and approve pull requests". Without it the
+# job fails when it tries to open the release PR.
+#
+# PRs opened with GITHUB_TOKEN do not start other workflows, so ci.yml does
+# not run on a release PR. That is acceptable while it only edits a version
+# and a changelog; pass a GitHub App or fine-grained token as `token` if CI
+# should run on them.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PRs, tags and GitHub Releases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

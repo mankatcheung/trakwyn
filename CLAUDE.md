@@ -126,3 +126,9 @@ cp apps/web/.env.example apps/web/.env
   An unchecked "tests" item means the issue isn't done.
 
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
+- **Releases (release-please, `.github/workflows/release.yml`):** only what people install is versioned: the Clipper (`apps/extension`), the mobile app (`apps/mobile`) and the CLI (`apps/cli`). `apps/api`, `apps/web` and `packages/ui` are not, because API and web deploy on every merge and the commit SHA names what is live.
+  - **The squash-commit title sets the bump:** `fix` is a patch, `feat` a minor, `!` or a `BREAKING CHANGE` footer a major (a minor while the package is below `1.0.0`). Other types (`chore`, `docs`, `ci`, …) release nothing.
+  - **A commit belongs to a package by the files it touches,** not by the `(scope)` in its title.
+  - **To release,** merge that package's open release PR. It bumps `package.json` and `CHANGELOG.md`, and the workflow tags it (`clipper-v1.1.0`) and creates the GitHub Release. Never edit a version or a changelog by hand. To force a number, such as mobile's first store release, put a `Release-As: 1.0.0` footer on a commit that touches the package.
+  - **`package.json` is the only place a version is written.** The CLI reads it in `src/lib/version.ts`, mobile in `app.config.ts`, and WXT fills the Clipper's manifests from it. The Safari Xcode project is the exception: see `apps/extension/CLAUDE.md`.
+  - The versioned packages are listed in `release-please-config.json` and `.release-please-manifest.json`, held by `releaseVersioning.test.ts`.

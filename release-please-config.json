@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "ef813809b8a7d4d30bdb7fd7b3bb3f9482d99405",
+  "separate-pull-requests": true,
+  "packages": {
+    "apps/extension": {
+      "release-type": "node",
+      "component": "clipper"
+    },
+    "apps/mobile": {
+      "release-type": "node",
+      "component": "mobile",
+      "bump-minor-pre-major": true
+    },
+    "apps/cli": {
+      "release-type": "node",
+      "component": "cli",
+      "bump-minor-pre-major": true
+    }
+  }
+}
