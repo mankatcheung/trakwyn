@@ -4,11 +4,12 @@ locals {
   # there and still isn't.
   #
   # Staggered five minutes apart rather than all at 09:00. Fired together
-  # against a service scaled to zero, the three requests made Cloud Run start
-  # several instances at once, and a request assigned to one that failed its
-  # startup probe was answered 503 before the app ran. The purge goes first
-  # because it is the one that can be retried, so it absorbs the cold start
-  # and the two email jobs arrive at an instance that is already warm.
+  # against a service scaled to zero, all three waited on one cold start, and
+  # when that instance failed its startup probe the request assigned to it was
+  # answered 503 before the app ran; which of the three that was is chance.
+  # The purge goes first because it is the one that can be retried, so it
+  # absorbs the cold start and the two email jobs arrive at an instance that
+  # is already warm.
   #
   # Only the purge retries. It is idempotent: a second run finds nothing left
   # to remove. The digest and reminder routes send email, so retrying after a
