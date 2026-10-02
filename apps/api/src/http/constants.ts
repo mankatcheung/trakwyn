@@ -54,6 +54,8 @@ export const ROUTES = {
   VAPID_PUBLIC_KEY: '/vapid-public-key',
   OAUTH_START: '/auth/oauth/:provider/start',
   OAUTH_CALLBACK: '/auth/oauth/:provider/callback',
+  /** Where a tab-based extension login ends (Safari, JEF-386) — see EXTENSION_OAUTH_DONE_PAGE. */
+  EXTENSION_OAUTH_DONE: '/auth/oauth/extension/done',
   /** Stand-in "provider" consent screen, registered only when OAUTH_PROVIDER_MODE=fake — see FakeOAuthProvider. */
   OAUTH_FAKE_CONSENT: FAKE_OAUTH.CONSENT_PATH,
   /**
@@ -214,6 +216,36 @@ export const OAUTH_PLATFORM = {
   MOBILE: 'mobile',
   /** The Trakwyn Clipper browser extension (JEF-383). */
   EXTENSION: 'extension',
+  /**
+   * The Clipper in a browser without `identity.launchWebAuthFlow` (Safari,
+   * JEF-386). It signs in in a tab and watches for ROUTES.EXTENSION_OAUTH_DONE
+   * on this API's origin, so there is no extension ID to allowlist.
+   */
+  EXTENSION_TAB: 'extension-tab',
+} as const;
+
+/** Origins of the Trakwyn Clipper's pages, which CORS lets through: Chrome, and Safari (JEF-386). */
+export const EXTENSION_ORIGIN_SCHEMES = ['chrome-extension://', 'safari-web-extension://'] as const;
+
+/**
+ * The page a tab-based extension login lands on (JEF-386). The extension
+ * reads the handoff code from its URL and closes the tab, so the page is only
+ * seen if that fails. It is static: nothing from the query is echoed back.
+ */
+export const EXTENSION_OAUTH_DONE_PAGE = {
+  HTML:
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>Trakwyn Clipper</title></head>' +
+    '<body style="font-family: system-ui, sans-serif; text-align: center; padding: 3rem 1rem">' +
+    '<p>You can close this tab and return to the Trakwyn Clipper.</p></body></html>',
+  HEADERS: {
+    'content-type': 'text/html; charset=utf-8',
+    // The URL carries a handoff code: keep it out of caches and referrers.
+    'cache-control': 'no-store',
+    'referrer-policy': 'no-referrer',
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'",
+  },
 } as const;
 
 /**

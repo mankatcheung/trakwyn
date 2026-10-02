@@ -11,10 +11,22 @@ export class OAuthCancelledError extends Error {
   }
 }
 
+function oauthStartUrl(
+  apiUrl: string,
+  provider: OAuthProvider,
+  platform: string,
+  codeChallenge: string,
+): URL {
+  const url = new URL(OAUTH.startPath(provider), new URL(apiUrl).origin);
+  url.searchParams.set('platform', platform);
+  url.searchParams.set('codeChallenge', codeChallenge);
+  return url;
+}
+
 /**
- * The API's `/start` URL for an extension login (JEF-383). The API origin is
- * taken from the configured GraphQL endpoint, so a self-hosted API URL works
- * the same way as the default.
+ * The API's `/start` URL for a `launchWebAuthFlow` login (Chrome, JEF-383).
+ * The API origin is taken from the configured GraphQL endpoint, so a
+ * self-hosted API URL works the same way as the default.
  */
 export function buildOAuthStartUrl(
   apiUrl: string,
@@ -22,11 +34,27 @@ export function buildOAuthStartUrl(
   codeChallenge: string,
   extensionId: string,
 ): string {
-  const url = new URL(OAUTH.startPath(provider), new URL(apiUrl).origin);
-  url.searchParams.set('platform', OAUTH.PLATFORM);
-  url.searchParams.set('codeChallenge', codeChallenge);
+  const url = oauthStartUrl(apiUrl, provider, OAUTH.PLATFORM, codeChallenge);
   url.searchParams.set('extensionId', extensionId);
   return url.toString();
+}
+
+/**
+ * The API's `/start` URL for a login run in a tab (Safari, JEF-386). No
+ * extension ID: the API ends it on its own `tabOAuthDoneUrl`, not on a URL
+ * that names the extension.
+ */
+export function buildTabOAuthStartUrl(
+  apiUrl: string,
+  provider: OAuthProvider,
+  codeChallenge: string,
+): string {
+  return oauthStartUrl(apiUrl, provider, OAUTH.TAB_PLATFORM, codeChallenge).toString();
+}
+
+/** Where the API ends a tab login: a fixed page on the API's own origin. */
+export function tabOAuthDoneUrl(apiUrl: string): string {
+  return new URL(OAUTH.TAB_DONE_PATH, new URL(apiUrl).origin).toString();
 }
 
 export function parseOAuthRedirect(redirectUrl: string): OAuthRedirectResult {

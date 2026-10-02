@@ -93,6 +93,10 @@ jobs:
           restore-keys: turbo-build-test-${{ runner.os }}-
 
       - run: pnpm build
+      # `pnpm build` builds the Clipper for Chrome; build the Safari bundle
+      # too (JEF-386). Wrapping it in the Xcode app needs macOS, so that part
+      # stays local (apps/extension/scripts/package-safari.sh).
+      - run: pnpm --filter @trakwyn/extension build:safari
       - run: pnpm test
 
   terraform:

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { CurrentUser } from '../lib/api';
-import { displayName, hasDistinctName, initials } from '../lib/user';
+import type { CurrentUser } from '../../lib/api';
+import { displayName, hasDistinctName, initials } from '../../lib/user';
 
 interface Props {
   user: CurrentUser;

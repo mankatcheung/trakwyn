@@ -1,6 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi, type MockInstance } from 'vitest';
+import { browser, type Browser } from 'wxt/browser';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { login, loginWithOAuth, refreshToken } from './api';
 import { OAuthCancelledError } from './oauth';
+import { registerTabOAuthListeners } from './tabOAuth';
 import { getAuth, setAuth } from './storage';
 
 const EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop';
@@ -15,22 +18,7 @@ function fakeJwt(expSeconds: number, tag = 'a'): string {
   return `header.${payload}.sig`;
 }
 
-function fakeStorageArea() {
-  let data: Record<string, unknown> = {};
-  return {
-    get: vi.fn(async (keys: string | Record<string, unknown>) =>
-      typeof keys === 'string' ? { [keys]: data[keys] } : { ...keys, ...data },
-    ),
-    set: vi.fn(async (items: Record<string, unknown>) => {
-      data = { ...data, ...items };
-    }),
-    remove: vi.fn(async (key: string) => {
-      const { [key]: _removed, ...rest } = data;
-      data = rest;
-    }),
-  };
-}
-
+const CHROME_IDENTITY = fakeBrowser.identity;
 const launchWebAuthFlow = vi.fn();
 const fetchMock = vi.fn();
 
@@ -47,11 +35,16 @@ beforeEach(() => {
   launchWebAuthFlow.mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
-  vi.stubGlobal('chrome', {
-    runtime: { id: EXTENSION_ID, sendMessage: vi.fn() },
-    identity: { launchWebAuthFlow },
-    storage: { session: fakeStorageArea(), sync: fakeStorageArea() },
-  });
+  fakeBrowser.reset();
+  vi.spyOn(fakeBrowser.runtime, 'id', 'get').mockReturnValue(EXTENSION_ID);
+  // Put back what the Safari tests remove; reset() does not.
+  Reflect.set(fakeBrowser, 'identity', CHROME_IDENTITY);
+  fakeBrowser.identity.launchWebAuthFlow = launchWebAuthFlow;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('loginWithOAuth', () => {
@@ -113,6 +106,54 @@ describe('loginWithOAuth', () => {
     launchWebAuthFlow.mockRejectedValue(new Error('Authorization page could not be loaded.'));
 
     await expect(loginWithOAuth('google')).rejects.toThrow(/Couldn't open the sign-in window/);
+  });
+});
+
+describe('loginWithOAuth without identity (Safari)', () => {
+  const DONE_URL = 'http://localhost:3001/auth/oauth/extension/done';
+
+  beforeEach(() => {
+    // Safari exposes no `identity` API at all.
+    Reflect.deleteProperty(fakeBrowser, 'identity');
+    registerTabOAuthListeners(async () => undefined);
+  });
+
+  async function openedTab(create: MockInstance<typeof browser.tabs.create>) {
+    await vi.waitFor(() => expect(create).toHaveBeenCalled());
+    return (await create.mock.results[0]!.value) as { id: number };
+  }
+
+  it('signs in in a tab and redeems the code from the API done page', async () => {
+    const accessToken = fakeJwt(2_000_000_000);
+    fetchMock.mockResolvedValue(
+      graphqlResponse({ exchangeMobileOAuthCode: { accessToken, refreshToken: 'refresh-1' } }),
+    );
+    const create = vi.spyOn(browser.tabs, 'create');
+
+    const login = loginWithOAuth('google');
+    const tab = await openedTab(create);
+    const startUrl = new URL(create.mock.calls[0]![0].url!);
+    await fakeBrowser.tabs.onUpdated.trigger(tab.id, { url: `${DONE_URL}?code=handoff-code` }, {
+      id: tab.id,
+    } as Browser.tabs.Tab);
+    await login;
+
+    expect(startUrl.searchParams.get('platform')).toBe('extension-tab');
+    expect(startUrl.searchParams.has('extensionId')).toBe(false);
+    expect(lastRequest().variables.code).toBe('handoff-code');
+    expect((await getAuth())?.refreshToken).toBe('refresh-1');
+  });
+
+  it('reports a closed sign-in tab as a cancel', async () => {
+    const create = vi.spyOn(browser.tabs, 'create');
+
+    const login = loginWithOAuth('github');
+    const outcome = expect(login).rejects.toBeInstanceOf(OAuthCancelledError);
+    const tab = await openedTab(create);
+    await fakeBrowser.tabs.onRemoved.trigger(tab.id, { windowId: 1, isWindowClosing: false });
+
+    await outcome;
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

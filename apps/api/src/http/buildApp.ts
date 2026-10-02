@@ -251,6 +251,16 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
       await route.handler(toHttpRequest(request), toHttpResponse(reply));
     },
   });
+  fastify.route({
+    method: 'GET',
+    url: ROUTES.EXTENSION_OAUTH_DONE,
+    handler: async (request, reply) => {
+      const route = oauthRoutes(() => diScopeOf(request).cradle).find(
+        (r) => r.path === ROUTES.EXTENSION_OAUTH_DONE,
+      )!;
+      await route.handler(toHttpRequest(request), toHttpResponse(reply));
+    },
+  });
 
   await fastify.register(mercurius, {
     schema,

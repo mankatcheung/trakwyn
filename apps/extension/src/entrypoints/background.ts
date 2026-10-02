@@ -1,6 +1,9 @@
+import { defineBackground } from 'wxt/utils/define-background';
+import { browser } from 'wxt/browser';
 import { getAuth } from '../lib/storage';
-import { loginWithOAuth, refreshToken } from '../lib/api';
+import { loginWithOAuth, redeemOAuthRedirect, refreshToken } from '../lib/api';
 import { OAuthCancelledError } from '../lib/oauth';
+import { registerTabOAuthListeners } from '../lib/tabOAuth';
 import { REFRESH_LEEWAY_MS, RUNTIME_MESSAGES, type OAuthProvider } from '../constants';
 
 /** What the popup gets back from an OAUTH_LOGIN message. */
@@ -25,17 +28,19 @@ async function handleOAuthLogin(provider: OAuthProvider): Promise<OAuthLoginResp
   }
 }
 
-chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
-  if (message.type === RUNTIME_MESSAGES.OAUTH_LOGIN) {
-    handleOAuthLogin(message.provider).then(sendResponse);
-    return true; // keep the channel open for the async response
+/**
+ * A Safari tab sign-in that outlived the background instance that started it
+ * (JEF-386). Nobody is waiting for the answer: the popup closed when the tab
+ * opened, and the next popup reads the stored session.
+ */
+async function finishOrphanedTabLogin(redirectUrl: string, verifier: string): Promise<void> {
+  try {
+    await redeemOAuthRedirect(redirectUrl, verifier);
+    await scheduleRefresh();
+  } catch {
+    // The next popup shows the sign-in screen, which is all a failure here means.
   }
-  if (message.type === RUNTIME_MESSAGES.REFRESH_TOKEN) {
-    refreshToken().then(sendResponse);
-    return true;
-  }
-  return false;
-});
+}
 
 // Proactively refresh the token shortly before it expires
 async function scheduleRefresh() {
@@ -55,4 +60,14 @@ async function scheduleRefresh() {
   }
 }
 
-scheduleRefresh();
+export default defineBackground(() => {
+  // Registered synchronously so a restarted background still receives them.
+  browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
+    if (message.type === RUNTIME_MESSAGES.OAUTH_LOGIN) return handleOAuthLogin(message.provider);
+    if (message.type === RUNTIME_MESSAGES.REFRESH_TOKEN) return refreshToken();
+    return undefined;
+  });
+  registerTabOAuthListeners(finishOrphanedTabLogin);
+
+  void scheduleRefresh();
+});

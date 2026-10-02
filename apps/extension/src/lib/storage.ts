@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser';
 import { DEFAULT_API_URL, STORAGE_KEYS } from '../constants';
 
 export interface AuthState {
@@ -22,24 +23,24 @@ function isAuthState(value: unknown): value is AuthState {
  * reads as signed out.
  */
 export async function getAuth(): Promise<AuthState | null> {
-  const result = await chrome.storage.session.get(STORAGE_KEYS.AUTH);
+  const result = await browser.storage.session.get(STORAGE_KEYS.AUTH);
   const auth: unknown = result[STORAGE_KEYS.AUTH];
   return isAuthState(auth) ? auth : null;
 }
 
 export async function setAuth(auth: AuthState): Promise<void> {
-  await chrome.storage.session.set({ [STORAGE_KEYS.AUTH]: auth });
+  await browser.storage.session.set({ [STORAGE_KEYS.AUTH]: auth });
 }
 
 export async function clearAuth(): Promise<void> {
-  await chrome.storage.session.remove(STORAGE_KEYS.AUTH);
+  await browser.storage.session.remove(STORAGE_KEYS.AUTH);
 }
 
 export async function getApiUrl(): Promise<string> {
-  const result = await chrome.storage.sync.get({ [STORAGE_KEYS.API_URL]: DEFAULT_API_URL });
+  const result = await browser.storage.sync.get({ [STORAGE_KEYS.API_URL]: DEFAULT_API_URL });
   return result[STORAGE_KEYS.API_URL] as string;
 }
 
 export async function setApiUrl(apiUrl: string): Promise<void> {
-  await chrome.storage.sync.set({ [STORAGE_KEYS.API_URL]: apiUrl });
+  await browser.storage.sync.set({ [STORAGE_KEYS.API_URL]: apiUrl });
 }

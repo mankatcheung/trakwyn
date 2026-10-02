@@ -2,15 +2,21 @@ import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { setAuthCookies } from '#src/http/schema/types/AuthPayloadType.js';
-import { ENV, EXTENSION_OAUTH, NODE_ENV, OAUTH } from '#src/infrastructure/config/constants.js';
+import { ENV, NODE_ENV, OAUTH } from '#src/infrastructure/config/constants.js';
 import {
   COOKIES,
   COOKIE_PATH,
-  MOBILE_OAUTH_CALLBACK,
+  EXTENSION_OAUTH_DONE_PAGE,
   OAUTH_PLATFORM,
   OAUTH_PROVIDER,
   ROUTES,
 } from '#src/http/constants.js';
+import {
+  type OAuthPlatform,
+  handoffRedirectBase,
+  parsePlatform,
+  requestOrigin,
+} from '#src/http/routes/oauthPlatform.js';
 import type { OAuthProviderName } from '#src/domain/oauthAccount/OAuthAccount.js';
 import { createPkcePair, isWellFormedPkceValue } from '#src/infrastructure/auth/pkce.js';
 import {
@@ -21,34 +27,6 @@ import {
   providerErrorSlug,
 } from '#src/http/routes/oauthErrorSlug.js';
 
-type OAuthPlatform = (typeof OAUTH_PLATFORM)[keyof typeof OAUTH_PLATFORM];
-
-function parsePlatform(value: unknown): OAuthPlatform {
-  if (value === OAUTH_PLATFORM.MOBILE) return OAUTH_PLATFORM.MOBILE;
-  if (value === OAUTH_PLATFORM.EXTENSION) return OAUTH_PLATFORM.EXTENSION;
-  return OAUTH_PLATFORM.WEB;
-}
-
-/**
- * Where a non-web login is handed its tokens: the app's deep link for mobile,
- * or the extension's `chromiumapp.org` URL (JEF-383). `undefined` means web,
- * which gets cookies instead.
- *
- * The extension ID is checked against the allowlist again here, not only at
- * /start, so the redirect host never rests on the cookie alone.
- */
-function handoffRedirectBase(
-  platform: OAuthPlatform,
-  extensionId: string,
-  allowedExtensionIds: ReadonlySet<string>,
-): string | undefined {
-  if (platform === OAUTH_PLATFORM.MOBILE) return MOBILE_OAUTH_CALLBACK;
-  if (platform === OAUTH_PLATFORM.EXTENSION && allowedExtensionIds.has(extensionId)) {
-    return EXTENSION_OAUTH.redirectUrl(extensionId);
-  }
-  return undefined;
-}
-
 const KNOWN_PROVIDERS = new Set<string>(Object.values(OAUTH_PROVIDER));
 
 function isKnownProvider(provider: string): provider is OAuthProviderName {
@@ -56,7 +34,7 @@ function isKnownProvider(provider: string): provider is OAuthProviderName {
 }
 
 function callbackUrl(request: IHttpRequest, provider: string): string {
-  return `${request.protocol}://${request.headers.host}${OAUTH.callbackPath(provider)}`;
+  return `${requestOrigin(request)}${OAUTH.callbackPath(provider)}`;
 }
 
 /**
@@ -248,6 +226,7 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
               redirectCookie.platform,
               redirectCookie.extensionId,
               extensionOAuthIds,
+              requestOrigin(req),
             )
           : undefined;
         const loginError = (slug: OAuthErrorSlug): string =>
@@ -372,6 +351,16 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
           getCradle().logger.error(`OAuth login failed for ${provider}`, err);
           res.redirect(loginError(loginErrorSlug(err)));
         }
+      },
+    },
+    {
+      method: 'GET',
+      path: ROUTES.EXTENSION_OAUTH_DONE,
+      handler: async (_req, res) => {
+        for (const [name, value] of Object.entries(EXTENSION_OAUTH_DONE_PAGE.HEADERS)) {
+          res.header(name, value);
+        }
+        res.status(200).send(EXTENSION_OAUTH_DONE_PAGE.HTML);
       },
     },
   ];

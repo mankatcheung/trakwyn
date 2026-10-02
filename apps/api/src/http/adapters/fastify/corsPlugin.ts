@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import cors from '@fastify/cors';
 import type { FastifyInstance } from 'fastify';
 import { ENV } from '#src/infrastructure/config/constants.js';
+import { EXTENSION_ORIGIN_SCHEMES } from '#src/http/constants.js';
 
 export default fp(async function corsPlugin(fastify: FastifyInstance) {
   const allowedOrigins = process.env[ENV.CORS_ORIGIN]
@@ -10,8 +11,11 @@ export default fp(async function corsPlugin(fastify: FastifyInstance) {
   await fastify.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      // Allow browser extension requests
-      if (origin.startsWith('chrome-extension://')) return cb(null, true);
+      // Allow browser extension requests: the Trakwyn Clipper in Chrome, and
+      // in Safari (JEF-386)
+      if (EXTENSION_ORIGIN_SCHEMES.some((scheme) => origin.startsWith(scheme))) {
+        return cb(null, true);
+      }
       // Allow explicit origins from CORS_ORIGIN env var (comma-separated)
       if (allowedOrigins.includes(origin)) return cb(null, true);
       // Allow Vercel preview deployments (*.vercel.app)

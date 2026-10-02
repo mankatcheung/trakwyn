@@ -1,12 +1,16 @@
+import { browser } from 'wxt/browser';
 import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
 import { createPkcePair } from './pkce';
 import {
   OAuthCancelledError,
   buildOAuthStartUrl,
+  buildTabOAuthStartUrl,
   isUserCancellation,
   oauthErrorMessage,
   parseOAuthRedirect,
+  tabOAuthDoneUrl,
 } from './oauth';
+import { runTabOAuth } from './tabOAuth';
 import {
   API_ERROR_CODES,
   AUTH_HEADER,
@@ -86,7 +90,7 @@ async function gql<T>(
 async function authedGql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   let auth = await getAuth();
   if (auth && Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
-    await chrome.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
+    await browser.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
     auth = await getAuth();
   }
   if (!auth) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
@@ -157,27 +161,52 @@ export async function login(email: string, password: string): Promise<void> {
   await storeTokens({ accessToken, refreshToken });
 }
 
-/**
- * Google/GitHub sign-in (JEF-383). Runs in the background service worker: the
- * popup closes when Chrome's sign-in window takes focus.
- *
- * The API finishes the provider round-trip and redirects to this extension's
- * `chromiumapp.org` URL with a short-lived handoff code, which only this
- * login's PKCE verifier can redeem.
- */
-export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
-  const { verifier, challenge } = await createPkcePair();
-  const startUrl = buildOAuthStartUrl(await getApiUrl(), provider, challenge, chrome.runtime.id);
+/** Chrome has it; Safari has no `identity` API and signs in in a tab. */
+function supportsWebAuthFlow(): boolean {
+  return typeof browser.identity?.launchWebAuthFlow === 'function';
+}
 
+async function runWebAuthFlow(startUrl: string): Promise<string> {
   let redirectUrl: string | undefined;
   try {
-    redirectUrl = await chrome.identity.launchWebAuthFlow({ url: startUrl, interactive: true });
+    redirectUrl = await browser.identity.launchWebAuthFlow({ url: startUrl, interactive: true });
   } catch (err) {
     if (isUserCancellation(err)) throw new OAuthCancelledError();
     throw new Error("Couldn't open the sign-in window. Check the API URL and try again.");
   }
   if (!redirectUrl) throw new OAuthCancelledError();
+  return redirectUrl;
+}
 
+/**
+ * Google/GitHub sign-in. Runs in the background worker: the popup closes when
+ * the sign-in window or tab takes focus.
+ *
+ * The API finishes the provider round-trip and hands back a short-lived
+ * handoff code, which only this login's PKCE verifier can redeem:
+ * - Chrome (JEF-383): to this extension's `chromiumapp.org` URL, through
+ *   `launchWebAuthFlow`.
+ * - Safari (JEF-386): to a fixed page on the API's origin, in a tab (see
+ *   tabOAuth.ts).
+ */
+export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
+  const { verifier, challenge } = await createPkcePair();
+  const apiUrl = await getApiUrl();
+  const redirectUrl = supportsWebAuthFlow()
+    ? await runWebAuthFlow(buildOAuthStartUrl(apiUrl, provider, challenge, browser.runtime.id))
+    : await runTabOAuth(
+        buildTabOAuthStartUrl(apiUrl, provider, challenge),
+        tabOAuthDoneUrl(apiUrl),
+        verifier,
+      );
+  await redeemOAuthRedirect(redirectUrl, verifier);
+}
+
+/**
+ * Turns the API's redirect into a stored session: an error slug becomes a
+ * thrown error, and a handoff code is redeemed with `verifier`.
+ */
+export async function redeemOAuthRedirect(redirectUrl: string, verifier: string): Promise<void> {
   const result = parseOAuthRedirect(redirectUrl);
   if ('error' in result) {
     if (result.error === OAUTH.CANCELLED_SLUG) throw new OAuthCancelledError();

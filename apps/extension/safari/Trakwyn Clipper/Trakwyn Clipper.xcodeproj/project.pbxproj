@@ -1,0 +1,605 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 110;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9CAB2368306D648F00E611E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAB2367306D648F00E611E5 /* AppDelegate.swift */; };
+		9CAB236C306D648F00E611E5 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB236A306D648F00E611E5 /* Main.html */; };
+		9CAB236E306D648F00E611E5 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB236D306D648F00E611E5 /* Icon.png */; };
+		9CAB2370306D648F00E611E5 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB236F306D648F00E611E5 /* Style.css */; };
+		9CAB2372306D648F00E611E5 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2371306D648F00E611E5 /* Script.js */; };
+		9CAB2374306D648F00E611E5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAB2373306D648F00E611E5 /* ViewController.swift */; };
+		9CAB2377306D648F00E611E5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2375306D648F00E611E5 /* Main.storyboard */; };
+		9CAB2379306D649000E611E5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2378306D649000E611E5 /* Assets.xcassets */; };
+		9CAB2380306D649000E611E5 /* Trakwyn Clipper Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9CAB237F306D649000E611E5 /* Trakwyn Clipper Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9CAB2385306D649000E611E5 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAB2384306D649000E611E5 /* SafariWebExtensionHandler.swift */; };
+		9CAB2399306D649000E611E5 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2391306D649000E611E5 /* background.js */; };
+		9CAB239A306D649000E611E5 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2392306D649000E611E5 /* popup.html */; };
+		9CAB239B306D649000E611E5 /* chunks in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2393306D649000E611E5 /* chunks */; };
+		9CAB239C306D649000E611E5 /* content-scripts in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2394306D649000E611E5 /* content-scripts */; };
+		9CAB239D306D649000E611E5 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2395306D649000E611E5 /* icons */; };
+		9CAB239E306D649000E611E5 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2396306D649000E611E5 /* manifest.json */; };
+		9CAB239F306D649000E611E5 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2397306D649000E611E5 /* options.html */; };
+		9CAB23A0306D649000E611E5 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2398306D649000E611E5 /* assets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9CAB2381306D649000E611E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9CAB235C306D648F00E611E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9CAB237E306D649000E611E5;
+			remoteInfo = "Trakwyn Clipper Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9CAB238C306D649000E611E5 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				9CAB2380306D649000E611E5 /* Trakwyn Clipper Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		9CAB2364306D648F00E611E5 /* Trakwyn Clipper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Trakwyn Clipper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CAB2367306D648F00E611E5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9CAB236B306D648F00E611E5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		9CAB236D306D648F00E611E5 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		9CAB236F306D648F00E611E5 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		9CAB2371306D648F00E611E5 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		9CAB2373306D648F00E611E5 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		9CAB2376306D648F00E611E5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		9CAB2378306D649000E611E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9CAB237A306D649000E611E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9CAB237F306D649000E611E5 /* Trakwyn Clipper Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Trakwyn Clipper Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CAB2384306D649000E611E5 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		9CAB2386306D649000E611E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9CAB2391306D649000E611E5 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = "../../../.output/safari-mv3/background.js"; sourceTree = "<group>"; };
+		9CAB2392306D649000E611E5 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = "../../../.output/safari-mv3/popup.html"; sourceTree = "<group>"; };
+		9CAB2393306D649000E611E5 /* chunks */ = {isa = PBXFileReference; lastKnownFileType = folder; name = chunks; path = "../../../.output/safari-mv3/chunks"; sourceTree = "<group>"; };
+		9CAB2394306D649000E611E5 /* content-scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "content-scripts"; path = "../../../.output/safari-mv3/content-scripts"; sourceTree = "<group>"; };
+		9CAB2395306D649000E611E5 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = "../../../.output/safari-mv3/icons"; sourceTree = "<group>"; };
+		9CAB2396306D649000E611E5 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = "../../../.output/safari-mv3/manifest.json"; sourceTree = "<group>"; };
+		9CAB2397306D649000E611E5 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = "../../../.output/safari-mv3/options.html"; sourceTree = "<group>"; };
+		9CAB2398306D649000E611E5 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = "../../../.output/safari-mv3/assets"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9CAB2361306D648F00E611E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		9CAB237C306D649000E611E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9CAB235B306D648F00E611E5 = {
+			isa = PBXGroup;
+			children = (
+				9CAB2366306D648F00E611E5 /* Trakwyn Clipper */,
+				9CAB2383306D649000E611E5 /* Trakwyn Clipper Extension */,
+				9CAB2365306D648F00E611E5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9CAB2365306D648F00E611E5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9CAB2364306D648F00E611E5 /* Trakwyn Clipper.app */,
+				9CAB237F306D649000E611E5 /* Trakwyn Clipper Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9CAB2366306D648F00E611E5 /* Trakwyn Clipper */ = {
+			isa = PBXGroup;
+			children = (
+				9CAB2367306D648F00E611E5 /* AppDelegate.swift */,
+				9CAB2373306D648F00E611E5 /* ViewController.swift */,
+				9CAB2375306D648F00E611E5 /* Main.storyboard */,
+				9CAB2378306D649000E611E5 /* Assets.xcassets */,
+				9CAB237A306D649000E611E5 /* Info.plist */,
+				9CAB2369306D648F00E611E5 /* Resources */,
+			);
+			path = "Trakwyn Clipper";
+			sourceTree = "<group>";
+		};
+		9CAB2369306D648F00E611E5 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9CAB236A306D648F00E611E5 /* Main.html */,
+				9CAB236D306D648F00E611E5 /* Icon.png */,
+				9CAB236F306D648F00E611E5 /* Style.css */,
+				9CAB2371306D648F00E611E5 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		9CAB2383306D649000E611E5 /* Trakwyn Clipper Extension */ = {
+			isa = PBXGroup;
+			children = (
+				9CAB2390306D649000E611E5 /* Resources */,
+				9CAB2384306D649000E611E5 /* SafariWebExtensionHandler.swift */,
+				9CAB2386306D649000E611E5 /* Info.plist */,
+			);
+			path = "Trakwyn Clipper Extension";
+			sourceTree = "<group>";
+		};
+		9CAB2390306D649000E611E5 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9CAB2391306D649000E611E5 /* background.js */,
+				9CAB2392306D649000E611E5 /* popup.html */,
+				9CAB2393306D649000E611E5 /* chunks */,
+				9CAB2394306D649000E611E5 /* content-scripts */,
+				9CAB2395306D649000E611E5 /* icons */,
+				9CAB2396306D649000E611E5 /* manifest.json */,
+				9CAB2397306D649000E611E5 /* options.html */,
+				9CAB2398306D649000E611E5 /* assets */,
+			);
+			name = Resources;
+			path = "Trakwyn Clipper Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9CAB2363306D648F00E611E5 /* Trakwyn Clipper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9CAB238D306D649000E611E5 /* Build configuration list for PBXNativeTarget "Trakwyn Clipper" */;
+			buildPhases = (
+				9CAB2360306D648F00E611E5 /* Sources */,
+				9CAB2361306D648F00E611E5 /* Frameworks */,
+				9CAB2362306D648F00E611E5 /* Resources */,
+				9CAB238C306D649000E611E5 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9CAB2382306D649000E611E5 /* PBXTargetDependency */,
+			);
+			name = "Trakwyn Clipper";
+			productName = "Trakwyn Clipper";
+			productReference = 9CAB2364306D648F00E611E5 /* Trakwyn Clipper.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9CAB237E306D649000E611E5 /* Trakwyn Clipper Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9CAB2389306D649000E611E5 /* Build configuration list for PBXNativeTarget "Trakwyn Clipper Extension" */;
+			buildPhases = (
+				9CAB237B306D649000E611E5 /* Sources */,
+				9CAB237C306D649000E611E5 /* Frameworks */,
+				9CAB237D306D649000E611E5 /* Resources */,
+			);
+			buildRules = (
+			);
+			name = "Trakwyn Clipper Extension";
+			productName = "Trakwyn Clipper Extension";
+			productReference = 9CAB237F306D649000E611E5 /* Trakwyn Clipper Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9CAB235C306D648F00E611E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					9CAB2363306D648F00E611E5 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					9CAB237E306D649000E611E5 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = 9CAB235F306D648F00E611E5 /* Build configuration list for PBXProject "Trakwyn Clipper" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9CAB235B306D648F00E611E5;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9CAB2365306D648F00E611E5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9CAB2363306D648F00E611E5 /* Trakwyn Clipper */,
+				9CAB237E306D649000E611E5 /* Trakwyn Clipper Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9CAB2362306D648F00E611E5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				9CAB236E306D648F00E611E5 /* Icon.png in Resources */,
+				9CAB2377306D648F00E611E5 /* Main.storyboard in Resources */,
+				9CAB2372306D648F00E611E5 /* Script.js in Resources */,
+				9CAB236C306D648F00E611E5 /* Main.html in Resources */,
+				9CAB2379306D649000E611E5 /* Assets.xcassets in Resources */,
+				9CAB2370306D648F00E611E5 /* Style.css in Resources */,
+			);
+		};
+		9CAB237D306D649000E611E5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				9CAB239F306D649000E611E5 /* options.html in Resources */,
+				9CAB23A0306D649000E611E5 /* assets in Resources */,
+				9CAB239B306D649000E611E5 /* chunks in Resources */,
+				9CAB2399306D649000E611E5 /* background.js in Resources */,
+				9CAB239A306D649000E611E5 /* popup.html in Resources */,
+				9CAB239D306D649000E611E5 /* icons in Resources */,
+				9CAB239E306D649000E611E5 /* manifest.json in Resources */,
+				9CAB239C306D649000E611E5 /* content-scripts in Resources */,
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9CAB2360306D648F00E611E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				9CAB2374306D648F00E611E5 /* ViewController.swift in Sources */,
+				9CAB2368306D648F00E611E5 /* AppDelegate.swift in Sources */,
+			);
+		};
+		9CAB237B306D649000E611E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				9CAB2385306D649000E611E5 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9CAB2382306D649000E611E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9CAB237E306D649000E611E5 /* Trakwyn Clipper Extension */;
+			targetProxy = 9CAB2381306D649000E611E5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		9CAB236A306D648F00E611E5 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9CAB236B306D648F00E611E5 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		9CAB2375306D648F00E611E5 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9CAB2376306D648F00E611E5 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		9CAB2387306D649000E611E5 /* Debug configuration for PBXProject "Trakwyn Clipper" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9CAB2388306D649000E611E5 /* Release configuration for PBXProject "Trakwyn Clipper" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		9CAB238A306D649000E611E5 /* Debug configuration for PBXNativeTarget "Trakwyn Clipper Extension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Trakwyn Clipper Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Trakwyn Clipper Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trakwyn.clipper.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9CAB238B306D649000E611E5 /* Release configuration for PBXNativeTarget "Trakwyn Clipper Extension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Trakwyn Clipper Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Trakwyn Clipper Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trakwyn.clipper.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9CAB238E306D649000E611E5 /* Debug configuration for PBXNativeTarget "Trakwyn Clipper" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Trakwyn Clipper/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Trakwyn Clipper";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSViewGestureRecognizerIsExclusive = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trakwyn.clipper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9CAB238F306D649000E611E5 /* Release configuration for PBXNativeTarget "Trakwyn Clipper" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Trakwyn Clipper/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Trakwyn Clipper";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSViewGestureRecognizerIsExclusive = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trakwyn.clipper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9CAB235F306D648F00E611E5 /* Build configuration list for PBXProject "Trakwyn Clipper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CAB2387306D649000E611E5 /* Debug configuration for PBXProject "Trakwyn Clipper" */,
+				9CAB2388306D649000E611E5 /* Release configuration for PBXProject "Trakwyn Clipper" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		9CAB2389306D649000E611E5 /* Build configuration list for PBXNativeTarget "Trakwyn Clipper Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CAB238A306D649000E611E5 /* Debug configuration for PBXNativeTarget "Trakwyn Clipper Extension" */,
+				9CAB238B306D649000E611E5 /* Release configuration for PBXNativeTarget "Trakwyn Clipper Extension" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		9CAB238D306D649000E611E5 /* Build configuration list for PBXNativeTarget "Trakwyn Clipper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CAB238E306D649000E611E5 /* Debug configuration for PBXNativeTarget "Trakwyn Clipper" */,
+				9CAB238F306D649000E611E5 /* Release configuration for PBXNativeTarget "Trakwyn Clipper" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9CAB235C306D648F00E611E5 /* Project object */;
+	validationLevel = 1;
+}
