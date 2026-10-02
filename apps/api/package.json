@@ -62,7 +62,7 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "fastify": "^5.12.4",
+    "fastify": "^5.12.5",
     "fastify-plugin": "^5.1.0",
     "graphql": "^16.14.2",
     "import-in-the-middle": "^3.5.1",
