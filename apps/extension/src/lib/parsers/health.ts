@@ -25,13 +25,13 @@ export interface ParserHealthProperties {
 /**
  * The properties to report a parse with, or `null` when it went well.
  *
- * Reported: a known board whose own parser found nothing, or whose result
- * lacks a field a clip needs. Not reported: a healthy parse (that would be
- * usage analytics, which the Clipper does not collect) and pages that are
- * not on a known board.
+ * Reported: a job's page on a known board whose own parser found nothing, or
+ * whose result lacks a field a clip needs. Not reported: a healthy parse
+ * (that would be usage analytics, which the Clipper does not collect), a
+ * page that is not a single job (search results), and unknown boards.
  */
 export function parserHealthProperties(health: ParserHealth): ParserHealthProperties | null {
-  if (health.board === UNKNOWN_JOB_BOARD) return null;
+  if (health.board === UNKNOWN_JOB_BOARD || !health.onJobPage) return null;
   const missingRequired = REQUIRED_JOB_FIELDS.some((field) => health.missingFields.includes(field));
   if (!health.siteParserFailed && !missingRequired) return null;
   return {

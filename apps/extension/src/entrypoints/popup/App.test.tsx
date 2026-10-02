@@ -206,6 +206,7 @@ describe('popup App — error reporting (JEF-387)', () => {
       jobData: null,
       parserHealth: {
         board: 'linkedin',
+        onJobPage: true,
         parser: 'none',
         siteParserFailed: true,
         missingFields: ['company', 'role', 'description'],
@@ -228,6 +229,7 @@ describe('popup App — error reporting (JEF-387)', () => {
       jobData: { company: 'Monument', role: 'Engineer', jobUrl: 'https://example.com/1' },
       parserHealth: {
         board: 'linkedin',
+        onJobPage: true,
         parser: 'linkedin',
         siteParserFailed: false,
         missingFields: ['description'],

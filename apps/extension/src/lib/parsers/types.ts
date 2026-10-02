@@ -18,6 +18,13 @@ export type ParserName = 'linkedin' | 'indeed' | 'generic' | 'none';
  */
 export interface ParserHealth {
   board: JobBoard;
+  /**
+   * The URL is a single job's page, as far as the board's parser can tell.
+   * A search page or a careers home page has nothing to parse, and that is
+   * not a fault. Boards without a parser of their own cannot tell, so they
+   * count as job pages.
+   */
+  onJobPage: boolean;
   parser: ParserName;
   /** The board has its own parser and it found no job, so `generic` ran instead. */
   siteParserFailed: boolean;

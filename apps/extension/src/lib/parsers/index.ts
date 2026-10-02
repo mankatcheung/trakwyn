@@ -5,17 +5,24 @@ import {
   type ParsedJobPage,
   type ParserName,
 } from './types';
-import { parseLinkedIn } from './linkedin';
-import { parseIndeed } from './indeed';
+import { isLinkedInJobPage, parseLinkedIn } from './linkedin';
+import { isIndeedJobPage, parseIndeed } from './indeed';
 import { parseGeneric } from './generic';
 import { jobBoardOf } from './health';
 
 export type { JobData };
 
+interface SiteParser {
+  name: ParserName;
+  parse: () => JobData | null;
+  /** Whether the URL names one job, so that finding none is a fault. */
+  isJobPage: () => boolean;
+}
+
 /** The boards with a parser of their own. Every other board gets `generic`. */
-const SITE_PARSERS: Partial<Record<string, { name: ParserName; parse: () => JobData | null }>> = {
-  linkedin: { name: 'linkedin', parse: parseLinkedIn },
-  indeed: { name: 'indeed', parse: parseIndeed },
+const SITE_PARSERS: Partial<Record<string, SiteParser>> = {
+  linkedin: { name: 'linkedin', parse: parseLinkedIn, isJobPage: isLinkedInJobPage },
+  indeed: { name: 'indeed', parse: parseIndeed, isJobPage: isIndeedJobPage },
 };
 
 function missingFields(jobData: JobData | null): JobField[] {
@@ -38,6 +45,7 @@ export function parseJobPage(): ParsedJobPage {
     jobData,
     parserHealth: {
       board,
+      onJobPage: siteParser?.isJobPage() ?? true,
       parser,
       siteParserFailed: siteParser !== undefined && fromSite === null,
       missingFields: missingFields(jobData),

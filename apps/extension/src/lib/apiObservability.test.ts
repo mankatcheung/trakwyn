@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, getCurrentUser, login, refreshToken } from './api';
 import { clearAuth, getAuth } from './storage';
-import { captureEvent, wasReported } from './observability/report';
+import { captureEvent, captureException, wasReported } from './observability/report';
 import { getLastTraceId } from './observability/traceContext';
 import { OBSERVABILITY_EVENTS } from '../constants';
 
@@ -16,6 +16,7 @@ vi.mock('./storage', () => ({
 vi.mock('./observability/report', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./observability/report')>()),
   captureEvent: vi.fn(async () => undefined),
+  captureException: vi.fn(async () => undefined),
 }));
 
 const fetchMock = vi.fn();
@@ -43,6 +44,7 @@ function eventsNamed(name: string): Array<Record<string, unknown>> {
 beforeEach(() => {
   fetchMock.mockReset();
   vi.mocked(captureEvent).mockClear();
+  vi.mocked(captureException).mockClear();
   vi.stubGlobal('fetch', fetchMock);
   vi.mocked(getAuth).mockResolvedValue({
     token: 'tok',
@@ -104,7 +106,8 @@ describe('transport failures', () => {
 
     const err = await getCurrentUser().catch((e: unknown) => e);
 
-    expect((err as Error).message).toMatch(/didn't answer as expected/);
+    // An outage, so the user is not sent to check their API URL.
+    expect((err as Error).message).toMatch(/having trouble/);
     expect(eventsNamed(OBSERVABILITY_EVENTS.GRAPHQL_REQUEST_FAILED)).toEqual([
       { status: 502, operation: 'Me', trace_id: getLastTraceId() },
     ]);
@@ -175,6 +178,30 @@ describe('refreshToken', () => {
     await refreshToken();
 
     expect(JSON.stringify(vi.mocked(captureEvent).mock.calls)).not.toContain('rt-secret-value');
+  });
+
+  it('sends a bug in the refresh itself to Error Tracking with its stack', async () => {
+    // A token the API returned that is not a JWT.
+    respond(200, { data: { refreshTokenMobile: { accessToken: 'nope', refreshToken: 'r2' } } });
+
+    await expect(refreshToken()).resolves.toBe(false);
+
+    expect(eventsNamed(OBSERVABILITY_EVENTS.TOKEN_REFRESH_FAILED)).toEqual([
+      { reason: 'unexpected' },
+    ]);
+    expect(captureException).toHaveBeenCalledExactlyOnceWith(expect.any(Error), {
+      action: 'token_refresh',
+    });
+  });
+
+  it('does not call a wrong API URL a rejected token', async () => {
+    respondWithHtml(404);
+
+    await refreshToken();
+
+    expect(eventsNamed(OBSERVABILITY_EVENTS.TOKEN_REFRESH_FAILED)).toEqual([
+      { reason: 'unexpected' },
+    ]);
   });
 
   it('reports nothing when there is no session to refresh', async () => {

@@ -123,7 +123,7 @@ Tell them apart by `$lib = trakwyn-extension`. `context` is `background`, `popup
 | `oauth_login_failed`     | A Google or GitHub sign-in ended in an error. A cancel is not one. | `reason` (the API's error slug, or a cause), `provider`.   |
 | `parser_result`          | A known job board's page gave the parsers less than a clip needs.  | `board`, `parser`, `site_parser_failed`, `missing_fields`. |
 
-`trace_id` finds the request's trace in Axiom. A rise in `parser_result` for one `board` means that site changed its markup; some are expected at any time, because a search results page with no job open also has nothing to parse.
+`trace_id` finds the request's trace in Axiom. A rise in `parser_result` for one `board` means that site changed its markup. On LinkedIn and Indeed it is sent only when the URL names a job (a search page with no job open has nothing to parse); the other boards have no such check, so a few from their non-job pages are normal.
 
 **Why no consent gate.** The same reasoning as the server-side errors: these are operational reports about the extension, not analytics about a person, and they carry nothing that identifies one. `$process_person_profile: false`, a random `distinct_id` per event (nothing is stored on the device to link two reports), `$geoip_disable`, and `anonymize_ips` on the project. They never hold a token, the email, the OAuth handoff code, GraphQL variables, job content or a page URL: `parser_result` names the board, not the hostname, and every message and stack passes the same scrubber as the web app's. Only faults are sent. Counting clips or sign-ins would be product analytics and would need a consent decision first.
 

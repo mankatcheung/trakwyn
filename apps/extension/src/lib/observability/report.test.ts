@@ -189,6 +189,15 @@ describe('with VITE_POSTHOG_KEY', () => {
     expect(captures()[0].body.properties).not.toHaveProperty('release');
   });
 
+  it('sends untimed where AbortSignal.timeout does not exist', async () => {
+    vi.stubGlobal('AbortSignal', {});
+
+    await captureEvent(OBSERVABILITY_EVENTS.PARSER_RESULT);
+
+    expect(captures()).toHaveLength(1);
+    expect(captures()[0].init.signal).toBeUndefined();
+  });
+
   describe('initObservability', () => {
     it('reports uncaught errors and unhandled rejections as unhandled', async () => {
       initObservability(EXTENSION_CONTEXTS.POPUP);
@@ -209,6 +218,19 @@ describe('with VITE_POSTHOG_KEY', () => {
         return entry.value;
       });
       expect(values).toEqual(['uncaught', 'rejected']);
+    });
+
+    it('listens once however often it is called', async () => {
+      initObservability(EXTENSION_CONTEXTS.POPUP);
+      initObservability(EXTENSION_CONTEXTS.POPUP);
+      const before = fetchMock.mock.calls.length;
+
+      // No `error` object, so the WeakSet cannot be what dedupes this.
+      globalThis.dispatchEvent(new ErrorEvent('error', { message: 'Script error.' }));
+      await vi.waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(fetchMock.mock.calls.length).toBe(before + 1);
     });
   });
 });

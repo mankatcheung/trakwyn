@@ -75,6 +75,28 @@ describe('buildExceptionList', () => {
     expect(entry.stacktrace?.frames).toHaveLength(3);
   });
 
+  it('keeps every frame of a long stack, and scrubs each one', () => {
+    // Far past the scrubber's per-string clip, as any real stack is.
+    const lines = Array.from(
+      { length: 30 },
+      (_, index) =>
+        `    at step${index} (chrome-extension://abcdefghijklmnopabcdefghijklmnop/chunks/popup-BxYz.js:${index + 1}:7)`,
+    );
+    const error = new Error('boom');
+    error.stack = [
+      'Error: boom',
+      '    at redeem (https://abc.chromiumapp.org/?code=handoff-123:1:2)',
+      ...lines,
+    ].join('\n');
+
+    const frames = buildExceptionList(error, true)[0].stacktrace?.frames ?? [];
+
+    expect(frames).toHaveLength(31);
+    expect(frames[0]).toMatchObject({ function: 'step29', lineno: 30, colno: 7, in_app: true });
+    expect(JSON.stringify(frames)).not.toContain('handoff-123');
+    expect(JSON.stringify(frames)).not.toContain('clipped');
+  });
+
   it('omits the stacktrace when there are no frames', () => {
     const error = new Error('boom');
     error.stack = undefined;

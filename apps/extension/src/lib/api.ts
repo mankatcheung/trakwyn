@@ -11,12 +11,13 @@ import {
   tabOAuthDoneUrl,
 } from './oauth';
 import { runTabOAuth } from './tabOAuth';
-import { captureEvent, markReported, wasReported } from './observability/report';
+import { captureEvent, captureException, markReported, wasReported } from './observability/report';
 import { newTraceContext, rememberTraceId } from './observability/traceContext';
 import { operationName, transportFailureProperties } from './observability/transportFailure';
 import {
   API_ERROR_CODES,
   AUTH_HEADER,
+  HTTP_SERVER_ERROR_MIN,
   OAUTH,
   OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
@@ -61,6 +62,7 @@ export function isUnauthorizedError(err: unknown): boolean {
 
 const UNREADABLE_RESPONSE =
   "The API didn't answer as expected. Check the API URL in the extension's options and try again.";
+const SERVER_UNAVAILABLE = 'Trakwyn is having trouble right now. Please try again in a moment.';
 
 interface TokenPair {
   accessToken: string;
@@ -112,7 +114,10 @@ async function gql<T>(
   }
   // An unreadable answer is usually a mistyped API URL: shown, not reported,
   // unless it is a 5xx. Readable JSON with no data is a bug either way.
-  if (!json) throw failed(new ApiError(UNREADABLE_RESPONSE), res.status);
+  if (!json) {
+    const outage = res.status >= HTTP_SERVER_ERROR_MIN;
+    throw failed(new ApiError(outage ? SERVER_UNAVAILABLE : UNREADABLE_RESPONSE), res.status);
+  }
   if (!json.data) throw failed(new Error('No data returned'), res.status);
   return json.data;
 }
@@ -278,11 +283,14 @@ async function doRefresh(): Promise<boolean> {
   } catch (err) {
     // Until JEF-387 this signed the user out without a trace. `transport` is
     // the API unreachable or 5xx (also reported by `gql`, with the trace id);
-    // `rejected` is the API refusing the token.
+    // `rejected` is the API refusing the token; `unexpected` is a bug, so
+    // its stack goes to Error Tracking as well.
+    const reason = refreshFailureReason(err);
     void captureEvent(OBSERVABILITY_EVENTS.TOKEN_REFRESH_FAILED, {
-      reason: refreshFailureReason(err),
+      reason,
       ...(err instanceof ApiError && err.code ? { code: err.code } : {}),
     });
+    if (reason === 'unexpected') void captureException(err, { action: 'token_refresh' });
     await clearAuth();
     return false;
   }
@@ -290,7 +298,9 @@ async function doRefresh(): Promise<boolean> {
 
 function refreshFailureReason(err: unknown): 'transport' | 'rejected' | 'unexpected' {
   if (wasReported(err)) return 'transport';
-  return err instanceof ApiError ? 'rejected' : 'unexpected';
+  // Only a coded error is the API's own answer; an unreadable response
+  // (a wrong API URL) is not the API rejecting anything.
+  return err instanceof ApiError && err.code ? 'rejected' : 'unexpected';
 }
 
 /**

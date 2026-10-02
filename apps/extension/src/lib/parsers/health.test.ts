@@ -42,6 +42,7 @@ describe('parseJobPage', () => {
     expect(jobData?.company).toBe('Monument');
     expect(parserHealth).toEqual({
       board: 'linkedin',
+      onJobPage: true,
       parser: 'linkedin',
       siteParserFailed: false,
       missingFields: [],
@@ -77,6 +78,30 @@ describe('parseJobPage', () => {
     });
   });
 
+  it.each([
+    [
+      'https://www.linkedin.com/jobs/search/?keywords=engineer',
+      'a LinkedIn search with no job open',
+    ],
+    ['https://uk.indeed.com/jobs?q=engineer', 'an Indeed search with no job open'],
+  ])('does not flag %s (%s)', (url) => {
+    visit(url, '<div>nothing here</div>');
+
+    const { parserHealth } = parseJobPage();
+
+    expect(parserHealth).toMatchObject({ onJobPage: false, siteParserFailed: true });
+    expect(parserHealthProperties(parserHealth)).toBeNull();
+  });
+
+  it('flags a job selected in a search split pane that the parser cannot read', () => {
+    visit('https://uk.indeed.com/jobs?q=engineer&vjk=abc123', '<div>nothing here</div>');
+
+    expect(parserHealthProperties(parseJobPage().parserHealth)).toMatchObject({
+      board: 'indeed',
+      site_parser_failed: true,
+    });
+  });
+
   it('does not flag a generic board for a missing description alone', () => {
     visit('https://jobs.lever.co/acme/1', '<h1>Staff Engineer</h1>');
 
@@ -101,6 +126,7 @@ describe('parserHealthProperties', () => {
     expect(
       parserHealthProperties({
         board: 'other',
+        onJobPage: true,
         parser: 'none',
         siteParserFailed: false,
         missingFields: ['company', 'role', 'description'],

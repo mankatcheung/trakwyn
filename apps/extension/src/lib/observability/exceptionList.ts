@@ -74,12 +74,16 @@ function parseFrame(line: string): StackFrame | undefined {
 /**
  * A stack as PostHog frames: outermost first, innermost last (both engines
  * print the reverse), at most `STACK_FRAME_LIMIT` of the innermost ones.
+ *
+ * Each line is scrubbed before it is parsed, so a frame cannot carry what
+ * the text would not. Per line, not the stack as a whole: the scrubber clips
+ * long strings, which would cut a real stack off after four or five frames.
  */
 export function parseStack(stack: string): StackFrame[] {
   // `slice` returns a fresh array, so `reverse` mutates nothing shared.
   return stack
     .split('\n')
-    .map(parseFrame)
+    .map((line) => parseFrame(scrubString(line)))
     .filter((parsed): parsed is StackFrame => parsed !== undefined)
     .slice(0, STACK_FRAME_LIMIT)
     .reverse();
@@ -88,14 +92,13 @@ export function parseStack(stack: string): StackFrame[] {
 /**
  * One entry per report: the error's type, message and stack, each through
  * the scrubber. A message quotes the value that broke, and that value can be
- * an email or a token. The stack is scrubbed as text before it is parsed, so
- * a frame cannot carry what the text would not. A non-Error throw reports
- * its type only, never its value.
+ * an email or a token. A non-Error throw reports its type only, never its
+ * value.
  */
 export function buildExceptionList(error: unknown, handled: boolean): ExceptionEntry[] {
   const mechanism = { type: 'generic', handled, synthetic: false } as const;
   if (error instanceof Error) {
-    const frames = error.stack ? parseStack(scrubString(error.stack)) : [];
+    const frames = error.stack ? parseStack(error.stack) : [];
     return [
       {
         type: error.name,

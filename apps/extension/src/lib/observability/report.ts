@@ -35,6 +35,7 @@ interface CaptureConfig {
 }
 
 let context: ExtensionContext | undefined;
+let listening = false;
 
 /** Errors already reported, so an outer layer does not report the same one again. */
 const reported = new WeakSet<object>();
@@ -95,7 +96,12 @@ async function send(event: string, build: () => Properties): Promise<void> {
       // The popup closes under a pending request (it does when a sign-in
       // window opens); `keepalive` lets the report outlive it.
       keepalive: true,
-      signal: AbortSignal.timeout(OBSERVABILITY.SEND_TIMEOUT_MS),
+      // Without `AbortSignal.timeout` (an old Safari) the report is sent
+      // untimed rather than dropped by the `catch` below.
+      signal:
+        typeof AbortSignal.timeout === 'function'
+          ? AbortSignal.timeout(OBSERVABILITY.SEND_TIMEOUT_MS)
+          : undefined,
     });
   } catch {
     // Dropped. See the file header.
@@ -141,6 +147,9 @@ export function captureException(
  */
 export function initObservability(extensionContext: ExtensionContext): void {
   context = extensionContext;
+  // Once per JS context, however often this is called.
+  if (listening) return;
+  listening = true;
   globalThis.addEventListener('error', (event) => {
     const { error, message } = event as ErrorEvent;
     void captureException(error ?? new Error(message), {}, false);
