@@ -5,7 +5,7 @@ Guidance for Claude Code in this repository. Subsystem detail lives next to the 
 - `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, database, observability, use-case spans, deployment and testing.
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
 - `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
-- `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, and OAuth sign-in per browser.
+- `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, OAuth sign-in per browser, and error reporting to PostHog.
 - Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's Blob store; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
 
 ## Commands

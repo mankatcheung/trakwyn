@@ -6,6 +6,7 @@ import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
 import { ApiError, getCurrentUser, logout } from '../../lib/api';
 import { getAuth } from '../../lib/storage';
+import { captureEvent, captureException } from '../../lib/observability/report';
 
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
@@ -22,6 +23,11 @@ vi.mock('../../lib/api', async (importOriginal) => {
     getCurrentUser: vi.fn(),
   };
 });
+
+vi.mock('../../lib/observability/report', () => ({
+  captureEvent: vi.fn(async () => undefined),
+  captureException: vi.fn(async () => undefined),
+}));
 
 const user = {
   id: 'u1',
@@ -190,5 +196,67 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
     expect(rendered.container.querySelector('.error-box')?.textContent).toBe(
       'That linked account no longer exists.',
     );
+  });
+});
+
+describe('popup App — error reporting (JEF-387)', () => {
+  it('reports a job board page the parsers could not read', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
+      jobData: null,
+      parserHealth: {
+        board: 'linkedin',
+        onJobPage: true,
+        parser: 'none',
+        siteParserFailed: true,
+        missingFields: ['company', 'role', 'description'],
+      },
+    });
+
+    rendered = await render(<App />);
+
+    expect(captureEvent).toHaveBeenCalledExactlyOnceWith('parser_result', {
+      board: 'linkedin',
+      parser: 'none',
+      site_parser_failed: true,
+      missing_fields: ['company', 'role', 'description'],
+    });
+  });
+
+  it('reports nothing for a healthy parse, and none of the job itself', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
+      jobData: { company: 'Monument', role: 'Engineer', jobUrl: 'https://example.com/1' },
+      parserHealth: {
+        board: 'linkedin',
+        onJobPage: true,
+        parser: 'linkedin',
+        siteParserFailed: false,
+        missingFields: ['description'],
+      },
+    });
+
+    rendered = await render(<App />);
+
+    expect(rendered.container.textContent).toContain('Monument');
+    expect(captureEvent).not.toHaveBeenCalled();
+  });
+
+  it('reports a failure it did not expect', async () => {
+    const bug = new TypeError("Cannot read properties of undefined (reading 'id')");
+    vi.mocked(getCurrentUser).mockRejectedValue(bug);
+
+    rendered = await render(<App />);
+
+    expect(captureException).toHaveBeenCalledExactlyOnceWith(bug, { action: 'load_account' });
+    expect(rendered.container.querySelector('.error-text')).not.toBeNull();
+  });
+
+  it('does not report the API saying no', async () => {
+    vi.mocked(getCurrentUser).mockRejectedValue(new ApiError('Boom', 'INTERNAL_ERROR'));
+
+    rendered = await render(<App />);
+
+    expect(captureException).not.toHaveBeenCalled();
   });
 });

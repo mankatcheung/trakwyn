@@ -3,18 +3,23 @@ import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
 import { createPkcePair } from './pkce';
 import {
   OAuthCancelledError,
+  OAuthFailedError,
   buildOAuthStartUrl,
   buildTabOAuthStartUrl,
   isUserCancellation,
-  oauthErrorMessage,
   parseOAuthRedirect,
   tabOAuthDoneUrl,
 } from './oauth';
 import { runTabOAuth } from './tabOAuth';
+import { captureEvent, captureException, markReported, wasReported } from './observability/report';
+import { newTraceContext, rememberTraceId } from './observability/traceContext';
+import { operationName, transportFailureProperties } from './observability/transportFailure';
 import {
   API_ERROR_CODES,
   AUTH_HEADER,
+  HTTP_SERVER_ERROR_MIN,
   OAUTH,
+  OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
   RUNTIME_MESSAGES,
   type OAuthProvider,
@@ -36,7 +41,11 @@ export interface CurrentUser {
   avatarUrl: string | null;
 }
 
-/** A GraphQL error, carrying the API's `extensions.code` when it sent one. */
+/**
+ * An answer from the API that says no: a GraphQL error, carrying the API's
+ * `extensions.code` when it sent one. It is the API working, so it is shown
+ * to the user and not reported as a fault (JEF-387).
+ */
 export class ApiError extends Error {
   readonly code: string | undefined;
 
@@ -51,6 +60,10 @@ export function isUnauthorizedError(err: unknown): boolean {
   return err instanceof ApiError && err.code === API_ERROR_CODES.UNAUTHORIZED;
 }
 
+const UNREADABLE_RESPONSE =
+  "The API didn't answer as expected. Check the API URL in the extension's options and try again.";
+const SERVER_UNAVAILABLE = 'Trakwyn is having trouble right now. Please try again in a moment.';
+
 interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -62,24 +75,50 @@ async function gql<T>(
   token?: string,
 ): Promise<T> {
   const apiUrl = await getApiUrl();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const operation = operationName(query);
+  // Each request is the root of its own trace in Axiom (JEF-387).
+  const { traceId, traceparent } = newTraceContext();
+  rememberTraceId(traceId);
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', traceparent };
   if (token) headers['Authorization'] = `${AUTH_HEADER.BEARER_PREFIX}${token}`;
 
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables }),
-  });
+  /** Reports an unreachable API or a 5xx, and marks `err` so no caller reports it again. */
+  const failed = <E>(err: E, status: number | null): E => {
+    const properties = transportFailureProperties(status, operation, traceId);
+    if (properties) {
+      void captureEvent(OBSERVABILITY_EVENTS.GRAPHQL_REQUEST_FAILED, { ...properties });
+      markReported(err);
+    }
+    return err;
+  };
 
-  const json = (await res.json()) as {
+  let res: Response;
+  try {
+    res = await fetch(apiUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables }),
+    });
+  } catch (err) {
+    throw failed(err, null);
+  }
+
+  // A 5xx from a proxy, or a wrong API URL, answers with HTML rather than JSON.
+  const json = (await res.json().catch(() => null)) as {
     data?: T;
     errors?: Array<{ message: string; extensions?: { code?: string } }>;
-  };
-  if (json.errors?.length) {
+  } | null;
+  if (json?.errors?.length) {
     const [first] = json.errors;
-    throw new ApiError(first.message, first.extensions?.code);
+    throw failed(new ApiError(first.message, first.extensions?.code), res.status);
   }
-  if (!json.data) throw new Error('No data returned');
+  // An unreadable answer is usually a mistyped API URL: shown, not reported,
+  // unless it is a 5xx. Readable JSON with no data is a bug either way.
+  if (!json) {
+    const outage = res.status >= HTTP_SERVER_ERROR_MIN;
+    throw failed(new ApiError(outage ? SERVER_UNAVAILABLE : UNREADABLE_RESPONSE), res.status);
+  }
+  if (!json.data) throw failed(new Error('No data returned'), res.status);
   return json.data;
 }
 
@@ -152,12 +191,12 @@ export async function login(email: string, password: string): Promise<void> {
   }>(LOGIN, { email, password });
 
   if (data.loginMobile.totpRequired) {
-    throw new Error(
+    throw new ApiError(
       "This account has two-factor authentication enabled, which the extension doesn't support yet — log in on the web app instead.",
     );
   }
   const { accessToken, refreshToken } = data.loginMobile;
-  if (!accessToken || !refreshToken) throw new Error('Login failed');
+  if (!accessToken || !refreshToken) throw new ApiError('Login failed');
   await storeTokens({ accessToken, refreshToken });
 }
 
@@ -210,7 +249,7 @@ export async function redeemOAuthRedirect(redirectUrl: string, verifier: string)
   const result = parseOAuthRedirect(redirectUrl);
   if ('error' in result) {
     if (result.error === OAUTH.CANCELLED_SLUG) throw new OAuthCancelledError();
-    throw new Error(oauthErrorMessage(result.error));
+    throw new OAuthFailedError(result.error);
   }
 
   const data = await gql<{ exchangeMobileOAuthCode: TokenPair }>(EXCHANGE_OAUTH_CODE, {
@@ -241,10 +280,27 @@ async function doRefresh(): Promise<boolean> {
     });
     await storeTokens(data.refreshTokenMobile);
     return true;
-  } catch {
+  } catch (err) {
+    // Until JEF-387 this signed the user out without a trace. `transport` is
+    // the API unreachable or 5xx (also reported by `gql`, with the trace id);
+    // `rejected` is the API refusing the token; `unexpected` is a bug, so
+    // its stack goes to Error Tracking as well.
+    const reason = refreshFailureReason(err);
+    void captureEvent(OBSERVABILITY_EVENTS.TOKEN_REFRESH_FAILED, {
+      reason,
+      ...(err instanceof ApiError && err.code ? { code: err.code } : {}),
+    });
+    if (reason === 'unexpected') void captureException(err, { action: 'token_refresh' });
     await clearAuth();
     return false;
   }
+}
+
+function refreshFailureReason(err: unknown): 'transport' | 'rejected' | 'unexpected' {
+  if (wasReported(err)) return 'transport';
+  // Only a coded error is the API's own answer; an unreadable response
+  // (a wrong API URL) is not the API rejecting anything.
+  return err instanceof ApiError && err.code ? 'rejected' : 'unexpected';
 }
 
 /**

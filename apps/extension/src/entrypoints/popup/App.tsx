@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
 import { getAuth, getApiUrl } from '../../lib/storage';
 import {
+  ApiError,
   login,
   logout,
   createApplication,
@@ -9,11 +10,14 @@ import {
   isUnauthorizedError,
   type CurrentUser,
 } from '../../lib/api';
-import type { JobData } from '../../lib/parsers/types';
+import type { JobData, ParsedJobPage } from '../../lib/parsers/types';
+import { parserHealthProperties } from '../../lib/parsers/health';
+import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
   CONTENT_MESSAGES,
   OAUTH_PROVIDERS,
+  OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
   RUNTIME_MESSAGES,
   type OAuthProvider,
@@ -32,14 +36,26 @@ async function readActiveTabJobData(): Promise<JobData | null> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return null;
   try {
-    const response = await browser.tabs.sendMessage(tab.id, {
+    const response: Partial<ParsedJobPage> | undefined = await browser.tabs.sendMessage(tab.id, {
       type: CONTENT_MESSAGES.GET_JOB_DATA,
     });
+    // A job board whose markup changed shows up as a spike of these (JEF-387).
+    const unhealthy = response?.parserHealth && parserHealthProperties(response.parserHealth);
+    if (unhealthy) void captureEvent(OBSERVABILITY_EVENTS.PARSER_RESULT, { ...unhealthy });
     return response?.jobData ?? null;
   } catch {
     // No content script on this page — there's no job data to clip
     return null;
   }
+}
+
+/**
+ * Reports a failure the popup did not expect (JEF-387). An `ApiError` is the
+ * API answering (a wrong password, a validation message), and an unreachable
+ * API was already reported by `gql`, which `captureException` knows.
+ */
+function reportUnexpected(err: unknown, action: string): void {
+  if (!(err instanceof ApiError)) void captureException(err, { action });
 }
 
 export function App() {
@@ -83,6 +99,7 @@ export function App() {
         setScreen({ type: 'login' });
         return;
       }
+      reportUnexpected(err, 'load_account');
       setScreen({
         type: 'error',
         message: err instanceof Error ? err.message : 'Failed to load your account',
@@ -96,6 +113,7 @@ export function App() {
       await login(email, password);
       await loadReadyScreen();
     } catch (err) {
+      reportUnexpected(err, 'login');
       setScreen({ type: 'login', error: err instanceof Error ? err.message : 'Login failed' });
     }
   }
@@ -144,6 +162,7 @@ export function App() {
         role: app.role,
       });
     } catch (err) {
+      reportUnexpected(err, 'save_application');
       setScreen({ type: 'error', message: err instanceof Error ? err.message : 'Failed to save' });
     }
   }

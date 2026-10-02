@@ -11,6 +11,14 @@ export class OAuthCancelledError extends Error {
   }
 }
 
+/** The API ended the sign-in with an error slug (a closed set, never free text). */
+export class OAuthFailedError extends Error {
+  constructor(readonly slug: string) {
+    super(oauthErrorMessage(slug));
+    this.name = 'OAuthFailedError';
+  }
+}
+
 function oauthStartUrl(
   apiUrl: string,
   provider: OAuthProvider,

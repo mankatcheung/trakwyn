@@ -3,8 +3,15 @@ import { browser } from 'wxt/browser';
 import { getAuth } from '../lib/storage';
 import { loginWithOAuth, redeemOAuthRedirect, refreshToken } from '../lib/api';
 import { OAuthCancelledError } from '../lib/oauth';
+import { reportOAuthFailure } from '../lib/oauthReporting';
 import { registerTabOAuthListeners } from '../lib/tabOAuth';
-import { REFRESH_LEEWAY_MS, RUNTIME_MESSAGES, type OAuthProvider } from '../constants';
+import { initObservability } from '../lib/observability/report';
+import {
+  EXTENSION_CONTEXTS,
+  REFRESH_LEEWAY_MS,
+  RUNTIME_MESSAGES,
+  type OAuthProvider,
+} from '../constants';
 
 /** What the popup gets back from an OAUTH_LOGIN message. */
 export type OAuthLoginResponse = { ok: true } | { ok: false; cancelled: boolean; error?: string };
@@ -20,6 +27,7 @@ async function handleOAuthLogin(provider: OAuthProvider): Promise<OAuthLoginResp
     return { ok: true };
   } catch (err) {
     if (err instanceof OAuthCancelledError) return { ok: false, cancelled: true };
+    reportOAuthFailure(err, provider);
     return {
       ok: false,
       cancelled: false,
@@ -37,8 +45,10 @@ async function finishOrphanedTabLogin(redirectUrl: string, verifier: string): Pr
   try {
     await redeemOAuthRedirect(redirectUrl, verifier);
     await scheduleRefresh();
-  } catch {
-    // The next popup shows the sign-in screen, which is all a failure here means.
+  } catch (err) {
+    // The next popup shows the sign-in screen, which is all the user sees of
+    // a failure here. The provider was only known to the lost background.
+    reportOAuthFailure(err);
   }
 }
 
@@ -61,6 +71,8 @@ async function scheduleRefresh() {
 }
 
 export default defineBackground(() => {
+  initObservability(EXTENSION_CONTEXTS.BACKGROUND);
+
   // Registered synchronously so a restarted background still receives them.
   browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
     if (message.type === RUNTIME_MESSAGES.OAUTH_LOGIN) return handleOAuthLogin(message.provider);

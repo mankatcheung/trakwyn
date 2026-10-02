@@ -99,6 +99,11 @@ function parseLegacy(): JobData | null {
   };
 }
 
+/** A job is open: on its own page, or selected in the search split pane. */
+export function isLinkedInJobPage(): boolean {
+  return extractJobId() !== null;
+}
+
 export function parseLinkedIn(): JobData | null {
   const jobId = extractJobId();
   if (jobId) {

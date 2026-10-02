@@ -1,5 +1,11 @@
 import type { JobData } from './types';
 
+/** `/viewjob?jk=…`, or a job selected in the search split pane (`?vjk=…`). */
+export function isIndeedJobPage(): boolean {
+  const { pathname, search } = window.location;
+  return pathname.startsWith('/viewjob') || new URLSearchParams(search).has('vjk');
+}
+
 export function parseIndeed(): JobData | null {
   const role =
     (

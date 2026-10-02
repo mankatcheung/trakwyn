@@ -20,7 +20,9 @@ export default defineContentScript({
     // Safari's `browser.runtime.onMessage` does not honour reliably.
     browser.runtime.onMessage.addListener((message: { type?: string }) => {
       if (message.type !== CONTENT_MESSAGES.GET_JOB_DATA) return undefined;
-      return Promise.resolve({ jobData: parseJobPage() });
+      // The content script reports nothing itself: the popup decides whether
+      // `parserHealth` is worth a report (JEF-387).
+      return Promise.resolve(parseJobPage());
     });
   },
 });
