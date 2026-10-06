@@ -9,8 +9,9 @@ name: Mobile E2E (iOS)
 # label to it.
 #
 # It lives in its own file rather than as another job in ci.yml because ci.yml
-# deploys: a scheduled run there would match `github.ref == 'refs/heads/main'`
-# and ship production every night.
+# deploys. Its deploy jobs are gated to pushes to main, so a schedule there
+# would no longer ship production, but a nightly trigger does not belong in the
+# deploy workflow, and every other job in it would run each night too.
 #
 # Free on GitHub's hosted runners while mankatcheung/trakwyn is public —
 # including macos, which is otherwise the metered one.
@@ -42,7 +43,10 @@ jobs:
     # package dependencies; macos-26 ships Xcode 26, selected explicitly below
     # so an image update cannot move it underneath us.
     runs-on: macos-26
-    timeout-minutes: 60
+    # The Xcode build alone has taken 30-39 minutes and once ran past 59, at
+    # which point a 60-minute limit cancelled the job before any flow ran.
+    # The rest of the job needs about 15 minutes.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -165,6 +169,24 @@ jobs:
       # cost so the timed flows below do not pay it.
       - name: Warm up the simulator
         run: maestro test apps/mobile/.maestro/warm-up/first-launch.yml
+
+      # The API has sat idle for the whole Xcode build by now, and on this
+      # runner its first sign-up afterwards has taken 18s or more, longer than
+      # a flow waits. The launch above never makes the API write anything, so
+      # do one throwaway sign-up here, with the mutation the app itself sends
+      # (RegisterMobile in src/auth/AuthContext.tsx).
+      - name: Warm up the API
+        run: |
+          response=$(curl -sS --max-time 120 -w '\n%{time_total}s' \
+            -H 'Content-Type: application/json' \
+            -d '{"query":"mutation RegisterMobile($email: String!, $password: String!) { registerMobile(email: $email, password: $password) { accessToken } }","variables":{"email":"warm-up@example.com","password":"CorrectHorseBatteryStaple1!"}}' \
+            http://localhost:3001/graphql)
+          echo "$response" | tail -n 1
+          if ! echo "$response" | grep -q '"accessToken"'; then
+            echo "::error::the warm-up sign-up did not return a token"
+            echo "$response"
+            exit 1
+          fi
 
       - name: Run the Maestro flows
         # android-only: flows that cannot pass on iOS yet, each naming the issue

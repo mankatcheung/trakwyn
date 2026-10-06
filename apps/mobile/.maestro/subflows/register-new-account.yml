@@ -13,13 +13,10 @@ appId: com.trakwyn.app
 - evalScript: ${output.email = 'e2e-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com'}
 - evalScript: ${output.password = 'CorrectHorseBatteryStaple1!'}
 
-# A cold launch on a CI emulator can take longer than assertVisible's
-# default wait before the first screen draws: a slow Android run has shown a
-# blank screen 30s in.
-- extendedWaitUntil:
-    visible:
-      id: 'login-email-input'
-    timeout: 60000
+# launch-signed-out.yml has already waited for this screen (and relaunched if
+# it never came), so this is only the subflow stating what it starts from.
+- assertVisible:
+    id: 'login-email-input'
 - tapOn:
     id: 'login-register-link'
 
