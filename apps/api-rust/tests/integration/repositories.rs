@@ -312,3 +312,40 @@ mod transactions {
         assert_eq!(seen, 1);
     }
 }
+
+mod transaction_manager {
+    use super::*;
+    use trakwyn_api::infrastructure::db::transaction_manager::PgTransactionManager;
+    use trakwyn_api::use_cases::ports::transaction_manager::in_transaction;
+
+    #[tokio::test]
+    async fn commits_and_returns_the_works_value() {
+        let db = seeded().await;
+        let notes = PgNoteRepository::new(db.clone());
+        let transactions = PgTransactionManager::new(db);
+
+        let created = in_transaction(&transactions, async {
+            notes.create(note_data("note-1", "app-1")).await
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(notes.find_by_id("note-1").await.unwrap(), Some(created));
+    }
+
+    #[tokio::test]
+    async fn rolls_back_when_the_work_fails() {
+        let db = seeded().await;
+        let notes = PgNoteRepository::new(db.clone());
+        let transactions = PgTransactionManager::new(db);
+
+        let result: DomainResult<()> = in_transaction(&transactions, async {
+            notes.create(note_data("note-1", "app-1")).await?;
+            Err(DomainError::conflict("changed my mind"))
+        })
+        .await;
+
+        assert!(result.is_err());
+        assert_eq!(notes.find_by_id("note-1").await.unwrap(), None);
+    }
+}

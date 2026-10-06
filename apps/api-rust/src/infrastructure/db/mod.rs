@@ -8,6 +8,7 @@
 
 pub mod migrations;
 pub mod repositories;
+pub mod transaction_manager;
 
 use std::future::Future;
 use std::ops::{Deref, DerefMut};

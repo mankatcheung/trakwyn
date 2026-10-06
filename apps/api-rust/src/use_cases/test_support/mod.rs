@@ -6,8 +6,10 @@ mod activity_logs;
 mod applications;
 mod infrastructure;
 mod notes;
+mod transactions;
 
 pub use activity_logs::FakeActivityLogRepository;
 pub use applications::{application_owned_by, FakeApplicationRepository};
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
 pub use notes::FakeNoteRepository;
+pub use transactions::FakeTransactionManager;

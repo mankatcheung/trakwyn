@@ -6,6 +6,7 @@ pub mod application_repository;
 pub mod note_repository;
 pub mod session_blocklist;
 pub mod token_service;
+pub mod transaction_manager;
 
 pub use activity_log_repository::{ActivityLogRepository, AppendActivityLogData};
 pub use application_repository::ApplicationRepository;
