@@ -1,8 +1,16 @@
-# Launches the app from a clean slate: no data, no session.
+# Launches the app from a clean slate (no data, no session) and waits for
+# the sign-in screen.
 #
 # On iOS, clearState reinstalls the app but leaves the Keychain alone, and the
 # Keychain is where expo-secure-store keeps the session, so the next flow
 # opened signed in as the previous flow's user. clearKeychain is iOS-only.
+#
+# The launch is retried because on Android it can lose a race with the
+# previous flow's cleanup: clearState starts the new process and, 30ms later,
+# ActivityManager kills it while removing the old task ("Killing ... remove
+# task", then "failed to attach" in logcat). Nothing restarts it, and the flow
+# sits on a blank screen however long it waits. A second launch has no old
+# task left to race with.
 appId: com.trakwyn.app
 ---
 - runFlow:
@@ -10,5 +18,12 @@ appId: com.trakwyn.app
       platform: iOS
     commands:
       - clearKeychain
-- launchApp:
-    clearState: true
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          clearState: true
+      - extendedWaitUntil:
+          visible:
+            id: 'login-email-input'
+          timeout: 30000

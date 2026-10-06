@@ -9,8 +9,9 @@ name: Mobile E2E (iOS)
 # label to it.
 #
 # It lives in its own file rather than as another job in ci.yml because ci.yml
-# deploys: a scheduled run there would match `github.ref == 'refs/heads/main'`
-# and ship production every night.
+# deploys. Its deploy jobs are gated to pushes to main, so a schedule there
+# would no longer ship production, but a nightly trigger does not belong in the
+# deploy workflow, and every other job in it would run each night too.
 #
 # Free on GitHub's hosted runners while mankatcheung/trakwyn is public —
 # including macos, which is otherwise the metered one.

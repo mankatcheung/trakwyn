@@ -8,8 +8,5 @@
 # the flows' timings.
 appId: com.trakwyn.app
 ---
+# The subflow waits for the sign-in screen itself, relaunching if it has to.
 - runFlow: ../subflows/launch-signed-out.yml
-- extendedWaitUntil:
-    visible:
-      id: 'login-email-input'
-    timeout: 120000

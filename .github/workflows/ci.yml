@@ -436,7 +436,13 @@ jobs:
   migrate-db:
     name: Run database migrations
     needs: [quality, build-test, e2e]
-    if: github.ref == 'refs/heads/main'
+    # A push to main, and nothing else. The ref alone is not enough: for a
+    # pull request that has already been merged, GitHub reports the base
+    # branch as github.ref, so a pull_request run that starts just after its
+    # PR merges would pass `github.ref == 'refs/heads/main'` and deploy. That
+    # happened once (#933), bypassing the push `paths` filter above. The
+    # three jobs below repeat the same condition.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -452,7 +458,7 @@ jobs:
   deploy-api:
     name: Deploy api to Cloud Run
     needs: [quality, build-test, migrate-db, e2e]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -505,7 +511,7 @@ jobs:
   deploy-web:
     name: Deploy web to Vercel
     needs: [quality, build-test, e2e]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -521,7 +527,7 @@ jobs:
   notify-deploy:
     name: Notify production deploy via ntfy
     needs: [deploy-api, deploy-web]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Notify via ntfy
