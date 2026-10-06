@@ -2,7 +2,6 @@
   "expo": {
     "name": "Trakwyn",
     "slug": "trakwyn",
-    "version": "1.0.0",
     "scheme": "trakwyn",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

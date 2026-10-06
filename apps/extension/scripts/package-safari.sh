@@ -38,9 +38,16 @@ xcrun safari-web-extension-packager "$BUNDLE_DIR" \
 # The packager names the extension "$BUNDLE_ID.Extension" but derives the
 # app's ID from its name, which Xcode then rejects: an embedded extension's ID
 # must start with its app's. Give the app $BUNDLE_ID itself.
+#
+# The packager also stamps its own MARKETING_VERSION (1.0). The Clipper's
+# version is package.json's, the one release-please bumps (JEF-389), so the
+# app and the manifest inside it report the same number.
 readonly PBXPROJ="$PROJECT_DIR/Trakwyn Clipper/Trakwyn Clipper.xcodeproj/project.pbxproj"
+VERSION="$(node -p "require('./package.json').version")"
+readonly VERSION
 sed -i '' -E \
-  "s/PRODUCT_BUNDLE_IDENTIFIER = \"[^\"]*Trakwyn-Clipper\";/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/" \
+  -e "s/PRODUCT_BUNDLE_IDENTIFIER = \"[^\"]*Trakwyn-Clipper\";/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/" \
+  -e "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $VERSION;/" \
   "$PBXPROJ"
 
 echo "Xcode project: apps/extension/$PROJECT_DIR/Trakwyn Clipper/Trakwyn Clipper.xcodeproj"

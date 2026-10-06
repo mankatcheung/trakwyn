@@ -1,0 +1,5 @@
+{
+  "apps/extension": "1.0.0",
+  "apps/mobile": "0.1.0",
+  "apps/cli": "0.0.1"
+}

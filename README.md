@@ -214,6 +214,15 @@ cd apps/web && pnpm codegen
 
 See [CLAUDE.md](./CLAUDE.md) for architecture details and development conventions.
 
+## Releases
+
+The API and web app deploy on every merge to `main` and are identified by commit SHA. The browser extension, the mobile app and the CLI are versioned with [release-please](https://github.com/googleapis/release-please):
+
+- A package with unreleased `fix` or `feat` commits on `main` has an open release PR, kept up to date on every merge. The version bump and changelog come from the commit titles (`fix` is a patch, `feat` a minor, `!` a major).
+- Merging a release PR tags the release (for example `clipper-v1.1.0`) and creates a GitHub Release.
+
+Versions live in each package's `package.json` and are never edited by hand.
+
 ## License
 
 [AGPL-3.0](./LICENSE)
