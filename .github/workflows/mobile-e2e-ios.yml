@@ -1,0 +1,186 @@
+name: Mobile E2E (iOS)
+
+# The same seven Maestro flows as the Android job in ci.yml, on a simulator.
+#
+# Kept out of the per-PR path on purpose (JEF-300, D-2): an iOS build is Xcode's
+# to do and macOS runners queue longer, so this job costs an estimated 20-30
+# minutes against Android's 12-18. Android blocks every pull request; iOS runs
+# nightly, and can be pulled into any single PR by adding the `run-ios-e2e`
+# label to it.
+#
+# It lives in its own file rather than as another job in ci.yml because ci.yml
+# deploys: a scheduled run there would match `github.ref == 'refs/heads/main'`
+# and ship production every night.
+#
+# Free on GitHub's hosted runners while mankatcheung/trakwyn is public —
+# including macos, which is otherwise the metered one.
+
+on:
+  schedule:
+    # 03:00 UTC, after the day's merges have settled.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-e2e-ios:
+    name: Mobile E2E (iOS simulator)
+    # On a pull request this runs only when asked for by name; on a schedule or
+    # a manual dispatch it always runs.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-ios-e2e')
+    # Pinned, not macos-latest: every run regenerates the native project from
+    # scratch, so the Xcode version is part of this job's contract (R-4).
+    # macos-15 tops out at Xcode 16.x, which cannot resolve Expo SDK 57's
+    # package dependencies; macos-26 ships Xcode 26, selected explicitly below
+    # so an image update cannot move it underneath us.
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+
+      - uses: ./.github/actions/setup-project
+
+      # PGlite commits with fsync, and on this runner's virtual disk every
+      # write-heavy request (registration above all) took 13-17s against well
+      # under 1s on the Linux runner with the same API, long enough to outlast
+      # both Maestro's wait and the app's 20s request timeout. A RAM disk takes
+      # the disk out of it; the migrate step and the API both use this path.
+      - name: Put the E2E database on a RAM disk
+        run: |
+          device=$(hdiutil attach -nomount ram://2097152 | awk '{print $1}')
+          diskutil erasevolume APFS trakwyn-e2e "$device"
+
+      - name: Configure ephemeral E2E environment
+        run: |
+          cat > apps/api/.env <<'EOF'
+          PORT=3001
+          NODE_ENV=development
+          DATABASE_URL=pglite:/Volumes/trakwyn-e2e/pglite
+          JWT_SECRET=e2e-only-jwt-secret
+          JWT_REFRESH_SECRET=e2e-only-refresh-secret
+          TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
+          LLM_API_KEY_ENCRYPTION_KEY=e2e-only-llm-encryption-key
+          STORAGE_PROVIDER=local
+          CACHE_PROVIDER=memory
+          EMAIL_PROVIDER=console
+          CORS_ORIGIN=http://localhost:3000
+          WEB_APP_ORIGIN=http://localhost:3000
+          API_ORIGIN=http://localhost:3001
+          COOKIE_DOMAIN=
+          GOOGLE_OAUTH_CLIENT_ID=e2e-fake-google-client-id
+          GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
+          OAUTH_PROVIDER_MODE=fake
+          LLM_PROVIDER_MODE=fake
+          EOF
+
+      - name: Run database migrations
+        run: pnpm --filter @trakwyn/api db:migrate:apply
+
+      - name: Start the API
+        run: |
+          pnpm --filter @trakwyn/api dev > "${{ runner.temp }}/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf -X POST -H 'content-type: application/json' \
+              -d '{"query":"{ __typename }"}' http://localhost:3001/graphql >/dev/null; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::the API never answered on :3001"
+          cat "${{ runner.temp }}/api.log"
+          exit 1
+
+      # A simulator shares the host's network, so unlike the Android job this
+      # one reaches the API on plain localhost. That difference is the whole
+      # reason the two platforms need two builds: src/constants.ts's
+      # EXPO_PUBLIC_API_URL is inlined by Metro at build time, not read at
+      # launch, so it cannot be switched afterwards.
+      #
+      # `expo run:ios` does prebuild, pod install, the Xcode build, and the
+      # install onto a booted simulator in one command — the pieces that would
+      # otherwise be four brittle steps of xcodebuild and simctl.
+      - name: Build and install on a simulator
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:3001/graphql
+        # After installing, `expo run:ios` also opens the app through
+        # `simctl openurl`, which has timed out on a busy runner (code 60)
+        # after a good build and install. Maestro launches the app itself, so
+        # only that last part is allowed to fail: the step still fails unless
+        # the app is really installed, and a fresh runner has nothing
+        # installed beforehand.
+        run: |
+          if ! pnpm exec expo run:ios --configuration Release --no-bundler; then
+            echo "::warning::expo run:ios exited non-zero; checking whether the app was installed anyway"
+          fi
+          xcrun simctl get_app_container booted com.trakwyn.app
+
+      # iOS spots a sign-up form (an email and two secure fields) and swaps the
+      # keyboard for its "Automatic Strong Password" view, which swallows what
+      # Maestro types: the register flow ended with a short password and an
+      # empty confirmation. Turn Password AutoFill off in the simulator's
+      # configuration profile, the setting Settings > Passwords writes, and
+      # reboot so it takes effect. Real users keep AutoFill; only this
+      # throwaway simulator loses it. Which of these plists exist depends on
+      # the iOS runtime, so every one that does is updated.
+      - name: Turn off Password AutoFill on the simulator
+        run: |
+          udid=$(xcrun simctl list devices booted -j | jq -r '[.devices[][] | select(.state == "Booted")][0].udid')
+          dir="$HOME/Library/Developer/CoreSimulator/Devices/$udid/data/Containers/Shared/SystemGroup/systemgroup.com.apple.configurationprofiles/Library/ConfigurationProfiles"
+          updated=0
+          for f in UserSettings.plist EffectiveUserSettings.plist PublicInfo/PublicEffectiveUserSettings.plist; do
+            if [ -f "$dir/$f" ]; then
+              plutil -replace restrictedBool.allowPasswordAutoFill.value -bool NO "$dir/$f"
+              updated=1
+            fi
+          done
+          if [ "$updated" != 1 ]; then
+            echo "::error::no configuration profile plist under $dir"
+            exit 1
+          fi
+          xcrun simctl shutdown "$udid"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # See the flow's header: absorbs the simulator's and Maestro's first-run
+      # cost so the timed flows below do not pay it.
+      - name: Warm up the simulator
+        run: maestro test apps/mobile/.maestro/warm-up/first-launch.yml
+
+      - name: Run the Maestro flows
+        # android-only: flows that cannot pass on iOS yet, each naming the issue
+        # that will lift it (06: JEF-377).
+        run: maestro test apps/mobile/.maestro --exclude-tags android-only --debug-output "${{ runner.temp }}/maestro-debug"
+
+      - name: Upload Maestro artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios
+          # Maestro writes its screenshots and hierarchy dumps under a hidden
+          # .maestro/tests/ tree, which upload-artifact skips by default (the
+          # Android job in ci.yml has the same setting).
+          include-hidden-files: true
+          path: |
+            ${{ runner.temp }}/maestro-debug/
+            ${{ runner.temp }}/api.log
+          if-no-files-found: ignore
