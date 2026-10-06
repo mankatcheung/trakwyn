@@ -43,7 +43,10 @@ jobs:
     # package dependencies; macos-26 ships Xcode 26, selected explicitly below
     # so an image update cannot move it underneath us.
     runs-on: macos-26
-    timeout-minutes: 60
+    # The Xcode build alone has taken 30-39 minutes and once ran past 59, at
+    # which point a 60-minute limit cancelled the job before any flow ran.
+    # The rest of the job needs about 15 minutes.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
