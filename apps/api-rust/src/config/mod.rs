@@ -2,8 +2,29 @@
 //!
 //! The variable names are the ones `apps/api` reads, so one `.env` serves
 //! either implementation.
+//!
+//! Each area of infrastructure has its own module here holding a config
+//! struct with a `from_lookup(get)` constructor, so nothing outside `config`
+//! reads an environment variable.
+
+pub mod auth;
+pub mod cache;
+pub mod email;
+pub mod llm;
+pub mod net;
+pub mod push;
+pub mod storage;
 
 use std::env;
+
+/// A name → value source for configuration: the process environment in
+/// production, a map in tests.
+pub type EnvLookup<'a> = &'a dyn Fn(&str) -> Option<String>;
+
+/// The variable's value, with a blank one treated as unset.
+pub fn non_empty(get: EnvLookup<'_>, name: &str) -> Option<String> {
+    get(name).filter(|value| !value.trim().is_empty())
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {

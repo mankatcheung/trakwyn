@@ -9,3 +9,9 @@ src/infrastructure/db/repositories/mod.rs merge=union
 src/http/di/mod.rs merge=union
 src/http/routes/mod.rs merge=union
 tests/integration/main.rs merge=union
+
+# Constants are appended as self-contained `pub mod <area> { ... }` blocks,
+# and dependencies as single lines, so the same holds for these.
+src/use_cases/constants.rs merge=union
+src/http/constants.rs merge=union
+Cargo.toml merge=union

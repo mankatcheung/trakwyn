@@ -3,7 +3,9 @@
 
 pub mod activity_log_repository;
 pub mod application_repository;
+pub mod logger;
 pub mod note_repository;
+pub mod outbound_url_policy;
 pub mod session_blocklist;
 pub mod token_service;
 pub mod transaction_manager;
