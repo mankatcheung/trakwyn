@@ -7,7 +7,7 @@ Loaded when working under `apps/extension`, the Trakwyn Clipper. Paths below are
 One source, one MV3 manifest per browser, from `wxt.config.ts`. Entrypoints are in `src/entrypoints/` (`popup/`, `options/`, `background.ts`, `content.ts`); shared code is in `src/lib/`. Content-script `matches` live in `content.ts`'s `defineContentScript`, not the config.
 
 ```bash
-pnpm dev             # build + watch Chrome into .output/chrome-mv3-dev (no browser launch)
+pnpm dev             # build + watch Chrome into .output/chrome-mv3-dev (no browser launch); dev server on :3002
 pnpm build           # Chrome  -> .output/chrome-mv3
 pnpm build:safari    # Safari  -> .output/safari-mv3
 pnpm package:safari  # build:safari, then (re)generate the Xcode project in safari/
