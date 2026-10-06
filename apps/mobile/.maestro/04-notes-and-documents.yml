@@ -43,7 +43,12 @@ appId: com.trakwyn.app
 - tapOn: '.*${output.company}.*'
 
 # The detail screen is an index of sections (JEF-303); each row drills into
-# its own screen.
+# its own screen. The Health score card above the index loads a moment after
+# the rows and pushes them down, so wait for it first: a tap aimed at the
+# Notes row's old position landed on the card and expanded it instead.
+- assertVisible:
+    id: 'health-score-card'
+- waitForAnimationToEnd
 - tapOn:
     id: 'section-index-notes'
 
