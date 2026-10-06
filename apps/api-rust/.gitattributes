@@ -1,0 +1,11 @@
+# Registry files hold only single-line `mod` / `pub use` statements (see
+# CLAUDE.md), so two branches that each add a line can keep both.
+src/domain/mod.rs merge=union
+src/use_cases/mod.rs merge=union
+src/use_cases/ports/mod.rs merge=union
+src/use_cases/test_support/mod.rs merge=union
+src/infrastructure/mod.rs merge=union
+src/infrastructure/db/repositories/mod.rs merge=union
+src/http/di/mod.rs merge=union
+src/http/routes/mod.rs merge=union
+tests/integration/main.rs merge=union

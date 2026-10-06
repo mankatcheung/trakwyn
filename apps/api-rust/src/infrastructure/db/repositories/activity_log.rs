@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::unknown_value;
+use super::support::unknown_value;
 use crate::domain::activity_log::{ActivityEventType, ActivityLog};
 use crate::infrastructure::db::Db;
 use crate::use_cases::clock::now;
