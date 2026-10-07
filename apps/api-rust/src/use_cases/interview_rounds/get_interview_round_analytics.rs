@@ -50,7 +50,7 @@ fn median(counts: &[i32]) -> Option<f64> {
     let mut sorted = counts.to_vec();
     sorted.sort_unstable();
     let mid = sorted.len() / 2;
-    Some(if sorted.len() % 2 == 0 {
+    Some(if sorted.len().is_multiple_of(2) {
         (f64::from(sorted[mid - 1]) + f64::from(sorted[mid])) / 2.0
     } else {
         f64::from(sorted[mid])

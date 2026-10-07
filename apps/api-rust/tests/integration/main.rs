@@ -6,9 +6,12 @@
 
 mod common;
 
+mod contacts;
 mod http;
+mod interview_rounds;
 mod migrations;
 mod notes;
+mod offers;
 mod repositories;
 mod repositories_applications;
 mod repositories_auth;

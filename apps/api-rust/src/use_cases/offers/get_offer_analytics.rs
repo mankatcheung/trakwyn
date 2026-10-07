@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -43,7 +44,7 @@ fn median(salaries: &[f64]) -> f64 {
     let mut sorted = salaries.to_vec();
     sorted.sort_by(f64::total_cmp);
     let mid = sorted.len() / 2;
-    if sorted.len() % 2 == 0 {
+    if sorted.len().is_multiple_of(2) {
         (sorted[mid - 1] + sorted[mid]) / 2.0
     } else {
         sorted[mid]
@@ -123,7 +124,7 @@ impl GetOfferAnalyticsUseCase {
                 average_yearly_salary: average(&salaries),
             })
             .collect();
-        by_currency.sort_by(|a, b| b.count.cmp(&a.count));
+        by_currency.sort_by_key(|stat| Reverse(stat.count));
 
         Ok(OfferAnalytics { trend, by_currency })
     }

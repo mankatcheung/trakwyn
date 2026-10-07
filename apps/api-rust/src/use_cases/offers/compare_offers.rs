@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::sync::Arc;
 
 use super::normalize::normalize_to_yearly;
@@ -60,7 +61,7 @@ impl CompareOffersUseCase {
         }
 
         // Highest total first; a stable sort, so ties keep the order asked for.
-        comparisons.sort_by(|a, b| b.total_compensation.cmp(&a.total_compensation));
+        comparisons.sort_by_key(|comparison| Reverse(comparison.total_compensation));
 
         Ok(comparisons)
     }
