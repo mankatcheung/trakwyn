@@ -30,3 +30,8 @@ pub mod llm_usage_event;
 pub mod mcp_oauth;
 pub mod note;
 pub mod share_link;
+pub mod company_briefing;
+pub mod contact;
+pub mod interview_round;
+pub mod note;
+pub mod offer;

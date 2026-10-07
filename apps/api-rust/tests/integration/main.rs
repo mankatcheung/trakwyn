@@ -13,4 +13,5 @@ mod repositories;
 mod repositories_auth;
 mod repositories_content;
 mod repositories_credentials;
+mod repositories_applications;
 mod sdl_parity;
