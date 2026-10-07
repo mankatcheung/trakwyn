@@ -3,3 +3,9 @@
 
 mod auth;
 mod notes;
+mod api_tokens;
+mod conversations;
+mod cookie_consent;
+mod notifications;
+mod profile;
+mod share_links;
