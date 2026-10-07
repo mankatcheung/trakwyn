@@ -10,8 +10,6 @@ src/http/di/mod.rs merge=union
 src/http/routes/mod.rs merge=union
 tests/integration/main.rs merge=union
 
-# Constants are appended as self-contained `pub mod <area> { ... }` blocks,
-# and dependencies as single lines, so the same holds for these.
-src/use_cases/constants.rs merge=union
-src/http/constants.rs merge=union
+# Dependencies are single lines, so the same holds for the manifest. After a
+# union merge, run scripts/dedupe-registries.py and `cargo fmt`.
 Cargo.toml merge=union

@@ -22,6 +22,8 @@ pub mod document_limits {
     pub const DOCUMENTS_PER_APPLICATION: i32 = 10;
     /// `Document.documentType` when the caller omits it.
     pub const DEFAULT_DOCUMENT_TYPE: &str = "other";
+}
+
 /// Per-user and per-application content caps.
 pub mod content_limits {
     pub const APPLICATIONS_PER_USER: i32 = 50;
