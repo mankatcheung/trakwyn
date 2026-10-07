@@ -43,7 +43,6 @@ pub mod user_repository;
 
 pub use activity_log_repository::{ActivityLogRepository, AppendActivityLogData};
 pub use api_token_repository::{ApiTokenRepository, ApiTokenWithUserEmail, CreateApiTokenData};
-pub use application_repository::ApplicationRepository;
 pub use backup_email_verification_token_repository::*;
 pub use email_verification_token_repository::*;
 pub use llm_api_key_repository::{LlmApiKeyRepository, UpsertLlmApiKeyData};
