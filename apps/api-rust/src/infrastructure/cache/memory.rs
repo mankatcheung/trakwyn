@@ -10,7 +10,7 @@ use tokio::time::Instant;
 use super::constants::{DEFAULT_TTL, MEMORY_MAX_ENTRIES};
 use super::insertion_ordered::InsertionOrdered;
 use super::{Cache, JsonFetch};
-use crate::use_cases::errors::{DomainError, DomainResult, ErrorCode};
+use crate::use_cases::errors::{DomainError, DomainResult, ErrorCode, LlmProviderFailure};
 
 struct Entry {
     value: Value,
@@ -22,23 +22,27 @@ struct Entry {
 /// its text, which still never reaches a client.
 #[derive(Clone)]
 enum SharedFailure {
-    Coded { code: ErrorCode, message: String },
+    Coded { code: ErrorCode, message: String, llm_provider: Option<LlmProviderFailure> },
     Internal(String),
 }
 
 impl SharedFailure {
     fn of(err: &DomainError) -> Self {
         match err {
-            DomainError::Coded { code, message } => {
-                Self::Coded { code: *code, message: message.clone() }
-            }
+            DomainError::Coded { code, message, llm_provider } => Self::Coded {
+                code: *code,
+                message: message.clone(),
+                llm_provider: llm_provider.clone(),
+            },
             DomainError::Internal(source) => Self::Internal(source.to_string()),
         }
     }
 
     fn into_error(self) -> DomainError {
         match self {
-            Self::Coded { code, message } => DomainError::Coded { code, message },
+            Self::Coded { code, message, llm_provider } => {
+                DomainError::Coded { code, message, llm_provider }
+            }
             Self::Internal(text) => DomainError::internal(text),
         }
     }
