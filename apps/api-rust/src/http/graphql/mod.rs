@@ -9,6 +9,17 @@
 
 mod notes;
 pub mod support;
+mod api_tokens;
+mod conversations;
+mod cookie_consent;
+mod education;
+pub mod enums;
+pub mod js_date;
+mod notifications;
+pub mod optional_input;
+mod share_links;
+mod skills;
+mod work_experience;
 
 use std::sync::Arc;
 
@@ -17,10 +28,29 @@ use async_graphql::{EmptySubscription, MergedObject, Schema};
 use crate::http::container::Container;
 
 #[derive(MergedObject, Default)]
-pub struct Query(notes::NotesQuery);
+pub struct Query(
+    notes::NotesQuery,
+    api_tokens::ApiTokensQuery,
+    conversations::ConversationsQuery,
+    education::EducationQuery,
+    notifications::NotificationsQuery,
+    share_links::ShareLinksQuery,
+    skills::SkillsQuery,
+    work_experience::WorkExperienceQuery,
+);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(notes::NotesMutation);
+pub struct Mutation(
+    notes::NotesMutation,
+    api_tokens::ApiTokensMutation,
+    conversations::ConversationsMutation,
+    cookie_consent::CookieConsentMutation,
+    education::EducationMutation,
+    notifications::NotificationsMutation,
+    share_links::ShareLinksMutation,
+    skills::SkillsMutation,
+    work_experience::WorkExperienceMutation,
+);
 
 pub type ApiSchema = Schema<Query, Mutation, EmptySubscription>;
 
