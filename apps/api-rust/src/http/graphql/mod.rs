@@ -7,6 +7,12 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
+mod activity_logs;
+mod application_analytics;
+mod application_mutations;
+mod applications;
+mod calendar;
+pub mod enums;
 mod notes;
 pub mod support;
 
@@ -17,10 +23,16 @@ use async_graphql::{EmptySubscription, MergedObject, Schema};
 use crate::http::container::Container;
 
 #[derive(MergedObject, Default)]
-pub struct Query(notes::NotesQuery);
+pub struct Query(
+    activity_logs::ActivityLogsQuery,
+    application_analytics::ApplicationAnalyticsQuery,
+    applications::ApplicationsQuery,
+    calendar::CalendarQuery,
+    notes::NotesQuery,
+);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(notes::NotesMutation);
+pub struct Mutation(application_mutations::ApplicationsMutation, notes::NotesMutation);
 
 pub type ApiSchema = Schema<Query, Mutation, EmptySubscription>;
 

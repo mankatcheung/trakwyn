@@ -4,10 +4,6 @@
 # entry here is implemented (delete the line) and when an operation is
 # missing without being listed.
 Mutation.beginTotpSetup
-Mutation.bulkAddTagToApplications
-Mutation.bulkDeleteApplications
-Mutation.bulkRestoreApplications
-Mutation.bulkUpdateApplications
 Mutation.compareOffers
 Mutation.computeResumeMatchScore
 Mutation.confirmAvatar
@@ -16,7 +12,6 @@ Mutation.confirmDocument
 Mutation.confirmEmailChange
 Mutation.confirmTotpSetup
 Mutation.createApiToken
-Mutation.createApplication
 Mutation.createContact
 Mutation.createConversation
 Mutation.createDocumentDraft
@@ -28,7 +23,6 @@ Mutation.createSkill
 Mutation.createWorkExperience
 Mutation.deleteAccount
 Mutation.deleteApiToken
-Mutation.deleteApplication
 Mutation.deleteContact
 Mutation.deleteConversation
 Mutation.deleteDocument
@@ -56,7 +50,6 @@ Mutation.loginWithTotp
 Mutation.loginWithTotpMobile
 Mutation.logout
 Mutation.markNotificationsRead
-Mutation.moveApplicationOnBoard
 Mutation.parseJobDescription
 Mutation.permanentlyDeleteApplication
 Mutation.reauthenticate
@@ -79,7 +72,6 @@ Mutation.requestEmailChange
 Mutation.requestPasswordReset
 Mutation.requestUploadUrl
 Mutation.resetPassword
-Mutation.restoreApplication
 Mutation.revokeMcpOAuthGrant
 Mutation.revokeOtherSessions
 Mutation.revokeSession
@@ -89,7 +81,6 @@ Mutation.setLlmApiKeyMonthlyLimit
 Mutation.testLlmApiKey
 Mutation.unlinkOAuthAccount
 Mutation.unregisterPushSubscription
-Mutation.updateApplication
 Mutation.updateContact
 Mutation.updateDocumentDraftContent
 Mutation.updateEducation
@@ -101,14 +92,7 @@ Mutation.updateProfile
 Mutation.updateSkill
 Mutation.updateWorkExperience
 Mutation.verifyEmail
-Query.activityLogs
 Query.apiTokens
-Query.application
-Query.applicationChannelAnalytics
-Query.applicationHealthScore
-Query.applications
-Query.applicationsPage
-Query.calendarEvents
 Query.chatHistory
 Query.companyBriefing
 Query.contacts
@@ -132,7 +116,6 @@ Query.notificationPreferences
 Query.notificationsPage
 Query.offerAnalytics
 Query.offers
-Query.responseTimeAnalytics
 Query.searchConversations
 Query.securityActivity
 Query.sessions
@@ -140,7 +123,5 @@ Query.sharedSummary
 Query.shareLinks
 Query.skills
 Query.totpEnabled
-Query.trashedApplications
 Query.unreadNotificationCount
-Query.weeklyApplicationGoal
 Query.workExperiences

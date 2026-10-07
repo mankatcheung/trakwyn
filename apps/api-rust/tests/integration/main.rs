@@ -6,6 +6,9 @@
 
 mod common;
 
+mod application_analytics;
+mod applications;
+mod applications_bulk;
 mod http;
 mod migrations;
 mod notes;
