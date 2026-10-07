@@ -7,6 +7,8 @@ mod api_tokens;
 mod applications;
 mod backup_email_verification_tokens;
 mod email_verification_tokens;
+mod devices;
+mod emails;
 mod infrastructure;
 mod llm;
 mod llm_api_keys;
@@ -22,6 +24,9 @@ mod security_events;
 mod sessions;
 mod share_links;
 mod totp_backup_codes;
+mod net;
+mod notes;
+mod storage;
 mod transactions;
 mod users;
 
@@ -30,6 +35,8 @@ pub use api_tokens::FakeApiTokenRepository;
 pub use applications::{application_owned_by, FakeApplicationRepository};
 pub use backup_email_verification_tokens::FakeBackupEmailVerificationTokenRepository;
 pub use email_verification_tokens::FakeEmailVerificationTokenRepository;
+pub use devices::{FakeDeviceLabeler, FakeIpLocationResolver};
+pub use emails::{FakeEmailService, SentEmail};
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
 pub use llm::{
     FakeJobPostingSourceResolver, FakeLLMProvider, FakeLlmCall, RecordingOutboundUrlPolicy,
@@ -47,6 +54,9 @@ pub use security_events::FakeSecurityEventRepository;
 pub use sessions::{session_for, FakeSessionRepository};
 pub use share_links::FakeShareLinkRepository;
 pub use totp_backup_codes::FakeTotpBackupCodeRepository;
+pub use net::FakeOutboundUrlPolicy;
+pub use notes::FakeNoteRepository;
+pub use storage::{FakeStorageProvider, StoredObject};
 pub use transactions::FakeTransactionManager;
 pub use users::{user_with_email, FakeUserRepository};
 mod company_briefings;
