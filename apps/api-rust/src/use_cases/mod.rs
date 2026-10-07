@@ -9,6 +9,7 @@ pub mod ids;
 pub mod jobs;
 pub mod notes;
 pub mod ports;
+pub mod user;
 
 #[cfg(test)]
 pub mod test_support;

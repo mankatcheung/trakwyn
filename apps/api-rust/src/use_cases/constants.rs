@@ -142,3 +142,58 @@ pub mod resume_text_extraction {
     pub const FETCH_TIMEOUT_MS: u64 = 15_000;
     pub const EXTRACT_TIMEOUT_MS: u64 = 20_000;
 }
+
+/// Password policy.
+pub mod password {
+    /// Minimum length, in UTF-16 code units (what `apps/api` counts).
+    pub const MIN_LENGTH: usize = 8;
+    /// bcrypt work factor. Hashes written by either implementation carry
+    /// their own cost, so both verify each other's.
+    pub const BCRYPT_COST: u32 = 12;
+}
+
+/// Step-up re-authentication: how long after a full authentication a session
+/// still counts as fresh enough for a sensitive action on a 2FA account.
+pub mod reauth {
+    pub const FRESHNESS_WINDOW_MS: i64 = 15 * 60 * 1000;
+}
+
+/// Backup/recovery codes issued alongside TOTP enrollment.
+pub mod totp_backup_codes {
+    /// How many single-use codes to generate at enrollment.
+    pub const COUNT: usize = 10;
+    /// Number of random bytes hex-encoded into each code (16 hex chars).
+    pub const RANDOM_BYTES: usize = 8;
+}
+
+/// Email-verification token settings.
+pub mod email_verification_token {
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 32;
+    /// How long a verification link stays valid, in milliseconds.
+    pub const TTL_MS: i64 = 24 * 60 * 60 * 1000;
+}
+
+/// Backup email verification token settings.
+pub mod backup_email_verification_token {
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 32;
+    /// How long a verification link stays valid, in milliseconds.
+    pub const TTL_MS: i64 = 24 * 60 * 60 * 1000;
+}
+
+/// Profile photo uploads.
+pub mod avatar {
+    pub const ALLOWED_MIME_TYPES: [&str; 3] = ["image/png", "image/jpeg", "image/webp"];
+    /// Max accepted avatar upload size, in bytes (5 MB).
+    pub const MAX_SIZE_BYTES: i32 = 5 * 1024 * 1024;
+}
+
+/// What an imported application falls back to when the file names no
+/// recognised status. Kept apart from `defaults` so the block the
+/// applications slice extends is not touched from two branches.
+pub mod import_defaults {
+    use crate::domain::application::ApplicationStatus;
+
+    pub const APPLICATION_STATUS: ApplicationStatus = ApplicationStatus::Draft;
+}
