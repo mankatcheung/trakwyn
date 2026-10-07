@@ -26,8 +26,12 @@ def dedupe(text: str) -> str:
     kept: list[str] = []
     for line in text.splitlines():
         statement = line.strip()
-        # Blank lines, comments and attributes legitimately repeat.
-        if statement and not statement.startswith(("//", "#")):
+        # Only a complete one-line statement is a duplicate. Blank lines,
+        # comments, attributes and the lines of a wrapped `pub use { ... };`
+        # legitimately repeat.
+        if statement.startswith(("mod ", "pub mod ", "pub(crate) mod ", "pub use ")) and (
+            statement.endswith(";")
+        ):
             if statement in seen:
                 continue
             seen.add(statement)

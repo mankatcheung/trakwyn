@@ -5,6 +5,7 @@
 mod activity_logs;
 mod api_tokens;
 mod applications;
+mod auth_providers;
 mod backup_email_verification_tokens;
 mod devices;
 mod email_verification_tokens;
@@ -32,14 +33,13 @@ mod users;
 pub use activity_logs::FakeActivityLogRepository;
 pub use api_tokens::FakeApiTokenRepository;
 pub use applications::{application_owned_by, FakeApplicationRepository};
+pub use auth_providers::*;
 pub use backup_email_verification_tokens::FakeBackupEmailVerificationTokenRepository;
 pub use devices::{FakeDeviceLabeler, FakeIpLocationResolver};
 pub use email_verification_tokens::FakeEmailVerificationTokenRepository;
 pub use emails::{FakeEmailService, SentEmail};
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
-pub use llm::{
-    FakeJobPostingSourceResolver, FakeLLMProvider, FakeLlmCall, RecordingOutboundUrlPolicy,
-};
+pub use llm::*;
 pub use llm_api_keys::FakeLlmApiKeyRepository;
 pub use llm_usage_events::FakeLlmUsageEventRepository;
 pub use logging::{FakeLogger, LogLevel, LoggedLine};
