@@ -14,7 +14,9 @@ pub mod document_repository;
 pub mod education_repository;
 pub mod email_verification_token_repository;
 pub mod interview_round_repository;
+pub mod job_posting_source_resolver;
 pub mod llm_api_key_repository;
+pub mod llm_provider;
 pub mod llm_usage_event_repository;
 pub mod logger;
 pub mod login_event_repository;
@@ -43,9 +45,15 @@ pub mod user_repository;
 
 pub use activity_log_repository::{ActivityLogRepository, AppendActivityLogData};
 pub use api_token_repository::{ApiTokenRepository, ApiTokenWithUserEmail, CreateApiTokenData};
+pub use application_repository::ApplicationRepository;
 pub use backup_email_verification_token_repository::*;
 pub use email_verification_token_repository::*;
+pub use job_posting_source_resolver::{JobPostingSource, JobPostingSourceResolver};
 pub use llm_api_key_repository::{LlmApiKeyRepository, UpsertLlmApiKeyData};
+pub use llm_provider::{
+    LLMProvider, LlmCompleteOptions, LlmCompleteResult, LlmCompletionResult, LlmMessage, LlmRole,
+    LlmStream, LlmStreamChunk, LlmToolCall, LlmToolDefinition, LlmUsage,
+};
 pub use llm_usage_event_repository::{LlmUsageEventRepository, RecordLlmUsageEventData};
 pub use login_event_repository::{CreateLoginEventData, LoginEventRepository};
 pub use mcp_oauth_authorization_code_repository::*;

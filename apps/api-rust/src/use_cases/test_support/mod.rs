@@ -8,6 +8,7 @@ mod applications;
 mod backup_email_verification_tokens;
 mod email_verification_tokens;
 mod infrastructure;
+mod llm;
 mod llm_api_keys;
 mod llm_usage_events;
 mod logging;
@@ -29,6 +30,9 @@ pub use applications::{application_owned_by, FakeApplicationRepository};
 pub use backup_email_verification_tokens::FakeBackupEmailVerificationTokenRepository;
 pub use email_verification_tokens::FakeEmailVerificationTokenRepository;
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
+pub use llm::{
+    FakeJobPostingSourceResolver, FakeLLMProvider, FakeLlmCall, RecordingOutboundUrlPolicy,
+};
 pub use llm_api_keys::FakeLlmApiKeyRepository;
 pub use llm_usage_events::FakeLlmUsageEventRepository;
 pub use logging::{FakeLogger, LogLevel, LoggedLine};
