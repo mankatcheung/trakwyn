@@ -14,3 +14,12 @@ pub mod token_lifetime_s {
 pub mod api_token {
     pub const PREFIX: &str = "trakwyn_";
 }
+
+/// Per-application document quota and the default a document is stored
+/// with. The counter (`JobApplication.documentCount`) is maintained
+/// transactionally by the document repository.
+pub mod document_limits {
+    pub const DOCUMENTS_PER_APPLICATION: i32 = 10;
+    /// `Document.documentType` when the caller omits it.
+    pub const DEFAULT_DOCUMENT_TYPE: &str = "other";
+}

@@ -10,4 +10,5 @@ mod http;
 mod migrations;
 mod notes;
 mod repositories;
+mod repositories_content;
 mod sdl_parity;
