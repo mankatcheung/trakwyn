@@ -3,3 +3,4 @@
 pub mod activity_log;
 pub mod application;
 pub mod note;
+pub mod oauth_account;

@@ -4,6 +4,7 @@
 
 mod activity_logs;
 mod applications;
+mod auth_providers;
 mod infrastructure;
 mod logging;
 mod notes;
@@ -11,6 +12,10 @@ mod transactions;
 
 pub use activity_logs::FakeActivityLogRepository;
 pub use applications::{application_owned_by, FakeApplicationRepository};
+pub use auth_providers::{
+    FakeLlmApiKeyCipher, FakeMobileOAuthHandoffService, FakeOAuthProvider,
+    FakeOAuthProviderRegistry, FakeOidcTokenVerifier, FakeTotpProvider, OAuthExchange,
+};
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
 pub use logging::{FakeLogger, LogLevel, LoggedLine};
 pub use notes::FakeNoteRepository;
