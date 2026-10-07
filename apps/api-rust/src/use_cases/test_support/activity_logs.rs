@@ -13,6 +13,11 @@ pub struct FakeActivityLogRepository {
 }
 
 impl FakeActivityLogRepository {
+    /// Seeds entries as they are, so a test can place them in time.
+    pub fn with(entries: Vec<ActivityLog>) -> Self {
+        Self { entries: Mutex::new(entries) }
+    }
+
     pub fn entries(&self) -> Vec<ActivityLog> {
         self.entries.lock().unwrap().clone()
     }

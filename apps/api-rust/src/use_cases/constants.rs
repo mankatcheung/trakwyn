@@ -46,7 +46,29 @@ pub mod reminder_window_ms {
 
 /// What a create falls back to when the caller names no value.
 pub mod defaults {
+    use crate::domain::application::ApplicationStatus;
     use crate::domain::interview_round::InterviewRoundOutcome;
 
+    pub const APPLICATION_STATUS: ApplicationStatus = ApplicationStatus::Draft;
     pub const INTERVIEW_OUTCOME: InterviewRoundOutcome = InterviewRoundOutcome::Pending;
+}
+
+/// Bulk mutations over a selection of applications.
+pub mod bulk_actions {
+    /// Max number of ids accepted in a single bulk mutation call.
+    pub const MAX_IDS: usize = 200;
+}
+
+/// The kanban board.
+pub mod board {
+    /// Max cards accepted in one kanban column reorder. Deliberately not
+    /// `bulk_actions::MAX_IDS`: that caps how much a user may act on at once,
+    /// whereas this caps a column the user did not choose the size of.
+    pub const MAX_REORDER_IDS: usize = 500;
+}
+
+/// Cursor pagination: the page size when the caller names none, and the cap.
+pub mod pagination {
+    pub const DEFAULT_LIMIT: i64 = 20;
+    pub const MAX_LIMIT: i64 = 100;
 }
