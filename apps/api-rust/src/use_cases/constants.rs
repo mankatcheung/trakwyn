@@ -50,3 +50,19 @@ pub mod defaults {
 
     pub const INTERVIEW_OUTCOME: InterviewRoundOutcome = InterviewRoundOutcome::Pending;
 }
+
+/// What an interview round is created as when the caller names no type.
+pub mod interview_round_defaults {
+    use crate::domain::interview_round::InterviewRoundType;
+
+    pub const TYPE: InterviewRoundType = InterviewRoundType::Other;
+}
+
+/// How many pay periods make a year, for comparing offers on different
+/// periods.
+pub mod offer_normalization {
+    pub const MONTHS_PER_YEAR: i64 = 12;
+    pub const WEEKS_PER_YEAR: i64 = 52;
+    /// 40 hours a week.
+    pub const WORKING_HOURS_PER_YEAR: i64 = 40 * WEEKS_PER_YEAR;
+}
