@@ -4,10 +4,13 @@
 pub mod auth;
 pub mod clock;
 pub mod constants;
+pub mod contacts;
 pub mod errors;
 pub mod ids;
+pub mod interview_rounds;
 pub mod jobs;
 pub mod notes;
+pub mod offers;
 pub mod ports;
 
 #[cfg(test)]
