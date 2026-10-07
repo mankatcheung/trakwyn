@@ -6,6 +6,7 @@ pub mod clock;
 pub mod constants;
 pub mod errors;
 pub mod ids;
+pub mod jobs;
 pub mod notes;
 pub mod ports;
 

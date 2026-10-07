@@ -7,9 +7,17 @@
 
 mod activity_log;
 mod application;
+mod company_briefing;
+mod contact;
+mod interview_round;
 mod note;
+mod offer;
 pub mod support;
 
 pub use activity_log::PgActivityLogRepository;
 pub use application::PgApplicationRepository;
+pub use company_briefing::PgCompanyBriefingRepository;
+pub use contact::PgContactRepository;
+pub use interview_round::PgInterviewRoundRepository;
 pub use note::PgNoteRepository;
+pub use offer::PgOfferRepository;
