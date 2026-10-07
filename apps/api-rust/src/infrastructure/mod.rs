@@ -2,4 +2,7 @@
 
 pub mod auth;
 pub mod db;
+pub mod documents;
+pub mod pdf;
+pub mod push;
 pub mod session_blocklist;
