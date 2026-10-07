@@ -2,4 +2,6 @@
 
 pub mod auth;
 pub mod db;
+pub mod job_description;
+pub mod llm;
 pub mod session_blocklist;
