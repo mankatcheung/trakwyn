@@ -1,6 +1,7 @@
 //! Pure entities. Nothing here imports a framework, a driver or another layer.
 
 pub mod activity_log;
+pub mod api_token;
 pub mod application;
 pub mod backup_email_verification_token;
 pub mod email_verification_token;
@@ -24,3 +25,8 @@ pub mod push_subscription;
 pub mod resume;
 pub mod skill;
 pub mod work_experience;
+pub mod llm_api_key;
+pub mod llm_usage_event;
+pub mod mcp_oauth;
+pub mod note;
+pub mod share_link;

@@ -12,4 +12,5 @@ mod notes;
 mod repositories;
 mod repositories_auth;
 mod repositories_content;
+mod repositories_credentials;
 mod sdl_parity;

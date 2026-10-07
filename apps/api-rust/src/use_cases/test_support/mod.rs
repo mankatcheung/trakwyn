@@ -3,10 +3,13 @@
 //! `infrastructure`.
 
 mod activity_logs;
+mod api_tokens;
 mod applications;
 mod backup_email_verification_tokens;
 mod email_verification_tokens;
 mod infrastructure;
+mod llm_api_keys;
+mod llm_usage_events;
 mod logging;
 mod login_events;
 mod notes;
@@ -15,14 +18,20 @@ mod password_reset_tokens;
 mod security_events;
 mod sessions;
 mod totp_backup_codes;
+mod mcp_oauth;
+mod notes;
+mod share_links;
 mod transactions;
 mod users;
 
 pub use activity_logs::FakeActivityLogRepository;
+pub use api_tokens::FakeApiTokenRepository;
 pub use applications::{application_owned_by, FakeApplicationRepository};
 pub use backup_email_verification_tokens::FakeBackupEmailVerificationTokenRepository;
 pub use email_verification_tokens::FakeEmailVerificationTokenRepository;
 pub use infrastructure::{sequential_ids, FakeSessionBlocklist, FakeTokenService};
+pub use llm_api_keys::FakeLlmApiKeyRepository;
+pub use llm_usage_events::FakeLlmUsageEventRepository;
 pub use logging::{FakeLogger, LogLevel, LoggedLine};
 pub use login_events::FakeLoginEventRepository;
 pub use notes::FakeNoteRepository;
@@ -31,6 +40,9 @@ pub use password_reset_tokens::FakePasswordResetTokenRepository;
 pub use security_events::FakeSecurityEventRepository;
 pub use sessions::{session_for, FakeSessionRepository};
 pub use totp_backup_codes::FakeTotpBackupCodeRepository;
+pub use mcp_oauth::*;
+pub use notes::FakeNoteRepository;
+pub use share_links::FakeShareLinkRepository;
 pub use transactions::FakeTransactionManager;
 pub use users::{user_with_email, FakeUserRepository};
 mod conversations;

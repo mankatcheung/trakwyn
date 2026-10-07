@@ -6,6 +6,7 @@
 //! microseconds the `timestamptz(3)` columns round away.
 
 mod activity_log;
+mod api_token;
 mod application;
 mod backup_email_verification_token;
 mod email_verification_token;
@@ -15,11 +16,21 @@ mod oauth_account;
 mod password_reset_token;
 mod security_event;
 mod session;
+mod llm_api_key;
+mod llm_usage_event;
+mod mcp_oauth_authorization_code;
+mod mcp_oauth_client;
+mod mcp_oauth_grant;
+mod mcp_oauth_refresh_token;
+mod mcp_oauth_token;
+mod note;
+mod share_link;
 pub mod support;
 mod totp_backup_code;
 mod user;
 
 pub use activity_log::PgActivityLogRepository;
+pub use api_token::PgApiTokenRepository;
 pub use application::PgApplicationRepository;
 pub use backup_email_verification_token::PgBackupEmailVerificationTokenRepository;
 pub use email_verification_token::PgEmailVerificationTokenRepository;
@@ -57,3 +68,12 @@ pub use notification::PgNotificationRepository;
 pub use push_subscription::PgPushSubscriptionRepository;
 pub use skill::PgSkillRepository;
 pub use work_experience::PgWorkExperienceRepository;
+pub use llm_api_key::PgLlmApiKeyRepository;
+pub use llm_usage_event::PgLlmUsageEventRepository;
+pub use mcp_oauth_authorization_code::PgMcpOAuthAuthorizationCodeRepository;
+pub use mcp_oauth_client::PgMcpOAuthClientRepository;
+pub use mcp_oauth_grant::PgMcpOAuthGrantRepository;
+pub use mcp_oauth_refresh_token::PgMcpOAuthRefreshTokenRepository;
+pub use mcp_oauth_token::PgMcpOAuthTokenRepository;
+pub use note::PgNoteRepository;
+pub use share_link::PgShareLinkRepository;
