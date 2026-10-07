@@ -4,14 +4,18 @@
 pub mod activity_log_repository;
 pub mod application_repository;
 pub mod logger;
+pub mod metrics;
 pub mod note_repository;
 pub mod outbound_url_policy;
+pub mod rate_limiter;
 pub mod session_blocklist;
 pub mod token_service;
 pub mod transaction_manager;
 
 pub use activity_log_repository::{ActivityLogRepository, AppendActivityLogData};
 pub use application_repository::ApplicationRepository;
+pub use metrics::Metrics;
 pub use note_repository::{CreateNoteData, NoteRepository};
+pub use rate_limiter::{RateLimit, RateLimiter};
 pub use session_blocklist::SessionBlocklist;
 pub use token_service::{AccessClaims, RefreshClaims, TokenPair, TokenService};
