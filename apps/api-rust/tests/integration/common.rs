@@ -123,15 +123,16 @@ const ALPHANUMERIC_LOWER: [char; 36] = [
 ];
 
 pub fn test_config() -> Config {
-    Config {
-        port: 0,
-        node_env: NodeEnv::Test,
-        database_url: "postgres://unused-the-pool-is-injected/test".to_string(),
-        jwt_secret: JWT_SECRET.to_string(),
-        jwt_refresh_secret: JWT_REFRESH_SECRET.to_string(),
-        cors_origins: vec!["http://localhost:3000".to_string()],
-        cookie_domain: None,
-    }
+    let base = Config::from_lookup(|name| match name {
+        // The pool is injected, so this URL is never connected to.
+        "DATABASE_URL" => Some("postgres://unused-the-pool-is-injected/test".to_string()),
+        "JWT_SECRET" => Some(JWT_SECRET.to_string()),
+        "JWT_REFRESH_SECRET" => Some(JWT_REFRESH_SECRET.to_string()),
+        "EMAIL_PROVIDER" => Some("console".to_string()),
+        _ => None,
+    })
+    .unwrap();
+    Config { port: 0, node_env: NodeEnv::Test, ..base }
 }
 
 /// What came back from one request to the app.
@@ -181,7 +182,7 @@ impl TestApp {
 
     pub async fn start_with(config: Config) -> Self {
         let TestDb { db } = TestDb::create().await;
-        let container = Arc::new(Container::new(config, db.clone()));
+        let container = Arc::new(Container::new(config, db.clone()).unwrap());
         Self { router: build_router(container.clone()), container, db }
     }
 

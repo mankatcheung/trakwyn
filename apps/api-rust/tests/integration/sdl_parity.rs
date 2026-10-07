@@ -107,7 +107,7 @@ fn rust_shapes() -> BTreeMap<String, TypeShape> {
     let pool = sqlx::postgres::PgPoolOptions::new()
         .connect_lazy("postgres://unused/unused")
         .expect("a lazy pool needs no server");
-    let container = Arc::new(Container::new(test_config(), Db::from_pool(pool)));
+    let container = Arc::new(Container::new(test_config(), Db::from_pool(pool)).unwrap());
     shapes(&build_schema(container).sdl())
 }
 

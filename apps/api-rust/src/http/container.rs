@@ -8,11 +8,11 @@ use std::sync::Arc;
 
 use crate::config::Config;
 use crate::http::cookies::AuthCookies;
+use crate::http::services::{BoxError, Services};
 use crate::infrastructure::auth::JwtTokenService;
 use crate::infrastructure::db::repositories as pg;
 use crate::infrastructure::db::transaction_manager::PgTransactionManager;
 use crate::infrastructure::db::Db;
-use crate::infrastructure::session_blocklist::MemorySessionBlocklist;
 use crate::use_cases::ids::{nanoid_generator, GenerateId};
 use crate::use_cases::ports::transaction_manager::TransactionManager;
 use crate::use_cases::ports::*;
@@ -23,6 +23,8 @@ pub struct Container {
     pub auth_cookies: AuthCookies,
     pub generate_id: GenerateId,
     pub token_service: Arc<dyn TokenService>,
+    /// Cache, email, storage, auth providers, LLM plumbing, rate limiters.
+    pub services: Services,
     pub session_blocklist: Arc<dyn SessionBlocklist>,
     pub transaction_manager: Arc<dyn TransactionManager>,
 
@@ -64,16 +66,18 @@ pub struct Container {
 }
 
 impl Container {
-    pub fn new(config: Config, db: Db) -> Self {
+    pub fn new(config: Config, db: Db) -> Result<Self, BoxError> {
         let repo = || db.clone();
-        Self {
+        let services = Services::new(&config)?;
+        Ok(Self {
             auth_cookies: AuthCookies::new(&config),
             generate_id: nanoid_generator(),
             token_service: Arc::new(JwtTokenService::new(
                 &config.jwt_secret,
                 &config.jwt_refresh_secret,
             )),
-            session_blocklist: Arc::new(MemorySessionBlocklist::default()),
+            session_blocklist: services.session_blocklist.clone(),
+            services,
             transaction_manager: Arc::new(PgTransactionManager::new(repo())),
 
             activity_log_repository: Arc::new(pg::PgActivityLogRepository::new(repo())),
@@ -124,6 +128,6 @@ impl Container {
 
             config: Arc::new(config),
             db,
-        }
+        })
     }
 }

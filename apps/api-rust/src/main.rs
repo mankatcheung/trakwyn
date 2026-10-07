@@ -54,7 +54,7 @@ async fn migrate(config: &Config) -> Result<(), BoxError> {
 async fn serve(config: Config) -> Result<(), BoxError> {
     let port = config.port;
     let db = Db::connect(&config.database_url).await?;
-    let router = build_router(Arc::new(Container::new(config, db.clone())));
+    let router = build_router(Arc::new(Container::new(config, db.clone())?));
 
     let listener = TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], port))).await?;
     tracing::info!("API server listening on http://localhost:{port}");

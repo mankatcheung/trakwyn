@@ -52,6 +52,13 @@ pub struct Config {
     pub cors_origins: Vec<String>,
     /// Shared `Domain` for the auth cookies, e.g. `.trakwyn.com`. `None` means host-only.
     pub cookie_domain: Option<String>,
+    pub auth: auth::AuthConfig,
+    pub cache: cache::CacheConfig,
+    pub email: email::EmailConfig,
+    pub llm_cipher: llm::LlmCipherConfig,
+    pub net: net::NetConfig,
+    pub push: push::PushConfig,
+    pub storage: storage::StorageConfig,
 }
 
 const DEFAULT_PORT: u16 = 3001;
@@ -108,6 +115,13 @@ impl Config {
             jwt_refresh_secret: required("JWT_REFRESH_SECRET")?,
             cors_origins,
             cookie_domain: non_empty("COOKIE_DOMAIN"),
+            auth: auth::AuthConfig::from_lookup(&get)?,
+            cache: cache::CacheConfig::from_lookup(&get)?,
+            email: email::EmailConfig::from_lookup(&get)?,
+            llm_cipher: llm::LlmCipherConfig::from_lookup(&get)?,
+            net: net::NetConfig::from_lookup(&get, node_env)?,
+            push: push::PushConfig::from_lookup(&get)?,
+            storage: storage::StorageConfig::from_lookup(&get)?,
         })
     }
 

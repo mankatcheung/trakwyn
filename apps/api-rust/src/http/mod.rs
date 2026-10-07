@@ -10,3 +10,4 @@ pub mod errors;
 pub mod graphql;
 pub mod request_context;
 pub mod routes;
+pub mod services;

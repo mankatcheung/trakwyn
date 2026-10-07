@@ -152,15 +152,14 @@ mod tests {
     use crate::config::NodeEnv;
 
     fn config(node_env: NodeEnv, cookie_domain: Option<&str>) -> Config {
-        Config {
-            port: 3001,
-            node_env,
-            database_url: "postgres://localhost/trakwyn".to_string(),
-            jwt_secret: "a".to_string(),
-            jwt_refresh_secret: "b".to_string(),
-            cors_origins: vec![],
-            cookie_domain: cookie_domain.map(str::to_string),
-        }
+        let base = Config::from_lookup(|name| match name {
+            "DATABASE_URL" => Some("postgres://localhost/trakwyn".to_string()),
+            "JWT_SECRET" => Some("a".to_string()),
+            "JWT_REFRESH_SECRET" => Some("b".to_string()),
+            _ => None,
+        })
+        .unwrap();
+        Config { node_env, cookie_domain: cookie_domain.map(str::to_string), ..base }
     }
 
     #[test]
