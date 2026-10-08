@@ -1,14 +1,14 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 
-jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-import { useTheme } from '../../../../theme/ThemeContext';
-import { lightColors } from '../../../../theme/colors';
-import { AssistantMarkdown } from '../AssistantMarkdown';
+jest.mock('../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+import { useTheme } from '../../theme/ThemeContext';
+import { lightColors } from '../../theme/colors';
+import { Markdown } from '../Markdown';
 
 const mockedUseTheme = jest.mocked(useTheme);
 
-describe('AssistantMarkdown', () => {
+describe('Markdown', () => {
   beforeEach(() => {
     mockedUseTheme.mockReturnValue({
       mode: 'light',
@@ -19,23 +19,23 @@ describe('AssistantMarkdown', () => {
   });
 
   it('renders bold text from markdown', async () => {
-    const { getByText } = await render(<AssistantMarkdown content="**bold**" />);
+    const { getByText } = await render(<Markdown content="**bold**" />);
     expect(getByText('bold')).toBeTruthy();
   });
 
   it('renders a bullet list', async () => {
-    const { getByText } = await render(<AssistantMarkdown content={'- one\n- two'} />);
+    const { getByText } = await render(<Markdown content={'- one\n- two'} />);
     expect(getByText('one')).toBeTruthy();
     expect(getByText('two')).toBeTruthy();
   });
 
   it('renders plain paragraph text', async () => {
-    const { getByText } = await render(<AssistantMarkdown content="Hello there" />);
+    const { getByText } = await render(<Markdown content="Hello there" />);
     expect(getByText('Hello there')).toBeTruthy();
   });
 
   it('renders inline code constrained to the body line box', async () => {
-    const { getByText } = await render(<AssistantMarkdown content="Status is `pending`" />);
+    const { getByText } = await render(<Markdown content="Status is `pending`" />);
     const node = getByText('pending');
     expect(node).toBeTruthy();
     const flatStyle = Object.assign({}, ...[node.props.style].flat());
@@ -44,7 +44,7 @@ describe('AssistantMarkdown', () => {
   });
 
   it('renders a fenced code block', async () => {
-    const { getByText } = await render(<AssistantMarkdown content={'```\nconst x = 1;\n```'} />);
+    const { getByText } = await render(<Markdown content={'```\nconst x = 1;\n```'} />);
     expect(getByText('const x = 1;')).toBeTruthy();
   });
 });

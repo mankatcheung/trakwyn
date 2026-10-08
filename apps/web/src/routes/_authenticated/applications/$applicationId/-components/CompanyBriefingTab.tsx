@@ -4,6 +4,7 @@ import { CopyIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
 import { Button, Card, Spinner } from '@trakwyn/ui';
 
@@ -129,9 +130,11 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
             </Button>
           </div>
           <p className="text-xs text-gray-400">{t('companyBriefing.disclaimer')}</p>
-          <pre className="font-sans text-sm/relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-            {briefing.content}
-          </pre>
+          {/* Briefings stored before markdown were "Header:\nbody" with single
+              newlines, which markdown folds into one run-on line. */}
+          <div className="text-gray-800 dark:text-gray-200 [&_p]:whitespace-pre-line">
+            <Markdown content={briefing.content} />
+          </div>
         </Card>
       )}
     </div>

@@ -137,6 +137,35 @@ describe('GenerateCompanyBriefingUseCase', () => {
     expect(systemMessage.content.toLowerCase()).toContain('no reliable access to real-time');
   });
 
+  it('asks for markdown, since both clients render the briefing as markdown', async () => {
+    const llmProvider = makeLLMProvider();
+    const llmProviderFactory = makeLLMProviderFactory({
+      forUser: vi.fn().mockResolvedValue(llmProvider),
+    });
+
+    await new GenerateCompanyBriefingUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(makeApplication()),
+      }),
+      llmProviderFactory,
+      userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
+      generateCompanyBriefingRateLimiter: makeRateLimiter(),
+      companyBriefingRepository: makeCompanyBriefingRepository(),
+      generateId: () => 'briefing-1',
+      now: () => new Date('2026-08-21T00:00:00.000Z'),
+    }).execute({
+      applicationId: 'app-1',
+      userId: 'user-1',
+    });
+
+    const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      Array<{ role: string; content: string }>,
+    ];
+    const systemMessage = messages.find((m) => m.role === 'system')!;
+    expect(systemMessage.content).toContain('markdown');
+    expect(systemMessage.content.toLowerCase()).not.toContain('no markdown');
+  });
+
   it('includes application context in the prompt', async () => {
     const app = makeApplication({
       company: 'Stripe',

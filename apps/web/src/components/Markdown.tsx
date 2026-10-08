@@ -42,17 +42,17 @@ const components: Components = {
   ),
 };
 
-interface AssistantMarkdownProps {
+interface MarkdownProps {
   content: string;
 }
 
 /**
- * Renders assistant chat messages as parsed markdown (JEF-314) rather than
- * raw text — headings/lists/code/etc. Only used for assistant-authored
- * content; user messages stay as plain text since they aren't markdown the
- * app generated.
+ * Renders app-generated markdown (assistant chat messages, JEF-314, and the
+ * company briefing, JEF-391) as parsed markdown rather than raw text. Only
+ * use it for content the app's own model produced; user-typed text stays
+ * plain since it isn't markdown the app generated.
  */
-export function AssistantMarkdown({ content }: AssistantMarkdownProps) {
+export function Markdown({ content }: MarkdownProps) {
   return (
     <div className="text-sm wrap-break-word [&>*:last-child]:mb-0">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
