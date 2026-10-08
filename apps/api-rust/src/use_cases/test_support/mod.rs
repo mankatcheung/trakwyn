@@ -90,3 +90,7 @@ pub use offers::FakeOfferRepository;
 pub use push_subscriptions::FakePushSubscriptionRepository;
 pub use skills::FakeSkillRepository;
 pub use work_experiences::FakeWorkExperienceRepository;
+mod qr_codes;
+mod rate_limiters;
+pub use qr_codes::FakeQrCodeRenderer;
+pub use rate_limiters::FakeRateLimiter;

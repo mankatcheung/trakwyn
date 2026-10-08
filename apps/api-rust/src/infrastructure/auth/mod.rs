@@ -36,3 +36,5 @@ pub use oauth_state_service::{
 pub use pkce::{create_pkce_pair, derive_code_challenge, is_well_formed_pkce_value, PkcePair};
 pub use qr_code::qr_code_data_url;
 pub use totp_provider::{Rfc6238TotpProvider, TotpError};
+mod qr_code_renderer;
+pub use qr_code_renderer::PngQrCodeRenderer;
