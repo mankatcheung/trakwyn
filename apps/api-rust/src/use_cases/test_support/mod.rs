@@ -94,3 +94,7 @@ mod qr_codes;
 mod rate_limiters;
 pub use qr_codes::FakeQrCodeRenderer;
 pub use rate_limiters::FakeRateLimiter;
+mod llm_factory;
+pub use llm_factory::*;
+mod ai_features;
+pub use ai_features::*;

@@ -31,7 +31,7 @@ use crate::infrastructure::rate_limit::{
 };
 use crate::infrastructure::session_blocklist::{MemorySessionBlocklist, RedisSessionBlocklist};
 use crate::infrastructure::storage::{
-    LocalStorageProvider, VercelBlobStorageProvider, VERCEL_BLOB_API_URL,
+    HttpRemoteFileFetcher, LocalStorageProvider, VercelBlobStorageProvider, VERCEL_BLOB_API_URL,
 };
 use crate::use_cases::ports::device_labeler::DeviceLabeler;
 use crate::use_cases::ports::document_text_extractor::DocumentTextExtractor;
@@ -48,7 +48,9 @@ use crate::use_cases::ports::oauth_provider_registry::OAuthProviderRegistry;
 use crate::use_cases::ports::oidc_token_verifier::OidcTokenVerifier;
 use crate::use_cases::ports::outbound_url_policy::OutboundUrlPolicy;
 use crate::use_cases::ports::pdf_renderer::PdfRenderer;
+use crate::use_cases::ports::qr_code_renderer::QrCodeRenderer;
 use crate::use_cases::ports::rate_limiter::{RateLimit, RateLimiter};
+use crate::use_cases::ports::remote_file_fetcher::RemoteFileFetcher;
 use crate::use_cases::ports::storage_provider::StorageProvider;
 use crate::use_cases::ports::totp_provider::TotpProvider;
 use crate::use_cases::ports::web_push_service::WebPushService;
@@ -102,6 +104,8 @@ pub struct Services {
     pub oidc_token_verifier: Arc<dyn OidcTokenVerifier>,
     pub llm_api_key_cipher: Arc<dyn LlmApiKeyCipher>,
     pub llm_transport: LlmTransport,
+    pub qr_code_renderer: Arc<dyn QrCodeRenderer>,
+    pub remote_file_fetcher: Arc<dyn RemoteFileFetcher>,
     pub document_text_extractor: Arc<dyn DocumentTextExtractor>,
     pub pdf_renderer: Arc<dyn PdfRenderer>,
     pub job_posting_source_resolver: Arc<dyn JobPostingSourceResolver>,
@@ -323,6 +327,8 @@ impl Services {
                 config.llm_cipher.passphrase(),
             )),
             llm_transport: LlmTransport::new()?,
+            qr_code_renderer: Arc::new(auth_infra::PngQrCodeRenderer),
+            remote_file_fetcher: Arc::new(HttpRemoteFileFetcher::default()),
             document_text_extractor: Arc::new(PdfAndDocxTextExtractor::new()),
             pdf_renderer: Arc::new(PdfDocumentRenderer::new()),
             job_posting_source_resolver: Arc::new(FetchJobPostingSourceResolver::new(

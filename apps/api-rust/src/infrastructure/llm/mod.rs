@@ -13,3 +13,6 @@ pub(crate) mod stub_server;
 mod wire;
 
 pub use llm_api_key_cipher::AesGcmLlmApiKeyCipher;
+pub mod limit_enforcing_llm_provider_factory;
+pub mod usage_tracking_llm_provider;
+pub mod user_llm_provider_factory;

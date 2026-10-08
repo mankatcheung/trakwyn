@@ -12,6 +12,7 @@ mod uploads;
 
 mod account;
 mod account_support;
+mod ai_features;
 mod api_tokens;
 mod application_analytics;
 mod applications;
@@ -25,6 +26,7 @@ mod cookie_consent;
 mod education;
 mod http;
 mod interview_rounds;
+mod llm_keys;
 mod migrations;
 mod notes;
 mod notifications;

@@ -9,6 +9,7 @@
 
 mod account;
 mod activity_logs;
+mod ai_features;
 mod api_tokens;
 mod application_analytics;
 mod application_mutations;
@@ -17,6 +18,7 @@ mod auth;
 pub mod auth_flows;
 mod auth_mobile;
 mod calendar;
+mod company_briefing;
 mod contacts;
 mod conversations;
 mod cookie_consent;
@@ -26,6 +28,7 @@ mod education;
 pub mod enums;
 mod interview_rounds;
 pub mod js_date;
+mod llm_keys;
 mod notes;
 mod notifications;
 mod oauth_accounts;
@@ -56,12 +59,14 @@ pub struct Query(
     application_analytics::ApplicationAnalyticsQuery,
     applications::ApplicationsQuery,
     calendar::CalendarQuery,
+    company_briefing::CompanyBriefingQuery,
     contacts::ContactsQuery,
     conversations::ConversationsQuery,
     document_drafts::DocumentDraftsQuery,
     documents::DocumentsQuery,
     education::EducationQuery,
     interview_rounds::InterviewRoundsQuery,
+    llm_keys::LlmKeysQuery,
     notes::NotesQuery,
     notifications::NotificationsQuery,
     oauth_accounts::OAuthAccountsQuery,
@@ -78,10 +83,12 @@ pub struct Query(
 #[derive(MergedObject, Default)]
 pub struct Mutation(
     account::AccountMutation,
+    ai_features::AiFeaturesMutation,
     api_tokens::ApiTokensMutation,
     application_mutations::ApplicationsMutation,
     auth::AuthMutation,
     auth_mobile::AuthMobileMutation,
+    company_briefing::CompanyBriefingMutation,
     contacts::ContactsMutation,
     conversations::ConversationsMutation,
     cookie_consent::CookieConsentMutation,
@@ -89,6 +96,7 @@ pub struct Mutation(
     documents::DocumentsMutation,
     education::EducationMutation,
     interview_rounds::InterviewRoundsMutation,
+    llm_keys::LlmKeysMutation,
     notes::NotesMutation,
     notifications::NotificationsMutation,
     oauth_accounts::OAuthAccountsMutation,

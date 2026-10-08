@@ -95,3 +95,11 @@ pub mod uploads {
     /// The type an upload is stored with when the request names none.
     pub const FALLBACK_CONTENT_TYPE: &str = "application/octet-stream";
 }
+
+/// The fake LLM completions endpoint: a same-origin stand-in for an
+/// OpenAI-compatible `/chat/completions`, mounted only when
+/// `LLM_PROVIDER_MODE=fake`. Not a new provider type: a user (or an e2e
+/// test) points the existing "Custom" provider at it.
+pub mod llm_fake_completions {
+    pub const PATH: &str = "/llm-test/fake/chat/completions";
+}

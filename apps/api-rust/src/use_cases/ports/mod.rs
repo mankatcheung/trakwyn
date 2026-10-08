@@ -119,3 +119,7 @@ pub use web_push_service::{PushDeliveryError, PushPayload, PushSubscriptionKeys,
 pub use work_experience_repository::*;
 pub mod qr_code_renderer;
 pub use qr_code_renderer::QrCodeRenderer;
+pub mod llm_provider_factory;
+pub mod remote_file_fetcher;
+pub use llm_provider_factory::*;
+pub use remote_file_fetcher::{RemoteFile, RemoteFileFetcher};

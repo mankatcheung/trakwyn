@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::config::Config;
 use crate::http::cookies::AuthCookies;
+use crate::http::di::llm::build_llm_provider_factory;
 use crate::http::services::{BoxError, Services};
 use crate::infrastructure::auth::JwtTokenService;
 use crate::infrastructure::db::repositories as pg;
@@ -25,6 +26,9 @@ pub struct Container {
     pub token_service: Arc<dyn TokenService>,
     /// Cache, email, storage, auth providers, LLM plumbing, rate limiters.
     pub services: Services,
+    /// The per-user factory wrapped by the monthly-limit decorator, shared by
+    /// every AI feature.
+    pub llm_provider_factory: Arc<dyn LLMProviderFactory>,
     pub session_blocklist: Arc<dyn SessionBlocklist>,
     pub transaction_manager: Arc<dyn TransactionManager>,
 
@@ -69,15 +73,45 @@ impl Container {
     pub fn new(config: Config, db: Db) -> Result<Self, BoxError> {
         let repo = || db.clone();
         let services = Services::new(&config)?;
+        let generate_id = nanoid_generator();
+
+        // Plain repositories the decorators and the LLM factory are built over.
+        let user_repository: Arc<dyn UserRepository> = Arc::new(pg::PgUserRepository::new(repo()));
+        let llm_api_key_repository: Arc<dyn LlmApiKeyRepository> =
+            Arc::new(pg::PgLlmApiKeyRepository::new(repo()));
+        let llm_usage_event_repository: Arc<dyn LlmUsageEventRepository> =
+            Arc::new(pg::PgLlmUsageEventRepository::new(repo()));
+        // Every revocation path also blocklists the affected session ids, so no
+        // call site has to remember to.
+        let session_repository: Arc<dyn SessionRepository> =
+            Arc::new(pg::BlocklistingSessionRepository::new(
+                Arc::new(pg::PgSessionRepository::new(repo())),
+                services.session_blocklist.clone(),
+            ));
+        // Every security event is also logged and counted as it is written.
+        let security_event_repository: Arc<dyn SecurityEventRepository> =
+            Arc::new(pg::LoggingSecurityEventRepository::new(
+                Arc::new(pg::PgSecurityEventRepository::new(repo())),
+                services.logger.clone(),
+                services.metrics.clone(),
+            ));
+        let llm_provider_factory = build_llm_provider_factory(
+            &user_repository,
+            &llm_api_key_repository,
+            &llm_usage_event_repository,
+            &services,
+            &generate_id,
+        );
         Ok(Self {
             auth_cookies: AuthCookies::new(&config),
-            generate_id: nanoid_generator(),
+            generate_id,
             token_service: Arc::new(JwtTokenService::new(
                 &config.jwt_secret,
                 &config.jwt_refresh_secret,
             )),
             session_blocklist: services.session_blocklist.clone(),
             services,
+            llm_provider_factory,
             transaction_manager: Arc::new(PgTransactionManager::new(repo())),
 
             activity_log_repository: Arc::new(pg::PgActivityLogRepository::new(repo())),
@@ -97,8 +131,8 @@ impl Container {
                 pg::PgEmailVerificationTokenRepository::new(repo()),
             ),
             interview_round_repository: Arc::new(pg::PgInterviewRoundRepository::new(repo())),
-            llm_api_key_repository: Arc::new(pg::PgLlmApiKeyRepository::new(repo())),
-            llm_usage_event_repository: Arc::new(pg::PgLlmUsageEventRepository::new(repo())),
+            llm_api_key_repository,
+            llm_usage_event_repository,
             login_event_repository: Arc::new(pg::PgLoginEventRepository::new(repo())),
             mcp_oauth_authorization_code_repository: Arc::new(
                 pg::PgMcpOAuthAuthorizationCodeRepository::new(repo()),
@@ -118,12 +152,12 @@ impl Container {
                 repo(),
             )),
             push_subscription_repository: Arc::new(pg::PgPushSubscriptionRepository::new(repo())),
-            security_event_repository: Arc::new(pg::PgSecurityEventRepository::new(repo())),
-            session_repository: Arc::new(pg::PgSessionRepository::new(repo())),
+            security_event_repository,
+            session_repository,
             share_link_repository: Arc::new(pg::PgShareLinkRepository::new(repo())),
             skill_repository: Arc::new(pg::PgSkillRepository::new(repo())),
             totp_backup_code_repository: Arc::new(pg::PgTotpBackupCodeRepository::new(repo())),
-            user_repository: Arc::new(pg::PgUserRepository::new(repo())),
+            user_repository,
             work_experience_repository: Arc::new(pg::PgWorkExperienceRepository::new(repo())),
 
             config: Arc::new(config),

@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use crate::http::container::Container;
-use crate::infrastructure::auth::PngQrCodeRenderer;
 use crate::use_cases::user::*;
 
 impl Container {
@@ -95,7 +92,7 @@ impl Container {
             user_repository: self.user_repository.clone(),
             totp_provider: self.services.totp_provider.clone(),
             // Stateless, so built here until `Services` carries one.
-            qr_code_renderer: Arc::new(PngQrCodeRenderer),
+            qr_code_renderer: self.services.qr_code_renderer.clone(),
         }
     }
 

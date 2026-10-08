@@ -22,6 +22,7 @@ use crate::http::constants::{
 use crate::http::container::Container;
 use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
+use crate::http::routes::fake_llm_completions::fake_llm_completions_routes;
 use crate::http::routes::health::health;
 use crate::http::routes::uploads;
 
@@ -92,6 +93,13 @@ pub fn build_router(container: Arc<Container>) -> Router {
     let router = match &container.services.local_storage {
         Some(local_storage) => router.merge(uploads::router(local_storage.clone())),
         None => router,
+    };
+    // A stand-in OpenAI-compatible endpoint for e2e and CI; never present
+    // unless explicitly opted into.
+    let router = if container.config.llm_provider_mode.is_fake() {
+        router.merge(fake_llm_completions_routes())
+    } else {
+        router
     };
 
     router

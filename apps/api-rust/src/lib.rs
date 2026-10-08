@@ -5,6 +5,10 @@
 //! `infrastructure` implements the ports `use_cases` declares, and `http` is
 //! the only layer that knows there is a transport.
 
+// The GraphQL root is one merged object over every domain's resolvers; the
+// generated resolver futures nest deeper than the default limit allows.
+#![recursion_limit = "512"]
+
 pub mod config;
 pub mod domain;
 pub mod http;
