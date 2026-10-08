@@ -25,8 +25,8 @@ use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
 use crate::http::routes::admin;
 use crate::http::routes::fake_llm_completions::fake_llm_completions_routes;
-use crate::http::routes::health::health;
 use crate::http::routes::fake_oauth_consent::fake_oauth_consent_routes;
+use crate::http::routes::health::health;
 use crate::http::routes::{mcp_oauth, oauth, uploads};
 
 #[derive(Clone)]

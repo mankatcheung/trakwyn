@@ -75,13 +75,14 @@ async fn consent(headers: HeaderMap, RawQuery(query): RawQuery) -> Response {
 /// unique-enough identity per call so unrelated tests never collide.
 fn fake_profile(query: &Map<String, Value>, provider: OAuthProviderName) -> Value {
     let provider = provider.as_str();
-    let email = query.get("email").and_then(Value::as_str).map(str::to_string).unwrap_or_else(|| {
-        format!(
-            "fake-{provider}-{}-{}@e2e.example.com",
-            Utc::now().timestamp_millis(),
-            random_suffix()
-        )
-    });
+    let email =
+        query.get("email").and_then(Value::as_str).map(str::to_string).unwrap_or_else(|| {
+            format!(
+                "fake-{provider}-{}-{}@e2e.example.com",
+                Utc::now().timestamp_millis(),
+                random_suffix()
+            )
+        });
     let name = query
         .get("name")
         .and_then(Value::as_str)

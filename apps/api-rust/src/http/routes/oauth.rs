@@ -20,8 +20,8 @@ use serde_json::{Map, Value};
 
 use super::mcp_oauth_helpers::{error_response, parse_query, redirect, string_value};
 use super::oauth_error_slug::{
-    link_error_slug, login_error_slug, provider_error_slug, INVALID_STATE,
-    MISSING_CODE, MISSING_USER, PROVIDER_MISMATCH,
+    link_error_slug, login_error_slug, provider_error_slug, INVALID_STATE, MISSING_CODE,
+    MISSING_USER, PROVIDER_MISMATCH,
 };
 use super::oauth_platform::{handoff_redirect_base, request_origin, OAuthPlatform};
 use crate::domain::oauth_account::OAuthProviderName;
@@ -147,6 +147,19 @@ fn with_cookies(mut response: Response, set_cookies: &[String]) -> Response {
     response
 }
 
+/// The state cookie is cleared before the handler's own cookies are set, as
+/// `apps/api` does, so it leads the `Set-Cookie` list.
+fn clearing_state_cookie_first(mut response: Response) -> Response {
+    let later: Vec<HeaderValue> =
+        response.headers().get_all("set-cookie").iter().cloned().collect();
+    response.headers_mut().remove("set-cookie");
+    let mut response = with_cookies(response, &[clear_state_cookie()]);
+    for value in later {
+        response.headers_mut().append("set-cookie", value);
+    }
+    response
+}
+
 fn encode_component(value: &str) -> String {
     utf8_percent_encode(value, URI_COMPONENT).to_string()
 }
@@ -198,7 +211,12 @@ async fn start(
     settled(begin(&container, &provider, &headers, &parse_query(query.as_deref())))
 }
 
-fn begin(container: &Container, provider: &str, headers: &HeaderMap, query: &Map<String, Value>) -> Reply {
+fn begin(
+    container: &Container,
+    provider: &str,
+    headers: &HeaderMap,
+    query: &Map<String, Value>,
+) -> Reply {
     let provider = parse_provider(provider)?;
     let mode = if string_value(query, "mode") == "link" {
         OAuthStateMode::Link
@@ -226,7 +244,8 @@ fn begin(container: &Container, provider: &str, headers: &HeaderMap, query: &Map
     let mut extension_id = String::new();
     if platform == OAuthPlatform::Extension {
         let requested = string_value(query, "extensionId");
-        let allowed = parse_extension_oauth_ids(container.config.auth.extension_oauth_ids.as_deref());
+        let allowed =
+            parse_extension_oauth_ids(container.config.auth.extension_oauth_ids.as_deref());
         if !allowed.contains(requested) {
             return Err(json_error(StatusCode::BAD_REQUEST, "Unknown extensionId"));
         }
@@ -238,7 +257,10 @@ fn begin(container: &Container, provider: &str, headers: &HeaderMap, query: &Map
         let cookies = request_cookies(headers);
         let Some(token) = cookies.get(cookies::ACCESS_TOKEN).filter(|token| !token.is_empty())
         else {
-            return Err(json_error(StatusCode::UNAUTHORIZED, "Must be logged in to link a provider"));
+            return Err(json_error(
+                StatusCode::UNAUTHORIZED,
+                "Must be logged in to link a provider",
+            ));
         };
         match container.token_service.verify_access(token) {
             Some(claims) => user_id = Some(claims.sub),
@@ -328,7 +350,7 @@ async fn callback(
     // Cleared once here rather than on each branch: this handler has many
     // ways out, and a stale nonce left behind would block the user's next
     // attempt. The value was read above, so clearing does not affect the checks.
-    with_cookies(finish(&container, &request).await, &[clear_state_cookie()])
+    clearing_state_cookie_first(finish(&container, &request).await)
 }
 
 async fn finish(container: &Container, request: &CallbackRequest) -> Response {
@@ -361,10 +383,8 @@ async fn finish(container: &Container, request: &CallbackRequest) -> Response {
     if state.provider != provider {
         return login_error(PROVIDER_MISMATCH);
     }
-    let Some(cookie) = request
-        .cookie
-        .as_ref()
-        .filter(|cookie| state_matches_browser(&state.nonce, &cookie.nonce))
+    let Some(cookie) =
+        request.cookie.as_ref().filter(|cookie| state_matches_browser(&state.nonce, &cookie.nonce))
     else {
         return login_error(INVALID_STATE);
     };
@@ -467,11 +487,8 @@ async fn sign_in(
         })
         .await?;
     let user = output.user;
-    let user_agent = request
-        .headers
-        .get(USER_AGENT)
-        .and_then(|value| value.to_str().ok())
-        .map(str::to_string);
+    let user_agent =
+        request.headers.get(USER_AGENT).and_then(|value| value.to_str().ok()).map(str::to_string);
     let session = container
         .create_session_use_case()
         .execute(CreateSessionInput {
@@ -488,11 +505,13 @@ async fn sign_in(
         Utc::now().timestamp_millis(),
     )?;
     Ok(match handoff_challenge {
-        Some(challenge) => SignedIn::Handoff(container.services.mobile_oauth_handoff_service.issue(
-            &tokens.access_token,
-            &tokens.refresh_token,
-            challenge,
-        )),
+        Some(challenge) => {
+            SignedIn::Handoff(container.services.mobile_oauth_handoff_service.issue(
+                &tokens.access_token,
+                &tokens.refresh_token,
+                challenge,
+            ))
+        }
         None => SignedIn::Cookies(
             container.auth_cookies.sign_in(&tokens.access_token, &tokens.refresh_token),
         ),
@@ -502,10 +521,9 @@ async fn sign_in(
 async fn extension_done() -> Response {
     let mut response = (StatusCode::OK, extension_done_page::HTML).into_response();
     for (name, value) in extension_done_page::HEADERS {
-        response.headers_mut().insert(
-            axum::http::HeaderName::from_static(name),
-            HeaderValue::from_static(value),
-        );
+        response
+            .headers_mut()
+            .insert(axum::http::HeaderName::from_static(name), HeaderValue::from_static(value));
     }
     response
 }

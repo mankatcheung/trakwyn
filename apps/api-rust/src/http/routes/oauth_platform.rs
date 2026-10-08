@@ -121,11 +121,11 @@ mod tests {
 
     #[test]
     fn an_extension_outside_the_allowlist_gets_no_handoff() {
+        assert_eq!(handoff_redirect_base(OAuthPlatform::Extension, "evil", &allowed(), "x"), None);
         assert_eq!(
-            handoff_redirect_base(OAuthPlatform::Extension, "evil", &allowed(), "x"),
+            handoff_redirect_base(OAuthPlatform::Extension, ID, &BTreeSet::new(), "x"),
             None
         );
-        assert_eq!(handoff_redirect_base(OAuthPlatform::Extension, ID, &BTreeSet::new(), "x"), None);
     }
 
     #[test]
