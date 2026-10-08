@@ -3,3 +3,5 @@
 
 mod auth;
 mod notes;
+mod oauth;
+mod sessions;

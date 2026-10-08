@@ -78,3 +78,7 @@ pub use push_subscription::PgPushSubscriptionRepository;
 pub use share_link::PgShareLinkRepository;
 pub use skill::PgSkillRepository;
 pub use work_experience::PgWorkExperienceRepository;
+mod blocklisting_session;
+mod logging_security_event;
+pub use blocklisting_session::BlocklistingSessionRepository;
+pub use logging_security_event::LoggingSecurityEventRepository;
