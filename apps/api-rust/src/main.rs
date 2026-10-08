@@ -44,9 +44,21 @@ async fn shutdown_signal() {
     }
 }
 
-async fn migrate(config: &Config) -> Result<(), BoxError> {
-    let mut conn = sqlx::PgConnection::connect(&config.database_url).await?;
-    let summary = apply_migrations(&mut conn, &default_migrations_dir()).await?;
+/// Applies `apps/api`'s Drizzle migrations. Needs only `DATABASE_URL`, not the
+/// rest of the server's configuration, so a deploy job can run it with just
+/// the database credentials. The directory is the first argument, else
+/// `MIGRATIONS_DIR`, else the monorepo's `apps/api/drizzle`.
+async fn migrate(directory: Option<String>) -> Result<(), BoxError> {
+    let database_url = std::env::var("DATABASE_URL")
+        .ok()
+        .filter(|url| !url.trim().is_empty())
+        .ok_or("DATABASE_URL must be set")?;
+    let directory = directory
+        .or_else(|| std::env::var("MIGRATIONS_DIR").ok().filter(|dir| !dir.trim().is_empty()))
+        .map_or_else(default_migrations_dir, std::path::PathBuf::from);
+
+    let mut conn = sqlx::PgConnection::connect(&database_url).await?;
+    let summary = apply_migrations(&mut conn, &directory).await?;
     println!("Migrations complete: {} applied, {} skipped", summary.applied, summary.skipped);
     Ok(())
 }
@@ -71,12 +83,15 @@ async fn run() -> Result<(), BoxError> {
     // A missing `.env` is normal in production, where the platform sets the
     // environment directly.
     let _ = dotenvy::dotenv();
-    let config = Config::from_env()?;
-    init_logging(&config);
+    let mut args = std::env::args().skip(1);
 
-    match std::env::args().nth(1).as_deref() {
-        None | Some("serve") => serve(config).await,
-        Some("migrate") => migrate(&config).await,
+    match args.next().as_deref() {
+        None | Some("serve") => {
+            let config = Config::from_env()?;
+            init_logging(&config);
+            serve(config).await
+        }
+        Some("migrate") => migrate(args.next()).await,
         Some(other) => {
             Err(format!("unknown command {other:?}; expected `serve` or `migrate`").into())
         }
