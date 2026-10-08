@@ -17,7 +17,6 @@ Mutation.deleteDocumentDraft
 Mutation.deleteLlmApiKey
 Mutation.disableTotp
 Mutation.dismissOnboardingChecklist
-Mutation.emptyTrash
 Mutation.exchangeMobileOAuthCode
 Mutation.exportDocumentDraftToPdf
 Mutation.extractDocumentText
@@ -31,7 +30,6 @@ Mutation.loginWithTotp
 Mutation.loginWithTotpMobile
 Mutation.logout
 Mutation.parseJobDescription
-Mutation.permanentlyDeleteApplication
 Mutation.reauthenticate
 Mutation.reauthenticateMobile
 Mutation.refreshToken

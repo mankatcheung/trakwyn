@@ -10,6 +10,7 @@ mod api_tokens;
 mod application_analytics;
 mod applications;
 mod applications_bulk;
+mod applications_trash;
 mod contacts;
 mod conversations;
 mod cookie_consent;

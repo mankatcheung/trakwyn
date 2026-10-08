@@ -2,9 +2,10 @@ use crate::http::container::Container;
 use crate::use_cases::jobs::{
     BulkAddTagToApplicationsUseCase, BulkDeleteApplicationsUseCase, BulkRestoreApplicationsUseCase,
     BulkUpdateApplicationsUseCase, CreateApplicationUseCase, DeleteApplicationUseCase,
-    GetApplicationSectionCountsUseCase, GetApplicationUseCase, GetApplicationsPageUseCase,
-    GetApplicationsUseCase, ListTrashedApplicationsUseCase, MoveApplicationOnBoardUseCase,
-    RestoreApplicationUseCase, UpdateApplicationUseCase,
+    EmptyTrashUseCase, GetApplicationSectionCountsUseCase, GetApplicationUseCase,
+    GetApplicationsPageUseCase, GetApplicationsUseCase, ListTrashedApplicationsUseCase,
+    MoveApplicationOnBoardUseCase, PermanentlyDeleteApplicationUseCase,
+    PurgeExpiredApplicationsUseCase, RestoreApplicationUseCase, UpdateApplicationUseCase,
 };
 
 impl Container {
@@ -38,6 +39,30 @@ impl Container {
 
     pub fn delete_application_use_case(&self) -> DeleteApplicationUseCase {
         DeleteApplicationUseCase { application_repository: self.application_repository.clone() }
+    }
+
+    pub fn permanently_delete_application_use_case(&self) -> PermanentlyDeleteApplicationUseCase {
+        PermanentlyDeleteApplicationUseCase {
+            application_repository: self.application_repository.clone(),
+            document_repository: self.document_repository.clone(),
+            storage_provider: self.services.storage_provider.clone(),
+        }
+    }
+
+    pub fn empty_trash_use_case(&self) -> EmptyTrashUseCase {
+        EmptyTrashUseCase {
+            application_repository: self.application_repository.clone(),
+            permanently_delete_application_use_case: self.permanently_delete_application_use_case(),
+            logger: self.services.logger.clone(),
+        }
+    }
+
+    pub fn purge_expired_applications_use_case(&self) -> PurgeExpiredApplicationsUseCase {
+        PurgeExpiredApplicationsUseCase {
+            application_repository: self.application_repository.clone(),
+            permanently_delete_application_use_case: self.permanently_delete_application_use_case(),
+            logger: self.services.logger.clone(),
+        }
     }
 
     pub fn restore_application_use_case(&self) -> RestoreApplicationUseCase {

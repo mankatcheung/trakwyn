@@ -8,8 +8,9 @@ use crate::http::errors::GraphQLResultExt;
 use crate::use_cases::errors::{DomainError, DomainResult};
 use crate::use_cases::jobs::{
     BulkAddTagToApplicationsInput, BulkDeleteApplicationsInput, BulkRestoreApplicationsInput,
-    BulkUpdateApplicationsInput, CreateApplicationInput, DeleteApplicationInput,
-    MoveApplicationOnBoardInput, RestoreApplicationInput, UpdateApplicationInput,
+    BulkUpdateApplicationsInput, CreateApplicationInput, DeleteApplicationInput, EmptyTrashInput,
+    MoveApplicationOnBoardInput, PermanentlyDeleteApplicationInput, RestoreApplicationInput,
+    UpdateApplicationInput,
 };
 
 #[derive(InputObject)]
@@ -60,6 +61,13 @@ pub struct MoveApplicationOnBoardInputObject {
 
 // Counts rather than a bare `Boolean`: "false" over a list that is now
 // almost empty tells the user nothing they can act on.
+#[derive(SimpleObject)]
+#[graphql(name = "EmptyTrashResult")]
+pub struct EmptyTrashResultObject {
+    deleted: Option<i32>,
+    failed: Option<i32>,
+}
+
 #[derive(SimpleObject)]
 #[graphql(name = "BulkRestoreResult")]
 pub struct BulkRestoreResultObject {
@@ -214,6 +222,36 @@ impl ApplicationsMutation {
             .await
             .gql()?;
         Ok(Some(true))
+    }
+
+    async fn permanently_delete_application(
+        &self,
+        ctx: &Context<'_>,
+        id: ID,
+    ) -> Result<Option<bool>> {
+        let user = require_user(ctx)?;
+        container(ctx)
+            .permanently_delete_application_use_case()
+            .execute(PermanentlyDeleteApplicationInput {
+                user_id: user.sub.clone(),
+                application_id: id.0,
+            })
+            .await
+            .gql()?;
+        Ok(Some(true))
+    }
+
+    async fn empty_trash(&self, ctx: &Context<'_>) -> Result<Option<EmptyTrashResultObject>> {
+        let user = require_user(ctx)?;
+        let result = container(ctx)
+            .empty_trash_use_case()
+            .execute(EmptyTrashInput { user_id: user.sub.clone() })
+            .await
+            .gql()?;
+        Ok(Some(EmptyTrashResultObject {
+            deleted: Some(int(result.deleted)),
+            failed: Some(int(result.failed)),
+        }))
     }
 
     async fn bulk_restore_applications(
