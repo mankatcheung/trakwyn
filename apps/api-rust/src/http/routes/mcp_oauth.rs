@@ -6,6 +6,10 @@
 //! browser to the web app's own consent screen, which calls
 //! `/oauth/authorize/approve` (JSON) with the signed-in cookie session.
 
+// A handler's early exit is the finished `Response`; it is built once per
+// request, so its size does not matter.
+#![allow(clippy::result_large_err)]
+
 use std::sync::Arc;
 
 use axum::body::Bytes;

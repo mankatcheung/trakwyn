@@ -2,6 +2,9 @@
 //! routes (`apps/api`'s `mcpOAuth.helpers.ts`), kept apart from the route
 //! table so the parts that decide what is granted are testable on their own.
 
+// A refused request is answered with its finished `Response`, built once.
+#![allow(clippy::result_large_err)]
+
 use axum::http::header::{CONTENT_TYPE, COOKIE, HOST, ORIGIN, USER_AGENT};
 use axum::http::{Extensions, HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};

@@ -20,6 +20,8 @@ mod cookie_consent;
 mod education;
 mod http;
 mod interview_rounds;
+mod mcp_oauth_grants;
+mod mcp_oauth_routes;
 mod migrations;
 mod notes;
 mod notifications;
