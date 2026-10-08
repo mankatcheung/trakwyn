@@ -73,10 +73,15 @@ impl Container {
     pub fn new(config: Config, db: Db) -> Result<Self, BoxError> {
         let repo = || db.clone();
         let services = Services::new(&config)?;
+        let shared_cache = services.cache.clone();
+        let cache = || shared_cache.clone();
         let generate_id = nanoid_generator();
 
         // Plain repositories the decorators and the LLM factory are built over.
-        let user_repository: Arc<dyn UserRepository> = Arc::new(pg::PgUserRepository::new(repo()));
+        let user_repository: Arc<dyn UserRepository> = Arc::new(pg::CachedUserRepository::new(
+            Arc::new(pg::PgUserRepository::new(repo())),
+            services.cache.clone(),
+        ));
         let llm_api_key_repository: Arc<dyn LlmApiKeyRepository> =
             Arc::new(pg::PgLlmApiKeyRepository::new(repo()));
         let llm_usage_event_repository: Arc<dyn LlmUsageEventRepository> =
@@ -121,22 +126,40 @@ impl Container {
             transaction_manager: Arc::new(PgTransactionManager::new(repo())),
 
             activity_log_repository: Arc::new(pg::PgActivityLogRepository::new(repo())),
-            api_token_repository: Arc::new(pg::PgApiTokenRepository::new(repo())),
-            application_repository: Arc::new(pg::PgApplicationRepository::new(repo())),
+            api_token_repository: Arc::new(pg::CachedApiTokenRepository::new(
+                Arc::new(pg::PgApiTokenRepository::new(repo())),
+                cache(),
+            )),
+            application_repository: Arc::new(pg::CachedApplicationRepository::new(
+                Arc::new(pg::PgApplicationRepository::new(repo())),
+                cache(),
+            )),
             backup_email_verification_token_repository: Arc::new(
                 pg::PgBackupEmailVerificationTokenRepository::new(repo()),
             ),
             company_briefing_repository: Arc::new(pg::PgCompanyBriefingRepository::new(repo())),
-            contact_repository: Arc::new(pg::PgContactRepository::new(repo())),
+            contact_repository: Arc::new(pg::CachedContactRepository::new(
+                Arc::new(pg::PgContactRepository::new(repo())),
+                cache(),
+            )),
             conversation_repository: Arc::new(pg::PgConversationRepository::new(repo())),
             cookie_consent_repository: Arc::new(pg::PgCookieConsentRepository::new(repo())),
             document_draft_repository: Arc::new(pg::PgDocumentDraftRepository::new(repo())),
-            document_repository: Arc::new(pg::PgDocumentRepository::new(repo())),
-            education_repository: Arc::new(pg::PgEducationRepository::new(repo())),
+            document_repository: Arc::new(pg::CachedDocumentRepository::new(
+                Arc::new(pg::PgDocumentRepository::new(repo())),
+                cache(),
+            )),
+            education_repository: Arc::new(pg::CachedEducationRepository::new(
+                Arc::new(pg::PgEducationRepository::new(repo())),
+                cache(),
+            )),
             email_verification_token_repository: Arc::new(
                 pg::PgEmailVerificationTokenRepository::new(repo()),
             ),
-            interview_round_repository: Arc::new(pg::PgInterviewRoundRepository::new(repo())),
+            interview_round_repository: Arc::new(pg::CachedInterviewRoundRepository::new(
+                Arc::new(pg::PgInterviewRoundRepository::new(repo())),
+                cache(),
+            )),
             llm_api_key_repository,
             llm_usage_event_repository,
             login_event_repository: Arc::new(pg::PgLoginEventRepository::new(repo())),
@@ -150,8 +173,14 @@ impl Container {
             ),
             mcp_oauth_token_repository,
             message_repository: Arc::new(pg::PgMessageRepository::new(repo())),
-            note_repository: Arc::new(pg::PgNoteRepository::new(repo())),
-            notification_repository: Arc::new(pg::PgNotificationRepository::new(repo())),
+            note_repository: Arc::new(pg::CachedNoteRepository::new(
+                Arc::new(pg::PgNoteRepository::new(repo())),
+                cache(),
+            )),
+            notification_repository: Arc::new(pg::CachedNotificationRepository::new(
+                Arc::new(pg::PgNotificationRepository::new(repo())),
+                cache(),
+            )),
             oauth_account_repository: Arc::new(pg::PgOAuthAccountRepository::new(repo())),
             offer_repository: Arc::new(pg::PgOfferRepository::new(repo())),
             password_reset_token_repository: Arc::new(pg::PgPasswordResetTokenRepository::new(
@@ -161,10 +190,16 @@ impl Container {
             security_event_repository,
             session_repository,
             share_link_repository: Arc::new(pg::PgShareLinkRepository::new(repo())),
-            skill_repository: Arc::new(pg::PgSkillRepository::new(repo())),
+            skill_repository: Arc::new(pg::CachedSkillRepository::new(
+                Arc::new(pg::PgSkillRepository::new(repo())),
+                cache(),
+            )),
             totp_backup_code_repository: Arc::new(pg::PgTotpBackupCodeRepository::new(repo())),
             user_repository,
-            work_experience_repository: Arc::new(pg::PgWorkExperienceRepository::new(repo())),
+            work_experience_repository: Arc::new(pg::CachedWorkExperienceRepository::new(
+                Arc::new(pg::PgWorkExperienceRepository::new(repo())),
+                cache(),
+            )),
 
             config: Arc::new(config),
             db,

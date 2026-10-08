@@ -204,6 +204,15 @@ impl TestApp {
         Response { status: parts.status, headers: parts.headers, body }
     }
 
+    /// Forgets every cached read.
+    ///
+    /// Repositories cache what they read and drop it when they write. A test
+    /// that changes a row with raw SQL has bypassed that, so it calls this
+    /// before asserting on what the app now sees.
+    pub async fn flush_cache(&self) {
+        self.container.services.cache.delete_by_prefix("").await;
+    }
+
     pub async fn graphql(&self, query: &str, variables: Value, auth: Auth<'_>) -> Response {
         let builder = Request::post("/graphql").header(CONTENT_TYPE, "application/json");
         let builder = match auth {

@@ -200,6 +200,7 @@ async fn a_contact_on_a_trashed_application_is_out_of_reach() {
         .execute(app.db.pool())
         .await
         .unwrap();
+    app.flush_cache().await;
 
     let listed = app.graphql(LIST, json!({ "applicationId": "app-1" }), Auth::Bearer(&token)).await;
     assert_eq!(listed.error_code(), "NOT_FOUND");

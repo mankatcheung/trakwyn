@@ -186,6 +186,7 @@ async fn with_fallback_enabled_a_paused_key_hands_over_to_another_and_that_one_i
         .execute(app.db.pool())
         .await
         .unwrap();
+    app.flush_cache().await;
     app.graphql(
         SET_LIMIT,
         json!({ "provider": "openrouter", "limit": 1000 }),
@@ -347,6 +348,7 @@ async fn scores_a_resume_against_the_job_description() {
     .execute(app.db.pool())
     .await
     .unwrap();
+    app.flush_cache().await;
 
     let response = app
         .graphql(
@@ -389,6 +391,7 @@ async fn scoring_needs_a_job_description_and_some_resume_source() {
     .execute(app.db.pool())
     .await
     .unwrap();
+    app.flush_cache().await;
     let no_resume = app.graphql(MATCH, application_id(), Auth::Bearer(&token)).await;
     assert_eq!(no_resume.error_code(), "VALIDATION");
     assert_eq!(

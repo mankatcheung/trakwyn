@@ -277,6 +277,7 @@ mod email {
         assert_eq!(wrong.error_message(), "Invalid password");
 
         enable_2fa(&app.db, "ada").await;
+        app.flush_cache().await;
         let stale = stale_token(&app, "ada");
         let refused = app
             .graphql(
