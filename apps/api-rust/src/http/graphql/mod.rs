@@ -7,8 +7,11 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
+mod document_drafts;
+mod documents;
 mod notes;
 pub mod support;
+mod upload_url_payload;
 
 use std::sync::Arc;
 
@@ -16,11 +19,21 @@ use async_graphql::{EmptySubscription, MergedObject, Schema};
 
 use crate::http::container::Container;
 
+#[rustfmt::skip]
 #[derive(MergedObject, Default)]
-pub struct Query(notes::NotesQuery);
+pub struct Query(
+    document_drafts::DocumentDraftsQuery,
+    documents::DocumentsQuery,
+    notes::NotesQuery,
+);
 
+#[rustfmt::skip]
 #[derive(MergedObject, Default)]
-pub struct Mutation(notes::NotesMutation);
+pub struct Mutation(
+    document_drafts::DocumentDraftsMutation,
+    documents::DocumentsMutation,
+    notes::NotesMutation,
+);
 
 pub type ApiSchema = Schema<Query, Mutation, EmptySubscription>;
 

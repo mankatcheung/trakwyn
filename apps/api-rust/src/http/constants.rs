@@ -76,3 +76,22 @@ pub mod rate_limit {
     /// unsaved key, so it could be used to hammer third-party keys through us.
     pub const TEST_LLM_API_KEY: RateLimit = RateLimit::new(10, 5 * MINUTE_MS);
 }
+
+/// The local-storage routes: the upload target `LocalStorageProvider` hands
+/// out and the read-back of what it stored. Registered only when storage is
+/// local disk.
+pub mod uploads {
+    /// `PUT`: the wildcard is the storage key, percent-encoded.
+    pub const UPLOAD: &str = "/uploads/_upload/{*key}";
+    pub const UPLOAD_EMPTY_KEY: &str = "/uploads/_upload/";
+    /// `GET`: the wildcard is the storage key.
+    pub const OBJECT: &str = "/uploads/{*key}";
+    pub const OBJECT_EMPTY_KEY: &str = "/uploads/";
+    /// Key prefix of the upload route, never a stored object's key.
+    pub const UPLOAD_PATH_PREFIX: &str = "_upload/";
+    /// The request bodies the upload route reads; anything else is a 415.
+    pub const ACCEPTED_CONTENT_TYPES: [&str; 3] =
+        ["application/octet-stream", "text/plain", "application/pdf"];
+    /// The type an upload is stored with when the request names none.
+    pub const FALLBACK_CONTENT_TYPE: &str = "application/octet-stream";
+}

@@ -12,14 +12,12 @@ Mutation.compareOffers
 Mutation.computeResumeMatchScore
 Mutation.confirmAvatar
 Mutation.confirmBackupEmail
-Mutation.confirmDocument
 Mutation.confirmEmailChange
 Mutation.confirmTotpSetup
 Mutation.createApiToken
 Mutation.createApplication
 Mutation.createContact
 Mutation.createConversation
-Mutation.createDocumentDraft
 Mutation.createEducation
 Mutation.createInterviewRound
 Mutation.createOffer
@@ -31,8 +29,6 @@ Mutation.deleteApiToken
 Mutation.deleteApplication
 Mutation.deleteContact
 Mutation.deleteConversation
-Mutation.deleteDocument
-Mutation.deleteDocumentDraft
 Mutation.deleteEducation
 Mutation.deleteInterviewRound
 Mutation.deleteLlmApiKey
@@ -44,8 +40,6 @@ Mutation.disableTotp
 Mutation.dismissOnboardingChecklist
 Mutation.emptyTrash
 Mutation.exchangeMobileOAuthCode
-Mutation.exportDocumentDraftToPdf
-Mutation.extractDocumentText
 Mutation.generateCompanyBriefing
 Mutation.generateCoverLetter
 Mutation.generateResume
@@ -71,13 +65,11 @@ Mutation.registerMobile
 Mutation.registerPushSubscription
 Mutation.removeAvatar
 Mutation.removeBackupEmail
-Mutation.renameDocumentDraft
 Mutation.requestAddBackupEmail
 Mutation.requestAvatarUploadUrl
 Mutation.requestBackupEmailRecovery
 Mutation.requestEmailChange
 Mutation.requestPasswordReset
-Mutation.requestUploadUrl
 Mutation.resetPassword
 Mutation.restoreApplication
 Mutation.revokeMcpOAuthGrant
@@ -91,7 +83,6 @@ Mutation.unlinkOAuthAccount
 Mutation.unregisterPushSubscription
 Mutation.updateApplication
 Mutation.updateContact
-Mutation.updateDocumentDraftContent
 Mutation.updateEducation
 Mutation.updateInterviewRound
 Mutation.updateNotificationPreferences
@@ -113,10 +104,6 @@ Query.chatHistory
 Query.companyBriefing
 Query.contacts
 Query.conversations
-Query.documentDraft
-Query.documentDrafts
-Query.documents
-Query.documentVersionOutcomes
 Query.educations
 Query.exportUserData
 Query.interviewRoundAnalytics

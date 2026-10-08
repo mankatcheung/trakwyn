@@ -4,6 +4,7 @@
 pub mod auth;
 pub mod clock;
 pub mod constants;
+pub mod documents;
 pub mod errors;
 pub mod ids;
 pub mod jobs;

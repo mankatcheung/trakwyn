@@ -142,3 +142,31 @@ pub mod resume_text_extraction {
     pub const FETCH_TIMEOUT_MS: u64 = 15_000;
     pub const EXTRACT_TIMEOUT_MS: u64 = 20_000;
 }
+
+/// What a document upload may be: the accepted MIME types (resumes, cover
+/// letters, portfolios) and the largest accepted size.
+pub mod document_upload {
+    use super::{mime_type, resume_text_extraction};
+
+    pub const ALLOWED_MIME_TYPES: [&str; 6] = [
+        mime_type::PDF,
+        mime_type::DOC,
+        mime_type::DOCX,
+        mime_type::TEXT_PLAIN,
+        mime_type::PNG,
+        mime_type::JPEG,
+    ];
+    /// 10 MB. `resume_text_extraction::MAX_BYTES` is this cap restated at
+    /// read time, so the two are one value.
+    pub const MAX_SIZE_BYTES: i32 = resume_text_extraction::MAX_BYTES as i32;
+    /// A sanitized upload filename is cut to this many characters.
+    pub const MAX_FILENAME_CHARS: usize = 200;
+}
+
+/// `Document.documentType` values.
+pub mod document_type {
+    pub const RESUME: &str = "resume";
+    pub const COVER_LETTER: &str = "cover_letter";
+    pub const PORTFOLIO: &str = "portfolio";
+    pub const OTHER: &str = "other";
+}
