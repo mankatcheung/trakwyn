@@ -5,6 +5,9 @@
 //! throwaway one and runs the suite against it.
 
 mod common;
+mod document_drafts;
+mod documents;
+mod uploads;
 
 mod http;
 mod migrations;
