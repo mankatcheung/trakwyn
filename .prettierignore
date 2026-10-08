@@ -15,3 +15,5 @@ apps/extension/safari/
 # Cargo build output and the printed GraphQL contract (apps/api-rust/CLAUDE.md)
 apps/api-rust/target/
 apps/api-rust/schema.graphql
+# Compared byte for byte with what apps/api produces (apps/api-rust tests)
+apps/api-rust/tests/integration/fixtures/
