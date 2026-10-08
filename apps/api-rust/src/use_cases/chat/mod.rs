@@ -17,3 +17,5 @@ pub use stream_chat_with_assistant::{
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_stream;
