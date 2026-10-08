@@ -6,7 +6,9 @@
 
 mod common;
 
+mod ai_features;
 mod http;
+mod llm_keys;
 mod migrations;
 mod notes;
 mod repositories;

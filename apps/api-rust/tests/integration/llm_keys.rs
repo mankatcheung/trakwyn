@@ -17,7 +17,9 @@ use serde_json::{json, Value};
 
 use trakwyn_api::config::{Config, NodeEnv};
 
-use crate::common::{seed_application, seed_user, Auth, Response, TestApp, JWT_REFRESH_SECRET, JWT_SECRET};
+use crate::common::{
+    seed_application, seed_user, Auth, Response, TestApp, JWT_REFRESH_SECRET, JWT_SECRET,
+};
 
 pub const STUB_PATH: &str = "/v1/chat/completions";
 pub const STUB_MODEL: &str = "stub-model";
@@ -100,10 +102,8 @@ async fn stub_handler(
 
 impl LlmStub {
     pub async fn start(replies: Vec<(u16, Value)>) -> Self {
-        let state = Arc::new(StubState {
-            replies: Mutex::new(replies.into()),
-            requests: Mutex::default(),
-        });
+        let state =
+            Arc::new(StubState { replies: Mutex::new(replies.into()), requests: Mutex::default() });
         let router = Router::new().route(STUB_PATH, post(stub_handler)).with_state(state.clone());
         Self { url: serve(router).await + STUB_PATH, state }
     }
@@ -141,7 +141,8 @@ pub fn llm_config() -> Config {
     Config { port: 0, node_env: NodeEnv::Test, ..base }
 }
 
-pub const SAVE: &str = "mutation($provider: String!, $apiKey: String!, $model: String, $baseUrl: String) {
+pub const SAVE: &str =
+    "mutation($provider: String!, $apiKey: String!, $model: String, $baseUrl: String) {
     saveLlmApiKey(provider: $provider, apiKey: $apiKey, model: $model, baseUrl: $baseUrl)
 }";
 const LIST: &str = "{ llmApiKeys { provider model baseUrl monthlyTokenLimit } }";
@@ -300,8 +301,7 @@ async fn deleting_the_default_key_clears_the_default() {
     save_named_key(&app, &token, "openai").await.data("saveLlmApiKey");
     save_named_key(&app, &token, "groq").await.data("saveLlmApiKey");
 
-    let deleted =
-        app.graphql(DELETE, json!({ "provider": "openai" }), Auth::Bearer(&token)).await;
+    let deleted = app.graphql(DELETE, json!({ "provider": "openai" }), Auth::Bearer(&token)).await;
 
     assert_eq!(deleted.data("deleteLlmApiKey"), &Value::Bool(true));
     assert_eq!(default_provider(&app).await, None);
@@ -359,7 +359,11 @@ async fn refuses_a_limit_below_one_and_a_provider_without_a_key() {
 
     for limit in [0, -3] {
         let response = app
-            .graphql(SET_LIMIT, json!({ "provider": "openai", "limit": limit }), Auth::Bearer(&token))
+            .graphql(
+                SET_LIMIT,
+                json!({ "provider": "openai", "limit": limit }),
+                Auth::Bearer(&token),
+            )
             .await;
         assert_eq!(response.error_code(), "VALIDATION");
         assert_eq!(response.error_message(), "Monthly token limit must be at least 1");
@@ -388,10 +392,7 @@ async fn tests_an_unsaved_key_against_the_provider_without_storing_or_metering_i
     assert_eq!(request.authorization.as_deref(), Some("Bearer sk-unsaved"));
     assert_eq!(request.body["model"], STUB_MODEL);
     assert_eq!(request.body["max_tokens"], 5);
-    assert_eq!(
-        request.user_prompt(),
-        "Reply with a single word to confirm this connection works."
-    );
+    assert_eq!(request.user_prompt(), "Reply with a single word to confirm this connection works.");
     assert_eq!(usage_event_count(&app).await, 0);
     let listed = app.graphql(LIST, json!({}), Auth::Bearer(&token)).await;
     assert_eq!(listed.data("llmApiKeys"), &json!([]));
@@ -403,8 +404,7 @@ async fn tests_a_saved_key_with_the_decrypted_secret_and_does_not_meter_it() {
     let stub = LlmStub::start(vec![]).await;
     save_custom_key(&app, &token, &stub).await;
 
-    let response =
-        app.graphql(TEST, json!({ "provider": "custom" }), Auth::Bearer(&token)).await;
+    let response = app.graphql(TEST, json!({ "provider": "custom" }), Auth::Bearer(&token)).await;
 
     assert_eq!(response.data("testLlmApiKey")["ok"], true);
     assert_eq!(stub.only_request().authorization, Some(format!("Bearer {STUB_KEY}")));
@@ -421,8 +421,7 @@ async fn a_saved_key_past_its_limit_can_still_be_tested() {
         .await
         .data("setLlmApiKeyMonthlyLimit");
 
-    let response =
-        app.graphql(TEST, json!({ "provider": "custom" }), Auth::Bearer(&token)).await;
+    let response = app.graphql(TEST, json!({ "provider": "custom" }), Auth::Bearer(&token)).await;
 
     assert_eq!(response.data("testLlmApiKey")["ok"], true);
 }
@@ -430,7 +429,8 @@ async fn a_saved_key_past_its_limit_can_still_be_tested() {
 #[tokio::test]
 async fn a_rejected_key_is_reported_with_classified_copy_never_the_providers_words() {
     let (app, token) = app_with_owner().await;
-    let secret_body = json!({ "error": { "message": "INTERNAL-ADMIN-PAGE sk-unsaved is invalid" } });
+    let secret_body =
+        json!({ "error": { "message": "INTERNAL-ADMIN-PAGE sk-unsaved is invalid" } });
     let stub = LlmStub::start(vec![(401, secret_body)]).await;
     let variables = json!({
         "provider": "custom", "apiKey": "sk-unsaved", "model": STUB_MODEL, "baseUrl": stub.url
@@ -442,7 +442,8 @@ async fn a_rejected_key_is_reported_with_classified_copy_never_the_providers_wor
     assert_eq!(result["ok"], false);
     let error = result["error"].as_str().unwrap();
     assert!(
-        error.starts_with("The provider rejected this API key — check it in Settings and try again"),
+        error
+            .starts_with("The provider rejected this API key — check it in Settings and try again"),
         "{error}"
     );
     let whole = response.body.to_string();
@@ -472,8 +473,7 @@ async fn an_unreachable_endpoint_is_reported_as_unreachable() {
 async fn testing_a_provider_with_no_saved_key_is_ai_not_configured() {
     let (app, token) = app_with_owner().await;
 
-    let response =
-        app.graphql(TEST, json!({ "provider": "openai" }), Auth::Bearer(&token)).await;
+    let response = app.graphql(TEST, json!({ "provider": "openai" }), Auth::Bearer(&token)).await;
 
     assert_eq!(response.error_code(), "AI_NOT_CONFIGURED");
     assert_eq!(response.error_message(), "No API key saved for this provider yet");
@@ -491,10 +491,7 @@ async fn the_key_test_is_rate_limited_per_user() {
 
     let last = last.unwrap();
     assert_eq!(last.error_code(), "RATE_LIMITED");
-    assert_eq!(
-        last.error_message(),
-        "Too many test attempts — please wait a moment and try again"
-    );
+    assert_eq!(last.error_message(), "Too many test attempts — please wait a moment and try again");
     assert_eq!(last.body["errors"][0]["extensions"]["statusCode"], 429);
 }
 
@@ -585,8 +582,7 @@ async fn one_users_keys_are_invisible_to_another() {
     let stranger = app.access_token("stranger");
 
     let listed = app.graphql(LIST, json!({}), Auth::Bearer(&stranger)).await;
-    let tested =
-        app.graphql(TEST, json!({ "provider": "openai" }), Auth::Bearer(&stranger)).await;
+    let tested = app.graphql(TEST, json!({ "provider": "openai" }), Auth::Bearer(&stranger)).await;
 
     assert_eq!(listed.data("llmApiKeys"), &json!([]));
     assert_eq!(tested.error_code(), "AI_NOT_CONFIGURED");

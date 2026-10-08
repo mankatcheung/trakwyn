@@ -89,6 +89,7 @@ pub trait LLMProviderFactory: Send + Sync {
     /// Builds a provider directly from raw credentials. No database access,
     /// nothing decrypted, never usage-tracked. `Ok(None)` for an
     /// unrecognized `provider` id.
+    #[allow(clippy::wrong_self_convention)] // the name is `apps/api`'s
     fn from_credentials(
         &self,
         credentials: LLMProviderCredentials,
