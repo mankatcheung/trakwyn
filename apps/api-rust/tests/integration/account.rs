@@ -213,6 +213,9 @@ mod email {
         .unwrap();
     }
 
+    /// `(tokenHash, newEmail, expiresAt, usedAt)`.
+    type ChangeTokenRow = (String, Option<String>, DateTime<Utc>, Option<DateTime<Utc>>);
+
     /// A stored token hash is the SHA-256 of 32 random bytes in hex: 64 hex characters.
     fn is_sha256_hex(value: &str) -> bool {
         value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit())
@@ -229,14 +232,13 @@ mod email {
         assert_eq!(response.data("requestEmailChange"), &Value::Bool(true));
 
         // The second request replaced the first one's token.
-        let rows: Vec<(String, Option<String>, DateTime<Utc>, Option<DateTime<Utc>>)> =
-            sqlx::query_as(
-                r#"SELECT "tokenHash", "newEmail", "expiresAt", "usedAt"
+        let rows: Vec<ChangeTokenRow> = sqlx::query_as(
+            r#"SELECT "tokenHash", "newEmail", "expiresAt", "usedAt"
                FROM "EmailVerificationToken" WHERE "userId" = 'ada'"#,
-            )
-            .fetch_all(app.db.pool())
-            .await
-            .unwrap();
+        )
+        .fetch_all(app.db.pool())
+        .await
+        .unwrap();
         assert_eq!(rows.len(), 1);
         let (hash, new_email, expires_at, used_at) = &rows[0];
         assert!(is_sha256_hex(hash), "{hash}");

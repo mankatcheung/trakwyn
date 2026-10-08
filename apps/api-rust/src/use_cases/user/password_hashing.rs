@@ -63,6 +63,8 @@ mod tests {
     async fn writes_a_cost_12_hash_in_the_format_bcryptjs_writes() {
         let hash = hash_password("hunter2hunter2").await.unwrap();
 
+        // A hash printed from here was checked the other way round:
+        // `bcryptjs.compareSync` accepts it for the same password.
         assert_eq!(hash.len(), BCRYPT_HASH_LENGTH);
         assert!(hash.starts_with("$2b$12$"), "{hash}");
         assert!(verify_password("hunter2hunter2", &hash).await.unwrap());
