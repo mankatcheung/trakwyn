@@ -8,6 +8,7 @@ pub mod cookies;
 pub mod di;
 pub mod errors;
 pub mod graphql;
+pub mod mcp;
 pub mod request_context;
 pub mod routes;
 pub mod services;

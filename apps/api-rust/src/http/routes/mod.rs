@@ -1,10 +1,12 @@
 //! HTTP routes outside the GraphQL endpoint.
 
 pub mod admin;
+pub mod chat_stream;
 pub mod cron_auth;
 pub mod digest;
 pub mod fake_llm_completions;
 pub mod health;
+pub mod mcp;
 pub mod mcp_oauth;
 pub mod mcp_oauth_helpers;
 pub mod push_notifications;

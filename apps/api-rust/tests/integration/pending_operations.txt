@@ -3,4 +3,3 @@
 # This list may only shrink. tests/integration/sdl_parity.rs fails when an
 # entry here is implemented (delete the line) and when an operation is
 # missing without being listed.
-Query.chatHistory

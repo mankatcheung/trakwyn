@@ -18,6 +18,7 @@ mod auth;
 pub mod auth_flows;
 mod auth_mobile;
 mod calendar;
+mod chat;
 mod company_briefing;
 mod contacts;
 mod conversations;
@@ -61,6 +62,7 @@ pub struct Query(
     application_analytics::ApplicationAnalyticsQuery,
     applications::ApplicationsQuery,
     calendar::CalendarQuery,
+    chat::ChatQuery,
     company_briefing::CompanyBriefingQuery,
     contacts::ContactsQuery,
     conversations::ConversationsQuery,
