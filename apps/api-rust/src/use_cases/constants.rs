@@ -142,3 +142,69 @@ pub mod resume_text_extraction {
     pub const FETCH_TIMEOUT_MS: u64 = 15_000;
     pub const EXTRACT_TIMEOUT_MS: u64 = 20_000;
 }
+
+/// Server-side session tracking (JEF-164).
+pub mod session {
+    use super::token_lifetime_s;
+
+    /// How long a session stays active without a refresh, in milliseconds:
+    /// mirrors the refresh JWT's lifetime and slides forward on each refresh.
+    pub const TTL_MS: i64 = token_lifetime_s::REFRESH_TOKEN * 1000;
+    /// Window after a rotation in which the just-superseded refresh token is
+    /// still accepted, to absorb benign concurrent-tab refresh races without
+    /// flagging them as reuse.
+    pub const ROTATION_GRACE_MS: i64 = 10 * 1000;
+}
+
+/// Step-up re-authentication (JEF-44): how recently a session must have
+/// fully authenticated (login or `reauthenticate`) for a sensitive action.
+pub mod reauth {
+    pub const FRESHNESS_WINDOW_MS: i64 = 15 * 60 * 1000;
+}
+
+/// Password-reset token settings.
+pub mod password_reset_token {
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 32;
+    /// How long a reset link stays valid, in milliseconds.
+    pub const TTL_MS: i64 = 60 * 60 * 1000;
+}
+
+/// Rules for any newly set password.
+pub mod password {
+    /// Minimum length, counted as `apps/api` counts it: UTF-16 code units.
+    pub const MIN_LENGTH: usize = 8;
+    /// bcrypt work factor. Both implementations must agree, or a hash's cost
+    /// would depend on which one wrote it.
+    pub const BCRYPT_COST: u32 = 12;
+}
+
+/// Email verification token settings.
+pub mod email_verification_token {
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 32;
+    /// How long a verification link stays valid, in milliseconds.
+    pub const TTL_MS: i64 = 24 * 60 * 60 * 1000;
+}
+
+/// Login history shown to the user.
+pub mod login_history {
+    /// Max number of recent login events surfaced to the user.
+    pub const LIMIT: i64 = 20;
+}
+
+/// Unified security activity feed (logins plus password, email, 2FA and
+/// session events).
+pub mod security_activity {
+    /// Max number of items in the merged feed, and the per-source fetch
+    /// limit: each source is fetched up to this many, then merged, sorted and
+    /// truncated, so the most recent N overall are never missed even if one
+    /// source dominates recent activity.
+    pub const LIMIT: i64 = 20;
+}
+
+/// `event` names for refused sign-ins (JEF-354), which the monitors group on.
+pub mod auth_failure_events {
+    pub const LOGIN_FAILED: &str = "auth.login.failed";
+    pub const TOTP_FAILED: &str = "auth.totp.failed";
+}
