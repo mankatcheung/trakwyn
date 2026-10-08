@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Markdown } from '../../../components/Markdown';
 import { useCompanyBriefing } from '../hooks/useCompanyBriefingQueries';
 import { useGenerateCompanyBriefing } from '../hooks/useCompanyBriefingMutations';
 import { getErrorMessage } from '../../../lib/errors';
@@ -72,7 +73,7 @@ export function CompanyBriefingScreen() {
               date: new Date(briefing.generatedAt).toLocaleString(),
             })}
           </Text>
-          <Text style={styles.briefingText}>{briefing.content}</Text>
+          <Markdown content={briefing.content} />
         </View>
       ) : null}
     </ScrollView>
@@ -104,6 +105,5 @@ function createStyles(colors: ThemeColors) {
     buttonDisabled: { opacity: 0.6 },
     generateButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '700' },
     generatedAt: { fontSize: 12, color: colors.textFaint },
-    briefingText: { fontSize: 14, color: colors.text, lineHeight: 21 },
   });
 }

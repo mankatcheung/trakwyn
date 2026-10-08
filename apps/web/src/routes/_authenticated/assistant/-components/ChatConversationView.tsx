@@ -9,7 +9,7 @@ import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Button, Input, Skeleton, Spinner } from '@trakwyn/ui';
-import { AssistantMarkdown } from '#/routes/_authenticated/assistant/-components/AssistantMarkdown';
+import { Markdown } from '#/components/Markdown';
 import {
   CREATE_CONVERSATION,
   chatHistoryQueryOptions,
@@ -238,7 +238,7 @@ export function ChatConversationView({
                       : 'border border-gray-200 bg-white text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
                   }`}
                 >
-                  {m.role === 'assistant' ? <AssistantMarkdown content={m.content} /> : m.content}
+                  {m.role === 'assistant' ? <Markdown content={m.content} /> : m.content}
                 </div>
               </div>
             ))}
@@ -249,7 +249,7 @@ export function ChatConversationView({
           (streamingText ? (
             <div className="flex justify-start">
               <div className="max-w-[80%] rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                <AssistantMarkdown content={streamingText} />
+                <Markdown content={streamingText} />
               </div>
             </div>
           ) : (

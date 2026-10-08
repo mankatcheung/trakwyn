@@ -54,6 +54,33 @@ describe('CompanyBriefingTab', () => {
     );
   });
 
+  it('renders a markdown briefing as headings and lists, not raw syntax', async () => {
+    respondWith({
+      ...stored,
+      content:
+        '## Company overview\nAcme builds widgets.\n\n- **Culture**: fast\n- Interviews: 3 rounds',
+    });
+    render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Company overview' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Culture').tagName).toBe('STRONG');
+    expect(screen.getByText(/Interviews: 3 rounds/).closest('li')).not.toBeNull();
+    expect(screen.queryByText(/##/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the line breaks of a briefing stored as plain text before markdown', async () => {
+    // Old briefings are "Header:\nbody" with single newlines, which markdown
+    // would otherwise fold into one run-on line.
+    respondWith(stored);
+    render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    const paragraph = (await screen.findByText(/Acme builds widgets/)).closest('p')!;
+    expect(paragraph.textContent).toBe('Company overview:\nAcme builds widgets.');
+    expect(paragraph.parentElement?.parentElement?.className).toContain('whitespace-pre-line');
+  });
+
   it('says when the briefing was generated, so a stale one looks stale', async () => {
     respondWith(stored);
     render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
