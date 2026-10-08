@@ -7,8 +7,13 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
+mod activity_logs;
+mod application_analytics;
+mod application_mutations;
+mod applications;
+mod calendar;
 mod contacts;
-mod enums;
+pub mod enums;
 mod interview_rounds;
 mod notes;
 mod offers;
@@ -22,17 +27,22 @@ use crate::http::container::Container;
 
 #[derive(MergedObject, Default)]
 pub struct Query(
-    notes::NotesQuery,
+    activity_logs::ActivityLogsQuery,
+    application_analytics::ApplicationAnalyticsQuery,
+    applications::ApplicationsQuery,
+    calendar::CalendarQuery,
     contacts::ContactsQuery,
     interview_rounds::InterviewRoundsQuery,
+    notes::NotesQuery,
     offers::OffersQuery,
 );
 
 #[derive(MergedObject, Default)]
 pub struct Mutation(
-    notes::NotesMutation,
+    application_mutations::ApplicationsMutation,
     contacts::ContactsMutation,
     interview_rounds::InterviewRoundsMutation,
+    notes::NotesMutation,
     offers::OffersMutation,
 );
 

@@ -1,9 +1,55 @@
-//! GraphQL enums more than one resolver module uses. One enum per block, each
-//! mirroring a domain enum: the contract spells the values as they are stored.
+//! GraphQL enums more than one resolver module uses. One block per enum.
 
-// --- InterviewRoundType ----------------------------------------------------
+use async_graphql::Enum;
 
-#[derive(async_graphql::Enum, Clone, Copy, PartialEq, Eq)]
+use crate::domain::application::ApplicationStatus;
+use crate::domain::interview_round::InterviewRoundType;
+
+// ── ApplicationStatus ───────────────────────────────────────────────────────
+
+#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq)]
+#[graphql(name = "ApplicationStatus", rename_items = "lowercase")]
+pub enum ApplicationStatusEnum {
+    Draft,
+    Applied,
+    Interviewing,
+    Offered,
+    Accepted,
+    Rejected,
+    Withdrawn,
+}
+
+impl From<ApplicationStatus> for ApplicationStatusEnum {
+    fn from(status: ApplicationStatus) -> Self {
+        match status {
+            ApplicationStatus::Draft => Self::Draft,
+            ApplicationStatus::Applied => Self::Applied,
+            ApplicationStatus::Interviewing => Self::Interviewing,
+            ApplicationStatus::Offered => Self::Offered,
+            ApplicationStatus::Accepted => Self::Accepted,
+            ApplicationStatus::Rejected => Self::Rejected,
+            ApplicationStatus::Withdrawn => Self::Withdrawn,
+        }
+    }
+}
+
+impl From<ApplicationStatusEnum> for ApplicationStatus {
+    fn from(status: ApplicationStatusEnum) -> Self {
+        match status {
+            ApplicationStatusEnum::Draft => Self::Draft,
+            ApplicationStatusEnum::Applied => Self::Applied,
+            ApplicationStatusEnum::Interviewing => Self::Interviewing,
+            ApplicationStatusEnum::Offered => Self::Offered,
+            ApplicationStatusEnum::Accepted => Self::Accepted,
+            ApplicationStatusEnum::Rejected => Self::Rejected,
+            ApplicationStatusEnum::Withdrawn => Self::Withdrawn,
+        }
+    }
+}
+
+// ── InterviewRoundType ──────────────────────────────────────────────────────
+
+#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq)]
 #[graphql(name = "InterviewRoundType", rename_items = "lowercase")]
 pub enum InterviewRoundTypeEnum {
     Phone,
@@ -13,22 +59,21 @@ pub enum InterviewRoundTypeEnum {
     Other,
 }
 
-impl From<crate::domain::interview_round::InterviewRoundType> for InterviewRoundTypeEnum {
-    fn from(value: crate::domain::interview_round::InterviewRoundType) -> Self {
-        use crate::domain::interview_round::InterviewRoundType as Domain;
-        match value {
-            Domain::Phone => Self::Phone,
-            Domain::Technical => Self::Technical,
-            Domain::Onsite => Self::Onsite,
-            Domain::Hr => Self::Hr,
-            Domain::Other => Self::Other,
+impl From<InterviewRoundType> for InterviewRoundTypeEnum {
+    fn from(round_type: InterviewRoundType) -> Self {
+        match round_type {
+            InterviewRoundType::Phone => Self::Phone,
+            InterviewRoundType::Technical => Self::Technical,
+            InterviewRoundType::Onsite => Self::Onsite,
+            InterviewRoundType::Hr => Self::Hr,
+            InterviewRoundType::Other => Self::Other,
         }
     }
 }
 
-impl From<InterviewRoundTypeEnum> for crate::domain::interview_round::InterviewRoundType {
-    fn from(value: InterviewRoundTypeEnum) -> Self {
-        match value {
+impl From<InterviewRoundTypeEnum> for InterviewRoundType {
+    fn from(round_type: InterviewRoundTypeEnum) -> Self {
+        match round_type {
             InterviewRoundTypeEnum::Phone => Self::Phone,
             InterviewRoundTypeEnum::Technical => Self::Technical,
             InterviewRoundTypeEnum::Onsite => Self::Onsite,
@@ -38,7 +83,34 @@ impl From<InterviewRoundTypeEnum> for crate::domain::interview_round::InterviewR
     }
 }
 
-// --- InterviewRoundOutcome -------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn application_status_round_trips_and_keeps_the_stored_spelling() {
+        for status in ApplicationStatus::ALL {
+            let exposed = ApplicationStatusEnum::from(status);
+            assert_eq!(ApplicationStatus::from(exposed), status);
+            assert_eq!(
+                async_graphql::resolver_utils::enum_value(exposed).to_string(),
+                status.as_str()
+            );
+        }
+    }
+
+    #[test]
+    fn interview_round_type_round_trips_and_keeps_the_stored_spelling() {
+        for round_type in InterviewRoundType::ALL {
+            let exposed = InterviewRoundTypeEnum::from(round_type);
+            assert_eq!(InterviewRoundType::from(exposed), round_type);
+            assert_eq!(
+                async_graphql::resolver_utils::enum_value(exposed).to_string(),
+                round_type.as_str()
+            );
+        }
+    }
+}
 
 #[derive(async_graphql::Enum, Clone, Copy, PartialEq, Eq)]
 #[graphql(name = "InterviewRoundOutcome", rename_items = "lowercase")]
