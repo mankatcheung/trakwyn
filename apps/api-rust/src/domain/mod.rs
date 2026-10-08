@@ -1,0 +1,34 @@
+//! Pure entities. Nothing here imports a framework, a driver or another layer.
+
+pub mod activity_log;
+pub mod api_token;
+pub mod application;
+pub mod backup_email_verification_token;
+pub mod company_briefing;
+pub mod contact;
+pub mod conversation;
+pub mod cookie_consent;
+pub mod document;
+pub mod document_draft;
+pub mod education;
+pub mod email_verification_token;
+pub mod interview_round;
+pub mod llm_api_key;
+pub mod llm_usage_event;
+pub mod login_event;
+pub mod mcp_oauth;
+pub mod message;
+pub mod note;
+pub mod notification;
+pub mod oauth_account;
+pub mod offer;
+pub mod password_reset_token;
+pub mod push_subscription;
+pub mod resume;
+pub mod security_event;
+pub mod session;
+pub mod share_link;
+pub mod skill;
+pub mod totp_backup_code;
+pub mod user;
+pub mod work_experience;

@@ -174,6 +174,85 @@ jobs:
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
+  # apps/api-rust is a Cargo package, not a pnpm workspace member, so Turbo
+  # does not see it and it gets its own job. It also runs when apps/api's
+  # migrations change, since it applies those same files.
+  api-rust:
+    name: Rust API (fmt, clippy, test)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    # A server the integration tests may create databases on: each test clones
+    # its own from a migrated template (apps/api-rust/tests/integration/common.rs).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: trakwyn
+          POSTGRES_PASSWORD: trakwyn
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trakwyn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/api-rust
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Rust API changes
+        id: changes
+        working-directory: .
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git diff --quiet "origin/${BASE_REF}...HEAD" -- apps/api-rust apps/api/drizzle .github/workflows/ci.yml; then
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # rustup reads apps/api-rust/rust-toolchain.toml and installs the pinned
+      # toolchain with rustfmt and clippy on first use.
+      - name: Install the pinned toolchain
+        if: steps.changes.outputs.rust == 'true'
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+        if: steps.changes.outputs.rust == 'true'
+        with:
+          workspaces: apps/api-rust
+
+      - if: steps.changes.outputs.rust == 'true'
+        run: cargo fmt --check
+
+      - if: steps.changes.outputs.rust == 'true'
+        run: cargo clippy --all-targets -- -D warnings
+
+      - if: steps.changes.outputs.rust == 'true'
+        env:
+          TEST_DATABASE_URL: postgres://trakwyn:trakwyn@localhost:5432/postgres
+        run: cargo test
+
+      # Build only, so a Dockerfile or dependency change that breaks the image
+      # fails on the PR rather than after merge.
+      - uses: docker/setup-buildx-action@v3
+        if: steps.changes.outputs.rust == 'true'
+
+      - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.rust == 'true'
+        with:
+          context: .
+          file: apps/api-rust/Dockerfile
+          push: false
+          cache-from: type=gha,scope=api-rust-image
+          cache-to: type=gha,mode=max,scope=api-rust-image
+
   e2e:
     name: Playwright E2E
     needs: [quality, build-test]
