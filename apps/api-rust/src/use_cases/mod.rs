@@ -12,6 +12,7 @@ pub mod constants;
 pub mod contacts;
 pub mod conversations;
 pub mod cookie_consent;
+pub mod documents;
 pub mod education;
 pub mod errors;
 pub mod ids;

@@ -8,6 +8,7 @@ mod auth;
 mod contacts;
 mod conversations;
 mod cookie_consent;
+mod documents;
 mod interview_rounds;
 mod notes;
 mod notifications;

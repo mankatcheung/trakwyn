@@ -16,6 +16,8 @@ mod calendar;
 mod contacts;
 mod conversations;
 mod cookie_consent;
+mod document_drafts;
+mod documents;
 mod education;
 pub mod enums;
 mod interview_rounds;
@@ -27,6 +29,7 @@ pub mod optional_input;
 mod share_links;
 mod skills;
 pub mod support;
+mod upload_url_payload;
 mod work_experience;
 
 use std::sync::Arc;
@@ -44,6 +47,8 @@ pub struct Query(
     calendar::CalendarQuery,
     contacts::ContactsQuery,
     conversations::ConversationsQuery,
+    document_drafts::DocumentDraftsQuery,
+    documents::DocumentsQuery,
     education::EducationQuery,
     interview_rounds::InterviewRoundsQuery,
     notes::NotesQuery,
@@ -61,6 +66,8 @@ pub struct Mutation(
     contacts::ContactsMutation,
     conversations::ConversationsMutation,
     cookie_consent::CookieConsentMutation,
+    document_drafts::DocumentDraftsMutation,
+    documents::DocumentsMutation,
     education::EducationMutation,
     interview_rounds::InterviewRoundsMutation,
     notes::NotesMutation,
