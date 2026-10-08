@@ -225,3 +225,26 @@ pub mod document_type {
     pub const PORTFOLIO: &str = "portfolio";
     pub const OTHER: &str = "other";
 }
+
+/// MCP OAuth (the authorization server `apps/api` runs for MCP clients).
+/// `RESOURCE` is the token audience the validate use case checks, not a
+/// route. The consent token's lifetime stays with the service that signs it
+/// (`infrastructure::auth::MCP_CONSENT_TOKEN_TTL_MS`).
+pub mod mcp_oauth {
+    pub const RESOURCE: &str = "/mcp";
+    pub const CLIENT_ID_PREFIX: &str = "trakwyn_mcp_client_";
+    pub const CLIENT_ID_RANDOM_BYTES: usize = 16;
+    pub const CLIENT_NAME_MAX_LENGTH: usize = 100;
+    pub const AUTHORIZATION_CODE_PREFIX: &str = "trakwyn_mcp_code_";
+    pub const AUTHORIZATION_CODE_RANDOM_BYTES: usize = 32;
+    pub const AUTHORIZATION_CODE_TTL_MS: i64 = 5 * 60 * 1000;
+    pub const REFRESH_TOKEN_PREFIX: &str = "trakwyn_mcp_refresh_";
+    pub const REFRESH_TOKEN_RANDOM_BYTES: usize = 32;
+    pub const REFRESH_TOKEN_TTL_MS: i64 = 30 * 24 * 60 * 60 * 1000;
+    pub const ACCESS_TOKEN_PREFIX: &str = "trakwyn_mcp_";
+    pub const ACCESS_TOKEN_RANDOM_BYTES: usize = 32;
+    pub const ACCESS_TOKEN_TTL_MS: i64 = 60 * 60 * 1000;
+    /// RFC 7636 s4.1: a code verifier is 43 to 128 characters.
+    pub const CODE_VERIFIER_MIN_LENGTH: usize = 43;
+    pub const CODE_VERIFIER_MAX_LENGTH: usize = 128;
+}

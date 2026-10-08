@@ -18,6 +18,7 @@ pub mod errors;
 pub mod ids;
 pub mod interview_rounds;
 pub mod jobs;
+pub mod mcp_oauth;
 pub mod notes;
 pub mod notifications;
 pub mod offers;
