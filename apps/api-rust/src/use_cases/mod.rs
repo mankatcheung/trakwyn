@@ -7,6 +7,7 @@ pub mod constants;
 pub mod errors;
 pub mod ids;
 pub mod jobs;
+pub mod llm_keys;
 pub mod notes;
 pub mod ports;
 pub mod shared;

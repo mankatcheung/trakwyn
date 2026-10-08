@@ -90,3 +90,5 @@ pub use offers::FakeOfferRepository;
 pub use push_subscriptions::FakePushSubscriptionRepository;
 pub use skills::FakeSkillRepository;
 pub use work_experiences::FakeWorkExperienceRepository;
+mod llm_factory;
+pub use llm_factory::*;
