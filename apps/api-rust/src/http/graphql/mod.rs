@@ -35,6 +35,7 @@ mod notifications;
 mod oauth_accounts;
 mod offers;
 pub mod optional_input;
+mod push;
 mod security;
 mod session_auth_time;
 mod sessions;
@@ -104,6 +105,7 @@ pub struct Mutation(
     notifications::NotificationsMutation,
     oauth_accounts::OAuthAccountsMutation,
     offers::OffersMutation,
+    push::PushMutation,
     sessions::SessionsMutation,
     share_links::ShareLinksMutation,
     skills::SkillsMutation,

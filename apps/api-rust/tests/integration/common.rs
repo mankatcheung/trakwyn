@@ -181,8 +181,17 @@ impl TestApp {
     }
 
     pub async fn start_with(config: Config) -> Self {
+        Self::start_customised(config, |_| {}).await
+    }
+
+    /// Like [`TestApp::start_with`], but `customise` may swap singletons on
+    /// the freshly built container (`container.services.oidc_token_verifier`,
+    /// the push services, the logger, ...) before the router is built.
+    pub async fn start_customised(config: Config, customise: impl FnOnce(&mut Container)) -> Self {
         let TestDb { db } = TestDb::create().await;
-        let container = Arc::new(Container::new(config, db.clone()).unwrap());
+        let mut container = Container::new(config, db.clone()).unwrap();
+        customise(&mut container);
+        let container = Arc::new(container);
         Self { router: build_router(container.clone()), container, db }
     }
 

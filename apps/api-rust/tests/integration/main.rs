@@ -12,6 +12,7 @@ mod uploads;
 
 mod account;
 mod account_support;
+mod admin_routes;
 mod ai_features;
 mod api_tokens;
 mod application_analytics;
@@ -34,6 +35,7 @@ mod notes;
 mod notifications;
 mod oauth_accounts;
 mod offers;
+mod push;
 mod repositories;
 mod repositories_applications;
 mod repositories_auth;

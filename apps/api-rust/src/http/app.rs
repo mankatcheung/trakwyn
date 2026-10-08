@@ -22,6 +22,7 @@ use crate::http::constants::{
 use crate::http::container::Container;
 use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
+use crate::http::routes::admin;
 use crate::http::routes::fake_llm_completions::fake_llm_completions_routes;
 use crate::http::routes::health::health;
 use crate::http::routes::{mcp_oauth, uploads};
@@ -102,6 +103,8 @@ pub fn build_router(container: Arc<Container>) -> Router {
     } else {
         router
     };
+
+    let router = router.merge(admin::router(container.clone()));
 
     router
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
