@@ -9,7 +9,6 @@ Mutation.bulkDeleteApplications
 Mutation.bulkRestoreApplications
 Mutation.bulkUpdateApplications
 Mutation.compareOffers
-Mutation.computeResumeMatchScore
 Mutation.confirmAvatar
 Mutation.confirmBackupEmail
 Mutation.confirmDocument
@@ -35,7 +34,6 @@ Mutation.deleteDocument
 Mutation.deleteDocumentDraft
 Mutation.deleteEducation
 Mutation.deleteInterviewRound
-Mutation.deleteLlmApiKey
 Mutation.deleteOffer
 Mutation.deleteShareLink
 Mutation.deleteSkill
@@ -46,9 +44,6 @@ Mutation.emptyTrash
 Mutation.exchangeMobileOAuthCode
 Mutation.exportDocumentDraftToPdf
 Mutation.extractDocumentText
-Mutation.generateCompanyBriefing
-Mutation.generateCoverLetter
-Mutation.generateResume
 Mutation.importUserData
 Mutation.login
 Mutation.loginMobile
@@ -57,7 +52,6 @@ Mutation.loginWithTotpMobile
 Mutation.logout
 Mutation.markNotificationsRead
 Mutation.moveApplicationOnBoard
-Mutation.parseJobDescription
 Mutation.permanentlyDeleteApplication
 Mutation.reauthenticate
 Mutation.reauthenticateMobile
@@ -83,10 +77,6 @@ Mutation.restoreApplication
 Mutation.revokeMcpOAuthGrant
 Mutation.revokeOtherSessions
 Mutation.revokeSession
-Mutation.saveLlmApiKey
-Mutation.setDefaultLlmProvider
-Mutation.setLlmApiKeyMonthlyLimit
-Mutation.testLlmApiKey
 Mutation.unlinkOAuthAccount
 Mutation.unregisterPushSubscription
 Mutation.updateApplication
@@ -110,7 +100,6 @@ Query.applications
 Query.applicationsPage
 Query.calendarEvents
 Query.chatHistory
-Query.companyBriefing
 Query.contacts
 Query.conversations
 Query.documentDraft
@@ -122,8 +111,6 @@ Query.exportUserData
 Query.interviewRoundAnalytics
 Query.interviewRounds
 Query.linkedOAuthAccounts
-Query.llmApiKeys
-Query.llmUsageSummary
 Query.loginHistory
 Query.mcpOAuthGrants
 Query.me

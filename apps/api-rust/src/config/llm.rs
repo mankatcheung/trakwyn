@@ -36,6 +36,66 @@ impl LlmCipherConfig {
     }
 }
 
+const LLM_PROVIDER_MODE: &str = "LLM_PROVIDER_MODE";
+const LLM_PROVIDER_MODE_FAKE: &str = "fake";
+
+/// `LLM_PROVIDER_MODE`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LlmProviderMode {
+    Real,
+    /// Mounts the same-origin fake completions route, so e2e and CI can point
+    /// a "Custom" provider at this server instead of a live vendor.
+    Fake,
+}
+
+/// Whether the fake completions route exists at all.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LlmProviderModeConfig {
+    pub mode: LlmProviderMode,
+}
+
+impl LlmProviderModeConfig {
+    pub fn from_lookup(get: EnvLookup<'_>) -> Result<Self, ConfigError> {
+        Ok(Self {
+            mode: match get(LLM_PROVIDER_MODE).as_deref() {
+                Some(LLM_PROVIDER_MODE_FAKE) => LlmProviderMode::Fake,
+                _ => LlmProviderMode::Real,
+            },
+        })
+    }
+
+    pub fn is_fake(&self) -> bool {
+        self.mode == LlmProviderMode::Fake
+    }
+}
+
+#[cfg(test)]
+mod provider_mode_tests {
+    use super::*;
+
+    fn mode(value: Option<&str>) -> LlmProviderModeConfig {
+        let value = value.map(str::to_string);
+        LlmProviderModeConfig::from_lookup(&|name| {
+            (name == "LLM_PROVIDER_MODE").then(|| value.clone()).flatten()
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn defaults_to_real() {
+        assert_eq!(mode(None).mode, LlmProviderMode::Real);
+        assert!(!mode(None).is_fake());
+    }
+
+    #[test]
+    fn only_the_exact_value_fake_mounts_the_fake_route() {
+        assert!(mode(Some("fake")).is_fake());
+        for other in ["real", "FAKE", " fake", ""] {
+            assert!(!mode(Some(other)).is_fake(), "{other:?}");
+        }
+    }
+}
+
 #[cfg(test)]
 mod cipher_config_tests {
     use super::*;

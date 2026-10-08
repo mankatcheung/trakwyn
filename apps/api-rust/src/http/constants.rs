@@ -76,3 +76,11 @@ pub mod rate_limit {
     /// unsaved key, so it could be used to hammer third-party keys through us.
     pub const TEST_LLM_API_KEY: RateLimit = RateLimit::new(10, 5 * MINUTE_MS);
 }
+
+/// The fake LLM completions endpoint: a same-origin stand-in for an
+/// OpenAI-compatible `/chat/completions`, mounted only when
+/// `LLM_PROVIDER_MODE=fake`. Not a new provider type: a user (or an e2e
+/// test) points the existing "Custom" provider at it.
+pub mod llm_fake_completions {
+    pub const PATH: &str = "/llm-test/fake/chat/completions";
+}
