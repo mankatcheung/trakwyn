@@ -61,7 +61,10 @@ mod tests {
     fn an_empty_date_string_counts_as_absent() {
         assert_eq!(date_if_given(None), None);
         assert_eq!(date_if_given(Some(String::new())), None);
-        assert!(matches!(date_if_given(Some("2024-01-15".to_string())), Some(ClientDate::Valid(_))));
+        assert!(matches!(
+            date_if_given(Some("2024-01-15".to_string())),
+            Some(ClientDate::Valid(_))
+        ));
         assert_eq!(date_if_given(Some("nope".to_string())), Some(ClientDate::Invalid));
     }
 

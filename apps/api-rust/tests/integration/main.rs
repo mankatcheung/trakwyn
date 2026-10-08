@@ -6,12 +6,20 @@
 
 mod common;
 
+mod api_tokens;
+mod conversations;
+mod cookie_consent;
+mod education;
 mod http;
 mod migrations;
 mod notes;
+mod notifications;
 mod repositories;
 mod repositories_applications;
 mod repositories_auth;
 mod repositories_content;
 mod repositories_credentials;
 mod sdl_parity;
+mod share_links;
+mod skills;
+mod work_experience;

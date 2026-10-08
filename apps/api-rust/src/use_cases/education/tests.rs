@@ -157,8 +157,7 @@ mod update {
 
     #[tokio::test]
     async fn fails_when_the_entry_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Education not found");
     }
@@ -224,8 +223,7 @@ mod delete {
 
     #[tokio::test]
     async fn fails_when_the_entry_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Education not found");
     }

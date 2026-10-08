@@ -31,7 +31,7 @@ impl GetNotificationsPageUseCase {
         input: GetNotificationsPageInput,
     ) -> DomainResult<GetNotificationsPageOutput> {
         let limit =
-            input.limit.unwrap_or(pagination::DEFAULT_LIMIT).min(pagination::MAX_LIMIT).max(1);
+            input.limit.unwrap_or(pagination::DEFAULT_LIMIT).clamp(1, pagination::MAX_LIMIT);
 
         let page = self
             .notification_repository

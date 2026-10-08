@@ -66,7 +66,10 @@ mod create {
         assert_eq!(created.user_id, OWNER);
         assert_eq!(created.company, "Globex");
         assert_eq!(created.start_date, at(500));
-        assert_eq!((created.location.clone(), created.end_date, created.description.clone()), (None, None, None));
+        assert_eq!(
+            (created.location.clone(), created.end_date, created.description.clone()),
+            (None, None, None)
+        );
         assert_eq!(repository.all(), vec![created]);
     }
 
@@ -153,8 +156,7 @@ mod update {
 
     #[tokio::test]
     async fn fails_when_the_entry_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Work experience not found");
     }
@@ -162,8 +164,10 @@ mod update {
     #[tokio::test]
     async fn someone_elses_entry_is_not_found_and_left_alone() {
         let repository = repository(vec![experience("we", OWNER)]);
-        let input =
-            UpdateWorkExperienceInput { title: Some("Hacked".to_string()), ..input(STRANGER, "we") };
+        let input = UpdateWorkExperienceInput {
+            title: Some("Hacked".to_string()),
+            ..input(STRANGER, "we")
+        };
 
         let err = use_case(&repository).execute(input).await.unwrap_err();
 
@@ -174,8 +178,10 @@ mod update {
     #[tokio::test]
     async fn an_unreadable_date_fails_after_the_ownership_check() {
         let repository = repository(vec![experience("we", OWNER)]);
-        let bad_start =
-            || UpdateWorkExperienceInput { start_date: Some(ClientDate::Invalid), ..input(OWNER, "we") };
+        let bad_start = || UpdateWorkExperienceInput {
+            start_date: Some(ClientDate::Invalid),
+            ..input(OWNER, "we")
+        };
 
         let err = use_case(&repository).execute(bad_start()).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::InternalError);
@@ -216,8 +222,7 @@ mod delete {
 
     #[tokio::test]
     async fn fails_when_the_entry_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Work experience not found");
     }

@@ -21,16 +21,14 @@ fn matches_model_id_pattern(model: &str) -> bool {
     };
     bytes.len() <= MODEL_ID_MAX_LENGTH
         && first.is_ascii_alphanumeric()
-        && rest
-            .iter()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'/' | b'-'))
+        && rest.iter().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'/' | b'-')
+        })
 }
 
 pub fn assert_valid_llm_model_id(model: &str) -> DomainResult<()> {
     if !matches_model_id_pattern(model) || model.contains("..") || model.contains("//") {
-        return Err(DomainError::validation(
-            "Model name contains characters that are not allowed",
-        ));
+        return Err(DomainError::validation("Model name contains characters that are not allowed"));
     }
     Ok(())
 }

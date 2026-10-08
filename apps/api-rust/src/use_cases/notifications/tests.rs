@@ -162,10 +162,8 @@ mod unread_count {
 
     #[tokio::test]
     async fn counts_the_users_unread_notifications() {
-        let read = Notification {
-            read_at: Some(DateTime::<Utc>::UNIX_EPOCH),
-            ..notification(3, OWNER)
-        };
+        let read =
+            Notification { read_at: Some(DateTime::<Utc>::UNIX_EPOCH), ..notification(3, OWNER) };
         let repository = Arc::new(FakeNotificationRepository::with(vec![
             notification(1, OWNER),
             notification(2, OWNER),

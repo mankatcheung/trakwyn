@@ -103,8 +103,7 @@ fn time_of_day(cursor: &mut Cursor<'_>) -> Option<i64> {
 
     let in_range = hour <= 23 && minute <= 59 && second <= 59;
     let end_of_day = hour == 24 && minute == 0 && second == 0 && millisecond == 0;
-    (in_range || end_of_day)
-        .then_some(((hour * 60 + minute) * 60 + second) * 1000 + millisecond)
+    (in_range || end_of_day).then_some(((hour * 60 + minute) * 60 + second) * 1000 + millisecond)
 }
 
 /// Milliseconds east of UTC, from `Z`, `±HH:mm` or `±HHmm`.

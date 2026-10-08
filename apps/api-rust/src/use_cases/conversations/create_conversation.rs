@@ -3,7 +3,9 @@ use std::sync::Arc;
 use crate::domain::conversation::Conversation;
 use crate::use_cases::errors::{DomainError, DomainResult};
 use crate::use_cases::ids::GenerateId;
-use crate::use_cases::ports::{ConversationRepository, CreateConversationData, LlmApiKeyRepository};
+use crate::use_cases::ports::{
+    ConversationRepository, CreateConversationData, LlmApiKeyRepository,
+};
 use crate::use_cases::user::llm_api_key_validation::assert_valid_llm_model_id;
 
 pub struct CreateConversationInput {

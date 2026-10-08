@@ -7,18 +7,18 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
-mod notes;
-pub mod support;
 mod api_tokens;
 mod conversations;
 mod cookie_consent;
 mod education;
 pub mod enums;
 pub mod js_date;
+mod notes;
 mod notifications;
 pub mod optional_input;
 mod share_links;
 mod skills;
+pub mod support;
 mod work_experience;
 
 use std::sync::Arc;

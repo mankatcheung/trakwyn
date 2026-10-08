@@ -29,7 +29,10 @@ mod create {
     use super::*;
 
     fn use_case(repository: &Arc<FakeSkillRepository>) -> CreateSkillUseCase {
-        CreateSkillUseCase { skill_repository: repository.clone(), generate_id: sequential_ids("id") }
+        CreateSkillUseCase {
+            skill_repository: repository.clone(),
+            generate_id: sequential_ids("id"),
+        }
     }
 
     #[tokio::test]
@@ -98,11 +101,8 @@ mod update {
     #[tokio::test]
     async fn clears_a_nullable_field_given_as_null() {
         let repository = repository(vec![skill("s", OWNER)]);
-        let input = UpdateSkillInput {
-            category: Some(None),
-            proficiency: Some(None),
-            ..input(OWNER, "s")
-        };
+        let input =
+            UpdateSkillInput { category: Some(None), proficiency: Some(None), ..input(OWNER, "s") };
 
         let updated = use_case(&repository).execute(input).await.unwrap();
 
@@ -111,8 +111,7 @@ mod update {
 
     #[tokio::test]
     async fn fails_when_the_skill_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Skill not found");
     }
@@ -160,8 +159,7 @@ mod delete {
 
     #[tokio::test]
     async fn fails_when_the_skill_does_not_exist() {
-        let err =
-            use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
+        let err = use_case(&repository(vec![])).execute(input(OWNER, "missing")).await.unwrap_err();
         assert_eq!(err.code(), ErrorCode::NotFound);
         assert_eq!(err.to_string(), "Skill not found");
     }

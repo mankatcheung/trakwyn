@@ -66,8 +66,11 @@ impl ConversationsQuery {
         query: String,
     ) -> Result<Option<Vec<ConversationObject>>> {
         let user = require_user(ctx)?;
-        let conversations =
-            container(ctx).search_conversations_use_case().execute(&user.sub, &query).await.gql()?;
+        let conversations = container(ctx)
+            .search_conversations_use_case()
+            .execute(&user.sub, &query)
+            .await
+            .gql()?;
         Ok(objects(conversations))
     }
 }
