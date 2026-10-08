@@ -47,7 +47,10 @@ mod compact {
         let value = J::object(vec![
             ("id", J::str("a")),
             ("salaryRange", J::Null),
-            ("nested", J::object(vec![("keep", J::int(1)), ("deeper", J::object(vec![("x", J::Null)]))])),
+            (
+                "nested",
+                J::object(vec![("keep", J::int(1)), ("deeper", J::object(vec![("x", J::Null)]))]),
+            ),
         ]);
         assert_eq!(
             compact_for_model(&value).unwrap().stringify(),
@@ -59,7 +62,10 @@ mod compact {
     fn shortens_dates_to_day_or_minute_precision() {
         let midnight = J::object(vec![("appliedAt", J::Date(at(2026, 9, 6, 0, 0, 0)))]);
         let moment = J::object(vec![("scheduledAt", J::Date(at(2026, 9, 6, 14, 30, 15)))]);
-        assert_eq!(compact_for_model(&midnight).unwrap().stringify(), r#"{"appliedAt":"2026-09-06"}"#);
+        assert_eq!(
+            compact_for_model(&midnight).unwrap().stringify(),
+            r#"{"appliedAt":"2026-09-06"}"#
+        );
         assert_eq!(
             compact_for_model(&moment).unwrap().stringify(),
             r#"{"scheduledAt":"2026-09-06T14:30Z"}"#
@@ -84,7 +90,8 @@ mod compact {
 
     #[test]
     fn keeps_array_positions_so_a_null_element_stays_null() {
-        let value = J::array([J::object(vec![("a", J::Null), ("b", J::int(1))]), J::Null, J::str("x")]);
+        let value =
+            J::array([J::object(vec![("a", J::Null), ("b", J::int(1))]), J::Null, J::str("x")]);
         assert_eq!(compact_for_model(&value).unwrap().stringify(), r#"[{"b":1},null,"x"]"#);
     }
 
@@ -118,7 +125,9 @@ mod projection {
         let row = project_application_summary(&application(Some("d".repeat(1000))));
         let description = row.get("description").and_then(J::as_str).unwrap();
         assert_eq!(description.chars().count(), chat::LIST_DESCRIPTION_MAX_CHARS + 1);
-        for absent in ["userId", "boardPosition", "reminderSentAt", "deletedAt", "createdAt", "jobUrl"] {
+        for absent in
+            ["userId", "boardPosition", "reminderSentAt", "deletedAt", "createdAt", "jobUrl"]
+        {
             assert!(row.get(absent).is_none(), "{absent}");
         }
         assert_eq!(row.get("starred"), Some(&J::Bool(true)));
@@ -188,10 +197,8 @@ mod history_assembly {
 
     #[test]
     fn marks_the_last_stored_message_and_leaves_the_new_one_unmarked() {
-        let history = [
-            message(MessageRole::User, "one", None),
-            message(MessageRole::Assistant, "two", None),
-        ];
+        let history =
+            [message(MessageRole::User, "one", None), message(MessageRole::Assistant, "two", None)];
         let messages = build_chat_messages(&history, "three", None);
         let flags: Vec<bool> = messages.iter().map(|m| m.cache_breakpoint).collect();
         assert_eq!(flags, [true, false, true, false]);
@@ -214,11 +221,15 @@ mod history_assembly {
     }
 
     fn sized(sizes: &[usize]) -> Vec<Message> {
-        sizes.iter().enumerate().map(|(i, n)| {
-            let mut m = message(MessageRole::User, &"x".repeat(*n), None);
-            m.id = format!("m{i}");
-            m
-        }).collect()
+        sizes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| {
+                let mut m = message(MessageRole::User, &"x".repeat(*n), None);
+                m.id = format!("m{i}");
+                m
+            })
+            .collect()
     }
 
     #[test]
@@ -302,7 +313,8 @@ mod trace {
             ),
             ("hasNextPage", J::Bool(false)),
         ]);
-        let line = summarize_tool_result(&call("list_applications", json!({"status": "applied"})), &page);
+        let line =
+            summarize_tool_result(&call("list_applications", json!({"status": "applied"})), &page);
         assert_eq!(
             line,
             r#"list_applications({"status":"applied"}) → 2 results: app-1 Acme/Engineer, app-2 Globex/Staff"#
@@ -323,11 +335,17 @@ mod trace {
     fn records_a_failed_call_and_a_single_record_by_its_label() {
         let failed = J::object(vec![("error", J::str("Application not found"))]);
         assert_eq!(
-            summarize_tool_result(&call("get_application", json!({"applicationId": "nope"})), &failed),
+            summarize_tool_result(
+                &call("get_application", json!({"applicationId": "nope"})),
+                &failed
+            ),
             r#"get_application({"applicationId":"nope"}) → error: Application not found"#
         );
         assert_eq!(
-            summarize_tool_result(&call("get_application", json!({})), &row("app-1", "Acme", "Engineer")),
+            summarize_tool_result(
+                &call("get_application", json!({})),
+                &row("app-1", "Acme", "Engineer")
+            ),
             "get_application → app-1 Acme/Engineer"
         );
     }
@@ -339,14 +357,18 @@ mod trace {
             "list_notes → 0 results"
         );
         assert_eq!(
-            summarize_tool_result(&call("get_analytics", json!({})), &J::object(vec![("a", J::int(1))])),
+            summarize_tool_result(
+                &call("get_analytics", json!({})),
+                &J::object(vec![("a", J::int(1))])
+            ),
             "get_analytics → ok"
         );
     }
 
     #[test]
     fn one_result_is_singular() {
-        let line = summarize_tool_result(&call("list_notes", json!({})), &J::array([row("n1", "A", "B")]));
+        let line =
+            summarize_tool_result(&call("list_notes", json!({})), &J::array([row("n1", "A", "B")]));
         assert_eq!(line, "list_notes → 1 result: n1 A/B");
     }
 }
@@ -368,8 +390,9 @@ mod get_chat_history {
 
     fn use_case(owner: Option<&str>, messages: Vec<Message>) -> GetChatHistoryUseCase {
         let messages = Arc::new(FakeMessageRepository::with(messages));
-        let conversations = FakeConversationRepository::with(owner.map(conversation).into_iter().collect())
-            .with_messages(&messages);
+        let conversations =
+            FakeConversationRepository::with(owner.map(conversation).into_iter().collect())
+                .with_messages(&messages);
         GetChatHistoryUseCase {
             message_repository: messages,
             conversation_repository: Arc::new(conversations),

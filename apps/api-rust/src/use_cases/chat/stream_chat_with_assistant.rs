@@ -12,7 +12,9 @@ use super::chat_tools::{execute_chat_tool, ChatToolDeps};
 use crate::domain::message::MessageRole;
 use crate::use_cases::constants::chat;
 use crate::use_cases::errors::{DomainError, DomainResult};
-use crate::use_cases::ports::llm_provider::{LlmMessage, LlmRole, LlmStreamChunk, LlmToolDefinition};
+use crate::use_cases::ports::llm_provider::{
+    LlmMessage, LlmRole, LlmStreamChunk, LlmToolDefinition,
+};
 use crate::use_cases::ports::{
     ConversationRepository, CreateMessageData, LLMProviderFactory, MessageRepository, RateLimiter,
     UserRepository,
@@ -47,11 +49,16 @@ pub struct StreamChatWithAssistantUseCase {
 /// real-time UI only.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChatStreamEvent {
-    Delta { text: String },
+    Delta {
+        text: String,
+    },
     /// The key this turn would have used was paused at its monthly limit, and
     /// the user's opt-in fallback picked another one (JEF-258). Emitted
     /// before any text, so the client can say which key answered.
-    Fallback { from: String, to: String },
+    Fallback {
+        from: String,
+        to: String,
+    },
     Done,
 }
 
@@ -68,7 +75,7 @@ fn with_thousands(n: usize) -> String {
     let digits = n.to_string();
     let mut out = String::new();
     for (index, digit) in digits.chars().enumerate() {
-        if index > 0 && (digits.len() - index) % 3 == 0 {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
             out.push(',');
         }
         out.push(digit);

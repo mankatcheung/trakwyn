@@ -34,11 +34,7 @@ impl CatalogueToolCallObserver {
         logger: Arc<dyn Logger>,
         metrics: Arc<dyn Metrics>,
     ) -> Self {
-        Self {
-            known_tools: tool_names.into_iter().map(str::to_string).collect(),
-            logger,
-            metrics,
-        }
+        Self { known_tools: tool_names.into_iter().map(str::to_string).collect(), logger, metrics }
     }
 }
 
@@ -110,7 +106,10 @@ mod tests {
         observe(&observer, meta("drop_tables", None), |call| async move { call.invalid_params() })
             .await;
         let calls = metrics.tool_calls();
-        assert_eq!((calls[0].tool.as_str(), calls[0].outcome.as_str()), ("unknown", "invalid_params"));
+        assert_eq!(
+            (calls[0].tool.as_str(), calls[0].outcome.as_str()),
+            ("unknown", "invalid_params")
+        );
     }
 
     #[tokio::test]

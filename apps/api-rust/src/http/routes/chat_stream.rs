@@ -12,6 +12,10 @@
 //! Dropping the response body (the client went away) drops the use-case
 //! stream, which drops the upstream LLM request.
 
+// A handler's early exit is the finished `Response`; it is built once per
+// request, so its size does not matter.
+#![allow(clippy::result_large_err)]
+
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -100,7 +104,9 @@ fn error_frame(error: &DomainError) -> Bytes {
 fn event_frame(event: &ChatStreamEvent) -> Bytes {
     match event {
         ChatStreamEvent::Delta { text } => frame("delta", &json!({ "text": text })),
-        ChatStreamEvent::Fallback { from, to } => frame("fallback", &json!({ "from": from, "to": to })),
+        ChatStreamEvent::Fallback { from, to } => {
+            frame("fallback", &json!({ "from": from, "to": to }))
+        }
         ChatStreamEvent::Done => frame("done", &json!({})),
     }
 }
@@ -132,11 +138,12 @@ async fn handle(
         Err(response) => return response,
     };
 
-    let mut events = container.stream_chat_with_assistant_use_case().execute(ChatWithAssistantInput {
-        user_id: user.sub,
-        conversation_id: request.conversation_id,
-        message: request.message,
-    });
+    let mut events =
+        container.stream_chat_with_assistant_use_case().execute(ChatWithAssistantInput {
+            user_id: user.sub,
+            conversation_id: request.conversation_id,
+            message: request.message,
+        });
 
     let frames = stream! {
         while let Some(item) = events.next().await {

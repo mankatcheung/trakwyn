@@ -38,7 +38,8 @@ fn fixture() -> Fixture {
     let observer = Arc::new(RecordingToolCallObserver::default());
     let reads = fake_chat_tool_deps(vec![application_owned_by("app-1", USER)], observer.clone());
 
-    let applications = Arc::new(FakeApplicationRepository::with(vec![application_owned_by("app-1", USER)]));
+    let applications =
+        Arc::new(FakeApplicationRepository::with(vec![application_owned_by("app-1", USER)]));
     let notes = Arc::new(FakeNoteRepository::default());
     let skills = Arc::new(FakeSkillRepository::default());
     let educations = Arc::new(FakeEducationRepository::default());
@@ -69,7 +70,10 @@ fn fixture() -> Fixture {
             activity_log_repository: Some(activity),
             generate_id: ids(),
         },
-        create_skill_use_case: CreateSkillUseCase { skill_repository: skills.clone(), generate_id: ids() },
+        create_skill_use_case: CreateSkillUseCase {
+            skill_repository: skills.clone(),
+            generate_id: ids(),
+        },
         update_skill_use_case: UpdateSkillUseCase { skill_repository: skills.clone() },
         create_education_use_case: CreateEducationUseCase {
             education_repository: educations.clone(),
@@ -80,7 +84,9 @@ fn fixture() -> Fixture {
             work_experience_repository: work.clone(),
             generate_id: ids(),
         },
-        update_work_experience_use_case: UpdateWorkExperienceUseCase { work_experience_repository: work },
+        update_work_experience_use_case: UpdateWorkExperienceUseCase {
+            work_experience_repository: work,
+        },
     };
     Fixture {
         controller: McpController { reads, writes },
@@ -110,9 +116,9 @@ fn error_of(result: &McpResult) -> (i64, String) {
 
 /// The `text` of a successful tools/call, parsed.
 fn payload(result: &McpResult) -> Value {
-    let text = result.body["result"]["content"][0]["text"].as_str().unwrap_or_else(|| {
-        panic!("expected a result, got {}", result.body)
-    });
+    let text = result.body["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("expected a result, got {}", result.body));
     serde_json::from_str(text).unwrap()
 }
 
@@ -272,7 +278,12 @@ mod parity {
     #[tokio::test]
     async fn the_observer_never_sees_arguments() {
         let f = fixture();
-        send(&f, call("get_application", json!({ "applicationId": "secret-id" })), ApiTokenScope::Full).await;
+        send(
+            &f,
+            call("get_application", json!({ "applicationId": "secret-id" })),
+            ApiTokenScope::Full,
+        )
+        .await;
         assert!(!format!("{:?}", f.observer.calls()).contains("secret-id"));
     }
 }
@@ -290,7 +301,9 @@ mod scope_enforcement {
             "update_skill" => json!({ "skillId": "s1", "name": "Rust" }),
             "create_education" => json!({ "institution": "U", "startDate": "2020-01-01" }),
             "update_education" => json!({ "educationId": "e1" }),
-            "create_work_experience" => json!({ "company": "A", "title": "B", "startDate": "2020-01-01" }),
+            "create_work_experience" => {
+                json!({ "company": "A", "title": "B", "startDate": "2020-01-01" })
+            }
             _ => json!({ "workExperienceId": "w1" }),
         }
     }
@@ -302,7 +315,9 @@ mod scope_enforcement {
             mcp_tools().iter().filter(|t| t.access == ToolAccess::Write).collect();
         assert!(!writes.is_empty());
         for tool in &writes {
-            let result = send(&f, call(tool.name, write_tool_arguments(tool.name)), ApiTokenScope::Read).await;
+            let result =
+                send(&f, call(tool.name, write_tool_arguments(tool.name)), ApiTokenScope::Read)
+                    .await;
             assert_eq!(
                 error_of(&result),
                 (
@@ -329,7 +344,12 @@ mod scope_enforcement {
     #[tokio::test]
     async fn a_full_token_may_call_a_write_tool() {
         let f = fixture();
-        let result = send(&f, call("create_note", json!({ "applicationId": "app-1", "content": "hello" })), ApiTokenScope::Full).await;
+        let result = send(
+            &f,
+            call("create_note", json!({ "applicationId": "app-1", "content": "hello" })),
+            ApiTokenScope::Full,
+        )
+        .await;
         let note = payload(&result);
         assert_eq!(note["content"], "hello");
         assert_eq!(f.written_notes.all().len(), 1);
@@ -375,7 +395,9 @@ mod tools_call {
     async fn accepts_a_numeric_string_limit_and_ignores_nonsense() {
         let f = fixture();
         for limit in [json!("1"), json!(1), json!(-3), json!("abc"), json!(2.5)] {
-            let result = send(&f, call("list_applications", json!({ "limit": limit })), ApiTokenScope::Read).await;
+            let result =
+                send(&f, call("list_applications", json!({ "limit": limit })), ApiTokenScope::Read)
+                    .await;
             assert_eq!(payload(&result)["items"].as_array().unwrap().len(), 1);
         }
     }
@@ -383,7 +405,12 @@ mod tools_call {
     #[tokio::test]
     async fn an_unknown_status_filters_everything_out() {
         let f = fixture();
-        let result = send(&f, call("list_applications", json!({ "status": "nonsense" })), ApiTokenScope::Read).await;
+        let result = send(
+            &f,
+            call("list_applications", json!({ "status": "nonsense" })),
+            ApiTokenScope::Read,
+        )
+        .await;
         assert_eq!(payload(&result)["items"], json!([]));
     }
 
@@ -398,7 +425,12 @@ mod tools_call {
     #[tokio::test]
     async fn get_application_returns_the_whole_record() {
         let f = fixture();
-        let result = send(&f, call("get_application", json!({ "applicationId": "app-1" })), ApiTokenScope::Read).await;
+        let result = send(
+            &f,
+            call("get_application", json!({ "applicationId": "app-1" })),
+            ApiTokenScope::Read,
+        )
+        .await;
         let app = payload(&result);
         assert_eq!(app["id"], "app-1");
         assert_eq!(app["userId"], USER);
@@ -408,7 +440,12 @@ mod tools_call {
     #[tokio::test]
     async fn not_found_is_invalid_params_and_forbidden_too() {
         let f = fixture();
-        let result = send(&f, call("get_application", json!({ "applicationId": "nope" })), ApiTokenScope::Read).await;
+        let result = send(
+            &f,
+            call("get_application", json!({ "applicationId": "nope" })),
+            ApiTokenScope::Read,
+        )
+        .await;
         assert_eq!(error_of(&result), (-32602, "Application not found".to_string()));
         assert_eq!(f.observer.calls()[0].1.outcome, ToolCallOutcome::DomainError);
     }
@@ -416,7 +453,12 @@ mod tools_call {
     #[tokio::test]
     async fn a_missing_params_object_is_an_unknown_tool() {
         let f = fixture();
-        let result = send(&f, json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call" }), ApiTokenScope::Full).await;
+        let result = send(
+            &f,
+            json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call" }),
+            ApiTokenScope::Full,
+        )
+        .await;
         assert_eq!(error_of(&result), (-32601, "Unknown tool: undefined".to_string()));
     }
 
@@ -438,13 +480,25 @@ mod tools_call {
         let cases = [
             ("create_application", json!({ "company": "A" }), "company and role are required"),
             ("update_application", json!({}), "applicationId is required"),
-            ("create_note", json!({ "applicationId": "app-1" }), "applicationId and content are required"),
+            (
+                "create_note",
+                json!({ "applicationId": "app-1" }),
+                "applicationId and content are required",
+            ),
             ("create_interview_round", json!({}), "applicationId is required"),
             ("create_skill", json!({}), "name is required"),
             ("update_skill", json!({}), "skillId is required"),
-            ("create_education", json!({ "institution": "U", "startDate": "junk" }), "institution and a valid ISO 8601 startDate are required"),
+            (
+                "create_education",
+                json!({ "institution": "U", "startDate": "junk" }),
+                "institution and a valid ISO 8601 startDate are required",
+            ),
             ("update_education", json!({}), "educationId is required"),
-            ("create_work_experience", json!({ "company": "A", "title": "B" }), "company, title and a valid ISO 8601 startDate are required"),
+            (
+                "create_work_experience",
+                json!({ "company": "A", "title": "B" }),
+                "company, title and a valid ISO 8601 startDate are required",
+            ),
             ("update_work_experience", json!({}), "workExperienceId is required"),
         ];
         for (name, arguments, message) in cases {
@@ -458,12 +512,18 @@ mod tools_call {
         let f = fixture();
         let result = send(
             &f,
-            call("create_application", json!({ "company": "Globex", "role": "Staff", "status": "applied" })),
+            call(
+                "create_application",
+                json!({ "company": "Globex", "role": "Staff", "status": "applied" }),
+            ),
             ApiTokenScope::Full,
         )
         .await;
         let created = payload(&result);
-        assert_eq!((created["company"].as_str(), created["status"].as_str()), (Some("Globex"), Some("applied")));
+        assert_eq!(
+            (created["company"].as_str(), created["status"].as_str()),
+            (Some("Globex"), Some("applied"))
+        );
         assert_eq!(created["userId"], USER);
         assert_eq!(f.written_applications.all().len(), 2);
     }
@@ -473,14 +533,20 @@ mod tools_call {
         let f = fixture();
         let ok = send(
             &f,
-            call("create_interview_round", json!({ "applicationId": "app-1", "scheduledAt": "2030-05-01T10:00:00Z" })),
+            call(
+                "create_interview_round",
+                json!({ "applicationId": "app-1", "scheduledAt": "2030-05-01T10:00:00Z" }),
+            ),
             ApiTokenScope::Full,
         )
         .await;
         assert_eq!(payload(&ok)["scheduledAt"], "2030-05-01T10:00:00.000Z");
         let junk = send(
             &f,
-            call("create_interview_round", json!({ "applicationId": "app-1", "scheduledAt": "someday" })),
+            call(
+                "create_interview_round",
+                json!({ "applicationId": "app-1", "scheduledAt": "someday" }),
+            ),
             ApiTokenScope::Full,
         )
         .await;
@@ -492,7 +558,10 @@ mod tools_call {
         let f = fixture();
         let result = send(
             &f,
-            call("create_interview_round", json!({ "applicationId": "app-1", "type": "phone_screen" })),
+            call(
+                "create_interview_round",
+                json!({ "applicationId": "app-1", "type": "phone_screen" }),
+            ),
             ApiTokenScope::Full,
         )
         .await;
@@ -504,19 +573,34 @@ mod tools_call {
     #[tokio::test]
     async fn update_skill_maps_skill_id_onto_the_use_case() {
         let f = fixture();
-        let created = send(&f, call("create_skill", json!({ "name": "Rust" })), ApiTokenScope::Full).await;
+        let created =
+            send(&f, call("create_skill", json!({ "name": "Rust" })), ApiTokenScope::Full).await;
         let id = payload(&created)["id"].as_str().unwrap().to_string();
-        let updated = send(&f, call("update_skill", json!({ "skillId": id, "proficiency": "expert" })), ApiTokenScope::Full).await;
+        let updated = send(
+            &f,
+            call("update_skill", json!({ "skillId": id, "proficiency": "expert" })),
+            ApiTokenScope::Full,
+        )
+        .await;
         let skill = payload(&updated);
-        assert_eq!((skill["name"].as_str(), skill["proficiency"].as_str()), (Some("Rust"), Some("expert")));
-        let missing = send(&f, call("update_skill", json!({ "skillId": "nope" })), ApiTokenScope::Full).await;
+        assert_eq!(
+            (skill["name"].as_str(), skill["proficiency"].as_str()),
+            (Some("Rust"), Some("expert"))
+        );
+        let missing =
+            send(&f, call("update_skill", json!({ "skillId": "nope" })), ApiTokenScope::Full).await;
         assert_eq!(error_of(&missing), (-32602, "Skill not found".to_string()));
     }
 
     #[tokio::test]
     async fn arguments_that_are_not_an_object_read_as_none() {
         let f = fixture();
-        let result = send(&f, rpc("tools/call", json!({ "name": "get_application", "arguments": "x" })), ApiTokenScope::Read).await;
+        let result = send(
+            &f,
+            rpc("tools/call", json!({ "name": "get_application", "arguments": "x" })),
+            ApiTokenScope::Read,
+        )
+        .await;
         assert_eq!(error_of(&result), (-32602, "applicationId is required".to_string()));
     }
 }
@@ -582,8 +666,10 @@ mod catalogue {
     fn does_not_restate_the_scope_requirement_in_descriptions() {
         let offenders: Vec<&str> = tool_catalogue()
             .iter()
-            .filter(|t| t.description.to_lowercase().contains("full-access token")
-                || t.description.to_lowercase().contains("full access token"))
+            .filter(|t| {
+                t.description.to_lowercase().contains("full-access token")
+                    || t.description.to_lowercase().contains("full access token")
+            })
             .map(|t| t.name)
             .collect();
         assert!(offenders.is_empty(), "{offenders:?}");
@@ -604,12 +690,29 @@ mod catalogue {
         assert_eq!(
             names,
             [
-                "list_applications", "get_application", "list_notes", "list_contacts",
-                "list_interview_rounds", "list_work_experiences", "list_educations", "list_skills",
-                "list_documents", "list_offers", "list_activity", "list_calendar_events",
-                "get_analytics", "create_application", "update_application", "create_note",
-                "create_interview_round", "create_skill", "update_skill", "create_education",
-                "update_education", "create_work_experience", "update_work_experience",
+                "list_applications",
+                "get_application",
+                "list_notes",
+                "list_contacts",
+                "list_interview_rounds",
+                "list_work_experiences",
+                "list_educations",
+                "list_skills",
+                "list_documents",
+                "list_offers",
+                "list_activity",
+                "list_calendar_events",
+                "get_analytics",
+                "create_application",
+                "update_application",
+                "create_note",
+                "create_interview_round",
+                "create_skill",
+                "update_skill",
+                "create_education",
+                "update_education",
+                "create_work_experience",
+                "update_work_experience",
             ]
         );
     }

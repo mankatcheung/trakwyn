@@ -104,10 +104,14 @@ impl McpController {
             let null = Value::Null;
             return McpResult {
                 status: 400,
-                body: error(Some(id.unwrap_or(&null)), json_rpc_error::INVALID_REQUEST, "Invalid Request"),
+                body: error(
+                    Some(id.unwrap_or(&null)),
+                    json_rpc_error::INVALID_REQUEST,
+                    "Invalid Request",
+                ),
             };
         }
-        let body = body.map(|body| body.clone()).unwrap_or_default();
+        let body = body.cloned().unwrap_or_default();
         let id = body.get("id");
         let method_name = body.get("method").map(js_string).unwrap_or_default();
         let params = body.get("params");
@@ -134,11 +138,9 @@ impl McpController {
                 envelope(id, "result", json!({ "tools": advertise(&visible) }))
             }
             method::TOOLS_CALL => self.call_tool(id, params, user_id, scope).await,
-            other => error(
-                id,
-                json_rpc_error::METHOD_NOT_FOUND,
-                &format!("Method not found: {other}"),
-            ),
+            other => {
+                error(id, json_rpc_error::METHOD_NOT_FOUND, &format!("Method not found: {other}"))
+            }
         };
         McpResult { status: 200, body: response }
     }
@@ -227,7 +229,8 @@ impl McpController {
                 observed.failed(&failure);
                 let (code, message) = match &failure {
                     DomainError::Coded { code, message, .. } => {
-                        let client_error = matches!(code, ErrorCode::NotFound | ErrorCode::Forbidden);
+                        let client_error =
+                            matches!(code, ErrorCode::NotFound | ErrorCode::Forbidden);
                         let rpc = if client_error {
                             json_rpc_error::INVALID_PARAMS
                         } else {

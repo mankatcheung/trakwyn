@@ -103,7 +103,8 @@ pub fn summarize_tool_result(call: &LlmToolCall, result: &ToolJson) -> String {
             String::new()
         };
         let plural = if rows.len() == 1 { "" } else { "s" };
-        let listed = if shown.is_empty() { String::new() } else { format!(": {}", shown.join(", ")) };
+        let listed =
+            if shown.is_empty() { String::new() } else { format!(": {}", shown.join(", ")) };
         return format!("{head} → {} result{plural}{listed}{more}", rows.len());
     }
     if let ToolJson::Object(_) = result {

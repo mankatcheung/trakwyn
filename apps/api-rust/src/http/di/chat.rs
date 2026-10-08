@@ -6,9 +6,7 @@ use std::sync::Arc;
 use crate::http::container::Container;
 use crate::http::mcp::tool_catalogue::{chat_tools, to_llm_tool_definitions, tool_catalogue};
 use crate::infrastructure::observability::CatalogueToolCallObserver;
-use crate::use_cases::chat::{
-    ChatToolDeps, GetChatHistoryUseCase, StreamChatWithAssistantUseCase,
-};
+use crate::use_cases::chat::{ChatToolDeps, GetChatHistoryUseCase, StreamChatWithAssistantUseCase};
 use crate::use_cases::ports::tool_call_observer::ToolCallObserver;
 
 impl Container {

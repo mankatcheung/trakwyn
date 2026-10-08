@@ -10,6 +10,10 @@
 //! instead of giving up on the server before it reaches the 401 that starts
 //! OAuth discovery.
 
+// A handler's early exit is the finished `Response`; it is built once per
+// request, so its size does not matter.
+#![allow(clippy::result_large_err)]
+
 use std::sync::Arc;
 
 use axum::body::Bytes;

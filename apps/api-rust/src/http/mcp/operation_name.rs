@@ -20,7 +20,8 @@ pub fn mcp_operation_name(body: &Value) -> Option<String> {
         return Some(method_name.to_string());
     }
 
-    let requested = body.get("params").and_then(|params| params.get("name")).and_then(Value::as_str);
+    let requested =
+        body.get("params").and_then(|params| params.get("name")).and_then(Value::as_str);
     let tool = requested
         .filter(|name| mcp_tools().iter().any(|tool| tool.name == *name))
         .unwrap_or(UNKNOWN_OPERATION);
@@ -52,8 +53,14 @@ mod tests {
 
     #[test]
     fn names_the_other_methods_by_method_alone() {
-        assert_eq!(mcp_operation_name(&rpc(json!("tools/list"), None)).as_deref(), Some("tools/list"));
-        assert_eq!(mcp_operation_name(&rpc(json!("initialize"), None)).as_deref(), Some("initialize"));
+        assert_eq!(
+            mcp_operation_name(&rpc(json!("tools/list"), None)).as_deref(),
+            Some("tools/list")
+        );
+        assert_eq!(
+            mcp_operation_name(&rpc(json!("initialize"), None)).as_deref(),
+            Some("initialize")
+        );
     }
 
     #[test]
@@ -65,7 +72,10 @@ mod tests {
                 Some("tools/call unknown")
             );
         }
-        assert_eq!(mcp_operation_name(&rpc(json!("resources/list"), None)).as_deref(), Some("unknown"));
+        assert_eq!(
+            mcp_operation_name(&rpc(json!("resources/list"), None)).as_deref(),
+            Some("unknown")
+        );
     }
 
     #[test]

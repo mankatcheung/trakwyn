@@ -19,9 +19,9 @@ use crate::use_cases::errors::{DomainError, DomainResult, ErrorCode};
 use crate::use_cases::ports::llm_provider::{LlmRole, LlmToolCall, LlmToolDefinition};
 use crate::use_cases::ports::tool_call_observer::{ToolCallOutcome, ToolSurface};
 use crate::use_cases::test_support::{
-    application_owned_by, fake_chat_tool_deps, sequential_ids, user_with_email, FakeConversationRepository,
-    FakeLLMProvider, FakeLLMProviderFactory, FakeMessageRepository, FakeRateLimiter,
-    FakeUserRepository, RecordingToolCallObserver,
+    application_owned_by, fake_chat_tool_deps, sequential_ids, user_with_email,
+    FakeConversationRepository, FakeLLMProvider, FakeLLMProviderFactory, FakeMessageRepository,
+    FakeRateLimiter, FakeUserRepository, RecordingToolCallObserver,
 };
 
 const USER: &str = "u1";
@@ -88,7 +88,9 @@ fn harness(options: Options) -> Harness {
         chat_rate_limiter: limiter.clone(),
         message_repository: messages.clone(),
         conversation_repository: conversations.clone(),
-        user_repository: Arc::new(FakeUserRepository::with(vec![user_with_email(USER, "a@b.test")])),
+        user_repository: Arc::new(FakeUserRepository::with(vec![user_with_email(
+            USER, "a@b.test",
+        )])),
         generate_id: sequential_ids("id"),
     };
     Harness { provider, messages, conversations, limiter, use_case: Some(use_case) }
@@ -134,7 +136,10 @@ fn application(id: &str) -> Application {
 
 #[tokio::test]
 async fn a_rate_limited_user_is_refused() {
-    let mut h = harness(Options { limiter: FakeRateLimiter::rejecting(), ..Options::new(FakeLLMProvider::new()) });
+    let mut h = harness(Options {
+        limiter: FakeRateLimiter::rejecting(),
+        ..Options::new(FakeLLMProvider::new())
+    });
     let items = h.run("hi").await;
     assert_eq!(error_code(&items), ErrorCode::RateLimited);
     assert_eq!(h.limiter.consumed(), ["chat:user:u1"]);
@@ -184,7 +189,10 @@ async fn no_provider_is_ai_not_configured() {
     });
     let items = h.run("hi").await;
     assert_eq!(error_code(&items), ErrorCode::AiNotConfigured);
-    assert_eq!(items[0].as_ref().unwrap_err().to_string(), "Add your AI API key in Settings to use this feature");
+    assert_eq!(
+        items[0].as_ref().unwrap_err().to_string(),
+        "Add your AI API key in Settings to use this feature"
+    );
 }
 
 #[tokio::test]
@@ -235,12 +243,16 @@ async fn announces_a_fallback_before_any_text() {
 
 #[tokio::test]
 async fn persists_the_user_message_and_the_final_reply() {
-    let mut h = harness(Options::new(FakeLLMProvider::new().stream_text(&["The ", "answer  "], None)));
+    let mut h =
+        harness(Options::new(FakeLLMProvider::new().stream_text(&["The ", "answer  "], None)));
     h.run("What?").await;
     let stored = h.messages.all();
     assert_eq!(stored.len(), 2);
     assert_eq!((stored[0].role, stored[0].content.as_str()), (MessageRole::User, "What?"));
-    assert_eq!((stored[1].role, stored[1].content.as_str()), (MessageRole::Assistant, "The answer"));
+    assert_eq!(
+        (stored[1].role, stored[1].content.as_str()),
+        (MessageRole::Assistant, "The answer")
+    );
     assert_eq!(stored[1].tool_trace, None);
 }
 
@@ -266,7 +278,10 @@ async fn derives_a_title_from_the_first_message_only() {
         tool_trace: None,
         created_at: DateTime::<Utc>::UNIX_EPOCH,
     }];
-    let mut h = harness(Options { stored, ..Options::new(FakeLLMProvider::new().stream_text(&["x"], None)) });
+    let mut h = harness(Options {
+        stored,
+        ..Options::new(FakeLLMProvider::new().stream_text(&["x"], None))
+    });
     h.run("second").await;
     assert_eq!(h.conversations.all()[0].title, None);
 }
@@ -274,11 +289,18 @@ async fn derives_a_title_from_the_first_message_only() {
 #[tokio::test]
 async fn runs_a_tool_round_trip_and_persists_only_the_final_text() {
     let provider = FakeLLMProvider::new()
-        .stream_tool_calls(vec![tool_call("t1", "list_applications", json!({"status": "applied"}))], None)
+        .stream_tool_calls(
+            vec![tool_call("t1", "list_applications", json!({"status": "applied"}))],
+            None,
+        )
         .stream_text(&["You have one."], None);
-    let mut h = harness(Options { applications: vec![application("app-1")], ..Options::new(provider) });
+    let mut h =
+        harness(Options { applications: vec![application("app-1")], ..Options::new(provider) });
     let got = events(h.run("which?").await);
-    assert_eq!(got, [ChatStreamEvent::Delta { text: "You have one.".into() }, ChatStreamEvent::Done]);
+    assert_eq!(
+        got,
+        [ChatStreamEvent::Delta { text: "You have one.".into() }, ChatStreamEvent::Done]
+    );
 
     let stored = h.messages.all();
     assert_eq!(stored[1].content, "You have one.");
@@ -303,7 +325,8 @@ async fn fences_and_compacts_every_tool_result_before_the_model_sees_it() {
     let provider = FakeLLMProvider::new()
         .stream_tool_calls(vec![tool_call("t1", "list_applications", json!({}))], None)
         .stream_text(&["ok"], None);
-    let mut h = harness(Options { applications: vec![application("app-1")], ..Options::new(provider) });
+    let mut h =
+        harness(Options { applications: vec![application("app-1")], ..Options::new(provider) });
     h.run("go").await;
     let calls = h.provider.calls();
     let content = &calls[1].messages().last().unwrap().content;
@@ -317,7 +340,10 @@ async fn fences_and_compacts_every_tool_result_before_the_model_sees_it() {
 #[tokio::test]
 async fn hands_the_model_a_domain_message_but_never_an_internal_error() {
     let provider = FakeLLMProvider::new()
-        .stream_tool_calls(vec![tool_call("t1", "get_application", json!({"applicationId": "nope"}))], None)
+        .stream_tool_calls(
+            vec![tool_call("t1", "get_application", json!({"applicationId": "nope"}))],
+            None,
+        )
         .stream_text(&["sorry"], None);
     let mut h = harness(Options::new(provider));
     h.run("go").await;
@@ -353,7 +379,8 @@ async fn list_applications_defaults_to_the_chat_page_size_and_honours_a_limit() 
     let mut h = harness(Options { applications: apps, ..Options::new(provider) });
     h.run("go").await;
     let messages = h.provider.calls()[2].messages().to_vec();
-    let results: Vec<&str> = messages.iter().filter(|m| m.role == LlmRole::Tool).map(|m| m.content.as_str()).collect();
+    let results: Vec<&str> =
+        messages.iter().filter(|m| m.role == LlmRole::Tool).map(|m| m.content.as_str()).collect();
     assert_eq!(results[0].matches(r#""id":"app-"#).count(), chat::LIST_DEFAULT_LIMIT as usize);
     assert!(results[0].contains(r#""hasNextPage":true"#));
     assert_eq!(results[1].matches(r#""id":"app-"#).count(), 3);
@@ -372,7 +399,10 @@ async fn bounds_the_history_by_count_and_by_characters() {
             created_at: DateTime::<Utc>::from_timestamp(i as i64, 0).unwrap(),
         });
     }
-    let mut h = harness(Options { stored, ..Options::new(FakeLLMProvider::new().stream_text(&["x"], None)) });
+    let mut h = harness(Options {
+        stored,
+        ..Options::new(FakeLLMProvider::new().stream_text(&["x"], None))
+    });
     h.run("new").await;
     let sent = h.provider.calls()[0].messages().to_vec();
     // two system blocks' worth is one here (no custom prompt), plus the new message
@@ -385,7 +415,8 @@ async fn bounds_the_history_by_count_and_by_characters() {
 async fn gives_up_with_a_clear_message_after_the_iteration_cap() {
     let mut provider = FakeLLMProvider::new();
     for i in 0..chat::MAX_TOOL_ITERATIONS {
-        provider = provider.stream_tool_calls(vec![tool_call(&format!("t{i}"), "list_skills", json!({}))], None);
+        provider = provider
+            .stream_tool_calls(vec![tool_call(&format!("t{i}"), "list_skills", json!({}))], None);
     }
     let mut h = harness(Options::new(provider));
     let got = events(h.run("go").await);
@@ -419,7 +450,11 @@ async fn dropping_the_stream_abandons_the_upstream_request() {
 mod chat_tools {
     use super::*;
 
-    async fn run_tool(name: &str, arguments: Value, apps: Vec<Application>) -> (Value, Arc<RecordingToolCallObserver>) {
+    async fn run_tool(
+        name: &str,
+        arguments: Value,
+        apps: Vec<Application>,
+    ) -> (Value, Arc<RecordingToolCallObserver>) {
         let observer = Arc::new(RecordingToolCallObserver::default());
         let deps = fake_chat_tool_deps(apps, observer.clone());
         let out = execute_chat_tool(&tool_call("c", name, arguments), USER, &deps).await;
@@ -431,12 +466,27 @@ mod chat_tools {
         let observer = Arc::new(RecordingToolCallObserver::default());
         let deps = fake_chat_tool_deps(vec![application("app-1")], observer.clone());
         let names = [
-            "list_applications", "get_application", "list_notes", "list_contacts",
-            "list_interview_rounds", "list_work_experiences", "list_educations", "list_skills",
-            "list_documents", "list_offers", "list_activity", "list_calendar_events", "get_analytics",
+            "list_applications",
+            "get_application",
+            "list_notes",
+            "list_contacts",
+            "list_interview_rounds",
+            "list_work_experiences",
+            "list_educations",
+            "list_skills",
+            "list_documents",
+            "list_offers",
+            "list_activity",
+            "list_calendar_events",
+            "get_analytics",
         ];
         for name in names {
-            execute_chat_tool(&tool_call("c", name, json!({"applicationId": "app-1"})), USER, &deps).await;
+            execute_chat_tool(
+                &tool_call("c", name, json!({"applicationId": "app-1"})),
+                USER,
+                &deps,
+            )
+            .await;
         }
         let calls = observer.calls();
         assert_eq!(calls.len(), names.len());
@@ -449,7 +499,8 @@ mod chat_tools {
 
     #[tokio::test]
     async fn a_domain_error_is_reported_and_the_model_gets_its_message() {
-        let (out, observer) = run_tool("get_application", json!({"applicationId": "nope"}), vec![]).await;
+        let (out, observer) =
+            run_tool("get_application", json!({"applicationId": "nope"}), vec![]).await;
         assert_eq!(out, json!({"error": "Application not found"}));
         assert_eq!(observer.calls()[0].1.outcome, ToolCallOutcome::DomainError);
     }
@@ -463,7 +514,12 @@ mod chat_tools {
 
     #[tokio::test]
     async fn a_write_tool_is_not_available_to_chat() {
-        let (out, _) = run_tool("create_note", json!({"applicationId": "app-1", "content": "x"}), vec![application("app-1")]).await;
+        let (out, _) = run_tool(
+            "create_note",
+            json!({"applicationId": "app-1", "content": "x"}),
+            vec![application("app-1")],
+        )
+        .await;
         assert_eq!(out, json!({"error": "Unknown tool: create_note"}));
     }
 
@@ -471,13 +527,15 @@ mod chat_tools {
     async fn another_users_application_is_refused() {
         let mut foreign = application("app-1");
         foreign.user_id = "someone-else".into();
-        let (out, _) = run_tool("get_application", json!({"applicationId": "app-1"}), vec![foreign]).await;
+        let (out, _) =
+            run_tool("get_application", json!({"applicationId": "app-1"}), vec![foreign]).await;
         assert_eq!(out["error"], "Forbidden");
     }
 
     #[tokio::test]
     async fn the_observer_never_sees_arguments() {
-        let (_, observer) = run_tool("get_application", json!({"applicationId": "secret-id"}), vec![]).await;
+        let (_, observer) =
+            run_tool("get_application", json!({"applicationId": "secret-id"}), vec![]).await;
         let seen = format!("{:?}", observer.calls());
         assert!(!seen.contains("secret-id"));
     }

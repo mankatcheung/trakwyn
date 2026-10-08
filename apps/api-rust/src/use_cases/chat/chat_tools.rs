@@ -104,16 +104,9 @@ fn application_id_arg(args: &Value) -> String {
 /// Runs one tool for the model. The reply is always a value the model can
 /// read: a failed tool answers `{ error }` so the model can recover or
 /// explain. Every call is observed, whatever its outcome.
-pub async fn execute_chat_tool(
-    call: &LlmToolCall,
-    user_id: &str,
-    deps: &ChatToolDeps,
-) -> ToolJson {
-    let meta = ToolCallMeta {
-        surface: ToolSurface::Chat,
-        name: call.name.clone(),
-        token_scope: None,
-    };
+pub async fn execute_chat_tool(call: &LlmToolCall, user_id: &str, deps: &ChatToolDeps) -> ToolJson {
+    let meta =
+        ToolCallMeta { surface: ToolSurface::Chat, name: call.name.clone(), token_scope: None };
     observe(deps.tool_call_observer.as_ref(), meta, |observed| async move {
         match dispatch_chat_tool(call, user_id, deps).await {
             Ok(result) => {
@@ -188,7 +181,10 @@ async fn dispatch_chat_tool(
             project_application_detail(&application)
         }
         "list_notes" => entities::notes(
-            &deps.get_notes_use_case.execute(GetNotesInput { user_id: user, application_id }).await?,
+            &deps
+                .get_notes_use_case
+                .execute(GetNotesInput { user_id: user, application_id })
+                .await?,
         ),
         "list_contacts" => entities::contacts(
             &deps
@@ -202,9 +198,9 @@ async fn dispatch_chat_tool(
                 .execute(GetInterviewRoundsInput { user_id: user, application_id })
                 .await?,
         ),
-        "list_work_experiences" => {
-            entities::work_experiences(&deps.work_experience_repository.find_all_by_user_id(&user).await?)
-        }
+        "list_work_experiences" => entities::work_experiences(
+            &deps.work_experience_repository.find_all_by_user_id(&user).await?,
+        ),
         "list_educations" => {
             entities::educations(&deps.education_repository.find_all_by_user_id(&user).await?)
         }
@@ -228,7 +224,10 @@ async fn dispatch_chat_tool(
                 .await?,
         ),
         "list_calendar_events" => entities::calendar_events(
-            &deps.get_calendar_events_use_case.execute(GetCalendarEventsInput { user_id: user }).await?,
+            &deps
+                .get_calendar_events_use_case
+                .execute(GetCalendarEventsInput { user_id: user })
+                .await?,
         ),
         "get_analytics" => analytics(deps, user_id).await?,
         // Returned as an error rather than answered, so the observer counts it
