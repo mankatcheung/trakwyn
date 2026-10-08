@@ -46,6 +46,7 @@ pub mod password_reset_token_repository;
 pub mod pdf_renderer;
 pub mod push_subscription_repository;
 pub mod rate_limiter;
+pub mod tool_call_observer;
 pub mod security_event_repository;
 pub mod session_blocklist;
 pub mod session_repository;

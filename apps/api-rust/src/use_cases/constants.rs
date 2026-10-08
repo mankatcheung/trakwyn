@@ -356,3 +356,35 @@ pub mod digest_window_ms {
     /// The period a daily digest covers.
     pub const DAY: i64 = 24 * 60 * 60 * 1000;
 }
+
+/// The in-app chat assistant: loop bounds, input limits and what a tool
+/// result is trimmed to before the model reads it.
+pub mod chat {
+    /// Hard cap on LLM<->tool round-trips within a single chat turn, to bound cost/latency.
+    pub const MAX_TOOL_ITERATIONS: usize = 5;
+    /// Longest message a user may send in one turn, in UTF-16 code units.
+    /// Long enough to paste a job description or a cover letter in full.
+    pub const MAX_MESSAGE_CHARS: usize = 8000;
+    /// Longest single string field a chat tool result may carry back to the
+    /// model, after which it is clipped with an ellipsis (T7).
+    pub const TOOL_RESULT_STRING_MAX_CHARS: usize = 2000;
+    /// How much of a job description a chat list row carries (T1).
+    /// `get_application` returns the description up to
+    /// `DETAIL_DESCRIPTION_MAX_CHARS`.
+    pub const LIST_DESCRIPTION_MAX_CHARS: usize = 300;
+    /// Rows per `list_applications` page when the model does not ask for a
+    /// number (T5): half of `pagination::DEFAULT_LIMIT`.
+    pub const LIST_DEFAULT_LIMIT: i64 = 10;
+    /// How many result rows a persisted tool trace names before "+N more" (F10).
+    pub const TOOL_TRACE_MAX_ROWS: usize = 10;
+    pub const DETAIL_DESCRIPTION_MAX_CHARS: usize = 3000;
+    /// Auto-derived conversation title is truncated to this many characters of the first message.
+    pub const TITLE_MAX_LENGTH: usize = 50;
+    /// Only the most recent messages of a conversation's stored history are
+    /// sent back to the model on each turn (JEF-237): 20 user/assistant
+    /// turns. `GetChatHistoryUseCase` still reads the whole history.
+    pub const MAX_HISTORY_MESSAGES: usize = 40;
+    /// The same cap by size (T6), in UTF-16 code units: oldest messages are
+    /// dropped first until the history fits.
+    pub const MAX_HISTORY_CHARS: usize = 24_000;
+}
