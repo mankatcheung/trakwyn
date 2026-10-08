@@ -3,3 +3,4 @@
 
 mod auth;
 mod notes;
+mod user;

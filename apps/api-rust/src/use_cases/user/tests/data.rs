@@ -136,15 +136,11 @@ mod export {
 
     #[tokio::test]
     async fn an_application_never_applied_to_has_no_applied_date() {
-        let output = use_case(
-            vec![user()],
-            vec![application_owned_by("app-1", USER)],
-            vec![],
-            vec![],
-        )
-        .execute(USER)
-        .await
-        .unwrap();
+        let output =
+            use_case(vec![user()], vec![application_owned_by("app-1", USER)], vec![], vec![])
+                .execute(USER)
+                .await
+                .unwrap();
 
         assert_eq!(output.applications[0].applied_at, None);
         assert!(output.applications[0].notes.is_empty());

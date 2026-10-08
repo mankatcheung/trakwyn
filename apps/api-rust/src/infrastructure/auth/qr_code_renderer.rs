@@ -18,7 +18,8 @@ mod tests {
 
     #[test]
     fn renders_a_png_data_url() {
-        let url = PngQrCodeRenderer.to_data_url("otpauth://totp/Trakwyn:a%40b.c?secret=AAAA").unwrap();
+        let url =
+            PngQrCodeRenderer.to_data_url("otpauth://totp/Trakwyn:a%40b.c?secret=AAAA").unwrap();
         assert!(url.starts_with("data:image/png;base64,"));
     }
 

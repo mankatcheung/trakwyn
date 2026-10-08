@@ -105,7 +105,10 @@ async fn refuses_a_new_password_that_is_too_short_before_spending_an_attempt() {
 
     let err = fixture
         .use_case()
-        .execute(UpdatePasswordInput { new_password: "short".to_string(), ..input(PASSWORD, fresh()) })
+        .execute(UpdatePasswordInput {
+            new_password: "short".to_string(),
+            ..input(PASSWORD, fresh())
+        })
         .await
         .unwrap_err();
 

@@ -3,18 +3,13 @@
 # This list may only shrink. tests/integration/sdl_parity.rs fails when an
 # entry here is implemented (delete the line) and when an operation is
 # missing without being listed.
-Mutation.beginTotpSetup
 Mutation.bulkAddTagToApplications
 Mutation.bulkDeleteApplications
 Mutation.bulkRestoreApplications
 Mutation.bulkUpdateApplications
 Mutation.compareOffers
 Mutation.computeResumeMatchScore
-Mutation.confirmAvatar
-Mutation.confirmBackupEmail
 Mutation.confirmDocument
-Mutation.confirmEmailChange
-Mutation.confirmTotpSetup
 Mutation.createApiToken
 Mutation.createApplication
 Mutation.createContact
@@ -26,7 +21,6 @@ Mutation.createOffer
 Mutation.createShareLink
 Mutation.createSkill
 Mutation.createWorkExperience
-Mutation.deleteAccount
 Mutation.deleteApiToken
 Mutation.deleteApplication
 Mutation.deleteContact
@@ -40,8 +34,6 @@ Mutation.deleteOffer
 Mutation.deleteShareLink
 Mutation.deleteSkill
 Mutation.deleteWorkExperience
-Mutation.disableTotp
-Mutation.dismissOnboardingChecklist
 Mutation.emptyTrash
 Mutation.exchangeMobileOAuthCode
 Mutation.exportDocumentDraftToPdf
@@ -49,7 +41,6 @@ Mutation.extractDocumentText
 Mutation.generateCompanyBriefing
 Mutation.generateCoverLetter
 Mutation.generateResume
-Mutation.importUserData
 Mutation.login
 Mutation.loginMobile
 Mutation.loginWithTotp
@@ -64,18 +55,12 @@ Mutation.reauthenticateMobile
 Mutation.recordCookieConsent
 Mutation.refreshToken
 Mutation.refreshTokenMobile
-Mutation.regenerateTotpBackupCodes
 Mutation.register
 Mutation.registerExpoPushToken
 Mutation.registerMobile
 Mutation.registerPushSubscription
-Mutation.removeAvatar
-Mutation.removeBackupEmail
 Mutation.renameDocumentDraft
-Mutation.requestAddBackupEmail
-Mutation.requestAvatarUploadUrl
 Mutation.requestBackupEmailRecovery
-Mutation.requestEmailChange
 Mutation.requestPasswordReset
 Mutation.requestUploadUrl
 Mutation.resetPassword
@@ -94,10 +79,7 @@ Mutation.updateContact
 Mutation.updateDocumentDraftContent
 Mutation.updateEducation
 Mutation.updateInterviewRound
-Mutation.updateNotificationPreferences
 Mutation.updateOffer
-Mutation.updatePassword
-Mutation.updateProfile
 Mutation.updateSkill
 Mutation.updateWorkExperience
 Mutation.verifyEmail
@@ -118,7 +100,6 @@ Query.documentDrafts
 Query.documents
 Query.documentVersionOutcomes
 Query.educations
-Query.exportUserData
 Query.interviewRoundAnalytics
 Query.interviewRounds
 Query.linkedOAuthAccounts
@@ -126,9 +107,7 @@ Query.llmApiKeys
 Query.llmUsageSummary
 Query.loginHistory
 Query.mcpOAuthGrants
-Query.me
 Query.myOffers
-Query.notificationPreferences
 Query.notificationsPage
 Query.offerAnalytics
 Query.offers
@@ -139,7 +118,6 @@ Query.sessions
 Query.sharedSummary
 Query.shareLinks
 Query.skills
-Query.totpEnabled
 Query.trashedApplications
 Query.unreadNotificationCount
 Query.weeklyApplicationGoal

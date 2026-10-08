@@ -124,7 +124,11 @@ mod update {
         }]);
 
         update_profile(&users)
-            .execute(UpdateProfileInput { name: text(""), custom_ai_prompt: text(" \t\n"), ..input() })
+            .execute(UpdateProfileInput {
+                name: text(""),
+                custom_ai_prompt: text(" \t\n"),
+                ..input()
+            })
             .await
             .unwrap();
 

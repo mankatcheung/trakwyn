@@ -31,7 +31,10 @@ pub struct ConfirmTotpSetupUseCase {
 }
 
 impl ConfirmTotpSetupUseCase {
-    pub async fn execute(&self, input: ConfirmTotpSetupInput) -> DomainResult<ConfirmTotpSetupOutput> {
+    pub async fn execute(
+        &self,
+        input: ConfirmTotpSetupInput,
+    ) -> DomainResult<ConfirmTotpSetupOutput> {
         let user = self
             .user_repository
             .find_by_id(&input.user_id)

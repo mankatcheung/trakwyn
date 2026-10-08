@@ -37,7 +37,8 @@ impl ConfirmEmailChangeUseCase {
 
         // A token with no new email is a registration-verification token, and
         // an empty one is treated the same way, as `apps/api` treats it.
-        let new_email = token.new_email.filter(|email| !email.is_empty()).ok_or_else(invalid_link)?;
+        let new_email =
+            token.new_email.filter(|email| !email.is_empty()).ok_or_else(invalid_link)?;
         if token.used_at.is_some() || token.expires_at < now() {
             return Err(invalid_link());
         }

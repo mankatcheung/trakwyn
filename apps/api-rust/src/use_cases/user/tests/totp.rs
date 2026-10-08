@@ -390,8 +390,7 @@ mod regenerate {
 
     #[tokio::test]
     async fn refuses_an_account_with_no_password() {
-        let fixture =
-            Fixture::new(vec![User { password_hash: None, ..user_with_2fa() }]);
+        let fixture = Fixture::new(vec![User { password_hash: None, ..user_with_2fa() }]);
         let err = fixture.regenerate().execute(input(PASSWORD, fresh())).await.unwrap_err();
         assert_error(&err, ErrorCode::Unauthorized, NO_PASSWORD_MESSAGE);
     }

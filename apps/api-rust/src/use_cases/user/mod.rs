@@ -30,13 +30,17 @@ pub mod update_profile;
 pub use confirm_avatar::{ConfirmAvatarInput, ConfirmAvatarUseCase};
 pub use confirm_backup_email::{ConfirmBackupEmailInput, ConfirmBackupEmailUseCase};
 pub use confirm_email_change::{ConfirmEmailChangeInput, ConfirmEmailChangeUseCase};
-pub use confirm_totp_setup::{ConfirmTotpSetupInput, ConfirmTotpSetupOutput, ConfirmTotpSetupUseCase};
+pub use confirm_totp_setup::{
+    ConfirmTotpSetupInput, ConfirmTotpSetupOutput, ConfirmTotpSetupUseCase,
+};
 pub use delete_account::{DeleteAccountInput, DeleteAccountUseCase};
 pub use disable_totp::{DisableTotpInput, DisableTotpUseCase};
 pub use dismiss_onboarding_checklist::DismissOnboardingChecklistUseCase;
 pub use export_user_data::*;
 pub use generate_totp_secret::{GenerateTotpSecretInput, GenerateTotpSecretUseCase, TotpSetup};
-pub use get_notification_preferences::{GetNotificationPreferencesUseCase, NotificationPreferences};
+pub use get_notification_preferences::{
+    GetNotificationPreferencesUseCase, NotificationPreferences,
+};
 pub use get_totp_status::GetTotpStatusUseCase;
 pub use get_user::GetUserUseCase;
 pub use import_user_data::{ImportSummary, ImportUserDataUseCase};

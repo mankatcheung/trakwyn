@@ -6,6 +6,8 @@
 
 mod common;
 
+mod account;
+mod account_support;
 mod http;
 mod migrations;
 mod notes;
@@ -15,3 +17,5 @@ mod repositories_auth;
 mod repositories_content;
 mod repositories_credentials;
 mod sdl_parity;
+mod totp;
+mod user;

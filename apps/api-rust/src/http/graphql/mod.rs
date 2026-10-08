@@ -7,8 +7,13 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
+mod account;
+pub mod enums;
 mod notes;
+mod session_auth_time;
 pub mod support;
+mod totp;
+mod user;
 
 use std::sync::Arc;
 
@@ -17,10 +22,15 @@ use async_graphql::{EmptySubscription, MergedObject, Schema};
 use crate::http::container::Container;
 
 #[derive(MergedObject, Default)]
-pub struct Query(notes::NotesQuery);
+pub struct Query(notes::NotesQuery, account::AccountQuery, totp::TotpQuery, user::UserQuery);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(notes::NotesMutation);
+pub struct Mutation(
+    notes::NotesMutation,
+    account::AccountMutation,
+    totp::TotpMutation,
+    user::UserMutation,
+);
 
 pub type ApiSchema = Schema<Query, Mutation, EmptySubscription>;
 

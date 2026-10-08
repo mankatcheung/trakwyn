@@ -536,7 +536,11 @@ mod backup_email {
         let fixture = Fixture::new(vec![user()], vec![token()]);
         let before = now();
 
-        fixture.confirm().execute(ConfirmBackupEmailInput { token: RAW_TOKEN.to_string() }).await.unwrap();
+        fixture
+            .confirm()
+            .execute(ConfirmBackupEmailInput { token: RAW_TOKEN.to_string() })
+            .await
+            .unwrap();
 
         let stored = stored(&fixture.users, USER).await;
         assert_eq!(stored.backup_email.as_deref(), Some(BACKUP_EMAIL));
