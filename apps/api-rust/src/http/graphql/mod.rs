@@ -18,6 +18,7 @@ mod auth;
 pub mod auth_flows;
 mod auth_mobile;
 mod calendar;
+mod chat;
 mod company_briefing;
 mod contacts;
 mod conversations;
@@ -61,6 +62,7 @@ pub struct Query(
     application_analytics::ApplicationAnalyticsQuery,
     applications::ApplicationsQuery,
     calendar::CalendarQuery,
+    chat::ChatQuery,
     company_briefing::CompanyBriefingQuery,
     contacts::ContactsQuery,
     conversations::ConversationsQuery,
@@ -117,5 +119,8 @@ pub struct Mutation(
 pub type ApiSchema = Schema<Query, Mutation, EmptySubscription>;
 
 pub fn build_schema(container: Arc<Container>) -> ApiSchema {
-    Schema::build(Query::default(), Mutation::default(), EmptySubscription).data(container).finish()
+    Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+        .register_output_type::<enums::ActivityEventTypeEnum>()
+        .data(container)
+        .finish()
 }

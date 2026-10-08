@@ -5,7 +5,9 @@
 mod logger;
 mod metrics;
 mod serialize_logged_error;
+mod tool_call_observer;
 
 pub use logger::{LogFormat, LogLevel, StructuredLogger};
 pub use metrics::NoopMetrics;
 pub use serialize_logged_error::{serialize_logged_error, SerializedError};
+pub use tool_call_observer::CatalogueToolCallObserver;

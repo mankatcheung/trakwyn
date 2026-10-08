@@ -187,3 +187,19 @@ pub mod oauth_sign_in {
         ];
     }
 }
+
+/// The MCP endpoint path (`ROUTES.MCP` in `apps/api`).
+pub mod mcp_route {
+    pub const PATH: &str = "/mcp";
+}
+
+/// `/chat/stream` (`ROUTES.CHAT_STREAM` and `CHAT_STREAM` in `apps/api`).
+///
+/// Request bodies are capped well below the global limit: a chat turn is one
+/// id and one message of at most `chat::MAX_MESSAGE_CHARS` (64 KB leaves room
+/// for 4-byte characters and JSON escaping), and an over-long body should be
+/// refused before it is parsed.
+pub mod chat_stream {
+    pub const PATH: &str = "/chat/stream";
+    pub const BODY_LIMIT_BYTES: usize = 64 * 1024;
+}

@@ -6,6 +6,7 @@ pub mod api_tokens;
 pub mod applications;
 pub mod auth;
 pub mod calendar;
+pub mod chat;
 pub mod client_date;
 pub mod clock;
 pub mod company_briefing;

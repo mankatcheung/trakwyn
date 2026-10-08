@@ -53,6 +53,7 @@ pub mod share_link_repository;
 pub mod skill_repository;
 pub mod storage_provider;
 pub mod token_service;
+pub mod tool_call_observer;
 pub mod totp_backup_code_repository;
 pub mod totp_provider;
 pub mod transaction_manager;

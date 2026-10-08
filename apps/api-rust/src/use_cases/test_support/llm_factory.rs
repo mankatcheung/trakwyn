@@ -38,6 +38,7 @@ pub struct ResolveCall {
 #[derive(Default)]
 pub struct FakeLLMProviderFactory {
     provider: Option<Arc<dyn LLMProvider>>,
+    fell_back_from: Option<String>,
     failures: Mutex<Vec<DomainError>>,
     resolve_calls: Mutex<Vec<ResolveCall>>,
     credentials_calls: Mutex<Vec<LLMProviderCredentials>>,
@@ -52,6 +53,13 @@ impl FakeLLMProviderFactory {
     /// which key was chosen, not what the model said.
     pub fn resolving_any() -> Self {
         Self::with_provider(Arc::new(FakeLLMProvider::new()))
+    }
+
+    /// Reports every resolution as a fallback from `provider_id`, as the
+    /// limit-enforcing factory does when a paused key's fallback answers.
+    pub fn falling_back_from(mut self, provider_id: &str) -> Self {
+        self.fell_back_from = Some(provider_id.to_string());
+        self
     }
 
     /// Makes the next `resolve_for_user` fail with this error, as the
@@ -94,7 +102,7 @@ impl LLMProviderFactory for FakeLLMProviderFactory {
         Ok(self.provider.clone().map(|resolved| LLMProviderResolution {
             provider: resolved,
             provider_id: provider.unwrap_or(FAKE_DEFAULT_PROVIDER).to_string(),
-            fell_back_from: None,
+            fell_back_from: self.fell_back_from.clone(),
         }))
     }
 

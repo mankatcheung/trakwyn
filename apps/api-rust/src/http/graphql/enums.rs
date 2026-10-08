@@ -216,6 +216,29 @@ impl From<ApiTokenScope> for crate::domain::api_token::ApiTokenScope {
     }
 }
 
+// ── ActivityEventType ───────────────────────────────────────────────────────
+
+/// In the contract but referenced by no field (`ActivityLog.eventType` is a
+/// string), so `build_schema` registers it explicitly.
+#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq)]
+#[graphql(name = "ActivityEventType")]
+pub enum ActivityEventTypeEnum {
+    #[graphql(name = "document_deleted")]
+    DocumentDeleted,
+    #[graphql(name = "document_uploaded")]
+    DocumentUploaded,
+    #[graphql(name = "field_updated")]
+    FieldUpdated,
+    #[graphql(name = "interview_added")]
+    InterviewAdded,
+    #[graphql(name = "note_added")]
+    NoteAdded,
+    #[graphql(name = "note_deleted")]
+    NoteDeleted,
+    #[graphql(name = "status_changed")]
+    StatusChanged,
+}
+
 #[cfg(test)]
 mod api_token_scope_tests {
     use super::*;
