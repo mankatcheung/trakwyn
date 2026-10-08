@@ -142,3 +142,48 @@ pub mod admin_jobs {
 pub mod cron_auth_events {
     pub const REJECTED: &str = "cron.auth.rejected";
 }
+
+/// The OAuth sign-in routes (`/auth/oauth/*`), registered by
+/// `http/routes/oauth.rs` and, in fake provider mode, `fake_oauth_consent.rs`.
+pub mod oauth_sign_in {
+    pub const START: &str = "/auth/oauth/{provider}/start";
+    pub const CALLBACK: &str = "/auth/oauth/{provider}/callback";
+    /// Where a tab-based extension login ends (Safari, JEF-386).
+    pub const EXTENSION_DONE: &str = "/auth/oauth/extension/done";
+    /// Stand-in provider consent screen, mounted only when `OAUTH_PROVIDER_MODE=fake`.
+    pub const FAKE_CONSENT: &str = crate::infrastructure::auth::FAKE_OAUTH_CONSENT_PATH;
+    /// Binds the redirect to the browser that started it (JEF-198).
+    pub const STATE_COOKIE: &str = "trakwyn_oauth_state";
+    /// Where the API sends a mobile OAuth login when it is done: the app's own
+    /// custom URL scheme, the same in every environment.
+    pub const MOBILE_CALLBACK: &str = "trakwyn://oauth-callback";
+
+    /// Which client started a login (JEF-275).
+    pub mod platform {
+        pub const WEB: &str = "web";
+        pub const MOBILE: &str = "mobile";
+        /// The Trakwyn Clipper in Chrome (JEF-383).
+        pub const EXTENSION: &str = "extension";
+        /// The Clipper in Safari, which signs in in a tab (JEF-386).
+        pub const EXTENSION_TAB: &str = "extension-tab";
+    }
+
+    /// What `GET /auth/oauth/extension/done` answers with. Static: nothing
+    /// from the query is echoed back.
+    pub mod extension_done_page {
+        pub const HTML: &str = concat!(
+            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">",
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+            "<title>Trakwyn Clipper</title></head>",
+            "<body style=\"font-family: system-ui, sans-serif; text-align: center; padding: 3rem 1rem\">",
+            "<p>You can close this tab and return to the Trakwyn Clipper.</p></body></html>"
+        );
+        /// The URL carries a handoff code: keep it out of caches and referrers.
+        pub const HEADERS: [(&str, &str); 4] = [
+            ("content-type", "text/html; charset=utf-8"),
+            ("cache-control", "no-store"),
+            ("referrer-policy", "no-referrer"),
+            ("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'"),
+        ];
+    }
+}

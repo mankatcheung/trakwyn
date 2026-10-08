@@ -34,6 +34,7 @@ mod migrations;
 mod notes;
 mod notifications;
 mod oauth_accounts;
+mod oauth_routes;
 mod offers;
 mod push;
 mod repositories;

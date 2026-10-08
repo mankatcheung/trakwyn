@@ -15,6 +15,7 @@ use axum::{Json, Router};
 use serde_json::json;
 use tower_http::cors::{AllowHeaders, AllowOrigin, CorsLayer};
 
+use crate::config::auth::OAuthProviderMode;
 use crate::config::Config;
 use crate::http::constants::{
     routes, BODY_LIMIT_BYTES, EXTENSION_ORIGIN_SCHEMES, PREVIEW_ORIGIN_SUFFIX,
@@ -24,8 +25,9 @@ use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
 use crate::http::routes::admin;
 use crate::http::routes::fake_llm_completions::fake_llm_completions_routes;
+use crate::http::routes::fake_oauth_consent::fake_oauth_consent_routes;
 use crate::http::routes::health::health;
-use crate::http::routes::{mcp_oauth, uploads};
+use crate::http::routes::{mcp_oauth, oauth, uploads};
 
 #[derive(Clone)]
 struct AppState {
@@ -105,6 +107,13 @@ pub fn build_router(container: Arc<Container>) -> Router {
     };
 
     let router = router.merge(admin::router(container.clone()));
+    let router = router.merge(oauth::router(container.clone()));
+    // The stand-in provider consent screen, for e2e and CI only.
+    let router = if container.config.auth.oauth_provider_mode == OAuthProviderMode::Fake {
+        router.merge(fake_oauth_consent_routes())
+    } else {
+        router
+    };
 
     router
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
