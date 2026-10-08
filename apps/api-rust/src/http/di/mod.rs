@@ -12,6 +12,8 @@ mod documents;
 mod interview_rounds;
 mod notes;
 mod notifications;
+mod oauth;
 mod offers;
 mod profile;
+mod sessions;
 mod share_links;

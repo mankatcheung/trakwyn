@@ -90,3 +90,5 @@ pub use offers::FakeOfferRepository;
 pub use push_subscriptions::FakePushSubscriptionRepository;
 pub use skills::FakeSkillRepository;
 pub use work_experiences::FakeWorkExperienceRepository;
+mod rate_limiters;
+pub use rate_limiters::FakeRateLimiter;
