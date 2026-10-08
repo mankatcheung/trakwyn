@@ -92,3 +92,5 @@ pub use skills::FakeSkillRepository;
 pub use work_experiences::FakeWorkExperienceRepository;
 mod llm_factory;
 pub use llm_factory::*;
+mod ai_features;
+pub use ai_features::*;
