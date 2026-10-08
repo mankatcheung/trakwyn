@@ -12,6 +12,7 @@ mod cookie_consent;
 mod documents;
 mod interview_rounds;
 pub mod llm;
+mod mcp_oauth;
 mod notes;
 mod notifications;
 mod oauth;

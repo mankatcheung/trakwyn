@@ -95,6 +95,12 @@ impl Container {
                 services.logger.clone(),
                 services.metrics.clone(),
             ));
+        // The access-token lookup runs on every MCP request, so it is cached.
+        let mcp_oauth_token_repository: Arc<dyn McpOAuthTokenRepository> =
+            Arc::new(pg::CachedMcpOAuthTokenRepository::new(
+                Arc::new(pg::PgMcpOAuthTokenRepository::new(repo())),
+                services.cache.clone(),
+            ));
         let llm_provider_factory = build_llm_provider_factory(
             &user_repository,
             &llm_api_key_repository,
@@ -142,7 +148,7 @@ impl Container {
             mcp_oauth_refresh_token_repository: Arc::new(
                 pg::PgMcpOAuthRefreshTokenRepository::new(repo()),
             ),
-            mcp_oauth_token_repository: Arc::new(pg::PgMcpOAuthTokenRepository::new(repo())),
+            mcp_oauth_token_repository,
             message_repository: Arc::new(pg::PgMessageRepository::new(repo())),
             note_repository: Arc::new(pg::PgNoteRepository::new(repo())),
             notification_repository: Arc::new(pg::PgNotificationRepository::new(repo())),

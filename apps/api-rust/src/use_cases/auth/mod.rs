@@ -1,3 +1,4 @@
+pub mod authenticate_mcp_request;
 pub mod authenticate_request;
 pub mod log_auth_failure;
 pub mod login;
@@ -15,6 +16,8 @@ pub mod session_freshness;
 pub mod token_hashing;
 pub mod verify_email;
 pub mod verify_totp_or_backup_code;
+
+pub use authenticate_mcp_request::{AuthenticateMcpRequestResult, AuthenticateMcpRequestUseCase};
 
 pub use authenticate_request::{AuthenticateRequestUseCase, AuthenticatedUser};
 pub use log_auth_failure::{log_auth_failure, AuthFailureReason};

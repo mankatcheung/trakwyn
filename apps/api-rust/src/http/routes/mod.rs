@@ -2,4 +2,6 @@
 
 pub mod fake_llm_completions;
 pub mod health;
+pub mod mcp_oauth;
+pub mod mcp_oauth_helpers;
 pub mod uploads;

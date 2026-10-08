@@ -103,3 +103,16 @@ pub mod uploads {
 pub mod llm_fake_completions {
     pub const PATH: &str = "/llm-test/fake/chat/completions";
 }
+
+/// MCP OAuth endpoint paths, registered by `http/routes/mcp_oauth.rs`.
+pub mod mcp_oauth_routes {
+    pub const PROTECTED_RESOURCE_METADATA: &str = "/.well-known/oauth-protected-resource";
+    pub const AUTHORIZATION_SERVER_METADATA: &str = "/.well-known/oauth-authorization-server";
+    pub const AUTHORIZE: &str = "/oauth/authorize";
+    pub const AUTHORIZE_APPROVE: &str = "/oauth/authorize/approve";
+    pub const REGISTER: &str = "/oauth/register";
+    pub const TOKEN: &str = "/oauth/token";
+    pub const REVOKE: &str = "/oauth/revoke";
+    /// The scopes the MCP server offers (`MCP.SCOPES` in `apps/api`).
+    pub const SCOPES: [&str; 2] = ["read", "full"];
+}

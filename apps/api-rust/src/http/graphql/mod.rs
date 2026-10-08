@@ -29,6 +29,7 @@ pub mod enums;
 mod interview_rounds;
 pub mod js_date;
 mod llm_keys;
+mod mcp_oauth_grants;
 mod notes;
 mod notifications;
 mod oauth_accounts;
@@ -67,6 +68,7 @@ pub struct Query(
     education::EducationQuery,
     interview_rounds::InterviewRoundsQuery,
     llm_keys::LlmKeysQuery,
+    mcp_oauth_grants::McpOAuthGrantsQuery,
     notes::NotesQuery,
     notifications::NotificationsQuery,
     oauth_accounts::OAuthAccountsQuery,
@@ -97,6 +99,7 @@ pub struct Mutation(
     education::EducationMutation,
     interview_rounds::InterviewRoundsMutation,
     llm_keys::LlmKeysMutation,
+    mcp_oauth_grants::McpOAuthGrantsMutation,
     notes::NotesMutation,
     notifications::NotificationsMutation,
     oauth_accounts::OAuthAccountsMutation,

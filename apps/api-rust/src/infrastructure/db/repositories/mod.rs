@@ -9,6 +9,7 @@ mod activity_log;
 mod api_token;
 mod application;
 mod backup_email_verification_token;
+mod cached_mcp_oauth_token;
 mod company_briefing;
 mod contact;
 mod email_verification_token;
@@ -56,6 +57,7 @@ mod push_subscription;
 mod skill;
 mod work_experience;
 
+pub use cached_mcp_oauth_token::CachedMcpOAuthTokenRepository;
 pub use company_briefing::PgCompanyBriefingRepository;
 pub use contact::PgContactRepository;
 pub use conversation::PgConversationRepository;

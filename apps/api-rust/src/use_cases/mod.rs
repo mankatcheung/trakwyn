@@ -23,6 +23,7 @@ pub mod job_description;
 pub mod jobs;
 pub mod llm_keys;
 pub mod login_events;
+pub mod mcp_oauth;
 pub mod notes;
 pub mod notifications;
 pub mod oauth;

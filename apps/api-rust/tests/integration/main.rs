@@ -27,6 +27,8 @@ mod education;
 mod http;
 mod interview_rounds;
 mod llm_keys;
+mod mcp_oauth_grants;
+mod mcp_oauth_routes;
 mod migrations;
 mod notes;
 mod notifications;
