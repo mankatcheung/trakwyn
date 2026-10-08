@@ -143,3 +143,41 @@ impl From<InterviewRoundOutcomeEnum> for crate::domain::interview_round::Intervi
         }
     }
 }
+
+#[derive(Enum, Debug, Clone, Copy, PartialEq, Eq)]
+#[graphql(name = "ApiTokenScope", rename_items = "lowercase")]
+pub enum ApiTokenScope {
+    Full,
+    Read,
+}
+
+impl From<crate::domain::api_token::ApiTokenScope> for ApiTokenScope {
+    fn from(scope: crate::domain::api_token::ApiTokenScope) -> Self {
+        match scope {
+            crate::domain::api_token::ApiTokenScope::Full => Self::Full,
+            crate::domain::api_token::ApiTokenScope::Read => Self::Read,
+        }
+    }
+}
+
+impl From<ApiTokenScope> for crate::domain::api_token::ApiTokenScope {
+    fn from(scope: ApiTokenScope) -> Self {
+        match scope {
+            ApiTokenScope::Full => Self::Full,
+            ApiTokenScope::Read => Self::Read,
+        }
+    }
+}
+
+#[cfg(test)]
+mod api_token_scope_tests {
+    use super::*;
+
+    #[test]
+    fn api_token_scope_round_trips_through_the_domain() {
+        for scope in crate::domain::api_token::ApiTokenScope::ALL {
+            let graphql = ApiTokenScope::from(scope);
+            assert_eq!(crate::domain::api_token::ApiTokenScope::from(graphql), scope);
+        }
+    }
+}

@@ -6,14 +6,19 @@
 
 mod common;
 
+mod api_tokens;
 mod application_analytics;
 mod applications;
 mod applications_bulk;
 mod contacts;
+mod conversations;
+mod cookie_consent;
+mod education;
 mod http;
 mod interview_rounds;
 mod migrations;
 mod notes;
+mod notifications;
 mod offers;
 mod repositories;
 mod repositories_applications;
@@ -21,3 +26,6 @@ mod repositories_auth;
 mod repositories_content;
 mod repositories_credentials;
 mod sdl_parity;
+mod share_links;
+mod skills;
+mod work_experience;

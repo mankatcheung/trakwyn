@@ -13,6 +13,8 @@ pub mod token_lifetime_s {
 /// API-token (`trakwyn_...`) settings.
 pub mod api_token {
     pub const PREFIX: &str = "trakwyn_";
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 24;
 }
 
 /// Per-application document quota and the default a document is stored
@@ -46,11 +48,26 @@ pub mod reminder_window_ms {
 
 /// What a create falls back to when the caller names no value.
 pub mod defaults {
+    use crate::domain::api_token::ApiTokenScope;
     use crate::domain::application::ApplicationStatus;
     use crate::domain::interview_round::InterviewRoundOutcome;
 
     pub const APPLICATION_STATUS: ApplicationStatus = ApplicationStatus::Draft;
     pub const INTERVIEW_OUTCOME: InterviewRoundOutcome = InterviewRoundOutcome::Pending;
+    pub const API_TOKEN_SCOPE: ApiTokenScope = ApiTokenScope::Full;
+}
+
+/// Read-only share-link (`jfsl_...`) settings.
+pub mod share_link {
+    pub const PREFIX: &str = "jfsl_";
+    /// Number of random bytes hex-encoded into the token body.
+    pub const RANDOM_BYTES: usize = 24;
+}
+
+/// Durations, in milliseconds.
+pub mod durations_ms {
+    /// The weekly-digest and "recently updated" window: 7 days.
+    pub const WEEK: i64 = 7 * 24 * 60 * 60 * 1000;
 }
 
 /// `LLM_PROVIDER` values: the providers a user can bring a key for.
