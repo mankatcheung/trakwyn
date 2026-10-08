@@ -22,6 +22,7 @@ use crate::http::constants::{
 use crate::http::container::Container;
 use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
+use crate::http::routes::admin;
 use crate::http::routes::health::health;
 use crate::http::routes::uploads;
 
@@ -93,6 +94,8 @@ pub fn build_router(container: Arc<Container>) -> Router {
         Some(local_storage) => router.merge(uploads::router(local_storage.clone())),
         None => router,
     };
+
+    let router = router.merge(admin::router(container.clone()));
 
     router
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))

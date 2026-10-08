@@ -26,6 +26,7 @@ mod notes;
 mod notifications;
 mod offers;
 pub mod optional_input;
+mod push;
 mod share_links;
 mod skills;
 pub mod support;
@@ -73,6 +74,7 @@ pub struct Mutation(
     notes::NotesMutation,
     notifications::NotificationsMutation,
     offers::OffersMutation,
+    push::PushMutation,
     share_links::ShareLinksMutation,
     skills::SkillsMutation,
     work_experience::WorkExperienceMutation,

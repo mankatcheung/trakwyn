@@ -225,3 +225,13 @@ pub mod document_type {
     pub const PORTFOLIO: &str = "portfolio";
     pub const OTHER: &str = "other";
 }
+
+/// Weekly-digest resend guards and the daily period, in milliseconds.
+pub mod digest_window_ms {
+    /// Don't resend a weekly digest if the last send was within 6 days.
+    pub const RESEND_AFTER: i64 = 6 * 24 * 60 * 60 * 1000;
+    /// Don't resend a daily digest if the last send was within 23 hours.
+    pub const DAILY_RESEND_AFTER: i64 = 23 * 60 * 60 * 1000;
+    /// The period a daily digest covers.
+    pub const DAY: i64 = 24 * 60 * 60 * 1000;
+}

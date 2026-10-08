@@ -30,9 +30,7 @@ Mutation.refreshToken
 Mutation.refreshTokenMobile
 Mutation.regenerateTotpBackupCodes
 Mutation.register
-Mutation.registerExpoPushToken
 Mutation.registerMobile
-Mutation.registerPushSubscription
 Mutation.removeAvatar
 Mutation.removeBackupEmail
 Mutation.requestAddBackupEmail
@@ -49,7 +47,6 @@ Mutation.setDefaultLlmProvider
 Mutation.setLlmApiKeyMonthlyLimit
 Mutation.testLlmApiKey
 Mutation.unlinkOAuthAccount
-Mutation.unregisterPushSubscription
 Mutation.updateNotificationPreferences
 Mutation.updatePassword
 Mutation.updateProfile

@@ -95,3 +95,29 @@ pub mod uploads {
     /// The type an upload is stored with when the request names none.
     pub const FALLBACK_CONTENT_TYPE: &str = "application/octet-stream";
 }
+
+/// The `/admin/*` routes Cloud Scheduler drives, plus the public VAPID key.
+pub mod admin_routes {
+    pub const DIGEST_SEND: &str = "/admin/digest/send";
+    pub const TRASH_PURGE: &str = "/admin/trash/purge";
+    pub const REMINDERS_SEND: &str = "/admin/reminders/send";
+    pub const PUSH_NOTIFICATIONS_SEND: &str = "/admin/push-notifications/send";
+    pub const VAPID_PUBLIC_KEY: &str = "/vapid-public-key";
+}
+
+/// Names of the Cloud Scheduler-driven `/admin/*` jobs, as they appear in the
+/// summary log lines (`job.<name>.completed`) the Axiom monitors group on, so
+/// they must survive a route being moved.
+pub mod admin_jobs {
+    pub const DIGEST: &str = "digest";
+    pub const TRASH_PURGE: &str = "trash_purge";
+    pub const REMINDERS: &str = "reminders";
+    pub const PUSH_NOTIFICATIONS: &str = "push_notifications";
+}
+
+/// Log events for a request a configured `/admin/*` route refused. Rejection
+/// happens before the job runs, so without this a scheduler whose token
+/// stopped verifying would leave no line at all.
+pub mod cron_auth_events {
+    pub const REJECTED: &str = "cron.auth.rejected";
+}

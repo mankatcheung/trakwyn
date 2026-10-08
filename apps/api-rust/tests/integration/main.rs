@@ -9,6 +9,7 @@ mod document_drafts;
 mod documents;
 mod uploads;
 
+mod admin_routes;
 mod api_tokens;
 mod application_analytics;
 mod applications;
@@ -24,6 +25,7 @@ mod migrations;
 mod notes;
 mod notifications;
 mod offers;
+mod push;
 mod repositories;
 mod repositories_applications;
 mod repositories_auth;
