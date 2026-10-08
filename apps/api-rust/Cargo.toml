@@ -20,8 +20,9 @@ async-stream = "0.3"
 async-trait = "0.1"
 axum = { version = "0.8", features = ["macros"] }
 base64 = "0.22"
-bcrypt = "0.17"
+bcrypt = "0.19"
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+chrono-tz = { version = "0.10", features = ["case-insensitive"] }
 dotenvy = "0.15"
 futures = "0.3"
 form_urlencoded = "1"

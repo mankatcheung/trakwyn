@@ -109,6 +109,27 @@ impl From<OAuthProviderName> for OAuthProviderEnum {
     }
 }
 
+#[derive(async_graphql::Enum, Clone, Copy, Debug, PartialEq, Eq)]
+#[graphql(name = "DigestFrequency")]
+pub enum DigestFrequencyEnum {
+    #[graphql(name = "DAILY")]
+    Daily,
+    #[graphql(name = "WEEKLY")]
+    Weekly,
+    #[graphql(name = "OFF")]
+    Off,
+}
+
+impl From<DigestFrequencyEnum> for crate::domain::user::DigestFrequency {
+    fn from(value: DigestFrequencyEnum) -> Self {
+        match value {
+            DigestFrequencyEnum::Daily => Self::Daily,
+            DigestFrequencyEnum::Weekly => Self::Weekly,
+            DigestFrequencyEnum::Off => Self::Off,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

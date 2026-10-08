@@ -17,3 +17,4 @@ mod offers;
 mod profile;
 mod sessions;
 mod share_links;
+mod user;

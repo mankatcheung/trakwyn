@@ -7,6 +7,7 @@
 //!
 //! Each domain module contributes a `*Query` and a `*Mutation`, merged below.
 
+mod account;
 mod activity_logs;
 mod api_tokens;
 mod application_analytics;
@@ -31,11 +32,14 @@ mod oauth_accounts;
 mod offers;
 pub mod optional_input;
 mod security;
+mod session_auth_time;
 mod sessions;
 mod share_links;
 mod skills;
 pub mod support;
+mod totp;
 mod upload_url_payload;
+mod user;
 mod work_experience;
 
 use std::sync::Arc;
@@ -46,6 +50,7 @@ use crate::http::container::Container;
 
 #[derive(MergedObject, Default)]
 pub struct Query(
+    account::AccountQuery,
     activity_logs::ActivityLogsQuery,
     api_tokens::ApiTokensQuery,
     application_analytics::ApplicationAnalyticsQuery,
@@ -65,11 +70,14 @@ pub struct Query(
     sessions::SessionsQuery,
     share_links::ShareLinksQuery,
     skills::SkillsQuery,
+    totp::TotpQuery,
+    user::UserQuery,
     work_experience::WorkExperienceQuery,
 );
 
 #[derive(MergedObject, Default)]
 pub struct Mutation(
+    account::AccountMutation,
     api_tokens::ApiTokensMutation,
     application_mutations::ApplicationsMutation,
     auth::AuthMutation,
@@ -88,6 +96,8 @@ pub struct Mutation(
     sessions::SessionsMutation,
     share_links::ShareLinksMutation,
     skills::SkillsMutation,
+    totp::TotpMutation,
+    user::UserMutation,
     work_experience::WorkExperienceMutation,
 );
 

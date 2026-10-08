@@ -3,44 +3,22 @@
 # This list may only shrink. tests/integration/sdl_parity.rs fails when an
 # entry here is implemented (delete the line) and when an operation is
 # missing without being listed.
-Mutation.beginTotpSetup
 Mutation.computeResumeMatchScore
-Mutation.confirmAvatar
-Mutation.confirmBackupEmail
-Mutation.confirmEmailChange
-Mutation.confirmTotpSetup
-Mutation.deleteAccount
 Mutation.deleteLlmApiKey
-Mutation.disableTotp
-Mutation.dismissOnboardingChecklist
 Mutation.generateCompanyBriefing
 Mutation.generateCoverLetter
 Mutation.generateResume
-Mutation.importUserData
 Mutation.parseJobDescription
-Mutation.regenerateTotpBackupCodes
 Mutation.registerExpoPushToken
 Mutation.registerPushSubscription
-Mutation.removeAvatar
-Mutation.removeBackupEmail
-Mutation.requestAddBackupEmail
-Mutation.requestAvatarUploadUrl
-Mutation.requestEmailChange
 Mutation.revokeMcpOAuthGrant
 Mutation.saveLlmApiKey
 Mutation.setDefaultLlmProvider
 Mutation.setLlmApiKeyMonthlyLimit
 Mutation.testLlmApiKey
 Mutation.unregisterPushSubscription
-Mutation.updateNotificationPreferences
-Mutation.updatePassword
-Mutation.updateProfile
 Query.chatHistory
 Query.companyBriefing
-Query.exportUserData
 Query.llmApiKeys
 Query.llmUsageSummary
 Query.mcpOAuthGrants
-Query.me
-Query.notificationPreferences
-Query.totpEnabled

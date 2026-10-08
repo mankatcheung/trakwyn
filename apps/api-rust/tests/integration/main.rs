@@ -10,6 +10,8 @@ mod document_drafts;
 mod documents;
 mod uploads;
 
+mod account;
+mod account_support;
 mod api_tokens;
 mod application_analytics;
 mod applications;
@@ -38,4 +40,6 @@ mod security;
 mod sessions;
 mod share_links;
 mod skills;
+mod totp;
+mod user;
 mod work_experience;

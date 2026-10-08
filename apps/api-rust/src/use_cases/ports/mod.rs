@@ -117,3 +117,5 @@ pub use skill_repository::{CreateSkillData, SkillRepository, UpdateSkillData};
 pub use totp_provider::TotpProvider;
 pub use web_push_service::{PushDeliveryError, PushPayload, PushSubscriptionKeys, WebPushService};
 pub use work_experience_repository::*;
+pub mod qr_code_renderer;
+pub use qr_code_renderer::QrCodeRenderer;
