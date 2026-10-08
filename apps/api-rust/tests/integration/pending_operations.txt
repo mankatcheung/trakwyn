@@ -41,7 +41,6 @@ Mutation.requestBackupEmailRecovery
 Mutation.requestEmailChange
 Mutation.requestPasswordReset
 Mutation.resetPassword
-Mutation.revokeMcpOAuthGrant
 Mutation.revokeOtherSessions
 Mutation.revokeSession
 Mutation.saveLlmApiKey
@@ -61,7 +60,6 @@ Query.linkedOAuthAccounts
 Query.llmApiKeys
 Query.llmUsageSummary
 Query.loginHistory
-Query.mcpOAuthGrants
 Query.me
 Query.notificationPreferences
 Query.securityActivity

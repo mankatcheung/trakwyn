@@ -22,6 +22,7 @@ mod education;
 pub mod enums;
 mod interview_rounds;
 pub mod js_date;
+mod mcp_oauth_grants;
 mod notes;
 mod notifications;
 mod offers;
@@ -51,6 +52,7 @@ pub struct Query(
     documents::DocumentsQuery,
     education::EducationQuery,
     interview_rounds::InterviewRoundsQuery,
+    mcp_oauth_grants::McpOAuthGrantsQuery,
     notes::NotesQuery,
     notifications::NotificationsQuery,
     offers::OffersQuery,
@@ -70,6 +72,7 @@ pub struct Mutation(
     documents::DocumentsMutation,
     education::EducationMutation,
     interview_rounds::InterviewRoundsMutation,
+    mcp_oauth_grants::McpOAuthGrantsMutation,
     notes::NotesMutation,
     notifications::NotificationsMutation,
     offers::OffersMutation,

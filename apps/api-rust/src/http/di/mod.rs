@@ -10,6 +10,7 @@ mod conversations;
 mod cookie_consent;
 mod documents;
 mod interview_rounds;
+mod mcp_oauth;
 mod notes;
 mod notifications;
 mod offers;

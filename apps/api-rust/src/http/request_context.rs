@@ -33,7 +33,7 @@ fn header(headers: &HeaderMap, name: impl AsHeaderName) -> Option<&str> {
 /// The client's address. The API sits behind Cloud Run's front end, which
 /// appends to `X-Forwarded-For`, so the left-most entry is the client; the
 /// socket's peer is only the proxy. Same trust as `apps/api`'s `trustProxy`.
-fn client_ip(headers: &HeaderMap, peer: Option<SocketAddr>) -> Option<String> {
+pub(crate) fn client_ip(headers: &HeaderMap, peer: Option<SocketAddr>) -> Option<String> {
     header(headers, FORWARDED_FOR)
         .and_then(|forwarded| forwarded.split(',').next())
         .map(str::trim)

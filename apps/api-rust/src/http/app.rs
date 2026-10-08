@@ -23,7 +23,7 @@ use crate::http::container::Container;
 use crate::http::graphql::{build_schema, ApiSchema};
 use crate::http::request_context::RequestContext;
 use crate::http::routes::health::health;
-use crate::http::routes::uploads;
+use crate::http::routes::{mcp_oauth, uploads};
 
 #[derive(Clone)]
 struct AppState {
@@ -88,6 +88,7 @@ pub fn build_router(container: Arc<Container>) -> Router {
     let router =
         Router::new().route(routes::HEALTH, get(health)).route(routes::GRAPHQL, post(graphql));
     let router = if production { router } else { router.route(routes::GRAPHIQL, get(graphiql)) };
+    let router = router.merge(mcp_oauth::router(container.clone()));
     // The upload target and read-back exist only for local-disk storage.
     let router = match &container.services.local_storage {
         Some(local_storage) => router.merge(uploads::router(local_storage.clone())),
