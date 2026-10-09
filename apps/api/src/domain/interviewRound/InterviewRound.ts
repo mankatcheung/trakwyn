@@ -10,6 +10,8 @@ export interface InterviewRound {
   interviewerName: string | null;
   notes: string | null;
   outcome: InterviewRoundOutcome;
+  /** How many InterviewQuestion rows the round has; backs the per-round quota. */
+  questionCount: number;
   pushNotificationSentAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

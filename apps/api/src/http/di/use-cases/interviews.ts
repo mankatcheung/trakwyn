@@ -6,6 +6,12 @@ import { UpdateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/Upda
 import { DeleteInterviewRoundUseCase } from '#src/use-cases/interviewRounds/DeleteInterviewRoundUseCase.js';
 import { GetInterviewRoundAnalyticsUseCase } from '#src/use-cases/interviewRounds/GetInterviewRoundAnalyticsUseCase.js';
 
+import { CreateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/CreateInterviewQuestionUseCase.js';
+import { GetInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/GetInterviewQuestionsUseCase.js';
+import { UpdateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/UpdateInterviewQuestionUseCase.js';
+import { DeleteInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/DeleteInterviewQuestionUseCase.js';
+import { ReorderInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/ReorderInterviewQuestionsUseCase.js';
+
 import type { Cradle } from '../types.js';
 
 export const interviews = {
@@ -19,6 +25,21 @@ export const interviews = {
     lifetime: Lifetime.TRANSIENT,
   }),
   deleteInterviewRoundUseCase: asClass(DeleteInterviewRoundUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  createInterviewQuestionUseCase: asClass(CreateInterviewQuestionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  getInterviewQuestionsUseCase: asClass(GetInterviewQuestionsUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  updateInterviewQuestionUseCase: asClass(UpdateInterviewQuestionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  deleteInterviewQuestionUseCase: asClass(DeleteInterviewQuestionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  reorderInterviewQuestionsUseCase: asClass(ReorderInterviewQuestionsUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
   getInterviewRoundAnalyticsUseCase: asClass(GetInterviewRoundAnalyticsUseCase, {

@@ -8,6 +8,7 @@ import { DocumentDraftResolver } from '#src/interface-adapters/resolvers/Documen
 import { CompanyBriefingResolver } from '#src/interface-adapters/resolvers/CompanyBriefingResolver.js';
 import { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
 import { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
+import { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
 import { ActivityLogResolver } from '#src/interface-adapters/resolvers/ActivityLogResolver.js';
 import { ContactResolver } from '#src/interface-adapters/resolvers/ContactResolver.js';
 import { LoginEventResolver } from '#src/interface-adapters/resolvers/LoginEventResolver.js';
@@ -36,6 +37,7 @@ export const resolvers = {
   documentDraftResolver: asClass(DocumentDraftResolver, { lifetime: Lifetime.SINGLETON }),
   userResolver: asClass(UserResolver, { lifetime: Lifetime.SINGLETON }),
   interviewRoundResolver: asClass(InterviewRoundResolver, { lifetime: Lifetime.SINGLETON }),
+  interviewQuestionResolver: asClass(InterviewQuestionResolver, { lifetime: Lifetime.SINGLETON }),
   activityLogResolver: asClass(ActivityLogResolver, { lifetime: Lifetime.SINGLETON }),
   contactResolver: asClass(ContactResolver, { lifetime: Lifetime.SINGLETON }),
   loginEventResolver: asClass(LoginEventResolver, { lifetime: Lifetime.SINGLETON }),

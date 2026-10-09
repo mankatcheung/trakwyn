@@ -389,6 +389,13 @@ export const PAGINATION = {
 export const CONTENT_LIMITS = {
   APPLICATIONS_PER_USER: 50,
   DOCUMENTS_PER_APPLICATION: 10,
+  QUESTIONS_PER_ROUND: 50,
+} as const;
+
+/** Length limits for the question and answer a user records against an interview round. */
+export const INTERVIEW_QUESTION_LIMITS = {
+  QUESTION_MAX_CHARS: 500,
+  ANSWER_MAX_CHARS: 4000,
 } as const;
 
 /** Named MIME type constants, for referencing specific types instead of repeating string literals. */

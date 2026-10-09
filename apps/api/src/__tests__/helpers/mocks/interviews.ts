@@ -8,7 +8,9 @@
 
 import { vi } from 'vitest';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
+import type { IInterviewQuestionRepository } from '#src/use-cases/ports/IInterviewQuestionRepository.js';
 import type { InterviewRound } from '#src/domain/interviewRound/InterviewRound.js';
+import type { InterviewQuestion } from '#src/domain/interviewRound/InterviewQuestion.js';
 
 export const makeInterviewRoundRepository = (
   overrides?: Partial<IInterviewRoundRepository>,
@@ -34,7 +36,33 @@ export const makeInterviewRound = (overrides?: Partial<InterviewRound>): Intervi
   interviewerName: null,
   notes: null,
   outcome: 'pending',
+  questionCount: 0,
   pushNotificationSentAt: null,
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeInterviewQuestionRepository = (
+  overrides?: Partial<IInterviewQuestionRepository>,
+): IInterviewQuestionRepository => ({
+  findAllByRoundId: vi.fn().mockResolvedValue([]),
+  findById: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn().mockResolvedValue(undefined),
+  reorder: vi.fn().mockResolvedValue(undefined),
+  ...overrides,
+});
+
+export const makeInterviewQuestion = (
+  overrides?: Partial<InterviewQuestion>,
+): InterviewQuestion => ({
+  id: 'question-1',
+  interviewRoundId: 'round-1',
+  question: 'Tell me about yourself',
+  answer: null,
+  position: 0,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   ...overrides,

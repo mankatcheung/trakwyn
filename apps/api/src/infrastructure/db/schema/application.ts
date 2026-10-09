@@ -115,6 +115,7 @@ export const interviewRound = pgTable(
     interviewerName: text('interviewerName'),
     notes: text('notes'),
     outcome: text('outcome').notNull().default('pending'),
+    questionCount: integer('questionCount').notNull().default(0),
     pushNotificationSentAt: timestamp('pushNotificationSentAt', TIMESTAMP),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
@@ -125,6 +126,27 @@ export const interviewRound = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index('InterviewRound_applicationId_idx').on(table.applicationId)],
+);
+
+export const interviewQuestion = pgTable(
+  'InterviewQuestion',
+  {
+    id: text('id').primaryKey(),
+    interviewRoundId: text('interviewRoundId')
+      .notNull()
+      .references(() => interviewRound.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    answer: text('answer'),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index('InterviewQuestion_interviewRoundId_idx').on(table.interviewRoundId)],
 );
 
 export const note = pgTable(

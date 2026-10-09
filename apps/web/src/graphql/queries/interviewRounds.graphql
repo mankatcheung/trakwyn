@@ -8,6 +8,7 @@ query InterviewRounds($applicationId: ID!) {
     interviewerName
     notes
     outcome
+    questionCount
     createdAt
     updatedAt
   }

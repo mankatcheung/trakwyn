@@ -15,24 +15,25 @@ import {
   Textarea,
 } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
+import { InterviewQuestionsPanel } from './InterviewQuestionsPanel';
 const INTERVIEW_ROUNDS_QUERY = `
   query InterviewRounds($applicationId: ID!) {
     interviewRounds(applicationId: $applicationId) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
     }
   }
 `;
 const CREATE_ROUND = `
   mutation CreateInterviewRound($input: CreateInterviewRoundInput!) {
     createInterviewRound(input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
     }
   }
 `;
 const UPDATE_ROUND = `
   mutation UpdateInterviewRound($id: ID!, $input: UpdateInterviewRoundInput!) {
     updateInterviewRound(id: $id, input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
     }
   }
 `;
@@ -47,6 +48,7 @@ type InterviewRound = {
   interviewerName?: string | null;
   notes?: string | null;
   outcome: string;
+  questionCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -180,6 +182,7 @@ export function InterviewsTab({
         interviewerName: f.interviewerName || null,
         notes: f.notes || null,
         outcome: f.outcome,
+        questionCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -451,6 +454,13 @@ export function InterviewsTab({
                   </button>
                 </div>
               </div>
+              {!round.id.startsWith('__tmp_') && (
+                <InterviewQuestionsPanel
+                  applicationId={applicationId}
+                  roundId={round.id}
+                  questionCount={round.questionCount}
+                />
+              )}
               <p className="mt-2 text-xs text-gray-400">
                 {new Date(round.createdAt).toLocaleString()}
               </p>

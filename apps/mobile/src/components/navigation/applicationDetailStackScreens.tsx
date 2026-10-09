@@ -33,6 +33,11 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.interviews') }}
     />,
     <Stack.Screen
+      key="interviewQuestions"
+      name={`${prefix}[id]/interview-questions`}
+      options={{ title: t('screenTitles.interviewQuestions') }}
+    />,
+    <Stack.Screen
       key="contacts"
       name={`${prefix}[id]/contacts`}
       options={{ title: t('screenTitles.contacts') }}

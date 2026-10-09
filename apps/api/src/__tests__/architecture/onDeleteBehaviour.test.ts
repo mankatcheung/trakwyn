@@ -31,6 +31,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'DocumentDraft -> JobApplication': 'cascade',
   'Education -> User': 'cascade',
   'EmailVerificationToken -> User': 'cascade',
+  'InterviewQuestion -> InterviewRound': 'cascade', // what was asked in a round is part of the round
   'InterviewRound -> JobApplication': 'cascade',
   'JobApplication -> User': 'cascade',
   'LlmApiKey -> User': 'cascade',

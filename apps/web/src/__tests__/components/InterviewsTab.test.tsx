@@ -48,6 +48,7 @@ const mockRound = {
   interviewerName: 'Alex Kim',
   notes: 'Discuss system design',
   outcome: 'pending',
+  questionCount: 3,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
@@ -85,6 +86,55 @@ describe('InterviewsTab', () => {
     expect(screen.getByText('Pending')).toBeInTheDocument();
     expect(screen.getByText('with Alex Kim')).toBeInTheDocument();
   });
+
+  it("shows each round's question count", async () => {
+    mockGqlRequest.mockResolvedValue({
+      interviewRounds: [
+        mockRound,
+        { ...mockRound, id: 'round-2', type: 'phone', questionCount: 0 },
+      ],
+    });
+    render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+    expect(await screen.findByRole('button', { name: '3 questions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No questions yet' })).toBeInTheDocument();
+  });
+
+  it.each(['passed', 'failed', 'cancelled'])(
+    'still offers the questions for a round whose outcome is %s',
+    async (outcome) => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        Promise.resolve(
+          query.includes('query InterviewQuestions')
+            ? {
+                interviewQuestions: [
+                  {
+                    id: 'q1',
+                    interviewRoundId: 'round-1',
+                    question: 'Describe a hard bug.',
+                    answer: null,
+                    position: 0,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z',
+                  },
+                ],
+              }
+            : {
+                interviewRounds: [
+                  { ...mockRound, outcome, completedAt: '2024-06-01T16:00:00.000Z' },
+                ],
+              },
+        ),
+      );
+      render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+      fireEvent.click(await screen.findByRole('button', { name: '3 questions' }));
+
+      expect(await screen.findByText('Describe a hard bug.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add question' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit question' })).toBeInTheDocument();
+    },
+  );
 
   it('shows the Export to Calendar button only when a round has a scheduled date', async () => {
     mockGqlRequest.mockResolvedValue({ interviewRounds: [{ ...mockRound, scheduledAt: null }] });
