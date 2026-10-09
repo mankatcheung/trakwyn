@@ -18,6 +18,8 @@ import type { CachedNotificationRepository } from '#src/infrastructure/db/reposi
 import type { CachedDocumentRepository } from '#src/infrastructure/db/repositories/CachedDocumentRepository.js';
 import type { DrizzleInterviewRoundRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewRoundRepository.js';
 import type { CachedInterviewRoundRepository } from '#src/infrastructure/db/repositories/CachedInterviewRoundRepository.js';
+import type { DrizzleInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewQuestionRepository.js';
+import type { CachedInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedInterviewQuestionRepository.js';
 import type { CachedUserRepository } from '#src/infrastructure/db/repositories/CachedUserRepository.js';
 import type { CachedSkillRepository } from '#src/infrastructure/db/repositories/CachedSkillRepository.js';
 import type { CachedEducationRepository } from '#src/infrastructure/db/repositories/CachedEducationRepository.js';
@@ -77,6 +79,7 @@ import type { DocumentMapper } from '#src/interface-adapters/mappers/DocumentMap
 import type { DocumentDraftMapper } from '#src/interface-adapters/mappers/DocumentDraftMapper.js';
 import type { UserMapper } from '#src/interface-adapters/mappers/UserMapper.js';
 import type { InterviewRoundMapper } from '#src/interface-adapters/mappers/InterviewRoundMapper.js';
+import type { InterviewQuestionMapper } from '#src/interface-adapters/mappers/InterviewQuestionMapper.js';
 import type { ActivityLogMapper } from '#src/interface-adapters/mappers/ActivityLogMapper.js';
 import type { ContactMapper } from '#src/interface-adapters/mappers/ContactMapper.js';
 import type { LoginEventMapper } from '#src/interface-adapters/mappers/LoginEventMapper.js';
@@ -95,6 +98,7 @@ import type { DocumentResolver } from '#src/interface-adapters/resolvers/Documen
 import type { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
 import type { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
 import type { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
+import type { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
 import type { ActivityLogResolver } from '#src/interface-adapters/resolvers/ActivityLogResolver.js';
 import type { ContactResolver } from '#src/interface-adapters/resolvers/ContactResolver.js';
 import type { LoginEventResolver } from '#src/interface-adapters/resolvers/LoginEventResolver.js';
@@ -195,6 +199,11 @@ import type { CreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds
 import type { GetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/GetInterviewRoundsUseCase.js';
 import type { UpdateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/UpdateInterviewRoundUseCase.js';
 import type { DeleteInterviewRoundUseCase } from '#src/use-cases/interviewRounds/DeleteInterviewRoundUseCase.js';
+import type { CreateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/CreateInterviewQuestionUseCase.js';
+import type { GetInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/GetInterviewQuestionsUseCase.js';
+import type { UpdateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/UpdateInterviewQuestionUseCase.js';
+import type { DeleteInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/DeleteInterviewQuestionUseCase.js';
+import type { ReorderInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/ReorderInterviewQuestionsUseCase.js';
 import type { GetActivityLogsUseCase } from '#src/use-cases/activityLogs/GetActivityLogsUseCase.js';
 import type { GetLoginHistoryUseCase } from '#src/use-cases/loginEvents/GetLoginHistoryUseCase.js';
 import type { GetSecurityActivityUseCase } from '#src/use-cases/securityEvents/GetSecurityActivityUseCase.js';
@@ -332,6 +341,8 @@ export interface Cradle {
   documentRepository: CachedDocumentRepository;
   drizzleInterviewRoundRepository: DrizzleInterviewRoundRepository;
   interviewRoundRepository: CachedInterviewRoundRepository;
+  drizzleInterviewQuestionRepository: DrizzleInterviewQuestionRepository;
+  interviewQuestionRepository: CachedInterviewQuestionRepository;
   userRepository: CachedUserRepository;
   skillRepository: CachedSkillRepository;
   educationRepository: CachedEducationRepository;
@@ -391,6 +402,7 @@ export interface Cradle {
   documentDraftMapper: DocumentDraftMapper;
   userMapper: UserMapper;
   interviewRoundMapper: InterviewRoundMapper;
+  interviewQuestionMapper: InterviewQuestionMapper;
   activityLogMapper: ActivityLogMapper;
   contactMapper: ContactMapper;
   loginEventMapper: LoginEventMapper;
@@ -413,6 +425,7 @@ export interface Cradle {
   documentDraftResolver: DocumentDraftResolver;
   userResolver: UserResolver;
   interviewRoundResolver: InterviewRoundResolver;
+  interviewQuestionResolver: InterviewQuestionResolver;
   activityLogResolver: ActivityLogResolver;
   contactResolver: ContactResolver;
   loginEventResolver: LoginEventResolver;
@@ -528,6 +541,11 @@ export interface Cradle {
   getInterviewRoundsUseCase: GetInterviewRoundsUseCase;
   updateInterviewRoundUseCase: UpdateInterviewRoundUseCase;
   deleteInterviewRoundUseCase: DeleteInterviewRoundUseCase;
+  createInterviewQuestionUseCase: CreateInterviewQuestionUseCase;
+  getInterviewQuestionsUseCase: GetInterviewQuestionsUseCase;
+  updateInterviewQuestionUseCase: UpdateInterviewQuestionUseCase;
+  deleteInterviewQuestionUseCase: DeleteInterviewQuestionUseCase;
+  reorderInterviewQuestionsUseCase: ReorderInterviewQuestionsUseCase;
   getActivityLogsUseCase: GetActivityLogsUseCase;
   getLoginHistoryUseCase: GetLoginHistoryUseCase;
   getSecurityActivityUseCase: GetSecurityActivityUseCase;

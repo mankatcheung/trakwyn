@@ -14,6 +14,8 @@ import { CachedNotificationRepository } from '#src/infrastructure/db/repositorie
 import { CachedDocumentRepository } from '#src/infrastructure/db/repositories/CachedDocumentRepository.js';
 import { DrizzleInterviewRoundRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewRoundRepository.js';
 import { CachedInterviewRoundRepository } from '#src/infrastructure/db/repositories/CachedInterviewRoundRepository.js';
+import { DrizzleInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewQuestionRepository.js';
+import { CachedInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedInterviewQuestionRepository.js';
 import { CachedUserRepository } from '#src/infrastructure/db/repositories/CachedUserRepository.js';
 import { CachedSkillRepository } from '#src/infrastructure/db/repositories/CachedSkillRepository.js';
 import { CachedEducationRepository } from '#src/infrastructure/db/repositories/CachedEducationRepository.js';
@@ -106,6 +108,12 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   interviewRoundRepository: asClass(CachedInterviewRoundRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  drizzleInterviewQuestionRepository: asClass(DrizzleInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  interviewQuestionRepository: asClass(CachedInterviewQuestionRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   userRepository: asClass(CachedUserRepository, { lifetime: Lifetime.SINGLETON }),

@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateInterviewRound,
@@ -25,7 +25,12 @@ import type { InterviewRound, InterviewRoundFormData } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import { PencilIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
+import {
+  ChevronRightIcon,
+  MessageIcon,
+  PencilIcon,
+  TrashIcon,
+} from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
@@ -169,6 +174,7 @@ export function InterviewsScreen() {
   const { t } = useTranslation('interviews');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: rounds, isLoading, isError, error } = useInterviewRounds(applicationId);
   const createRound = useCreateInterviewRound(applicationId);
@@ -234,6 +240,10 @@ export function InterviewsScreen() {
         ) : (
           rows.map((round) => {
             const tone = outcomeStyle(colors, round.outcome);
+            const questionsLabel =
+              round.questionCount > 0
+                ? t('questionCount', { count: round.questionCount })
+                : t('noQuestionsYet');
             return (
               <View key={round.id} style={styles.card} testID={`interview-round-${round.id}`}>
                 <View style={styles.cardHeaderRow}>
@@ -251,6 +261,32 @@ export function InterviewsScreen() {
                   <Text style={styles.meta}>{new Date(round.scheduledAt).toLocaleString()}</Text>
                 ) : null}
                 {round.notes ? <Text style={styles.notes}>{round.notes}</Text> : null}
+                <Pressable
+                  style={[
+                    styles.questionsRow,
+                    round.questionCount > 0 && styles.questionsRowFilled,
+                  ]}
+                  onPress={() => router.push(`./interview-questions?roundId=${round.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={questionsLabel}
+                  testID={`interview-questions-${round.id}`}
+                >
+                  <View style={styles.questionsRowLabel}>
+                    <MessageIcon
+                      color={round.questionCount > 0 ? colors.primary : colors.textSubtle}
+                      size={18}
+                    />
+                    <Text
+                      style={[
+                        styles.questionsRowText,
+                        round.questionCount > 0 && styles.questionsRowTextFilled,
+                      ]}
+                    >
+                      {questionsLabel}
+                    </Text>
+                  </View>
+                  <ChevronRightIcon color={colors.textSubtle} size={18} />
+                </Pressable>
                 <View style={styles.cardActions}>
                   <IconButton
                     icon={PencilIcon}
@@ -360,6 +396,22 @@ function createStyles(colors: ThemeColors) {
     outcomeText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
     meta: { fontSize: 13, color: colors.textSubtle },
     notes: { fontSize: 14, color: colors.textMuted, marginTop: 2, lineHeight: 20 },
+    questionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 48,
+      marginTop: 6,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    questionsRowFilled: { borderColor: colors.primary, backgroundColor: colors.surfaceAlt },
+    questionsRowLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    questionsRowText: { fontSize: 15, fontWeight: '600', color: colors.textSubtle },
+    questionsRowTextFilled: { color: colors.primary },
     cardActions: { flexDirection: 'row', gap: 4, marginTop: 4 },
     modalContainer: { flex: 1, backgroundColor: colors.background },
     modalHeader: {

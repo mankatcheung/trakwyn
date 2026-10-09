@@ -13,6 +13,7 @@ export interface InterviewRoundDTO {
   interviewerName: string | null;
   notes: string | null;
   outcome: InterviewRoundOutcome;
+  questionCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +29,7 @@ export class InterviewRoundMapper {
       interviewerName: round.interviewerName,
       notes: round.notes,
       outcome: round.outcome,
+      questionCount: round.questionCount,
       createdAt: round.createdAt.toISOString(),
       updatedAt: round.updatedAt.toISOString(),
     };

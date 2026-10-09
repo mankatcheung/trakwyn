@@ -11,10 +11,11 @@ jest.mock('../../hooks/useInterviewMutations', () => ({
 }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: jest.fn(),
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInterviewRounds } from '../../hooks/useInterviewQueries';
 import {
   useCreateInterviewRound,
@@ -31,6 +32,8 @@ const mockedUseCreateInterviewRound = jest.mocked(useCreateInterviewRound);
 const mockedUseUpdateInterviewRound = jest.mocked(useUpdateInterviewRound);
 const mockedUseDeleteInterviewRound = jest.mocked(useDeleteInterviewRound);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockedUseRouter = jest.mocked(useRouter);
+const mockPush = jest.fn();
 const mockedUseTheme = jest.mocked(useTheme);
 
 const round: InterviewRound = {
@@ -42,12 +45,14 @@ const round: InterviewRound = {
   interviewerName: 'Marcus Lin',
   notes: 'Strong on system design.',
   outcome: 'passed',
+  questionCount: 2,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
 function renderScreen() {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
+  mockedUseRouter.mockReturnValue({ push: mockPush } as never);
   return render(<InterviewsScreen />);
 }
 
@@ -91,6 +96,49 @@ describe('InterviewsScreen', () => {
     await waitFor(() => expect(getByTestId('interview-round-round-1')).toBeTruthy());
     expect(getByText('With Marcus Lin')).toBeTruthy();
     expect(getByText('Strong on system design.')).toBeTruthy();
+  });
+
+  describe('question count', () => {
+    const listOf = (...rounds: InterviewRound[]) =>
+      mockedUseInterviewRounds.mockReturnValue({
+        data: rounds,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as never);
+
+    it('shows how many questions a round has', async () => {
+      listOf(round);
+
+      const { getByText } = await renderScreen();
+
+      expect(getByText('2 questions')).toBeTruthy();
+    });
+
+    it('uses the singular for one question', async () => {
+      listOf({ ...round, questionCount: 1 });
+
+      const { getByText } = await renderScreen();
+
+      expect(getByText('1 question')).toBeTruthy();
+    });
+
+    it('says so when a round has none', async () => {
+      listOf({ ...round, questionCount: 0 });
+
+      const { getByText } = await renderScreen();
+
+      expect(getByText('No questions yet')).toBeTruthy();
+    });
+
+    it('opens that round’s questions, whatever its outcome', async () => {
+      listOf({ ...round, outcome: 'failed', completedAt: '2026-01-02T00:00:00.000Z' });
+
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('interview-questions-round-1'));
+
+      expect(mockPush).toHaveBeenCalledWith('./interview-questions?roundId=round-1');
+    });
   });
 
   it('opens the form modal from the floating action button', async () => {

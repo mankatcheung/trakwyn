@@ -8,6 +8,7 @@ mutation CreateInterviewRound($input: CreateInterviewRoundInput!) {
     interviewerName
     notes
     outcome
+    questionCount
     createdAt
     updatedAt
   }
@@ -23,6 +24,7 @@ mutation UpdateInterviewRound($id: ID!, $input: UpdateInterviewRoundInput!) {
     interviewerName
     notes
     outcome
+    questionCount
     createdAt
     updatedAt
   }

@@ -206,6 +206,12 @@ export type CreateEducationInput = {
   startDate: Scalars['String']['input'];
 };
 
+export type CreateInterviewQuestionInput = {
+  answer?: InputMaybe<Scalars['String']['input']>;
+  interviewRoundId: Scalars['ID']['input'];
+  question: Scalars['String']['input'];
+};
+
 export type CreateInterviewRoundInput = {
   applicationId: Scalars['ID']['input'];
   completedAt?: InputMaybe<Scalars['String']['input']>;
@@ -344,6 +350,17 @@ export type ImportSummary = {
   notesImported?: Maybe<Scalars['Int']['output']>;
 };
 
+export type InterviewQuestion = {
+  __typename?: 'InterviewQuestion';
+  answer?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  interviewRoundId?: Maybe<Scalars['ID']['output']>;
+  position?: Maybe<Scalars['Int']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
+};
+
 export type InterviewRound = {
   __typename?: 'InterviewRound';
   applicationId?: Maybe<Scalars['ID']['output']>;
@@ -353,6 +370,7 @@ export type InterviewRound = {
   interviewerName?: Maybe<Scalars['String']['output']>;
   notes?: Maybe<Scalars['String']['output']>;
   outcome?: Maybe<InterviewRoundOutcome>;
+  questionCount?: Maybe<Scalars['Int']['output']>;
   scheduledAt?: Maybe<Scalars['String']['output']>;
   type?: Maybe<InterviewRoundType>;
   updatedAt?: Maybe<Scalars['String']['output']>;
@@ -429,6 +447,8 @@ export type LlmApiKey = {
 
 export type LlmUsageSummary = {
   __typename?: 'LlmUsageSummary';
+  cacheReadTokens?: Maybe<Scalars['Int']['output']>;
+  cacheWriteTokens?: Maybe<Scalars['Int']['output']>;
   completionTokens?: Maybe<Scalars['Int']['output']>;
   lastUsedAt?: Maybe<Scalars['String']['output']>;
   limitReached?: Maybe<Scalars['Boolean']['output']>;
@@ -470,6 +490,20 @@ export type Message = {
   role?: Maybe<Scalars['String']['output']>;
 };
 
+export type MobileAuthPayload = {
+  __typename?: 'MobileAuthPayload';
+  accessToken?: Maybe<Scalars['String']['output']>;
+  refreshToken?: Maybe<Scalars['String']['output']>;
+};
+
+export type MobileLoginResult = {
+  __typename?: 'MobileLoginResult';
+  accessToken?: Maybe<Scalars['String']['output']>;
+  refreshToken?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+  totpRequired?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type MoveApplicationOnBoardInput = {
   applicationId: Scalars['ID']['input'];
   orderedIds: Array<Scalars['ID']['input']>;
@@ -496,6 +530,7 @@ export type Mutation = {
   createConversation?: Maybe<Conversation>;
   createDocumentDraft?: Maybe<DocumentDraft>;
   createEducation?: Maybe<Education>;
+  createInterviewQuestion?: Maybe<InterviewQuestion>;
   createInterviewRound?: Maybe<InterviewRound>;
   createNote?: Maybe<Note>;
   createOffer?: Maybe<Offer>;
@@ -510,6 +545,7 @@ export type Mutation = {
   deleteDocument?: Maybe<Scalars['Boolean']['output']>;
   deleteDocumentDraft?: Maybe<Scalars['Boolean']['output']>;
   deleteEducation?: Maybe<Scalars['Boolean']['output']>;
+  deleteInterviewQuestion?: Maybe<Scalars['Boolean']['output']>;
   deleteInterviewRound?: Maybe<Scalars['Boolean']['output']>;
   deleteLlmApiKey?: Maybe<Scalars['Boolean']['output']>;
   deleteNote?: Maybe<Scalars['Boolean']['output']>;
@@ -518,7 +554,9 @@ export type Mutation = {
   deleteSkill?: Maybe<Scalars['Boolean']['output']>;
   deleteWorkExperience?: Maybe<Scalars['Boolean']['output']>;
   disableTotp?: Maybe<Scalars['Boolean']['output']>;
+  dismissOnboardingChecklist?: Maybe<Scalars['Boolean']['output']>;
   emptyTrash?: Maybe<EmptyTrashResult>;
+  exchangeMobileOAuthCode?: Maybe<MobileAuthPayload>;
   exportDocumentDraftToPdf?: Maybe<Document>;
   extractDocumentText?: Maybe<ExtractDocumentTextPayload>;
   generateCompanyBriefing?: Maybe<CompanyBriefing>;
@@ -526,7 +564,9 @@ export type Mutation = {
   generateResume?: Maybe<DocumentDraft>;
   importUserData?: Maybe<ImportSummary>;
   login?: Maybe<LoginResult>;
+  loginMobile?: Maybe<MobileLoginResult>;
   loginWithTotp?: Maybe<Scalars['String']['output']>;
+  loginWithTotpMobile?: Maybe<MobileAuthPayload>;
   logout?: Maybe<Scalars['Boolean']['output']>;
   markNotificationsRead?: Maybe<Scalars['Boolean']['output']>;
   /** Place a card in a kanban column. Returns the destination column in its new order. */
@@ -534,14 +574,19 @@ export type Mutation = {
   parseJobDescription?: Maybe<ParsedJobDescription>;
   permanentlyDeleteApplication?: Maybe<Scalars['Boolean']['output']>;
   reauthenticate?: Maybe<LoginResult>;
+  reauthenticateMobile?: Maybe<MobileLoginResult>;
   recordCookieConsent?: Maybe<Scalars['Boolean']['output']>;
   refreshToken?: Maybe<Scalars['String']['output']>;
+  refreshTokenMobile?: Maybe<MobileAuthPayload>;
   regenerateTotpBackupCodes?: Maybe<ConfirmTotpSetupResult>;
   register?: Maybe<Scalars['String']['output']>;
+  registerExpoPushToken?: Maybe<Scalars['Boolean']['output']>;
+  registerMobile?: Maybe<MobileAuthPayload>;
   registerPushSubscription?: Maybe<Scalars['Boolean']['output']>;
   removeAvatar?: Maybe<Scalars['Boolean']['output']>;
   removeBackupEmail?: Maybe<Scalars['Boolean']['output']>;
   renameDocumentDraft?: Maybe<DocumentDraft>;
+  reorderInterviewQuestions?: Maybe<Array<InterviewQuestion>>;
   requestAddBackupEmail?: Maybe<Scalars['Boolean']['output']>;
   requestAvatarUploadUrl?: Maybe<UploadUrlPayload>;
   requestBackupEmailRecovery?: Maybe<Scalars['Boolean']['output']>;
@@ -563,6 +608,7 @@ export type Mutation = {
   updateContact?: Maybe<Contact>;
   updateDocumentDraftContent?: Maybe<DocumentDraft>;
   updateEducation?: Maybe<Education>;
+  updateInterviewQuestion?: Maybe<InterviewQuestion>;
   updateInterviewRound?: Maybe<InterviewRound>;
   updateNote?: Maybe<Note>;
   updateNotificationPreferences?: Maybe<Scalars['Boolean']['output']>;
@@ -679,6 +725,11 @@ export type MutationCreateEducationArgs = {
 };
 
 
+export type MutationCreateInterviewQuestionArgs = {
+  input: CreateInterviewQuestionInput;
+};
+
+
 export type MutationCreateInterviewRoundArgs = {
   input: CreateInterviewRoundInput;
 };
@@ -750,6 +801,11 @@ export type MutationDeleteEducationArgs = {
 };
 
 
+export type MutationDeleteInterviewQuestionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteInterviewRoundArgs = {
   id: Scalars['ID']['input'];
 };
@@ -790,6 +846,12 @@ export type MutationDisableTotpArgs = {
 };
 
 
+export type MutationExchangeMobileOAuthCodeArgs = {
+  code: Scalars['String']['input'];
+  codeVerifier: Scalars['String']['input'];
+};
+
+
 export type MutationExportDocumentDraftToPdfArgs = {
   draftId: Scalars['ID']['input'];
 };
@@ -827,7 +889,20 @@ export type MutationLoginArgs = {
 };
 
 
+export type MutationLoginMobileArgs = {
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
+
 export type MutationLoginWithTotpArgs = {
+  code: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
+
+export type MutationLoginWithTotpMobileArgs = {
   code: Scalars['String']['input'];
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -862,8 +937,19 @@ export type MutationReauthenticateArgs = {
 };
 
 
+export type MutationReauthenticateMobileArgs = {
+  code?: InputMaybe<Scalars['String']['input']>;
+  password: Scalars['String']['input'];
+};
+
+
 export type MutationRecordCookieConsentArgs = {
   analyticsAccepted: Scalars['Boolean']['input'];
+};
+
+
+export type MutationRefreshTokenMobileArgs = {
+  refreshToken: Scalars['String']['input'];
 };
 
 
@@ -873,6 +959,17 @@ export type MutationRegenerateTotpBackupCodesArgs = {
 
 
 export type MutationRegisterArgs = {
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
+
+export type MutationRegisterExpoPushTokenArgs = {
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationRegisterMobileArgs = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
 };
@@ -893,6 +990,12 @@ export type MutationRemoveBackupEmailArgs = {
 export type MutationRenameDocumentDraftArgs = {
   draftId: Scalars['ID']['input'];
   title: Scalars['String']['input'];
+};
+
+
+export type MutationReorderInterviewQuestionsArgs = {
+  interviewRoundId: Scalars['ID']['input'];
+  orderedIds: Array<Scalars['ID']['input']>;
 };
 
 
@@ -1015,6 +1118,12 @@ export type MutationUpdateEducationArgs = {
 };
 
 
+export type MutationUpdateInterviewQuestionArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateInterviewQuestionInput;
+};
+
+
 export type MutationUpdateInterviewRoundArgs = {
   id: Scalars['ID']['input'];
   input: UpdateInterviewRoundInput;
@@ -1049,6 +1158,7 @@ export type MutationUpdatePasswordArgs = {
 
 export type MutationUpdateProfileArgs = {
   customAiPrompt?: InputMaybe<Scalars['String']['input']>;
+  llmFallbackWhenLimited?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   targetRole?: InputMaybe<Scalars['String']['input']>;
   timezone?: InputMaybe<Scalars['String']['input']>;
@@ -1154,6 +1264,13 @@ export type OfferTrendPoint = {
   role?: Maybe<Scalars['String']['output']>;
 };
 
+export type OfferWithApplication = {
+  __typename?: 'OfferWithApplication';
+  company?: Maybe<Scalars['String']['output']>;
+  offer?: Maybe<Offer>;
+  role?: Maybe<Scalars['String']['output']>;
+};
+
 export type ParsedJobDescription = {
   __typename?: 'ParsedJobDescription';
   company?: Maybe<Scalars['String']['output']>;
@@ -1183,6 +1300,7 @@ export type Query = {
   documents?: Maybe<Array<Document>>;
   educations?: Maybe<Array<Education>>;
   exportUserData?: Maybe<Scalars['String']['output']>;
+  interviewQuestions?: Maybe<Array<InterviewQuestion>>;
   interviewRoundAnalytics?: Maybe<InterviewRoundAnalytics>;
   interviewRounds?: Maybe<Array<InterviewRound>>;
   linkedOAuthAccounts?: Maybe<Array<LinkedOAuthAccount>>;
@@ -1191,6 +1309,7 @@ export type Query = {
   loginHistory?: Maybe<Array<LoginEvent>>;
   mcpOAuthGrants?: Maybe<Array<McpOAuthGrant>>;
   me?: Maybe<User>;
+  myOffers?: Maybe<Array<OfferWithApplication>>;
   notes?: Maybe<Array<Note>>;
   notificationPreferences?: Maybe<NotificationPreferences>;
   notificationsPage?: Maybe<NotificationConnection>;
@@ -1273,6 +1392,11 @@ export type QueryDocumentDraftsArgs = {
 
 export type QueryDocumentsArgs = {
   applicationId: Scalars['ID']['input'];
+};
+
+
+export type QueryInterviewQuestionsArgs = {
+  interviewRoundId: Scalars['ID']['input'];
 };
 
 
@@ -1446,6 +1570,11 @@ export type UpdateEducationInput = {
   startDate?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateInterviewQuestionInput = {
+  answer?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateInterviewRoundInput = {
   completedAt?: InputMaybe<Scalars['String']['input']>;
   interviewerName?: InputMaybe<Scalars['String']['input']>;
@@ -1497,7 +1626,9 @@ export type User = {
   defaultLlmProvider?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
+  onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
   targetRole?: Maybe<Scalars['String']['output']>;
   timezone?: Maybe<Scalars['String']['output']>;
   useCrossApplicationContext?: Maybe<Scalars['Boolean']['output']>;
@@ -1702,12 +1833,42 @@ export type DeleteSkillMutationVariables = Exact<{
 
 export type DeleteSkillMutation = { __typename?: 'Mutation', deleteSkill?: boolean | null };
 
+export type CreateInterviewQuestionMutationVariables = Exact<{
+  input: CreateInterviewQuestionInput;
+}>;
+
+
+export type CreateInterviewQuestionMutation = { __typename?: 'Mutation', createInterviewQuestion?: { __typename?: 'InterviewQuestion', id?: string | null, interviewRoundId?: string | null, question?: string | null, answer?: string | null, position?: number | null, createdAt?: string | null, updatedAt?: string | null } | null };
+
+export type UpdateInterviewQuestionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateInterviewQuestionInput;
+}>;
+
+
+export type UpdateInterviewQuestionMutation = { __typename?: 'Mutation', updateInterviewQuestion?: { __typename?: 'InterviewQuestion', id?: string | null, interviewRoundId?: string | null, question?: string | null, answer?: string | null, position?: number | null, createdAt?: string | null, updatedAt?: string | null } | null };
+
+export type DeleteInterviewQuestionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteInterviewQuestionMutation = { __typename?: 'Mutation', deleteInterviewQuestion?: boolean | null };
+
+export type ReorderInterviewQuestionsMutationVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
+  orderedIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type ReorderInterviewQuestionsMutation = { __typename?: 'Mutation', reorderInterviewQuestions?: Array<{ __typename?: 'InterviewQuestion', id?: string | null, interviewRoundId?: string | null, question?: string | null, answer?: string | null, position?: number | null, createdAt?: string | null, updatedAt?: string | null }> | null };
+
 export type CreateInterviewRoundMutationVariables = Exact<{
   input: CreateInterviewRoundInput;
 }>;
 
 
-export type CreateInterviewRoundMutation = { __typename?: 'Mutation', createInterviewRound?: { __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, createdAt?: string | null, updatedAt?: string | null } | null };
+export type CreateInterviewRoundMutation = { __typename?: 'Mutation', createInterviewRound?: { __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, questionCount?: number | null, createdAt?: string | null, updatedAt?: string | null } | null };
 
 export type UpdateInterviewRoundMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1715,7 +1876,7 @@ export type UpdateInterviewRoundMutationVariables = Exact<{
 }>;
 
 
-export type UpdateInterviewRoundMutation = { __typename?: 'Mutation', updateInterviewRound?: { __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, createdAt?: string | null, updatedAt?: string | null } | null };
+export type UpdateInterviewRoundMutation = { __typename?: 'Mutation', updateInterviewRound?: { __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, questionCount?: number | null, createdAt?: string | null, updatedAt?: string | null } | null };
 
 export type DeleteInterviewRoundMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1805,12 +1966,19 @@ export type SkillsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type SkillsQuery = { __typename?: 'Query', skills?: Array<{ __typename?: 'Skill', id?: string | null, name?: string | null, category?: string | null, proficiency?: string | null, createdAt?: string | null }> | null };
 
+export type InterviewQuestionsQueryVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
+}>;
+
+
+export type InterviewQuestionsQuery = { __typename?: 'Query', interviewQuestions?: Array<{ __typename?: 'InterviewQuestion', id?: string | null, interviewRoundId?: string | null, question?: string | null, answer?: string | null, position?: number | null, createdAt?: string | null, updatedAt?: string | null }> | null };
+
 export type InterviewRoundsQueryVariables = Exact<{
   applicationId: Scalars['ID']['input'];
 }>;
 
 
-export type InterviewRoundsQuery = { __typename?: 'Query', interviewRounds?: Array<{ __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, createdAt?: string | null, updatedAt?: string | null }> | null };
+export type InterviewRoundsQuery = { __typename?: 'Query', interviewRounds?: Array<{ __typename?: 'InterviewRound', id?: string | null, applicationId?: string | null, type?: InterviewRoundType | null, scheduledAt?: string | null, completedAt?: string | null, interviewerName?: string | null, notes?: string | null, outcome?: InterviewRoundOutcome | null, questionCount?: number | null, createdAt?: string | null, updatedAt?: string | null }> | null };
 
 export type NotesQueryVariables = Exact<{
   applicationId: Scalars['ID']['input'];
@@ -1843,8 +2011,12 @@ export const DeleteEducationDocument = {"kind":"Document","definitions":[{"kind"
 export const CreateSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateSkillInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSkill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"proficiency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateSkillMutation, CreateSkillMutationVariables>;
 export const UpdateSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateSkillInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSkill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"proficiency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<UpdateSkillMutation, UpdateSkillMutationVariables>;
 export const DeleteSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteSkill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteSkillMutation, DeleteSkillMutationVariables>;
-export const CreateInterviewRoundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateInterviewRound"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateInterviewRoundInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createInterviewRound"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<CreateInterviewRoundMutation, CreateInterviewRoundMutationVariables>;
-export const UpdateInterviewRoundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateInterviewRound"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateInterviewRoundInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateInterviewRound"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateInterviewRoundMutation, UpdateInterviewRoundMutationVariables>;
+export const CreateInterviewQuestionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateInterviewQuestion"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateInterviewQuestionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createInterviewQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<CreateInterviewQuestionMutation, CreateInterviewQuestionMutationVariables>;
+export const UpdateInterviewQuestionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateInterviewQuestion"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateInterviewQuestionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateInterviewQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateInterviewQuestionMutation, UpdateInterviewQuestionMutationVariables>;
+export const DeleteInterviewQuestionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteInterviewQuestion"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteInterviewQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteInterviewQuestionMutation, DeleteInterviewQuestionMutationVariables>;
+export const ReorderInterviewQuestionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderInterviewQuestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderedIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderInterviewQuestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"interviewRoundId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderedIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderedIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<ReorderInterviewQuestionsMutation, ReorderInterviewQuestionsMutationVariables>;
+export const CreateInterviewRoundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateInterviewRound"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateInterviewRoundInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createInterviewRound"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"questionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<CreateInterviewRoundMutation, CreateInterviewRoundMutationVariables>;
+export const UpdateInterviewRoundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateInterviewRound"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateInterviewRoundInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateInterviewRound"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"questionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateInterviewRoundMutation, UpdateInterviewRoundMutationVariables>;
 export const DeleteInterviewRoundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteInterviewRound"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteInterviewRound"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteInterviewRoundMutation, DeleteInterviewRoundMutationVariables>;
 export const ParseJobDescriptionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ParseJobDescription"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"text"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"url"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"parseJobDescription"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"text"},"value":{"kind":"Variable","name":{"kind":"Name","value":"text"}}},{"kind":"Argument","name":{"kind":"Name","value":"url"},"value":{"kind":"Variable","name":{"kind":"Name","value":"url"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"company"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"salary"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<ParseJobDescriptionMutation, ParseJobDescriptionMutationVariables>;
 export const CreateNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<CreateNoteMutation, CreateNoteMutationVariables>;
@@ -1858,5 +2030,6 @@ export const DocumentsDocument = {"kind":"Document","definitions":[{"kind":"Oper
 export const WorkExperiencesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"WorkExperiences"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workExperiences"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"company"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<WorkExperiencesQuery, WorkExperiencesQueryVariables>;
 export const EducationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Educations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"educations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"institution"}},{"kind":"Field","name":{"kind":"Name","value":"degree"}},{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<EducationsQuery, EducationsQueryVariables>;
 export const SkillsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"skills"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"proficiency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<SkillsQuery, SkillsQueryVariables>;
-export const InterviewRoundsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"InterviewRounds"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"interviewRounds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
+export const InterviewQuestionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"InterviewQuestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"interviewQuestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"interviewRoundId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<InterviewQuestionsQuery, InterviewQuestionsQueryVariables>;
+export const InterviewRoundsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"InterviewRounds"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"interviewRounds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"scheduledAt"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"interviewerName"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"questionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
 export const NotesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Notes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"notes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
