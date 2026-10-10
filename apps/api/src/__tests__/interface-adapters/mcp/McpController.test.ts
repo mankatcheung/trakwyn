@@ -15,6 +15,10 @@ import type { ICreateApplicationUseCase } from '#src/use-cases/jobs/ICreateAppli
 import type { IUpdateApplicationUseCase } from '#src/use-cases/jobs/IUpdateApplicationUseCase.js';
 import type { ICreateNoteUseCase } from '#src/use-cases/notes/ICreateNoteUseCase.js';
 import type { ICreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/ICreateInterviewRoundUseCase.js';
+import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
+import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
+import type { ICreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/ICreateMockInterviewQuestionUseCase.js';
 import type { ICreateSkillUseCase } from '#src/use-cases/skill/ICreateSkillUseCase.js';
 import type { IUpdateSkillUseCase } from '#src/use-cases/skill/IUpdateSkillUseCase.js';
 import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEducationUseCase.js';
@@ -62,6 +66,10 @@ const makeDeps = () => ({
   updateApplicationUseCase: { execute: vi.fn() } as IUpdateApplicationUseCase,
   createNoteUseCase: { execute: vi.fn() } as ICreateNoteUseCase,
   createInterviewRoundUseCase: { execute: vi.fn() } as ICreateInterviewRoundUseCase,
+  getMockInterviewQuestionsUseCase: { execute: vi.fn() } as IGetMockInterviewQuestionsUseCase,
+  generateMockQuestionsUseCase: { execute: vi.fn() } as IGenerateMockQuestionsUseCase,
+  generateMockAnswerUseCase: { execute: vi.fn() } as IGenerateMockAnswerUseCase,
+  createMockInterviewQuestionUseCase: { execute: vi.fn() } as ICreateMockInterviewQuestionUseCase,
   createSkillUseCase: { execute: vi.fn() } as ICreateSkillUseCase,
   updateSkillUseCase: { execute: vi.fn() } as IUpdateSkillUseCase,
   createEducationUseCase: { execute: vi.fn() } as ICreateEducationUseCase,
@@ -410,6 +418,108 @@ describe('McpController', () => {
         // undefined, never an Invalid Date — that would reach the DB as NaN.
         expect(deps.createInterviewRoundUseCase.execute).toHaveBeenLastCalledWith(
           expect.objectContaining({ scheduledAt: undefined }),
+        );
+      });
+    });
+
+    describe('practice question tools (JEF-393)', () => {
+      const call = (name: string, args: Record<string, unknown>, scope: 'read' | 'full' = 'full') =>
+        controller.handle(rpc('tools/call', { name, arguments: args }), USER_ID, scope);
+
+      it('list_mock_interview_questions is readable and scoped to the caller', async () => {
+        vi.mocked(deps.getMockInterviewQuestionsUseCase.execute).mockResolvedValue([]);
+
+        const { body } = await call(
+          'list_mock_interview_questions',
+          { interviewRoundId: 'r1' },
+          'read',
+        );
+
+        expect(deps.getMockInterviewQuestionsUseCase.execute).toHaveBeenCalledWith({
+          userId: USER_ID,
+          roundId: 'r1',
+        });
+        expect(body).not.toHaveProperty('error');
+      });
+
+      it('generate_mock_interview_questions passes the prompt and count, and works with a read token', async () => {
+        vi.mocked(deps.generateMockQuestionsUseCase.execute).mockResolvedValue({
+          suggestions: ['Q?'],
+          usedJobDescription: true,
+          usedBriefing: false,
+        });
+
+        const { body } = await call(
+          'generate_mock_interview_questions',
+          { interviewRoundId: 'r1', prompt: 'system design', count: 3 },
+          'read',
+        );
+
+        expect(deps.generateMockQuestionsUseCase.execute).toHaveBeenCalledWith({
+          userId: USER_ID,
+          roundId: 'r1',
+          prompt: 'system design',
+          count: 3,
+        });
+        expect(body).not.toHaveProperty('error');
+      });
+
+      it('generate_mock_interview_answer passes the question id and prompt', async () => {
+        vi.mocked(deps.generateMockAnswerUseCase.execute).mockResolvedValue({
+          answer: 'A',
+          usedJobDescription: false,
+          usedBriefing: false,
+        });
+
+        await call('generate_mock_interview_answer', {
+          mockInterviewQuestionId: 'q1',
+          prompt: 'short',
+        });
+
+        expect(deps.generateMockAnswerUseCase.execute).toHaveBeenCalledWith({
+          userId: USER_ID,
+          questionId: 'q1',
+          prompt: 'short',
+        });
+      });
+
+      it.each([
+        ['list_mock_interview_questions', {}],
+        ['generate_mock_interview_questions', {}],
+        ['generate_mock_interview_answer', {}],
+        ['create_mock_interview_question', { interviewRoundId: 'r1' }],
+      ])('%s rejects missing arguments', async (name, args) => {
+        const { body } = await call(name, args);
+
+        expect(body).toMatchObject({ error: { code: JSON_RPC_ERROR.INVALID_PARAMS } });
+      });
+
+      it('create_mock_interview_question saves with the `ai` label only when asked', async () => {
+        vi.mocked(deps.createMockInterviewQuestionUseCase.execute).mockResolvedValue({} as never);
+
+        await call('create_mock_interview_question', {
+          interviewRoundId: 'r1',
+          question: 'Why us?',
+          answer: 'Because',
+          answerSource: 'ai',
+        });
+        await call('create_mock_interview_question', {
+          interviewRoundId: 'r1',
+          question: 'Why us?',
+          answer: 'Because',
+          answerSource: 'anything-else',
+        });
+
+        expect(deps.createMockInterviewQuestionUseCase.execute).toHaveBeenNthCalledWith(1, {
+          userId: USER_ID,
+          roundId: 'r1',
+          question: 'Why us?',
+          answer: 'Because',
+          answerSource: 'ai',
+        });
+        expect(deps.createMockInterviewQuestionUseCase.execute).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({ answerSource: 'user' }),
         );
       });
     });

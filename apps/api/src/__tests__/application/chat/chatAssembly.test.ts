@@ -28,6 +28,9 @@ function makeToolDeps() {
     getNotesUseCase: stub(),
     getContactsUseCase: stub(),
     getInterviewRoundsUseCase: stub(),
+    getMockInterviewQuestionsUseCase: stub(),
+    generateMockQuestionsUseCase: stub({ suggestions: [] }),
+    generateMockAnswerUseCase: stub({ answer: '' }),
     getDocumentsUseCase: stub(),
     getOffersUseCase: stub(),
     getActivityLogsUseCase: stub(),
@@ -64,6 +67,40 @@ describe('executeChatTool observation (JEF-365)', () => {
     expect(deps.toolCallObserver.calls.map((c) => [c.meta, c.reports])).toEqual(
       CHAT_TOOLS.map((tool) => [{ surface: 'chat', name: tool.name }, ['succeeded']]),
     );
+  });
+
+  it('routes the practice question tools to their use cases (JEF-393)', async () => {
+    const deps = makeToolDeps();
+    const run = (name: string, args: Record<string, unknown>) =>
+      executeChatTool(toolCall(name, args), 'user-1', deps as unknown as ChatToolDeps);
+
+    await run('list_mock_interview_questions', { interviewRoundId: 'r1' });
+    await run('generate_mock_interview_questions', {
+      interviewRoundId: 'r1',
+      prompt: 'system design',
+      count: 3,
+    });
+    await run('generate_mock_interview_answer', { mockInterviewQuestionId: 'q1', prompt: 'short' });
+
+    expect(deps.getMockInterviewQuestionsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      roundId: 'r1',
+    });
+    expect(deps.generateMockQuestionsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      roundId: 'r1',
+      prompt: 'system design',
+      count: 3,
+    });
+    expect(deps.generateMockAnswerUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      questionId: 'q1',
+      prompt: 'short',
+    });
+  });
+
+  it('does not offer the practice question write tool to chat', () => {
+    expect(CHAT_TOOLS.map((t) => t.name)).not.toContain('create_mock_interview_question');
   });
 
   it('reports success with the compacted result the model receives', async () => {

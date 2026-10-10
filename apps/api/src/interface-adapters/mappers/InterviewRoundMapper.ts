@@ -14,6 +14,7 @@ export interface InterviewRoundDTO {
   notes: string | null;
   outcome: InterviewRoundOutcome;
   questionCount: number;
+  mockQuestionCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +31,7 @@ export class InterviewRoundMapper {
       notes: round.notes,
       outcome: round.outcome,
       questionCount: round.questionCount,
+      mockQuestionCount: round.mockQuestionCount,
       createdAt: round.createdAt.toISOString(),
       updatedAt: round.updatedAt.toISOString(),
     };

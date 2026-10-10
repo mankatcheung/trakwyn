@@ -316,6 +316,12 @@ export const AI_PROMPT_INPUT = {
   CROSS_APPLICATION_CONTEXT_MAX_CHARS: 2000,
   /** Cover letter generation — how many *other* applications' notes/drafts to pull from, most recent first (JEF-249). */
   CROSS_APPLICATION_CONTEXT_MAX_APPLICATIONS: 3,
+  /** Practice question and answer generation — what the user asks for (JEF-393). */
+  MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS: 500,
+  /** Practice question and answer generation — the application's job description field (JEF-393). */
+  MOCK_INTERVIEW_JOB_DESCRIPTION_MAX_CHARS: 3000,
+  /** Practice question and answer generation — the stored company briefing (JEF-393). */
+  MOCK_INTERVIEW_BRIEFING_MAX_CHARS: 2000,
 } as const;
 
 /** In-app AI chat assistant settings. */
@@ -390,6 +396,18 @@ export const CONTENT_LIMITS = {
   APPLICATIONS_PER_USER: 50,
   DOCUMENTS_PER_APPLICATION: 10,
   QUESTIONS_PER_ROUND: 50,
+  /** Practice questions have their own quota so they never use up the real one (JEF-393). */
+  MOCK_QUESTIONS_PER_ROUND: 30,
+} as const;
+
+/** How many practice questions one generate request may ask the model for (JEF-393). */
+export const MOCK_QUESTION_GENERATION = {
+  DEFAULT_COUNT: 5,
+  MAX_COUNT: 10,
+  /** Output budget for a full batch of questions. */
+  QUESTIONS_MAX_TOKENS: 1024,
+  /** Output budget for one drafted answer; sized for INTERVIEW_QUESTION_LIMITS.ANSWER_MAX_CHARS. */
+  ANSWER_MAX_TOKENS: 1024,
 } as const;
 
 /** Length limits for the question and answer a user records against an interview round. */

@@ -135,6 +135,7 @@ export class DrizzleInterviewRoundRepository implements IInterviewRoundRepositor
       notes: row.notes,
       outcome: row.outcome as InterviewRoundOutcome,
       questionCount: row.questionCount,
+      mockQuestionCount: row.mockQuestionCount,
       pushNotificationSentAt: row.pushNotificationSentAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

@@ -116,6 +116,7 @@ export const interviewRound = pgTable(
     notes: text('notes'),
     outcome: text('outcome').notNull().default('pending'),
     questionCount: integer('questionCount').notNull().default(0),
+    mockQuestionCount: integer('mockQuestionCount').notNull().default(0),
     pushNotificationSentAt: timestamp('pushNotificationSentAt', TIMESTAMP),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
@@ -147,6 +148,33 @@ export const interviewQuestion = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index('InterviewQuestion_interviewRoundId_idx').on(table.interviewRoundId)],
+);
+
+/**
+ * Practice questions for a round (JEF-393). A separate table from
+ * `interviewQuestion`, which records what was actually asked, so the two never mix.
+ */
+export const mockInterviewQuestion = pgTable(
+  'MockInterviewQuestion',
+  {
+    id: text('id').primaryKey(),
+    interviewRoundId: text('interviewRoundId')
+      .notNull()
+      .references(() => interviewRound.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    answer: text('answer'),
+    /** `user` or `ai`; `ai` marks an answer that began as an AI draft. */
+    answerSource: text('answerSource').notNull().default('user'),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index('MockInterviewQuestion_interviewRoundId_idx').on(table.interviewRoundId)],
 );
 
 export const note = pgTable(
