@@ -46,6 +46,7 @@ const round: InterviewRound = {
   notes: 'Strong on system design.',
   outcome: 'passed',
   questionCount: 2,
+  mockQuestionCount: 3,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -129,6 +130,35 @@ describe('InterviewsScreen', () => {
       const { getByText } = await renderScreen();
 
       expect(getByText('No questions yet')).toBeTruthy();
+    });
+
+    it('shows the practice question count apart from the questions asked (JEF-393)', async () => {
+      listOf({ ...round, questionCount: 2, mockQuestionCount: 3 });
+
+      const { getByText } = await renderScreen();
+
+      expect(getByText('2 questions')).toBeTruthy();
+      expect(getByText('3 practice questions')).toBeTruthy();
+    });
+
+    it.each([
+      [1, '1 practice question'],
+      [0, 'Practice questions'],
+    ])('labels %i practice questions as "%s"', async (mockQuestionCount, label) => {
+      listOf({ ...round, mockQuestionCount });
+
+      const { getByText } = await renderScreen();
+
+      expect(getByText(label)).toBeTruthy();
+    });
+
+    it('opens that round’s practice questions, whatever its outcome', async () => {
+      listOf({ ...round, outcome: 'failed', completedAt: '2026-01-02T00:00:00.000Z' });
+
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('practice-questions-round-1'));
+
+      expect(mockPush).toHaveBeenCalledWith('./practice-questions?roundId=round-1');
     });
 
     it('opens that round’s questions, whatever its outcome', async () => {

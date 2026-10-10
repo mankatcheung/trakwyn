@@ -11,6 +11,7 @@ const INTERVIEW_ROUND_FIELDS = `
   notes
   outcome
   questionCount
+  mockQuestionCount
   createdAt
   updatedAt
 `;
@@ -89,6 +90,75 @@ export const REORDER_INTERVIEW_QUESTIONS_MUTATION = `
   mutation ReorderInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!]!) {
     reorderInterviewQuestions(interviewRoundId: $interviewRoundId, orderedIds: $orderedIds) {
       ${INTERVIEW_QUESTION_FIELDS}
+    }
+  }
+`;
+
+const MOCK_INTERVIEW_QUESTION_FIELDS = `
+  id
+  interviewRoundId
+  question
+  answer
+  answerSource
+  position
+  createdAt
+  updatedAt
+`;
+
+export const MOCK_INTERVIEW_QUESTIONS_QUERY = `
+  query MockInterviewQuestions($interviewRoundId: ID!) {
+    mockInterviewQuestions(interviewRoundId: $interviewRoundId) {
+      ${MOCK_INTERVIEW_QUESTION_FIELDS}
+    }
+  }
+`;
+
+export const CREATE_MOCK_INTERVIEW_QUESTION_MUTATION = `
+  mutation CreateMockInterviewQuestion($input: CreateMockInterviewQuestionInput!) {
+    createMockInterviewQuestion(input: $input) {
+      ${MOCK_INTERVIEW_QUESTION_FIELDS}
+    }
+  }
+`;
+
+export const UPDATE_MOCK_INTERVIEW_QUESTION_MUTATION = `
+  mutation UpdateMockInterviewQuestion($id: ID!, $input: UpdateMockInterviewQuestionInput!) {
+    updateMockInterviewQuestion(id: $id, input: $input) {
+      ${MOCK_INTERVIEW_QUESTION_FIELDS}
+    }
+  }
+`;
+
+export const DELETE_MOCK_INTERVIEW_QUESTION_MUTATION = `
+  mutation DeleteMockInterviewQuestion($id: ID!) {
+    deleteMockInterviewQuestion(id: $id)
+  }
+`;
+
+export const REORDER_MOCK_INTERVIEW_QUESTIONS_MUTATION = `
+  mutation ReorderMockInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!]!) {
+    reorderMockInterviewQuestions(interviewRoundId: $interviewRoundId, orderedIds: $orderedIds) {
+      ${MOCK_INTERVIEW_QUESTION_FIELDS}
+    }
+  }
+`;
+
+export const GENERATE_MOCK_INTERVIEW_QUESTIONS_MUTATION = `
+  mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int) {
+    generateMockInterviewQuestions(interviewRoundId: $interviewRoundId, prompt: $prompt, count: $count) {
+      suggestions
+      usedJobDescription
+      usedBriefing
+    }
+  }
+`;
+
+export const GENERATE_MOCK_INTERVIEW_ANSWER_MUTATION = `
+  mutation GenerateMockInterviewAnswer($mockInterviewQuestionId: ID!, $prompt: String) {
+    generateMockInterviewAnswer(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt) {
+      answer
+      usedJobDescription
+      usedBriefing
     }
   }
 `;

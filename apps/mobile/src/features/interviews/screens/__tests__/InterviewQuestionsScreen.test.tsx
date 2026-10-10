@@ -51,6 +51,7 @@ const makeRound = (overrides: Partial<InterviewRound> = {}): InterviewRound => (
   // A finished round: the log has to stay usable once the interview is over.
   outcome: 'passed',
   questionCount: 3,
+  mockQuestionCount: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   ...overrides,
