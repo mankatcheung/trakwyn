@@ -42,7 +42,11 @@ mutation ReorderMockInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!
 }
 
 mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int) {
-  generateMockInterviewQuestions(interviewRoundId: $interviewRoundId, prompt: $prompt, count: $count) {
+  generateMockInterviewQuestions(
+    interviewRoundId: $interviewRoundId
+    prompt: $prompt
+    count: $count
+  ) {
     suggestions
     usedJobDescription
     usedBriefing
