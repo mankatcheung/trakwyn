@@ -100,6 +100,54 @@ export const TOOL_CATALOGUE = [
   },
   {
     access: 'read',
+    name: 'list_mock_interview_questions',
+    description:
+      "List the user's practice (mock) questions for an interview round, with any answer and whether the answer is AI generated. These are preparation, not what was asked in the interview.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        interviewRoundId: {
+          type: 'string',
+          description: 'The interview round ID (from list_interview_rounds)',
+        },
+      },
+      required: ['interviewRoundId'],
+    },
+  },
+  {
+    access: 'read',
+    name: 'generate_mock_interview_questions',
+    description:
+      'Suggest practice questions for an interview round, based on the job description and company briefing. Returns suggestions only and saves nothing; show them to the user and save the ones they pick with create_mock_interview_question.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        interviewRoundId: { type: 'string', description: 'The interview round ID' },
+        prompt: { type: 'string', description: 'What the questions should focus on (optional)' },
+        count: { type: 'number', description: 'How many to suggest, 1 to 10 (default 5)' },
+      },
+      required: ['interviewRoundId'],
+    },
+  },
+  {
+    access: 'read',
+    name: 'generate_mock_interview_answer',
+    description:
+      'Draft an answer to one practice question, based on the job description and company briefing. Returns a draft only and saves nothing; if the user keeps it, save it with create_mock_interview_question using answerSource "ai".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mockInterviewQuestionId: {
+          type: 'string',
+          description: 'The practice question ID (from list_mock_interview_questions)',
+        },
+        prompt: { type: 'string', description: 'How the answer should be shaped (optional)' },
+      },
+      required: ['mockInterviewQuestionId'],
+    },
+  },
+  {
+    access: 'read',
     name: 'list_work_experiences',
     description: 'List all work experiences for the authenticated user',
     inputSchema: {
@@ -259,6 +307,27 @@ export const TOOL_CATALOGUE = [
         notes: { type: 'string' },
       },
       required: ['applicationId'],
+    },
+  },
+  {
+    access: 'write',
+    name: 'create_mock_interview_question',
+    description:
+      'Save a practice question, and optionally an answer, to an interview round. Practice questions are kept apart from the questions actually asked in the interview.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        interviewRoundId: { type: 'string', description: 'The interview round ID' },
+        question: { type: 'string', description: 'The practice question' },
+        answer: { type: 'string', description: 'The answer (optional)' },
+        answerSource: {
+          type: 'string',
+          enum: ['user', 'ai'],
+          description:
+            'Use "ai" when the answer came from generate_mock_interview_answer; otherwise "user" (the default)',
+        },
+      },
+      required: ['interviewRoundId', 'question'],
     },
   },
   {

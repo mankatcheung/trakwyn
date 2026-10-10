@@ -16,24 +16,25 @@ import {
 } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import { InterviewQuestionsPanel } from './InterviewQuestionsPanel';
+import { MockQuestionsPanel } from './MockQuestionsPanel';
 const INTERVIEW_ROUNDS_QUERY = `
   query InterviewRounds($applicationId: ID!) {
     interviewRounds(applicationId: $applicationId) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
     }
   }
 `;
 const CREATE_ROUND = `
   mutation CreateInterviewRound($input: CreateInterviewRoundInput!) {
     createInterviewRound(input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
     }
   }
 `;
 const UPDATE_ROUND = `
   mutation UpdateInterviewRound($id: ID!, $input: UpdateInterviewRoundInput!) {
     updateInterviewRound(id: $id, input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount createdAt updatedAt
+      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
     }
   }
 `;
@@ -49,6 +50,7 @@ type InterviewRound = {
   notes?: string | null;
   outcome: string;
   questionCount: number;
+  mockQuestionCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -183,6 +185,7 @@ export function InterviewsTab({
         notes: f.notes || null,
         outcome: f.outcome,
         questionCount: 0,
+        mockQuestionCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -455,11 +458,18 @@ export function InterviewsTab({
                 </div>
               </div>
               {!round.id.startsWith('__tmp_') && (
-                <InterviewQuestionsPanel
-                  applicationId={applicationId}
-                  roundId={round.id}
-                  questionCount={round.questionCount}
-                />
+                <>
+                  <InterviewQuestionsPanel
+                    applicationId={applicationId}
+                    roundId={round.id}
+                    questionCount={round.questionCount}
+                  />
+                  <MockQuestionsPanel
+                    applicationId={applicationId}
+                    roundId={round.id}
+                    mockQuestionCount={round.mockQuestionCount}
+                  />
+                </>
               )}
               <p className="mt-2 text-xs text-gray-400">
                 {new Date(round.createdAt).toLocaleString()}

@@ -9,6 +9,7 @@ import { CompanyBriefingMapper } from '#src/interface-adapters/mappers/CompanyBr
 import { UserMapper } from '#src/interface-adapters/mappers/UserMapper.js';
 import { InterviewRoundMapper } from '#src/interface-adapters/mappers/InterviewRoundMapper.js';
 import { InterviewQuestionMapper } from '#src/interface-adapters/mappers/InterviewQuestionMapper.js';
+import { MockInterviewQuestionMapper } from '#src/interface-adapters/mappers/MockInterviewQuestionMapper.js';
 import { ActivityLogMapper } from '#src/interface-adapters/mappers/ActivityLogMapper.js';
 import { ContactMapper } from '#src/interface-adapters/mappers/ContactMapper.js';
 import { LoginEventMapper } from '#src/interface-adapters/mappers/LoginEventMapper.js';
@@ -42,6 +43,9 @@ export const mappers = {
   userMapper: asClass(UserMapper, { lifetime: Lifetime.SINGLETON }),
   interviewRoundMapper: asClass(InterviewRoundMapper, { lifetime: Lifetime.SINGLETON }),
   interviewQuestionMapper: asClass(InterviewQuestionMapper, { lifetime: Lifetime.SINGLETON }),
+  mockInterviewQuestionMapper: asClass(MockInterviewQuestionMapper, {
+    lifetime: Lifetime.SINGLETON,
+  }),
   activityLogMapper: asClass(ActivityLogMapper, { lifetime: Lifetime.SINGLETON }),
   contactMapper: asClass(ContactMapper, { lifetime: Lifetime.SINGLETON }),
   loginEventMapper: asClass(LoginEventMapper, { lifetime: Lifetime.SINGLETON }),

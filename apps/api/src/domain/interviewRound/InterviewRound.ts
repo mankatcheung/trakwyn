@@ -12,6 +12,8 @@ export interface InterviewRound {
   outcome: InterviewRoundOutcome;
   /** How many InterviewQuestion rows the round has; backs the per-round quota. */
   questionCount: number;
+  /** How many MockInterviewQuestion rows the round has; backs the practice-question quota. */
+  mockQuestionCount: number;
   pushNotificationSentAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

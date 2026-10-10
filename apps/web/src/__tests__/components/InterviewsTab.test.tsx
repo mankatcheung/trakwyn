@@ -100,6 +100,33 @@ describe('InterviewsTab', () => {
     expect(screen.getByRole('button', { name: 'No questions yet' })).toBeInTheDocument();
   });
 
+  it("shows each round's practice question count apart from its asked-question count (JEF-393)", async () => {
+    mockGqlRequest.mockResolvedValue({
+      interviewRounds: [
+        { ...mockRound, questionCount: 3, mockQuestionCount: 2 },
+        { ...mockRound, id: 'round-2', type: 'phone', questionCount: 0, mockQuestionCount: 0 },
+      ],
+    });
+    render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+    expect(await screen.findByRole('button', { name: '3 questions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '2 practice questions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No questions yet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Practice questions' })).toBeInTheDocument();
+  });
+
+  it('asks for the practice question count with the rounds', async () => {
+    mockGqlRequest.mockResolvedValue({ interviewRounds: [mockRound] });
+    render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+    await screen.findByRole('button', { name: '3 questions' });
+
+    expect(mockGqlRequest).toHaveBeenCalledWith(
+      expect.stringContaining('mockQuestionCount'),
+      expect.anything(),
+    );
+  });
+
   it.each(['passed', 'failed', 'cancelled'])(
     'still offers the questions for a round whose outcome is %s',
     async (outcome) => {

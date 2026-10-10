@@ -16,6 +16,8 @@ import { DrizzleInterviewRoundRepository } from '#src/infrastructure/db/reposito
 import { CachedInterviewRoundRepository } from '#src/infrastructure/db/repositories/CachedInterviewRoundRepository.js';
 import { DrizzleInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewQuestionRepository.js';
 import { CachedInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedInterviewQuestionRepository.js';
+import { DrizzleMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleMockInterviewQuestionRepository.js';
+import { CachedMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedMockInterviewQuestionRepository.js';
 import { CachedUserRepository } from '#src/infrastructure/db/repositories/CachedUserRepository.js';
 import { CachedSkillRepository } from '#src/infrastructure/db/repositories/CachedSkillRepository.js';
 import { CachedEducationRepository } from '#src/infrastructure/db/repositories/CachedEducationRepository.js';
@@ -114,6 +116,12 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   interviewQuestionRepository: asClass(CachedInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  drizzleMockInterviewQuestionRepository: asClass(DrizzleMockInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  mockInterviewQuestionRepository: asClass(CachedMockInterviewQuestionRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   userRepository: asClass(CachedUserRepository, { lifetime: Lifetime.SINGLETON }),

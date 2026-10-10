@@ -71,6 +71,14 @@ export const rateLimiters = {
     'generateCompanyBriefingRateLimiter',
     RATE_LIMIT.GENERATE_COMPANY_BRIEFING,
   ),
+  generateMockQuestionsRateLimiter: limiter(
+    'generateMockQuestionsRateLimiter',
+    RATE_LIMIT.GENERATE_MOCK_QUESTIONS,
+  ),
+  generateMockAnswerRateLimiter: limiter(
+    'generateMockAnswerRateLimiter',
+    RATE_LIMIT.GENERATE_MOCK_ANSWER,
+  ),
   testLlmApiKeyRateLimiter: limiter('testLlmApiKeyRateLimiter', RATE_LIMIT.TEST_LLM_API_KEY),
   updatePasswordRateLimiter: limiter('updatePasswordRateLimiter', RATE_LIMIT.UPDATE_PASSWORD),
   requestEmailChangeRateLimiter: limiter(

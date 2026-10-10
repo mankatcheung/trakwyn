@@ -11,7 +11,6 @@ export const API_BASE_URL = API_URL;
 export const BOOT_TIMEOUT_MS = 90_000;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __TRAKWYN_API__: { reused: boolean; pid?: number; dataDir?: string } | undefined;
 }
 

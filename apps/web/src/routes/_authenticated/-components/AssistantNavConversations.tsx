@@ -30,7 +30,7 @@ export function AssistantNavConversations({
   const conversations = data?.conversations ?? [];
 
   return (
-    <div className="ml-2 mt-1 mb-1 space-y-0.5 border-l border-gray-200 dark:border-gray-700">
+    <div className="my-1 ml-2 space-y-0.5 border-l border-gray-200 dark:border-gray-700">
       {/* First among the subitems: an empty search param clears the active
           conversation, which is exactly what "new" means here. */}
       <Link

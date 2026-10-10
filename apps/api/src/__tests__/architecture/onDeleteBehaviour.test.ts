@@ -34,6 +34,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'InterviewQuestion -> InterviewRound': 'cascade', // what was asked in a round is part of the round
   'InterviewRound -> JobApplication': 'cascade',
   'JobApplication -> User': 'cascade',
+  'MockInterviewQuestion -> InterviewRound': 'cascade', // practice questions are prep for the round, so they go with it
   'LlmApiKey -> User': 'cascade',
   'LlmUsageEvent -> User': 'cascade',
   'LoginEvent -> User': 'cascade', // erasure beats retention — these rows hold IP, device and location

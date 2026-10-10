@@ -28,6 +28,7 @@ import type { ThemeColors } from '../../../theme/colors';
 import {
   ChevronRightIcon,
   MessageIcon,
+  SparklesIcon,
   PencilIcon,
   TrashIcon,
 } from '../../applications/components/ApplicationIcons';
@@ -226,6 +227,8 @@ export function InterviewsScreen() {
   };
 
   const rows = rounds ?? [];
+  const practiceLabel = (count: number) =>
+    count > 0 ? t('practiceCount', { count }) : t('noPracticeYet');
   const saving = createRound.isPending || updateRound.isPending;
 
   return (
@@ -283,6 +286,32 @@ export function InterviewsScreen() {
                       ]}
                     >
                       {questionsLabel}
+                    </Text>
+                  </View>
+                  <ChevronRightIcon color={colors.textSubtle} size={18} />
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.questionsRow,
+                    round.mockQuestionCount > 0 && styles.questionsRowFilled,
+                  ]}
+                  onPress={() => router.push(`./practice-questions?roundId=${round.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={practiceLabel(round.mockQuestionCount)}
+                  testID={`practice-questions-${round.id}`}
+                >
+                  <View style={styles.questionsRowLabel}>
+                    <SparklesIcon
+                      color={round.mockQuestionCount > 0 ? colors.primary : colors.textSubtle}
+                      size={18}
+                    />
+                    <Text
+                      style={[
+                        styles.questionsRowText,
+                        round.mockQuestionCount > 0 && styles.questionsRowTextFilled,
+                      ]}
+                    >
+                      {practiceLabel(round.mockQuestionCount)}
                     </Text>
                   </View>
                   <ChevronRightIcon color={colors.textSubtle} size={18} />
