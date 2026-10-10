@@ -183,7 +183,9 @@ jobs:
     # integration tests already cover PGlite).
     services:
       postgres:
-        image: postgres:17
+        # The AWS public mirror of the official image: anonymous pulls from
+        # Docker Hub are rate-limited on shared runner IPs (429).
+        image: public.ecr.aws/docker/library/postgres:17
         env:
           POSTGRES_USER: trakwyn
           POSTGRES_PASSWORD: trakwyn
