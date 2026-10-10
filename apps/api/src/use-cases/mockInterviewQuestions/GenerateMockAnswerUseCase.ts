@@ -16,7 +16,11 @@ import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBr
 import { assertNotTruncated } from '#src/use-cases/shared/parseAiJson.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { findOwnedInterviewRound } from '#src/use-cases/interviewQuestions/ownedInterviewRound.js';
-import { INTERVIEW_QUESTION_LIMITS, MOCK_QUESTION_GENERATION } from '#src/use-cases/constants.js';
+import {
+  INTERVIEW_QUESTION_LIMITS,
+  MOCK_INTERVIEW_PROMPT_TASK,
+  MOCK_QUESTION_GENERATION,
+} from '#src/use-cases/constants.js';
 import {
   buildMockInterviewContext,
   normaliseMockPrompt,
@@ -37,7 +41,7 @@ interface Deps {
   generateMockAnswerRateLimiter: IRateLimiter;
 }
 
-const SYSTEM_PROMPT = `You are an interview coach helping a candidate prepare. Given an interview question, the role, and optionally a job description and a company briefing, draft a strong answer the candidate can adapt.
+const SYSTEM_PROMPT = `You are an interview coach helping a candidate prepare. Given an interview question, the role, and optionally a job description and a company briefing, ${MOCK_INTERVIEW_PROMPT_TASK.ANSWER}.
 
 Rules:
 - Write in the first person, as the candidate, in plain spoken language. Keep it to what could be said in about two minutes.

@@ -15,7 +15,11 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { findOwnedInterviewRound } from '#src/use-cases/interviewQuestions/ownedInterviewRound.js';
-import { INTERVIEW_QUESTION_LIMITS, MOCK_QUESTION_GENERATION } from '#src/use-cases/constants.js';
+import {
+  INTERVIEW_QUESTION_LIMITS,
+  MOCK_INTERVIEW_PROMPT_TASK,
+  MOCK_QUESTION_GENERATION,
+} from '#src/use-cases/constants.js';
 import {
   buildMockInterviewContext,
   normaliseMockPrompt,
@@ -37,7 +41,7 @@ interface Deps {
 
 const questionsSchema = z.object({ questions: z.array(z.string()) });
 
-const SYSTEM_PROMPT = `You are an interview coach helping a candidate prepare. Given a role, an interview round, and optionally a job description and a company briefing, write realistic questions the candidate could be asked in that round.
+const SYSTEM_PROMPT = `You are an interview coach helping a candidate prepare. Given a role, an interview round, and optionally a job description and a company briefing, ${MOCK_INTERVIEW_PROMPT_TASK.QUESTIONS}.
 
 Rules:
 - Ground every question in the role, the round type and whatever job description or briefing you were given. If you were given neither, ask well-known questions for the role and do not pretend to know company specifics.

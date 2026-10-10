@@ -400,6 +400,16 @@ export const CONTENT_LIMITS = {
   MOCK_QUESTIONS_PER_ROUND: 30,
 } as const;
 
+/**
+ * The task sentence each practice-interview system prompt carries. The dev and
+ * e2e fake LLM route (`fakeLlmCompletions.routes.ts`) reads them to pick its
+ * canned reply, so they are stated once here rather than twice in prose.
+ */
+export const MOCK_INTERVIEW_PROMPT_TASK = {
+  QUESTIONS: 'write realistic questions the candidate could be asked in that round',
+  ANSWER: 'draft a strong answer the candidate can adapt',
+} as const;
+
 /** How many practice questions one generate request may ask the model for (JEF-393). */
 export const MOCK_QUESTION_GENERATION = {
   DEFAULT_COUNT: 5,
