@@ -133,8 +133,14 @@ export function addTraceparent<T extends { url: string; headers?: HeadersInit }>
 /**
  * Reports the API unreachable or answering 5xx — which failures qualify is
  * `transportFailureProperties`, shared with the mobile app.
+ *
+ * A fetch rejected while the browser reports itself offline is the user's own
+ * connection, not an API outage, so it is not reported. This lives here, not
+ * in `transportFailureProperties`, which `transportFailureParity.test.ts`
+ * keeps identical to the mobile copy.
  */
 function reportTransportFailure(response: unknown, operationName: string | undefined): void {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   const properties = transportFailureProperties(response, operationName);
   if (properties) captureException(response, properties);
 }
