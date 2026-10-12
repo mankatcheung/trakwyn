@@ -11,8 +11,8 @@ export type DetailSectionKey = keyof typeof DETAIL_SECTION_ROUTES;
  * groups them (Track / Documents / Outcome), used to render the detail
  * screen's section index list (JEF-303).
  *
- * A flat tab bar stopped scaling once Contacts, Cover Letter, Resume Match,
- * Company Briefing and Offers joined Notes/Interviews/Documents — nine items
+ * A flat tab bar stopped scaling once Contacts, Cover Letter, Company Briefing
+ * and Offers joined Notes/Interviews/Documents — nine items
  * in one row (or even a scrolling one) reads as a wall of text on a phone.
  * Grouping into a short scrollable list, mirroring web's sidebar/index
  * grouping, keeps each destination discoverable without the horizontal noise.
@@ -50,7 +50,6 @@ export const DETAIL_SECTION_GROUPS: DetailSectionGroup[] = [
       { key: 'resumes', slug: 'resumes', labelKey: 'detail.resumesTab' },
       { key: 'coverLetters', slug: 'cover-letters', labelKey: 'detail.coverLettersTab' },
       { key: 'otherDocuments', slug: 'other-documents', labelKey: 'detail.otherDocumentsTab' },
-      { key: 'resumeMatch', slug: 'resume-match', labelKey: 'detail.resumeMatchTab' },
     ],
   },
   {

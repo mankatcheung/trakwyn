@@ -1,5 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gqlRequest } from '../../../graphql/client';
+import { RESUME_MATCHES_KEY_PREFIX } from '../../applications/hooks/useResumeMatchQueries';
 import { UPDATE_DOCUMENT_DRAFT_CONTENT_MUTATION } from '../graphql/draftOperations';
 
 export interface UpdateDocumentDraftContentInput {
@@ -9,11 +10,17 @@ export interface UpdateDocumentDraftContentInput {
 }
 
 export function useUpdateDocumentDraftContent() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateDocumentDraftContentInput) =>
       gqlRequest<{ updateDocumentDraftContent: { id: string; updatedAt: string } }>(
         UPDATE_DOCUMENT_DRAFT_CONTENT_MUTATION,
         { input },
       ).then((data) => data.updateDocumentDraftContent),
+    // A saved edit can make the resume's match stale; refetch so the Resumes
+    // screen shows the reminder rather than a cached "up to date" result.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: RESUME_MATCHES_KEY_PREFIX });
+    },
   });
 }

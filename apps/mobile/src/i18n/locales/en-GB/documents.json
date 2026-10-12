@@ -8,7 +8,7 @@
   "upload": "Upload",
   "chooseFile": "Choose a file to upload",
   "emptyCoverLetters": "No cover letters yet.",
-  "emptyResumes": "No CVs yet.",
+  "emptyResumes": "No CVs yet. Create or upload one to check how well it matches this job.",
   "emptyOther": "No other documents yet.",
   "couldNotDeleteTitle": "Could not delete",
   "uploadFailedStatus": "Upload failed with status {{status}}",
