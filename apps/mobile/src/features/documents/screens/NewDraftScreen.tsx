@@ -20,9 +20,12 @@ import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import type { DocumentDraftType } from '../types';
 
-const DRAFT_TYPES: DocumentDraftType[] = ['cover_letter', 'resume'];
+interface NewDraftScreenProps {
+  /** Fixed by the route: the screen never asks, and cannot be switched (JEF-396). */
+  type: DocumentDraftType;
+}
 
-export function NewDocumentDraftScreen() {
+function NewDraftScreen({ type }: NewDraftScreenProps) {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -35,7 +38,6 @@ export function NewDocumentDraftScreen() {
   const extractText = useExtractDocumentText();
   const generateResume = useGenerateResume(applicationId);
 
-  const [type, setType] = useState<DocumentDraftType>('cover_letter');
   const [title, setTitle] = useState('');
   const [sourceDocumentId, setSourceDocumentId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +47,10 @@ export function NewDocumentDraftScreen() {
   // `router.replace('../draftId')` resolves against the matched file route
   // (group segments included) rather than the browser pathname on web,
   // landing on an unmatched URL — deriving the target from the actual
-  // pathname sidesteps that and works the same on every platform.
-  const openDraft = (draftId: string) => router.replace(pathname.replace(/\/new$/, `/${draftId}`));
+  // pathname sidesteps that and works the same on every platform. The editor
+  // is `documents/<id>`, a sibling of this `new-*` route.
+  const openDraft = (draftId: string) =>
+    router.replace(pathname.replace(/\/new-(cover-letter|resume)$/, `/documents/${draftId}`));
 
   const handleCreate = async () => {
     setError(null);
@@ -86,25 +90,6 @@ export function NewDocumentDraftScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>{t('typeLabel')}</Text>
-      <View style={styles.typeToggleRow}>
-        {DRAFT_TYPES.map((option) => {
-          const selected = type === option;
-          return (
-            <Pressable
-              key={option}
-              style={[styles.typeToggle, selected && styles.typeToggleSelected]}
-              onPress={() => setType(option)}
-              testID={`draft-type-${option}`}
-            >
-              <Text style={[styles.typeToggleText, selected && styles.typeToggleTextSelected]}>
-                {t(option)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       <Text style={styles.sectionLabel}>{t('titleLabel')}</Text>
       <TextInput
         style={styles.input}
@@ -190,19 +175,6 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 20, gap: 8, paddingBottom: 40 },
     sectionLabel: { fontSize: 14, fontWeight: '600', color: colors.text, marginTop: 12 },
     helpText: { fontSize: 12, color: colors.textSubtle, marginBottom: 4 },
-    typeToggleRow: { flexDirection: 'row', gap: 10 },
-    typeToggle: {
-      flex: 1,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      paddingVertical: 12,
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-    },
-    typeToggleSelected: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
-    typeToggleText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
-    typeToggleTextSelected: { color: colors.primary, fontWeight: '700' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -277,4 +249,12 @@ function createStyles(colors: ThemeColors) {
     createButtonText: { fontSize: 14, fontWeight: '600', color: colors.onPrimary },
     disabled: { opacity: 0.6 },
   });
+}
+
+export function NewCoverLetterDraftScreen() {
+  return <NewDraftScreen type="cover_letter" />;
+}
+
+export function NewResumeDraftScreen() {
+  return <NewDraftScreen type="resume" />;
 }

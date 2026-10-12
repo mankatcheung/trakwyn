@@ -97,7 +97,8 @@ test.describe('Application detail page', () => {
   });
 
   test('uploads and deletes a document', async ({ page }) => {
-    await openTab(page, 'Documents');
+    // An upload from the Resumes tab is a resume: the tab implies the type.
+    await openTab(page, 'Resumes');
 
     await page.locator('input[type="file"]').setInputFiles({
       name: 'resume.txt',
@@ -115,5 +116,26 @@ test.describe('Application detail page', () => {
       .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]');
     await docRow.locator('button').last().click();
     await expect(page.getByText('resume.txt')).not.toBeVisible();
+  });
+
+  test('shows an upload in exactly one of the three document tabs', async ({ page }) => {
+    await openTab(page, 'Resumes');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'only-a-resume.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Staff Engineer resume content for e2e test.'),
+    });
+    // No type to choose: the Resumes tab saves it as a resume.
+    await expect(page.getByLabel('Document type')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Confirm upload' }).click();
+    await expect(page.getByText('only-a-resume.txt')).toBeVisible();
+
+    await openTab(page, 'Cover letters');
+    await expect(page.getByText('No cover letters yet')).toBeVisible();
+    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
+
+    await openTab(page, 'Other documents');
+    await expect(page.getByText('No other documents yet')).toBeVisible();
+    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
   });
 });

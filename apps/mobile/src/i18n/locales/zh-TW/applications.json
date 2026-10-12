@@ -28,10 +28,11 @@
     "overviewTab": "總覽",
     "interviewsTab": "面試",
     "notesTab": "筆記",
-    "docsTab": "文件",
+    "coverLettersTab": "求職信",
+    "resumesTab": "履歷",
+    "otherDocumentsTab": "其他文件",
     "contactsTab": "聯絡人",
     "activityTab": "活動",
-    "coverLetterTab": "求職信",
     "resumeMatchTab": "履歷配對",
     "companyBriefingTab": "公司簡報",
     "offersTab": "聘書",
@@ -69,8 +70,6 @@
     "resumeBackgroundLabel": "履歷背景（選填）",
     "pastePlaceholder": "貼上你的履歷內容以產生更貼合的求職信",
     "generateCoverLetter": "產生求職信",
-    "savedTitle": "已儲存的求職信",
-    "noneSavedYet": "目前沒有已儲存的求職信。",
     "couldNotGenerateTitle": "無法產生"
   },
   "resumeMatch": {

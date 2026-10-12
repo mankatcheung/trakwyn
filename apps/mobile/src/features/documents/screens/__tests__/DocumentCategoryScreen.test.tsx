@@ -30,7 +30,8 @@ import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../../hooks/useDocumentDraftQueries';
-import { DocumentsScreen } from '../DocumentsScreen';
+import { DocumentCategoryScreen } from '../DocumentCategoryScreen';
+import type { DocumentCategory } from '../../lib/documentCategory';
 import type { Document } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
@@ -56,13 +57,13 @@ const document: Document = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-function renderScreen(push = jest.fn()) {
+function renderScreen(push = jest.fn(), category: DocumentCategory = 'other') {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
   mockedUseRouter.mockReturnValue({ push } as never);
-  return render(<DocumentsScreen />);
+  return render(<DocumentCategoryScreen category={category} />);
 }
 
-describe('DocumentsScreen', () => {
+describe('DocumentCategoryScreen', () => {
   beforeEach(() => {
     mockedUseTheme.mockReturnValue({
       mode: 'light',
@@ -84,12 +85,12 @@ describe('DocumentsScreen', () => {
     } as never);
     mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
 
-    const { getByText } = await renderScreen();
+    const { getByText } = await renderScreen(jest.fn(), 'resume');
 
     await waitFor(() => expect(getByText('resume.pdf')).toBeTruthy());
   });
 
-  it('picks a file and uploads it with the selected type', async () => {
+  it('picks a file and uploads it with the type chosen on Other documents', async () => {
     const mutate = jest.fn();
     mockedUseDocuments.mockReturnValue({
       data: [],
@@ -114,15 +115,15 @@ describe('DocumentsScreen', () => {
     const { getByTestId, findByTestId } = await renderScreen();
 
     await fireEvent.press(getByTestId('pick-document-button'));
-    const resumeChip = await findByTestId('document-type-resume');
-    await fireEvent.press(resumeChip);
+    const portfolioChip = await findByTestId('document-type-portfolio');
+    await fireEvent.press(portfolioChip);
     await fireEvent.press(getByTestId('confirm-upload-button'));
 
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         uri: 'file:///tmp/resume.pdf',
         name: 'resume.pdf',
-        documentType: 'resume',
+        documentType: 'portfolio',
       }),
       expect.any(Object),
     );
@@ -143,14 +144,14 @@ describe('DocumentsScreen', () => {
     mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDeleteDocument.mockReturnValue({ mutate: deleteMutate, isPending: false } as never);
 
-    const { getByTestId } = await renderScreen();
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
 
     await fireEvent.press(getByTestId('delete-document-1'));
 
     expect(deleteMutate).toHaveBeenCalledWith('1', expect.any(Object));
   });
 
-  it('renders document drafts with their type and a new-draft entry point', async () => {
+  it('renders document drafts with a new-draft entry point', async () => {
     mockedUseDocuments.mockReturnValue({
       data: [],
       isLoading: false,
@@ -172,14 +173,14 @@ describe('DocumentsScreen', () => {
       isLoading: false,
     } as never);
 
-    const { getByText, getByTestId } = await renderScreen();
+    const { getByText, getByTestId } = await renderScreen(jest.fn(), 'cover_letter');
 
     await waitFor(() => expect(getByText('Cover Letter — Acme Corp')).toBeTruthy());
     expect(getByTestId('draft-draft-1')).toBeTruthy();
     expect(getByTestId('new-draft-button')).toBeTruthy();
   });
 
-  it('resolves the draft link against the documents/ subroute', async () => {
+  it('resolves the draft link against the documents/ subroute, from a flat route', async () => {
     mockedUseDocuments.mockReturnValue({
       data: [],
       isLoading: false,
@@ -201,11 +202,10 @@ describe('DocumentsScreen', () => {
       isLoading: false,
     } as never);
 
-    const { getByTestId } = await renderScreen();
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
 
-    // Rendered from an index route, a bare relative href (e.g. "./draft-1")
-    // resolves against the parent of documents/, not documents/ itself —
-    // regression coverage for the "Unmatched Route" bug (JEF-310).
+    // The editor stays at documents/<id>, a sibling directory of this flat
+    // route, so the href has to spell `documents/` out (JEF-310, JEF-396).
     expect(getByTestId('link:./documents/draft-1')).toBeTruthy();
   });
 
@@ -220,13 +220,176 @@ describe('DocumentsScreen', () => {
     mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
 
-    const { getByTestId } = await renderScreen(push);
+    const { getByTestId } = await renderScreen(push, 'cover_letter');
 
     await fireEvent.press(getByTestId('new-draft-button'));
 
-    // Same relative-resolution concern as the draft links above (JEF-310):
-    // pushing "./documents/new" must resolve against this screen's route,
-    // not its parent.
-    expect(push).toHaveBeenCalledWith('./documents/new');
+    // Its own create screen, so the type is never asked for (JEF-396); a
+    // sibling file route, so the same relative-resolution rule as above holds.
+    expect(push).toHaveBeenCalledWith('./new-cover-letter');
+  });
+});
+
+describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
+  const upload = (id: string, name: string, documentType: string): Document => ({
+    ...document,
+    id,
+    name,
+    documentType,
+  });
+  const draft = (id: string, title: string, type: string) => ({
+    id,
+    applicationId: 'app-1',
+    type,
+    title,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  const uploads = [
+    upload('u-r', 'resume.pdf', 'resume'),
+    upload('u-c', 'letter.pdf', 'cover_letter'),
+    upload('u-p', 'portfolio.pdf', 'portfolio'),
+    upload('u-o', 'notes.pdf', 'other'),
+    upload('u-x', 'mystery.pdf', 'some_future_type'),
+  ];
+  const drafts = [
+    draft('dr-r', 'Resume draft', 'resume'),
+    draft('dr-c', 'Cover letter draft', 'cover_letter'),
+  ];
+  const ALL = [
+    'resume.pdf',
+    'letter.pdf',
+    'portfolio.pdf',
+    'notes.pdf',
+    'mystery.pdf',
+    'Resume draft',
+    'Cover letter draft',
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
+    mockedUseDeleteDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDocuments.mockReturnValue({
+      data: uploads,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDocumentDrafts.mockReturnValue({ data: drafts, isLoading: false } as never);
+  });
+
+  const visible = (queryByText: (t: string) => unknown) => ALL.filter((n) => queryByText(n));
+
+  it.each([
+    ['resume', ['resume.pdf', 'Resume draft']],
+    ['cover_letter', ['letter.pdf', 'Cover letter draft']],
+    ['other', ['portfolio.pdf', 'notes.pdf', 'mystery.pdf']],
+  ] as const)('shows only %s items, drafts and uploads together', async (category, expected) => {
+    const { queryByText } = await renderScreen(jest.fn(), category);
+
+    expect(visible(queryByText).sort()).toEqual([...expected].sort());
+  });
+
+  it('puts every item on exactly one screen', async () => {
+    const seen: string[] = [];
+    for (const category of ['cover_letter', 'resume', 'other'] as const) {
+      const { queryByText, unmount } = await renderScreen(jest.fn(), category);
+      seen.push(...visible(queryByText));
+      await unmount();
+    }
+
+    expect(seen.sort()).toEqual([...ALL].sort());
+  });
+
+  it.each([
+    ['cover_letter', 'No cover letters yet.'],
+    ['resume', 'No resumes yet.'],
+    ['other', 'No other documents yet.'],
+  ] as const)('shows a per-category empty state on %s', async (category, message) => {
+    mockedUseDocuments.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
+
+    const { getByText } = await renderScreen(jest.fn(), category);
+
+    expect(getByText(message)).toBeTruthy();
+  });
+
+  it('gives Other documents no new-draft button, only upload', async () => {
+    const { queryByTestId } = await renderScreen(jest.fn(), 'other');
+
+    expect(queryByTestId('new-draft-button')).toBeNull();
+    expect(queryByTestId('pick-document-button')).toBeTruthy();
+  });
+
+  it('sends Resumes to its own create screen', async () => {
+    const push = jest.fn();
+    const { getByTestId } = await renderScreen(push, 'resume');
+
+    await fireEvent.press(getByTestId('new-draft-button'));
+
+    expect(push).toHaveBeenCalledWith('./new-resume');
+  });
+
+  describe('upload type', () => {
+    const pickFile = async (category: DocumentCategory, mutate = jest.fn()) => {
+      mockedUseUploadDocument.mockReturnValue({ mutate, isPending: false } as never);
+      mockedGetDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [
+          {
+            uri: 'file:///tmp/x.pdf',
+            name: 'x.pdf',
+            mimeType: 'application/pdf',
+            size: 10,
+            lastModified: 0,
+          },
+        ],
+      });
+      const screen = await renderScreen(jest.fn(), category);
+      await fireEvent.press(screen.getByTestId('pick-document-button'));
+      await screen.findByTestId('confirm-upload-button');
+      return screen;
+    };
+
+    it.each(['resume', 'cover_letter'] as const)(
+      'saves %s uploads with that type and never shows a type chooser',
+      async (category) => {
+        const mutate = jest.fn();
+        const { queryByTestId, getByTestId } = await pickFile(category, mutate);
+
+        expect(queryByTestId('document-type-resume')).toBeNull();
+        expect(queryByTestId('document-type-cover_letter')).toBeNull();
+        expect(queryByTestId('document-type-other')).toBeNull();
+
+        await fireEvent.press(getByTestId('confirm-upload-button'));
+
+        expect(mutate).toHaveBeenCalledWith(
+          expect.objectContaining({ documentType: category }),
+          expect.any(Object),
+        );
+      },
+    );
+
+    it('offers Other only the types that stay in it, so a file cannot vanish into another screen', async () => {
+      const { queryByTestId } = await pickFile('other');
+
+      expect(queryByTestId('document-type-other')).toBeTruthy();
+      expect(queryByTestId('document-type-portfolio')).toBeTruthy();
+      expect(queryByTestId('document-type-resume')).toBeNull();
+      expect(queryByTestId('document-type-cover_letter')).toBeNull();
+    });
   });
 });

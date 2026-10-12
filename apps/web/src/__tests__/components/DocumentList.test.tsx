@@ -55,7 +55,7 @@ vi.mock('#/lib/analytics', () => ({
   captureEvent: mockCaptureEvent,
 }));
 
-import { DocumentsTab } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentsTab';
+import { DocumentList } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentList';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -94,34 +94,35 @@ function mockResponses(overrides?: { documents?: unknown[]; documentDrafts?: unk
   });
 }
 
-describe('DocumentsTab', () => {
+describe('DocumentList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('shows the upload prompt when there are no documents', async () => {
     mockResponses();
-    render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<DocumentList applicationId="app-1" category="other" />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByText(/click to upload/i)).toBeInTheDocument();
     });
   });
 
-  it('renders an existing document with its type and size', async () => {
+  it('renders an existing document with its size, without a redundant type badge', async () => {
     mockResponses({ documents: [mockDoc] });
-    render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'resume.pdf' })).toBeInTheDocument();
     });
-    expect(screen.getByText('Resume')).toBeInTheDocument();
+    // The tab already says it is Resumes; a badge would repeat that on every row.
+    expect(screen.queryByText('Resume')).not.toBeInTheDocument();
     expect(screen.getByText(/100\.0 KB/)).toBeInTheDocument();
   });
 
   it('renders an existing document draft with a link to it', async () => {
     mockResponses({ documentDrafts: [mockDraft] });
-    render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<DocumentList applicationId="app-1" category="cover_letter" />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByText('My cover letter')).toBeInTheDocument();
@@ -139,7 +140,7 @@ describe('DocumentsTab', () => {
       if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
       return Promise.resolve({ documents: [mockDoc] });
     });
-    render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'resume.pdf' })).toBeInTheDocument();
@@ -175,7 +176,9 @@ describe('DocumentsTab', () => {
       }
       return Promise.resolve({ documents: [] });
     });
-    const { container } = render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+    const { container } = render(<DocumentList applicationId="app-1" category="other" />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
     const input = container.querySelector('input[type="file"]')!;
@@ -228,7 +231,9 @@ describe('DocumentsTab', () => {
     async function chooseFile(
       file = new File(['pdf'], 'Jane Doe CV.pdf', { type: 'application/pdf' }),
     ) {
-      const { container } = render(<DocumentsTab applicationId="app-1" />, { wrapper: Wrapper });
+      const { container } = render(<DocumentList applicationId="app-1" category="other" />, {
+        wrapper: Wrapper,
+      });
       await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
       fireEvent.change(container.querySelector('input[type="file"]')!, {
         target: { files: [file] },
@@ -313,6 +318,151 @@ describe('DocumentsTab', () => {
         mime_type: 'application/pdf',
       });
       expect(mockCaptureException).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('DocumentList — one category per tab (JEF-396)', () => {
+  const doc = (id: string, name: string, documentType: string) => ({
+    ...mockDoc,
+    id,
+    name,
+    documentType,
+  });
+  const draft = (id: string, title: string, type: string) => ({ ...mockDraft, id, title, type });
+
+  const documents = [
+    doc('d-r', 'resume.pdf', 'resume'),
+    doc('d-c', 'letter.pdf', 'cover_letter'),
+    doc('d-p', 'portfolio.pdf', 'portfolio'),
+    doc('d-o', 'notes.pdf', 'other'),
+    doc('d-x', 'mystery.pdf', 'some_future_type'),
+  ];
+  const documentDrafts = [
+    draft('dr-r', 'Resume draft', 'resume'),
+    draft('dr-c', 'Cover letter draft', 'cover_letter'),
+  ];
+
+  const ALL = [
+    'resume.pdf',
+    'letter.pdf',
+    'portfolio.pdf',
+    'notes.pdf',
+    'mystery.pdf',
+    'Resume draft',
+    'Cover letter draft',
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockResponses({ documents, documentDrafts });
+  });
+
+  const shown = (names: string[]) => names.filter((n) => screen.queryByText(n) !== null);
+
+  it.each([
+    ['resume', ['resume.pdf', 'Resume draft']],
+    ['cover_letter', ['letter.pdf', 'Cover letter draft']],
+    ['other', ['portfolio.pdf', 'notes.pdf', 'mystery.pdf']],
+  ] as const)('shows only %s items, drafts and uploads together', async (category, expected) => {
+    render(<DocumentList applicationId="app-1" category={category} />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText(expected[0])).toBeInTheDocument());
+    expect(shown(ALL).sort()).toEqual([...expected].sort());
+  });
+
+  it('puts every item in exactly one tab', async () => {
+    const seen: string[] = [];
+    for (const category of ['cover_letter', 'resume', 'other'] as const) {
+      const { unmount } = render(<DocumentList applicationId="app-1" category={category} />, {
+        wrapper: Wrapper,
+      });
+      await waitFor(() => expect(shown(ALL).length).toBeGreaterThan(0));
+      seen.push(...shown(ALL));
+      unmount();
+    }
+    expect(seen.sort()).toEqual([...ALL].sort());
+  });
+
+  it('badges portfolio files on Other, the one tab that mixes types', async () => {
+    render(<DocumentList applicationId="app-1" category="other" />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('portfolio.pdf')).toBeInTheDocument());
+    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+  });
+
+  it('shows a per-category empty state', async () => {
+    mockResponses({ documents: [doc('d-r', 'resume.pdf', 'resume')] });
+    render(<DocumentList applicationId="app-1" category="cover_letter" />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('No cover letters yet')).toBeInTheDocument());
+  });
+
+  it('links each draftable tab to its own create form and gives Other none', async () => {
+    const hrefOfNewDraft = async (category: 'cover_letter' | 'resume' | 'other') => {
+      const { unmount } = render(<DocumentList applicationId="app-1" category={category} />, {
+        wrapper: Wrapper,
+      });
+      await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+      const link = screen.queryByText('New Draft')?.closest('a') ?? null;
+      const href = link?.getAttribute('href') ?? null;
+      unmount();
+      return href;
+    };
+
+    expect(await hrefOfNewDraft('cover_letter')).toContain('/cover-letters/new');
+    expect(await hrefOfNewDraft('resume')).toContain('/resumes/new');
+    expect(await hrefOfNewDraft('other')).toBeNull();
+  });
+
+  describe('upload type', () => {
+    const uploadWithin = async (category: 'cover_letter' | 'resume' | 'other') => {
+      mockGqlRequest.mockImplementation((query: string) => {
+        if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
+        if (query.includes('RequestUploadUrl'))
+          return Promise.resolve({ requestUploadUrl: { uploadUrl: 'tok', storageKey: 'k' } });
+        if (query.includes('ConfirmDocument')) return Promise.resolve({ confirmDocument: mockDoc });
+        return Promise.resolve({ documents: [] });
+      });
+      mockPutBlob.mockResolvedValue({});
+      const { container } = render(<DocumentList applicationId="app-1" category={category} />, {
+        wrapper: Wrapper,
+      });
+      await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+      fireEvent.change(container.querySelector('input[type="file"]')!, {
+        target: { files: [new File(['pdf'], 'x.pdf', { type: 'application/pdf' })] },
+      });
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /confirm upload/i })).toBeInTheDocument(),
+      );
+    };
+
+    it.each(['resume', 'cover_letter'] as const)(
+      'saves %s uploads with that type and never asks for one',
+      async (category) => {
+        await uploadWithin(category);
+        expect(screen.queryByLabelText(/document type/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /confirm upload/i }));
+        await waitFor(() =>
+          expect(mockGqlRequest).toHaveBeenCalledWith(
+            expect.stringContaining('ConfirmDocument'),
+            expect.objectContaining({
+              input: expect.objectContaining({ documentType: category }),
+            }),
+          ),
+        );
+      },
+    );
+
+    it('offers Other only the types that stay in it, so a file cannot vanish into another tab', async () => {
+      await uploadWithin('other');
+
+      const options = within(screen.getByRole('combobox'))
+        .getAllByRole('option')
+        .map((o) => (o as HTMLOptionElement).value);
+      expect(options).toEqual(['other', 'portfolio']);
     });
   });
 });

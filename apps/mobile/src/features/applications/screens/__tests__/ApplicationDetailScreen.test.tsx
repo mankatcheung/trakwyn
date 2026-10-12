@@ -257,9 +257,18 @@ describe('ApplicationDetailScreen', () => {
   // './interviews' resolves against the parent of `[id]` in expo-router
   // (dropping applicationId from the URL entirely, 404ing the sub-screen's
   // query), so the id must be spelled out in the pushed path explicitly.
-  it.each(['notes', 'interviews', 'contacts', 'activity', 'documents', 'offers'])(
+  it.each([
+    ['notes', 'notes'],
+    ['interviews', 'interviews'],
+    ['contacts', 'contacts'],
+    ['activity', 'activity'],
+    ['coverLetters', 'cover-letters'],
+    ['resumes', 'resumes'],
+    ['otherDocuments', 'other-documents'],
+    ['offers', 'offers'],
+  ])(
     'navigates to the %s section with the applicationId in the path when its row is pressed',
-    async (section) => {
+    async (key, slug) => {
       const push = jest.fn();
       mockedUseApplication.mockReturnValue({
         data: application,
@@ -275,9 +284,9 @@ describe('ApplicationDetailScreen', () => {
 
       const { getByTestId } = await renderScreen(push);
 
-      await fireEvent.press(getByTestId(`section-index-${section}`));
+      await fireEvent.press(getByTestId(`section-index-${key}`));
 
-      expect(push).toHaveBeenCalledWith(`./1/${section}`);
+      expect(push).toHaveBeenCalledWith(`./1/${slug}`);
     },
   );
 });

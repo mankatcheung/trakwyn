@@ -28,10 +28,11 @@
     "overviewTab": "Overview",
     "interviewsTab": "Interviews",
     "notesTab": "Notes",
-    "docsTab": "Docs",
+    "coverLettersTab": "Cover letters",
+    "resumesTab": "CVs",
+    "otherDocumentsTab": "Other documents",
     "contactsTab": "Contacts",
     "activityTab": "Activity",
-    "coverLetterTab": "Cover letter",
     "resumeMatchTab": "Resume match",
     "companyBriefingTab": "Company briefing",
     "offersTab": "Offers",
@@ -69,8 +70,6 @@
     "resumeBackgroundLabel": "Resume background (optional)",
     "pastePlaceholder": "Paste your resume text for a more tailored letter",
     "generateCoverLetter": "Generate cover letter",
-    "savedTitle": "Saved cover letters",
-    "noneSavedYet": "No cover letters saved yet.",
     "couldNotGenerateTitle": "Could not generate"
   },
   "resumeMatch": {

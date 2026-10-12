@@ -18,7 +18,7 @@ import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useCreateDocumentDraft } from '../../hooks/useCreateDocumentDraft';
 import { useExtractDocumentText } from '../../hooks/useExtractDocumentText';
 import { useGenerateResume } from '../../hooks/useGenerateResume';
-import { NewDocumentDraftScreen } from '../NewDocumentDraftScreen';
+import { NewCoverLetterDraftScreen, NewResumeDraftScreen } from '../NewDraftScreen';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
@@ -31,12 +31,12 @@ const mockedUseExtractDocumentText = jest.mocked(useExtractDocumentText);
 const mockedUseGenerateResume = jest.mocked(useGenerateResume);
 const mockedUseTheme = jest.mocked(useTheme);
 
-function renderScreen() {
+function renderScreen(Screen: () => React.JSX.Element) {
   mockedUseLocalSearchParams.mockReturnValue({ id: 'app-1' } as never);
-  return render(<NewDocumentDraftScreen />);
+  return render(<Screen />);
 }
 
-describe('NewDocumentDraftScreen', () => {
+describe('NewDraftScreen — no type to choose (JEF-396)', () => {
   const replace = jest.fn();
   const back = jest.fn();
 
@@ -49,20 +49,36 @@ describe('NewDocumentDraftScreen', () => {
       setMode: jest.fn(),
     } as never);
     mockedUseRouter.mockReturnValue({ replace, back } as never);
-    mockedUsePathname.mockReturnValue('/applications/app-1/documents/new');
     mockedUseDocuments.mockReturnValue({ data: [] } as never);
     mockedUseExtractDocumentText.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
     } as never);
+    mockedUseGenerateResume.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
+    mockedUseCreateDocumentDraft.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
   });
 
-  it('creates a blank cover letter draft and opens it', async () => {
+  it.each([
+    ['cover letter', NewCoverLetterDraftScreen],
+    ['resume', NewResumeDraftScreen],
+  ] as const)('has no type toggle on the %s screen', async (_name, Screen) => {
+    mockedUsePathname.mockReturnValue('/applications/app-1/new-resume');
+    const { queryByTestId, queryByText } = await renderScreen(Screen);
+
+    expect(queryByTestId('draft-type-cover_letter')).toBeNull();
+    expect(queryByTestId('draft-type-resume')).toBeNull();
+    expect(queryByText('Type')).toBeNull();
+  });
+
+  it('creates a cover letter draft with the type the route implies, and opens it', async () => {
+    mockedUsePathname.mockReturnValue('/applications/app-1/new-cover-letter');
     const mutateAsync = jest.fn().mockResolvedValue({ id: 'draft-1' });
     mockedUseCreateDocumentDraft.mockReturnValue({ mutateAsync, isPending: false } as never);
-    mockedUseGenerateResume.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
 
-    const { getByTestId } = await renderScreen();
+    const { getByTestId } = await renderScreen(NewCoverLetterDraftScreen);
 
     await fireEvent.changeText(getByTestId('draft-title-input'), 'My cover letter');
     await fireEvent.press(getByTestId('create-draft-button'));
@@ -75,10 +91,45 @@ describe('NewDocumentDraftScreen', () => {
         title: 'My cover letter',
       }),
     );
+    // The editor is documents/<id>, a sibling of the new-* route.
     expect(replace).toHaveBeenCalledWith('/applications/app-1/documents/draft-1');
   });
 
-  it('generates a resume draft from the resume type and opens it', async () => {
+  it('creates a resume draft with the resume type', async () => {
+    mockedUsePathname.mockReturnValue('/applications/app-1/new-resume');
+    const mutateAsync = jest.fn().mockResolvedValue({ id: 'draft-3' });
+    mockedUseCreateDocumentDraft.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId } = await renderScreen(NewResumeDraftScreen);
+
+    await fireEvent.changeText(getByTestId('draft-title-input'), 'My resume');
+    await fireEvent.press(getByTestId('create-draft-button'));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'resume', title: 'My resume' }),
+      ),
+    );
+    expect(replace).toHaveBeenCalledWith('/applications/app-1/documents/draft-3');
+  });
+
+  it('offers AI generation on the resume screen only', async () => {
+    mockedUsePathname.mockReturnValue('/applications/app-1/new-resume');
+    mockedUseCreateDocumentDraft.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+
+    const resume = await renderScreen(NewResumeDraftScreen);
+    expect(resume.queryByTestId('generate-resume-button')).toBeTruthy();
+    await resume.unmount();
+
+    const coverLetter = await renderScreen(NewCoverLetterDraftScreen);
+    expect(coverLetter.queryByTestId('generate-resume-button')).toBeNull();
+  });
+
+  it('generates a resume draft and opens it', async () => {
+    mockedUsePathname.mockReturnValue('/applications/app-1/new-resume');
     const generateMutateAsync = jest.fn().mockResolvedValue({ id: 'draft-2' });
     mockedUseCreateDocumentDraft.mockReturnValue({
       mutateAsync: jest.fn(),
@@ -89,9 +140,8 @@ describe('NewDocumentDraftScreen', () => {
       isPending: false,
     } as never);
 
-    const { getByTestId } = await renderScreen();
+    const { getByTestId } = await renderScreen(NewResumeDraftScreen);
 
-    await fireEvent.press(getByTestId('draft-type-resume'));
     await fireEvent.press(getByTestId('generate-resume-button'));
 
     await waitFor(() => expect(generateMutateAsync).toHaveBeenCalled());

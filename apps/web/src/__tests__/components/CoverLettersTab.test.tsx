@@ -18,7 +18,7 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { CoverLetterTab } from '#/routes/_authenticated/applications/$applicationId/-components/CoverLetterTab';
+import { CoverLettersTab } from '#/routes/_authenticated/applications/$applicationId/-components/CoverLettersTab';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
@@ -34,7 +34,7 @@ const savedLetter = {
   updatedAt: '2026-08-21T00:00:00.000Z',
 };
 
-/** Everything not a cover letter belongs to the Documents tab, not this one. */
+/** Everything not a cover letter belongs to another tab, not this one. */
 const resumeDraft = {
   id: 'draft-2',
   type: 'resume',
@@ -49,7 +49,7 @@ const respondWith = (drafts: unknown[], generated?: { id: string }) =>
     return Promise.resolve({ documentDrafts: drafts });
   });
 
-describe('CoverLetterTab', () => {
+describe('CoverLettersTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -58,16 +58,16 @@ describe('CoverLetterTab', () => {
     // The point of JEF-195: a letter generated in an earlier session is still
     // here, rather than having lived in component state.
     respondWith([savedLetter]);
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() =>
       expect(screen.getByText('Acme — Engineer (2026-08-21)')).toBeInTheDocument(),
     );
   });
 
-  it('leaves resume drafts to the Documents tab', async () => {
+  it('leaves resume drafts to the Resumes tab', async () => {
     respondWith([savedLetter, resumeDraft]);
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() =>
       expect(screen.getByText('Acme — Engineer (2026-08-21)')).toBeInTheDocument(),
@@ -77,14 +77,14 @@ describe('CoverLetterTab', () => {
 
   it('shows an empty state before anything has been generated', async () => {
     respondWith([]);
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('No cover letters yet')).toBeInTheDocument());
   });
 
   it('generates a letter and opens it in the editor', async () => {
     respondWith([], { id: 'draft-new' });
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: /generate cover letter/i }));
 
@@ -105,7 +105,7 @@ describe('CoverLetterTab', () => {
 
   it('passes pasted resume text through to the mutation', async () => {
     respondWith([]);
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My background' } });
     fireEvent.click(screen.getByRole('button', { name: /generate cover letter/i }));
@@ -126,7 +126,7 @@ describe('CoverLetterTab', () => {
         });
       return Promise.resolve({ documentDrafts: [] });
     });
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: /generate cover letter/i }));
 
@@ -146,7 +146,7 @@ describe('CoverLetterTab', () => {
       if (query.includes('GenerateCoverLetter')) return Promise.reject(new Error('rate limited'));
       return Promise.resolve({ documentDrafts: [] });
     });
-    render(<CoverLetterTab applicationId="app-1" />, { wrapper: Wrapper });
+    render(<CoverLettersTab applicationId="app-1" />, { wrapper: Wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: /generate cover letter/i }));
 

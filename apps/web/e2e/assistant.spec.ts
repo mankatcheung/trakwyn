@@ -198,8 +198,8 @@ test.describe('AI resume generation', () => {
   }) => {
     const applicationId = await createApplication(page, { company: 'DestCo', role: 'Engineer' });
 
-    await page.goto(`/applications/${applicationId}/documents/new`);
-    await page.getByRole('button', { name: 'Resume', exact: true }).click();
+    // The resume form is its own page, so there is no type to pick (JEF-396).
+    await page.goto(`/applications/${applicationId}/resumes/new`);
     await page.getByRole('button', { name: /generate resume/i }).click();
 
     // (?!new$) excludes the form's own URL — it already matches
@@ -211,12 +211,12 @@ test.describe('AI resume generation', () => {
     await expect(page.getByText('Acme Corp')).toBeVisible();
     await expect(page.getByText('Built things.')).toBeVisible();
 
-    // Reachable again from the application's own Documents tab, not just the
+    // Reachable again from the application's own Resumes tab, not just the
     // page this navigation happened to land on.
     await page.goto(`/applications/${applicationId}`);
     await page
       .getByRole('navigation', { name: 'Section navigation' })
-      .getByRole('button', { name: 'Documents' })
+      .getByRole('button', { name: 'Resumes' })
       .click();
     await expect(page.getByRole('link', { name: /DestCo — Engineer/ })).toBeVisible();
   });

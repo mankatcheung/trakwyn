@@ -4,7 +4,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +20,11 @@ import { useDocuments } from '../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../hooks/useDeleteDocument';
 import { useUploadDocument, type UploadDocumentInput } from '../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../hooks/useDocumentDraftQueries';
+import {
+  documentCategory,
+  UPLOAD_TYPES_BY_CATEGORY,
+  type DocumentCategory,
+} from '../lib/documentCategory';
 import type { Document, DocumentDraftSummary } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -26,14 +33,28 @@ import { TrashIcon } from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
-const DOCUMENT_TYPES = ['other', 'resume', 'cover_letter', 'portfolio'] as const;
+/**
+ * Cover letters and Resumes each have their own create-draft screen, so the
+ * type is never asked for; Other documents is upload-only. The routes are
+ * flat siblings of this one, like `./documents/<id>`, so a bare relative push
+ * resolves against `[id]/` (JEF-310).
+ */
+const NEW_DRAFT_ROUTE: Partial<Record<DocumentCategory, string>> = {
+  cover_letter: './new-cover-letter',
+  resume: './new-resume',
+};
+
+const EMPTY_TEXT_KEY: Record<DocumentCategory, string> = {
+  cover_letter: 'emptyCoverLetters',
+  resume: 'emptyResumes',
+  other: 'emptyOther',
+};
 
 function formatSize(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
 function DraftRow({ draft }: { draft: DocumentDraftSummary }) {
-  const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
@@ -42,18 +63,21 @@ function DraftRow({ draft }: { draft: DocumentDraftSummary }) {
         <Text style={styles.name} numberOfLines={1}>
           {draft.title}
         </Text>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.typeBadge, draft.type === 'resume' && styles.typeBadgeResume]}>
-            {draft.type === 'cover_letter' ? t('cover_letter') : t('resume')}
-          </Text>
-          <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
-        </View>
+        <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
       </Pressable>
     </Link>
   );
 }
 
-function DocumentRow({ document, onDelete }: { document: Document; onDelete: () => void }) {
+function DocumentRow({
+  document,
+  showTypeBadge,
+  onDelete,
+}: {
+  document: Document;
+  showTypeBadge: boolean;
+  onDelete: () => void;
+}) {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -86,26 +110,41 @@ function DocumentRow({ document, onDelete }: { document: Document; onDelete: () 
           accessibilityLabel={t('delete')}
         />
       </View>
-      {document.documentType !== 'other' ? (
-        <Text style={styles.typeBadge}>{document.documentType.replace('_', ' ')}</Text>
-      ) : null}
+      {showTypeBadge ? <Text style={styles.typeBadge}>{t(document.documentType)}</Text> : null}
     </View>
   );
 }
 
-export function DocumentsScreen() {
+interface DocumentCategoryScreenProps {
+  /** Only this category's drafts and uploads are shown — no screen overlaps another. */
+  category: DocumentCategory;
+  /** Shown above the drafts, e.g. the cover letter generator. */
+  header?: React.ReactNode;
+}
+
+export function DocumentCategoryScreen({ category, header }: DocumentCategoryScreenProps) {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
-  const { data: documents, isLoading, isError, error } = useDocuments(applicationId);
-  const { data: drafts } = useDocumentDrafts(applicationId);
+  const { data: allDocuments, isLoading, isError, error } = useDocuments(applicationId);
+  const { data: allDrafts } = useDocumentDrafts(applicationId);
   const uploadDocument = useUploadDocument(applicationId);
   const deleteDocument = useDeleteDocument(applicationId);
 
+  const allowedTypes = UPLOAD_TYPES_BY_CATEGORY[category];
+  const documents = useMemo(
+    () => (allDocuments ?? []).filter((d) => documentCategory(d.documentType) === category),
+    [allDocuments, category],
+  );
+  const drafts = useMemo(
+    () => (allDrafts ?? []).filter((d) => documentCategory(d.type) === category),
+    [allDrafts, category],
+  );
+
   const [pending, setPending] = useState<UploadDocumentInput | null>(null);
-  const [documentType, setDocumentType] = useState<string>('other');
+  const [documentType, setDocumentType] = useState<string>(allowedTypes[0]);
   const [version, setVersion] = useState('');
   const [pickError, setPickError] = useState<string | null>(null);
 
@@ -120,9 +159,9 @@ export function DocumentsScreen() {
       name: asset.name,
       mimeType: asset.mimeType ?? 'application/octet-stream',
       sizeBytes: asset.size ?? 0,
-      documentType: 'other',
+      documentType: allowedTypes[0],
     });
-    setDocumentType('other');
+    setDocumentType(allowedTypes[0]);
     setVersion('');
   };
 
@@ -153,16 +192,21 @@ export function DocumentsScreen() {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.draftsHeaderRow}>
-        <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
-      </View>
-      {drafts && drafts.length > 0 ? (
-        <View style={styles.draftsList}>
-          {drafts.map((draft) => (
-            <DraftRow key={draft.id} draft={draft} />
-          ))}
+  const newDraftRoute = NEW_DRAFT_ROUTE[category];
+
+  const listHeader = (
+    <View>
+      {header}
+      {drafts.length > 0 ? (
+        <View>
+          <View style={styles.draftsHeaderRow}>
+            <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
+          </View>
+          <View style={styles.draftsList}>
+            {drafts.map((draft) => (
+              <DraftRow key={draft.id} draft={draft} />
+            ))}
+          </View>
         </View>
       ) : null}
 
@@ -173,22 +217,27 @@ export function DocumentsScreen() {
           <Text style={styles.name} numberOfLines={1}>
             {pending.name}
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeRow}>
-            {DOCUMENT_TYPES.map((type) => (
-              <Pressable
-                key={type}
-                style={[styles.typeChip, documentType === type && styles.typeChipActive]}
-                onPress={() => setDocumentType(type)}
-                testID={`document-type-${type}`}
-              >
-                <Text
-                  style={[styles.typeChipText, documentType === type && styles.typeChipTextActive]}
+          {allowedTypes.length > 1 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeRow}>
+              {allowedTypes.map((type) => (
+                <Pressable
+                  key={type}
+                  style={[styles.typeChip, documentType === type && styles.typeChipActive]}
+                  onPress={() => setDocumentType(type)}
+                  testID={`document-type-${type}`}
                 >
-                  {type.replace('_', ' ')}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.typeChipText,
+                      documentType === type && styles.typeChipTextActive,
+                    ]}
+                  >
+                    {t(type)}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
           <TextInput
             placeholderTextColor={colors.textFaint}
             style={styles.input}
@@ -222,15 +271,29 @@ export function DocumentsScreen() {
           <Text style={styles.pickButtonText}>{t('chooseFile')}</Text>
         </Pressable>
       )}
+    </View>
+  );
 
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <FlatList
-        data={documents ?? []}
+        data={documents}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>{t('emptyText')}</Text>}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          drafts.length === 0 ? (
+            <Text style={styles.emptyText}>{t(EMPTY_TEXT_KEY[category])}</Text>
+          ) : null
+        }
         renderItem={({ item }) => (
           <DocumentRow
             document={item}
+            showTypeBadge={category === 'other' && item.documentType === 'portfolio'}
             onDelete={() =>
               deleteDocument.mutate(item.id, {
                 onError: (err) => Alert.alert(t('couldNotDeleteTitle'), getErrorMessage(err)),
@@ -241,12 +304,14 @@ export function DocumentsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      <FloatingActionButton
-        onPress={() => router.push('./documents/new')}
-        testID="new-draft-button"
-        accessibilityLabel={t('newDraft')}
-      />
-    </View>
+      {newDraftRoute ? (
+        <FloatingActionButton
+          onPress={() => router.push(newDraftRoute as never)}
+          testID="new-draft-button"
+          accessibilityLabel={t('newDraft')}
+        />
+      ) : null}
+    </KeyboardAvoidingView>
   );
 }
 
@@ -267,16 +332,15 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 16,
       paddingTop: 16,
     },
     sectionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
-    draftsList: { paddingHorizontal: 16, paddingTop: 10, gap: 10 },
-    list: { padding: 16 },
+    draftsList: { paddingTop: 10, gap: 10 },
+    list: { padding: 16, paddingBottom: 96 },
     separator: { height: 10 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
     pickButton: {
-      margin: 16,
+      marginVertical: 16,
       minHeight: 56,
       borderRadius: 12,
       borderWidth: 1,
@@ -288,7 +352,7 @@ function createStyles(colors: ThemeColors) {
     },
     pickButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
     pendingCard: {
-      margin: 16,
+      marginVertical: 16,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.primarySurface,
@@ -358,6 +422,5 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 2,
       textTransform: 'capitalize',
     },
-    typeBadgeResume: { color: colors.textMuted, backgroundColor: colors.surfaceAlt },
   });
 }

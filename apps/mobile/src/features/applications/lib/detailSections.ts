@@ -2,7 +2,6 @@
 export const DETAIL_SECTION_ROUTES = {
   notes: './notes',
   interviews: './interviews',
-  documents: './documents',
 } as const;
 
 export type DetailSectionKey = keyof typeof DETAIL_SECTION_ROUTES;
@@ -47,8 +46,9 @@ export const DETAIL_SECTION_GROUPS: DetailSectionGroup[] = [
   {
     titleKey: 'detail.groupDocuments',
     sections: [
-      { key: 'documents', slug: 'documents', labelKey: 'detail.docsTab' },
-      { key: 'coverLetter', slug: 'cover-letter', labelKey: 'detail.coverLetterTab' },
+      { key: 'coverLetters', slug: 'cover-letters', labelKey: 'detail.coverLettersTab' },
+      { key: 'resumes', slug: 'resumes', labelKey: 'detail.resumesTab' },
+      { key: 'otherDocuments', slug: 'other-documents', labelKey: 'detail.otherDocumentsTab' },
       { key: 'resumeMatch', slug: 'resume-match', labelKey: 'detail.resumeMatchTab' },
       { key: 'companyBriefing', slug: 'company-briefing', labelKey: 'detail.companyBriefingTab' },
     ],
