@@ -18,7 +18,7 @@ describe('document sections (JEF-396)', () => {
     expect(SECTION_IDS).not.toContain('cover-letter');
   });
 
-  it('orders the group Company briefing, Resumes, Cover letters, Other documents, Resume match', () => {
+  it('orders the group Company briefing, Resumes, Cover letters, Other documents', () => {
     const group = SECTION_GROUPS.find((g) => g.titleKey === 'applicationDetail.groupDocuments')!;
 
     expect(group.sections.map((s) => s.id)).toEqual([
@@ -26,8 +26,14 @@ describe('document sections (JEF-396)', () => {
       'resumes',
       'cover-letters',
       'other-documents',
-      'resume-match',
     ]);
+  });
+
+  it('has no standalone resume-match section; a saved link lands on Resumes (JEF-397)', () => {
+    expect(SECTION_IDS).not.toContain('resume-match');
+    expect(sectionSearchSchema.parse({ section: 'resume-match' })).toEqual({
+      section: 'resumes',
+    });
   });
 
   it('keeps old ?section= links working', () => {

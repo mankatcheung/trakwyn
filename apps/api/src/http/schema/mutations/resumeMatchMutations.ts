@@ -1,15 +1,17 @@
 import { GraphQLError } from 'graphql';
 import { builder } from '#src/http/schema/builder.js';
-import { ResumeMatchScoreRef } from '#src/http/schema/types/ResumeMatchScoreType.js';
+import { ResumeMatchRef } from '#src/http/schema/types/ResumeMatchScoreType.js';
 import { fromCodedError } from '#src/http/errors/AppError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 
 builder.mutationField('computeResumeMatchScore', (t) =>
   t.field({
-    type: ResumeMatchScoreRef,
+    type: ResumeMatchRef,
     args: {
       applicationId: t.arg.id({ required: true }),
-      resumeText: t.arg.string({ required: false }),
+      // Exactly one: the draft or the uploaded file being scored.
+      documentDraftId: t.arg.id({ required: false }),
+      documentId: t.arg.id({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.user)
@@ -17,9 +19,10 @@ builder.mutationField('computeResumeMatchScore', (t) =>
       const { computeResumeMatchScoreUseCase } = ctx.diScope.cradle;
       try {
         return await computeResumeMatchScoreUseCase.execute({
-          applicationId: args.applicationId,
+          applicationId: String(args.applicationId),
           userId: ctx.user.sub,
-          resumeText: args.resumeText,
+          documentDraftId: args.documentDraftId ? String(args.documentDraftId) : null,
+          documentId: args.documentId ? String(args.documentId) : null,
         });
       } catch (err) {
         throw fromCodedError(err);
