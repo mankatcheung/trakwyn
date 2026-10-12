@@ -28,11 +28,11 @@ export const SECTION_IDS = [
   'interviews',
   'contacts',
   'activity',
-  'cover-letters',
+  'company-briefing',
   'resumes',
+  'cover-letters',
   'other-documents',
   'resume-match',
-  'company-briefing',
   'offers',
 ] as const;
 
@@ -124,10 +124,9 @@ export const SECTION_GROUPS: SectionGroup[] = [
     titleKey: 'applicationDetail.groupDocuments',
     sections: [
       {
-        id: 'cover-letters',
-        labelKey: 'applicationDetail.tabCoverLetters',
-        icon: PenLineIcon,
-        countOf: (c) => c.coverLetters,
+        id: 'company-briefing',
+        labelKey: 'applicationDetail.tabCompanyBriefing',
+        icon: Building2Icon,
       },
       {
         id: 'resumes',
@@ -136,17 +135,18 @@ export const SECTION_GROUPS: SectionGroup[] = [
         countOf: (c) => c.resumes,
       },
       {
+        id: 'cover-letters',
+        labelKey: 'applicationDetail.tabCoverLetters',
+        icon: PenLineIcon,
+        countOf: (c) => c.coverLetters,
+      },
+      {
         id: 'other-documents',
         labelKey: 'applicationDetail.tabOtherDocuments',
         icon: UploadIcon,
         countOf: (c) => c.otherDocuments,
       },
       { id: 'resume-match', labelKey: 'applicationDetail.tabResumeMatch', icon: FileTextIcon },
-      {
-        id: 'company-briefing',
-        labelKey: 'applicationDetail.tabCompanyBriefing',
-        icon: Building2Icon,
-      },
     ],
   },
   {

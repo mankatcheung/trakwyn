@@ -46,11 +46,11 @@ export const DETAIL_SECTION_GROUPS: DetailSectionGroup[] = [
   {
     titleKey: 'detail.groupDocuments',
     sections: [
-      { key: 'coverLetters', slug: 'cover-letters', labelKey: 'detail.coverLettersTab' },
+      { key: 'companyBriefing', slug: 'company-briefing', labelKey: 'detail.companyBriefingTab' },
       { key: 'resumes', slug: 'resumes', labelKey: 'detail.resumesTab' },
+      { key: 'coverLetters', slug: 'cover-letters', labelKey: 'detail.coverLettersTab' },
       { key: 'otherDocuments', slug: 'other-documents', labelKey: 'detail.otherDocumentsTab' },
       { key: 'resumeMatch', slug: 'resume-match', labelKey: 'detail.resumeMatchTab' },
-      { key: 'companyBriefing', slug: 'company-briefing', labelKey: 'detail.companyBriefingTab' },
     ],
   },
   {

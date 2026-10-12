@@ -10,6 +10,16 @@ describe('detail sections (JEF-396)', () => {
     expect(slugs).not.toContain('cover-letter');
   });
 
+  it('orders the group Company briefing, Resumes, Cover letters, Other documents, Resume match', () => {
+    expect(slugs).toEqual([
+      'company-briefing',
+      'resumes',
+      'cover-letters',
+      'other-documents',
+      'resume-match',
+    ]);
+  });
+
   it('gives every section a unique key and slug', () => {
     const all = DETAIL_SECTION_GROUPS.flatMap((g) => g.sections);
     expect(new Set(all.map((s) => s.key)).size).toBe(all.length);

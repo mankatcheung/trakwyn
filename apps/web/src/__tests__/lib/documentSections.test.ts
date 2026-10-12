@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   ALL_SECTIONS,
   LEGACY_SECTION_IDS,
+  SECTION_GROUPS,
   SECTION_IDS,
   sectionSearchSchema,
   type SectionCounts,
@@ -15,6 +16,18 @@ describe('document sections (JEF-396)', () => {
     );
     expect(SECTION_IDS).not.toContain('documents');
     expect(SECTION_IDS).not.toContain('cover-letter');
+  });
+
+  it('orders the group Company briefing, Resumes, Cover letters, Other documents, Resume match', () => {
+    const group = SECTION_GROUPS.find((g) => g.titleKey === 'applicationDetail.groupDocuments')!;
+
+    expect(group.sections.map((s) => s.id)).toEqual([
+      'company-briefing',
+      'resumes',
+      'cover-letters',
+      'other-documents',
+      'resume-match',
+    ]);
   });
 
   it('keeps old ?section= links working', () => {
