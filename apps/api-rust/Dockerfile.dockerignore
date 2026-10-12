@@ -1,0 +1,27 @@
+# BuildKit reads <Dockerfile>.dockerignore for this build; the context is the
+# repo root, so everything the Rust API image doesn't need is excluded here.
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/.env
+**/.env.*
+.git
+.github
+.claude
+.design
+.design-sync
+graphify-out
+docs
+infra
+apps/api-rust/target
+apps/api-rust/uploads
+apps/api-rust/tests
+# apps/api: only the migrations are needed.
+apps/api/*
+!apps/api/drizzle
+apps/cli
+apps/extension
+apps/mobile
+apps/web
+packages

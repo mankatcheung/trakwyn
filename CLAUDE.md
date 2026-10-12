@@ -6,6 +6,7 @@ Guidance for Claude Code in this repository. Subsystem detail lives next to the 
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
 - `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
 - `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, OAuth sign-in per browser, and error reporting to PostHog.
+- `apps/api-rust/CLAUDE.md`: the Rust implementation of the API: the contract it is held to, the porting conventions, how to run its tests. A Cargo package outside the pnpm workspace, so Turbo does not build or test it; CI runs it in its own job.
 - Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's Blob store; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
 
 ## Commands
@@ -36,6 +37,7 @@ cd apps/web && pnpm codegen     # needs the API at localhost:3001
 - `apps/web`: TanStack Start.
 - `apps/mobile`: Expo.
 - `apps/extension`: the "Trakwyn Clipper" browser extension.
+- `apps/api-rust`: the same API in Rust (axum, async-graphql, sqlx). It serves the same GraphQL schema over the same database, with interchangeable tokens and cookies; `apps/api` remains the source of truth for the schema, the migrations and behaviour.
 - `apps/cli`: `@trakwyn/cli`.
 - `packages/ui`: `@trakwyn/ui`, a Tailwind v4 component library developed in Storybook.
 

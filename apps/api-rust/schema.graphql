@@ -1,0 +1,893 @@
+enum ActivityEventType {
+  document_deleted
+  document_uploaded
+  field_updated
+  interview_added
+  note_added
+  note_deleted
+  status_changed
+}
+
+type ActivityLog {
+  actorId: String
+  applicationId: String
+  createdAt: String
+  eventType: String
+  id: String
+  payload: String
+}
+
+type ApiToken {
+  createdAt: String
+  id: ID
+  lastUsedAt: String
+  name: String
+  scope: String
+}
+
+enum ApiTokenScope {
+  full
+  read
+}
+
+type ApplicationChannelAnalytics {
+  bySource: [ApplicationGroupStat!]
+  byTag: [ApplicationGroupStat!]
+}
+
+type ApplicationConnection {
+  hasNextPage: Boolean
+  items: [JobApplication!]
+  nextCursor: String
+}
+
+type ApplicationGroupStat {
+  applicationCount: Int
+  label: String
+  offerCount: Int
+  offerRate: Int
+  respondedCount: Int
+  responseRate: Int
+}
+
+type ApplicationHealthScore {
+  criteria: [HealthScoreCriterion!]
+  label: String
+  score: Int
+}
+
+type ApplicationSectionCounts {
+  contacts: Int
+  documentDrafts: Int
+  documents: Int
+  interviews: Int
+  notes: Int
+  offers: Int
+}
+
+enum ApplicationStatus {
+  accepted
+  applied
+  draft
+  interviewing
+  offered
+  rejected
+  withdrawn
+}
+
+type BulkRestoreResult {
+  restored: Int
+}
+
+type CalendarEvent {
+  applicationId: ID
+  company: String
+  date: String
+  id: ID
+  interviewRoundType: InterviewRoundType
+  role: String
+  type: CalendarEventType
+}
+
+enum CalendarEventType {
+  applied
+  followUp
+  interview
+}
+
+type CompanyBriefing {
+  applicationId: ID
+  content: String
+  generatedAt: String
+  id: ID
+}
+
+input ConfirmDocumentInput {
+  applicationId: ID!
+  documentType: String
+  mimeType: String!
+  name: String!
+  sizeBytes: Int!
+  storageKey: String!
+  version: String
+}
+
+type ConfirmTotpSetupResult {
+  backupCodes: [String!]
+}
+
+type Contact {
+  applicationId: ID
+  createdAt: String
+  email: String
+  id: ID
+  linkedinUrl: String
+  name: String
+  notes: String
+  phone: String
+  role: String
+  updatedAt: String
+}
+
+type Conversation {
+  createdAt: String
+  id: String
+  llmModel: String
+  llmProvider: String
+  title: String
+  updatedAt: String
+}
+
+type CreateApiTokenPayload {
+  createdAt: String
+  id: ID
+  name: String
+  scope: String
+  token: String
+}
+
+input CreateApplicationInput {
+  company: String!
+  description: String
+  followUpAt: String
+  jobUrl: String
+  location: String
+  role: String!
+  salaryRange: String
+  source: String
+  starred: Boolean
+  status: ApplicationStatus
+  tags: [String!]
+}
+
+input CreateDocumentDraftInput {
+  applicationId: ID!
+  contentJson: String
+  plainText: String
+  sourceDocumentId: ID
+  title: String!
+  type: String!
+}
+
+input CreateEducationInput {
+  degree: String
+  description: String
+  endDate: String
+  field: String
+  institution: String!
+  startDate: String!
+}
+
+input CreateInterviewRoundInput {
+  applicationId: ID!
+  completedAt: String
+  interviewerName: String
+  notes: String
+  outcome: InterviewRoundOutcome
+  scheduledAt: String
+  type: InterviewRoundType
+}
+
+input CreateOfferInput {
+  applicationId: ID!
+  baseSalary: Int!
+  benefits: String
+  bonus: Int
+  costOfLivingAdjustment: Int
+  currency: String = "USD"
+  equity: String
+  notes: String
+  period: String = "yearly"
+}
+
+type CreateShareLinkPayload {
+  createdAt: String
+  id: ID
+  name: String
+  token: String
+}
+
+input CreateSkillInput {
+  category: String
+  name: String!
+  proficiency: String
+}
+
+input CreateWorkExperienceInput {
+  company: String!
+  description: String
+  endDate: String
+  location: String
+  startDate: String!
+  title: String!
+}
+
+type CurrencyGroupStat {
+  averageYearlySalary: Float
+  count: Int
+  currency: String
+  maxYearlySalary: Float
+  medianYearlySalary: Float
+  minYearlySalary: Float
+}
+
+enum DigestFrequency {
+  DAILY
+  OFF
+  WEEKLY
+}
+
+type Document {
+  applicationId: ID
+  createdAt: String
+  documentType: String
+  id: ID
+  mimeType: String
+  name: String
+  sizeBytes: Int
+  sourceDraftId: String
+  url: String
+  version: String
+}
+
+type DocumentDraft {
+  applicationId: ID
+  contentJson: String
+  createdAt: String
+  id: ID
+  plainText: String
+  sourceDocumentId: String
+  title: String
+  type: String
+  updatedAt: String
+}
+
+type DocumentVersionOutcome {
+  applicationCount: Int
+  documentType: String
+  interviewCount: Int
+  interviewRate: Int
+  version: String
+}
+
+type Education {
+  createdAt: String
+  degree: String
+  description: String
+  endDate: String
+  field: String
+  id: ID
+  institution: String
+  startDate: String
+  updatedAt: String
+  userId: ID
+}
+
+type EmptyTrashResult {
+  deleted: Int
+  failed: Int
+}
+
+type ExtractDocumentTextPayload {
+  text: String
+}
+
+type HealthScoreCriterion {
+  earned: Int
+  key: String
+  label: String
+  met: Boolean
+  points: Int
+}
+
+type ImportSummary {
+  applicationsImported: Int
+  applicationsSkipped: Int
+  documentsSkipped: Int
+  notesImported: Int
+}
+
+type InterviewRound {
+  applicationId: ID
+  completedAt: String
+  createdAt: String
+  id: ID
+  interviewerName: String
+  notes: String
+  outcome: InterviewRoundOutcome
+  scheduledAt: String
+  type: InterviewRoundType
+  updatedAt: String
+}
+
+type InterviewRoundAnalytics {
+  byType: [InterviewRoundTypeStat!]
+  roundsToOffer: RoundsToTerminalStat
+  roundsToRejection: RoundsToTerminalStat
+}
+
+enum InterviewRoundOutcome {
+  cancelled
+  failed
+  passed
+  pending
+}
+
+enum InterviewRoundType {
+  hr
+  onsite
+  other
+  phone
+  technical
+}
+
+type InterviewRoundTypeStat {
+  cancelled: Int
+  failed: Int
+  passed: Int
+  pending: Int
+  type: InterviewRoundType
+}
+
+type JobApplication {
+  appliedAt: String
+  boardPosition: Int
+  company: String
+  createdAt: String
+  deletedAt: String
+  description: String
+  followUpAt: String
+  id: ID
+  jobUrl: String
+  likelyGhosted: Boolean
+  location: String
+  purgeAt: String
+  role: String
+  salaryRange: String
+  sectionCounts: ApplicationSectionCounts
+  source: String
+  starred: Boolean
+  status: ApplicationStatus
+  tags: [String!]
+  updatedAt: String
+  userId: ID
+}
+
+type LinkedOAuthAccount {
+  createdAt: String
+  email: String
+  provider: OAuthProvider
+}
+
+type LlmApiKey {
+  baseUrl: String
+  model: String
+  monthlyTokenLimit: Int
+  provider: String
+}
+
+type LlmUsageSummary {
+  cacheReadTokens: Int
+  cacheWriteTokens: Int
+  completionTokens: Int
+  lastUsedAt: String
+  limitReached: Boolean
+  monthlyTokenLimit: Int
+  promptTokens: Int
+  provider: String
+  requestCount: Int
+}
+
+type LoginEvent {
+  createdAt: String
+  id: String
+  ipAddress: String
+  userAgent: String
+}
+
+type LoginResult {
+  accessToken: String
+  success: Boolean
+  totpRequired: Boolean
+}
+
+type McpOAuthGrant {
+  authorizedAt: String
+  clientName: String
+  id: ID
+  lastUsedAt: String
+  scope: String
+}
+
+type Message {
+  content: String
+  createdAt: String
+  id: String
+  role: String
+}
+
+type MobileAuthPayload {
+  accessToken: String
+  refreshToken: String
+}
+
+type MobileLoginResult {
+  accessToken: String
+  refreshToken: String
+  success: Boolean
+  totpRequired: Boolean
+}
+
+input MoveApplicationOnBoardInput {
+  applicationId: ID!
+  orderedIds: [ID!]!
+  toStatus: ApplicationStatus!
+}
+
+type Mutation {
+  beginTotpSetup(password: String!): TotpSetup
+  bulkAddTagToApplications(ids: [ID!]!, tag: String!): [JobApplication!]
+  bulkDeleteApplications(ids: [ID!]!): Boolean
+  bulkRestoreApplications(ids: [ID!]!): BulkRestoreResult
+  bulkUpdateApplications(ids: [ID!]!, starred: Boolean, status: ApplicationStatus): [JobApplication!]
+  compareOffers(offerIds: [String!]!): [OfferComparison!]
+  computeResumeMatchScore(applicationId: ID!, resumeText: String): ResumeMatchScore
+  confirmAvatar(mimeType: String!, sizeBytes: Int!, storageKey: String!): String
+  confirmBackupEmail(token: String!): Boolean
+  confirmDocument(input: ConfirmDocumentInput!): Document
+  confirmEmailChange(token: String!): Boolean
+  confirmTotpSetup(code: String!): ConfirmTotpSetupResult
+  createApiToken(name: String!, scope: ApiTokenScope): CreateApiTokenPayload
+  createApplication(input: CreateApplicationInput!): JobApplication
+  createContact(applicationId: ID!, email: String, linkedinUrl: String, name: String!, notes: String, phone: String, role: String): Contact
+  createConversation(model: String, provider: String): Conversation
+  createDocumentDraft(input: CreateDocumentDraftInput!): DocumentDraft
+  createEducation(input: CreateEducationInput!): Education
+  createInterviewRound(input: CreateInterviewRoundInput!): InterviewRound
+  createNote(applicationId: ID!, content: String!): Note
+  createOffer(input: CreateOfferInput!): Offer
+  createShareLink(name: String!): CreateShareLinkPayload
+  createSkill(input: CreateSkillInput!): Skill
+  createWorkExperience(input: CreateWorkExperienceInput!): WorkExperience
+  deleteAccount(password: String!): Boolean
+  deleteApiToken(id: ID!): Boolean
+  deleteApplication(id: ID!): Boolean
+  deleteContact(id: ID!): Boolean
+  deleteConversation(id: ID!): Boolean
+  deleteDocument(id: ID!): Boolean
+  deleteDocumentDraft(id: ID!): Boolean
+  deleteEducation(id: ID!): Boolean
+  deleteInterviewRound(id: ID!): Boolean
+  deleteLlmApiKey(provider: String!): Boolean
+  deleteNote(id: ID!): Boolean
+  deleteOffer(id: String!): Boolean
+  deleteShareLink(id: ID!): Boolean
+  deleteSkill(id: ID!): Boolean
+  deleteWorkExperience(id: ID!): Boolean
+  disableTotp(password: String!): Boolean
+  dismissOnboardingChecklist: Boolean
+  emptyTrash: EmptyTrashResult
+  exchangeMobileOAuthCode(code: String!, codeVerifier: String!): MobileAuthPayload
+  exportDocumentDraftToPdf(draftId: ID!): Document
+  extractDocumentText(documentId: ID!): ExtractDocumentTextPayload
+  generateCompanyBriefing(applicationId: ID!): CompanyBriefing
+  generateCoverLetter(applicationId: ID!, resumeText: String): DocumentDraft
+  generateResume(applicationId: ID!): DocumentDraft
+  importUserData(data: String!): ImportSummary
+  login(email: String!, password: String!): LoginResult
+  loginMobile(email: String!, password: String!): MobileLoginResult
+  loginWithTotp(code: String!, email: String!, password: String!): String
+  loginWithTotpMobile(code: String!, email: String!, password: String!): MobileAuthPayload
+  logout: Boolean
+  markNotificationsRead(ids: [ID!]!, isRead: Boolean!): Boolean
+
+  """
+  Place a card in a kanban column. Returns the destination column in its new order.
+  """
+  moveApplicationOnBoard(input: MoveApplicationOnBoardInput!): [JobApplication!]
+  parseJobDescription(text: String, url: String): ParsedJobDescription
+  permanentlyDeleteApplication(id: ID!): Boolean
+  reauthenticate(code: String, password: String!): LoginResult
+  reauthenticateMobile(code: String, password: String!): MobileLoginResult
+  recordCookieConsent(analyticsAccepted: Boolean!): Boolean
+  refreshToken: String
+  refreshTokenMobile(refreshToken: String!): MobileAuthPayload
+  regenerateTotpBackupCodes(currentPassword: String!): ConfirmTotpSetupResult
+  register(email: String!, password: String!): String
+  registerExpoPushToken(token: String!): Boolean
+  registerMobile(email: String!, password: String!): MobileAuthPayload
+  registerPushSubscription(auth: String!, endpoint: String!, p256dh: String!): Boolean
+  removeAvatar: Boolean
+  removeBackupEmail(currentPassword: String!): Boolean
+  renameDocumentDraft(draftId: ID!, title: String!): DocumentDraft
+  requestAddBackupEmail(backupEmail: String!, currentPassword: String!): Boolean
+  requestAvatarUploadUrl(filename: String!, mimeType: String!): UploadUrlPayload
+  requestBackupEmailRecovery(backupEmail: String!): Boolean
+  requestEmailChange(currentPassword: String!, newEmail: String!): Boolean
+  requestPasswordReset(email: String!): Boolean
+  requestUploadUrl(input: RequestUploadUrlInput!): UploadUrlPayload
+  resetPassword(newPassword: String!, token: String!): Boolean
+  restoreApplication(id: ID!): Boolean
+  revokeMcpOAuthGrant(id: ID!): Boolean
+  revokeOtherSessions: Boolean
+  revokeSession(id: ID!): Boolean
+  saveLlmApiKey(apiKey: String!, baseUrl: String, model: String, provider: String!): Boolean
+  setDefaultLlmProvider(provider: String!): Boolean
+  setLlmApiKeyMonthlyLimit(monthlyTokenLimit: Int, provider: String!): Boolean
+  testLlmApiKey(apiKey: String, baseUrl: String, model: String, provider: String!): TestLlmApiKeyResult
+  unlinkOAuthAccount(provider: OAuthProvider!): Boolean
+  unregisterPushSubscription(endpoint: String!): Boolean
+  updateApplication(id: ID!, input: UpdateApplicationInput!): JobApplication
+  updateContact(email: String, id: ID!, linkedinUrl: String, name: String, notes: String, phone: String, role: String): Contact
+  updateDocumentDraftContent(input: UpdateDocumentDraftContentInput!): DocumentDraft
+  updateEducation(id: ID!, input: UpdateEducationInput!): Education
+  updateInterviewRound(id: ID!, input: UpdateInterviewRoundInput!): InterviewRound
+  updateNote(content: String!, id: ID!): Note
+  updateNotificationPreferences(digestFrequency: DigestFrequency, followUpRemindersEnabled: Boolean, pushNotificationsEnabled: Boolean, weeklyApplicationGoal: Int, weeklyDigestEnabled: Boolean): Boolean
+  updateOffer(input: UpdateOfferInput!): Offer
+  updatePassword(currentPassword: String!, newPassword: String!): Boolean
+  updateProfile(customAiPrompt: String, llmFallbackWhenLimited: Boolean, name: String, targetRole: String, timezone: String, useCrossApplicationContext: Boolean): Boolean
+  updateSkill(id: ID!, input: UpdateSkillInput!): Skill
+  updateWorkExperience(id: ID!, input: UpdateWorkExperienceInput!): WorkExperience
+  verifyEmail(token: String!): Boolean
+}
+
+type Note {
+  applicationId: ID
+  content: String
+  createdAt: String
+  id: ID
+  updatedAt: String
+}
+
+type Notification {
+  body: String
+  createdAt: String
+  id: ID
+  read: Boolean
+  title: String
+  type: String
+  url: String
+}
+
+type NotificationConnection {
+  hasNextPage: Boolean
+  items: [Notification!]
+  nextCursor: String
+}
+
+type NotificationPreferences {
+  digestFrequency: String
+  followUpRemindersEnabled: Boolean
+  pushNotificationsEnabled: Boolean
+  weeklyApplicationGoal: Int
+  weeklyDigestEnabled: Boolean
+}
+
+enum OAuthProvider {
+  github
+  google
+}
+
+type Offer {
+  applicationId: ID
+  baseSalary: Int
+  benefits: String
+  bonus: Int
+  costOfLivingAdjustment: Int
+  createdAt: String
+  currency: String
+  equity: String
+  id: ID
+  notes: String
+  period: String
+  updatedAt: String
+}
+
+type OfferAnalytics {
+  byCurrency: [CurrencyGroupStat!]
+  trend: [OfferTrendPoint!]
+}
+
+type OfferComparison {
+  company: String
+  normalizedYearlySalary: Int
+  offer: Offer
+  role: String
+  totalCompensation: Int
+}
+
+type OfferTrendPoint {
+  applicationId: ID
+  company: String
+  createdAt: String
+  currency: String
+  normalizedYearlySalary: Float
+  offerId: ID
+  role: String
+}
+
+type OfferWithApplication {
+  company: String
+  offer: Offer
+  role: String
+}
+
+type ParsedJobDescription {
+  company: String
+  description: String
+  location: String
+  role: String
+  salary: String
+}
+
+type Query {
+  activityLogs(applicationId: ID!): [ActivityLog!]
+  apiTokens: [ApiToken!]
+  application(id: ID!): JobApplication
+  applicationChannelAnalytics: ApplicationChannelAnalytics
+  applicationHealthScore(applicationId: ID!): ApplicationHealthScore
+  applications(status: ApplicationStatus): [JobApplication!]
+  applicationsPage(cursor: String, likelyGhosted: Boolean, limit: Int, search: String, starred: Boolean, status: ApplicationStatus): ApplicationConnection
+  calendarEvents: [CalendarEvent!]
+  chatHistory(conversationId: ID!): [Message!]
+  companyBriefing(applicationId: ID!): CompanyBriefing
+  contacts(applicationId: ID!): [Contact!]
+  conversations(limit: Int): [Conversation!]
+  documentDraft(id: ID!): DocumentDraft
+  documentDrafts(applicationId: ID!): [DocumentDraft!]
+  documentVersionOutcomes: [DocumentVersionOutcome!]
+  documents(applicationId: ID!): [Document!]
+  educations: [Education!]
+  exportUserData: String
+  interviewRoundAnalytics: InterviewRoundAnalytics
+  interviewRounds(applicationId: ID!): [InterviewRound!]
+  linkedOAuthAccounts: [LinkedOAuthAccount!]
+  llmApiKeys: [LlmApiKey!]
+  llmUsageSummary: [LlmUsageSummary!]
+  loginHistory: [LoginEvent!]
+  mcpOAuthGrants: [McpOAuthGrant!]
+  me: User
+  myOffers: [OfferWithApplication!]
+  notes(applicationId: ID!): [Note!]
+  notificationPreferences: NotificationPreferences
+  notificationsPage(cursor: String, limit: Int): NotificationConnection
+  offerAnalytics: OfferAnalytics
+  offers(applicationId: ID!): [Offer!]
+  responseTimeAnalytics: ResponseTimeAnalytics
+  searchConversations(query: String!): [Conversation!]
+  securityActivity: [SecurityActivityItem!]
+  sessions: [Session!]
+  shareLinks: [ShareLink!]
+  sharedSummary(token: String!): SharedSummary
+  skills: [Skill!]
+  totpEnabled: Boolean
+  trashedApplications: [JobApplication!]
+  unreadNotificationCount: Int
+  weeklyApplicationGoal: WeeklyApplicationGoal
+  workExperiences: [WorkExperience!]
+}
+
+input RequestUploadUrlInput {
+  applicationId: ID!
+  filename: String!
+  mimeType: String!
+}
+
+type ResponseTimeAnalytics {
+  timeInStage: [StageDurationStat!]
+  timeToFirstResponse: TimeToResponseStat
+}
+
+type ResumeMatchScore {
+  label: String
+  matchedKeywords: [String!]
+  missingKeywords: [String!]
+  score: Int
+  summary: String
+}
+
+type RoundsToTerminalStat {
+  average: Float
+  median: Float
+  sampleSize: Int
+}
+
+type SecurityActivityItem {
+  createdAt: String
+  eventType: String
+  id: String
+  ipAddress: String
+  userAgent: String
+}
+
+type Session {
+  createdAt: String
+  current: Boolean
+  deviceLabel: String
+  id: ID
+  ipAddress: String
+  lastUsedAt: String
+  location: String
+  userAgent: String
+}
+
+type ShareLink {
+  createdAt: String
+  id: ID
+  lastUsedAt: String
+  name: String
+}
+
+type SharedSummary {
+  applicationsUpdatedLast7Days: Int
+  generatedAt: String
+  statusCounts: [StatusCount!]
+  totalApplications: Int
+  totalInterviews: Int
+  upcomingInterviews: Int
+}
+
+type Skill {
+  category: String
+  createdAt: String
+  id: ID
+  name: String
+  proficiency: String
+  userId: ID
+}
+
+type StageDurationStat {
+  averageDays: Float
+  medianDays: Float
+  sampleSize: Int
+  status: ApplicationStatus
+}
+
+type StatusCount {
+  count: Int
+  status: ApplicationStatus
+}
+
+type TestLlmApiKeyResult {
+  error: String
+  ok: Boolean
+}
+
+type TimeToResponseStat {
+  averageDays: Float
+  medianDays: Float
+  sampleSize: Int
+}
+
+type TotpSetup {
+  otpauthUrl: String
+  qrCodeDataUrl: String
+  secret: String
+}
+
+input UpdateApplicationInput {
+  company: String
+  description: String
+  followUpAt: String
+  jobUrl: String
+  location: String
+  role: String
+  salaryRange: String
+  source: String
+  starred: Boolean
+  status: ApplicationStatus
+  tags: [String!]
+}
+
+input UpdateDocumentDraftContentInput {
+  contentJson: String!
+  draftId: ID!
+  plainText: String!
+}
+
+input UpdateEducationInput {
+  degree: String
+  description: String
+  endDate: String
+  field: String
+  institution: String
+  startDate: String
+}
+
+input UpdateInterviewRoundInput {
+  completedAt: String
+  interviewerName: String
+  notes: String
+  outcome: InterviewRoundOutcome
+  scheduledAt: String
+  type: InterviewRoundType
+}
+
+input UpdateOfferInput {
+  baseSalary: Int
+  benefits: String
+  bonus: Int
+  costOfLivingAdjustment: Int
+  currency: String
+  equity: String
+  notes: String
+  offerId: ID!
+  period: String
+}
+
+input UpdateSkillInput {
+  category: String
+  name: String
+  proficiency: String
+}
+
+input UpdateWorkExperienceInput {
+  company: String
+  description: String
+  endDate: String
+  location: String
+  startDate: String
+  title: String
+}
+
+type UploadUrlPayload {
+  storageKey: String
+  uploadUrl: String
+}
+
+type User {
+  avatarUrl: String
+  backupEmail: String
+  backupEmailVerifiedAt: String
+  customAiPrompt: String
+  defaultLlmProvider: String
+  email: String
+  id: ID
+  llmFallbackWhenLimited: Boolean
+  name: String
+  onboardingChecklistDismissedAt: String
+  targetRole: String
+  timezone: String
+  useCrossApplicationContext: Boolean
+}
+
+type WeeklyApplicationGoal {
+  currentWeekCount: Int
+  currentWeekStart: String
+  streakWeeks: Int
+  weeklyApplicationGoal: Int
+}
+
+type WorkExperience {
+  company: String
+  createdAt: String
+  description: String
+  endDate: String
+  id: ID
+  location: String
+  startDate: String
+  title: String
+  updatedAt: String
+  userId: ID
+}

@@ -1,0 +1,51 @@
+{
+  "exportedAt": "2025-06-01T00:00:00.000Z",
+  "user": {
+    "email": "ada@example.com",
+    "createdAt": "2025-01-02T03:04:05.006Z"
+  },
+  "applications": [
+    {
+      "company": "Acme",
+      "role": "Engineer",
+      "status": "interviewing",
+      "jobUrl": "https://acme.example/jobs/1",
+      "location": "Remote",
+      "salaryRange": "100-120k",
+      "description": "Line one\nSays \"hi\" \\ — ünïcode ✓ \t tab",
+      "appliedAt": "2025-03-02T08:30:00.000Z",
+      "createdAt": "2025-03-01T10:00:00.000Z",
+      "notes": [
+        {
+          "content": "Second call",
+          "createdAt": "2025-03-04T09:00:00.000Z"
+        },
+        {
+          "content": "Called the recruiter",
+          "createdAt": "2025-03-03T09:00:00.000Z"
+        }
+      ],
+      "documents": [
+        {
+          "name": "cv.pdf",
+          "mimeType": "application/pdf",
+          "sizeBytes": 2048,
+          "createdAt": "2025-03-05T12:00:00.123Z"
+        }
+      ]
+    },
+    {
+      "company": "Globex",
+      "role": "Designer",
+      "status": "draft",
+      "jobUrl": null,
+      "location": null,
+      "salaryRange": null,
+      "description": null,
+      "appliedAt": null,
+      "createdAt": "2025-02-01T00:00:00.000Z",
+      "notes": [],
+      "documents": []
+    }
+  ]
+}
