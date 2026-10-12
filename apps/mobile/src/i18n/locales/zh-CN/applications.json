@@ -66,12 +66,6 @@
     "deleteContactMessage": "此联系人将被永久删除。",
     "couldNotSaveTitle": "无法保存"
   },
-  "coverLetter": {
-    "resumeBackgroundLabel": "简历背景（可选）",
-    "pastePlaceholder": "粘贴你的简历文本以生成更贴合的求职信",
-    "generateCoverLetter": "生成求职信",
-    "couldNotGenerateTitle": "无法生成"
-  },
   "resumeMatch": {
     "usingUploadedResumePrefix": "正在使用你上传的简历：",
     "pasteDifferentText": "粘贴其他文本",

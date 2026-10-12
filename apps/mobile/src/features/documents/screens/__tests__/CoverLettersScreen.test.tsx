@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import '../../../../i18n';
 
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
@@ -7,9 +7,6 @@ jest.mock('../../hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }))
 jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn() }));
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
-jest.mock('../../../applications/hooks/useCoverLetterMutations', () => ({
-  useGenerateCoverLetter: jest.fn(),
-}));
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
@@ -27,9 +24,7 @@ import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../../hooks/useDocumentDraftQueries';
-import { useGenerateCoverLetter } from '../../../applications/hooks/useCoverLetterMutations';
 import { CoverLettersScreen } from '../CoverLettersScreen';
-import { ResumesScreen } from '../ResumesScreen';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
@@ -63,9 +58,6 @@ describe('CoverLettersScreen', () => {
       .mocked(useUploadDocument)
       .mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     jest.mocked(useDocumentDrafts).mockReturnValue({ data: [], isLoading: false } as never);
-    jest
-      .mocked(useGenerateCoverLetter)
-      .mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
   });
 
   it('lists saved cover letters and leaves resume drafts to the Resumes screen', async () => {
@@ -86,26 +78,10 @@ describe('CoverLettersScreen', () => {
     expect(getByText('No cover letters yet.')).toBeTruthy();
   });
 
-  it('generates a cover letter and opens its draft in the editor', async () => {
-    const mutate = jest.fn((_resumeText, options) =>
-      options?.onSuccess?.({
-        id: 'd3',
-        title: 'New Cover Letter',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      }),
-    );
-    jest.mocked(useGenerateCoverLetter).mockReturnValue({ mutate, isPending: false } as never);
-
-    const { getByTestId } = await render(<CoverLettersScreen />);
-    await fireEvent.press(getByTestId('generate-cover-letter-button'));
-
-    expect(mutate).toHaveBeenCalledWith(null, expect.any(Object));
-    expect(push).toHaveBeenCalledWith('./documents/d3');
-  });
-
-  it('keeps AI cover letter generation off the Resumes screen', async () => {
-    const { queryByTestId } = await render(<ResumesScreen />);
+  it('does not generate here: generation lives on the create screen, like resumes', async () => {
+    const { queryByTestId } = await render(<CoverLettersScreen />);
 
     expect(queryByTestId('generate-cover-letter-button')).toBeNull();
+    expect(queryByTestId('cover-letter-resume-input')).toBeNull();
   });
 });

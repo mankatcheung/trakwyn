@@ -23,7 +23,6 @@ import { InterviewsTab } from './InterviewsTab';
 import { ContactsTab } from './ContactsTab';
 import { DocumentList } from './DocumentList';
 import { CompanyBriefingTab } from './CompanyBriefingTab';
-import { CoverLettersTab } from './CoverLettersTab';
 import { ResumeMatchTab } from './ResumeMatchTab';
 import {
   sectionById,
@@ -238,7 +237,9 @@ export function ApplicationDetailPage() {
       )}
       {activeSection === 'contacts' && <ContactsTab applicationId={applicationId} />}
       {activeSection === 'activity' && <ActivityTab applicationId={applicationId} />}
-      {activeSection === 'cover-letters' && <CoverLettersTab applicationId={applicationId} />}
+      {activeSection === 'cover-letters' && (
+        <DocumentList applicationId={applicationId} category="cover_letter" />
+      )}
       {activeSection === 'resumes' && (
         <DocumentList applicationId={applicationId} category="resume" />
       )}

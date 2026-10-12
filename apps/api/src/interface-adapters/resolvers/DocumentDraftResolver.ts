@@ -98,12 +98,18 @@ export class DocumentDraftResolver {
   async generateCoverLetterDraft(
     userId: string,
     applicationId: string,
-    resumeText?: string | null,
+    resume?: {
+      resumeText?: string | null;
+      resumeDocumentId?: string | null;
+      resumeDraftId?: string | null;
+    },
   ): Promise<DocumentDraftDTO> {
     const draft = await this.deps.generateCoverLetterDraftUseCase.execute({
       userId,
       applicationId,
-      resumeText,
+      resumeText: resume?.resumeText,
+      resumeDocumentId: resume?.resumeDocumentId,
+      resumeDraftId: resume?.resumeDraftId,
     });
     return this.deps.documentDraftMapper.toDTO(draft);
   }

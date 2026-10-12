@@ -66,12 +66,6 @@
     "deleteContactMessage": "This contact will be permanently deleted.",
     "couldNotSaveTitle": "Could not save"
   },
-  "coverLetter": {
-    "resumeBackgroundLabel": "Resume background (optional)",
-    "pastePlaceholder": "Paste your resume text for a more tailored letter",
-    "generateCoverLetter": "Generate cover letter",
-    "couldNotGenerateTitle": "Could not generate"
-  },
   "resumeMatch": {
     "usingUploadedResumePrefix": "Using your uploaded resume:",
     "pasteDifferentText": "Paste different text",

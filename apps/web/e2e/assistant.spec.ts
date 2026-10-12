@@ -220,4 +220,28 @@ test.describe('AI resume generation', () => {
       .click();
     await expect(page.getByRole('link', { name: /DestCo — Engineer/ })).toBeVisible();
   });
+
+  test('generates a cover letter from its own create form and lists it under Cover letters', async ({
+    page,
+  }) => {
+    const applicationId = await createApplication(page, { company: 'LetterCo', role: 'Engineer' });
+
+    // Same flow as the resume: the generate block lives on the create form.
+    await page.goto(`/applications/${applicationId}/cover-letters/new`);
+    await expect(page.getByLabel(/base it on a resume/i)).toBeVisible();
+    await page.getByRole('button', { name: /generate cover letter/i }).click();
+
+    await expect(page).toHaveURL(
+      new RegExp(`/applications/${applicationId}/documents/(?!new$)[^/]+$`),
+    );
+
+    await page.goto(`/applications/${applicationId}`);
+    await page
+      .getByRole('navigation', { name: 'Section navigation' })
+      .getByRole('button', { name: 'Cover letters' })
+      .click();
+    await expect(page.getByRole('link', { name: /LetterCo — Engineer/ })).toBeVisible();
+    // The old in-tab generator is gone: generation happens on the create form only.
+    await expect(page.getByRole('button', { name: /generate cover letter/i })).toHaveCount(0);
+  });
 });

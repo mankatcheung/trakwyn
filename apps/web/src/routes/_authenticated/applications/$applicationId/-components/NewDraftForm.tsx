@@ -6,6 +6,7 @@ import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input, Select } from '@trakwyn/ui';
 import type { SectionId } from '../-sections';
+import { GenerateCoverLetterCard } from './GenerateCoverLetterCard';
 
 const GENERATE_RESUME_MUTATION = `
   mutation GenerateResume($applicationId: ID!) {
@@ -62,7 +63,7 @@ interface NewDraftFormProps {
 /**
  * The create-draft form behind both `cover-letters/new` and `resumes/new`.
  * Each route passes its own type, so there is nothing for the user to choose
- * (JEF-396); the resume form alone offers AI generation.
+ * (JEF-396); each offers its own AI generation from the saved profile.
  */
 export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
   const { t } = useLocale();
@@ -189,6 +190,8 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
             </Select>
           )}
         </div>
+
+        {type === 'cover_letter' && <GenerateCoverLetterCard applicationId={applicationId} />}
 
         {type === 'resume' && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">

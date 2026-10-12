@@ -66,12 +66,6 @@
     "deleteContactMessage": "此聯絡人將被永久刪除。",
     "couldNotSaveTitle": "無法儲存"
   },
-  "coverLetter": {
-    "resumeBackgroundLabel": "履歷背景（選填）",
-    "pastePlaceholder": "貼上你的履歷內容以產生更貼合的求職信",
-    "generateCoverLetter": "產生求職信",
-    "couldNotGenerateTitle": "無法產生"
-  },
   "resumeMatch": {
     "usingUploadedResumePrefix": "正在使用你上傳的履歷：",
     "pasteDifferentText": "貼上其他文字",

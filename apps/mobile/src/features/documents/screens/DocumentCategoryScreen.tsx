@@ -118,11 +118,9 @@ function DocumentRow({
 interface DocumentCategoryScreenProps {
   /** Only this category's drafts and uploads are shown — no screen overlaps another. */
   category: DocumentCategory;
-  /** Shown above the drafts, e.g. the cover letter generator. */
-  header?: React.ReactNode;
 }
 
-export function DocumentCategoryScreen({ category, header }: DocumentCategoryScreenProps) {
+export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps) {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -196,7 +194,6 @@ export function DocumentCategoryScreen({ category, header }: DocumentCategoryScr
 
   const listHeader = (
     <View>
-      {header}
       {drafts.length > 0 ? (
         <View>
           <View style={styles.draftsHeaderRow}>
