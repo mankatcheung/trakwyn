@@ -6,6 +6,7 @@ import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
+import { invalidateSectionCounts } from '../-sectionCounts';
 import { Button, Card, Spinner } from '@trakwyn/ui';
 
 const BRIEFING_FIELDS = `id applicationId content generatedAt`;
@@ -51,6 +52,8 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
     onSuccess: (result) => {
       qc.setQueryData(queryKey, { companyBriefing: result.generateCompanyBriefing });
       setCopied(false);
+      // The section index's generated marker is its own cache entry.
+      void invalidateSectionCounts(qc, applicationId);
     },
   });
 

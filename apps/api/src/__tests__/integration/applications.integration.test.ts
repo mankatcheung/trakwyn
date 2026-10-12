@@ -445,13 +445,13 @@ describe('applications integration', () => {
       `query AppCounts($id: ID!) {
         application(id: $id) {
           id
-          sectionCounts { notes interviews contacts documents documentDrafts offers }
+          sectionCounts { notes interviews contacts documents documentDrafts offers companyBriefing }
         }
       }`,
       { id: app.id },
     );
     const body = res.json() as GraphQLResponse<{
-      application: { sectionCounts: Record<string, number> };
+      application: { sectionCounts: Record<string, number | boolean> };
     }>;
 
     expect(body.errors).toBeUndefined();
@@ -465,6 +465,7 @@ describe('applications integration', () => {
       documents: 0,
       documentDrafts: 0,
       offers: 0,
+      companyBriefing: false,
     });
   });
 

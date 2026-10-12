@@ -51,7 +51,7 @@ const SECTION_COUNTS_QUERY = `
   query ApplicationSectionCounts($id: ID!) {
     application(id: $id) {
       id
-      sectionCounts { notes interviews contacts offers }
+      sectionCounts { notes interviews contacts offers companyBriefing }
     }
   }
 `;

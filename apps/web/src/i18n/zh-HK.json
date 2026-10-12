@@ -222,6 +222,8 @@
   "applicationDetail.groupTrack": "追蹤",
   "applicationDetail.groupDocuments": "文件與 AI",
   "applicationDetail.groupOutcome": "結果",
+  "applicationDetail.briefingGenerated": "已生成",
+  "applicationDetail.briefingNotGenerated": "未生成",
   "applicationDetail.moreActions": "更多操作",
   "applicationDetail.changeStatus": "變更狀態",
   "applicationDetail.backToSections": "返回欄目列表",

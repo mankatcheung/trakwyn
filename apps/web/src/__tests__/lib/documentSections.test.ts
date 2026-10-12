@@ -58,6 +58,7 @@ describe('document sections (JEF-396)', () => {
       interviews: 0,
       contacts: 0,
       offers: 0,
+      companyBriefing: false,
       coverLetters: 1,
       resumes: 2,
       otherDocuments: 3,
@@ -66,6 +67,24 @@ describe('document sections (JEF-396)', () => {
     expect([countOf('cover-letters'), countOf('resumes'), countOf('other-documents')]).toEqual([
       1, 2, 3,
     ]);
+  });
+
+  it('flags only Company Briefing as generated-or-not, not counted', () => {
+    const counts: SectionCounts = {
+      notes: 0,
+      interviews: 0,
+      contacts: 0,
+      offers: 0,
+      companyBriefing: true,
+      coverLetters: 0,
+      resumes: 0,
+      otherDocuments: 0,
+    };
+    const flagged = ALL_SECTIONS.filter((s) => s.generatedOf);
+    expect(flagged.map((s) => s.id)).toEqual(['company-briefing']);
+    expect(flagged[0].generatedOf!(counts)).toBe(true);
+    expect(flagged[0].generatedOf!({ ...counts, companyBriefing: false })).toBe(false);
+    expect(flagged[0].countOf).toBeUndefined();
   });
 });
 

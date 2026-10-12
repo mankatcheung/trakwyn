@@ -1,4 +1,5 @@
 import { useLocale } from '#/lib/i18n';
+import { SectionGeneratedMarker } from './SectionGeneratedMarker';
 import { SECTION_GROUPS, type SectionCounts, type SectionDef, type SectionId } from '../-sections';
 
 interface SectionSidebarProps {
@@ -17,6 +18,8 @@ export function SectionSidebar({ active, counts, onOpen }: SectionSidebarProps) 
 
   const countFor = (section: SectionDef): number | null =>
     counts && section.countOf ? section.countOf(counts) : null;
+  const generatedFor = (section: SectionDef): boolean | null =>
+    counts && section.generatedOf ? section.generatedOf(counts) : null;
 
   return (
     <nav
@@ -30,6 +33,7 @@ export function SectionSidebar({ active, counts, onOpen }: SectionSidebarProps) 
           </h2>
           {group.sections.map((section) => {
             const count = countFor(section);
+            const generated = generatedFor(section);
             const isActive = active === section.id;
             return (
               <button
@@ -45,6 +49,7 @@ export function SectionSidebar({ active, counts, onOpen }: SectionSidebarProps) 
               >
                 <section.icon size={16} />
                 <span className="flex-1 truncate">{t(section.labelKey)}</span>{' '}
+                {generated !== null && <SectionGeneratedMarker generated={generated} />}
                 {count !== null && count > 0 && (
                   <span className={`text-[11px] font-bold ${isActive ? '' : 'text-gray-400'}`}>
                     {count}

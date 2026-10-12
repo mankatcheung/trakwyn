@@ -109,6 +109,21 @@ export const APPLICATION_HEALTH_SCORE_QUERY = `
   }
 `;
 
+export const APPLICATION_SECTION_COUNTS_QUERY = `
+  query ApplicationSectionCounts($id: ID!) {
+    application(id: $id) {
+      id
+      sectionCounts {
+        notes
+        interviews
+        contacts
+        offers
+        companyBriefing
+      }
+    }
+  }
+`;
+
 export const ACTIVITY_LOGS_QUERY = `
   query ActivityLogs($applicationId: ID!) {
     activityLogs(applicationId: $applicationId) {

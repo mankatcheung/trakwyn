@@ -39,6 +39,8 @@
     "groupTrack": "追蹤",
     "groupDocuments": "文件",
     "groupOutcome": "結果",
+    "briefingGenerated": "已生成",
+    "briefingNotGenerated": "未生成",
     "healthScoreLabel": "健康分數",
     "appliedOnLabel": "申請日期",
     "activityLabel": "活動",

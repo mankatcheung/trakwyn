@@ -26,3 +26,46 @@ describe('detail sections (JEF-396)', () => {
     expect(new Set(all.map((s) => s.slug)).size).toBe(all.length);
   });
 });
+
+describe('detail section badges', () => {
+  const all = DETAIL_SECTION_GROUPS.flatMap((g) => g.sections);
+  const byKey = (key: string) => all.find((s) => s.key === key)!;
+  const counts = {
+    notes: 1,
+    interviews: 2,
+    contacts: 3,
+    offers: 4,
+    companyBriefing: true,
+    coverLetters: 5,
+    resumes: 6,
+    otherDocuments: 7,
+  };
+
+  it('reads each counted section from its own count', () => {
+    const keys = [
+      'notes',
+      'interviews',
+      'contacts',
+      'offers',
+      'coverLetters',
+      'resumes',
+      'otherDocuments',
+    ];
+    expect(keys.map((key) => byKey(key).countOf!(counts))).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('flags Company briefing as generated-or-not rather than counting it', () => {
+    expect(byKey('companyBriefing').countOf).toBeUndefined();
+    expect(byKey('companyBriefing').generatedOf!(counts)).toBe(true);
+    expect(byKey('companyBriefing').generatedOf!({ ...counts, companyBriefing: false })).toBe(
+      false,
+    );
+  });
+
+  it('leaves Activity and Resume match unmarked', () => {
+    for (const key of ['activity', 'resumeMatch']) {
+      expect(byKey(key).countOf).toBeUndefined();
+      expect(byKey(key).generatedOf).toBeUndefined();
+    }
+  });
+});

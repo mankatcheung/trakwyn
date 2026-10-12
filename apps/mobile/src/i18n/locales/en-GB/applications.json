@@ -39,6 +39,8 @@
     "groupTrack": "Track",
     "groupDocuments": "Documents",
     "groupOutcome": "Outcome",
+    "briefingGenerated": "Generated",
+    "briefingNotGenerated": "Not generated",
     "healthScoreLabel": "Health score",
     "appliedOnLabel": "Applied on",
     "activityLabel": "Activity",

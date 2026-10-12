@@ -84,6 +84,7 @@ export type ApplicationHealthScore = {
 
 export type ApplicationSectionCounts = {
   __typename?: 'ApplicationSectionCounts';
+  companyBriefing?: Maybe<Scalars['Boolean']['output']>;
   contacts?: Maybe<Scalars['Int']['output']>;
   documentDrafts?: Maybe<Scalars['Int']['output']>;
   documents?: Maybe<Scalars['Int']['output']>;
