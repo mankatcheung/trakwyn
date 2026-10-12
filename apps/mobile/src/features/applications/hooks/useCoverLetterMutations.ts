@@ -9,13 +9,20 @@ interface GeneratedCoverLetter {
   createdAt: string;
 }
 
+/** At most one of this application's resumes; neither means the saved profile alone. */
+export interface CoverLetterResumeSelection {
+  resumeDocumentId?: string | null;
+  resumeDraftId?: string | null;
+}
+
 export function useGenerateCoverLetter(applicationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (resumeText: string | null) =>
+    mutationFn: (selection: CoverLetterResumeSelection = {}) =>
       gqlRequest<{ generateCoverLetter: GeneratedCoverLetter }>(GENERATE_COVER_LETTER_MUTATION, {
         applicationId,
-        resumeText,
+        resumeDocumentId: selection.resumeDocumentId ?? null,
+        resumeDraftId: selection.resumeDraftId ?? null,
       }).then((data) => data.generateCoverLetter),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: documentDraftsQueryKey(applicationId) }),

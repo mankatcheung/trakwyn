@@ -923,6 +923,8 @@ export type MutationGenerateCompanyBriefingArgs = {
 
 export type MutationGenerateCoverLetterArgs = {
   applicationId: Scalars['ID']['input'];
+  resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
+  resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
   resumeText?: InputMaybe<Scalars['String']['input']>;
 };
 

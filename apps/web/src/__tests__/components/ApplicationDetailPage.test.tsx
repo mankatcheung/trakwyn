@@ -200,7 +200,7 @@ describe('ApplicationDetailPage', () => {
     });
   });
 
-  it('shows the notes and documents tabs', async () => {
+  it('shows the notes tab and the three document tabs, with no combined Documents tab', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
@@ -211,17 +211,16 @@ describe('ApplicationDetailPage', () => {
       expect(screen.getByText('Stripe')).toBeInTheDocument();
     });
 
-    expect(
-      within(screen.getByLabelText('Section navigation')).getByRole('button', { name: /notes/i }),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
-      }),
-    ).toBeInTheDocument();
+    const nav = within(screen.getByLabelText('Section navigation'));
+    expect(nav.getByRole('button', { name: /notes/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^cover letters/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^resumes/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^other documents/i })).toBeInTheDocument();
+    expect(nav.queryByRole('button', { name: /^documents/i })).not.toBeInTheDocument();
+    expect(nav.queryByRole('button', { name: /^cover letter$/i })).not.toBeInTheDocument();
   });
 
-  it('switches to documents tab and shows upload area', async () => {
+  it('switches to the other documents tab and shows upload area', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -235,7 +234,7 @@ describe('ApplicationDetailPage', () => {
 
     fireEvent.click(
       within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
+        name: /other documents/i,
       }),
     );
 
@@ -244,7 +243,7 @@ describe('ApplicationDetailPage', () => {
     });
   });
 
-  it('renders existing documents in documents tab', async () => {
+  it('renders existing documents in the other documents tab', async () => {
     const mockDoc = {
       id: 'doc-1',
       applicationId: 'app-test-id',
@@ -267,7 +266,7 @@ describe('ApplicationDetailPage', () => {
 
     fireEvent.click(
       within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
+        name: /other documents/i,
       }),
     );
 
@@ -319,7 +318,7 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /resumes/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
@@ -341,7 +340,7 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /other documents/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('portfolio.png')).toBeInTheDocument());
@@ -362,7 +361,7 @@ describe('ApplicationDetailPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /resumes/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
@@ -387,7 +386,7 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /cover letters/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('cover-letter.docx')).toBeInTheDocument());
@@ -587,8 +586,6 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     notes: 3,
     interviews: 2,
     contacts: 0,
-    documents: 1,
-    documentDrafts: 0,
     offers: 0,
   };
 
@@ -598,6 +595,8 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
       if (custom !== undefined) return custom;
       if (query.includes('ApplicationSectionCounts'))
         return Promise.resolve({ application: { id: 'app-test-id', sectionCounts: counts } });
+      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
+      if (query.includes('query Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
     });
@@ -620,6 +619,48 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     // Zero is not a badge saying "0" — the row just reads quieter.
     expect(within(nav).getByRole('button', { name: /^contacts$/i })).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: /contacts 0/i })).not.toBeInTheDocument();
+  });
+
+  it('badges each document tab with its own category, drafts and uploads together', async () => {
+    const upload = (id: string, documentType: string) => ({
+      id,
+      applicationId: 'app-test-id',
+      name: `${id}.pdf`,
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      url: `https://example.com/${id}.pdf`,
+      documentType,
+      version: null,
+      createdAt: '2024-01-02T00:00:00.000Z',
+    });
+    const draft = (id: string, type: string) => ({
+      id,
+      applicationId: 'app-test-id',
+      type,
+      title: id,
+      createdAt: '2024-01-02T00:00:00.000Z',
+      updatedAt: '2024-01-02T00:00:00.000Z',
+    });
+    respond((query) => {
+      if (query.includes('DocumentDrafts'))
+        return Promise.resolve({
+          documentDrafts: [draft('d1', 'cover_letter'), draft('d2', 'resume')],
+        });
+      if (query.includes('query Documents'))
+        return Promise.resolve({
+          documents: [upload('u1', 'resume'), upload('u2', 'portfolio'), upload('u3', 'other')],
+        });
+      return undefined;
+    });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(within(nav).getByRole('button', { name: /cover letters 1/i })).toBeInTheDocument(),
+    );
+    expect(within(nav).getByRole('button', { name: /resumes 2/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: /other documents 2/i })).toBeInTheDocument();
   });
 
   it('groups the sections under Track, Documents & AI and Outcome', async () => {

@@ -53,24 +53,34 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.activity') }}
     />,
     <Stack.Screen
-      key="documents"
-      name={`${prefix}[id]/documents/index`}
-      options={{ title: t('screenTitles.documents') }}
+      key="coverLetters"
+      name={`${prefix}[id]/cover-letters`}
+      options={{ title: t('screenTitles.coverLetters') }}
     />,
     <Stack.Screen
-      key="newDraft"
-      name={`${prefix}[id]/documents/new`}
-      options={{ title: t('screenTitles.newDraft') }}
+      key="resumes"
+      name={`${prefix}[id]/resumes`}
+      options={{ title: t('screenTitles.resumes') }}
+    />,
+    <Stack.Screen
+      key="otherDocuments"
+      name={`${prefix}[id]/other-documents`}
+      options={{ title: t('screenTitles.otherDocuments') }}
+    />,
+    <Stack.Screen
+      key="newCoverLetter"
+      name={`${prefix}[id]/new-cover-letter`}
+      options={{ title: t('screenTitles.newCoverLetter') }}
+    />,
+    <Stack.Screen
+      key="newResume"
+      name={`${prefix}[id]/new-resume`}
+      options={{ title: t('screenTitles.newResume') }}
     />,
     <Stack.Screen
       key="draft"
       name={`${prefix}[id]/documents/[draftId]`}
       options={{ title: t('screenTitles.draft') }}
-    />,
-    <Stack.Screen
-      key="coverLetter"
-      name={`${prefix}[id]/cover-letter`}
-      options={{ title: t('screenTitles.coverLetter') }}
     />,
     <Stack.Screen
       key="resumeMatch"

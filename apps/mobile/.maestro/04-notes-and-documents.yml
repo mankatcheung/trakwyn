@@ -77,14 +77,16 @@ appId: com.trakwyn.app
     commands:
       - tapOn:
           id: 'BackButton'
-# Documents sits further down the section index than a small phone shows.
+# Other documents sits further down the section index than a small phone
+# shows. It is upload-only, so it is the one document screen with nothing else
+# to wait for (JEF-396 split Documents into Cover letters, Resumes and Other).
 - scrollUntilVisible:
     element:
-      id: 'section-index-documents'
+      id: 'section-index-otherDocuments'
 # Let the scroll settle: on iOS a tap on a list that is still decelerating
 # only stops it and never reaches the row.
 - waitForAnimationToEnd
 - tapOn:
-    id: 'section-index-documents'
+    id: 'section-index-otherDocuments'
 - assertVisible:
     id: 'pick-document-button'

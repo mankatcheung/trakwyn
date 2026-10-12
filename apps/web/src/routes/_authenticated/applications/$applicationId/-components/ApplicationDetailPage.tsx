@@ -21,11 +21,17 @@ import { NotesTab } from './NotesTab';
 import { ActivityTab } from './ActivityTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ContactsTab } from './ContactsTab';
-import { DocumentsTab } from './DocumentsTab';
+import { DocumentList } from './DocumentList';
 import { CompanyBriefingTab } from './CompanyBriefingTab';
-import { CoverLetterTab } from './CoverLetterTab';
 import { ResumeMatchTab } from './ResumeMatchTab';
-import { sectionById, type SectionCounts, type SectionId } from '../-sections';
+import {
+  sectionById,
+  type ApiSectionCounts,
+  type SectionCounts,
+  type SectionId,
+} from '../-sections';
+import { documentSectionCounts } from '../-sectionCounts';
+import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
 import { Route } from '../index';
 
 const UPDATE_APPLICATION = `
@@ -45,7 +51,7 @@ const SECTION_COUNTS_QUERY = `
   query ApplicationSectionCounts($id: ID!) {
     application(id: $id) {
       id
-      sectionCounts { notes interviews contacts documents documentDrafts offers }
+      sectionCounts { notes interviews contacts offers }
     }
   }
 `;
@@ -107,12 +113,34 @@ export function ApplicationDetailPage() {
   const { data: countsData } = useQuery({
     queryKey: ['sectionCounts', applicationId],
     queryFn: () =>
-      gqlClient.request<{ application: { sectionCounts: SectionCounts } }>(SECTION_COUNTS_QUERY, {
-        id: applicationId,
-      }),
+      gqlClient.request<{ application: { sectionCounts: ApiSectionCounts } }>(
+        SECTION_COUNTS_QUERY,
+        {
+          id: applicationId,
+        },
+      ),
     enabled: canLoadPanels,
   });
-  const counts = countsData?.application.sectionCounts;
+  // The three document badges count one category each, which the API does not
+  // offer, so they come from the lists the tabs render. Held back until both
+  // have arrived: a badge of 0 that becomes 3 would read as an empty section
+  // for a moment.
+  const { data: documentsData } = useQuery({
+    ...documentsQueryOptions(applicationId),
+    enabled: canLoadPanels,
+  });
+  const { data: draftsData } = useQuery({
+    ...documentDraftsQueryOptions(applicationId),
+    enabled: canLoadPanels,
+  });
+  const apiCounts = countsData?.application.sectionCounts;
+  const counts: SectionCounts | undefined =
+    apiCounts && documentsData && draftsData
+      ? {
+          ...apiCounts,
+          ...documentSectionCounts(documentsData.documents, draftsData.documentDrafts),
+        }
+      : undefined;
 
   // Star and status are the same mutation with a different field, so they
   // share one optimistic updater rather than two near-copies of it.
@@ -209,9 +237,16 @@ export function ApplicationDetailPage() {
       )}
       {activeSection === 'contacts' && <ContactsTab applicationId={applicationId} />}
       {activeSection === 'activity' && <ActivityTab applicationId={applicationId} />}
-      {activeSection === 'documents' && <DocumentsTab applicationId={applicationId} />}
+      {activeSection === 'cover-letters' && (
+        <DocumentList applicationId={applicationId} category="cover_letter" />
+      )}
+      {activeSection === 'resumes' && (
+        <DocumentList applicationId={applicationId} category="resume" />
+      )}
+      {activeSection === 'other-documents' && (
+        <DocumentList applicationId={applicationId} category="other" />
+      )}
       {activeSection === 'company-briefing' && <CompanyBriefingTab applicationId={applicationId} />}
-      {activeSection === 'cover-letter' && <CoverLetterTab applicationId={applicationId} />}
       {activeSection === 'resume-match' && <ResumeMatchTab applicationId={applicationId} />}
       {activeSection === 'offers' && (
         <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">

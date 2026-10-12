@@ -5,6 +5,7 @@ import {
   CalendarIcon,
   DollarSignIcon,
   FileTextIcon,
+  FileUserIcon,
   PenLineIcon,
   UploadIcon,
   UsersIcon,
@@ -12,7 +13,7 @@ import {
 } from 'lucide-react';
 
 /**
- * The nine sections of an application, grouped as the detail page presents
+ * The ten sections of an application, grouped as the detail page presents
  * them, in one place.
  *
  * The index, the desktop sidebar and the `?section=` URL schema all read this,
@@ -27,28 +28,55 @@ export const SECTION_IDS = [
   'interviews',
   'contacts',
   'activity',
-  'documents',
-  'cover-letter',
-  'resume-match',
   'company-briefing',
+  'resumes',
+  'cover-letters',
+  'other-documents',
+  'resume-match',
   'offers',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
 
+/**
+ * Section ids that existed before JEF-396 split Documents in three, so a saved
+ * link or a back-button entry still opens somewhere sensible. `documents` held
+ * everything; Resumes is the closest single home for it.
+ */
+export const LEGACY_SECTION_IDS: Record<string, SectionId> = {
+  documents: 'resumes',
+  'cover-letter': 'cover-letters',
+};
+
+const resolveLegacySection = (value: unknown): unknown =>
+  typeof value === 'string' && Object.hasOwn(LEGACY_SECTION_IDS, value)
+    ? LEGACY_SECTION_IDS[value]
+    : value;
+
 /** Unknown or absent falls back to Notes rather than erroring the route. */
 export const sectionSearchSchema = z.object({
-  section: z.enum(SECTION_IDS).optional(),
+  section: z.preprocess(resolveLegacySection, z.enum(SECTION_IDS).optional()),
 });
 
-export interface SectionCounts {
+/** What the API's `sectionCounts` returns. */
+export interface ApiSectionCounts {
   notes: number;
   interviews: number;
   contacts: number;
-  documents: number;
-  documentDrafts: number;
   offers: number;
 }
+
+/**
+ * Derived on the client from the documents and drafts lists, because the API
+ * counts only totals and a tab's badge has to count its own category.
+ */
+export interface DocumentSectionCounts {
+  coverLetters: number;
+  resumes: number;
+  otherDocuments: number;
+}
+
+export type SectionCounts = ApiSectionCounts & DocumentSectionCounts;
 
 export interface SectionDef {
   id: SectionId;
@@ -96,23 +124,29 @@ export const SECTION_GROUPS: SectionGroup[] = [
     titleKey: 'applicationDetail.groupDocuments',
     sections: [
       {
-        id: 'documents',
-        labelKey: 'applicationDetail.tabDocuments',
-        icon: UploadIcon,
-        countOf: (c) => c.documents,
-      },
-      {
-        id: 'cover-letter',
-        labelKey: 'applicationDetail.tabCoverLetter',
-        icon: PenLineIcon,
-        countOf: (c) => c.documentDrafts,
-      },
-      { id: 'resume-match', labelKey: 'applicationDetail.tabResumeMatch', icon: FileTextIcon },
-      {
         id: 'company-briefing',
         labelKey: 'applicationDetail.tabCompanyBriefing',
         icon: Building2Icon,
       },
+      {
+        id: 'resumes',
+        labelKey: 'applicationDetail.tabResumes',
+        icon: FileUserIcon,
+        countOf: (c) => c.resumes,
+      },
+      {
+        id: 'cover-letters',
+        labelKey: 'applicationDetail.tabCoverLetters',
+        icon: PenLineIcon,
+        countOf: (c) => c.coverLetters,
+      },
+      {
+        id: 'other-documents',
+        labelKey: 'applicationDetail.tabOtherDocuments',
+        icon: UploadIcon,
+        countOf: (c) => c.otherDocuments,
+      },
+      { id: 'resume-match', labelKey: 'applicationDetail.tabResumeMatch', icon: FileTextIcon },
     ],
   },
   {

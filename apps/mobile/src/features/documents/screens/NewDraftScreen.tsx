@@ -14,15 +14,21 @@ import { useDocuments } from '../hooks/useDocumentQueries';
 import { useCreateDocumentDraft } from '../hooks/useCreateDocumentDraft';
 import { useExtractDocumentText } from '../hooks/useExtractDocumentText';
 import { useGenerateResume } from '../hooks/useGenerateResume';
+import { useDocumentDrafts } from '../hooks/useDocumentDraftQueries';
+import { useGenerateCoverLetter } from '../../applications/hooks/useCoverLetterMutations';
+import { documentCategory } from '../lib/documentCategory';
 import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import type { DocumentDraftType } from '../types';
 
-const DRAFT_TYPES: DocumentDraftType[] = ['cover_letter', 'resume'];
+interface NewDraftScreenProps {
+  /** Fixed by the route: the screen never asks, and cannot be switched (JEF-396). */
+  type: DocumentDraftType;
+}
 
-export function NewDocumentDraftScreen() {
+function NewDraftScreen({ type }: NewDraftScreenProps) {
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -34,19 +40,36 @@ export function NewDocumentDraftScreen() {
   const createDraft = useCreateDocumentDraft(applicationId);
   const extractText = useExtractDocumentText();
   const generateResume = useGenerateResume(applicationId);
+  const generateCoverLetter = useGenerateCoverLetter(applicationId);
+  const { data: drafts } = useDocumentDrafts(applicationId);
 
-  const [type, setType] = useState<DocumentDraftType>('cover_letter');
   const [title, setTitle] = useState('');
   const [sourceDocumentId, setSourceDocumentId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  // One of this application's resumes to base a generated cover letter on:
+  // an uploaded file or a resume draft. None means the saved profile alone.
+  const [resumeChoice, setResumeChoice] = useState<{
+    kind: 'file' | 'draft';
+    id: string;
+  } | null>(null);
 
-  const busy = createDraft.isPending || extractText.isPending || generateResume.isPending;
+  const busy =
+    createDraft.isPending ||
+    extractText.isPending ||
+    generateResume.isPending ||
+    generateCoverLetter.isPending;
+  const resumeFiles = (documents ?? []).filter(
+    (d) => documentCategory(d.documentType) === 'resume',
+  );
+  const resumeDrafts = (drafts ?? []).filter((d) => documentCategory(d.type) === 'resume');
 
   // `router.replace('../draftId')` resolves against the matched file route
   // (group segments included) rather than the browser pathname on web,
   // landing on an unmatched URL — deriving the target from the actual
-  // pathname sidesteps that and works the same on every platform.
-  const openDraft = (draftId: string) => router.replace(pathname.replace(/\/new$/, `/${draftId}`));
+  // pathname sidesteps that and works the same on every platform. The editor
+  // is `documents/<id>`, a sibling of this `new-*` route.
+  const openDraft = (draftId: string) =>
+    router.replace(pathname.replace(/\/new-(cover-letter|resume)$/, `/documents/${draftId}`));
 
   const handleCreate = async () => {
     setError(null);
@@ -84,27 +107,21 @@ export function NewDocumentDraftScreen() {
     }
   };
 
+  const handleGenerateCoverLetter = async () => {
+    setError(null);
+    try {
+      const draft = await generateCoverLetter.mutateAsync({
+        resumeDocumentId: resumeChoice?.kind === 'file' ? resumeChoice.id : null,
+        resumeDraftId: resumeChoice?.kind === 'draft' ? resumeChoice.id : null,
+      });
+      openDraft(draft.id);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>{t('typeLabel')}</Text>
-      <View style={styles.typeToggleRow}>
-        {DRAFT_TYPES.map((option) => {
-          const selected = type === option;
-          return (
-            <Pressable
-              key={option}
-              style={[styles.typeToggle, selected && styles.typeToggleSelected]}
-              onPress={() => setType(option)}
-              testID={`draft-type-${option}`}
-            >
-              <Text style={[styles.typeToggleText, selected && styles.typeToggleTextSelected]}>
-                {t(option)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       <Text style={styles.sectionLabel}>{t('titleLabel')}</Text>
       <TextInput
         style={styles.input}
@@ -143,6 +160,59 @@ export function NewDocumentDraftScreen() {
           );
         })}
       </View>
+
+      {type === 'cover_letter' && (
+        <View style={styles.generateCard}>
+          <Text style={styles.generateTitle}>{t('generateCoverLetterTitle')}</Text>
+          <Text style={styles.generateHelp}>{t('generateCoverLetterHelp')}</Text>
+          <Text style={styles.generateLabel}>{t('baseOnResumeLabel')}</Text>
+          <View style={styles.sourceList}>
+            <Pressable
+              style={[styles.sourceOption, !resumeChoice && styles.sourceOptionSelected]}
+              onPress={() => setResumeChoice(null)}
+              testID="cover-letter-resume-none"
+            >
+              <Text
+                style={[styles.sourceOptionText, !resumeChoice && styles.sourceOptionTextSelected]}
+              >
+                {t('noResumeOption')}
+              </Text>
+            </Pressable>
+            {[
+              ...resumeFiles.map((doc) => ({ kind: 'file' as const, id: doc.id, label: doc.name })),
+              ...resumeDrafts.map((d) => ({ kind: 'draft' as const, id: d.id, label: d.title })),
+            ].map((option) => {
+              const selected = resumeChoice?.kind === option.kind && resumeChoice.id === option.id;
+              return (
+                <Pressable
+                  key={`${option.kind}:${option.id}`}
+                  style={[styles.sourceOption, selected && styles.sourceOptionSelected]}
+                  onPress={() => setResumeChoice({ kind: option.kind, id: option.id })}
+                  testID={`cover-letter-resume-${option.kind}-${option.id}`}
+                >
+                  <Text
+                    style={[styles.sourceOptionText, selected && styles.sourceOptionTextSelected]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            style={[styles.generateButton, busy && styles.disabled]}
+            onPress={() => void handleGenerateCoverLetter()}
+            disabled={busy}
+            testID="generate-cover-letter-button"
+          >
+            <Text style={styles.generateButtonText}>
+              {generateCoverLetter.isPending
+                ? t('generatingCoverLetter')
+                : `✨ ${t('generateCoverLetter')}`}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {type === 'resume' && (
         <View style={styles.generateCard}>
@@ -190,19 +260,6 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 20, gap: 8, paddingBottom: 40 },
     sectionLabel: { fontSize: 14, fontWeight: '600', color: colors.text, marginTop: 12 },
     helpText: { fontSize: 12, color: colors.textSubtle, marginBottom: 4 },
-    typeToggleRow: { flexDirection: 'row', gap: 10 },
-    typeToggle: {
-      flex: 1,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      paddingVertical: 12,
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-    },
-    typeToggleSelected: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
-    typeToggleText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
-    typeToggleTextSelected: { color: colors.primary, fontWeight: '700' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -236,6 +293,7 @@ function createStyles(colors: ThemeColors) {
     },
     generateTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
     generateHelp: { fontSize: 12, color: colors.textSubtle },
+    generateLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginTop: 6 },
     generateButton: {
       marginTop: 6,
       alignSelf: 'flex-start',
@@ -277,4 +335,12 @@ function createStyles(colors: ThemeColors) {
     createButtonText: { fontSize: 14, fontWeight: '600', color: colors.onPrimary },
     disabled: { opacity: 0.6 },
   });
+}
+
+export function NewCoverLetterDraftScreen() {
+  return <NewDraftScreen type="cover_letter" />;
+}
+
+export function NewResumeDraftScreen() {
+  return <NewDraftScreen type="resume" />;
 }

@@ -28,10 +28,11 @@
     "overviewTab": "概览",
     "interviewsTab": "面试",
     "notesTab": "备注",
-    "docsTab": "文件",
+    "coverLettersTab": "求职信",
+    "resumesTab": "简历",
+    "otherDocumentsTab": "其他文档",
     "contactsTab": "联系人",
     "activityTab": "活动",
-    "coverLetterTab": "求职信",
     "resumeMatchTab": "简历匹配",
     "companyBriefingTab": "公司简报",
     "offersTab": "录用信息",
@@ -64,14 +65,6 @@
     "deleteContactTitle": "删除联系人",
     "deleteContactMessage": "此联系人将被永久删除。",
     "couldNotSaveTitle": "无法保存"
-  },
-  "coverLetter": {
-    "resumeBackgroundLabel": "简历背景（可选）",
-    "pastePlaceholder": "粘贴你的简历文本以生成更贴合的求职信",
-    "generateCoverLetter": "生成求职信",
-    "savedTitle": "已保存的求职信",
-    "noneSavedYet": "还没有保存的求职信。",
-    "couldNotGenerateTitle": "无法生成"
   },
   "resumeMatch": {
     "usingUploadedResumePrefix": "正在使用你上传的简历：",

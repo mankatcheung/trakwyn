@@ -139,11 +139,19 @@ export class GenerateCoverLetterUseCase {
       lines.push(`\n${crossApplicationContext}`);
     }
 
-    if (resumeText?.trim()) {
-      lines.push(`\nMy background / resume:\n${resumeText.trim().slice(0, 4000)}`);
-    } else if (profile) {
-      lines.push(`\nMy background:\n${profile.slice(0, 4000)}`);
-    } else {
+    // The profile is what the user maintains in Settings, so it is always the
+    // base. A selected resume adds to it rather than standing in for it
+    // (JEF-396); only with neither is the letter written generically.
+    const hasResume = Boolean(resumeText?.trim());
+    if (profile) {
+      lines.push(
+        `\nMy background (work experience, education and skills):\n${profile.slice(0, 4000)}`,
+      );
+    }
+    if (hasResume) {
+      lines.push(`\nMy resume:\n${resumeText!.trim().slice(0, 4000)}`);
+    }
+    if (!profile && !hasResume) {
       lines.push('\nWrite a strong general cover letter for someone applying to this role.');
     }
 

@@ -7,7 +7,7 @@ import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { DocumentPreviewModal, isPreviewableMimeType } from './DocumentPreviewModal';
-import { DOCUMENTS_QUERY, type Document } from './DocumentsTab';
+import { documentsQueryOptions } from '../-documentQueries';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import { Card, FormLabel, Spinner, Textarea } from '@trakwyn/ui';
 
@@ -37,10 +37,7 @@ export function ResumeMatchTab({ applicationId }: { applicationId: string }) {
   const [overridePaste, setOverridePaste] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const { data: documentsData } = useQuery({
-    queryKey: ['documents', applicationId],
-    queryFn: () => gqlClient.request<{ documents: Document[] }>(DOCUMENTS_QUERY, { applicationId }),
-  });
+  const { data: documentsData } = useQuery(documentsQueryOptions(applicationId));
   const resumeDoc = (documentsData?.documents ?? [])
     .filter((d) => d.documentType === 'resume')
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
