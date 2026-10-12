@@ -420,6 +420,21 @@ describe('failure reporting', () => {
     );
   });
 
+  it('does not report a network failure while the browser is offline', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    await middleware(new Error('Failed to fetch'), {
+      url: 'http://localhost:3000/graphql',
+      operationName: 'Applications',
+    });
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+    onLine.mockRestore();
+  });
+
   it('names the operation, which is the one identifying detail that is safe to send', async () => {
     const { gqlClient } = await loadInitialised();
     const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
