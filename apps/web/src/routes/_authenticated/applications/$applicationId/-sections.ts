@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 /**
- * The ten sections of an application, grouped as the detail page presents
+ * The nine sections of an application, grouped as the detail page presents
  * them, in one place.
  *
  * The index, the desktop sidebar and the `?section=` URL schema all read this,
@@ -32,20 +32,21 @@ export const SECTION_IDS = [
   'resumes',
   'cover-letters',
   'other-documents',
-  'resume-match',
   'offers',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
 
 /**
- * Section ids that existed before JEF-396 split Documents in three, so a saved
- * link or a back-button entry still opens somewhere sensible. `documents` held
- * everything; Resumes is the closest single home for it.
+ * Section ids that no longer exist, so a saved link or a back-button entry
+ * still opens somewhere sensible. `documents` held everything before JEF-396
+ * split it in three; Resumes is the closest single home for it. `resume-match`
+ * became a per-resume panel inside Resumes (JEF-397).
  */
 export const LEGACY_SECTION_IDS: Record<string, SectionId> = {
   documents: 'resumes',
   'cover-letter': 'cover-letters',
+  'resume-match': 'resumes',
 };
 
 const resolveLegacySection = (value: unknown): unknown =>
@@ -86,7 +87,7 @@ export interface SectionDef {
   icon: LucideIcon;
   /**
    * Which count decides whether this section reads as empty. Sections without
-   * one (activity, résumé match, company briefing) are never dimmed — they
+   * one (activity, company briefing) are never dimmed — they
    * hold generated or derived content, not a list the user has filled.
    */
   countOf?: (counts: SectionCounts) => number;
@@ -154,7 +155,6 @@ export const SECTION_GROUPS: SectionGroup[] = [
         icon: UploadIcon,
         countOf: (c) => c.otherDocuments,
       },
-      { id: 'resume-match', labelKey: 'applicationDetail.tabResumeMatch', icon: FileTextIcon },
     ],
   },
   {

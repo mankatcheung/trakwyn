@@ -339,11 +339,10 @@ describe('ApplicationDetailScreen', () => {
       expect(queryByTestId('section-count-interviews')).toBeNull();
     });
 
-    it('does not badge Activity, Resume match or Company briefing with a number', async () => {
+    it('does not badge Activity or Company briefing with a number', async () => {
       const { queryByTestId } = await renderWithCounts({ ...counts, companyBriefing: true });
 
       expect(queryByTestId('section-count-activity')).toBeNull();
-      expect(queryByTestId('section-count-resumeMatch')).toBeNull();
       expect(queryByTestId('section-count-companyBriefing')).toBeNull();
     });
 

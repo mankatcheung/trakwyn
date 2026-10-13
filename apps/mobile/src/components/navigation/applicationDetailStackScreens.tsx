@@ -83,11 +83,6 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.draft') }}
     />,
     <Stack.Screen
-      key="resumeMatch"
-      name={`${prefix}[id]/resume-match`}
-      options={{ title: t('screenTitles.resumeMatch') }}
-    />,
-    <Stack.Screen
       key="companyBriefing"
       name={`${prefix}[id]/company-briefing`}
       options={{ title: t('screenTitles.companyBriefing') }}

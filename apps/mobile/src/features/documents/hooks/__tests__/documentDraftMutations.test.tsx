@@ -99,4 +99,39 @@ describe('useUpdateDocumentDraftContent', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({ id: 'draft-1', updatedAt: '2026-01-02T00:00:00.000Z' });
   });
+
+  it('refetches resume matches after a save, so a stale one shows its reminder (JEF-397)', async () => {
+    mockedGqlRequest.mockResolvedValueOnce({
+      updateDocumentDraftContent: { id: 'draft-1', updatedAt: '2026-01-02T00:00:00.000Z' },
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+    const withClient = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = await renderHook(() => useUpdateDocumentDraftContent(), {
+      wrapper: withClient,
+    });
+    result.current.mutate({ draftId: 'draft-1', contentJson: '{}', plainText: 'hello' });
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['resumeMatches'] }));
+  });
+
+  it('does not refetch resume matches when the save fails', async () => {
+    mockedGqlRequest.mockRejectedValueOnce(new Error('boom'));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+    const withClient = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = await renderHook(() => useUpdateDocumentDraftContent(), {
+      wrapper: withClient,
+    });
+    result.current.mutate({ draftId: 'draft-1', contentJson: '{}', plainText: 'hello' });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(invalidate).not.toHaveBeenCalled();
+  });
 });

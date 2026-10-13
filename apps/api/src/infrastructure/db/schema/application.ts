@@ -8,7 +8,9 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
@@ -270,6 +272,40 @@ export const documentDraft = pgTable(
   (table) => [
     index('DocumentDraft_applicationId_idx').on(table.applicationId),
     index('DocumentDraft_sourceDocumentId_idx').on(table.sourceDocumentId),
+  ],
+);
+
+export const resumeMatch = pgTable(
+  'ResumeMatch',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('applicationId')
+      .notNull()
+      .references(() => jobApplication.id, { onDelete: 'cascade' }),
+    // Exactly one of the two is set (see the check below). Each is unique, so a
+    // resume has one match and regenerating replaces it.
+    documentDraftId: text('documentDraftId')
+      .unique()
+      .references(() => documentDraft.id, { onDelete: 'cascade' }),
+    documentId: text('documentId')
+      .unique()
+      .references(() => document.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    label: text('label').notNull(),
+    matchedKeywords: text('matchedKeywords').notNull().default('[]'),
+    missingKeywords: text('missingKeywords').notNull().default('[]'),
+    summary: text('summary').notNull().default(''),
+    generatedAt: timestamp('generatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    resumeTextHash: text('resumeTextHash').notNull(),
+  },
+  (table) => [
+    index('ResumeMatch_applicationId_idx').on(table.applicationId),
+    check(
+      'ResumeMatch_one_resume_check',
+      sql`(${table.documentDraftId} IS NOT NULL) <> (${table.documentId} IS NOT NULL)`,
+    ),
   ],
 );
 

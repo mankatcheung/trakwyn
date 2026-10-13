@@ -114,7 +114,8 @@ test.describe('Application detail page', () => {
     const docRow = page
       .getByText('resume.txt')
       .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]');
-    await docRow.locator('button').last().click();
+    // By name, not position: a resume row also carries its match button.
+    await docRow.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText('resume.txt')).not.toBeVisible();
   });
 

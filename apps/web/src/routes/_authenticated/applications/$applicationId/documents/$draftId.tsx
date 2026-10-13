@@ -8,6 +8,7 @@ import { getErrorMessage } from '#/lib/errors';
 import { downloadUrl } from '#/lib/downloadUrl';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor } from '../-components/DocumentDraftEditor';
+import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
 
@@ -132,6 +133,9 @@ export function DocumentDraftEditPage() {
       });
       setLastSaved(new Date());
       setDraft((prev) => (prev ? { ...prev, contentJson, plainText } : prev));
+      // The resume's saved match is stale once its text changes; refetch so the
+      // Resumes list shows the reminder instead of a cached "up to date" result.
+      void queryClient.invalidateQueries({ queryKey: resumeMatchesQueryKey(applicationId) });
       return true;
     } catch (err) {
       console.error('Failed to save:', err);

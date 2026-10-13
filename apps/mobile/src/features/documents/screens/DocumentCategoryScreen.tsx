@@ -30,6 +30,7 @@ import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { TrashIcon } from '../../applications/components/ApplicationIcons';
+import { ResumeMatchPanel } from '../../applications/components/ResumeMatchPanel';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
@@ -54,28 +55,47 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
-function DraftRow({ draft }: { draft: DocumentDraftSummary }) {
+function DraftRow({
+  draft,
+  matchApplicationId,
+}: {
+  draft: DocumentDraftSummary;
+  /** Set on Resumes, where each resume carries its match (JEF-397). */
+  matchApplicationId?: string;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <Link href={`./documents/${draft.id}`} asChild>
-      <Pressable style={styles.card} testID={`draft-${draft.id}`}>
-        <Text style={styles.name} numberOfLines={1}>
-          {draft.title}
-        </Text>
-        <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
-      </Pressable>
-    </Link>
+    <View style={styles.card}>
+      <Link href={`./documents/${draft.id}`} asChild>
+        <Pressable style={styles.draftLink} testID={`draft-${draft.id}`}>
+          <Text style={styles.name} numberOfLines={1}>
+            {draft.title}
+          </Text>
+          <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
+        </Pressable>
+      </Link>
+      {matchApplicationId ? (
+        <ResumeMatchPanel
+          applicationId={matchApplicationId}
+          resume={{ documentDraftId: draft.id }}
+          resumeId={draft.id}
+        />
+      ) : null}
+    </View>
   );
 }
 
 function DocumentRow({
   document,
   showTypeBadge,
+  matchApplicationId,
   onDelete,
 }: {
   document: Document;
   showTypeBadge: boolean;
+  /** Set on Resumes, where each resume carries its match (JEF-397). */
+  matchApplicationId?: string;
   onDelete: () => void;
 }) {
   const { t } = useTranslation('documents');
@@ -111,6 +131,13 @@ function DocumentRow({
         />
       </View>
       {showTypeBadge ? <Text style={styles.typeBadge}>{t(document.documentType)}</Text> : null}
+      {matchApplicationId ? (
+        <ResumeMatchPanel
+          applicationId={matchApplicationId}
+          resume={{ documentId: document.id }}
+          resumeId={document.id}
+        />
+      ) : null}
     </View>
   );
 }
@@ -201,7 +228,11 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
           </View>
           <View style={styles.draftsList}>
             {drafts.map((draft) => (
-              <DraftRow key={draft.id} draft={draft} />
+              <DraftRow
+                key={draft.id}
+                draft={draft}
+                matchApplicationId={category === 'resume' ? applicationId : undefined}
+              />
             ))}
           </View>
         </View>
@@ -291,6 +322,7 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
           <DocumentRow
             document={item}
             showTypeBadge={category === 'other' && item.documentType === 'portfolio'}
+            matchApplicationId={category === 'resume' ? applicationId : undefined}
             onDelete={() =>
               deleteDocument.mutate(item.id, {
                 onError: (err) => Alert.alert(t('couldNotDeleteTitle'), getErrorMessage(err)),
@@ -405,6 +437,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       gap: 12,
     },
+    draftLink: { gap: 6 },
     textColumn: { flex: 1, gap: 2 },
     name: { fontSize: 14, fontWeight: '600', color: colors.text },
     meta: { fontSize: 12, color: colors.textSubtle },

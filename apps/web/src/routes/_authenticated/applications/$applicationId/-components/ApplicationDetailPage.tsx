@@ -23,7 +23,6 @@ import { InterviewsTab } from './InterviewsTab';
 import { ContactsTab } from './ContactsTab';
 import { DocumentList } from './DocumentList';
 import { CompanyBriefingTab } from './CompanyBriefingTab';
-import { ResumeMatchTab } from './ResumeMatchTab';
 import {
   sectionById,
   type ApiSectionCounts,
@@ -247,7 +246,6 @@ export function ApplicationDetailPage() {
         <DocumentList applicationId={applicationId} category="other" />
       )}
       {activeSection === 'company-briefing' && <CompanyBriefingTab applicationId={applicationId} />}
-      {activeSection === 'resume-match' && <ResumeMatchTab applicationId={applicationId} />}
       {activeSection === 'offers' && (
         <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">

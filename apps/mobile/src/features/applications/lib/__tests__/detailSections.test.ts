@@ -10,14 +10,13 @@ describe('detail sections (JEF-396)', () => {
     expect(slugs).not.toContain('cover-letter');
   });
 
-  it('orders the group Company briefing, Resumes, Cover letters, Other documents, Resume match', () => {
-    expect(slugs).toEqual([
-      'company-briefing',
-      'resumes',
-      'cover-letters',
-      'other-documents',
-      'resume-match',
-    ]);
+  it('orders the group Company briefing, Resumes, Cover letters, Other documents', () => {
+    expect(slugs).toEqual(['company-briefing', 'resumes', 'cover-letters', 'other-documents']);
+  });
+
+  it('has no standalone Resume match section; it lives on each resume (JEF-397)', () => {
+    const all = DETAIL_SECTION_GROUPS.flatMap((g) => g.sections.map((s) => s.slug));
+    expect(all).not.toContain('resume-match');
   });
 
   it('gives every section a unique key and slug', () => {
@@ -62,10 +61,8 @@ describe('detail section badges', () => {
     );
   });
 
-  it('leaves Activity and Resume match unmarked', () => {
-    for (const key of ['activity', 'resumeMatch']) {
-      expect(byKey(key).countOf).toBeUndefined();
-      expect(byKey(key).generatedOf).toBeUndefined();
-    }
+  it('leaves Activity unmarked', () => {
+    expect(byKey('activity').countOf).toBeUndefined();
+    expect(byKey('activity').generatedOf).toBeUndefined();
   });
 });

@@ -557,7 +557,7 @@ export type Mutation = {
   bulkRestoreApplications?: Maybe<BulkRestoreResult>;
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
   compareOffers?: Maybe<Array<OfferComparison>>;
-  computeResumeMatchScore?: Maybe<ResumeMatchScore>;
+  computeResumeMatchScore?: Maybe<ResumeMatch>;
   confirmAvatar?: Maybe<Scalars['String']['output']>;
   confirmBackupEmail?: Maybe<Scalars['Boolean']['output']>;
   confirmDocument?: Maybe<Document>;
@@ -701,7 +701,8 @@ export type MutationCompareOffersArgs = {
 
 export type MutationComputeResumeMatchScoreArgs = {
   applicationId: Scalars['ID']['input'];
-  resumeText?: InputMaybe<Scalars['String']['input']>;
+  documentDraftId?: InputMaybe<Scalars['ID']['input']>;
+  documentId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1399,6 +1400,7 @@ export type Query = {
   offerAnalytics?: Maybe<OfferAnalytics>;
   offers?: Maybe<Array<Offer>>;
   responseTimeAnalytics?: Maybe<ResponseTimeAnalytics>;
+  resumeMatches?: Maybe<Array<ResumeMatch>>;
   searchConversations?: Maybe<Array<Conversation>>;
   securityActivity?: Maybe<Array<SecurityActivityItem>>;
   sessions?: Maybe<Array<Session>>;
@@ -1509,6 +1511,11 @@ export type QueryOffersArgs = {
 };
 
 
+export type QueryResumeMatchesArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
+
 export type QuerySearchConversationsArgs = {
   query: Scalars['String']['input'];
 };
@@ -1530,8 +1537,14 @@ export type ResponseTimeAnalytics = {
   timeToFirstResponse?: Maybe<TimeToResponseStat>;
 };
 
-export type ResumeMatchScore = {
-  __typename?: 'ResumeMatchScore';
+export type ResumeMatch = {
+  __typename?: 'ResumeMatch';
+  applicationId?: Maybe<Scalars['ID']['output']>;
+  documentDraftId?: Maybe<Scalars['ID']['output']>;
+  documentId?: Maybe<Scalars['ID']['output']>;
+  generatedAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  isStale?: Maybe<Scalars['Boolean']['output']>;
   label?: Maybe<Scalars['String']['output']>;
   matchedKeywords?: Maybe<Array<Scalars['String']['output']>>;
   missingKeywords?: Maybe<Array<Scalars['String']['output']>>;

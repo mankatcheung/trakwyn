@@ -33,7 +33,6 @@
     "otherDocumentsTab": "Other documents",
     "contactsTab": "Contacts",
     "activityTab": "Activity",
-    "resumeMatchTab": "Resume match",
     "companyBriefingTab": "Company briefing",
     "offersTab": "Offers",
     "groupTrack": "Track",
@@ -69,13 +68,11 @@
     "couldNotSaveTitle": "Could not save"
   },
   "resumeMatch": {
-    "usingUploadedResumePrefix": "Using your uploaded resume:",
-    "pasteDifferentText": "Paste different text",
-    "yourResumeLabel": "Your resume",
-    "pasteResumePlaceholder": "Paste your resume text",
-    "useUploadedResumeInstead": "Use uploaded resume ({{name}}) instead",
-    "checkMatch": "Check match",
-    "checkAgain": "Check again",
+    "generate": "Generate match",
+    "regenerate": "Regenerate",
+    "generatedAt": "Generated {{date}}",
+    "staleReminder": "This CV has changed since the match was generated. Regenerate it for an up-to-date result.",
+    "notGenerated": "Check how well this CV matches the job description.",
     "matchedKeywords": "Matched keywords",
     "missingKeywords": "Missing keywords",
     "couldNotCheckTitle": "Could not check match"

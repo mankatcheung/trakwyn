@@ -8,6 +8,7 @@ import { documentCategory, type DocumentCategory } from '#/lib/documentCategory'
 import { Button, Card, EmptyState } from '@trakwyn/ui';
 import { DocumentPreviewModal, isPreviewableMimeType } from './DocumentPreviewModal';
 import { DocumentUploadPanel } from './DocumentUploadPanel';
+import { ResumeMatchPanel } from './ResumeMatchPanel';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import {
   documentDraftsQueryKey,
@@ -124,26 +125,34 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
       {drafts.length > 0 && (
         <div className="space-y-3">
           {drafts.map((draft) => (
-            <Card key={draft.id} className="flex items-center justify-between px-4 py-3">
-              <div className="min-w-0">
-                <Link
-                  to="/applications/$applicationId/documents/$draftId"
-                  params={{ applicationId, draftId: draft.id }}
-                  className="block truncate text-sm font-medium text-blue-600 hover:underline"
+            <Card key={draft.id} className="px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <Link
+                    to="/applications/$applicationId/documents/$draftId"
+                    params={{ applicationId, draftId: draft.id }}
+                    className="block truncate text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    {draft.title}
+                  </Link>
+                  <span className="text-xs text-gray-400">
+                    {new Date(draft.updatedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <button
+                  onClick={() => deleteDraft(draft)}
+                  aria-label={t('common.delete')}
+                  className="shrink-0 rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                 >
-                  {draft.title}
-                </Link>
-                <span className="text-xs text-gray-400">
-                  {new Date(draft.updatedAt).toLocaleDateString()}
-                </span>
+                  <Trash2Icon size={14} />
+                </button>
               </div>
-              <button
-                onClick={() => deleteDraft(draft)}
-                aria-label={t('common.delete')}
-                className="shrink-0 rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-              >
-                <Trash2Icon size={14} />
-              </button>
+              {category === 'resume' && (
+                <ResumeMatchPanel
+                  applicationId={applicationId}
+                  resume={{ documentDraftId: draft.id }}
+                />
+              )}
             </Card>
           ))}
         </div>
@@ -152,56 +161,61 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
       <DocumentUploadPanel applicationId={applicationId} category={category} />
 
       {docs.map((doc) => (
-        <Card key={doc.id} className="flex items-center justify-between px-4 py-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              {isPreviewableMimeType(doc.mimeType) ? (
-                <Button
-                  variant="link"
-                  onClick={() => setPreviewDoc(doc)}
-                  className="truncate text-left"
-                >
-                  {doc.name}
-                </Button>
-              ) : (
-                <a
-                  href={doc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="truncate text-sm font-medium text-blue-600 hover:underline"
-                >
-                  {doc.name}
-                </a>
-              )}
-              {category === 'other' && doc.documentType === 'portfolio' && (
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                  {t('documents.portfolio')}
-                </span>
-              )}
-              {doc.version && <span className="text-xs text-gray-400">{doc.version}</span>}
+        <Card key={doc.id} className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {isPreviewableMimeType(doc.mimeType) ? (
+                  <Button
+                    variant="link"
+                    onClick={() => setPreviewDoc(doc)}
+                    className="truncate text-left"
+                  >
+                    {doc.name}
+                  </Button>
+                ) : (
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    {doc.name}
+                  </a>
+                )}
+                {category === 'other' && doc.documentType === 'portfolio' && (
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    {t('documents.portfolio')}
+                  </span>
+                )}
+                {doc.version && <span className="text-xs text-gray-400">{doc.version}</span>}
+              </div>
+              <p className="text-xs text-gray-400">
+                {doc.mimeType} · {(doc.sizeBytes / 1024).toFixed(1)} KB
+              </p>
             </div>
-            <p className="text-xs text-gray-400">
-              {doc.mimeType} · {(doc.sizeBytes / 1024).toFixed(1)} KB
-            </p>
+            <div className="ml-4 flex shrink-0 items-center gap-1">
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-sm p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                title={t('documents.openInNewTab')}
+              >
+                <ExternalLinkIcon size={14} />
+              </a>
+              <button
+                onClick={() => deleteDocument(doc)}
+                aria-label={t('common.delete')}
+                className="rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+              >
+                <Trash2Icon size={14} />
+              </button>
+            </div>
           </div>
-          <div className="ml-4 flex shrink-0 items-center gap-1">
-            <a
-              href={doc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-sm p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
-              title={t('documents.openInNewTab')}
-            >
-              <ExternalLinkIcon size={14} />
-            </a>
-            <button
-              onClick={() => deleteDocument(doc)}
-              aria-label={t('common.delete')}
-              className="rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-            >
-              <Trash2Icon size={14} />
-            </button>
-          </div>
+          {category === 'resume' && (
+            <ResumeMatchPanel applicationId={applicationId} resume={{ documentId: doc.id }} />
+          )}
         </Card>
       ))}
 

@@ -397,7 +397,7 @@ describe('ApplicationDetailPage', () => {
     });
   });
 
-  describe('resume match tab preview (JEF-70)', () => {
+  describe('resume match inside the Resumes section (JEF-397)', () => {
     const mockPdfResume = {
       id: 'doc-1',
       applicationId: 'app-test-id',
@@ -408,56 +408,43 @@ describe('ApplicationDetailPage', () => {
       documentType: 'resume',
       createdAt: '2024-01-02T00:00:00.000Z',
     };
-    const mockDocxResume = {
-      ...mockPdfResume,
-      name: 'resume.docx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      url: 'https://example.com/resume.docx',
+
+    const openResumes = async (documents: unknown[]) => {
+      mockGqlRequest.mockImplementation((query: string) => {
+        if (query.includes('Documents')) return Promise.resolve({ documents });
+        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
+        return Promise.resolve({ application: mockApp });
+      });
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      fireEvent.click(
+        within(screen.getByLabelText('Section navigation')).getByRole('button', {
+          name: /^resumes/i,
+        }),
+      );
     };
 
-    it('shows a Preview button for an uploaded PDF resume and opens the modal', async () => {
+    it('has no standalone Resume Match section', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfResume] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
       });
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
-      fireEvent.click(
-        within(screen.getByLabelText('Section navigation')).getByRole('button', {
+      expect(
+        within(screen.getByLabelText('Section navigation')).queryByRole('button', {
           name: /resume match/i,
         }),
-      );
-      await waitFor(() => {
-        expect(screen.getByText(/using your uploaded resume/i)).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /^preview$/i }));
-
-      const iframe = await screen.findByTitle('resume.pdf');
-      expect(iframe).toHaveAttribute('src', mockPdfResume.url);
+      ).not.toBeInTheDocument();
     });
 
-    it('does not show a Preview button for a non-previewable resume type', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxResume] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
-      render(<ApplicationDetailPage />, { wrapper: Wrapper });
-      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+    it('offers to generate a match on an uploaded resume', async () => {
+      await openResumes([mockPdfResume]);
 
-      fireEvent.click(
-        within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /resume match/i,
-        }),
-      );
-      await waitFor(() => {
-        expect(screen.getByText(/using your uploaded resume/i)).toBeInTheDocument();
-      });
-
-      expect(screen.queryByRole('button', { name: /^preview$/i })).not.toBeInTheDocument();
+      expect(await screen.findByText('resume.pdf')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /generate match/i })).toBeInTheDocument();
     });
   });
 
