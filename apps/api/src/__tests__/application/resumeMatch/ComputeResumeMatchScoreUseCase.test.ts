@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import { RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
@@ -10,6 +10,7 @@ import {
   makeDocumentTextExtractor,
   makeResumeMatchRepository,
   makeStorageProvider,
+  makeStoredObject,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
@@ -68,16 +69,6 @@ const run = (deps: ReturnType<typeof makeDeps>, input: Record<string, unknown> =
 const codeOf = (err: unknown) => (err as { code: string }).code;
 
 describe('ComputeResumeMatchScoreUseCase', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        arrayBuffer: () => Promise.resolve(new TextEncoder().encode('resume bytes').buffer),
-      }),
-    );
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -166,9 +157,10 @@ describe('ComputeResumeMatchScoreUseCase', () => {
       );
     });
 
-    it('does not fetch a file or read the profile', async () => {
-      await run(makeDeps());
-      expect(fetch).not.toHaveBeenCalled();
+    it('does not read a file from storage', async () => {
+      const deps = makeDeps();
+      await run(deps);
+      expect(deps.storageProvider.getObject).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -249,36 +241,57 @@ describe('ComputeResumeMatchScoreUseCase', () => {
       expect(codeOf(await run(deps, upload).catch((e) => e))).toBe('VALIDATION');
     });
 
-    it('refuses a file whose Content-Length exceeds the upload cap before reading it (S9)', async () => {
-      const arrayBuffer = vi.fn();
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          headers: new Headers({ 'content-length': String(RESUME_TEXT_EXTRACTION.MAX_BYTES + 1) }),
-          arrayBuffer,
-        }),
-      );
+    it('reads the uploaded file from storage by its key, not through a URL', async () => {
       const deps = makeDeps();
+      await run(deps, upload);
+
+      expect(deps.storageProvider.getObject).toHaveBeenCalledWith(
+        'users/user-1/applications/app-1/resume.pdf',
+      );
+      expect(deps.storageProvider.getSignedUrl).not.toHaveBeenCalled();
+      expect(deps.documentTextExtractor.extract).toHaveBeenCalledWith(
+        Buffer.from('resume bytes'),
+        'application/pdf',
+      );
+    });
+
+    it('refuses a file whose declared size exceeds the upload cap before reading it (S9)', async () => {
+      const oversized = makeStoredObject('x', RESUME_TEXT_EXTRACTION.MAX_BYTES + 1);
+      const deps = makeDeps({
+        storageProvider: makeStorageProvider({ getObject: vi.fn().mockResolvedValue(oversized) }),
+      });
 
       expect(codeOf(await run(deps, upload).catch((e) => e))).toBe('VALIDATION');
-      expect(arrayBuffer).not.toHaveBeenCalled();
+      expect(oversized.stream.destroyed).toBe(true);
       expect(deps.documentTextExtractor.extract).not.toHaveBeenCalled();
     });
 
-    it('refuses a body larger than the cap even when no Content-Length was sent', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          headers: new Headers(),
-          arrayBuffer: () => Promise.resolve(new ArrayBuffer(RESUME_TEXT_EXTRACTION.MAX_BYTES + 1)),
-        }),
-      );
-      const deps = makeDeps();
+    it('refuses a body larger than the cap even when no size was declared', async () => {
+      const oversized = makeStoredObject(Buffer.alloc(RESUME_TEXT_EXTRACTION.MAX_BYTES + 1), null);
+      const deps = makeDeps({
+        storageProvider: makeStorageProvider({ getObject: vi.fn().mockResolvedValue(oversized) }),
+      });
 
       expect(codeOf(await run(deps, upload).catch((e) => e))).toBe('VALIDATION');
       expect(deps.documentTextExtractor.extract).not.toHaveBeenCalled();
+    });
+
+    it('gives up on a storage read that never finishes', async () => {
+      vi.useFakeTimers();
+      try {
+        const deps = makeDeps({
+          storageProvider: makeStorageProvider({
+            getObject: vi.fn().mockReturnValue(new Promise(() => {})),
+          }),
+        });
+
+        const pending = run(deps, upload).catch((e) => e);
+        await vi.advanceTimersByTimeAsync(RESUME_TEXT_EXTRACTION.FETCH_TIMEOUT_MS + 1);
+
+        expect(codeOf(await pending)).toBe('SERVICE_UNAVAILABLE');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('gives up on extraction that never finishes', async () => {
@@ -299,9 +312,11 @@ describe('ComputeResumeMatchScoreUseCase', () => {
       }
     });
 
-    it('throws SERVICE_UNAVAILABLE when fetching from storage fails', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-      expect(codeOf(await run(makeDeps(), upload).catch((e) => e))).toBe('SERVICE_UNAVAILABLE');
+    it('throws SERVICE_UNAVAILABLE when the file is missing from storage', async () => {
+      const deps = makeDeps({
+        storageProvider: makeStorageProvider({ getObject: vi.fn().mockResolvedValue(null) }),
+      });
+      expect(codeOf(await run(deps, upload).catch((e) => e))).toBe('SERVICE_UNAVAILABLE');
     });
   });
 

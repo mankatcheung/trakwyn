@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { DocumentResolver } from '#src/interface-adapters/resolvers/DocumentResolver.js';
 import { DocumentMapper } from '#src/interface-adapters/mappers/DocumentMapper.js';
-import { makeDocument, makeStorageProvider } from '#src/__tests__/helpers/mocks/documents.js';
+import { makeDocument, makeDocumentFileLinks } from '#src/__tests__/helpers/mocks/documents.js';
 import type { IRequestUploadUrlUseCase } from '#src/use-cases/documents/IRequestUploadUrlUseCase.js';
 import type { IConfirmDocumentUseCase } from '#src/use-cases/documents/IConfirmDocumentUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
@@ -14,24 +14,19 @@ const makeDeps = (overrides?: object) => ({
   confirmDocumentUseCase: stub<IConfirmDocumentUseCase>({ execute: vi.fn() }),
   getDocumentsUseCase: stub<IGetDocumentsUseCase>({ execute: vi.fn() }),
   deleteDocumentUseCase: stub<IDeleteDocumentUseCase>({ execute: vi.fn() }),
-  storageProvider: makeStorageProvider({
-    getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
-  }),
+  documentFileLinks: makeDocumentFileLinks(),
   documentMapper: new DocumentMapper(),
   ...overrides,
 });
 
 describe('DocumentResolver', () => {
-  it('getDocuments: fetches a signed URL for each document and returns mapped DTOs', async () => {
+  it('getDocuments: links each document to its file route and returns mapped DTOs', async () => {
     const docs = [
       makeDocument({ id: 'doc-1', storageKey: 'path/to/doc1.pdf' }),
       makeDocument({ id: 'doc-2', storageKey: 'path/to/doc2.pdf' }),
     ];
     const deps = makeDeps({
       getDocumentsUseCase: stub<IGetDocumentsUseCase>({ execute: vi.fn().mockResolvedValue(docs) }),
-      storageProvider: makeStorageProvider({
-        getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
-      }),
     });
 
     const resolver = new DocumentResolver(deps);
@@ -41,11 +36,12 @@ describe('DocumentResolver', () => {
       userId: 'user-1',
       applicationId: 'app-1',
     });
-    expect(deps.storageProvider.getSignedUrl).toHaveBeenCalledTimes(2);
-    expect(deps.storageProvider.getSignedUrl).toHaveBeenCalledWith('path/to/doc1.pdf');
-    expect(deps.storageProvider.getSignedUrl).toHaveBeenCalledWith('path/to/doc2.pdf');
+    expect(deps.documentFileLinks.urlFor).toHaveBeenCalledTimes(2);
     expect(result).toHaveLength(2);
-    expect(result[0].url).toBe('https://cdn.example.com/signed');
+    expect(result[0].url).toBe('https://api.example.com/documents/doc-1/file');
+    expect(result[1].url).toBe('https://api.example.com/documents/doc-2/file');
+    // The storage key is an implementation detail the client never sees.
+    expect(JSON.stringify(result)).not.toContain('path/to/doc1.pdf');
   });
 
   it('requestUploadUrl: delegates to use case and returns the payload', async () => {
@@ -76,14 +72,11 @@ describe('DocumentResolver', () => {
     expect(result).toEqual(payload);
   });
 
-  it('confirmDocument: saves the record, fetches a signed URL, and returns the mapped DTO', async () => {
+  it('confirmDocument: saves the record, links its file route, and returns the mapped DTO', async () => {
     const doc = makeDocument({ storageKey: 'users/user-1/applications/app-1/abc-resume.pdf' });
     const deps = makeDeps({
       confirmDocumentUseCase: stub<IConfirmDocumentUseCase>({
         execute: vi.fn().mockResolvedValue(doc),
-      }),
-      storageProvider: makeStorageProvider({
-        getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed-resume'),
       }),
     });
 
@@ -96,8 +89,8 @@ describe('DocumentResolver', () => {
       sizeBytes: 12345,
     });
 
-    expect(deps.storageProvider.getSignedUrl).toHaveBeenCalledWith(doc.storageKey);
-    expect(result.url).toBe('https://cdn.example.com/signed-resume');
+    expect(deps.documentFileLinks.urlFor).toHaveBeenCalledWith(doc.id);
+    expect(result.url).toBe(`https://api.example.com/documents/${doc.id}/file`);
     expect(result.id).toBe(doc.id);
   });
 

@@ -3,6 +3,7 @@ import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextE
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
 import { NotFoundError, ForbiddenError } from '#src/use-cases/errors/DomainError.js';
+import { readStoredObject } from '#src/use-cases/documents/readStoredObject.js';
 
 export interface ExtractDocumentTextQuery {
   userId: string;
@@ -36,12 +37,11 @@ export class ExtractDocumentTextUseCase implements IExtractDocumentTextUseCase {
       throw new ForbiddenError('Not authorized');
     }
 
-    const signedUrl = await this.storageProvider.getSignedUrl(doc.storageKey);
-    const response = await fetch(signedUrl);
-    if (!response.ok) {
+    const object = await this.storageProvider.getObject(doc.storageKey);
+    if (!object) {
       throw new Error('Failed to read the document file');
     }
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = await readStoredObject(object);
     const text = await this.documentTextExtractor.extract(buffer, doc.mimeType);
 
     return { text };

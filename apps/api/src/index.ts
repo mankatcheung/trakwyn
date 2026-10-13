@@ -3,7 +3,7 @@
 // module-load time when buildApp() below is imported, reading process.env
 // as they go — dotenv/config's side effect has to run before any of that.
 import 'dotenv/config';
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest } from 'fastify';
 import { logs } from '@opentelemetry/api-logs';
 import { buildApp } from '#src/http/buildApp.js';
 import { SHUTDOWN } from '#src/http/constants.js';
@@ -11,6 +11,7 @@ import { createShutdownHandler } from '#src/http/gracefulShutdown.js';
 import { shutdownObservability } from '#src/infrastructure/observability/tracing.js';
 import { createOtelLogDestination } from '#src/infrastructure/observability/otelLogDestination.js';
 import { serializeLoggedErrorForPino } from '#src/infrastructure/observability/serializeLoggedError.js';
+import { redactDocumentToken } from '#src/infrastructure/observability/redactDocumentToken.js';
 import { AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 
 const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
@@ -22,7 +23,21 @@ const isProduction = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
 // OTLP one and the stdout one Cloud Logging collects, are serialized once.
 // PinoLogger applies the same function, for anything not logged through
 // Fastify's own logger.
-const serializers = { err: serializeLoggedErrorForPino };
+//
+// `req` replaces Fastify's default request serializer only to blank the token
+// in a document file link's URL (JEF-51): that token is the file's credential
+// until it expires, and a request that errors logs its URL. It logs the same
+// fields the default does.
+const serializers = {
+  err: serializeLoggedErrorForPino,
+  req: (request: FastifyRequest) => ({
+    method: request.method,
+    url: redactDocumentToken(request.url),
+    host: request.host,
+    remoteAddress: request.ip,
+    remotePort: request.socket?.remotePort,
+  }),
+};
 
 const fastify = Fastify({
   logger: isProduction

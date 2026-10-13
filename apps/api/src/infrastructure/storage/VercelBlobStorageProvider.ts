@@ -1,6 +1,7 @@
-import { head, del, put } from '@vercel/blob';
+import { Readable } from 'node:stream';
+import { head, del, put, BlobNotFoundError } from '@vercel/blob';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
 
 /**
@@ -42,6 +43,33 @@ export class VercelBlobStorageProvider implements IStorageProvider {
     this.assertConfigured();
     const blob = await head(key, { token: this.token });
     return blob.url;
+  }
+
+  /**
+   * Reads the blob server-side, so a caller never needs its URL. Today's store
+   * is public and the fetch is a plain GET; once documents move to a private
+   * store (JEF-51, PR 2) this is the one place that gains the token.
+   */
+  async getObject(key: string): Promise<StoredObject | null> {
+    this.assertConfigured();
+    let url: string;
+    try {
+      ({ url } = await head(key, { token: this.token }));
+    } catch (error) {
+      if (error instanceof BlobNotFoundError) return null;
+      throw error;
+    }
+
+    const response = await fetch(url);
+    if (response.status === 404) return null;
+    if (!response.ok || response.body === null) {
+      throw new Error(`Failed to read blob (status ${response.status})`);
+    }
+    const length = Number(response.headers.get('content-length'));
+    return {
+      stream: Readable.fromWeb(response.body as import('node:stream/web').ReadableStream),
+      size: Number.isFinite(length) && length > 0 ? length : null,
+    };
   }
 
   async delete(key: string): Promise<void> {

@@ -138,6 +138,28 @@ describe('LocalStorageProvider', () => {
     });
   });
 
+  describe('getObject', () => {
+    it('returns the stream and size of a stored file, without a content type', async () => {
+      const stream = { fake: 'stream' };
+      vi.mocked(fs.stat).mockResolvedValueOnce(fileStats(42));
+      vi.mocked(createReadStream).mockReturnValueOnce(stream as never);
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.getObject('documents/app-1/doc-1.pdf')).resolves.toEqual({
+        stream,
+        size: 42,
+      });
+    });
+
+    it('returns null for a missing file or an invalid key', async () => {
+      vi.mocked(fs.stat).mockRejectedValueOnce(errnoError('ENOENT'));
+      const provider = new LocalStorageProvider();
+
+      await expect(provider.getObject('users/u1/missing.pdf')).resolves.toBeNull();
+      await expect(provider.getObject('../secret.txt')).resolves.toBeNull();
+    });
+  });
+
   describe('openObject', () => {
     it('returns a stream, size and content type for a stored file', async () => {
       const stream = { fake: 'stream' };

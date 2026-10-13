@@ -9,7 +9,7 @@
  * Split out of the former root-level `src/constants.ts` (JEF-253).
  */
 
-import { FAKE_OAUTH, TRACING } from '#src/infrastructure/config/constants.js';
+import { DOCUMENT_FILE_ROUTE, FAKE_OAUTH, TRACING } from '#src/infrastructure/config/constants.js';
 import { TOKEN_LIFETIME_S } from '#src/use-cases/constants.js';
 
 /** Auth cookie names. */
@@ -47,6 +47,8 @@ export const ROUTES = {
    * abstraction, for the same reason.
    */
   CHAT_STREAM: '/chat/stream',
+  /** Serves a document's file behind a short-lived signed link (JEF-51). */
+  DOCUMENT_FILE: DOCUMENT_FILE_ROUTE.PATH,
   DIGEST_SEND: '/admin/digest/send',
   TRASH_PURGE: '/admin/trash/purge',
   REMINDERS_SEND: '/admin/reminders/send',

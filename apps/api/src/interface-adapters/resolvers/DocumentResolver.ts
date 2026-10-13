@@ -2,7 +2,7 @@ import type { IRequestUploadUrlUseCase } from '#src/use-cases/documents/IRequest
 import type { IConfirmDocumentUseCase } from '#src/use-cases/documents/IConfirmDocumentUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
 import type { IDeleteDocumentUseCase } from '#src/use-cases/documents/IDeleteDocumentUseCase.js';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
 import type {
   DocumentMapper,
   DocumentDTO,
@@ -13,7 +13,7 @@ interface Deps {
   confirmDocumentUseCase: IConfirmDocumentUseCase;
   getDocumentsUseCase: IGetDocumentsUseCase;
   deleteDocumentUseCase: IDeleteDocumentUseCase;
-  storageProvider: IStorageProvider;
+  documentFileLinks: IDocumentFileLinks;
   documentMapper: DocumentMapper;
 }
 
@@ -37,11 +37,8 @@ export class DocumentResolver {
 
   async getDocuments(userId: string, applicationId: string): Promise<DocumentDTO[]> {
     const docs = await this.deps.getDocumentsUseCase.execute({ userId, applicationId });
-    return Promise.all(
-      docs.map(async (doc) => {
-        const url = await this.deps.storageProvider.getSignedUrl(doc.storageKey);
-        return this.deps.documentMapper.toDTO(doc, url);
-      }),
+    return docs.map((doc) =>
+      this.deps.documentMapper.toDTO(doc, this.deps.documentFileLinks.urlFor(doc.id)),
     );
   }
 
@@ -61,8 +58,7 @@ export class DocumentResolver {
 
   async confirmDocument(userId: string, input: ConfirmInput): Promise<DocumentDTO> {
     const doc = await this.deps.confirmDocumentUseCase.execute({ userId, ...input });
-    const url = await this.deps.storageProvider.getSignedUrl(doc.storageKey);
-    return this.deps.documentMapper.toDTO(doc, url);
+    return this.deps.documentMapper.toDTO(doc, this.deps.documentFileLinks.urlFor(doc.id));
   }
 
   async deleteDocument(userId: string, documentId: string): Promise<boolean> {
