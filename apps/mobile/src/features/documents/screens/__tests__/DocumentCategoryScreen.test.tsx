@@ -23,6 +23,16 @@ jest.mock('expo-router', () => {
   };
 });
 
+// The panel has its own tests; here it only has to show up where it belongs.
+jest.mock('../../../applications/components/ResumeMatchPanel', () => {
+  const { View } = require('react-native');
+  return {
+    ResumeMatchPanel: ({ resumeId }: { resumeId: string }) => (
+      <View testID={`resume-match-panel-${resumeId}`} />
+    ),
+  };
+});
+
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -311,7 +321,7 @@ describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
 
   it.each([
     ['cover_letter', 'No cover letters yet.'],
-    ['resume', 'No resumes yet.'],
+    ['resume', 'No resumes yet. Create or upload one to check how well it matches this job.'],
     ['other', 'No other documents yet.'],
   ] as const)('shows a per-category empty state on %s', async (category, message) => {
     mockedUseDocuments.mockReturnValue({
@@ -332,6 +342,19 @@ describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
 
     expect(queryByTestId('new-draft-button')).toBeNull();
     expect(queryByTestId('pick-document-button')).toBeTruthy();
+  });
+
+  it('puts a match panel on every resume, drafts and uploads alike (JEF-397)', async () => {
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
+
+    expect(getByTestId('resume-match-panel-dr-r')).toBeTruthy();
+    expect(getByTestId('resume-match-panel-u-r')).toBeTruthy();
+  });
+
+  it.each(['cover_letter', 'other'] as const)('puts no match panel on %s', async (category) => {
+    const { queryByTestId } = await renderScreen(jest.fn(), category);
+
+    expect(queryByTestId(/^resume-match-panel-/)).toBeNull();
   });
 
   it('sends Resumes to its own create screen', async () => {

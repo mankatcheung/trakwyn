@@ -8,7 +8,7 @@
   "upload": "上傳",
   "chooseFile": "選擇要上傳的檔案",
   "emptyCoverLetters": "尚無求職信。",
-  "emptyResumes": "尚無履歷。",
+  "emptyResumes": "尚無履歷。建立或上傳一份，即可檢查它與此職缺的配對度。",
   "emptyOther": "尚無其他文件。",
   "couldNotDeleteTitle": "無法刪除",
   "uploadFailedStatus": "上傳失敗，狀態碼 {{status}}",
