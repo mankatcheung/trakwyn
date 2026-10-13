@@ -24,6 +24,7 @@ import {
 import { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
+import { DocumentFileLinkService } from '#src/infrastructure/auth/DocumentFileLinkService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import { parseExtensionOAuthIds } from '#src/infrastructure/auth/extensionOAuthIds.js';
@@ -123,6 +124,7 @@ export const infrastructure = {
     },
   ),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
+  documentFileLinks: asClass(DocumentFileLinkService, { lifetime: Lifetime.SINGLETON }),
   // asFunction for the same options-object reason as outboundUrlPolicy below:
   // BrevoEmailService takes optional `{ metrics }` (JEF-356).
   emailService: asFunction(() => new EmailService(), { lifetime: Lifetime.SINGLETON }),

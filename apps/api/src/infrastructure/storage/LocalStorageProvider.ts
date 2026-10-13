@@ -1,7 +1,7 @@
 import { promises as fs, createReadStream } from 'fs';
 import type { Readable } from 'stream';
 import { join, dirname, extname, resolve, sep } from 'path';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
 
 /** Extension → Content-Type for files served back by `openObject`. */
@@ -88,6 +88,11 @@ export class LocalStorageProvider implements IStorageProvider {
       size,
       contentType: MIME_BY_EXTENSION[extname(filePath).toLowerCase()] ?? FALLBACK_MIME,
     };
+  }
+
+  async getObject(key: string): Promise<StoredObject | null> {
+    const object = await this.openObject(key);
+    return object && { stream: object.stream, size: object.size };
   }
 
   async putObject(key: string, data: Buffer, _mimeType: string): Promise<void> {

@@ -6,6 +6,7 @@
  * imported by 157 test files.
  */
 
+import { Readable } from 'node:stream';
 import { vi } from 'vitest';
 import type { Document } from '#src/domain/document/Document.js';
 import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
@@ -15,7 +16,8 @@ import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDra
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
 
 export const makeDocumentRepository = (
   overrides?: Partial<IDocumentRepository>,
@@ -105,9 +107,29 @@ export const makeDocumentTextExtractor = (
   ...overrides,
 });
 
+/** A stored file whose body is `body`; `size` defaults to its length, `null` models a backend that sends none. */
+export const makeStoredObject = (
+  body: Buffer | string = 'resume bytes',
+  size?: number | null,
+): StoredObject => {
+  const bytes = Buffer.from(body);
+  return { stream: Readable.from([bytes]), size: size === undefined ? bytes.byteLength : size };
+};
+
+export const makeDocumentFileLinks = (
+  overrides?: Partial<IDocumentFileLinks>,
+): IDocumentFileLinks => ({
+  urlFor: vi
+    .fn()
+    .mockImplementation((id: string) => `https://api.example.com/documents/${id}/file`),
+  verify: vi.fn().mockReturnValue(true),
+  ...overrides,
+});
+
 export const makeStorageProvider = (overrides?: Partial<IStorageProvider>): IStorageProvider => ({
   getPresignedUploadUrl: vi.fn(),
   getSignedUrl: vi.fn(),
+  getObject: vi.fn().mockImplementation(() => Promise.resolve(makeStoredObject())),
   putObject: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),

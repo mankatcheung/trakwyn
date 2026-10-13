@@ -429,3 +429,13 @@ export const CACHE_KEYS = {
 export const FAKE_OAUTH = {
   CONSENT_PATH: '/auth/oauth/fake-provider/authorize',
 } as const;
+
+/**
+ * The route that serves a stored document's file (JEF-51). Here rather than in
+ * `http/constants.ts` because `DocumentFileLinkService` builds the URL and
+ * infrastructure cannot import `http/`; `ROUTES.DOCUMENT_FILE` derives from it.
+ */
+export const DOCUMENT_FILE_ROUTE = {
+  PATH: '/documents/:id/file',
+  TOKEN_PARAM: 'token',
+} as const;

@@ -17,6 +17,7 @@ import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
+import { handleDocumentFile } from '#src/http/routes/documentFile.routes.js';
 import { oauthRoutes } from '#src/http/routes/oauth.routes.js';
 import { fakeOAuthConsentRoutes } from '#src/http/routes/fakeOAuthConsent.routes.js';
 import { fakeLlmCompletionsRoutes } from '#src/http/routes/fakeLlmCompletions.routes.js';
@@ -60,8 +61,13 @@ function operationNameOf(request: IHttpRequest): string | undefined {
   return typeof name === 'string' ? name : undefined;
 }
 
-/** Key prefix of the dev upload route, never a stored object's key. */
-const LOCAL_UPLOAD_PATH_PREFIX = '_upload/';
+/**
+ * The only stored keys the dev `GET /uploads/*` route serves: avatars, which
+ * `RequestAvatarUploadUrlUseCase` keys as `users/<id>/avatar/…`. Everything
+ * else is a document and is served by `handleDocumentFile`. This also rules
+ * out the `_upload/` write route's own prefix, which is never a stored key.
+ */
+const LOCAL_PUBLIC_KEY = /^users\/[^/]+\/avatar\/[^/]+$/;
 
 /**
  * Fully configures an already-constructed Fastify instance (cors/cookie/
@@ -158,23 +164,24 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
       },
     );
 
-    // Serves the URLs LocalStorageProvider.getSignedUrl hands out, so an
-    // uploaded document or exported PDF opens in dev and e2e. Unauthenticated,
-    // like the upload route above: local mode is a dev convenience, and
-    // production (Vercel Blob) serves its own URLs.
+    // Serves the URLs LocalStorageProvider.getSignedUrl hands out, which are
+    // avatars only (JEF-51): they are meant to be seen by other users, like
+    // the public Blob store's. Unauthenticated, like the upload route above.
+    // A document is not served here, it is read through ROUTES.DOCUMENT_FILE
+    // behind a signed link, the same as in production.
     fastify.get<{ Params: { '*': string } }>('/uploads/*', async (request, reply) => {
       const { storageProvider } = container.cradle;
       // Fastify has already percent-decoded the wildcard, so an encoded
       // `%2e%2e` arrives here as `..` and is caught by the same check.
       const storageKey = request.params['*'];
-      if (
-        !(storageProvider instanceof LocalStorageProvider) ||
-        storageKey.startsWith(LOCAL_UPLOAD_PATH_PREFIX)
-      ) {
+      if (!(storageProvider instanceof LocalStorageProvider)) {
         return reply.code(404).send({ error: 'Not found' });
       }
       if (storageProvider.resolveKeyPath(storageKey) === null) {
         return reply.code(400).send({ error: 'Invalid storage key' });
+      }
+      if (!LOCAL_PUBLIC_KEY.test(storageKey)) {
+        return reply.code(404).send({ error: 'Not found' });
       }
 
       const object = await storageProvider.openObject(storageKey);
@@ -230,6 +237,12 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     url: ROUTES.CHAT_STREAM,
     bodyLimit: CHAT_STREAM.BODY_LIMIT_BYTES,
     handler: handleChatStream,
+  });
+  // Streams a stored file, so it too needs the real reply (JEF-51).
+  fastify.route({
+    method: 'GET',
+    url: ROUTES.DOCUMENT_FILE,
+    handler: handleDocumentFile,
   });
   fastify.route({
     method: 'GET',

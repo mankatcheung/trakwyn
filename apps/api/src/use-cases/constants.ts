@@ -503,3 +503,14 @@ export const AUTH_FAILURE_EVENTS = {
   LOGIN_FAILED: 'auth.login.failed',
   TOTP_FAILED: 'auth.totp.failed',
 } as const;
+
+/**
+ * How long a document's file link works (JEF-51). The link is handed out with
+ * every `Document.url`, so it has to outlast a page left open in a tab: web
+ * keeps the list it fetched and reads `url` when the user clicks, which can be
+ * well after the query ran. An hour is that grace period; a link that leaks
+ * dies on its own instead of working forever.
+ */
+export const DOCUMENT_FILE_LINK = {
+  TTL_S: 60 * 60,
+} as const;

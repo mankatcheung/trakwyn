@@ -58,6 +58,7 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import type { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import type { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
+import type { DocumentFileLinkService } from '#src/infrastructure/auth/DocumentFileLinkService.js';
 import type { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import type { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import type { IOAuthProvider } from '#src/use-cases/ports/IOAuthProvider.js';
@@ -408,6 +409,7 @@ export interface Cradle {
   oauthStateService: OAuthStateService;
   mobileOAuthHandoffService: MobileOAuthHandoffService;
   mcpOAuthConsentService: McpOAuthConsentService;
+  documentFileLinks: DocumentFileLinkService;
 
   applicationMapper: ApplicationMapper;
   apiTokenMapper: ApiTokenMapper;
