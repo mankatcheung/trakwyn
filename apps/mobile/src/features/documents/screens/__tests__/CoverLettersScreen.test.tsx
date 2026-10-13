@@ -7,6 +7,7 @@ jest.mock('../../hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }))
 jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn() }));
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
+jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
@@ -24,6 +25,7 @@ import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../../hooks/useDocumentDraftQueries';
+import { useDeleteDocumentDraft } from '../../hooks/useDeleteDocumentDraft';
 import { CoverLettersScreen } from '../CoverLettersScreen';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
@@ -42,6 +44,7 @@ describe('CoverLettersScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(useDeleteDocumentDraft).mockReturnValue({ mutate: jest.fn() } as never);
     jest.mocked(useTheme).mockReturnValue({
       mode: 'light',
       resolvedScheme: 'light',

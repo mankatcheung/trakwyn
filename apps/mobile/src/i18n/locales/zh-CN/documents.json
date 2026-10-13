@@ -6,7 +6,6 @@
   "versionPlaceholder": "版本（可选）",
   "uploading": "正在上传…",
   "upload": "上传",
-  "chooseFile": "选择要上传的文件",
   "emptyCoverLetters": "还没有求职信。",
   "emptyResumes": "还没有简历。创建或上传一份，即可检查它与此职位的匹配度。",
   "emptyOther": "还没有其他文档。",
@@ -32,7 +31,6 @@
   "resume": "简历",
   "portfolio": "作品集",
   "other": "其他",
-  "draftsSectionTitle": "草稿",
   "newDraft": "新建草稿",
   "savingEllipsis": "正在保存…",
   "saved": "已保存",
@@ -43,5 +41,14 @@
   "deleteFailed": "删除草稿失败",
   "draftNotFound": "未找到草稿",
   "editorPlaceholder": "开始撰写…",
-  "editedPrefix": "编辑于"
+  "editedPrefix": "编辑于",
+  "filterAll": "全部",
+  "filterDrafts": "草稿",
+  "filterFiles": "文件",
+  "draftBadge": "草稿",
+  "editedOn": "编辑于 {{date}}",
+  "uploadedOn": "上传于 {{date}}",
+  "uploadFile": "上传文件",
+  "openFile": "打开",
+  "moreActions": "更多操作"
 }

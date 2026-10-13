@@ -72,10 +72,10 @@
     "regenerate": "重新生成",
     "generatedAt": "生成于 {{date}}",
     "staleReminder": "此简历在生成匹配结果后已有更改。建议重新生成以获得最新结果。",
-    "notGenerated": "检查这份简历与职位描述的匹配程度。",
     "matchedKeywords": "匹配的关键词",
     "missingKeywords": "缺失的关键词",
-    "couldNotCheckTitle": "无法检查匹配度"
+    "couldNotCheckTitle": "无法检查匹配度",
+    "staleBadge": "已过期"
   },
   "companyBriefing": {
     "description": "生成关于该公司的 AI 调研简报：企业文化、近期新闻和面试建议。",

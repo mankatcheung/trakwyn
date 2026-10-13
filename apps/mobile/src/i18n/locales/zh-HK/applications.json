@@ -72,10 +72,10 @@
     "regenerate": "重新生成",
     "generatedAt": "生成於 {{date}}",
     "staleReminder": "呢份履歷喺生成配對結果之後已有更改。建議重新生成以取得最新結果。",
-    "notGenerated": "檢查呢份履歷同職位描述嘅配對程度。",
     "matchedKeywords": "符合的關鍵字",
     "missingKeywords": "缺少的關鍵字",
-    "couldNotCheckTitle": "無法檢查配對度"
+    "couldNotCheckTitle": "無法檢查配對度",
+    "staleBadge": "已過期"
   },
   "companyBriefing": {
     "description": "產生這間公司的 AI 研究簡報：企業文化、近期新聞與面試建議。",

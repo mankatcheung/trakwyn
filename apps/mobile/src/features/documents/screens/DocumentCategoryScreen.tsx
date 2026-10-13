@@ -5,7 +5,6 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -14,25 +13,30 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../hooks/useDeleteDocument';
 import { useUploadDocument, type UploadDocumentInput } from '../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../hooks/useDocumentDraftQueries';
+import { useDeleteDocumentDraft } from '../hooks/useDeleteDocumentDraft';
 import {
   documentCategory,
   UPLOAD_TYPES_BY_CATEGORY,
   type DocumentCategory,
 } from '../lib/documentCategory';
-import type { Document, DocumentDraftSummary } from '../types';
+import {
+  buildListItems,
+  countItems,
+  effectiveFilter,
+  filterItems,
+  type ListFilter,
+} from '../lib/documentListItems';
+import { DraftCard, FileCard } from '../components/DocumentCards';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import { TrashIcon } from '../../applications/components/ApplicationIcons';
-import { ResumeMatchPanel } from '../../applications/components/ResumeMatchPanel';
-import { IconButton } from '../../../components/IconButton';
-import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { PlusIcon, UploadIcon } from '../../applications/components/ApplicationIcons';
 
 /**
  * Cover letters and Resumes each have their own create-draft screen, so the
@@ -51,96 +55,11 @@ const EMPTY_TEXT_KEY: Record<DocumentCategory, string> = {
   other: 'emptyOther',
 };
 
-function formatSize(bytes: number): string {
-  return `${(bytes / 1024).toFixed(1)} KB`;
-}
-
-function DraftRow({
-  draft,
-  matchApplicationId,
-}: {
-  draft: DocumentDraftSummary;
-  /** Set on Resumes, where each resume carries its match (JEF-397). */
-  matchApplicationId?: string;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  return (
-    <View style={styles.card}>
-      <Link href={`./documents/${draft.id}`} asChild>
-        <Pressable style={styles.draftLink} testID={`draft-${draft.id}`}>
-          <Text style={styles.name} numberOfLines={1}>
-            {draft.title}
-          </Text>
-          <Text style={styles.meta}>{new Date(draft.updatedAt).toLocaleDateString()}</Text>
-        </Pressable>
-      </Link>
-      {matchApplicationId ? (
-        <ResumeMatchPanel
-          applicationId={matchApplicationId}
-          resume={{ documentDraftId: draft.id }}
-          resumeId={draft.id}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-function DocumentRow({
-  document,
-  showTypeBadge,
-  matchApplicationId,
-  onDelete,
-}: {
-  document: Document;
-  showTypeBadge: boolean;
-  /** Set on Resumes, where each resume carries its match (JEF-397). */
-  matchApplicationId?: string;
-  onDelete: () => void;
-}) {
-  const { t } = useTranslation('documents');
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  return (
-    <View style={styles.card} testID={`document-${document.id}`}>
-      <View style={styles.rowBetween}>
-        <Pressable style={styles.textColumn} onPress={() => void Linking.openURL(document.url)}>
-          <Text style={styles.name} numberOfLines={1}>
-            {document.name}
-          </Text>
-          <Text style={styles.meta}>
-            {document.mimeType} · {formatSize(document.sizeBytes)}
-            {document.version ? ` · ${document.version}` : ''}
-          </Text>
-        </Pressable>
-        <IconButton
-          icon={TrashIcon}
-          variant="danger"
-          onPress={() =>
-            Alert.alert(
-              t('deleteDocumentTitle'),
-              t('deleteDocumentMessage', { name: document.name }),
-              [
-                { text: t('cancel'), style: 'cancel' },
-                { text: t('delete'), style: 'destructive', onPress: onDelete },
-              ],
-            )
-          }
-          testID={`delete-document-${document.id}`}
-          accessibilityLabel={t('delete')}
-        />
-      </View>
-      {showTypeBadge ? <Text style={styles.typeBadge}>{t(document.documentType)}</Text> : null}
-      {matchApplicationId ? (
-        <ResumeMatchPanel
-          applicationId={matchApplicationId}
-          resume={{ documentId: document.id }}
-          resumeId={document.id}
-        />
-      ) : null}
-    </View>
-  );
-}
+const FILTERS: readonly { id: ListFilter; labelKey: string }[] = [
+  { id: 'all', labelKey: 'filterAll' },
+  { id: 'drafts', labelKey: 'filterDrafts' },
+  { id: 'files', labelKey: 'filterFiles' },
+];
 
 interface DocumentCategoryScreenProps {
   /** Only this category's drafts and uploads are shown — no screen overlaps another. */
@@ -157,6 +76,8 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
   const { data: allDrafts } = useDocumentDrafts(applicationId);
   const uploadDocument = useUploadDocument(applicationId);
   const deleteDocument = useDeleteDocument(applicationId);
+  const deleteDraft = useDeleteDocumentDraft(applicationId);
+  const [filter, setFilter] = useState<ListFilter>('all');
 
   const allowedTypes = UPLOAD_TYPES_BY_CATEGORY[category];
   const documents = useMemo(
@@ -218,23 +139,33 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
   }
 
   const newDraftRoute = NEW_DRAFT_ROUTE[category];
+  const matchApplicationId = category === 'resume' ? applicationId : undefined;
+  const items = buildListItems(drafts, documents);
+  const counts = countItems(items);
+  const activeFilter = effectiveFilter(filter, counts);
+  const visible = filterItems(items, activeFilter);
 
   const listHeader = (
     <View>
-      {drafts.length > 0 ? (
-        <View>
-          <View style={styles.draftsHeaderRow}>
-            <Text style={styles.sectionTitle}>{t('draftsSectionTitle')}</Text>
-          </View>
-          <View style={styles.draftsList}>
-            {drafts.map((draft) => (
-              <DraftRow
-                key={draft.id}
-                draft={draft}
-                matchApplicationId={category === 'resume' ? applicationId : undefined}
-              />
-            ))}
-          </View>
+      {counts.drafts > 0 && counts.files > 0 ? (
+        <View style={styles.filterRow} accessibilityRole="tablist">
+          {FILTERS.map(({ id, labelKey }) => (
+            <Pressable
+              key={id}
+              style={[styles.filterTab, activeFilter === id && styles.filterTabActive]}
+              onPress={() => setFilter(id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeFilter === id }}
+              testID={`filter-${id}`}
+            >
+              <Text
+                numberOfLines={1}
+                style={[styles.filterText, activeFilter === id && styles.filterTextActive]}
+              >
+                {t(labelKey)} {counts[id]}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
 
@@ -290,15 +221,7 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
             </Pressable>
           </View>
         </View>
-      ) : (
-        <Pressable
-          style={styles.pickButton}
-          onPress={() => void onPick()}
-          testID="pick-document-button"
-        >
-          <Text style={styles.pickButtonText}>{t('chooseFile')}</Text>
-        </Pressable>
-      )}
+      ) : null}
     </View>
   );
 
@@ -308,38 +231,63 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <FlatList
-        data={documents}
-        keyExtractor={(item) => item.id}
+        data={visible}
+        keyExtractor={(item) => item.key}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
         ListHeaderComponent={listHeader}
-        ListEmptyComponent={
-          drafts.length === 0 ? (
-            <Text style={styles.emptyText}>{t(EMPTY_TEXT_KEY[category])}</Text>
-          ) : null
+        ListEmptyComponent={<Text style={styles.emptyText}>{t(EMPTY_TEXT_KEY[category])}</Text>}
+        renderItem={({ item }) =>
+          item.kind === 'draft' ? (
+            <DraftCard
+              draft={item.draft}
+              matchApplicationId={matchApplicationId}
+              onDelete={() =>
+                deleteDraft.mutate(item.id, {
+                  onError: (err) => Alert.alert(t('deleteFailed'), getErrorMessage(err)),
+                })
+              }
+            />
+          ) : (
+            <FileCard
+              document={item.document}
+              showTypeBadge={category === 'other' && item.document.documentType === 'portfolio'}
+              matchApplicationId={matchApplicationId}
+              onDelete={() =>
+                deleteDocument.mutate(item.id, {
+                  onError: (err) => Alert.alert(t('couldNotDeleteTitle'), getErrorMessage(err)),
+                })
+              }
+            />
+          )
         }
-        renderItem={({ item }) => (
-          <DocumentRow
-            document={item}
-            showTypeBadge={category === 'other' && item.documentType === 'portfolio'}
-            matchApplicationId={category === 'resume' ? applicationId : undefined}
-            onDelete={() =>
-              deleteDocument.mutate(item.id, {
-                onError: (err) => Alert.alert(t('couldNotDeleteTitle'), getErrorMessage(err)),
-              })
-            }
-          />
-        )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      {newDraftRoute ? (
-        <FloatingActionButton
-          onPress={() => router.push(newDraftRoute as never)}
-          testID="new-draft-button"
-          accessibilityLabel={t('newDraft')}
-        />
-      ) : null}
+      <View style={styles.fabs} pointerEvents="box-none">
+        {pending ? null : (
+          <Pressable
+            style={styles.uploadFab}
+            onPress={() => void onPick()}
+            accessibilityRole="button"
+            testID="pick-document-button"
+          >
+            <UploadIcon color={colors.text} size={16} />
+            <Text style={styles.uploadFabText}>{t('uploadFile')}</Text>
+          </Pressable>
+        )}
+        {newDraftRoute ? (
+          <Pressable
+            style={styles.newDraftFab}
+            onPress={() => router.push(newDraftRoute as never)}
+            accessibilityRole="button"
+            testID="new-draft-button"
+          >
+            <PlusIcon color={colors.onPrimary} size={18} />
+            <Text style={styles.newDraftFabText}>{t('newDraft')}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -357,29 +305,53 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 0,
       fontSize: 14,
     },
-    draftsHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 16,
-    },
-    sectionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
-    draftsList: { paddingTop: 10, gap: 10 },
     list: { padding: 16, paddingBottom: 96 },
     separator: { height: 10 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
-    pickButton: {
-      marginVertical: 16,
-      minHeight: 56,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderStyle: 'dashed',
-      borderColor: colors.borderStrong,
+    filterRow: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 10,
+      padding: 3,
+      marginBottom: 12,
+    },
+    filterTab: {
+      flex: 1,
+      minWidth: 0,
+      paddingHorizontal: 4,
+      minHeight: 36,
+      borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.surface,
     },
-    pickButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+    filterTabActive: { backgroundColor: colors.surface },
+    filterText: { fontSize: 13, color: colors.textMuted },
+    filterTextActive: { fontWeight: '700', color: colors.text },
+    fabs: { position: 'absolute', right: 16, bottom: 24, alignItems: 'flex-end', gap: 10 },
+    uploadFab: {
+      minHeight: 44,
+      borderRadius: 9999,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      backgroundColor: colors.surface,
+      elevation: 3,
+    },
+    uploadFabText: { fontSize: 14, fontWeight: '600', color: colors.text },
+    newDraftFab: {
+      minHeight: 52,
+      borderRadius: 9999,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.primary,
+      elevation: 4,
+    },
+    newDraftFabText: { fontSize: 15, fontWeight: '700', color: colors.onPrimary },
     pendingCard: {
       marginVertical: 16,
       borderRadius: 12,
@@ -422,35 +394,7 @@ function createStyles(colors: ThemeColors) {
     },
     disabled: { opacity: 0.6 },
     confirmButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
-    linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 14,
-      gap: 6,
-    },
-    rowBetween: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: 12,
-    },
-    draftLink: { gap: 6 },
-    textColumn: { flex: 1, gap: 2 },
     name: { fontSize: 14, fontWeight: '600', color: colors.text },
-    meta: { fontSize: 12, color: colors.textSubtle },
-    typeBadge: {
-      alignSelf: 'flex-start',
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.primary,
-      backgroundColor: colors.primarySurface,
-      borderRadius: 9999,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      textTransform: 'capitalize',
-    },
+    linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
   });
 }

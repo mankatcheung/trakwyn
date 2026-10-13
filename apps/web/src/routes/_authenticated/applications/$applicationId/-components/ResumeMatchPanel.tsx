@@ -1,5 +1,6 @@
+import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangleIcon, TargetIcon } from 'lucide-react';
+import { AlertTriangleIcon, ChevronDownIcon, TargetIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
@@ -15,11 +16,6 @@ import {
   type ResumeMatch,
   type ResumeRef,
 } from '../-resumeMatchQueries';
-
-interface ResumeMatchPanelProps {
-  applicationId: string;
-  resume: ResumeRef;
-}
 
 const sameResume = (a: ResumeMatch, b: ResumeMatch): boolean =>
   (a.documentDraftId !== null && a.documentDraftId === b.documentDraftId) ||
@@ -95,13 +91,11 @@ function KeywordList({
 }
 
 /**
- * The match for one resume: a Generate button until there is a result, then
- * the saved result with a Regenerate button. The result is stored server-side,
- * so it is still here after a reload; `isStale` says the resume's text has
- * changed since it was scored.
+ * The saved match for one resume, and the mutation that (re)computes it. The
+ * result is stored server-side, so it is still here after a reload; `isStale`
+ * says the resume's text has changed since it was scored.
  */
-export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProps) {
-  const { t, formatDate } = useLocale();
+function useResumeMatch(applicationId: string, resume: ResumeRef, onComputed: () => void) {
   const qc = useQueryClient();
   const { data } = useQuery(resumeMatchesQueryOptions(applicationId));
   const match = findResumeMatch(data?.resumeMatches, resume);
@@ -125,17 +119,34 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
           ],
         }),
       );
+      onComputed();
     },
   });
 
-  const color = match ? SCORE_COLORS[scoreColor(match.score)] : null;
+  return { match, compute };
+}
 
-  const button = (
+type Compute = ReturnType<typeof useResumeMatch>['compute'];
+
+const CHIP_CLASS =
+  'inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors';
+
+function ComputeButton({
+  compute,
+  label,
+  className,
+}: {
+  compute: Compute;
+  label: string;
+  className: string;
+}) {
+  const { t } = useLocale();
+  return (
     <button
       type="button"
       onClick={() => compute.mutate()}
       disabled={compute.isPending}
-      className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+      className={`${className} disabled:opacity-60`}
     >
       {compute.isPending ? (
         <>
@@ -145,15 +156,62 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
       ) : (
         <>
           <TargetIcon size={14} />
-          {match ? t('resumeMatch.regenerate') : t('resumeMatch.generate')}
+          {label}
         </>
       )}
     </button>
   );
+}
+
+function MatchChip({
+  match,
+  compute,
+  expanded,
+  onToggle,
+}: {
+  match: ResumeMatch | undefined;
+  compute: Compute;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useLocale();
+  if (!match) {
+    return (
+      <ComputeButton
+        compute={compute}
+        label={t('resumeMatch.generate')}
+        className={`${CHIP_CLASS} border-gray-300 bg-white text-blue-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700`}
+      />
+    );
+  }
+  const color = SCORE_COLORS[scoreColor(match.score)];
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className={`${CHIP_CLASS} border-transparent ${color.badge}`}
+    >
+      {match.isStale && <AlertTriangleIcon size={14} aria-label={t('resumeMatch.stale')} />}
+      <span>
+        {match.score} · {match.label}
+      </span>
+      <ChevronDownIcon
+        size={14}
+        aria-hidden="true"
+        className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+      />
+    </button>
+  );
+}
+
+function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; compute: Compute }) {
+  const { t, formatDate } = useLocale();
+  const color = match ? SCORE_COLORS[scoreColor(match.score)] : null;
 
   return (
-    <div className="mt-3 space-y-3 border-t border-gray-100 pt-3 dark:border-gray-700">
-      {match && color ? (
+    <div className="space-y-3">
+      {match && color && (
         <>
           <div
             className={`flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-700 ${color.bg}`}
@@ -163,11 +221,6 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                 {t('resumeMatch.resumeMatchTitle')}
               </p>
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color.badge}`}
-              >
-                {match.label}
-              </span>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {t('resumeMatch.generatedOn', {
                   date: formatDate(new Date(match.generatedAt), {
@@ -177,7 +230,11 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
                 })}
               </p>
             </div>
-            {button}
+            <ComputeButton
+              compute={compute}
+              label={t('resumeMatch.regenerate')}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+            />
           </div>
 
           {match.isStale && (
@@ -204,13 +261,6 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
             chipClass="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
           />
         </>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('resumeMatch.notGenerated')}
-          </p>
-          {button}
-        </div>
       )}
 
       {compute.isError && (
@@ -223,4 +273,39 @@ export function ResumeMatchPanel({ applicationId, resume }: ResumeMatchPanelProp
       )}
     </div>
   );
+}
+
+interface ResumeMatchProps {
+  applicationId: string;
+  resume: ResumeRef;
+  /**
+   * The chip belongs in the row's action cluster and the detail under the row,
+   * so this hands the row both pieces instead of laying them out itself. The
+   * detail is null until there is something to show: an expanded result, or an
+   * error from a first check that produced no result.
+   */
+  children: (parts: { chip: ReactNode; details: ReactNode }) => ReactNode;
+}
+
+/**
+ * The match for one resume: a "Generate match" chip until there is a result,
+ * then a score chip that expands in place to the summary and keywords (JEF-399).
+ */
+export function ResumeMatch({ applicationId, resume, children }: ResumeMatchProps) {
+  const [expanded, setExpanded] = useState(false);
+  // A fresh result opens itself: the chip alone would hide what was just asked for.
+  const { match, compute } = useResumeMatch(applicationId, resume, () => setExpanded(true));
+
+  const showDetails = (expanded && match !== undefined) || compute.isError;
+  return children({
+    chip: (
+      <MatchChip
+        match={match}
+        compute={compute}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+      />
+    ),
+    details: showDetails ? <MatchDetails match={match} compute={compute} /> : null,
+  });
 }

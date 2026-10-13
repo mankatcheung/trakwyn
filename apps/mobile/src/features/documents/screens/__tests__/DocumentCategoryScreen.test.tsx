@@ -8,6 +8,7 @@ jest.mock('../../hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }))
 jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn() }));
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
+jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
@@ -40,6 +41,7 @@ import { useDocuments } from '../../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../../hooks/useDocumentDraftQueries';
+import { useDeleteDocumentDraft } from '../../hooks/useDeleteDocumentDraft';
 import { DocumentCategoryScreen } from '../DocumentCategoryScreen';
 import type { DocumentCategory } from '../../lib/documentCategory';
 import type { Document } from '../../types';
@@ -51,6 +53,7 @@ const mockedUseDocuments = jest.mocked(useDocuments);
 const mockedUseDeleteDocument = jest.mocked(useDeleteDocument);
 const mockedUseUploadDocument = jest.mocked(useUploadDocument);
 const mockedUseDocumentDrafts = jest.mocked(useDocumentDrafts);
+const mockedUseDeleteDocumentDraft = jest.mocked(useDeleteDocumentDraft);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseTheme = jest.mocked(useTheme);
@@ -83,6 +86,7 @@ describe('DocumentCategoryScreen', () => {
     } as never);
     jest.clearAllMocks();
     mockedUseDeleteDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDeleteDocumentDraft.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
   });
 
@@ -139,7 +143,7 @@ describe('DocumentCategoryScreen', () => {
     );
   });
 
-  it('deletes a document after confirmation', async () => {
+  it('deletes a document from its actions menu, after confirmation', async () => {
     const deleteMutate = jest.fn();
     jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
       const confirm = buttons?.find((b) => b.text === 'Delete');
@@ -156,7 +160,7 @@ describe('DocumentCategoryScreen', () => {
 
     const { getByTestId } = await renderScreen(jest.fn(), 'resume');
 
-    await fireEvent.press(getByTestId('delete-document-1'));
+    await fireEvent.press(getByTestId('document-actions-1'));
 
     expect(deleteMutate).toHaveBeenCalledWith('1', expect.any(Object));
   });
@@ -414,5 +418,94 @@ describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
       expect(queryByTestId('document-type-resume')).toBeNull();
       expect(queryByTestId('document-type-cover_letter')).toBeNull();
     });
+  });
+});
+
+describe('DocumentCategoryScreen — one unified list (JEF-399)', () => {
+  const resumeFile: Document = { ...document, createdAt: '2026-02-01T00:00:00.000Z' };
+  const resumeDraft = {
+    id: 'dr-1',
+    applicationId: 'app-1',
+    type: 'resume',
+    title: 'Tailored for Acme',
+    createdAt: '2026-03-01T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    mockedUseTheme.mockReturnValue({
+      mode: 'light',
+      resolvedScheme: 'light',
+      colors: lightColors,
+      setMode: jest.fn(),
+    } as never);
+    mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDeleteDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDeleteDocumentDraft.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+  });
+
+  const withItems = (documents: Document[], drafts: unknown[]) => {
+    mockedUseDocuments.mockReturnValue({
+      data: documents,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseDocumentDrafts.mockReturnValue({ data: drafts, isLoading: false } as never);
+  };
+
+  it('shows drafts and files in one list with their own badges', async () => {
+    withItems([resumeFile], [resumeDraft]);
+    const { getByText } = await renderScreen(jest.fn(), 'resume');
+
+    await waitFor(() => expect(getByText('Tailored for Acme')).toBeTruthy());
+    expect(getByText('Draft')).toBeTruthy();
+    expect(getByText('PDF')).toBeTruthy();
+  });
+
+  it('filters between drafts and files, with counts', async () => {
+    withItems([resumeFile], [resumeDraft]);
+    const { getByTestId, getByText, queryByText } = await renderScreen(jest.fn(), 'resume');
+
+    await waitFor(() => expect(getByText('All 2')).toBeTruthy());
+    await fireEvent.press(getByTestId('filter-drafts'));
+    expect(getByText('Tailored for Acme')).toBeTruthy();
+    expect(queryByText('resume.pdf')).toBeNull();
+
+    await fireEvent.press(getByTestId('filter-files'));
+    expect(getByText('resume.pdf')).toBeTruthy();
+    expect(queryByText('Tailored for Acme')).toBeNull();
+  });
+
+  it('hides the filter while only one kind of item exists', async () => {
+    withItems([resumeFile], []);
+    const { queryByTestId, getByText } = await renderScreen(jest.fn(), 'resume');
+
+    await waitFor(() => expect(getByText('resume.pdf')).toBeTruthy());
+    expect(queryByTestId('filter-all')).toBeNull();
+  });
+
+  it('deletes a draft from its actions menu, after confirmation', async () => {
+    const mutate = jest.fn();
+    mockedUseDeleteDocumentDraft.mockReturnValue({ mutate, isPending: false } as never);
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((b) => b.text === 'Delete')?.onPress?.();
+    });
+    withItems([], [resumeDraft]);
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
+
+    await fireEvent.press(getByTestId('draft-actions-dr-1'));
+
+    expect(mutate).toHaveBeenCalledWith('dr-1', expect.any(Object));
+  });
+
+  it('offers Upload file next to New draft instead of a dashed picker', async () => {
+    withItems([], []);
+    const { getByText, getByTestId } = await renderScreen(jest.fn(), 'resume');
+
+    await waitFor(() => expect(getByTestId('pick-document-button')).toBeTruthy());
+    expect(getByText('Upload file')).toBeTruthy();
+    expect(getByTestId('new-draft-button')).toBeTruthy();
   });
 });

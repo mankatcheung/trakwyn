@@ -220,7 +220,7 @@ describe('ApplicationDetailPage', () => {
     expect(nav.queryByRole('button', { name: /^cover letter$/i })).not.toBeInTheDocument();
   });
 
-  it('switches to the other documents tab and shows upload area', async () => {
+  it('switches to the other documents tab and offers an Upload file button', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -239,7 +239,7 @@ describe('ApplicationDetailPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/click to upload/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument();
     });
   });
 
@@ -307,7 +307,7 @@ describe('ApplicationDetailPage', () => {
       createdAt: '2024-01-02T00:00:00.000Z',
     };
 
-    it('opens an inline PDF preview when clicking a PDF document name', async () => {
+    it('opens an inline PDF preview when pressing Preview on a PDF', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -323,13 +323,13 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
 
-      fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
 
       const iframe = await screen.findByTitle('resume.pdf');
       expect(iframe).toHaveAttribute('src', mockPdfDoc.url);
     });
 
-    it('opens an inline image preview when clicking an image document name', async () => {
+    it('opens an inline image preview when pressing Preview on an image', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockImageDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -345,7 +345,7 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('portfolio.png')).toBeInTheDocument());
 
-      fireEvent.click(screen.getByRole('button', { name: 'portfolio.png' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
 
       const img = await screen.findByAltText('portfolio.png');
       expect(img).toHaveAttribute('src', mockImageDoc.url);
@@ -365,7 +365,7 @@ describe('ApplicationDetailPage', () => {
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
-      fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
       await screen.findByTitle('resume.pdf');
 
       const dialog = screen.getByTitle('resume.pdf').closest('div')!.parentElement!;
@@ -375,7 +375,7 @@ describe('ApplicationDetailPage', () => {
       expect(screen.queryByTitle('resume.pdf')).not.toBeInTheDocument();
     });
 
-    it('does not make non-previewable documents (e.g. .docx) clickable, and keeps the download link', async () => {
+    it('offers a download link, not Preview, for non-previewable documents (e.g. .docx)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -391,8 +391,8 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('cover-letter.docx')).toBeInTheDocument());
 
-      expect(screen.queryByRole('button', { name: 'cover-letter.docx' })).not.toBeInTheDocument();
-      const link = screen.getByRole('link', { name: 'cover-letter.docx' });
+      expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument();
+      const link = screen.getByRole('link', { name: 'Download' });
       expect(link).toHaveAttribute('href', mockDocxDoc.url);
     });
   });
