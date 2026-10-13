@@ -201,10 +201,13 @@ describe('DocumentList', () => {
 
     function mockUploadFlow({
       uploadUrl = BLOB_TOKEN,
+      access,
       requestUploadUrl,
       confirmDocument,
     }: {
       uploadUrl?: string;
+      /** What the API reports for the token's store; omitted, as an older API would. */
+      access?: string;
       requestUploadUrl?: () => Promise<unknown>;
       confirmDocument?: () => Promise<unknown>;
     } = {}) {
@@ -213,7 +216,13 @@ describe('DocumentList', () => {
         if (query.includes('RequestUploadUrl')) {
           return requestUploadUrl
             ? requestUploadUrl()
-            : Promise.resolve({ requestUploadUrl: { uploadUrl, storageKey: STORAGE_KEY } });
+            : Promise.resolve({
+                requestUploadUrl: {
+                  uploadUrl,
+                  storageKey: STORAGE_KEY,
+                  ...(access === undefined ? {} : { access }),
+                },
+              });
         }
         if (query.includes('ConfirmDocument')) {
           return confirmDocument
@@ -302,6 +311,29 @@ describe('DocumentList', () => {
       expect(mockCaptureException).not.toHaveBeenCalled();
       expect(mockCaptureEvent).not.toHaveBeenCalled();
     });
+
+    it.each([
+      ['private', 'private'],
+      ['public', 'public'],
+      // An API that predates the private store sends no access: its token is
+      // for the one public store, so put() must say public (JEF-51).
+      [undefined, 'public'],
+    ])(
+      'uploads with the access the API reports for its token (%s) so put() matches the store',
+      async (reported, expected) => {
+        mockUploadFlow({ access: reported });
+        mockPutBlob.mockResolvedValue({});
+
+        await chooseFile();
+
+        await waitFor(() => expect(mockPutBlob).toHaveBeenCalledTimes(1));
+        expect(mockPutBlob).toHaveBeenCalledWith(
+          STORAGE_KEY,
+          expect.any(File),
+          expect.objectContaining({ access: expected, token: BLOB_TOKEN }),
+        );
+      },
+    );
 
     it('fires document_uploaded with the type and MIME only after a successful confirm', async () => {
       mockUploadFlow();

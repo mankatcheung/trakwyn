@@ -2,6 +2,7 @@ import type { IRequestUploadUrlUseCase } from '#src/use-cases/documents/IRequest
 import type { IConfirmDocumentUseCase } from '#src/use-cases/documents/IConfirmDocumentUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
 import type { IDeleteDocumentUseCase } from '#src/use-cases/documents/IDeleteDocumentUseCase.js';
+import type { StorageAccess } from '#src/use-cases/shared/storageAccess.js';
 import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
 import type {
   DocumentMapper,
@@ -20,6 +21,7 @@ interface Deps {
 interface UploadUrlPayload {
   uploadUrl: string;
   storageKey: string;
+  access: StorageAccess;
 }
 
 interface ConfirmInput {

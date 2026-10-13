@@ -21,6 +21,16 @@ const CONFIRM_DOCUMENT = `
     confirmDocument(input: $input) { id url name }
   }
 `;
+const REQUEST_UPLOAD_URL = `
+  mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
+    requestUploadUrl(input: $input) { uploadUrl storageKey access }
+  }
+`;
+const REQUEST_AVATAR_UPLOAD_URL = `
+  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {
+    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) { storageKey access }
+  }
+`;
 const DOCUMENTS = `
   query Documents($applicationId: ID!) {
     documents(applicationId: $applicationId) { id url }
@@ -108,6 +118,21 @@ describe('document file route (JEF-51) — STORAGE_PROVIDER=local', () => {
       userIds.map((id) => rm(join(uploadDir, 'users', id), { recursive: true, force: true })),
     );
     delete process.env[ENV.STORAGE_PROVIDER];
+  });
+
+  it('tells the client which access its upload token is for: private for a document, public for an avatar', async () => {
+    const { token, applicationId } = await uploadDocument();
+
+    const document = await graphql(token, REQUEST_UPLOAD_URL, {
+      input: { applicationId, filename: 'cv.pdf', mimeType: 'application/pdf' },
+    });
+    const avatar = await graphql(token, REQUEST_AVATAR_UPLOAD_URL, {
+      filename: 'me.png',
+      mimeType: 'image/png',
+    });
+
+    expect(document.json().data.requestUploadUrl.access).toBe('private');
+    expect(avatar.json().data.requestAvatarUploadUrl.access).toBe('public');
   });
 
   it('hands out a link to the file route, never the storage key or a bare /uploads URL', async () => {
