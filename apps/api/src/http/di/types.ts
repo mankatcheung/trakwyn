@@ -382,6 +382,9 @@ export interface Cradle {
   offerRepository: DrizzleOfferRepository;
   emailVerificationTokenRepository: DrizzleEmailVerificationTokenRepository;
   totpBackupCodeRepository: DrizzleTotpBackupCodeRepository;
+  registerRateLimiter: IRateLimiter;
+  emailVerificationUserRateLimiter: IRateLimiter;
+  emailVerificationGlobalRateLimiter: IRateLimiter;
   totpRateLimiter: IRateLimiter;
   chatRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;

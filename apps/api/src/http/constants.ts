@@ -113,6 +113,14 @@ export const SHUTDOWN = {
   SERVER_CLOSE_TIMEOUT_MS: 8_000,
 } as const;
 
+/**
+ * Ceiling used in place of an abuse limit's real one outside production
+ * (JEF-400). Dev, CI e2e and the integration suites sign up dozens of users
+ * from one IP in a single run; a production-sized limit would fail them for
+ * a reason that has nothing to do with what they test.
+ */
+export const RATE_LIMIT_RELAXED_MAX_ATTEMPTS = 1_000_000;
+
 /** Rate limits for auth endpoints prone to abuse (in-process, fixed-window). */
 export const RATE_LIMIT = {
   PASSWORD_RESET_REQUEST: {
@@ -122,6 +130,24 @@ export const RATE_LIMIT = {
   TOTP_VERIFICATION: {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  },
+  // JEF-400: sign-up is the one unauthenticated route that sends mail, so a
+  // bot looping it spends the shared Brevo quota. Keyed by client IP.
+  REGISTER: {
+    MAX_ATTEMPTS: 5,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
+  },
+  // Per account: one verification mail is enough, a few retries are allowed.
+  EMAIL_VERIFICATION_USER: {
+    MAX_ATTEMPTS: 3,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
+  },
+  // Every verification mail the API sends, from any caller. Sized well under
+  // Brevo's daily quota so a distributed abuser (many IPs, many addresses)
+  // cannot starve password-reset and other transactional mail.
+  EMAIL_VERIFICATION_GLOBAL: {
+    MAX_ATTEMPTS: 100,
+    WINDOW_MS: 24 * 60 * 60 * 1000, // 1 day
   },
   CHAT_MESSAGE: {
     MAX_ATTEMPTS: 20,

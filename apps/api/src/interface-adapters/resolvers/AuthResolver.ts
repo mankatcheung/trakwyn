@@ -41,7 +41,11 @@ export class AuthResolver {
   constructor(private readonly deps: Deps) {}
 
   async register(email: string, password: string, device: DeviceInfo): Promise<TokenPair> {
-    const { userId } = await this.deps.registerUseCase.execute({ email, password });
+    const { userId } = await this.deps.registerUseCase.execute({
+      email,
+      password,
+      ipAddress: device.ipAddress,
+    });
     const session = await this.deps.createSessionUseCase.execute({ userId, ...device });
     return this.deps.tokenService.sign(
       userId,

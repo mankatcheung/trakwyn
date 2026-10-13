@@ -1,6 +1,7 @@
-import { ConflictError } from '#src/use-cases/errors/DomainError.js';
+import { ConflictError, RateLimitedError } from '#src/use-cases/errors/DomainError.js';
 import bcrypt from 'bcryptjs';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ISendEmailVerificationUseCase } from '#src/use-cases/auth/ISendEmailVerificationUseCase.js';
 import { assertValidPassword } from '#src/use-cases/auth/passwordValidation.js';
 import type {
@@ -13,12 +14,21 @@ interface Deps {
   userRepository: IUserRepository;
   generateId: () => string;
   sendEmailVerificationUseCase: ISendEmailVerificationUseCase;
+  registerRateLimiter: IRateLimiter;
 }
 
 export class RegisterUseCase implements IRegisterUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: RegisterInput): Promise<RegisterOutput> {
+    // Before the password hash and the lookup: a rejected sign-up costs nothing.
+    if (
+      input.ipAddress &&
+      !(await this.deps.registerRateLimiter.consume(`register:ip:${input.ipAddress}`))
+    ) {
+      throw new RateLimitedError('Too many sign-up attempts. Try again later.');
+    }
+
     assertValidPassword(input.password);
 
     const existing = await this.deps.userRepository.findByEmail(input.email);

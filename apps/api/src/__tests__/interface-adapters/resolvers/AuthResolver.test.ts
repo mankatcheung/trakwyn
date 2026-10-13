@@ -118,6 +118,7 @@ describe('AuthResolver', () => {
       expect(registerUseCase.execute).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
+        ipAddress: device.ipAddress,
       });
       expect(createSessionUseCase.execute).toHaveBeenCalledWith({ userId: 'user-1', ...device });
       expect(tokenService.sign).toHaveBeenCalledWith(
