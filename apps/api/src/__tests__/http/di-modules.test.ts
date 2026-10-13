@@ -79,6 +79,46 @@ describe('DI modules', () => {
   });
 
   /**
+   * JEF-400: the per-IP sign-up limit and the global verification-mail budget
+   * exist to stop abuse, so they must bite in production — and only there, or
+   * dev, e2e and the integration suites (dozens of sign-ups from one IP) would
+   * trip them.
+   */
+  describe.each([
+    ['registerRateLimiter', 'register-ip', 5],
+    ['emailVerificationGlobalRateLimiter', 'verification-global', 100],
+  ])('%s (JEF-400)', (name, key, max) => {
+    async function resolveLimiter(
+      nodeEnv: string,
+    ): Promise<{ consume(k: string): Promise<boolean> }> {
+      const previous = process.env[ENV.NODE_ENV];
+      process.env[ENV.NODE_ENV] = nodeEnv;
+      try {
+        const { buildContainer } = await import('#src/http/container.js');
+        const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+        const { asValue } = await import('awilix');
+        const container = buildContainer();
+        container.register({ logger: asValue(makeLogger()) });
+        return container.resolve(name);
+      } finally {
+        if (previous === undefined) delete process.env[ENV.NODE_ENV];
+        else process.env[ENV.NODE_ENV] = previous;
+      }
+    }
+
+    it('rejects once the production ceiling is spent', async () => {
+      const limiter = await resolveLimiter('production');
+      for (let i = 0; i < max; i++) expect(await limiter.consume(key)).toBe(true);
+      expect(await limiter.consume(key)).toBe(false);
+    });
+
+    it('does not bite outside production', async () => {
+      const limiter = await resolveLimiter('development');
+      for (let i = 0; i < max + 50; i++) expect(await limiter.consume(key)).toBe(true);
+    });
+  });
+
+  /**
    * JEF-354: every security event reaches the logs only because every writer
    * resolves `securityEventRepository` through the logging decorator.
    */

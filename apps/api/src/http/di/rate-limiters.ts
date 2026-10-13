@@ -4,7 +4,8 @@ import { RateLimiter } from '#src/infrastructure/rateLimit/RateLimiter.js';
 import { RedisRateLimiter } from '#src/infrastructure/rateLimit/RedisRateLimiter.js';
 import { InstrumentedRateLimiter } from '#src/infrastructure/rateLimit/InstrumentedRateLimiter.js';
 import { getRedisClient } from '#src/infrastructure/cache/redisClient.js';
-import { RATE_LIMIT } from '#src/http/constants.js';
+import { RATE_LIMIT, RATE_LIMIT_RELAXED_MAX_ATTEMPTS } from '#src/http/constants.js';
+import { ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 
 import type { Cradle } from './types.js';
@@ -18,7 +19,7 @@ import type { Cradle } from './types.js';
  * normal horizontal scaling.
  *
  * Every limiter is wrapped in `InstrumentedRateLimiter` so a rejection is
- * logged and counted (JEF-350) — here rather than at the nineteen call
+ * logged and counted (JEF-350) — here rather than at the call
  * sites, which is what makes the coverage total.
  */
 function buildRateLimiter(
@@ -50,8 +51,38 @@ function limiter(
   );
 }
 
+/**
+ * Like `limiter`, but the policy only bites in production (JEF-400): the
+ * per-IP sign-up limit and the global verification-mail budget are shared
+ * across everyone, so dev, e2e and the integration suites — which sign up
+ * dozens of users from one address — would otherwise exhaust them. Read at
+ * resolve time, not module load, so a test can set NODE_ENV first.
+ */
+function productionOnlyLimiter(
+  name: string,
+  policy: { MAX_ATTEMPTS: number; WINDOW_MS: number },
+): Resolver<IRateLimiter> {
+  return asFunction(
+    ({ logger }: Cradle) => {
+      const enforced = process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION;
+      const maxAttempts = enforced ? policy.MAX_ATTEMPTS : RATE_LIMIT_RELAXED_MAX_ATTEMPTS;
+      return buildRateLimiter(name, maxAttempts, policy.WINDOW_MS, logger);
+    },
+    { lifetime: Lifetime.SINGLETON },
+  );
+}
+
 export const rateLimiters = {
   passwordResetRateLimiter: limiter('passwordResetRateLimiter', RATE_LIMIT.PASSWORD_RESET_REQUEST),
+  registerRateLimiter: productionOnlyLimiter('registerRateLimiter', RATE_LIMIT.REGISTER),
+  emailVerificationUserRateLimiter: limiter(
+    'emailVerificationUserRateLimiter',
+    RATE_LIMIT.EMAIL_VERIFICATION_USER,
+  ),
+  emailVerificationGlobalRateLimiter: productionOnlyLimiter(
+    'emailVerificationGlobalRateLimiter',
+    RATE_LIMIT.EMAIL_VERIFICATION_GLOBAL,
+  ),
   totpRateLimiter: limiter('totpRateLimiter', RATE_LIMIT.TOTP_VERIFICATION),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
