@@ -99,12 +99,12 @@ describe('DocumentList', () => {
     vi.clearAllMocks();
   });
 
-  it('shows the upload prompt when there are no documents', async () => {
+  it('offers an Upload file button when there are no documents', async () => {
     mockResponses();
     render(<DocumentList applicationId="app-1" category="other" />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText(/click to upload/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument();
     });
   });
 
@@ -112,9 +112,7 @@ describe('DocumentList', () => {
     mockResponses({ documents: [mockDoc] });
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'resume.pdf' })).toBeInTheDocument();
-    });
+    expect(await screen.findByText('resume.pdf')).toBeInTheDocument();
     // The tab already says it is Resumes; a badge would repeat that on every row.
     expect(screen.queryByText('Resume')).not.toBeInTheDocument();
     expect(screen.getByText(/100\.0 KB/)).toBeInTheDocument();
@@ -142,14 +140,10 @@ describe('DocumentList', () => {
     });
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'resume.pdf' })).toBeInTheDocument();
-    });
+    await screen.findByText('resume.pdf');
 
-    const row = screen.getByRole('button', { name: 'resume.pdf' }).closest('div')!.parentElement!
-      .parentElement!;
-    const buttons = within(row).getAllByRole('button');
-    fireEvent.click(buttons[buttons.length - 1]);
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
@@ -180,7 +174,9 @@ describe('DocumentList', () => {
       wrapper: Wrapper,
     });
 
-    await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument(),
+    );
     const input = container.querySelector('input[type="file"]')!;
     fireEvent.change(input, {
       target: { files: [new File(['pdf'], 'resume.pdf', { type: 'application/pdf' })] },
@@ -234,7 +230,9 @@ describe('DocumentList', () => {
       const { container } = render(<DocumentList applicationId="app-1" category="other" />, {
         wrapper: Wrapper,
       });
-      await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument(),
+      );
       fireEvent.change(container.querySelector('input[type="file"]')!, {
         target: { files: [file] },
       });
@@ -403,7 +401,9 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
       const { unmount } = render(<DocumentList applicationId="app-1" category={category} />, {
         wrapper: Wrapper,
       });
-      await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument(),
+      );
       const link = screen.queryByText('New Draft')?.closest('a') ?? null;
       const href = link?.getAttribute('href') ?? null;
       unmount();
@@ -428,7 +428,9 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
       const { container } = render(<DocumentList applicationId="app-1" category={category} />, {
         wrapper: Wrapper,
       });
-      await waitFor(() => expect(screen.getByText(/click to upload/i)).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument(),
+      );
       fireEvent.change(container.querySelector('input[type="file"]')!, {
         target: { files: [new File(['pdf'], 'x.pdf', { type: 'application/pdf' })] },
       });
@@ -479,7 +481,7 @@ describe('DocumentList — resume match (JEF-397)', () => {
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
     await screen.findByText('My CV');
-    await screen.findByRole('button', { name: 'resume.pdf' });
+    await screen.findByText('resume.pdf');
     expect(await screen.findAllByRole('button', { name: /generate match/i })).toHaveLength(2);
   });
 
@@ -496,7 +498,7 @@ describe('DocumentList — resume match (JEF-397)', () => {
     unmount();
 
     render(<DocumentList applicationId="app-1" category="other" />, { wrapper: Wrapper });
-    await screen.findByRole('button', { name: 'notes.pdf' });
+    await screen.findByText('notes.pdf');
     expect(screen.queryByRole('button', { name: /generate match/i })).not.toBeInTheDocument();
   });
 
@@ -506,5 +508,97 @@ describe('DocumentList — resume match (JEF-397)', () => {
 
     expect(await screen.findByText(/create or upload one/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /generate match/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('DocumentList — one unified list (JEF-399)', () => {
+  const resumeDraft = {
+    ...mockDraft,
+    id: 'draft-r',
+    type: 'resume',
+    title: 'Tailored for Acme',
+    updatedAt: '2024-03-01T00:00:00.000Z',
+  };
+  const resumeFile = { ...mockDoc, name: 'resume.pdf', createdAt: '2024-02-01T00:00:00.000Z' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('mixes drafts and files in one list, newest first, each marked by kind', async () => {
+    mockResponses({ documents: [resumeFile], documentDrafts: [resumeDraft] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByText('resume.pdf');
+    const rows = screen.getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0]).getByText('Tailored for Acme')).toBeInTheDocument();
+    expect(within(rows[0]).getByText('Draft')).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('link', { name: 'Edit' })).toBeInTheDocument();
+    expect(within(rows[1]).getByText('resume.pdf')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('PDF')).toBeInTheDocument();
+    expect(within(rows[1]).queryByText('Draft')).not.toBeInTheDocument();
+  });
+
+  it('filters between drafts and files, with counts', async () => {
+    mockResponses({ documents: [resumeFile], documentDrafts: [resumeDraft] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+    await screen.findByText('resume.pdf');
+
+    expect(screen.getByRole('button', { name: 'All 2' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Drafts 1' }));
+    expect(screen.queryByText('resume.pdf')).not.toBeInTheDocument();
+    expect(screen.getByText('Tailored for Acme')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files 1' }));
+    expect(screen.getByText('resume.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('Tailored for Acme')).not.toBeInTheDocument();
+  });
+
+  it('hides the filter while only one kind of item exists', async () => {
+    mockResponses({ documents: [resumeFile] });
+    const { unmount } = render(<DocumentList applicationId="app-1" category="resume" />, {
+      wrapper: Wrapper,
+    });
+    await screen.findByText('resume.pdf');
+    expect(screen.queryByRole('group', { name: 'Filter' })).not.toBeInTheDocument();
+    unmount();
+
+    mockResponses({ documentDrafts: [resumeDraft] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+    await screen.findByText('Tailored for Acme');
+    expect(screen.queryByRole('group', { name: 'Filter' })).not.toBeInTheDocument();
+  });
+
+  it('shows the whole list again once the filtered kind disappears', async () => {
+    mockResponses({ documents: [resumeFile], documentDrafts: [resumeDraft] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+    await screen.findByText('resume.pdf');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drafts 1' }));
+    mockResponses({ documents: [resumeFile] });
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+
+    expect(await screen.findByText('resume.pdf')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Filter' })).not.toBeInTheDocument();
+  });
+
+  it('no longer renders an always-open dropzone', async () => {
+    mockResponses();
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+    await screen.findByText(/create or upload one/i);
+    expect(screen.queryByText(/click to upload/i)).not.toBeInTheDocument();
+  });
+
+  it('opens the file picker from the Upload file button', async () => {
+    mockResponses();
+    const { container } = render(<DocumentList applicationId="app-1" category="resume" />, {
+      wrapper: Wrapper,
+    });
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const click = vi.spyOn(input, 'click');
+    fireEvent.click(screen.getByRole('button', { name: 'Upload file' }));
+    expect(click).toHaveBeenCalled();
   });
 });

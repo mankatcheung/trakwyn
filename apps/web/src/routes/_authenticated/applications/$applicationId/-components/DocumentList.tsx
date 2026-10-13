@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ExternalLinkIcon, FileTextIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { FileTextIcon, PlusIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
 import { documentCategory, type DocumentCategory } from '#/lib/documentCategory';
-import { Button, Card, EmptyState } from '@trakwyn/ui';
-import { DocumentPreviewModal, isPreviewableMimeType } from './DocumentPreviewModal';
+import {
+  buildListItems,
+  countItems,
+  effectiveFilter,
+  filterItems,
+  type ListFilter,
+} from '#/lib/documentListItems';
+import { EmptyState } from '@trakwyn/ui';
+import { DocumentPreviewModal } from './DocumentPreviewModal';
+import { DraftRow, FileRow } from './DocumentListRow';
 import { DocumentUploadPanel } from './DocumentUploadPanel';
-import { ResumeMatchPanel } from './ResumeMatchPanel';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import {
   documentDraftsQueryKey,
@@ -29,7 +36,20 @@ const EMPTY_MESSAGE_KEY: Record<DocumentCategory, string> = {
 };
 
 const NEW_DRAFT_CLASS =
-  'flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700';
+  'flex min-h-10 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700';
+const UPLOAD_CLASS =
+  'flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700';
+
+const FILTERS: readonly { id: ListFilter; labelKey: string }[] = [
+  { id: 'all', labelKey: 'documents.filterAll' },
+  { id: 'drafts', labelKey: 'documents.filterDrafts' },
+  { id: 'files', labelKey: 'documents.filterFiles' },
+];
+
+const NEW_DRAFT_ROUTE = {
+  cover_letter: '/applications/$applicationId/cover-letters/new',
+  resume: '/applications/$applicationId/resumes/new',
+} as const;
 
 interface DocumentListProps {
   applicationId: string;
@@ -91,135 +111,98 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
     });
   };
 
-  const newDraftLabel = (
-    <>
-      <PlusIcon size={14} /> <span className="hidden sm:inline">{t('documents.newDraft')}</span>
-    </>
-  );
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [filter, setFilter] = useState<ListFilter>('all');
+
+  const items = useMemo(() => buildListItems(drafts, docs), [drafts, docs]);
+  const counts = countItems(items);
+  const activeFilter = effectiveFilter(filter, counts);
+  const visible = filterItems(items, activeFilter);
+  const withMatch = category === 'resume';
 
   return (
     <div className="space-y-4">
-      {category === 'cover_letter' && (
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/applications/$applicationId/cover-letters/new"
-            params={{ applicationId }}
-            className={NEW_DRAFT_CLASS}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {counts.drafts > 0 && counts.files > 0 ? (
+          <div
+            role="group"
+            aria-label={t('documents.filterLabel')}
+            className="flex rounded-[10px] bg-gray-200 p-[3px] dark:bg-gray-700"
           >
-            {newDraftLabel}
-          </Link>
-        </div>
-      )}
-      {category === 'resume' && (
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/applications/$applicationId/resumes/new"
-            params={{ applicationId }}
-            className={NEW_DRAFT_CLASS}
-          >
-            {newDraftLabel}
-          </Link>
-        </div>
-      )}
-
-      {drafts.length > 0 && (
-        <div className="space-y-3">
-          {drafts.map((draft) => (
-            <Card key={draft.id} className="px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <Link
-                    to="/applications/$applicationId/documents/$draftId"
-                    params={{ applicationId, draftId: draft.id }}
-                    className="block truncate text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    {draft.title}
-                  </Link>
-                  <span className="text-xs text-gray-400">
-                    {new Date(draft.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <button
-                  onClick={() => deleteDraft(draft)}
-                  aria-label={t('common.delete')}
-                  className="shrink-0 rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                >
-                  <Trash2Icon size={14} />
-                </button>
-              </div>
-              {category === 'resume' && (
-                <ResumeMatchPanel
-                  applicationId={applicationId}
-                  resume={{ documentDraftId: draft.id }}
-                />
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <DocumentUploadPanel applicationId={applicationId} category={category} />
-
-      {docs.map((doc) => (
-        <Card key={doc.id} className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                {isPreviewableMimeType(doc.mimeType) ? (
-                  <Button
-                    variant="link"
-                    onClick={() => setPreviewDoc(doc)}
-                    className="truncate text-left"
-                  >
-                    {doc.name}
-                  </Button>
-                ) : (
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    {doc.name}
-                  </a>
-                )}
-                {category === 'other' && doc.documentType === 'portfolio' && (
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                    {t('documents.portfolio')}
-                  </span>
-                )}
-                {doc.version && <span className="text-xs text-gray-400">{doc.version}</span>}
-              </div>
-              <p className="text-xs text-gray-400">
-                {doc.mimeType} · {(doc.sizeBytes / 1024).toFixed(1)} KB
-              </p>
-            </div>
-            <div className="ml-4 flex shrink-0 items-center gap-1">
-              <a
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-sm p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
-                title={t('documents.openInNewTab')}
-              >
-                <ExternalLinkIcon size={14} />
-              </a>
+            {FILTERS.map(({ id, labelKey }) => (
               <button
-                onClick={() => deleteDocument(doc)}
-                aria-label={t('common.delete')}
-                className="rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                key={id}
+                type="button"
+                aria-pressed={activeFilter === id}
+                onClick={() => setFilter(id)}
+                className={`min-h-8 rounded-lg px-3.5 text-sm transition-colors ${
+                  activeFilter === id
+                    ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-gray-100'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
               >
-                <Trash2Icon size={14} />
+                {t(labelKey)} {counts[id === 'all' ? 'all' : id]}
               </button>
-            </div>
+            ))}
           </div>
-          {category === 'resume' && (
-            <ResumeMatchPanel applicationId={applicationId} resume={{ documentId: doc.id }} />
+        ) : (
+          <span />
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => uploadInputRef.current?.click()}
+            className={UPLOAD_CLASS}
+          >
+            <UploadIcon size={16} aria-hidden="true" />
+            {t('documents.uploadFile')}
+          </button>
+          {category !== 'other' && (
+            <Link
+              to={NEW_DRAFT_ROUTE[category]}
+              params={{ applicationId }}
+              className={NEW_DRAFT_CLASS}
+            >
+              <PlusIcon size={16} aria-hidden="true" />
+              {t('documents.newDraft')}
+            </Link>
           )}
-        </Card>
-      ))}
+        </div>
+      </div>
 
-      {draftsLoaded && docsLoaded && drafts.length === 0 && docs.length === 0 && (
+      <DocumentUploadPanel
+        applicationId={applicationId}
+        category={category}
+        inputRef={uploadInputRef}
+      />
+
+      {visible.length > 0 && (
+        <ul className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          {visible.map((item) =>
+            item.kind === 'draft' ? (
+              <DraftRow
+                key={item.key}
+                applicationId={applicationId}
+                draft={item.draft}
+                withMatch={withMatch}
+                onDelete={deleteDraft}
+              />
+            ) : (
+              <FileRow
+                key={item.key}
+                applicationId={applicationId}
+                document={item.document}
+                withMatch={withMatch}
+                showPortfolioBadge={category === 'other'}
+                onPreview={setPreviewDoc}
+                onDelete={deleteDocument}
+              />
+            ),
+          )}
+        </ul>
+      )}
+
+      {draftsLoaded && docsLoaded && items.length === 0 && (
         <EmptyState icon={<FileTextIcon size={32} />} message={t(EMPTY_MESSAGE_KEY[category])} />
       )}
       <DocumentPreviewModal document={previewDoc} onClose={() => setPreviewDoc(null)} />

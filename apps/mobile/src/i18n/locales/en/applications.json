@@ -70,10 +70,10 @@
     "regenerate": "Regenerate",
     "generatedAt": "Generated {{date}}",
     "staleReminder": "This resume has changed since the match was generated. Regenerate it for an up-to-date result.",
-    "notGenerated": "Check how well this resume matches the job description.",
     "matchedKeywords": "Matched keywords",
     "missingKeywords": "Missing keywords",
-    "couldNotCheckTitle": "Could not check match"
+    "couldNotCheckTitle": "Could not check match",
+    "staleBadge": "Out of date"
   },
   "companyBriefing": {
     "description": "Generate an AI research briefing on this company: culture, recent news, and interview tips.",

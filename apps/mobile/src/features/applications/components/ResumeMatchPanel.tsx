@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComputeResumeMatchScore } from '../hooks/useResumeMatchMutations';
@@ -7,6 +7,7 @@ import type { ResumeRef } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { ChevronDownIcon, ChevronUpIcon } from './ApplicationIcons';
 
 interface ResumeMatchPanelProps {
   applicationId: string;
@@ -15,11 +16,18 @@ interface ResumeMatchPanelProps {
   resumeId: string;
 }
 
+/** The bar's tone: the same bands as web's score colours, collapsed to three. */
+function scoreTone(score: number, colors: ThemeColors) {
+  if (score >= 71) return { background: colors.successSurface, text: colors.success };
+  if (score >= 41) return { background: colors.warningSurface, text: colors.warning };
+  return { background: colors.dangerSurface, text: colors.danger };
+}
+
 /**
- * The match for one resume: a Generate button until there is a result, then
- * the saved result with a Regenerate button. The result is stored server-side,
- * so it is still here after a restart; `isStale` says the resume's text has
- * changed since it was scored.
+ * The match for one resume: a full-width "Generate match" bar until there is
+ * a result, then a score bar that expands in place to the summary and keywords
+ * (JEF-399). The result is stored server-side, so it is still here after a
+ * restart; `isStale` says the resume's text has changed since it was scored.
  */
 export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatchPanelProps) {
   const { t } = useTranslation('applications');
@@ -28,9 +36,12 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
   const { data: matches } = useResumeMatches(applicationId);
   const compute = useComputeResumeMatchScore(applicationId);
   const match = findResumeMatch(matches, resume);
+  const [expanded, setExpanded] = useState(false);
 
   const onCompute = () => {
     compute.mutate(resume, {
+      // A fresh result opens itself: the bar alone would hide what was just asked for.
+      onSuccess: () => setExpanded(true),
       onError: (err) => Alert.alert(t('resumeMatch.couldNotCheckTitle'), getErrorMessage(err)),
     });
   };
@@ -55,79 +66,117 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
   if (!match) {
     return (
       <View style={styles.container} testID={`resume-match-${resumeId}`}>
-        <Text style={styles.hint}>{t('resumeMatch.notGenerated')}</Text>
-        {button}
+        <Pressable
+          style={[styles.bar, styles.generateBar, compute.isPending && styles.buttonDisabled]}
+          onPress={onCompute}
+          disabled={compute.isPending}
+          accessibilityRole="button"
+          testID={`generate-resume-match-${resumeId}`}
+        >
+          {compute.isPending ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={styles.generateBarText}>{t('resumeMatch.generate')}</Text>
+          )}
+        </Pressable>
       </View>
     );
   }
 
+  const tone = scoreTone(match.score, colors);
   return (
     <View style={styles.container} testID={`resume-match-${resumeId}`}>
-      <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{match.score}</Text>
-        <View style={styles.scoreText}>
-          <Text style={styles.scoreLabel}>{match.label}</Text>
+      <Pressable
+        style={[styles.bar, { backgroundColor: tone.background }]}
+        onPress={() => setExpanded((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        testID={`resume-match-toggle-${resumeId}`}
+      >
+        <Text style={[styles.barScore, { color: tone.text }]}>
+          {match.score} · {match.label}
+          {match.isStale ? ` · ${t('resumeMatch.staleBadge')}` : ''}
+        </Text>
+        {expanded ? (
+          <ChevronUpIcon color={tone.text} size={16} />
+        ) : (
+          <ChevronDownIcon color={tone.text} size={16} />
+        )}
+      </Pressable>
+
+      {expanded ? (
+        <View style={styles.details}>
           <Text style={styles.generatedAt}>
             {t('resumeMatch.generatedAt', {
               date: new Date(match.generatedAt).toLocaleString(),
             })}
           </Text>
-        </View>
-      </View>
 
-      {match.isStale ? (
-        <View
-          style={styles.stale}
-          accessibilityRole="alert"
-          testID={`resume-match-stale-${resumeId}`}
-        >
-          <Text style={styles.staleText}>{t('resumeMatch.staleReminder')}</Text>
-        </View>
-      ) : null}
+          {match.isStale ? (
+            <View
+              style={styles.stale}
+              accessibilityRole="alert"
+              testID={`resume-match-stale-${resumeId}`}
+            >
+              <Text style={styles.staleText}>{t('resumeMatch.staleReminder')}</Text>
+            </View>
+          ) : null}
 
-      {match.summary ? <Text style={styles.summary}>{match.summary}</Text> : null}
+          {match.summary ? <Text style={styles.summary}>{match.summary}</Text> : null}
 
-      {match.matchedKeywords.length > 0 ? (
-        <View>
-          <Text style={styles.keywordsHeading}>{t('resumeMatch.matchedKeywords')}</Text>
-          <View style={styles.keywordsRow}>
-            {match.matchedKeywords.map((kw) => (
-              <View key={kw} style={styles.matchedChip}>
-                <Text style={styles.matchedChipText}>{kw}</Text>
+          {match.matchedKeywords.length > 0 ? (
+            <View>
+              <Text style={styles.keywordsHeading}>{t('resumeMatch.matchedKeywords')}</Text>
+              <View style={styles.keywordsRow}>
+                {match.matchedKeywords.map((kw) => (
+                  <View key={kw} style={styles.matchedChip}>
+                    <Text style={styles.matchedChipText}>{kw}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        </View>
-      ) : null}
+            </View>
+          ) : null}
 
-      {match.missingKeywords.length > 0 ? (
-        <View>
-          <Text style={styles.keywordsHeading}>{t('resumeMatch.missingKeywords')}</Text>
-          <View style={styles.keywordsRow}>
-            {match.missingKeywords.map((kw) => (
-              <View key={kw} style={styles.missingChip}>
-                <Text style={styles.missingChipText}>{kw}</Text>
+          {match.missingKeywords.length > 0 ? (
+            <View>
+              <Text style={styles.keywordsHeading}>{t('resumeMatch.missingKeywords')}</Text>
+              <View style={styles.keywordsRow}>
+                {match.missingKeywords.map((kw) => (
+                  <View key={kw} style={styles.missingChip}>
+                    <Text style={styles.missingChipText}>{kw}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </View>
+          ) : null}
+
+          {button}
         </View>
       ) : null}
-
-      {button}
     </View>
   );
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    container: {
-      gap: 10,
-      marginTop: 8,
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
+    container: { gap: 10, marginTop: 8 },
+    bar: {
+      minHeight: 44,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
-    hint: { fontSize: 13, color: colors.textSubtle },
+    generateBar: {
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      backgroundColor: colors.surface,
+    },
+    generateBarText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+    barScore: { fontSize: 14, fontWeight: '700' },
+    details: { gap: 10 },
     button: {
       alignSelf: 'flex-start',
       backgroundColor: colors.primary,
@@ -139,10 +188,6 @@ function createStyles(colors: ThemeColors) {
     },
     buttonDisabled: { opacity: 0.6 },
     buttonText: { color: colors.onPrimary, fontSize: 13, fontWeight: '700' },
-    scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    scoreValue: { fontSize: 28, fontWeight: '800', color: colors.text },
-    scoreText: { flex: 1, gap: 2 },
-    scoreLabel: { fontSize: 14, fontWeight: '600', color: colors.textSubtle },
     generatedAt: { fontSize: 12, color: colors.textFaint },
     stale: {
       borderRadius: 8,

@@ -6,7 +6,6 @@
   "versionPlaceholder": "Version (optional)",
   "uploading": "Uploading...",
   "upload": "Upload",
-  "chooseFile": "Choose a file to upload",
   "emptyCoverLetters": "No cover letters yet.",
   "emptyResumes": "No resumes yet. Create or upload one to check how well it matches this job.",
   "emptyOther": "No other documents yet.",
@@ -32,7 +31,6 @@
   "resume": "Resume",
   "portfolio": "Portfolio",
   "other": "Other",
-  "draftsSectionTitle": "Drafts",
   "newDraft": "New Draft",
   "savingEllipsis": "Saving…",
   "saved": "Saved",
@@ -43,5 +41,14 @@
   "deleteFailed": "Failed to delete draft",
   "draftNotFound": "Draft not found",
   "editorPlaceholder": "Start writing…",
-  "editedPrefix": "Edited"
+  "editedPrefix": "Edited",
+  "filterAll": "All",
+  "filterDrafts": "Drafts",
+  "filterFiles": "Files",
+  "draftBadge": "Draft",
+  "editedOn": "Edited {{date}}",
+  "uploadedOn": "Uploaded {{date}}",
+  "uploadFile": "Upload file",
+  "openFile": "Open",
+  "moreActions": "More actions"
 }

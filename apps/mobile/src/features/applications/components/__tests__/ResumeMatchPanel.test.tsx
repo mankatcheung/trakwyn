@@ -76,23 +76,36 @@ describe('ResumeMatchPanel', () => {
     const { findByText, queryByText } = await renderPanel();
 
     expect(await findByText('Generate match')).toBeTruthy();
-    expect(queryByText('Good match')).toBeNull();
+    expect(queryByText(/Good match/)).toBeNull();
   });
 
-  it('shows the saved result without running the mutation', async () => {
+  it('shows the saved score as a collapsed bar without running the mutation', async () => {
     mockApi({ matches: [draftMatch] });
-    const { findByText, getByText } = await renderPanel();
+    const { findByText, queryByText } = await renderPanel();
 
-    expect(await findByText('Good match')).toBeTruthy();
-    expect(getByText('82')).toBeTruthy();
-    expect(getByText('Strong overlap on core skills.')).toBeTruthy();
-    expect(getByText('TypeScript')).toBeTruthy();
-    expect(getByText('Kubernetes')).toBeTruthy();
-    expect(getByText('Regenerate')).toBeTruthy();
+    expect(await findByText('82 · Good match')).toBeTruthy();
+    expect(queryByText('Strong overlap on core skills.')).toBeNull();
     expect(mockedGqlRequest).not.toHaveBeenCalledWith(
       expect.stringContaining('mutation ComputeResumeMatchScore'),
       expect.anything(),
     );
+  });
+
+  it('expands in place to the summary and keywords, and collapses again', async () => {
+    mockApi({ matches: [draftMatch] });
+    const { findByTestId, getByText, queryByText } = await renderPanel();
+
+    const toggle = await findByTestId('resume-match-toggle-draft-1');
+    expect(toggle.props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+    await fireEvent.press(toggle);
+
+    expect(getByText('Strong overlap on core skills.')).toBeTruthy();
+    expect(getByText('TypeScript')).toBeTruthy();
+    expect(getByText('Kubernetes')).toBeTruthy();
+    expect(getByText('Regenerate')).toBeTruthy();
+
+    await fireEvent.press(toggle);
+    expect(queryByText('Strong overlap on core skills.')).toBeNull();
   });
 
   it("ignores another resume's match", async () => {
@@ -100,17 +113,18 @@ describe('ResumeMatchPanel', () => {
     const { findByText, queryByText } = await renderPanel();
 
     expect(await findByText('Generate match')).toBeTruthy();
-    expect(queryByText('Good match')).toBeNull();
+    expect(queryByText(/Good match/)).toBeNull();
   });
 
-  it('generates a match for a draft and shows it', async () => {
+  it('generates a match for a draft and opens the result', async () => {
     mockApi({ computed: draftMatch });
     const { findByText, getByTestId } = await renderPanel();
 
     await findByText('Generate match');
     await fireEvent.press(getByTestId('generate-resume-match-draft-1'));
 
-    expect(await findByText('Good match')).toBeTruthy();
+    expect(await findByText('82 · Good match')).toBeTruthy();
+    expect(await findByText('Strong overlap on core skills.')).toBeTruthy();
     expect(mockedGqlRequest).toHaveBeenCalledWith(
       expect.stringContaining('mutation ComputeResumeMatchScore'),
       { applicationId: 'app-1', documentDraftId: 'draft-1', documentId: null },
@@ -130,23 +144,28 @@ describe('ResumeMatchPanel', () => {
         { applicationId: 'app-1', documentDraftId: null, documentId: 'doc-1' },
       ),
     );
-    expect(await findByText('Good match')).toBeTruthy();
+    expect(await findByText('82 · Good match')).toBeTruthy();
   });
 
   describe('when the resume changed since the match', () => {
-    it('shows the reminder to regenerate', async () => {
+    it('marks the bar and shows the reminder to regenerate once expanded', async () => {
       mockApi({ matches: [{ ...draftMatch, isStale: true }] });
-      const { findByTestId, findByText } = await renderPanel();
+      const { findByTestId, findByText, queryByTestId } = await renderPanel();
 
+      expect(await findByText(/Out of date/)).toBeTruthy();
+      expect(queryByTestId('resume-match-stale-draft-1')).toBeNull();
+
+      await fireEvent.press(await findByTestId('resume-match-toggle-draft-1'));
       expect(await findByTestId('resume-match-stale-draft-1')).toBeTruthy();
       expect(await findByText(/This resume has changed/)).toBeTruthy();
     });
 
-    it('does not show the reminder for an up-to-date match', async () => {
+    it('does not mark an up-to-date match', async () => {
       mockApi({ matches: [draftMatch] });
-      const { findByText, queryByTestId } = await renderPanel();
+      const { findByTestId, queryByText, queryByTestId } = await renderPanel();
 
-      await findByText('Good match');
+      await fireEvent.press(await findByTestId('resume-match-toggle-draft-1'));
+      expect(queryByText(/Out of date/)).toBeNull();
       expect(queryByTestId('resume-match-stale-draft-1')).toBeNull();
     });
 
@@ -157,10 +176,11 @@ describe('ResumeMatchPanel', () => {
       });
       const { findByTestId, findByText, queryByText, queryByTestId } = await renderPanel();
 
+      await fireEvent.press(await findByTestId('resume-match-toggle-draft-1'));
       await fireEvent.press(await findByTestId('generate-resume-match-draft-1'));
 
-      expect(await findByText('Excellent match')).toBeTruthy();
-      expect(queryByText('Some overlap')).toBeNull();
+      expect(await findByText('90 · Excellent match')).toBeTruthy();
+      expect(queryByText(/Some overlap/)).toBeNull();
       expect(queryByTestId('resume-match-stale-draft-1')).toBeNull();
     });
   });

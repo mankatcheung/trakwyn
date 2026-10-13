@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { put as putBlob } from '@vercel/blob/client';
 import { CheckIcon, XIcon } from 'lucide-react';
@@ -38,9 +38,18 @@ interface DocumentUploadPanelProps {
   applicationId: string;
   /** Decides the saved type: the tab implies it, so only Other asks. */
   category: DocumentCategory;
+  /**
+   * The file input is hidden and opened by the list header's "Upload file"
+   * button, so the picker has no dropzone of its own taking up the list.
+   */
+  inputRef: RefObject<HTMLInputElement | null>;
 }
 
-export function DocumentUploadPanel({ applicationId, category }: DocumentUploadPanelProps) {
+export function DocumentUploadPanel({
+  applicationId,
+  category,
+  inputRef,
+}: DocumentUploadPanelProps) {
   const { t } = useLocale();
   const qc = useQueryClient();
   const allowedTypes = UPLOAD_TYPES_BY_CATEGORY[category];
@@ -134,31 +143,34 @@ export function DocumentUploadPanel({ applicationId, category }: DocumentUploadP
     }
   };
 
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      className="hidden"
+      onChange={handleFileChange}
+      disabled={uploading}
+      aria-label={t('documents.uploadFile')}
+    />
+  );
+
   if (!pendingUpload) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center dark:border-gray-600 dark:bg-gray-800">
-        <label className="cursor-pointer">
-          <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} />
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {uploading ? (
-              <span>{t('documents.uploading')}</span>
-            ) : (
-              <>
-                <span className="font-medium text-blue-600 hover:underline">
-                  {t('documents.clickToUpload')}
-                </span>{' '}
-                {t('documents.uploadPromptSuffix')}
-              </>
-            )}
-          </div>
-        </label>
-        {uploadError && <p className="mt-2 text-xs text-red-600">{uploadError}</p>}
-      </div>
+      <>
+        {fileInput}
+        {uploading && (
+          <p role="status" className="text-sm text-gray-500 dark:text-gray-400">
+            {t('documents.uploading')}
+          </p>
+        )}
+        {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
+      </>
     );
   }
 
   return (
     <div className="space-y-3 rounded-xl border border-blue-200 bg-white p-4 dark:border-blue-700 dark:bg-gray-800">
+      {fileInput}
       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
         {t('documents.uploaded')}{' '}
         <span className="font-normal text-gray-600 dark:text-gray-400">{pendingUpload.name}</span>

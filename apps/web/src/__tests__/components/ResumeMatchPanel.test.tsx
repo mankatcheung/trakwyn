@@ -16,7 +16,7 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { ResumeMatchPanel } from '#/routes/_authenticated/applications/$applicationId/-components/ResumeMatchPanel';
+import { ResumeMatch as ResumeMatchSlot } from '#/routes/_authenticated/applications/$applicationId/-components/ResumeMatchPanel';
 import type { ResumeMatch } from '#/routes/_authenticated/applications/$applicationId/-resumeMatchQueries';
 
 const draftMatch: ResumeMatch = {
@@ -33,13 +33,20 @@ const draftMatch: ResumeMatch = {
   isStale: false,
 };
 
-function renderPanel(resume: React.ComponentProps<typeof ResumeMatchPanel>['resume']) {
+function renderPanel(resume: React.ComponentProps<typeof ResumeMatchSlot>['resume']) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <ResumeMatchPanel applicationId="app-1" resume={resume} />
+      <ResumeMatchSlot applicationId="app-1" resume={resume}>
+        {({ chip, details }) => (
+          <div>
+            {chip}
+            {details}
+          </div>
+        )}
+      </ResumeMatchSlot>
     </QueryClientProvider>,
   );
 }
@@ -64,7 +71,9 @@ function mockApi({
   });
 }
 
-describe('ResumeMatchPanel', () => {
+const chipName = (name: RegExp | string) => screen.findByRole('button', { name });
+
+describe('ResumeMatch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -73,44 +82,62 @@ describe('ResumeMatchPanel', () => {
     mockApi({});
     renderPanel({ documentDraftId: 'draft-1' });
 
-    expect(await screen.findByRole('button', { name: /generate match/i })).toBeEnabled();
-    expect(screen.queryByText('Good match')).not.toBeInTheDocument();
+    expect(await chipName(/generate match/i)).toBeEnabled();
+    expect(screen.queryByText(/Good match/)).not.toBeInTheDocument();
   });
 
-  it('shows the saved result without calling the LLM mutation', async () => {
+  it('shows the saved score as a collapsed chip without calling the LLM mutation', async () => {
     mockApi({ matches: [draftMatch] });
     renderPanel({ documentDraftId: 'draft-1' });
 
-    expect(await screen.findByText('Good match')).toBeInTheDocument();
-    expect(screen.getByText('82')).toBeInTheDocument();
-    expect(screen.getByText('Strong overlap on core skills.')).toBeInTheDocument();
-    expect(screen.getByText('TypeScript')).toBeInTheDocument();
-    expect(screen.getByText('Kubernetes')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
+    const chip = await chipName(/82 · Good match/);
+    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Strong overlap on core skills.')).not.toBeInTheDocument();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
       expect.stringContaining('mutation ComputeResumeMatchScore'),
       expect.anything(),
     );
   });
 
+  it('expands the chip in place to the summary and keywords, and collapses it again', async () => {
+    mockApi({ matches: [draftMatch] });
+    renderPanel({ documentDraftId: 'draft-1' });
+
+    const chip = await chipName(/82 · Good match/);
+    fireEvent.click(chip);
+
+    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Strong overlap on core skills.')).toBeInTheDocument();
+    expect(screen.getByText('TypeScript')).toBeInTheDocument();
+    expect(screen.getByText('Kubernetes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
+
+    fireEvent.click(chip);
+    expect(screen.queryByText('Strong overlap on core skills.')).not.toBeInTheDocument();
+  });
+
   it("ignores another resume's match", async () => {
     mockApi({ matches: [{ ...draftMatch, documentDraftId: 'draft-2' }] });
     renderPanel({ documentDraftId: 'draft-1' });
 
-    expect(await screen.findByRole('button', { name: /generate match/i })).toBeInTheDocument();
-    expect(screen.queryByText('Good match')).not.toBeInTheDocument();
+    expect(await chipName(/generate match/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Good match/)).not.toBeInTheDocument();
   });
 
-  it('generates a match for a draft and shows the result', async () => {
+  it('generates a match for a draft and opens the result', async () => {
     mockApi({ computed: draftMatch });
     renderPanel({ documentDraftId: 'draft-1' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /generate match/i }));
+    fireEvent.click(await chipName(/generate match/i));
 
-    expect(await screen.findByText('Good match')).toBeInTheDocument();
+    expect(await screen.findByText('Strong overlap on core skills.')).toBeInTheDocument();
     expect(mockGqlRequest).toHaveBeenCalledWith(
       expect.stringContaining('mutation ComputeResumeMatchScore'),
       { applicationId: 'app-1', documentDraftId: 'draft-1', documentId: null },
+    );
+    expect(screen.getByRole('button', { name: /82 · Good match/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
     );
     expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
   });
@@ -119,7 +146,7 @@ describe('ResumeMatchPanel', () => {
     mockApi({ computed: { ...draftMatch, documentDraftId: null, documentId: 'doc-1' } });
     renderPanel({ documentId: 'doc-1' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /generate match/i }));
+    fireEvent.click(await chipName(/generate match/i));
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
@@ -127,23 +154,29 @@ describe('ResumeMatchPanel', () => {
         { applicationId: 'app-1', documentDraftId: null, documentId: 'doc-1' },
       ),
     );
-    expect(await screen.findByText('Good match')).toBeInTheDocument();
+    expect(await chipName(/82 · Good match/)).toBeInTheDocument();
   });
 
   describe('when the resume changed since the match', () => {
-    it('shows the reminder to regenerate', async () => {
+    it('marks the chip and shows the reminder to regenerate once expanded', async () => {
       mockApi({ matches: [{ ...draftMatch, isStale: true }] });
       renderPanel({ documentDraftId: 'draft-1' });
 
-      expect(await screen.findByRole('status')).toHaveTextContent(/resume has changed/i);
+      const chip = await chipName(/82 · Good match/);
+      expect(screen.getByLabelText('Out of date')).toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+
+      fireEvent.click(chip);
+      expect(screen.getByRole('status')).toHaveTextContent(/resume has changed/i);
       expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
     });
 
-    it('does not show the reminder for an up-to-date match', async () => {
+    it('does not mark an up-to-date match', async () => {
       mockApi({ matches: [draftMatch] });
       renderPanel({ documentDraftId: 'draft-1' });
 
-      await screen.findByText('Good match');
+      fireEvent.click(await chipName(/82 · Good match/));
+      expect(screen.queryByLabelText('Out of date')).not.toBeInTheDocument();
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
@@ -154,10 +187,11 @@ describe('ResumeMatchPanel', () => {
       });
       renderPanel({ documentDraftId: 'draft-1' });
 
-      fireEvent.click(await screen.findByRole('button', { name: /regenerate/i }));
+      fireEvent.click(await chipName(/40 · Some overlap/));
+      fireEvent.click(screen.getByRole('button', { name: /regenerate/i }));
 
-      expect(await screen.findByText('Excellent match')).toBeInTheDocument();
-      expect(screen.queryByText('Some overlap')).not.toBeInTheDocument();
+      expect(await chipName(/90 · Excellent match/)).toBeInTheDocument();
+      expect(screen.queryByText(/Some overlap/)).not.toBeInTheDocument();
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
   });
@@ -166,7 +200,7 @@ describe('ResumeMatchPanel', () => {
     mockApi({ computeError: new Error('Something broke') });
     renderPanel({ documentDraftId: 'draft-1' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /generate match/i }));
+    fireEvent.click(await chipName(/generate match/i));
 
     expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /generate match/i })).toBeEnabled();

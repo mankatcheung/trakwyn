@@ -6,7 +6,6 @@
   "versionPlaceholder": "版本（選填）",
   "uploading": "上載中…",
   "upload": "上載",
-  "chooseFile": "選擇要上載的檔案",
   "emptyCoverLetters": "還沒有求職信。",
   "emptyResumes": "還沒有履歷。建立或上載一份，就可以檢查佢同呢個職位嘅配對度。",
   "emptyOther": "還沒有其他文件。",
@@ -32,7 +31,6 @@
   "resume": "履歷",
   "portfolio": "作品集",
   "other": "其他",
-  "draftsSectionTitle": "草稿",
   "newDraft": "新增草稿",
   "savingEllipsis": "儲存中…",
   "saved": "已儲存",
@@ -43,5 +41,14 @@
   "deleteFailed": "刪除草稿失敗",
   "draftNotFound": "找不到草稿",
   "editorPlaceholder": "開始撰寫…",
-  "editedPrefix": "編輯於"
+  "editedPrefix": "編輯於",
+  "filterAll": "全部",
+  "filterDrafts": "草稿",
+  "filterFiles": "檔案",
+  "draftBadge": "草稿",
+  "editedOn": "編輯於 {{date}}",
+  "uploadedOn": "上載於 {{date}}",
+  "uploadFile": "上載檔案",
+  "openFile": "開啟",
+  "moreActions": "更多操作"
 }
