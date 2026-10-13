@@ -102,6 +102,7 @@ import './queries/companyBriefingQueries.js';
 import './mutations/companyBriefingMutations.js';
 import './queries/resumeMatchQueries.js';
 import './mutations/resumeMatchMutations.js';
+import './mutations/resumeAtsMutations.js';
 import './mutations/sessionMutations.js';
 import './mutations/oauthMutations.js';
 import './mutations/chatMutations.js';

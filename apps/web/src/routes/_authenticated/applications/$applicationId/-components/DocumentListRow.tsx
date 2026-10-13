@@ -6,6 +6,7 @@ import { fileExtension } from '#/lib/documentListItems';
 import { Badge, Button, Menu, type MenuItem } from '@trakwyn/ui';
 import { isPreviewableMimeType } from './DocumentPreviewModal';
 import { ResumeMatch } from './ResumeMatchPanel';
+import { ResumeAts } from './ResumeAtsPanel';
 import type { ResumeRef } from '../-resumeMatchQueries';
 import type { Document, DocumentDraft } from '../-documentQueries';
 
@@ -22,7 +23,7 @@ interface RowShellProps {
   primary: ReactNode;
   menuItems: MenuItem[];
   onMenuSelect: (id: string) => void;
-  /** Set on Resumes, where each row carries its match (JEF-397). */
+  /** Set on Resumes, where each row carries its ATS check (JEF-395) and its match (JEF-397). */
   matchResume?: ResumeRef;
   applicationId: string;
 }
@@ -57,7 +58,7 @@ function RowShell({
           </div>
           <span className="text-sm text-gray-600 dark:text-gray-400">{meta}</span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           {chip}
           {primary}
           <Menu
@@ -87,9 +88,26 @@ function RowShell({
 
   if (!matchResume) return render(null, null);
   return (
-    <ResumeMatch applicationId={applicationId} resume={matchResume}>
-      {({ chip, details }) => render(chip, details)}
-    </ResumeMatch>
+    <ResumeAts resume={matchResume}>
+      {(ats) => (
+        <ResumeMatch applicationId={applicationId} resume={matchResume}>
+          {(match) =>
+            render(
+              <>
+                {ats.chip}
+                {match.chip}
+              </>,
+              ats.details || match.details ? (
+                <div className="space-y-4">
+                  {ats.details}
+                  {match.details}
+                </div>
+              ) : null,
+            )
+          }
+        </ResumeMatch>
+      )}
+    </ResumeAts>
   );
 }
 

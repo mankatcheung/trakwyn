@@ -462,6 +462,44 @@ export const RESUME_TEXT_EXTRACTION = {
   EXTRACT_TIMEOUT_MS: 20_000,
 } as const;
 
+/**
+ * The ATS-readiness score (`scoreResumeText`). Every weight is points out of
+ * 100, so `WEIGHTS` must sum to `MAX_SCORE` (asserted in the scorer's tests).
+ * Retuning the score is a change to this block alone.
+ */
+export const ATS_SCORE = {
+  MAX_SCORE: 100,
+  WEIGHTS: {
+    EMAIL: 8,
+    PHONE: 7,
+    EXPERIENCE_HEADING: 12,
+    EDUCATION_HEADING: 9,
+    SKILLS_HEADING: 9,
+    DATES: 15,
+    LENGTH: 10,
+    BULLETS: 10,
+    QUANTIFIED_RESULTS: 10,
+    CLEAN_CHARACTERS: 10,
+  },
+  /** Fewer words than this and the text is treated as not extracted at all. */
+  MIN_READABLE_WORDS: 20,
+  /** A sensible resume length, in words. */
+  WORDS: { MIN: 300, MAX: 1000 },
+  /** Date mentions needed so at least one role has a start and an end. */
+  MIN_DATES: 2,
+  MIN_BULLETS: 3,
+  MIN_QUANTIFIED_BULLETS: 3,
+  /** Characters a parser drops (emoji, private-use glyphs, U+FFFD) before the check fails. */
+  MAX_UNUSUAL_CHARS: 5,
+  /** Lines that are mostly symbols before the check fails. */
+  MAX_SYMBOL_LINES: 2,
+  /** A line this long or longer, under the letter ratio below, is symbol-heavy. */
+  SYMBOL_LINE_MIN_CHARS: 8,
+  SYMBOL_LINE_MIN_ALNUM_RATIO: 0.5,
+  /** Lower bound of each band; below `FAIR` the label is "Needs work". */
+  BANDS: { EXCELLENT: 90, GOOD: 70, FAIR: 40 },
+} as const;
+
 /** MIME types accepted for avatar/profile-photo uploads. */
 export const ALLOWED_AVATAR_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
 

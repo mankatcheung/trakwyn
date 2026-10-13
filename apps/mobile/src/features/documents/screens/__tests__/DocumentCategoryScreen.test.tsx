@@ -34,6 +34,15 @@ jest.mock('../../../applications/components/ResumeMatchPanel', () => {
   };
 });
 
+jest.mock('../../../applications/components/ResumeAtsPanel', () => {
+  const { View } = require('react-native');
+  return {
+    ResumeAtsPanel: ({ resumeId }: { resumeId: string }) => (
+      <View testID={`resume-ats-panel-${resumeId}`} />
+    ),
+  };
+});
+
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -355,11 +364,22 @@ describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
     expect(getByTestId('resume-match-panel-u-r')).toBeTruthy();
   });
 
-  it.each(['cover_letter', 'other'] as const)('puts no match panel on %s', async (category) => {
-    const { queryByTestId } = await renderScreen(jest.fn(), category);
+  it('puts an ATS panel on every resume, drafts and uploads alike (JEF-395)', async () => {
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
 
-    expect(queryByTestId(/^resume-match-panel-/)).toBeNull();
+    expect(getByTestId('resume-ats-panel-dr-r')).toBeTruthy();
+    expect(getByTestId('resume-ats-panel-u-r')).toBeTruthy();
   });
+
+  it.each(['cover_letter', 'other'] as const)(
+    'puts no match or ATS panel on %s',
+    async (category) => {
+      const { queryByTestId } = await renderScreen(jest.fn(), category);
+
+      expect(queryByTestId(/^resume-match-panel-/)).toBeNull();
+      expect(queryByTestId(/^resume-ats-panel-/)).toBeNull();
+    },
+  );
 
   it('sends Resumes to its own create screen', async () => {
     const push = jest.fn();

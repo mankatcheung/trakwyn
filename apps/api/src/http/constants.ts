@@ -186,6 +186,10 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  COMPUTE_RESUME_ATS_SCORE: {
+    MAX_ATTEMPTS: 20,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   GENERATE_COMPANY_BRIEFING: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
