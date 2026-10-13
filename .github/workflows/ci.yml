@@ -183,9 +183,13 @@ jobs:
     # integration tests already cover PGlite).
     services:
       postgres:
-        # The AWS public mirror of the official image: anonymous pulls from
-        # Docker Hub are rate-limited on shared runner IPs (429).
-        image: public.ecr.aws/docker/library/postgres:17
+        # Google's mirror of the official image, not Docker Hub or AWS's public
+        # mirror: anonymous pulls from both are rate-limited on shared runner
+        # IPs (Docker Hub with 429, ECR Public with `toomanyrequests: Data
+        # limit exceeded`, which failed this job on the JEF-51 merge and
+        # blocked the deploy). The service image cannot be retried or given a
+        # fallback, so a registry that does not throttle matters here.
+        image: mirror.gcr.io/library/postgres:17
         env:
           POSTGRES_USER: trakwyn
           POSTGRES_PASSWORD: trakwyn

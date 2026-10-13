@@ -13,11 +13,13 @@
 # deploy-api ships a new image.
 
 ARG NODE_VERSION=24
-# AWS's public mirror of Docker Hub's official images, not Docker Hub itself:
-# the same image, but CI's anonymous pulls from Docker Hub failed with
+# Google's mirror of Docker Hub's official images, not Docker Hub itself: the
+# same image, but CI's anonymous pulls from Docker Hub failed with
 # `429 Too Many Requests` and took the Cloud Run deploy down with them
-# (run #1314). Override NODE_IMAGE to build from somewhere else.
-ARG NODE_IMAGE=public.ecr.aws/docker/library/node:${NODE_VERSION}-slim
+# (run #1314). AWS's public mirror, used here before, started throttling the
+# same shared runner IPs (`toomanyrequests: Data limit exceeded`). Override
+# NODE_IMAGE to build from somewhere else.
+ARG NODE_IMAGE=mirror.gcr.io/library/node:${NODE_VERSION}-slim
 
 FROM ${NODE_IMAGE} AS build
 WORKDIR /repo
