@@ -17,6 +17,7 @@ import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
+import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import { handleDocumentFile } from '#src/http/routes/documentFile.routes.js';
 import { oauthRoutes } from '#src/http/routes/oauth.routes.js';
 import { fakeOAuthConsentRoutes } from '#src/http/routes/fakeOAuthConsent.routes.js';
@@ -60,14 +61,6 @@ function operationNameOf(request: IHttpRequest): string | undefined {
   const name = (source as { operationName?: unknown } | null)?.operationName;
   return typeof name === 'string' ? name : undefined;
 }
-
-/**
- * The only stored keys the dev `GET /uploads/*` route serves: avatars, which
- * `RequestAvatarUploadUrlUseCase` keys as `users/<id>/avatar/…`. Everything
- * else is a document and is served by `handleDocumentFile`. This also rules
- * out the `_upload/` write route's own prefix, which is never a stored key.
- */
-const LOCAL_PUBLIC_KEY = /^users\/[^/]+\/avatar\/[^/]+$/;
 
 /**
  * Fully configures an already-constructed Fastify instance (cors/cookie/
@@ -180,7 +173,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
       if (storageProvider.resolveKeyPath(storageKey) === null) {
         return reply.code(400).send({ error: 'Invalid storage key' });
       }
-      if (!LOCAL_PUBLIC_KEY.test(storageKey)) {
+      if (storageAccessFor(storageKey) !== 'public') {
         return reply.code(404).send({ error: 'Not found' });
       }
 

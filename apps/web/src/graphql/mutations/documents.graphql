@@ -2,6 +2,7 @@ mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
   requestUploadUrl(input: $input) {
     uploadUrl
     storageKey
+    access
   }
 }
 

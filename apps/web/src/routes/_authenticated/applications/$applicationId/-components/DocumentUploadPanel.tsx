@@ -15,10 +15,11 @@ import {
   uploadProviderOf,
   type UploadProvider,
 } from './documentUploadReporting';
+import { blobAccessOf } from './documentUploadAccess';
 
 const REQUEST_UPLOAD_URL = `
   mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
-    requestUploadUrl(input: $input) { uploadUrl storageKey }
+    requestUploadUrl(input: $input) { uploadUrl storageKey access }
   }
 `;
 const CONFIRM_DOCUMENT = `
@@ -71,7 +72,7 @@ export function DocumentUploadPanel({
     let storageProvider: UploadProvider | null = null;
     try {
       const { requestUploadUrl } = await gqlClient.request<{
-        requestUploadUrl: { uploadUrl: string; storageKey: string };
+        requestUploadUrl: { uploadUrl: string; storageKey: string; access?: string | null };
       }>(REQUEST_UPLOAD_URL, {
         input: { applicationId, filename: file.name, mimeType: file.type },
       });
@@ -89,7 +90,7 @@ export function DocumentUploadPanel({
         // `uploadUrl` is a Vercel Blob client token (not a fetchable URL) —
         // put() uploads directly to Blob storage, bypassing our API.
         await putBlob(requestUploadUrl.storageKey, file, {
-          access: 'public',
+          access: blobAccessOf(requestUploadUrl.access),
           token: requestUploadUrl.uploadUrl,
           contentType: file.type,
         });

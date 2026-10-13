@@ -84,26 +84,29 @@ cd apps/api && vercel env pull .env.production --environment=production && cd -
 
 The dry run never prints a value. It reports anything missing or left as a placeholder, and exits non-zero until every secret has one. `UPSTASH_REDIS_REST_TOKEN` is **not** in that file and has to come from the Upstash dashboard. `UPSTASH_REDIS_REST_URL` is not secret and belongs in `terraform.tfvars`, copied from `terraform -chdir=../upstash output -raw rest_url`. The database itself is Terraform in `infra/upstash` (JEF-378). Its value is copied rather than read across roots, because reading that root's state would also read the Redis credentials it holds (`infra/upstash/README.md`).
 
-`BLOB_PUBLIC_READ_WRITE_TOKEN` is never read from the file. The script fetches it from the Vercel API for the Blob store `infra/vercel` manages (JEF-381), using that root's `blob_store_id` and `team_id` outputs, and pipes it straight to Secret Manager. So apply `infra/vercel` first, and run the script with `TF_VAR_vercel_api_token` set (`source ../vercel/.envrc`). The token stays out of Terraform state on purpose: the provider's `vercel_blob_store_secrets` data source would have written it into state.
+`BLOB_PUBLIC_READ_WRITE_TOKEN` and `BLOB_PRIVATE_READ_WRITE_TOKEN` are never read from the file. The script fetches each from the Vercel API for the Blob stores `infra/vercel` manages (JEF-381, JEF-51), using that root's `blob_store_id` (avatars, public), `documents_blob_store_id` (documents, private) and `team_id` outputs, and pipes it straight to Secret Manager. So apply `infra/vercel` first, and run the script with `TF_VAR_vercel_api_token` set (`source ../vercel/.envrc`). The tokens stay out of Terraform state on purpose: the provider's `vercel_blob_store_secrets` data source would have written them into state.
+
+**Adding the private store to a running service** is a rollout with an order, because Cloud Run will not start a revision whose secret has no version: `infra/vercel/README.md`, "Moving documents to the private store".
 
 Secret IDs are the env var names in lower-kebab-case:
 
-| Secret ID                      | Value                                                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `jwt-secret`                   | copy from the current production config, or sessions are invalidated                             |
-| `jwt-refresh-secret`           | copy from the current production config                                                          |
-| `totp-encryption-key`          | copy from the current production config, or 2FA secrets can't be read                            |
-| `llm-api-key-encryption-key`   | copy from the current production config, or users' AI keys can't be read                         |
-| `database-url`                 | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below |
-| `upstash-redis-rest-token`     | Upstash token                                                                                    |
-| `blob-public-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s Blob store                         |
-| `brevo-api-key`                | Brevo API key (not the one `infra/brevo` uses)                                                   |
-| `cron-secret`                  | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
-| `digest-admin-secret`          | a new random value                                                                               |
-| `google-oauth-client-secret`   | Google OAuth client secret                                                                       |
-| `github-oauth-client-secret`   | GitHub OAuth app secret                                                                          |
-| `vapid-private-key`            | copy from the current production config, or push subscriptions break                             |
-| `axiom-token`                  | Axiom ingest token                                                                               |
+| Secret ID                       | Value                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `jwt-secret`                    | copy from the current production config, or sessions are invalidated                             |
+| `jwt-refresh-secret`            | copy from the current production config                                                          |
+| `totp-encryption-key`           | copy from the current production config, or 2FA secrets can't be read                            |
+| `llm-api-key-encryption-key`    | copy from the current production config, or users' AI keys can't be read                         |
+| `database-url`                  | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below |
+| `upstash-redis-rest-token`      | Upstash token                                                                                    |
+| `blob-public-read-write-token`  | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s public Blob store (avatars)        |
+| `blob-private-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s private Blob store (documents)     |
+| `brevo-api-key`                 | Brevo API key (not the one `infra/brevo` uses)                                                   |
+| `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
+| `digest-admin-secret`           | a new random value                                                                               |
+| `google-oauth-client-secret`    | Google OAuth client secret                                                                       |
+| `github-oauth-client-secret`    | GitHub OAuth app secret                                                                          |
+| `vapid-private-key`             | copy from the current production config, or push subscriptions break                             |
+| `axiom-token`                   | Axiom ingest token                                                                               |
 
 To set one by hand instead:
 

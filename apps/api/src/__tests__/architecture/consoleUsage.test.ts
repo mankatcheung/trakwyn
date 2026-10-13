@@ -41,6 +41,8 @@ const CONSOLE_BY_DESIGN: Record<string, string> = {
     'The `pnpm db:seed` entrypoint. Same as migrate.ts — a missing DATABASE_URL has to be reported to whoever ran the command, before anything is wired up.',
   'copyFromTurso.ts':
     'The one-off Turso to Postgres copy (JEF-342), a script run by hand and deleted once Turso is retired. Both this file and its exemption go at the same time.',
+  'copyDocumentsToPrivateStore.ts':
+    'The one-off Blob copy (JEF-51), run by hand through `pnpm blob:copy-documents` and deleted once the documents have moved. Its output is the report the operator reads before deleting the public copies, so it goes to the terminal. Both this file and its exemption go at the same time.',
 };
 
 /**

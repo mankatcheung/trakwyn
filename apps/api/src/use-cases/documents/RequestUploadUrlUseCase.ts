@@ -4,6 +4,7 @@ import {
   QuotaExceededError,
 } from '#src/use-cases/errors/DomainError.js';
 import { nanoid } from 'nanoid';
+import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
@@ -58,6 +59,6 @@ export class RequestUploadUrlUseCase implements IRequestUploadUrlUseCase {
       input.mimeType,
     );
 
-    return { uploadUrl, storageKey };
+    return { uploadUrl, storageKey, access: storageAccessFor(storageKey) };
   }
 }

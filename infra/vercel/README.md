@@ -1,6 +1,6 @@
 # infra/vercel: the web app's Vercel project
 
-The Vercel project `apps/web` deploys to, as Terraform (JEF-363): its settings, its domains and its production env vars, plus the Blob store the API uploads to (JEF-381). Before this, the same things were steps in a comment at the top of `.github/workflows/ci.yml`, done once in the dashboard and not visible anywhere after.
+The Vercel project `apps/web` deploys to, as Terraform (JEF-363): its settings, its domains and its production env vars, plus the two Blob stores the API uploads to (JEF-381, JEF-51). Before this, the same things were steps in a comment at the top of `.github/workflows/ci.yml`, done once in the dashboard and not visible anywhere after.
 
 Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. CI's `deploy-web` job still builds and ships every release (`vercel build` then `vercel deploy --prebuilt --prod`, `.github/actions/vercel-deploy-production`). Nothing here deploys.
 
@@ -12,7 +12,7 @@ Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. C
 | `domains.tf` | `www.trakwyn.com`, and the apex redirecting to it with a 308 (both imported). Set `apex_domain = null` if the project has no apex.                                                                |
 | `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY` (read by the browser bundle and, for error reporting, by the Vercel function).                                        |
 | `posthog.tf` | Reads `infra/posthog`'s state for the PostHog project key.                                                                                                                                        |
-| `blob.tf`    | `vercel_blob_store.uploads` (imported): the public Blob store the API uploads to. Its token is **not** read here; see "The Blob store".                                                           |
+| `blob.tf`    | `vercel_blob_store.uploads` (imported, public: avatars) and `vercel_blob_store.documents` (created, private: documents). Their tokens are **not** read here; see "The Blob stores".               |
 
 Things worth knowing:
 
@@ -69,12 +69,64 @@ Then read the plan before applying. Expect:
 
 Once the plan shows only changes you mean, `apply`, then empty `env_var_import_ids`. Import blocks are no-ops once the resource is in state, but the map is only needed once.
 
-## The Blob store (JEF-381)
+## The Blob stores (JEF-381, JEF-51)
 
-The store behind `STORAGE_PROVIDER=vercel-blob` is used by the API on Cloud Run, not by this project, so it has no project connection, and the files in it belong to the app (`@vercel/blob`), not to Terraform.
+The stores behind `STORAGE_PROVIDER=vercel-blob` are used by the API on Cloud Run, not by this project, so neither has a project connection, and the files in them belong to the app (`@vercel/blob`), not to Terraform.
 
-- **It must never be replaced.** In this provider, `name`, `access` and `region` all force a replacement, and replacing the store deletes every upload. `access` and `region` have defaults, so `blob.tf` states all three, and `lifecycle.prevent_destroy` makes a plan that would replace the store fail instead.
-- **Its token is not in state.** `infra/gcp/load-secrets.sh` reads `blob_store_id` and `team_id` from this root's outputs, fetches the token from `GET /v1/storage/stores/{id}/secrets`, and pipes it to Secret Manager. Using the `vercel_blob_store_secrets` data source instead would write the token into this root's state, and into any root that reads it.
+There are two because a store's access is fixed when it is created:
+
+| Store       | Access  | Holds                                                           | Token                           |
+| ----------- | ------- | --------------------------------------------------------------- | ------------------------------- |
+| `uploads`   | public  | avatars, which other users see as `<img src>`                   | `BLOB_PUBLIC_READ_WRITE_TOKEN`  |
+| `documents` | private | documents and exported PDFs, readable only with the store token | `BLOB_PRIVATE_READ_WRITE_TOKEN` |
+
+Which file goes in which is `storageAccessFor(key)` in `apps/api`: an avatar key (`users/<id>/avatar/…`) is public and everything else is private, so a new kind of file is private unless it opts out. A private blob has no URL anyone can open. The API reads it with the store's token and serves it behind a signed, expiring link (`apps/api/CLAUDE.md`, Storage).
+
+- **Neither store may be replaced.** In this provider, `name`, `access` and `region` all force a replacement, and replacing a store deletes everything in it. `access` and `region` have defaults, so `blob.tf` states all three for both, and `lifecycle.prevent_destroy` makes a plan that would replace a store fail instead.
+- **The tokens are not in state.** `infra/gcp/load-secrets.sh` reads `blob_store_id`, `documents_blob_store_id` and `team_id` from this root's outputs, fetches each token from `GET /v1/storage/stores/{id}/secrets`, and pipes it to Secret Manager. Using the `vercel_blob_store_secrets` data source instead would write the tokens into this root's state, and into any root that reads it.
+- **`documents` is created here, not imported.** Its region is `blob_store_region`, so the copy between the stores stays in one region; its name is `documents_blob_store_name` (default `trakwyn-documents`).
+
+### Moving documents to the private store (JEF-51)
+
+Documents uploaded before the private store existed are still in `uploads`. The rollout moves them without downtime, and **the order matters**: the API throws for a document operation if its private token is missing, rather than falling back to the public store, and Cloud Run will not start a revision whose secret has no version.
+
+1. **Create the store.** In this root, `terraform plan` must show **1 to add and nothing to change or destroy** (`vercel_blob_store.documents`; `uploads` is untouched), then `apply`. Check the new store is `private` in the Vercel dashboard.
+2. **Give the API its token.** In `infra/gcp`: a targeted `terraform apply -target=google_secret_manager_secret.api` creates the empty `blob-private-read-write-token` secret. Then add its one version. Do **not** use `load-secrets.sh --apply` for this: it adds a new version of _every_ secret from the env file, so a stale `.env.production` would overwrite good values. Fetch just this token and pipe it to Secret Manager, the way the script does, so it never lands in a file or the shell history:
+
+   ```bash
+   cd infra/vercel && source .envrc
+   printf 'Authorization: Bearer %s\n' "$TF_VAR_vercel_api_token" |
+     curl -sS --fail -H @- "https://api.vercel.com/v1/storage/stores/$(terraform output -raw documents_blob_store_id)/secrets?teamId=$(terraform output -raw team_id)" |
+     jq -er .rwToken |
+     tr -d '\n' |
+     gcloud secrets versions add blob-private-read-write-token --data-file=-
+   ```
+
+   Then a full `terraform apply` in `infra/gcp` adds the env var to the service. Read its plan first: it should be the new secret's IAM binding and a Cloud Run revision with the extra env var, and nothing else. The running revision ignores the variable until the new one takes traffic.
+
+3. **Merge the PR.** CI deploys web and the API. The web build sends `access: 'private'` for a document only when the API says so, and an API that says nothing gets `public`, so the order they land in does not matter for reads. There is one short window: an old web build against the new API cannot upload a document (its `put()` says `public`, the token is for the private store) and shows the usual upload error. `deploy-web` normally finishes before `deploy-api`, which waits for the migrations. Retrying the upload works once web has landed.
+4. **Check new uploads and exports go private.** Upload a PDF and open it from the preview; export a draft to PDF. In the Vercel dashboard the new objects should be in `documents`, and `uploads` should have gained nothing. Existing documents still open: a read that finds nothing in `documents` falls back to `uploads`.
+5. **Copy the existing documents.** From `apps/api` with both tokens in the environment (`vercel env pull`, or `source` them):
+
+   ```bash
+   pnpm blob:copy-documents                   # dry run: counts only
+   pnpm blob:copy-documents --apply           # copy; the public copies stay
+   ```
+
+   It keeps every pathname, so no `storageKey` in the database changes. It is safe to run again and to interrupt: a blob already in `documents` with the same size is skipped, a copy counts only once `documents` reports the size that was read, and a failure on one blob is reported without stopping the rest. It exits non-zero if anything failed. Run it until it reports `copied: 0` and `failed: 0`. Avatars are never touched.
+
+6. **Check a few documents** from before the copy still open in the app.
+7. **Delete the public copies.** This is the step that makes the old URLs stop working, so it is the one that closes the gap JEF-51 is about: any document URL that leaked before this stays valid until it runs.
+
+   ```bash
+   pnpm blob:copy-documents --apply --delete-public
+   ```
+
+   It removes a blob from `uploads` only after confirming it is in `documents` at the same size. Afterwards, confirm in the dashboard that `uploads` holds only `users/<id>/avatar/…` objects.
+
+8. **Clean up.** Remove the public fallback from `VercelBlobStorageProvider.getObject`, and delete the script (`src/copyDocumentsToPrivateStore.ts`, its `package.json` script, `infrastructure/storage/copyDocumentsToPrivateStore.ts`, `vercelBlobStoreClient.ts`, and their entries in `dependencyRule.test.ts` and `consoleUsage.test.ts`). `deleteMany` keeps deleting a private key from both stores until then, so a document the user deletes cannot survive in the public one.
+
+To roll back before step 7, redeploy the previous API image: the public copies are intact and the old provider reads them. The exception is anything uploaded or exported since step 3, which exists only in `documents` and which the old image cannot read; run the copy in reverse by hand, or accept losing sight of those until the roll-forward. After step 7 every document exists only in `documents`.
 
 ### Adopting the Blob store
 

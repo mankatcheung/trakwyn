@@ -66,6 +66,12 @@ variable "blob_store_name" {
 }
 
 variable "blob_store_region" {
-  description = "The Blob store's region (e.g. fra1), exactly as Vercel reports it. Like the name, a different value replaces the store."
+  description = "The Blob store's region (e.g. fra1), exactly as Vercel reports it. Like the name, a different value replaces the store. The private documents store is created in the same region."
   type        = string
+}
+
+variable "documents_blob_store_name" {
+  description = "Name of the private Blob store for documents (JEF-51), created by this root. Must differ from blob_store_name. Changing it later replaces the store and deletes every document, which prevent_destroy refuses."
+  type        = string
+  default     = "trakwyn-documents"
 }

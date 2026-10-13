@@ -3,6 +3,7 @@ import type { IHttpResponse } from '#src/http/ports/IHttpResponse.js';
 export interface UploadUrlPayloadDTO {
   uploadUrl: string;
   storageKey: string;
+  access: 'public' | 'private';
 }
 
 import { builder } from '#src/http/schema/builder.js';
@@ -14,6 +15,8 @@ UploadUrlPayloadRef.implement({
   fields: (t) => ({
     uploadUrl: t.exposeString('uploadUrl'),
     storageKey: t.exposeString('storageKey'),
+    /** `public` or `private`: the access the client's Blob `put()` must use with this token (JEF-51). */
+    access: t.exposeString('access'),
   }),
 });
 
