@@ -158,7 +158,10 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
               accessibilityState={{ selected: activeFilter === id }}
               testID={`filter-${id}`}
             >
-              <Text style={[styles.filterText, activeFilter === id && styles.filterTextActive]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.filterText, activeFilter === id && styles.filterTextActive]}
+              >
                 {t(labelKey)} {counts[id]}
               </Text>
             </Pressable>
@@ -314,6 +317,8 @@ function createStyles(colors: ThemeColors) {
     },
     filterTab: {
       flex: 1,
+      minWidth: 0,
+      paddingHorizontal: 4,
       minHeight: 36,
       borderRadius: 8,
       alignItems: 'center',
