@@ -111,11 +111,10 @@ test.describe('Application detail page', () => {
 
     await expect(page.getByText('resume.txt')).toBeVisible();
 
-    const docRow = page
-      .getByText('resume.txt')
-      .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]');
-    // By name, not position: a resume row also carries its match button.
-    await docRow.getByRole('button', { name: 'Delete' }).click();
+    // Delete lives in the row's actions menu, next to the match chip and Preview.
+    const docRow = page.getByRole('listitem').filter({ hasText: 'resume.txt' });
+    await docRow.getByRole('button', { name: 'More actions' }).click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
     await expect(page.getByText('resume.txt')).not.toBeVisible();
   });
 
