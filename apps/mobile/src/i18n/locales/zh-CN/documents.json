@@ -8,7 +8,7 @@
   "upload": "上传",
   "chooseFile": "选择要上传的文件",
   "emptyCoverLetters": "还没有求职信。",
-  "emptyResumes": "还没有简历。",
+  "emptyResumes": "还没有简历。创建或上传一份，即可检查它与此职位的匹配度。",
   "emptyOther": "还没有其他文档。",
   "couldNotDeleteTitle": "无法删除",
   "uploadFailedStatus": "上传失败，状态码 {{status}}",

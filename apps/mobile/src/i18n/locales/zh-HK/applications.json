@@ -33,7 +33,6 @@
     "otherDocumentsTab": "其他文件",
     "contactsTab": "聯絡人",
     "activityTab": "活動",
-    "resumeMatchTab": "履歷配對",
     "companyBriefingTab": "公司簡報",
     "offersTab": "聘書",
     "groupTrack": "追蹤",
@@ -67,13 +66,11 @@
     "couldNotSaveTitle": "無法儲存"
   },
   "resumeMatch": {
-    "usingUploadedResumePrefix": "正在使用你上傳的履歷：",
-    "pasteDifferentText": "貼上其他文字",
-    "yourResumeLabel": "你的履歷",
-    "pasteResumePlaceholder": "貼上你的履歷內容",
-    "useUploadedResumeInstead": "改用已上傳的履歷（{{name}}）",
-    "checkMatch": "檢查配對度",
-    "checkAgain": "重新檢查",
+    "generate": "生成配對結果",
+    "regenerate": "重新生成",
+    "generatedAt": "生成於 {{date}}",
+    "staleReminder": "呢份履歷喺生成配對結果之後已有更改。建議重新生成以取得最新結果。",
+    "notGenerated": "檢查呢份履歷同職位描述嘅配對程度。",
     "matchedKeywords": "符合的關鍵字",
     "missingKeywords": "缺少的關鍵字",
     "couldNotCheckTitle": "無法檢查配對度"

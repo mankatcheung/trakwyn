@@ -272,6 +272,8 @@ import type { CompanyBriefingMapper } from '#src/interface-adapters/mappers/Comp
 import type { CompanyBriefingResolver } from '#src/interface-adapters/resolvers/CompanyBriefingResolver.js';
 import type { ComputeHealthScoreUseCase } from '#src/use-cases/application/ComputeHealthScoreUseCase.js';
 import type { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
+import type { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
+import type { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
 import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import type { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
@@ -627,6 +629,8 @@ export interface Cradle {
   chatTools: LLMToolDefinition[];
   streamChatWithAssistantUseCase: StreamChatWithAssistantUseCase;
   computeResumeMatchScoreUseCase: ComputeResumeMatchScoreUseCase;
+  getResumeMatchesUseCase: GetResumeMatchesUseCase;
+  resumeMatchRepository: DrizzleResumeMatchRepository;
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;
   getCalendarEventsUseCase: GetCalendarEventsUseCase;
   getDocumentVersionOutcomesUseCase: GetDocumentVersionOutcomesUseCase;

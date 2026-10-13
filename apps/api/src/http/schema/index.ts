@@ -100,6 +100,7 @@ import './mutations/resumeMutations.js';
 import './types/CompanyBriefingType.js';
 import './queries/companyBriefingQueries.js';
 import './mutations/companyBriefingMutations.js';
+import './queries/resumeMatchQueries.js';
 import './mutations/resumeMatchMutations.js';
 import './mutations/sessionMutations.js';
 import './mutations/oauthMutations.js';

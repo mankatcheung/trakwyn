@@ -466,3 +466,45 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
     });
   });
 });
+
+describe('DocumentList — resume match (JEF-397)', () => {
+  const resumeDraft = { ...mockDraft, id: 'draft-r', type: 'resume', title: 'My CV' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('offers a match on every resume, drafts and uploads alike', async () => {
+    mockResponses({ documents: [mockDoc], documentDrafts: [resumeDraft] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByText('My CV');
+    await screen.findByRole('button', { name: 'resume.pdf' });
+    expect(await screen.findAllByRole('button', { name: /generate match/i })).toHaveLength(2);
+  });
+
+  it('does not offer a match on cover letters or other documents', async () => {
+    mockResponses({
+      documents: [{ ...mockDoc, documentType: 'other', name: 'notes.pdf' }],
+      documentDrafts: [mockDraft],
+    });
+    const { unmount } = render(<DocumentList applicationId="app-1" category="cover_letter" />, {
+      wrapper: Wrapper,
+    });
+    await screen.findByText('My cover letter');
+    expect(screen.queryByRole('button', { name: /generate match/i })).not.toBeInTheDocument();
+    unmount();
+
+    render(<DocumentList applicationId="app-1" category="other" />, { wrapper: Wrapper });
+    await screen.findByRole('button', { name: 'notes.pdf' });
+    expect(screen.queryByRole('button', { name: /generate match/i })).not.toBeInTheDocument();
+  });
+
+  it('points an empty Resumes section at creating or uploading one, with no match button', async () => {
+    mockResponses();
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    expect(await screen.findByText(/create or upload one/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /generate match/i })).not.toBeInTheDocument();
+  });
+});

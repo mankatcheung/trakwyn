@@ -8,7 +8,7 @@
   "upload": "上載",
   "chooseFile": "選擇要上載的檔案",
   "emptyCoverLetters": "還沒有求職信。",
-  "emptyResumes": "還沒有履歷。",
+  "emptyResumes": "還沒有履歷。建立或上載一份，就可以檢查佢同呢個職位嘅配對度。",
   "emptyOther": "還沒有其他文件。",
   "couldNotDeleteTitle": "無法刪除",
   "uploadFailedStatus": "上載失敗，狀態碼 {{status}}",

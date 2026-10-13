@@ -92,12 +92,23 @@ export interface ContactInput {
   notes?: string | null;
 }
 
-export interface ResumeMatchScoreResult {
+/** Which resume a match belongs to: a draft or an uploaded file. */
+export type ResumeRef = { documentDraftId: string } | { documentId: string };
+
+export interface ResumeMatch {
+  id: string;
+  applicationId: string;
+  /** Exactly one of the two is set. */
+  documentDraftId: string | null;
+  documentId: string | null;
   score: number;
   label: string;
   matchedKeywords: string[];
   missingKeywords: string[];
   summary: string;
+  generatedAt: string;
+  /** The resume's text changed after this match was generated. */
+  isStale: boolean;
 }
 
 export interface CompanyBriefing {

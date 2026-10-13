@@ -33,7 +33,6 @@
     "otherDocumentsTab": "其他文档",
     "contactsTab": "联系人",
     "activityTab": "活动",
-    "resumeMatchTab": "简历匹配",
     "companyBriefingTab": "公司简报",
     "offersTab": "录用信息",
     "groupTrack": "跟进",
@@ -67,13 +66,11 @@
     "couldNotSaveTitle": "无法保存"
   },
   "resumeMatch": {
-    "usingUploadedResumePrefix": "正在使用你上传的简历：",
-    "pasteDifferentText": "粘贴其他文本",
-    "yourResumeLabel": "你的简历",
-    "pasteResumePlaceholder": "粘贴你的简历文本",
-    "useUploadedResumeInstead": "改用已上传的简历（{{name}}）",
-    "checkMatch": "检查匹配度",
-    "checkAgain": "重新检查",
+    "generate": "生成匹配结果",
+    "regenerate": "重新生成",
+    "generatedAt": "生成于 {{date}}",
+    "staleReminder": "此简历在生成匹配结果后已有更改。建议重新生成以获得最新结果。",
+    "notGenerated": "检查这份简历与职位描述的匹配程度。",
     "matchedKeywords": "匹配的关键词",
     "missingKeywords": "缺失的关键词",
     "couldNotCheckTitle": "无法检查匹配度"
