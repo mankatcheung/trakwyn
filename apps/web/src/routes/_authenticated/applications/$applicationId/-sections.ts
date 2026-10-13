@@ -65,6 +65,8 @@ export interface ApiSectionCounts {
   interviews: number;
   contacts: number;
   offers: number;
+  /** Whether a briefing has been generated: at most one exists, so a flag rather than a count. */
+  companyBriefing: boolean;
 }
 
 /**
@@ -89,6 +91,11 @@ export interface SectionDef {
    * hold generated or derived content, not a list the user has filled.
    */
   countOf?: (counts: SectionCounts) => number;
+  /**
+   * For a section that holds one generated thing rather than a list: whether
+   * it exists yet. Shown as a check or a dot, never as a number.
+   */
+  generatedOf?: (counts: SectionCounts) => boolean;
 }
 
 export interface SectionGroup {
@@ -128,6 +135,7 @@ export const SECTION_GROUPS: SectionGroup[] = [
         id: 'company-briefing',
         labelKey: 'applicationDetail.tabCompanyBriefing',
         icon: Building2Icon,
+        generatedOf: (c) => c.companyBriefing,
       },
       {
         id: 'resumes',

@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useApplication, useApplicationHealthScore } from '../hooks/useApplicationQueries';
 import { useDeleteApplication, useUpdateApplication } from '../hooks/useApplicationMutations';
+import { useSectionCounts } from '../hooks/useSectionCounts';
 import { StatusBadge } from '../components/StatusBadge';
 import { StarIcon, PencilIcon, TrashIcon } from '../components/ApplicationIcons';
 import { HealthScoreCard } from '../components/HealthScoreCard';
@@ -53,6 +54,7 @@ export function ApplicationDetailScreen() {
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: application, isLoading, isError, error } = useApplication(applicationId);
   const { data: healthScore } = useApplicationHealthScore(applicationId);
+  const sectionCounts = useSectionCounts(applicationId);
   const deleteApplication = useDeleteApplication();
   const updateApplication = useUpdateApplication();
 
@@ -182,6 +184,7 @@ export function ApplicationDetailScreen() {
       ) : null}
 
       <SectionIndexList
+        counts={sectionCounts}
         onSelect={(slug) => {
           // This screen is the [id]/index route, so expo-router resolves a
           // bare relative push ('./notes') against the parent of `[id]`,

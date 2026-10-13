@@ -221,6 +221,8 @@
   "applicationDetail.groupTrack": "跟进",
   "applicationDetail.groupDocuments": "文档与 AI",
   "applicationDetail.groupOutcome": "结果",
+  "applicationDetail.briefingGenerated": "已生成",
+  "applicationDetail.briefingNotGenerated": "未生成",
   "applicationDetail.moreActions": "更多操作",
   "applicationDetail.changeStatus": "更改状态",
   "applicationDetail.backToSections": "返回栏目列表",

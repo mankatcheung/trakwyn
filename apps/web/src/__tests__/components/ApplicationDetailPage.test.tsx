@@ -574,14 +574,18 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     interviews: 2,
     contacts: 0,
     offers: 0,
+    companyBriefing: false,
   };
 
-  const respond = (extra: (query: string) => unknown = () => undefined) =>
+  const respond = (
+    extra: (query: string) => unknown = () => undefined,
+    sectionCounts: typeof counts = counts,
+  ) =>
     mockGqlRequest.mockImplementation((query: string) => {
       const custom = extra(query);
       if (custom !== undefined) return custom;
       if (query.includes('ApplicationSectionCounts'))
-        return Promise.resolve({ application: { id: 'app-test-id', sectionCounts: counts } });
+        return Promise.resolve({ application: { id: 'app-test-id', sectionCounts } });
       if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
       if (query.includes('query Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -606,6 +610,75 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     // Zero is not a badge saying "0" — the row just reads quieter.
     expect(within(nav).getByRole('button', { name: /^contacts$/i })).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: /contacts 0/i })).not.toBeInTheDocument();
+  });
+
+  it('marks Company Briefing as not generated until one exists', async () => {
+    respond();
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(
+        within(nav).getByRole('button', { name: /company briefing not generated/i }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('marks Company Briefing as generated once one exists, without a number', async () => {
+    respond(() => undefined, { ...counts, companyBriefing: true });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(
+        within(nav).getByRole('button', { name: /company briefing generated/i }),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(nav).queryByRole('button', { name: /company briefing not generated/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows no briefing marker before the counts arrive', async () => {
+    respond((query) =>
+      query.includes('ApplicationSectionCounts') ? new Promise(() => undefined) : undefined,
+    );
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    expect(within(nav).getByRole('button', { name: /^company briefing$/i })).toBeInTheDocument();
+  });
+
+  it('refreshes the counts when a briefing is generated, so the marker cannot go stale', async () => {
+    respond((query) =>
+      query.includes('GenerateCompanyBriefing')
+        ? Promise.resolve({
+            generateCompanyBriefing: {
+              id: 'b-1',
+              applicationId: 'app-test-id',
+              content: 'About Stripe',
+              generatedAt: '2024-01-03T00:00:00.000Z',
+            },
+          })
+        : query.includes('query CompanyBriefing')
+          ? Promise.resolve({ companyBriefing: null })
+          : undefined,
+    );
+    searchStore.set({ section: 'company-briefing' });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const countsCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('ApplicationSectionCounts'))
+        .length;
+    await waitFor(() => expect(countsCalls()).toBe(1));
+
+    fireEvent.click(await screen.findByRole('button', { name: /generate briefing/i }));
+
+    await waitFor(() => expect(countsCalls()).toBe(2));
   });
 
   it('badges each document tab with its own category, drafts and uploads together', async () => {

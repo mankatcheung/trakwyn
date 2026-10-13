@@ -9,8 +9,21 @@ import { makeInterviewRoundRepository } from '#src/__tests__/helpers/mocks/inter
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
 import { makeOfferRepository } from '#src/__tests__/helpers/mocks/offers.js';
+import { makeCompanyBriefingRepository } from '#src/__tests__/helpers/mocks/llm.js';
+import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 
-function makeUseCase(counts?: Partial<Record<string, number>>, appUserId = 'user-1') {
+const BRIEFING: CompanyBriefing = {
+  id: 'briefing-1',
+  applicationId: 'app-1',
+  content: 'About the company',
+  generatedAt: new Date('2024-01-01'),
+};
+
+function makeUseCase(
+  counts?: Partial<Record<string, number>>,
+  appUserId = 'user-1',
+  briefing: CompanyBriefing | null = null,
+) {
   const c = (n: number | undefined) => vi.fn().mockResolvedValue(n ?? 0);
   const deps = {
     applicationRepository: makeApplicationRepository({
@@ -25,6 +38,9 @@ function makeUseCase(counts?: Partial<Record<string, number>>, appUserId = 'user
     documentRepository: makeDocumentRepository({ countByApplicationId: c(counts?.documents) }),
     documentDraftRepository: makeDocumentDraftRepository({
       countByApplicationId: c(counts?.drafts),
+    }),
+    companyBriefingRepository: makeCompanyBriefingRepository({
+      findByApplicationId: vi.fn().mockResolvedValue(briefing),
     }),
   };
   return { useCase: new GetApplicationSectionCountsUseCase(deps), deps };
@@ -50,7 +66,25 @@ describe('GetApplicationSectionCountsUseCase', () => {
       documents: 4,
       documentDrafts: 2,
       offers: 1,
+      companyBriefing: false,
     });
+  });
+
+  it('reports whether a company briefing has been generated', async () => {
+    const generated = makeUseCase(undefined, 'user-1', BRIEFING);
+    const missing = makeUseCase();
+
+    const withBriefing = await generated.useCase.execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+    });
+    const without = await missing.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(withBriefing.companyBriefing).toBe(true);
+    expect(without.companyBriefing).toBe(false);
+    expect(generated.deps.companyBriefingRepository.findByApplicationId).toHaveBeenCalledWith(
+      'app-1',
+    );
   });
 
   it('reports zero rather than omitting an empty section', async () => {
@@ -84,5 +118,6 @@ describe('GetApplicationSectionCountsUseCase', () => {
 
     expect((err as { code: string }).code).toBe('FORBIDDEN');
     expect(ctx.deps.noteRepository.countByApplicationId).not.toHaveBeenCalled();
+    expect(ctx.deps.companyBriefingRepository.findByApplicationId).not.toHaveBeenCalled();
   });
 });

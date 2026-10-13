@@ -17,5 +17,6 @@ ApplicationSectionCountsRef.implement({
     documents: t.exposeInt('documents'),
     documentDrafts: t.exposeInt('documentDrafts'),
     offers: t.exposeInt('offers'),
+    companyBriefing: t.exposeBoolean('companyBriefing'),
   }),
 });

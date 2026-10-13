@@ -238,6 +238,8 @@
   "applicationDetail.groupTrack": "Track",
   "applicationDetail.groupDocuments": "Documents & AI",
   "applicationDetail.groupOutcome": "Outcome",
+  "applicationDetail.briefingGenerated": "Generated",
+  "applicationDetail.briefingNotGenerated": "Not generated",
   "applicationDetail.moreActions": "More actions",
   "applicationDetail.changeStatus": "Change status",
   "applicationDetail.backToSections": "Back to sections",

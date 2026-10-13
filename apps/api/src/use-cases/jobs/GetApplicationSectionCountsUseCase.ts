@@ -5,6 +5,7 @@ import type { IContactRepository } from '#src/use-cases/ports/IContactRepository
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
+import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 
 export interface ApplicationSectionCounts {
@@ -14,6 +15,8 @@ export interface ApplicationSectionCounts {
   documents: number;
   documentDrafts: number;
   offers: number;
+  /** Whether a briefing has been generated; a flag, not a count, as there is at most one. */
+  companyBriefing: boolean;
 }
 
 export interface GetApplicationSectionCountsInput {
@@ -33,6 +36,7 @@ interface Deps {
   offerRepository: IOfferRepository;
   documentRepository: IDocumentRepository;
   documentDraftRepository: IDocumentDraftRepository;
+  companyBriefingRepository: ICompanyBriefingRepository;
 }
 
 /**
@@ -56,15 +60,25 @@ export class GetApplicationSectionCountsUseCase implements IGetApplicationSectio
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
     const id = input.applicationId;
-    const [notes, interviews, contacts, documents, documentDrafts, offers] = await Promise.all([
-      this.deps.noteRepository.countByApplicationId(id),
-      this.deps.interviewRoundRepository.countByApplicationId(id),
-      this.deps.contactRepository.countByApplicationId(id),
-      this.deps.documentRepository.countByApplicationId(id),
-      this.deps.documentDraftRepository.countByApplicationId(id),
-      this.deps.offerRepository.countByApplicationId(id),
-    ]);
+    const [notes, interviews, contacts, documents, documentDrafts, offers, briefing] =
+      await Promise.all([
+        this.deps.noteRepository.countByApplicationId(id),
+        this.deps.interviewRoundRepository.countByApplicationId(id),
+        this.deps.contactRepository.countByApplicationId(id),
+        this.deps.documentRepository.countByApplicationId(id),
+        this.deps.documentDraftRepository.countByApplicationId(id),
+        this.deps.offerRepository.countByApplicationId(id),
+        this.deps.companyBriefingRepository.findByApplicationId(id),
+      ]);
 
-    return { notes, interviews, contacts, documents, documentDrafts, offers };
+    return {
+      notes,
+      interviews,
+      contacts,
+      documents,
+      documentDrafts,
+      offers,
+      companyBriefing: briefing !== null,
+    };
   }
 }
