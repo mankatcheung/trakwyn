@@ -91,7 +91,19 @@ Which file goes in which is `storageAccessFor(key)` in `apps/api`: an avatar key
 Documents uploaded before the private store existed are still in `uploads`. The rollout moves them without downtime, and **the order matters**: the API throws for a document operation if its private token is missing, rather than falling back to the public store, and Cloud Run will not start a revision whose secret has no version.
 
 1. **Create the store.** In this root, `terraform plan` must show **1 to add and nothing to change or destroy** (`vercel_blob_store.documents`; `uploads` is untouched), then `apply`. Check the new store is `private` in the Vercel dashboard.
-2. **Give the API its token.** In `infra/gcp` (`README.md`, step 3): a targeted `terraform apply -target=google_secret_manager_secret.api` creates the empty `blob-private-read-write-token` secret, then `./load-secrets.sh <env-file> --apply` adds its version (and a new version of every other secret, which is harmless), then a full `terraform apply` adds the env var to the service. The running revision ignores the extra variable.
+2. **Give the API its token.** In `infra/gcp`: a targeted `terraform apply -target=google_secret_manager_secret.api` creates the empty `blob-private-read-write-token` secret. Then add its one version. Do **not** use `load-secrets.sh --apply` for this: it adds a new version of _every_ secret from the env file, so a stale `.env.production` would overwrite good values. Fetch just this token and pipe it to Secret Manager, the way the script does, so it never lands in a file or the shell history:
+
+   ```bash
+   cd infra/vercel && source .envrc
+   printf 'Authorization: Bearer %s\n' "$TF_VAR_vercel_api_token" |
+     curl -sS --fail -H @- "https://api.vercel.com/v1/storage/stores/$(terraform output -raw documents_blob_store_id)/secrets?teamId=$(terraform output -raw team_id)" |
+     jq -er .rwToken |
+     tr -d '\n' |
+     gcloud secrets versions add blob-private-read-write-token --data-file=-
+   ```
+
+   Then a full `terraform apply` in `infra/gcp` adds the env var to the service. Read its plan first: it should be the new secret's IAM binding and a Cloud Run revision with the extra env var, and nothing else. The running revision ignores the variable until the new one takes traffic.
+
 3. **Merge the PR.** CI deploys web and the API. The web build sends `access: 'private'` for a document only when the API says so, and an API that says nothing gets `public`, so the order they land in does not matter for reads. There is one short window: an old web build against the new API cannot upload a document (its `put()` says `public`, the token is for the private store) and shows the usual upload error. `deploy-web` normally finishes before `deploy-api`, which waits for the migrations. Retrying the upload works once web has landed.
 4. **Check new uploads and exports go private.** Upload a PDF and open it from the preview; export a draft to PDF. In the Vercel dashboard the new objects should be in `documents`, and `uploads` should have gained nothing. Existing documents still open: a read that finds nothing in `documents` falls back to `uploads`.
 5. **Copy the existing documents.** From `apps/api` with both tokens in the environment (`vercel env pull`, or `source` them):
