@@ -2,7 +2,9 @@
 # Makes a freshly created git worktree runnable: copies apps/api/.env and
 # apps/web/.env from the main checkout (rewriting any absolute paths that
 # point at the main checkout so they point at this worktree instead),
-# installs dependencies, applies migrations, and seeds the local database.
+# links the gitignored infra/*/terraform.tfvars and infra/*/.envrc files from
+# the main checkout, installs dependencies, applies migrations, and seeds the
+# local database.
 #
 # Run from inside the new worktree, after `git worktree add`:
 #   pnpm setup:worktree
@@ -49,6 +51,33 @@ for app in api web; do
       -e '/^DATABASE_AUTH_TOKEN=/d' \
       "$SRC" > "$DEST"
   echo "wrote apps/$app/.env"
+done
+
+# Per-install Terraform config (terraform.tfvars, and the .envrc that holds
+# each provider token) is gitignored, so a new worktree has none of it. Link it
+# from the main checkout instead of copying: the main checkout stays the one
+# place to edit a variable or rotate a token, and no worktree is left holding a
+# stale copy. Terraform state is remote, so every checkout sees the same
+# infrastructure. `.terraform/` is not shared, so run `terraform init` in each
+# root you use (set TF_PLUGIN_CACHE_DIR to avoid re-downloading providers).
+echo
+for SRC in "$MAIN_ROOT"/infra/*/terraform.tfvars "$MAIN_ROOT"/infra/*/.envrc; do
+  [ -f "$SRC" ] || continue
+  REL="${SRC#"$MAIN_ROOT"/}"
+  DEST="$WORKTREE_ROOT/$REL"
+
+  if [ -e "$DEST" ] || [ -L "$DEST" ]; then
+    echo "skip: $REL already exists"
+    continue
+  fi
+  if [ ! -d "$(dirname "$DEST")" ]; then
+    # The root does not exist on this branch (added or removed since).
+    echo "skip: $REL — $(dirname "$REL") is not on this branch"
+    continue
+  fi
+
+  ln -s "$SRC" "$DEST"
+  echo "linked $REL"
 done
 
 if [ ! -f "$WORKTREE_ROOT/apps/api/.env" ]; then
