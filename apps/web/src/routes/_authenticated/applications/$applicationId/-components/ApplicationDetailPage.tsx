@@ -6,14 +6,16 @@ import { gqlClient } from '#/graphql/client';
 import { deleteApplicationWithUndo } from '../../-deleteWithUndo';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
+import { useMediaQuery } from '#/lib/useMediaQuery';
 import { Card, Skeleton } from '@trakwyn/ui';
 import { StatusBadge } from '../../../-components/StatusBadge';
 import { applicationQueryOptions, type Application } from '../-application-query';
 import type { BoardApplication } from '../../-board-queries';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { TrashedApplicationView } from './TrashedApplicationView';
-import { HealthScorePanel, type HealthScore } from './HealthScorePanel';
-import { ApplicationInfoChips } from './ApplicationInfoChips';
+import type { HealthScore } from './HealthScorePanel';
+import { ApplicationJobInfo } from './ApplicationJobInfo';
+import { OverviewTab } from './OverviewTab';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
 import { SectionIndex } from './SectionIndex';
 import { SectionNav } from './SectionNav';
@@ -32,6 +34,9 @@ import {
 import { documentSectionCounts } from '../-sectionCounts';
 import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
 import { Route } from '../index';
+
+/** Where the section tabs become a horizontal bar and Overview appears (Tailwind `lg`). */
+const WIDE_QUERY = '(min-width: 1024px)';
 
 /** Wide screens get a wider page; the section tabs sit above the content there (JEF-402). */
 const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-5xl xl:max-w-7xl';
@@ -67,10 +72,13 @@ export function ApplicationDetailPage() {
   const [actionsOpen, setActionsOpen] = useState(false);
 
   // `section` absent means the phone is on the index screen; the desktop has
-  // no such state — its sidebar and content are always both on screen, so it
-  // falls back to Notes.
-  const activeSection: SectionId = section ?? 'notes';
-  const openSection = section;
+  // no such state — its sidebar and content are always both on screen. There
+  // it falls back to Overview on a wide screen and to Notes below that, where
+  // there is no Overview (it stays in the header card). A `?section=overview`
+  // link opened on a narrower screen is treated as no section at all.
+  const isWide = useMediaQuery(WIDE_QUERY);
+  const openSection = section === 'overview' && !isWide ? undefined : section;
+  const activeSection: SectionId = openSection ?? (isWide ? 'overview' : 'notes');
 
   // Named in full rather than relatively: `to: '.'` resolves against whatever
   // the router thinks the current match is, which is one more thing to be
@@ -231,6 +239,7 @@ export function ApplicationDetailPage() {
 
   const sectionContent = (
     <>
+      {activeSection === 'overview' && <OverviewTab app={app} healthScore={healthScore} />}
       {activeSection === 'notes' && (
         <NotesTab applicationId={applicationId} enabled={canLoadPanels} />
       )}
@@ -335,40 +344,10 @@ export function ApplicationDetailPage() {
             <StatusBadge status={app.status} />
           </div>
 
-          <div className="mt-3">
-            <ApplicationInfoChips app={app} />
+          {/* From `lg` the same facts live in the Overview tab (JEF-403). */}
+          <div className="lg:hidden">
+            <ApplicationJobInfo app={app} healthScore={healthScore} collapseDescription />
           </div>
-
-          {app.followUpAt && (
-            <p className="mt-2 text-xs text-gray-400">{t('applicationDetail.emailReminderNote')}</p>
-          )}
-
-          {app.jobUrl && (
-            <div className="mt-3">
-              <dt className="text-xs text-gray-400">{t('applicationForm.jobUrlLabel')}</dt>
-              <a
-                href={app.jobUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs break-all text-blue-600 hover:underline"
-              >
-                {app.jobUrl}
-              </a>
-            </div>
-          )}
-
-          {app.description && (
-            <div className="mt-3">
-              <dt className="mb-1 text-xs text-gray-400">
-                {t('applicationDetail.descriptionLabel')}
-              </dt>
-              <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
-                {app.description}
-              </p>
-            </div>
-          )}
-
-          {healthScore && <HealthScorePanel healthScore={healthScore} />}
         </Card>
       </div>
 

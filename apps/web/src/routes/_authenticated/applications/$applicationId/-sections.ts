@@ -6,6 +6,7 @@ import {
   DollarSignIcon,
   FileTextIcon,
   FileUserIcon,
+  InfoIcon,
   PenLineIcon,
   UploadIcon,
   UsersIcon,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 
 /**
- * The nine sections of an application, grouped as the detail page presents
+ * The ten sections of an application, grouped as the detail page presents
  * them, in one place.
  *
  * The index, the desktop sidebar and the `?section=` URL schema all read this,
@@ -24,6 +25,7 @@ import {
  * query-param values.
  */
 export const SECTION_IDS = [
+  'overview',
   'notes',
   'interviews',
   'contacts',
@@ -96,6 +98,12 @@ export interface SectionDef {
    * it exists yet. Shown as a check or a dot, never as a number.
    */
   generatedOf?: (counts: SectionCounts) => boolean;
+  /**
+   * Only the horizontal tab bar (`lg` and up) offers it. Below that the same
+   * facts stay in the header card, so the phone index and the `md` sidebar
+   * leave it out (JEF-403).
+   */
+  wideOnly?: boolean;
 }
 
 export interface SectionGroup {
@@ -107,6 +115,12 @@ export const SECTION_GROUPS: SectionGroup[] = [
   {
     titleKey: 'applicationDetail.groupTrack',
     sections: [
+      {
+        id: 'overview',
+        labelKey: 'applicationDetail.tabOverview',
+        icon: InfoIcon,
+        wideOnly: true,
+      },
       {
         id: 'notes',
         labelKey: 'applicationDetail.tabNotes',
