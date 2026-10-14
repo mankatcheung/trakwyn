@@ -118,7 +118,7 @@ cp apps/web/.env.example apps/web/.env
   - Set it to **In Review** once the branch is pushed and the PR is open.
   - Set it to **Done** only after the merge or when the user asks.
 - **Branch:** `<feat|fix|chore|…>/<linear-id>-<brief-name>`. Include the lowercase Linear ID only when there is a ticket: `feat/jef-67-multi-provider-llm`, or without one, `feat/animated-page-transitions`.
-- **Worktrees:** create them in `.claude/worktrees/`, named after the branch with `/` replaced by `-`, using `git worktree add .claude/worktrees/<name> -b <branch> main`. Then run `pnpm setup:worktree` inside it to copy the `.env` files, install, migrate and seed.
+- **Worktrees:** create them in `.claude/worktrees/`, named after the branch with `/` replaced by `-`, using `git worktree add .claude/worktrees/<name> -b <branch> main`. Then run `pnpm setup:worktree` inside it to copy the `.env` files, link the gitignored `infra/*/terraform.tfvars` and `.envrc` files from the main checkout (symlinks, so edit them there), install, migrate and seed. Run `terraform init` in each infra root you use.
 - **Tests ship in the same PR** as every new or changed use case, resolver, repository, component/page or utility. Follow the existing convention for that layer:
   - use-case tests with the `helpers/mocks/<domain>.ts` mocks
   - `createTestDb()` for repositories
