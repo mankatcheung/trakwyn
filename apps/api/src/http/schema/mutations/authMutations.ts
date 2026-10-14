@@ -3,6 +3,7 @@ import { builder } from '#src/http/schema/builder.js';
 import { setAuthCookies, clearAuthCookies } from '#src/http/schema/types/AuthPayloadType.js';
 import { LoginResultRef } from '#src/http/schema/types/LoginResultType.js';
 import { deviceInfoFrom } from '#src/http/schema/requestDeviceInfo.js';
+import { parseTrakwynClientUserAgent } from '#src/infrastructure/device/trakwynClientUserAgent.js';
 import { fromCodedError } from '#src/http/errors/AppError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { COOKIES } from '#src/http/constants.js';
@@ -166,10 +167,17 @@ builder.mutationField('requestPasswordReset', (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const { authResolver } = ctx.diScope.cradle;
+      // App builds already in the stores call this mutation, not
+      // `requestPasswordResetMobile`, and cannot produce a token (JEF-401). They
+      // are recognised by the User-Agent only the app sends. The header is the
+      // caller's to set, which is no weaker than `requestPasswordResetMobile`
+      // being callable by anyone: the per-email and per-IP limits are what hold.
+      const fromMobileApp =
+        parseTrakwynClientUserAgent(deviceInfoFrom(ctx.request).userAgent) !== null;
       try {
         await authResolver.requestPasswordReset(args.email, ctx.request.ip ?? null, {
           token: args.captchaToken,
-          enforce: true,
+          enforce: !fromMobileApp,
         });
         return true;
       } catch (err) {

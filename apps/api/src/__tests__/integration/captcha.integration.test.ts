@@ -54,10 +54,15 @@ describe('captcha integration', () => {
     secret: process.env[ENV.TURNSTILE_SECRET_KEY],
   };
 
-  const gql = async (query: string, variables: Record<string, unknown>) => {
+  const gql = async (
+    query: string,
+    variables: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ) => {
     const res = await testApp.app.inject({
       method: 'POST',
       url: '/graphql',
+      headers,
       payload: { query, variables },
     });
     return res.json() as GraphQLResponse;
@@ -168,6 +173,28 @@ describe('captcha integration', () => {
 
       expect(res.errors).toBeUndefined();
       expect(res.data?.requestPasswordReset).toBe(true);
+    });
+
+    // App builds already in the stores call the shared mutation with no token.
+    it('lets a request from the mobile app through without a token', async () => {
+      const res = await gql(
+        REQUEST_RESET,
+        { email: newEmail() },
+        { 'user-agent': 'TrakwynMobile/1.4.0 (iPhone15,2; iOS 17.4)' },
+      );
+
+      expect(res.errors).toBeUndefined();
+      expect(res.data?.requestPasswordReset).toBe(true);
+    });
+
+    it('still asks a browser that merely sends another User-Agent', async () => {
+      const res = await gql(
+        REQUEST_RESET,
+        { email: newEmail() },
+        { 'user-agent': 'Mozilla/5.0 (Macintosh) TrakwynMobileLookalike' },
+      );
+
+      expect(codeOf(res)).toBe('CAPTCHA_REQUIRED');
     });
 
     it('accepts the mobile mutation without one', async () => {
