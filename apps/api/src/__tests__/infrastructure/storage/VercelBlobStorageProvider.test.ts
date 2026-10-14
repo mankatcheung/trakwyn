@@ -24,7 +24,7 @@ const PRIVATE_TOKEN = 'private-store-token';
 const DOCUMENT_KEY = 'users/u1/applications/a1/cv.pdf';
 const EXPORT_KEY = 'documents/a1/doc-1.pdf';
 const AVATAR_KEY = 'users/u1/avatar/me.png';
-const PUBLIC_URL = `https://public.blob.vercel-storage.com/${DOCUMENT_KEY}`;
+const PUBLIC_URL = `https://public.blob.vercel-storage.com/${AVATAR_KEY}`;
 
 async function drain(stream: AsyncIterable<unknown>): Promise<string> {
   const chunks: Buffer[] = [];
@@ -98,39 +98,32 @@ describe('VercelBlobStorageProvider', () => {
       });
     });
 
-    it('falls back to the public store for a document the copy has not moved yet', async () => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(new Response('old body', { headers: { 'content-length': '8' } }));
-      vi.stubGlobal('fetch', fetchMock);
-
-      const object = await new VercelBlobStorageProvider().getObject(DOCUMENT_KEY);
-
-      expect(blob.head).toHaveBeenCalledWith(DOCUMENT_KEY, { token: PUBLIC_TOKEN });
-      expect(fetchMock).toHaveBeenCalledWith(PUBLIC_URL);
-      expect(object?.size).toBe(8);
-      expect(await drain(object!.stream)).toBe('old body');
-    });
-
-    it('returns null when neither store has the blob', async () => {
-      blob.head.mockRejectedValue(new blob.BlobNotFoundError('not found'));
+    it('returns null when the private store does not have the blob, without reading the public one', async () => {
       const fetchMock = vi.fn();
       vi.stubGlobal('fetch', fetchMock);
 
       await expect(new VercelBlobStorageProvider().getObject(DOCUMENT_KEY)).resolves.toBeNull();
+      expect(blob.head).not.toHaveBeenCalled();
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('returns null when the public blob vanishes between the lookup and the read', async () => {
+    it('returns null for an avatar the public store does not have', async () => {
+      blob.head.mockRejectedValue(new blob.BlobNotFoundError('not found'));
+      vi.stubGlobal('fetch', vi.fn());
+
+      await expect(new VercelBlobStorageProvider().getObject(AVATAR_KEY)).resolves.toBeNull();
+    });
+
+    it('returns null when a public blob vanishes between the lookup and the read', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 404 })));
 
-      await expect(new VercelBlobStorageProvider().getObject(DOCUMENT_KEY)).resolves.toBeNull();
+      await expect(new VercelBlobStorageProvider().getObject(AVATAR_KEY)).resolves.toBeNull();
     });
 
     it('reports no size when the public response declares none', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('abc')));
 
-      const object = await new VercelBlobStorageProvider().getObject(DOCUMENT_KEY);
+      const object = await new VercelBlobStorageProvider().getObject(AVATAR_KEY);
 
       expect(object?.size).toBeNull();
     });
@@ -146,12 +139,12 @@ describe('VercelBlobStorageProvider', () => {
 
     it('throws on any other failure, rather than reporting the file as missing', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 503 })));
-      await expect(new VercelBlobStorageProvider().getObject(DOCUMENT_KEY)).rejects.toThrow(
+      await expect(new VercelBlobStorageProvider().getObject(AVATAR_KEY)).rejects.toThrow(
         'status 503',
       );
 
       blob.head.mockRejectedValue(new Error('network down'));
-      await expect(new VercelBlobStorageProvider().getObject(DOCUMENT_KEY)).rejects.toThrow(
+      await expect(new VercelBlobStorageProvider().getObject(AVATAR_KEY)).rejects.toThrow(
         'network down',
       );
 
@@ -260,12 +253,19 @@ describe('VercelBlobStorageProvider', () => {
   });
 
   describe('deleteMany', () => {
-    it('removes a private key from both stores, since it may still be in the public one', async () => {
+    it('removes each key from the store it lives in', async () => {
       await new VercelBlobStorageProvider().deleteMany([DOCUMENT_KEY, AVATAR_KEY]);
 
       expect(blob.del).toHaveBeenCalledTimes(2);
       expect(blob.del).toHaveBeenCalledWith([DOCUMENT_KEY], { token: PRIVATE_TOKEN });
-      expect(blob.del).toHaveBeenCalledWith([DOCUMENT_KEY, AVATAR_KEY], { token: PUBLIC_TOKEN });
+      expect(blob.del).toHaveBeenCalledWith([AVATAR_KEY], { token: PUBLIC_TOKEN });
+    });
+
+    it('removes a private key from the private store only', async () => {
+      await new VercelBlobStorageProvider().deleteMany([DOCUMENT_KEY]);
+
+      expect(blob.del).toHaveBeenCalledTimes(1);
+      expect(blob.del).toHaveBeenCalledWith([DOCUMENT_KEY], { token: PRIVATE_TOKEN });
     });
 
     it('removes an avatar from the public store only', async () => {
@@ -293,9 +293,10 @@ describe('VercelBlobStorageProvider', () => {
       );
 
       await expect(
-        new VercelBlobStorageProvider().deleteMany([DOCUMENT_KEY]),
+        new VercelBlobStorageProvider().deleteMany([DOCUMENT_KEY, AVATAR_KEY]),
       ).resolves.toBeUndefined();
       expect(blob.del).toHaveBeenCalledTimes(2);
+      expect(blob.del).toHaveBeenCalledWith([AVATAR_KEY], { token: PUBLIC_TOKEN });
     });
 
     it('skips a store with no token instead of failing', async () => {

@@ -21,11 +21,6 @@ import { toNodeReadable } from '#src/infrastructure/storage/toNodeReadable.js';
  * so a new kind of file is private unless it opts out. A private blob has no
  * URL anyone can open: it is read here, with the store's token, and served by
  * the API behind a signed link.
- *
- * Documents uploaded before the private store existed are still in the public
- * one until the copy script moves them (`copyDocumentsToPrivateStore.ts`), so
- * a private read that finds nothing falls back to the public store. Remove
- * that fallback, and `readPublic` for private keys, once the copy is done.
  */
 export class VercelBlobStorageProvider implements IStorageProvider {
   private readonly publicToken: string;
@@ -80,11 +75,8 @@ export class VercelBlobStorageProvider implements IStorageProvider {
     if (access === 'public') return this.readPublic(key, token);
 
     const result = await get(key, { access: 'private', token });
-    if (result?.statusCode === 200) {
-      return { stream: toNodeReadable(result.stream), size: result.blob.size };
-    }
-    // Not copied across yet: see the class comment.
-    return this.publicToken ? this.readPublic(key, this.publicToken) : null;
+    if (result?.statusCode !== 200) return null;
+    return { stream: toNodeReadable(result.stream), size: result.blob.size };
   }
 
   /** A public blob is fetched from its URL; the lookup finds the URL and tells us when there is none. */
@@ -113,19 +105,14 @@ export class VercelBlobStorageProvider implements IStorageProvider {
     await this.deleteMany([key]);
   }
 
-  /**
-   * Best-effort, like every other storage cleanup. A private key is removed
-   * from the public store as well: until the copy finishes the file may be in
-   * either, and a document the user deleted must not survive in the public one.
-   */
+  /** Best-effort, like every other storage cleanup. Each key is removed from the store it lives in. */
   async deleteMany(keys: string[]): Promise<void> {
     if (keys.length === 0) return;
-    const privateKeys = keys.filter((key) => storageAccessFor(key) === 'private');
     const removals = [
-      { token: this.privateToken, keys: privateKeys },
       // `del` takes an array and removes the lot in one request, the whole
       // reason this method exists rather than looping over `delete`.
-      { token: this.publicToken, keys },
+      { token: this.privateToken, keys: keys.filter((key) => storageAccessFor(key) === 'private') },
+      { token: this.publicToken, keys: keys.filter((key) => storageAccessFor(key) === 'public') },
     ];
     await Promise.all(
       removals
