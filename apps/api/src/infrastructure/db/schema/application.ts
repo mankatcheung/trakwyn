@@ -309,6 +309,44 @@ export const resumeMatch = pgTable(
   ],
 );
 
+/**
+ * The latest ATS-readiness result for one resume (JEF-395): one row per draft
+ * or uploaded file, replaced when it is checked again. The checks are stored as
+ * the JSON the clients render, so a result reads back exactly as it was scored.
+ */
+export const resumeAtsScore = pgTable(
+  'ResumeAtsScore',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('applicationId')
+      .notNull()
+      .references(() => jobApplication.id, { onDelete: 'cascade' }),
+    // Exactly one of the two is set (see the check below). Each is unique, so a
+    // resume has one result and checking again replaces it.
+    documentDraftId: text('documentDraftId')
+      .unique()
+      .references(() => documentDraft.id, { onDelete: 'cascade' }),
+    documentId: text('documentId')
+      .unique()
+      .references(() => document.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    label: text('label').notNull(),
+    readable: boolean('readable').notNull(),
+    checksJson: text('checksJson').notNull().default('[]'),
+    generatedAt: timestamp('generatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    resumeTextHash: text('resumeTextHash').notNull(),
+  },
+  (table) => [
+    index('ResumeAtsScore_applicationId_idx').on(table.applicationId),
+    check(
+      'ResumeAtsScore_one_resume_check',
+      sql`(${table.documentDraftId} IS NOT NULL) <> (${table.documentId} IS NOT NULL)`,
+    ),
+  ],
+);
+
 export const companyBriefing = pgTable(
   'CompanyBriefing',
   {

@@ -11,6 +11,8 @@ import { vi } from 'vitest';
 import type { Document } from '#src/domain/document/Document.js';
 import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
 import type { ResumeMatch } from '#src/domain/resumeMatch/ResumeMatch.js';
+import type { SavedAtsScore } from '#src/domain/resume/AtsScore.js';
+import type { IResumeAtsScoreRepository } from '#src/use-cases/ports/IResumeAtsScoreRepository.js';
 import type { IResumeMatchRepository } from '#src/use-cases/ports/IResumeMatchRepository.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
@@ -50,6 +52,37 @@ export const makeResumeMatch = (overrides?: Partial<ResumeMatch>): ResumeMatch =
   missingKeywords: ['Kubernetes'],
   summary: 'Solid fit.',
   generatedAt: new Date('2026-10-12T12:00:00Z'),
+  resumeTextHash: 'hash',
+  ...overrides,
+});
+
+export const makeResumeAtsScoreRepository = (
+  overrides?: Partial<IResumeAtsScoreRepository>,
+): IResumeAtsScoreRepository => ({
+  findByApplicationId: vi.fn().mockResolvedValue([]),
+  upsert: vi.fn().mockImplementation((data: SavedAtsScore) => Promise.resolve(data)),
+  ...overrides,
+});
+
+export const makeSavedAtsScore = (overrides?: Partial<SavedAtsScore>): SavedAtsScore => ({
+  id: 'ats-1',
+  applicationId: 'app-1',
+  documentDraftId: 'draft-1',
+  documentId: null,
+  score: 81,
+  label: 'Good',
+  readable: true,
+  checks: [
+    {
+      id: 'skills_heading',
+      label: 'Skills heading',
+      passed: false,
+      points: 0,
+      maxPoints: 9,
+      hint: 'Add a heading named “Skills”.',
+    },
+  ],
+  generatedAt: new Date('2026-10-14T12:00:00Z'),
   resumeTextHash: 'hash',
   ...overrides,
 });

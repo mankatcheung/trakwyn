@@ -77,6 +77,23 @@
     "couldNotCheckTitle": "無法檢查配對度",
     "staleBadge": "已過期"
   },
+  "resumeAts": {
+    "check": "檢查 ATS",
+    "bar": "ATS {{score}} · {{label}}",
+    "notReadableBar": "ATS · 無法讀取",
+    "description": "應徵者追蹤系統（ATS）能否讀取這份履歷。由程式計算，不需要 AI 金鑰。",
+    "notReadable": "無法從此檔案擷取文字。它可能是掃描檔或圖片，應徵者追蹤系統會看到一頁空白。",
+    "fixFirst": "請先修正 · {{count}}",
+    "passing": "已通過 · {{count}}",
+    "points": "{{points}} / {{max}}",
+    "recheck": "重新檢查",
+    "passed": "已通過",
+    "failed": "未通過",
+    "couldNotCheckTitle": "無法檢查 ATS 可讀性",
+    "staleBadge": "已過期",
+    "staleReminder": "這份履歷在檢查後已修改。請重新檢查以取得最新結果。",
+    "checkedAt": "檢查於 {{date}}"
+  },
   "companyBriefing": {
     "description": "產生這間公司的 AI 研究簡報：企業文化、近期新聞與面試建議。",
     "generateBriefing": "產生簡報",

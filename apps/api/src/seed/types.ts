@@ -93,3 +93,38 @@ export interface SeedNotification {
   readAt: Date | null;
   createdAt: Date;
 }
+
+/** A saved Resume Match for a seeded resume. */
+export interface SeedResumeMatch {
+  score: number;
+  label: string;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  summary: string;
+  /** Scored against an earlier version of the resume, so the UI shows it as out of date. */
+  stale?: boolean;
+}
+
+/**
+ * A resume draft. Written to span the ATS-readiness score on purpose: the
+ * score is computed from the text when asked, not stored, so what each
+ * resume contains is what decides the number a demo user sees.
+ */
+export interface SeedResume {
+  company: string;
+  title: string;
+  /** The resume as plain text, one line per line. Empty models a draft with nothing in it yet. */
+  text: string;
+  match?: SeedResumeMatch;
+  /**
+   * The saved ATS check: scored from the text when seeding, `stale` against an
+   * earlier version of it, or `none` for a resume not checked yet. Defaults to fresh.
+   */
+  ats?: 'fresh' | 'stale' | 'none';
+}
+
+export interface SeedCoverLetter {
+  company: string;
+  title: string;
+  text: string;
+}

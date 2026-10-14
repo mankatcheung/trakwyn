@@ -98,6 +98,10 @@ export const rateLimiters = {
     'computeResumeMatchScoreRateLimiter',
     RATE_LIMIT.COMPUTE_RESUME_MATCH_SCORE,
   ),
+  computeResumeAtsScoreRateLimiter: limiter(
+    'computeResumeAtsScoreRateLimiter',
+    RATE_LIMIT.COMPUTE_RESUME_ATS_SCORE,
+  ),
   generateCompanyBriefingRateLimiter: limiter(
     'generateCompanyBriefingRateLimiter',
     RATE_LIMIT.GENERATE_COMPANY_BRIEFING,
