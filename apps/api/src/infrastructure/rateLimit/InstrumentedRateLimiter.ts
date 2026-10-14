@@ -83,4 +83,9 @@ export class InstrumentedRateLimiter implements IRateLimiter {
     this.metrics.recordRateLimited(route, subject);
     return false;
   }
+
+  // Not a rejection — nothing is refused here — so nothing is logged or counted.
+  isLimited(key: string): Promise<boolean> {
+    return this.inner.isLimited(key);
+  }
 }

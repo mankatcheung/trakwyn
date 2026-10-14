@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RequestPasswordResetUseCase } from '#src/use-cases/auth/RequestPasswordResetUseCase.js';
 import { makePasswordResetTokenRepository } from '#src/__tests__/helpers/mocks/auth.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import {
+  makeCaptchaVerifier,
+  makeRateLimiter,
+} from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
@@ -20,6 +23,7 @@ const makeDeps = (overrides?: object) => ({
   passwordResetTokenRepository: makePasswordResetTokenRepository(),
   emailService: makeEmailService(),
   passwordResetRateLimiter: makeRateLimiter(),
+  captchaVerifier: makeCaptchaVerifier(),
   generateId: vi.fn().mockReturnValue('generated-id'),
   webAppOrigin: 'http://localhost:3000',
   ...overrides,
@@ -37,7 +41,7 @@ describe('RequestPasswordResetUseCase', () => {
 
     await new RequestPasswordResetUseCase(
       makeDeps({ userRepository, passwordResetTokenRepository, emailService }),
-    ).execute({ email: 'nobody@example.com', ipAddress: '127.0.0.1' });
+    ).execute({ email: 'nobody@example.com', ipAddress: '127.0.0.1', enforceCaptcha: true });
 
     expect(passwordResetTokenRepository.create).not.toHaveBeenCalled();
     expect(emailService.sendPasswordReset).not.toHaveBeenCalled();
@@ -56,7 +60,7 @@ describe('RequestPasswordResetUseCase', () => {
         emailService,
         webAppOrigin: 'https://app.jobfinder.com',
       }),
-    ).execute({ email: 'test@example.com', ipAddress: '127.0.0.1' });
+    ).execute({ email: 'test@example.com', ipAddress: '127.0.0.1', enforceCaptcha: true });
 
     expect(passwordResetTokenRepository.deleteAllForUser).toHaveBeenCalledWith('user-1');
     expect(passwordResetTokenRepository.create).toHaveBeenCalledWith(
@@ -76,7 +80,7 @@ describe('RequestPasswordResetUseCase', () => {
     const before = Date.now();
     await new RequestPasswordResetUseCase(
       makeDeps({ userRepository, passwordResetTokenRepository }),
-    ).execute({ email: 'test@example.com', ipAddress: '127.0.0.1' });
+    ).execute({ email: 'test@example.com', ipAddress: '127.0.0.1', enforceCaptcha: true });
     const after = Date.now();
 
     const createCall = vi.mocked(passwordResetTokenRepository.create).mock.calls[0][0];
@@ -96,6 +100,7 @@ describe('RequestPasswordResetUseCase', () => {
       new RequestPasswordResetUseCase(makeDeps({ userRepository, emailService })).execute({
         email: 'test@example.com',
         ipAddress: '127.0.0.1',
+        enforceCaptcha: true,
       }),
     ).resolves.toBeUndefined();
   });
@@ -107,7 +112,7 @@ describe('RequestPasswordResetUseCase', () => {
     const err = await new RequestPasswordResetUseCase(
       makeDeps({ userRepository, passwordResetRateLimiter: rateLimiter }),
     )
-      .execute({ email: 'nobody@example.com', ipAddress: '127.0.0.1' })
+      .execute({ email: 'nobody@example.com', ipAddress: '127.0.0.1', enforceCaptcha: true })
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('RATE_LIMITED');
@@ -123,7 +128,7 @@ describe('RequestPasswordResetUseCase', () => {
     const err = await new RequestPasswordResetUseCase(
       makeDeps({ passwordResetRateLimiter: rateLimiter }),
     )
-      .execute({ email: 'test@example.com', ipAddress: '203.0.113.5' })
+      .execute({ email: 'test@example.com', ipAddress: '203.0.113.5', enforceCaptcha: true })
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('RATE_LIMITED');
@@ -139,8 +144,63 @@ describe('RequestPasswordResetUseCase', () => {
     ).execute({
       email: 'Test@Example.com',
       ipAddress: null,
+      enforceCaptcha: true,
     });
 
     expect(rateLimiter.consume).toHaveBeenCalledWith('password-reset:email:test@example.com');
+  });
+  describe('captcha (JEF-401)', () => {
+    const input = { email: 'test@example.com', ipAddress: '203.0.113.5', enforceCaptcha: true };
+    const code = (err: unknown) => (err as { code: string }).code;
+
+    it('verifies the token with the caller ip', async () => {
+      const captchaVerifier = makeCaptchaVerifier();
+
+      await new RequestPasswordResetUseCase(makeDeps({ captchaVerifier })).execute({
+        ...input,
+        captchaToken: 'tok',
+      });
+
+      expect(captchaVerifier.verify).toHaveBeenCalledWith('tok', '203.0.113.5');
+    });
+
+    it('refuses a request with no token as CAPTCHA_REQUIRED, before spending any rate limit', async () => {
+      const passwordResetRateLimiter = makeRateLimiter();
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+
+      const err = await new RequestPasswordResetUseCase(
+        makeDeps({ captchaVerifier, passwordResetRateLimiter }),
+      )
+        .execute(input)
+        .catch((e) => e);
+
+      expect(code(err)).toBe('CAPTCHA_REQUIRED');
+      expect(passwordResetRateLimiter.consume).not.toHaveBeenCalled();
+    });
+
+    it('refuses a token the verifier rejects as CAPTCHA_FAILED', async () => {
+      const userRepository = makeUserRepository();
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+
+      const err = await new RequestPasswordResetUseCase(
+        makeDeps({ captchaVerifier, userRepository }),
+      )
+        .execute({ ...input, captchaToken: 'bad' })
+        .catch((e) => e);
+
+      expect(code(err)).toBe('CAPTCHA_FAILED');
+      expect(userRepository.findByEmail).not.toHaveBeenCalled();
+    });
+
+    it('skips the check for a client that cannot show a captcha', async () => {
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+
+      await new RequestPasswordResetUseCase(makeDeps({ captchaVerifier })).execute({
+        ...input,
+        enforceCaptcha: false,
+      });
+
+      expect(captchaVerifier.verify).not.toHaveBeenCalled();
+    });
   });
 });

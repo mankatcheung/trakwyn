@@ -6,13 +6,13 @@ Terraform owns configuration, CI owns releases, the same split as `infra/gcp`. C
 
 ## What it owns
 
-| File         | What                                                                                                                                                                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project.tf` | `vercel_project.web` (imported): root directory `apps/web`, and **no git connection**. Connecting the repo would make Vercel deploy every push itself, before CI's tests, alongside `deploy-web`. |
-| `domains.tf` | `www.trakwyn.com`, and the apex redirecting to it with a 308 (both imported). Set `apex_domain = null` if the project has no apex.                                                                |
-| `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY` (read by the browser bundle and, for error reporting, by the Vercel function).                                        |
-| `posthog.tf` | Reads `infra/posthog`'s state for the PostHog project key.                                                                                                                                        |
-| `blob.tf`    | `vercel_blob_store.uploads` (imported, public: avatars) and `vercel_blob_store.documents` (created, private: documents). Their tokens are **not** read here; see "The Blob stores".               |
+| File         | What                                                                                                                                                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `project.tf` | `vercel_project.web` (imported): root directory `apps/web`, and **no git connection**. Connecting the repo would make Vercel deploy every push itself, before CI's tests, alongside `deploy-web`.                                    |
+| `domains.tf` | `www.trakwyn.com`, and the apex redirecting to it with a 308 (both imported). Set `apex_domain = null` if the project has no apex.                                                                                                   |
+| `env.tf`     | Production env vars `VITE_API_URL`, `VITE_POSTHOG_HOST`, `VITE_POSTHOG_KEY` (read by the browser bundle and, for error reporting, by the Vercel function), and `VITE_TURNSTILE_SITE_KEY` once `turnstile_site_key` is set (JEF-401). |
+| `posthog.tf` | Reads `infra/posthog`'s state for the PostHog project key.                                                                                                                                                                           |
+| `blob.tf`    | `vercel_blob_store.uploads` (imported, public: avatars) and `vercel_blob_store.documents` (created, private: documents). Their tokens are **not** read here; see "The Blob stores".                                                  |
 
 Things worth knowing:
 

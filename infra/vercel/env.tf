@@ -21,6 +21,15 @@ locals {
       comment = "Public PostHog project key, from infra/posthog's state."
     }
   }
+
+  # Only present once a site key is given: Vercel does not accept an empty
+  # value, and an absent variable is what the web app reads as "no widget".
+  turnstile_env = var.turnstile_site_key == "" ? {} : {
+    VITE_TURNSTILE_SITE_KEY = {
+      value   = var.turnstile_site_key
+      comment = "Public Cloudflare Turnstile site key for the sign-up, sign-in and password-reset captcha."
+    }
+  }
 }
 
 import {
@@ -32,7 +41,7 @@ import {
 # Production only: CI never creates preview deployments, because the
 # project is not connected to git and deploy-web always passes --prod.
 resource "vercel_project_environment_variable" "this" {
-  for_each = local.env
+  for_each = merge(local.env, local.turnstile_env)
 
   project_id = vercel_project.web.id
   key        = each.key

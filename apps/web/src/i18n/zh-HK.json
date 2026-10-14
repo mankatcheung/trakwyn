@@ -80,6 +80,8 @@
   "auth.createOne": "以建立帳戶。",
   "auth.verify": "驗證",
   "auth.verifying": "驗證中…",
+  "auth.captchaRequired": "請完成驗證碼後繼續。",
+  "auth.captchaFailed": "驗證碼驗證失敗，請重試。",
   "auth.backToSignIn": "返回登入",
   "auth.createAccount": "建立帳戶",
   "auth.creatingAccount": "建立帳戶中…",

@@ -32,6 +32,16 @@ export interface DeviceInfo {
   ipAddress: string | null;
 }
 
+/**
+ * How a caller handles the captcha (JEF-401): the web mutations enforce it and
+ * pass the token the widget produced; the `*Mobile` ones cannot show a widget
+ * and are held to rate limits instead.
+ */
+export interface CaptchaOptions {
+  token?: string | null;
+  enforce: boolean;
+}
+
 export interface LoginResult {
   totpRequired: boolean;
   tokens: TokenPair | null;
@@ -40,11 +50,18 @@ export interface LoginResult {
 export class AuthResolver {
   constructor(private readonly deps: Deps) {}
 
-  async register(email: string, password: string, device: DeviceInfo): Promise<TokenPair> {
+  async register(
+    email: string,
+    password: string,
+    device: DeviceInfo,
+    captcha: CaptchaOptions,
+  ): Promise<TokenPair> {
     const { userId } = await this.deps.registerUseCase.execute({
       email,
       password,
       ipAddress: device.ipAddress,
+      captchaToken: captcha.token,
+      enforceCaptcha: captcha.enforce,
     });
     const session = await this.deps.createSessionUseCase.execute({ userId, ...device });
     return this.deps.tokenService.sign(
@@ -56,12 +73,19 @@ export class AuthResolver {
     );
   }
 
-  async login(email: string, password: string, device: DeviceInfo): Promise<LoginResult> {
+  async login(
+    email: string,
+    password: string,
+    device: DeviceInfo,
+    captcha: CaptchaOptions,
+  ): Promise<LoginResult> {
     const user = await this.deps.loginUseCase.execute({
       email,
       password,
       ipAddress: device.ipAddress,
       userAgent: device.userAgent,
+      captchaToken: captcha.token,
+      enforceCaptcha: captcha.enforce,
     });
     if (user.totpEnabled) {
       // Login isn't complete until TOTP is verified — no session yet.
@@ -154,8 +178,17 @@ export class AuthResolver {
     await this.deps.verifyEmailUseCase.execute({ token });
   }
 
-  async requestPasswordReset(email: string, ipAddress: string | null): Promise<void> {
-    await this.deps.requestPasswordResetUseCase.execute({ email, ipAddress });
+  async requestPasswordReset(
+    email: string,
+    ipAddress: string | null,
+    captcha: CaptchaOptions,
+  ): Promise<void> {
+    await this.deps.requestPasswordResetUseCase.execute({
+      email,
+      ipAddress,
+      captchaToken: captcha.token,
+      enforceCaptcha: captcha.enforce,
+    });
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

@@ -80,6 +80,8 @@
   "auth.createOne": "to create one.",
   "auth.verify": "Verify",
   "auth.verifying": "Verifying…",
+  "auth.captchaRequired": "Complete the captcha to continue.",
+  "auth.captchaFailed": "Captcha verification failed. Please try again.",
   "auth.backToSignIn": "Back to sign in",
   "auth.createAccount": "Create account",
   "auth.creatingAccount": "Creating account…",

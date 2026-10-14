@@ -3,7 +3,11 @@ import bcrypt from 'bcryptjs';
 import { LoginUseCase } from '#src/use-cases/auth/LoginUseCase.js';
 import { makeLoginEventRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
-import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import {
+  makeCaptchaVerifier,
+  makeLogger,
+  makeRateLimiter,
+} from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
 vi.mock('bcryptjs', () => ({
@@ -23,6 +27,9 @@ describe('LoginUseCase', () => {
     loginEventRepository: makeLoginEventRepository(),
     generateId: vi.fn().mockReturnValue('event-1'),
     logger: makeLogger(),
+    captchaVerifier: makeCaptchaVerifier(),
+    loginRateLimiter: makeRateLimiter(),
+    loginFailureRateLimiter: makeRateLimiter(),
     ...overrides,
   });
 
@@ -43,6 +50,7 @@ describe('LoginUseCase', () => {
       password: 'password123',
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
+      enforceCaptcha: true,
     });
 
     expect(result).toEqual(user);
@@ -66,7 +74,11 @@ describe('LoginUseCase', () => {
     vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
     const useCase = new LoginUseCase(deps);
-    await useCase.execute({ email: 'test@example.com', password: 'password123' });
+    await useCase.execute({
+      email: 'test@example.com',
+      password: 'password123',
+      enforceCaptcha: true,
+    });
 
     expect(loginEventRepository.create).toHaveBeenCalledWith({
       id: 'event-1',
@@ -85,7 +97,7 @@ describe('LoginUseCase', () => {
 
     const useCase = new LoginUseCase(deps);
     const err = await useCase
-      .execute({ email: 'nobody@example.com', password: 'pass' })
+      .execute({ email: 'nobody@example.com', password: 'pass', enforceCaptcha: true })
       .catch((e) => e);
 
     expect(err).toBeInstanceOf(Error);
@@ -112,6 +124,7 @@ describe('LoginUseCase', () => {
         password: 'wrong',
         ipAddress: '203.0.113.9',
         userAgent: 'test-agent',
+        enforceCaptcha: true,
       })
       .catch((e) => e);
 
@@ -139,7 +152,7 @@ describe('LoginUseCase', () => {
 
     const useCase = new LoginUseCase(deps);
     const err = await useCase
-      .execute({ email: 'test@example.com', password: 'anything' })
+      .execute({ email: 'test@example.com', password: 'anything', enforceCaptcha: true })
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
@@ -148,5 +161,166 @@ describe('LoginUseCase', () => {
     expect(warnFields(deps.logger)).toEqual([
       { event: 'auth.login.failed', reason: 'no_password', userId: undefined },
     ]);
+  });
+  describe('captcha and attempt limits (JEF-401)', () => {
+    const credentials = {
+      email: 'Test@Example.com',
+      password: 'password123',
+      ipAddress: '203.0.113.9',
+      enforceCaptcha: true,
+    };
+    const validUser = () =>
+      makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(makeUser()) });
+    const code = (err: unknown) => (err as { code: string }).code;
+
+    it('asks for no captcha while there are few failures', async () => {
+      const captchaVerifier = makeCaptchaVerifier();
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const useCase = new LoginUseCase(makeDeps({ userRepository: validUser(), captchaVerifier }));
+
+      await useCase.execute(credentials);
+
+      expect(captchaVerifier.verify).not.toHaveBeenCalled();
+    });
+
+    it('requires a captcha once the email has repeated failures', async () => {
+      const loginFailureRateLimiter = makeRateLimiter({
+        isLimited: vi.fn(async (key: string) => key === 'login-failure:email:test@example.com'),
+      });
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+      const useCase = new LoginUseCase(
+        makeDeps({ userRepository: validUser(), captchaVerifier, loginFailureRateLimiter }),
+      );
+
+      const err = await useCase.execute(credentials).catch((e) => e);
+
+      expect(code(err)).toBe('CAPTCHA_REQUIRED');
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    it('requires a captcha once the IP has repeated failures', async () => {
+      const loginFailureRateLimiter = makeRateLimiter({
+        isLimited: vi.fn(async (key: string) => key === 'login-failure:ip:203.0.113.9'),
+      });
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+      const useCase = new LoginUseCase(
+        makeDeps({ userRepository: validUser(), captchaVerifier, loginFailureRateLimiter }),
+      );
+
+      const err = await useCase.execute(credentials).catch((e) => e);
+
+      expect(code(err)).toBe('CAPTCHA_REQUIRED');
+    });
+
+    it('rejects a captcha token the verifier refuses', async () => {
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+      const useCase = new LoginUseCase(
+        makeDeps({
+          userRepository: validUser(),
+          captchaVerifier,
+          loginFailureRateLimiter: makeRateLimiter({ isLimited: vi.fn().mockResolvedValue(true) }),
+        }),
+      );
+
+      const err = await useCase.execute({ ...credentials, captchaToken: 'bad' }).catch((e) => e);
+
+      expect(code(err)).toBe('CAPTCHA_FAILED');
+      expect(captchaVerifier.verify).toHaveBeenCalledWith('bad', '203.0.113.9');
+    });
+
+    it('logs in when a valid captcha accompanies repeated failures', async () => {
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const useCase = new LoginUseCase(
+        makeDeps({
+          userRepository: validUser(),
+          loginFailureRateLimiter: makeRateLimiter({ isLimited: vi.fn().mockResolvedValue(true) }),
+        }),
+      );
+
+      await expect(useCase.execute({ ...credentials, captchaToken: 'good' })).resolves.toBeTruthy();
+    });
+
+    it('never asks a client that cannot show a captcha', async () => {
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
+      const useCase = new LoginUseCase(
+        makeDeps({
+          userRepository: validUser(),
+          captchaVerifier,
+          loginFailureRateLimiter: makeRateLimiter({ isLimited: vi.fn().mockResolvedValue(true) }),
+        }),
+      );
+
+      await expect(
+        useCase.execute({ ...credentials, enforceCaptcha: false }),
+      ).resolves.toBeTruthy();
+      expect(captchaVerifier.verify).not.toHaveBeenCalled();
+    });
+
+    it('counts a wrong password against the email and the IP', async () => {
+      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+      const loginFailureRateLimiter = makeRateLimiter();
+      const useCase = new LoginUseCase(
+        makeDeps({ userRepository: validUser(), loginFailureRateLimiter }),
+      );
+
+      await useCase.execute(credentials).catch(() => undefined);
+
+      expect(loginFailureRateLimiter.consume).toHaveBeenCalledWith(
+        'login-failure:email:test@example.com',
+      );
+      expect(loginFailureRateLimiter.consume).toHaveBeenCalledWith('login-failure:ip:203.0.113.9');
+    });
+
+    it('counts an unknown email the same way, so the captcha reveals nothing', async () => {
+      const loginFailureRateLimiter = makeRateLimiter();
+      const useCase = new LoginUseCase(
+        makeDeps({
+          userRepository: makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(null) }),
+          loginFailureRateLimiter,
+        }),
+      );
+
+      await useCase.execute(credentials).catch(() => undefined);
+
+      expect(loginFailureRateLimiter.consume).toHaveBeenCalledWith(
+        'login-failure:email:test@example.com',
+      );
+    });
+
+    it('does not count a successful login as a failure', async () => {
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      const loginFailureRateLimiter = makeRateLimiter();
+      const useCase = new LoginUseCase(
+        makeDeps({ userRepository: validUser(), loginFailureRateLimiter }),
+      );
+
+      await useCase.execute(credentials);
+
+      expect(loginFailureRateLimiter.consume).not.toHaveBeenCalled();
+    });
+
+    it('refuses once the per-email attempt ceiling is spent, captcha or not', async () => {
+      const loginRateLimiter = makeRateLimiter({
+        consume: vi.fn(async (key: string) => !key.startsWith('login:email:')),
+      });
+      const useCase = new LoginUseCase(makeDeps({ userRepository: validUser(), loginRateLimiter }));
+
+      const err = await useCase.execute({ ...credentials, enforceCaptcha: false }).catch((e) => e);
+
+      expect(code(err)).toBe('RATE_LIMITED');
+      expect(loginRateLimiter.consume).toHaveBeenCalledWith('login:email:test@example.com');
+    });
+
+    it('refuses once the per-IP attempt ceiling is spent', async () => {
+      const loginRateLimiter = makeRateLimiter({
+        consume: vi.fn(async (key: string) => !key.startsWith('login:ip:')),
+      });
+      const useCase = new LoginUseCase(makeDeps({ userRepository: validUser(), loginRateLimiter }));
+
+      const err = await useCase.execute(credentials).catch((e) => e);
+
+      expect(code(err)).toBe('RATE_LIMITED');
+    });
   });
 });

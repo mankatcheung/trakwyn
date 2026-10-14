@@ -7,6 +7,8 @@ import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { OAuthButtons } from '#/components/OAuthButtons';
 import { LogoMark } from '#/components/LogoMark';
+import { CaptchaWidget } from '#/components/CaptchaWidget';
+import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
@@ -23,13 +25,14 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 const REGISTER_MUTATION = `
-  mutation Register($email: String!, $password: String!) {
-    register(email: $email, password: $password)
+  mutation Register($email: String!, $password: String!, $captchaToken: String) {
+    register(email: $email, password: $password, captchaToken: $captchaToken)
   }
 `;
 
 export function RegisterPage() {
   const { t } = useLocale();
+  const captcha = useCaptcha();
   const {
     register,
     handleSubmit,
@@ -46,10 +49,13 @@ export function RegisterPage() {
       await gqlClient.request<{ register: string }>(REGISTER_MUTATION, {
         email,
         password,
+        captchaToken: captcha.token,
       });
       await queryClient.resetQueries();
       setRegisteredEmail(email);
     } catch (err: unknown) {
+      // A captcha token works once, whatever the outcome of the request.
+      captcha.reset();
       const msg = extractGqlError(err) ?? t('registerPage.registrationFailed');
       setError('root', { message: msg });
     }
@@ -161,9 +167,11 @@ export function RegisterPage() {
               )}
             </div>
 
+            <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />
+
             {errors.root && <Alert>{errors.root.message}</Alert>}
 
-            <Button type="submit" disabled={isSubmitting} fullWidth>
+            <Button type="submit" disabled={isSubmitting || captcha.pending} fullWidth>
               {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
             </Button>
           </form>

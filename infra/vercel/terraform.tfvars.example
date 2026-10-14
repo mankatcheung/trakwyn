@@ -28,3 +28,8 @@ blob_store_region = "<region, e.g. fra1>"
 # apex_domain       = "trakwyn.com" # null if the project has no apex domain
 # api_url           = "https://api.trakwyn.com/graphql"
 # posthog_host      = "https://eu.i.posthog.com"
+
+# Cloudflare Turnstile site key (JEF-401): `terraform output -raw
+# turnstile_site_key` in infra/cloudflare, which creates the widget. Its secret
+# key goes to infra/gcp's `turnstile-secret-key` secret.
+# turnstile_site_key = ""

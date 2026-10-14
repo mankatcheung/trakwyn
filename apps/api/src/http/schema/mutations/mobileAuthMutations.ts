@@ -27,7 +27,9 @@ builder.mutationField('registerMobile', (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const { authResolver } = ctx.diScope.cradle;
-      return authResolver.register(args.email, args.password, deviceInfoFrom(ctx.request));
+      return authResolver.register(args.email, args.password, deviceInfoFrom(ctx.request), {
+        enforce: false,
+      });
     },
   }),
 );
@@ -45,6 +47,7 @@ builder.mutationField('loginMobile', (t) =>
         args.email,
         args.password,
         deviceInfoFrom(ctx.request),
+        { enforce: false },
       );
       return {
         success: !result.totpRequired,
@@ -52,6 +55,27 @@ builder.mutationField('loginMobile', (t) =>
         accessToken: result.tokens?.accessToken ?? null,
         refreshToken: result.tokens?.refreshToken ?? null,
       };
+    },
+  }),
+);
+
+// The mobile twin of `requestPasswordReset`, which now needs a captcha token
+// the app cannot produce. Same rate limits, no captcha (JEF-401).
+builder.mutationField('requestPasswordResetMobile', (t) =>
+  t.boolean({
+    args: {
+      email: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const { authResolver } = ctx.diScope.cradle;
+      try {
+        await authResolver.requestPasswordReset(args.email, ctx.request.ip ?? null, {
+          enforce: false,
+        });
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
     },
   }),
 );

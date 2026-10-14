@@ -1,5 +1,5 @@
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token scoped to the trakwyn.com zone (Zone Read, DNS Edit, Zone Settings Edit). Supply as TF_VAR_cloudflare_api_token; never put it in terraform.tfvars."
+  description = "Cloudflare API token scoped to the trakwyn.com zone (Zone Read, DNS Edit, Zone Settings Edit, Email Routing Rules Edit) plus Account Turnstile Edit for the widget in turnstile.tf. Supply as TF_VAR_cloudflare_api_token; never put it in terraform.tfvars."
   type        = string
   sensitive   = true
 }
@@ -7,6 +7,17 @@ variable "cloudflare_api_token" {
 variable "zone_id" {
   description = "ID of the trakwyn.com zone, from the zone's Overview page in the dashboard. Not secret."
   type        = string
+}
+
+variable "account_id" {
+  description = "ID of the Cloudflare account that owns the Turnstile widget (turnstile.tf). Widgets are account-level, unlike everything else in this root. From the dashboard URL or the account's Overview page. Not secret."
+  type        = string
+}
+
+variable "turnstile_domains" {
+  description = "Hostnames the Turnstile widget may be shown on. The apex redirects to www, so only www is needed."
+  type        = set(string)
+  default     = ["www.trakwyn.com"]
 }
 
 variable "record_import_ids" {

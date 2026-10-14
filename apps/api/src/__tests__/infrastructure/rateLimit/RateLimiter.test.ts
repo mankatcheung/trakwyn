@@ -46,4 +46,31 @@ describe('RateLimiter', () => {
 
     expect(await limiter.consume('key-1')).toBe(true);
   });
+  describe('isLimited', () => {
+    it('is false for a key that has not been consumed', async () => {
+      const limiter = new RateLimiter(2, 60_000);
+
+      expect(await limiter.isLimited('key-1')).toBe(false);
+    });
+
+    it('turns true once the maximum has been consumed, without spending an attempt itself', async () => {
+      const limiter = new RateLimiter(2, 60_000);
+
+      await limiter.consume('key-1');
+      expect(await limiter.isLimited('key-1')).toBe(false);
+      expect(await limiter.isLimited('key-1')).toBe(false);
+      await limiter.consume('key-1');
+      expect(await limiter.isLimited('key-1')).toBe(true);
+      expect(await limiter.isLimited('key-2')).toBe(false);
+    });
+
+    it('is false again once the window has elapsed', async () => {
+      const limiter = new RateLimiter(1, 60_000);
+      await limiter.consume('key-1');
+
+      vi.advanceTimersByTime(60_001);
+
+      expect(await limiter.isLimited('key-1')).toBe(false);
+    });
+  });
 });

@@ -1,7 +1,9 @@
 import { ConflictError, RateLimitedError } from '#src/use-cases/errors/DomainError.js';
 import bcrypt from 'bcryptjs';
-import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
+import { assertCaptcha } from '#src/use-cases/auth/assertCaptcha.js';
+import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ISendEmailVerificationUseCase } from '#src/use-cases/auth/ISendEmailVerificationUseCase.js';
 import { assertValidPassword } from '#src/use-cases/auth/passwordValidation.js';
 import type {
@@ -14,7 +16,9 @@ interface Deps {
   userRepository: IUserRepository;
   generateId: () => string;
   sendEmailVerificationUseCase: ISendEmailVerificationUseCase;
+  captchaVerifier: ICaptchaVerifier;
   registerRateLimiter: IRateLimiter;
+  registerWithoutCaptchaRateLimiter: IRateLimiter;
 }
 
 export class RegisterUseCase implements IRegisterUseCase {
@@ -22,13 +26,7 @@ export class RegisterUseCase implements IRegisterUseCase {
 
   async execute(input: RegisterInput): Promise<RegisterOutput> {
     // Before the password hash and the lookup: a rejected sign-up costs nothing.
-    if (
-      input.ipAddress &&
-      !(await this.deps.registerRateLimiter.consume(`register:ip:${input.ipAddress}`))
-    ) {
-      throw new RateLimitedError('Too many sign-up attempts. Try again later.');
-    }
-
+    await this.assertNotAbusive(input);
     assertValidPassword(input.password);
 
     const existing = await this.deps.userRepository.findByEmail(input.email);
@@ -51,5 +49,29 @@ export class RegisterUseCase implements IRegisterUseCase {
     }
 
     return { userId: user.id, email: user.email };
+  }
+
+  /**
+   * Every sign-up sends a verification email, so this is what stops register
+   * being used to bulk-create accounts or to mail a stranger (JEF-401). A
+   * client that cannot show a captcha gets the tighter budget instead.
+   */
+  private async assertNotAbusive(input: RegisterInput): Promise<void> {
+    if (input.enforceCaptcha) {
+      await assertCaptcha(this.deps.captchaVerifier, input.captchaToken, input.ipAddress);
+    }
+
+    // The two budgets get their own key prefix: the Redis limiter keys on the
+    // string alone, so sharing one would make web and mobile spend one count.
+    const [limiter, route] = input.enforceCaptcha
+      ? [this.deps.registerRateLimiter, 'register']
+      : [this.deps.registerWithoutCaptchaRateLimiter, 'register-without-captcha'];
+    const emailAllowed = await limiter.consume(`${route}:email:${input.email.toLowerCase()}`);
+    const ipAllowed = input.ipAddress
+      ? await limiter.consume(`${route}:ip:${input.ipAddress}`)
+      : true;
+    if (!emailAllowed || !ipAllowed) {
+      throw new RateLimitedError('Too many sign-up attempts. Try again later.');
+    }
   }
 }

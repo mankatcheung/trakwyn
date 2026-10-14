@@ -113,12 +113,17 @@ describe('AuthResolver', () => {
         createSessionUseCase,
       });
 
-      const result = await resolver.register('test@example.com', 'password123', device);
+      const result = await resolver.register('test@example.com', 'password123', device, {
+        token: 'captcha-token',
+        enforce: true,
+      });
 
       expect(registerUseCase.execute).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
         ipAddress: device.ipAddress,
+        captchaToken: 'captcha-token',
+        enforceCaptcha: true,
       });
       expect(createSessionUseCase.execute).toHaveBeenCalledWith({ userId: 'user-1', ...device });
       expect(tokenService.sign).toHaveBeenCalledWith(
@@ -148,13 +153,18 @@ describe('AuthResolver', () => {
         createSessionUseCase,
       });
 
-      const result = await resolver.login('test@example.com', 'password123', device);
+      const result = await resolver.login('test@example.com', 'password123', device, {
+        token: 'captcha-token',
+        enforce: true,
+      });
 
       expect(loginUseCase.execute).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
         ipAddress: '127.0.0.1',
         userAgent: 'test-agent',
+        captchaToken: 'captcha-token',
+        enforceCaptcha: true,
       });
       expect(createSessionUseCase.execute).toHaveBeenCalledWith({ userId: user.id, ...device });
       expect(tokenService.sign).toHaveBeenCalledWith(
@@ -183,7 +193,9 @@ describe('AuthResolver', () => {
         createSessionUseCase,
       });
 
-      const result = await resolver.login('test@example.com', 'password123', device);
+      const result = await resolver.login('test@example.com', 'password123', device, {
+        enforce: true,
+      });
 
       expect(createSessionUseCase.execute).not.toHaveBeenCalled();
       expect(tokenService.sign).not.toHaveBeenCalled();
@@ -530,12 +542,28 @@ describe('AuthResolver', () => {
       const requestPasswordResetUseCase = makeRequestPasswordResetUseCase();
       const resolver = new AuthResolver({ ...baseDeps(), requestPasswordResetUseCase });
 
-      await resolver.requestPasswordReset('test@example.com', '127.0.0.1');
+      await resolver.requestPasswordReset('test@example.com', '127.0.0.1', {
+        token: 'captcha-token',
+        enforce: true,
+      });
 
       expect(requestPasswordResetUseCase.execute).toHaveBeenCalledWith({
         email: 'test@example.com',
         ipAddress: '127.0.0.1',
+        captchaToken: 'captcha-token',
+        enforceCaptcha: true,
       });
+    });
+
+    it('passes enforceCaptcha: false for a client that cannot show one', async () => {
+      const requestPasswordResetUseCase = makeRequestPasswordResetUseCase();
+      const resolver = new AuthResolver({ ...baseDeps(), requestPasswordResetUseCase });
+
+      await resolver.requestPasswordReset('test@example.com', '127.0.0.1', { enforce: false });
+
+      expect(requestPasswordResetUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ enforceCaptcha: false }),
+      );
     });
   });
 

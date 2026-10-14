@@ -87,7 +87,11 @@ describe('DI modules', () => {
   describe.each([
     ['registerRateLimiter', 'register-ip', 5],
     ['emailVerificationGlobalRateLimiter', 'verification-global', 100],
-  ])('%s (JEF-400)', (name, key, max) => {
+    // JEF-401: the same shape, for the sign-up budget of a client without a
+    // captcha and the per-IP login ceiling.
+    ['registerWithoutCaptchaRateLimiter', 'register-without-captcha', 3],
+    ['loginRateLimiter', 'login', 20],
+  ])('%s (JEF-400, JEF-401)', (name, key, max) => {
     async function resolveLimiter(
       nodeEnv: string,
     ): Promise<{ consume(k: string): Promise<boolean> }> {

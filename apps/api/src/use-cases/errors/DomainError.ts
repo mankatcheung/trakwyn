@@ -80,6 +80,20 @@ export class StepUpRequiredError extends DomainError {
   }
 }
 
+/** The action needs a solved captcha and the request carried none. */
+export class CaptchaRequiredError extends DomainError {
+  constructor(message = 'Complete the captcha to continue') {
+    super(message, ERROR_CODES.CAPTCHA_REQUIRED);
+  }
+}
+
+/** A captcha token was sent and refused. */
+export class CaptchaFailedError extends DomainError {
+  constructor(message = 'Captcha verification failed. Please try again.') {
+    super(message, ERROR_CODES.CAPTCHA_FAILED);
+  }
+}
+
 /** No email matches. Distinct from NotFoundError so the sign-in page can say so. */
 export class UserNotFoundError extends DomainError {
   constructor(message = 'No account found with this email') {

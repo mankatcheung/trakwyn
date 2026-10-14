@@ -8,7 +8,10 @@ import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 
-const inner = (allowed: boolean): IRateLimiter => ({ consume: vi.fn(async () => allowed) });
+const inner = (allowed: boolean): IRateLimiter => ({
+  consume: vi.fn(async () => allowed),
+  isLimited: vi.fn(async () => !allowed),
+});
 
 const build = (allowed: boolean, name = 'totpRateLimiter') => {
   const logger = makeLogger();

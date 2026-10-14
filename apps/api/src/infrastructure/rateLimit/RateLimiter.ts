@@ -34,4 +34,10 @@ export class RateLimiter implements IRateLimiter {
     bucket.count += 1;
     return true;
   }
+
+  async isLimited(key: string): Promise<boolean> {
+    const bucket = this.buckets.get(key);
+    if (!bucket || Date.now() > bucket.resetAt) return false;
+    return bucket.count >= this.maxAttempts;
+  }
 }

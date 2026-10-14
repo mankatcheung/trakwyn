@@ -60,6 +60,18 @@ export class RateLimitedError extends AppError {
   }
 }
 
+export class CaptchaRequiredError extends AppError {
+  constructor(message = 'Complete the captcha to continue') {
+    super(message, 400, ERROR_CODES.CAPTCHA_REQUIRED);
+  }
+}
+
+export class CaptchaFailedError extends AppError {
+  constructor(message = 'Captcha verification failed. Please try again.') {
+    super(message, 400, ERROR_CODES.CAPTCHA_FAILED);
+  }
+}
+
 export class ServiceUnavailableError extends AppError {
   constructor(message = 'Service unavailable') {
     super(message, 503, ERROR_CODES.SERVICE_UNAVAILABLE);
@@ -133,6 +145,10 @@ export function fromCodedError(err: unknown): AppError {
         return new ValidationError(err.message);
       case ERROR_CODES.RATE_LIMITED:
         return new RateLimitedError(err.message);
+      case ERROR_CODES.CAPTCHA_REQUIRED:
+        return new CaptchaRequiredError(err.message);
+      case ERROR_CODES.CAPTCHA_FAILED:
+        return new CaptchaFailedError(err.message);
       case ERROR_CODES.SERVICE_UNAVAILABLE:
         return new ServiceUnavailableError(err.message);
       case ERROR_CODES.AI_NOT_CONFIGURED:

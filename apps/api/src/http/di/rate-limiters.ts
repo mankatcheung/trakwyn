@@ -74,7 +74,16 @@ function productionOnlyLimiter(
 
 export const rateLimiters = {
   passwordResetRateLimiter: limiter('passwordResetRateLimiter', RATE_LIMIT.PASSWORD_RESET_REQUEST),
+  // Per-IP ceilings that every suite trips from one address (JEF-400, JEF-401),
+  // so they bite only in production. The failed-login counter does not: it is
+  // what triggers the captcha, and a test has to be able to reach it.
+  loginRateLimiter: productionOnlyLimiter('loginRateLimiter', RATE_LIMIT.LOGIN),
+  loginFailureRateLimiter: limiter('loginFailureRateLimiter', RATE_LIMIT.LOGIN_FAILURE),
   registerRateLimiter: productionOnlyLimiter('registerRateLimiter', RATE_LIMIT.REGISTER),
+  registerWithoutCaptchaRateLimiter: productionOnlyLimiter(
+    'registerWithoutCaptchaRateLimiter',
+    RATE_LIMIT.REGISTER_WITHOUT_CAPTCHA,
+  ),
   emailVerificationUserRateLimiter: limiter(
     'emailVerificationUserRateLimiter',
     RATE_LIMIT.EMAIL_VERIFICATION_USER,
