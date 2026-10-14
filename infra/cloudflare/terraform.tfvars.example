@@ -3,6 +3,11 @@
 # but email_routing_rules names personal inboxes, so keep it out of the repo.
 zone_id = "<32-hex zone id>" # trakwyn.com → Overview → API
 
+# The account that owns the Turnstile widget (JEF-401). Account-level, so it is
+# not the zone's id: it is the 32-hex id in the dashboard URL.
+account_id = "<32-hex account id>"
+# turnstile_domains = ["www.trakwyn.com"]
+
 # First apply only: adopt the records already in the zone. List their IDs as
 # README.md shows, then empty this map once they are in state.
 # record_import_ids = {
