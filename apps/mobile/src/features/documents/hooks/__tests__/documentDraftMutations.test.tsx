@@ -116,6 +116,7 @@ describe('useUpdateDocumentDraftContent', () => {
     result.current.mutate({ draftId: 'draft-1', contentJson: '{}', plainText: 'hello' });
 
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['resumeMatches'] }));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['resumeAtsScores'] }));
   });
 
   it('does not refetch resume matches when the save fails', async () => {

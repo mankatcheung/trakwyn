@@ -12,6 +12,7 @@ import {
   PencilIcon,
 } from '../../applications/components/ApplicationIcons';
 import { ResumeMatchPanel } from '../../applications/components/ResumeMatchPanel';
+import { ResumeAtsPanel } from '../../applications/components/ResumeAtsPanel';
 
 interface CardShellProps {
   kind: 'draft' | 'file';
@@ -22,7 +23,7 @@ interface CardShellProps {
   wrapHeader: (content: React.ReactNode) => React.ReactElement;
   onMenu: () => void;
   menuTestID: string;
-  /** Set on Resumes, where each resume carries its match (JEF-397). */
+  /** Set on Resumes, where each resume carries its ATS check (JEF-395) and its match (JEF-397). */
   match?: {
     applicationId: string;
     resume: React.ComponentProps<typeof ResumeMatchPanel>['resume'];
@@ -78,11 +79,18 @@ function CardShell({
         </Pressable>
       </View>
       {match ? (
-        <ResumeMatchPanel
-          applicationId={match.applicationId}
-          resume={match.resume}
-          resumeId={match.resumeId}
-        />
+        <>
+          <ResumeAtsPanel
+            applicationId={match.applicationId}
+            resume={match.resume}
+            resumeId={match.resumeId}
+          />
+          <ResumeMatchPanel
+            applicationId={match.applicationId}
+            resume={match.resume}
+            resumeId={match.resumeId}
+          />
+        </>
       ) : null}
     </View>
   );

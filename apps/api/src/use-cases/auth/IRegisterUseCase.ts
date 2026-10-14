@@ -1,6 +1,7 @@
 export interface RegisterInput {
   email: string;
   password: string;
+  /** Client IP, for the sign-up rate limit; absent when it can't be determined. */
   ipAddress?: string | null;
   captchaToken?: string | null;
   /**

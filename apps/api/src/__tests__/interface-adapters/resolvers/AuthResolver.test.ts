@@ -121,7 +121,7 @@ describe('AuthResolver', () => {
       expect(registerUseCase.execute).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
-        ipAddress: '127.0.0.1',
+        ipAddress: device.ipAddress,
         captchaToken: 'captcha-token',
         enforceCaptcha: true,
       });

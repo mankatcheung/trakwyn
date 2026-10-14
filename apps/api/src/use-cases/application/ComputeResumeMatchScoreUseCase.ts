@@ -3,7 +3,6 @@ import {
   ForbiddenError,
   NotFoundError,
   RateLimitedError,
-  ServiceUnavailableError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
 import { z } from 'zod';
@@ -12,19 +11,15 @@ import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRe
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IResumeMatchRepository } from '#src/use-cases/ports/IResumeMatchRepository.js';
-import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
-import {
-  readStoredObject,
-  StoredObjectTooLargeError,
-} from '#src/use-cases/documents/readStoredObject.js';
+import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT, RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
-import { withTimeout } from '#src/use-cases/shared/withTimeout.js';
+import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
+import { loadDocumentText } from '#src/use-cases/shared/loadDocumentText.js';
 
 export interface ComputeResumeMatchScoreInput {
   applicationId: string;
@@ -175,47 +170,12 @@ export class ComputeResumeMatchScoreUseCase {
       throw new NotFoundError('Resume not found');
     }
 
-    const buffer = await this.readResumeFile(doc.storageKey);
-    const text = await withTimeout(
-      this.deps.documentTextExtractor.extract(buffer, doc.mimeType),
-      RESUME_TEXT_EXTRACTION.EXTRACT_TIMEOUT_MS,
-      () => new ServiceUnavailableError('Reading the uploaded resume took too long'),
-    );
+    const text = await loadDocumentText(this.deps, doc);
 
     if (!text.trim()) {
       throw new ValidationError('No text could be read from this resume');
     }
     return text;
-  }
-
-  /**
-   * The uploaded file's bytes, read straight from storage rather than through
-   * a URL (JEF-51). Bounded in time and size: the file is parsed on the
-   * request path, and the upload cap is the size the parser was ever meant to
-   * see. The size is checked against the declared length first and the bytes
-   * actually read after, since a backend can omit or misstate it.
-   */
-  private async readResumeFile(storageKey: string): Promise<Buffer> {
-    const unavailable = () =>
-      new ServiceUnavailableError('Failed to read the uploaded resume file');
-    let opened: StoredObject | null = null;
-    try {
-      return await withTimeout(
-        (async () => {
-          opened = await this.deps.storageProvider.getObject(storageKey);
-          if (!opened) throw unavailable();
-          return readStoredObject(opened, RESUME_TEXT_EXTRACTION.MAX_BYTES);
-        })(),
-        RESUME_TEXT_EXTRACTION.FETCH_TIMEOUT_MS,
-        unavailable,
-      );
-    } catch (error) {
-      (opened as StoredObject | null)?.stream.destroy();
-      if (error instanceof StoredObjectTooLargeError) {
-        throw new ValidationError('The uploaded resume is too large to analyse');
-      }
-      throw error;
-    }
   }
 
   private parseResponse(

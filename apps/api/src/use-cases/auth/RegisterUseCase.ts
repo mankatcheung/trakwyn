@@ -25,6 +25,7 @@ export class RegisterUseCase implements IRegisterUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: RegisterInput): Promise<RegisterOutput> {
+    // Before the password hash and the lookup: a rejected sign-up costs nothing.
     await this.assertNotAbusive(input);
     assertValidPassword(input.password);
 
