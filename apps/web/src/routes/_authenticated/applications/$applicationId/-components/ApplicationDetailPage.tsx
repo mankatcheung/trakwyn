@@ -16,7 +16,7 @@ import { HealthScorePanel, type HealthScore } from './HealthScorePanel';
 import { ApplicationInfoChips } from './ApplicationInfoChips';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
 import { SectionIndex } from './SectionIndex';
-import { SectionSidebar } from './SectionSidebar';
+import { SectionNav } from './SectionNav';
 import { NotesTab } from './NotesTab';
 import { ActivityTab } from './ActivityTab';
 import { InterviewsTab } from './InterviewsTab';
@@ -32,6 +32,9 @@ import {
 import { documentSectionCounts } from '../-sectionCounts';
 import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
 import { Route } from '../index';
+
+/** Wide screens get a wider page; the section tabs sit above the content there (JEF-402). */
+const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-5xl xl:max-w-7xl';
 
 const UPDATE_APPLICATION = `
   mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {
@@ -211,7 +214,7 @@ export function ApplicationDetailPage() {
 
   if (isAppError) {
     return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-8">
+      <div className={PAGE_WIDTH}>
         <ErrorState error={appError} onRetry={() => refetchApp()} />
       </div>
     );
@@ -269,7 +272,7 @@ export function ApplicationDetailPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-8">
+    <div className={PAGE_WIDTH}>
       {/*
         Phone only, and only when drilled into a section: Back returns to the
         index rather than leaving the application, and the company stays on
@@ -369,8 +372,8 @@ export function ApplicationDetailPage() {
         </Card>
       </div>
 
-      <div className="flex flex-col gap-6 md:flex-row">
-        <SectionSidebar active={activeSection} counts={counts} onOpen={openSectionAt} />
+      <div className="flex flex-col gap-6 md:flex-row lg:flex-col">
+        <SectionNav active={activeSection} counts={counts} onOpen={openSectionAt} />
 
         {/* Phone: the index and a section are separate screens. Desktop: only the section. */}
         {!openSection && <SectionIndex counts={counts} onOpen={openSectionAt} />}
