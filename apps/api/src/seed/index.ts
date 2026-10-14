@@ -9,6 +9,7 @@ import { seedEducations } from './steps/educations.js';
 import { seedSkills } from './steps/skills.js';
 import { seedConversations } from './steps/conversations.js';
 import { seedNotifications } from './steps/notifications.js';
+import { seedDocuments } from './steps/documents.js';
 
 export const DEMO_EMAIL = 'demo@trakwyn.app';
 export const DEMO_PASSWORD = 'demo1234';
@@ -52,6 +53,7 @@ export async function runSeed(db: DrizzleDb): Promise<void> {
   console.log(`  Created demo user: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 
   await seedApplications(db, userId, now);
+  await seedDocuments(db, userId, now);
   await seedWorkExperiences(db, userId, now);
   await seedEducations(db, userId, now);
   await seedSkills(db, userId, now);
