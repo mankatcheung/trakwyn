@@ -29,7 +29,9 @@ test.describe('Resume ATS check', () => {
     await createApplication(page, { company: 'Acme Corp', role: 'Staff Engineer' });
   });
 
-  test('checks an uploaded resume and lists what to fix', async ({ page }) => {
+  test('checks an uploaded resume, lists what to fix, and keeps the result after a reload', async ({
+    page,
+  }) => {
     await openTab(page, 'Resumes');
     await page.locator('input[type="file"]').setInputFiles({
       name: 'jane-resume.txt',
@@ -48,9 +50,18 @@ test.describe('Resume ATS check', () => {
     // Separate from the job match, which stays its own chip.
     await expect(row.getByRole('button', { name: 'Generate match' })).toBeVisible();
 
+    // The result is saved: it is still there after a reload, with no new check.
+    await page.reload();
+    await openTab(page, 'Resumes');
+    const reloaded = page.getByRole('listitem').filter({ hasText: 'jane-resume.txt' });
+    await expect(reloaded.getByRole('button', { name: /ATS \d+ · / })).toBeVisible();
+    await expect(reloaded.getByRole('button', { name: 'Check ATS' })).toHaveCount(0);
+    await reloaded.getByRole('button', { name: /ATS \d+ · / }).click();
+    await expect(reloaded.getByText(/Add a heading named “Skills”/)).toBeVisible();
+
     await shot(page, 'desktop-1440');
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(row.getByText('Skills heading')).toBeVisible();
+    await expect(reloaded.getByText('Skills heading')).toBeVisible();
     await shot(page, 'mobile-390');
   });
 });

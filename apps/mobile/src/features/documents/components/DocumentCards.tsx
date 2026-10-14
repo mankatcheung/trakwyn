@@ -80,7 +80,11 @@ function CardShell({
       </View>
       {match ? (
         <>
-          <ResumeAtsPanel resume={match.resume} resumeId={match.resumeId} />
+          <ResumeAtsPanel
+            applicationId={match.applicationId}
+            resume={match.resume}
+            resumeId={match.resumeId}
+          />
           <ResumeMatchPanel
             applicationId={match.applicationId}
             resume={match.resume}

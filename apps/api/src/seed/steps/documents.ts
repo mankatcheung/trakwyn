@@ -1,9 +1,15 @@
 import { nanoid } from 'nanoid';
 import { and, eq } from 'drizzle-orm';
 import type { DrizzleDb } from '../../infrastructure/db/client.js';
-import { documentDraft, jobApplication, resumeMatch } from '../../infrastructure/db/schema.js';
+import {
+  documentDraft,
+  jobApplication,
+  resumeAtsScore,
+  resumeMatch,
+} from '../../infrastructure/db/schema.js';
 import { hashResumeText } from '../../use-cases/shared/hashResumeText.js';
 import { proseToTiptapDoc } from '../../use-cases/shared/proseToTiptapDoc.js';
+import { scoreResumeText } from '../../use-cases/shared/scoreResumeText.js';
 import { resumeToTiptapDoc } from '../../use-cases/shared/resumeToTiptapDoc.js';
 import { coverLetters } from '../data/coverLetters.js';
 import { GENERATED_RESUME, resumes } from '../data/resumes.js';
@@ -11,9 +17,9 @@ import { GENERATED_RESUME, resumes } from '../data/resumes.js';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Resume and cover letter drafts, with the saved Resume Match for most
- * resumes. The ATS-readiness score is not stored (it is computed from the text
- * on request), so the resumes themselves are what vary: from complete to
+ * Resume and cover letter drafts, with the saved Resume Match and the saved
+ * ATS-readiness result for most resumes. The ATS result is scored from each
+ * resume's text, so the resumes themselves are what vary: from complete to
  * thin, symbol-heavy, missing contact details, and empty.
  */
 export async function seedDocuments(db: DrizzleDb, userId: string, now: Date): Promise<void> {
@@ -46,6 +52,22 @@ export async function seedDocuments(db: DrizzleDb, userId: string, now: Date): P
       createdAt: editedAt,
       updatedAt: editedAt,
     });
+
+    if (resume.ats !== 'none') {
+      const { checks, ...scored } = scoreResumeText(content.plainText);
+      await db.insert(resumeAtsScore).values({
+        id: nanoid(),
+        applicationId,
+        documentDraftId: draftId,
+        ...scored,
+        checksJson: JSON.stringify(checks),
+        generatedAt: editedAt,
+        // A stale result was scored against different text, so its hash no longer fits the draft.
+        resumeTextHash: hashResumeText(
+          resume.ats === 'stale' ? `${content.plainText}\n(earlier version)` : content.plainText,
+        ),
+      });
+    }
 
     if (resume.match) {
       const { match } = resume;

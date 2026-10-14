@@ -1,12 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ComputeResumeAtsScoreUseCase } from '#src/use-cases/application/ComputeResumeAtsScoreUseCase.js';
 import { MIME_TYPE, RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
+import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
 import {
   makeDocument,
   makeDocumentDraft,
   makeDocumentDraftRepository,
   makeDocumentRepository,
   makeDocumentTextExtractor,
+  makeResumeAtsScoreRepository,
   makeStorageProvider,
   makeStoredObject,
 } from '#src/__tests__/helpers/mocks/documents.js';
@@ -29,6 +31,8 @@ const READABLE = [
   'TypeScript, GraphQL, PostgreSQL',
 ].join('\n');
 
+const NOW = new Date('2026-10-14T12:00:00Z');
+
 const resumeDraft = (overrides = {}) =>
   makeDocumentDraft({ id: 'draft-1', type: 'resume', plainText: READABLE, ...overrides });
 
@@ -50,7 +54,10 @@ function makeDeps(overrides?: Record<string, unknown>) {
     documentTextExtractor: makeDocumentTextExtractor({
       extract: vi.fn().mockResolvedValue(READABLE),
     }),
+    resumeAtsScoreRepository: makeResumeAtsScoreRepository(),
     computeResumeAtsScoreRateLimiter: makeRateLimiter(),
+    generateId: () => 'ats-1',
+    now: () => NOW,
     ...overrides,
   };
 }
@@ -167,6 +174,46 @@ describe('ComputeResumeAtsScoreUseCase', () => {
       expect(await run(deps)).toMatchObject({ score: 0, readable: false });
     });
 
+    it('saves the result against the draft, with the text hash and the checks', async () => {
+      const deps = makeDeps();
+
+      const result = await run(deps);
+
+      expect(deps.resumeAtsScoreRepository.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'ats-1',
+          applicationId: 'app-1',
+          documentDraftId: 'draft-1',
+          documentId: null,
+          score: 90,
+          readable: true,
+          generatedAt: NOW,
+          resumeTextHash: hashResumeText(READABLE),
+          checks: expect.arrayContaining([
+            expect.objectContaining({ id: 'length', passed: false }),
+          ]),
+        }),
+      );
+      expect(result).toMatchObject({ id: 'ats-1', isStale: false });
+    });
+
+    it('saves again on a re-check, leaving the repository to replace the old row', async () => {
+      const deps = makeDeps();
+      await run(deps);
+      await run(deps);
+      expect(deps.resumeAtsScoreRepository.upsert).toHaveBeenCalledTimes(2);
+    });
+
+    it('saves nothing when the check is refused', async () => {
+      const deps = makeDeps({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-2' })),
+        }),
+      });
+      await run(deps).catch(() => undefined);
+      expect(deps.resumeAtsScoreRepository.upsert).not.toHaveBeenCalled();
+    });
+
     it('scores the same text the same each time', async () => {
       const deps = makeDeps();
       expect(await run(deps)).toEqual(await run(deps));
@@ -185,6 +232,9 @@ describe('ComputeResumeAtsScoreUseCase', () => {
       );
       expect(result.readable).toBe(true);
       expect(result.score).toBe(90);
+      expect(deps.resumeAtsScoreRepository.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ documentDraftId: null, documentId: 'doc-1' }),
+      );
     });
 
     it('reports a scanned PDF (no extractable text) as not readable', async () => {

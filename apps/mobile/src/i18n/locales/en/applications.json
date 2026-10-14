@@ -89,7 +89,10 @@
     "recheck": "Run check again",
     "passed": "Passed",
     "failed": "Failed",
-    "couldNotCheckTitle": "Could not check ATS readiness"
+    "couldNotCheckTitle": "Could not check ATS readiness",
+    "staleBadge": "Out of date",
+    "staleReminder": "This resume has changed since it was checked. Run the check again for an up-to-date result.",
+    "checkedAt": "Checked {{date}}"
   },
   "companyBriefing": {
     "description": "Generate an AI research briefing on this company: culture, recent news, and interview tips.",

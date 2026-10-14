@@ -88,7 +88,7 @@ function RowShell({
 
   if (!matchResume) return render(null, null);
   return (
-    <ResumeAts resume={matchResume}>
+    <ResumeAts applicationId={applicationId} resume={matchResume}>
       {(ats) => (
         <ResumeMatch applicationId={applicationId} resume={matchResume}>
           {(match) =>

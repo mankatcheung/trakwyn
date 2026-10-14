@@ -128,6 +128,7 @@ export const resumes: SeedResume[] = [
   {
     company: 'Linear',
     title: 'Resume (generated for Linear)',
+    ats: 'none',
     // Filled in by the step from GENERATED_RESUME, so the draft opens in the editor with headings and bullets.
     text: '',
     match: {
@@ -155,6 +156,7 @@ export const resumes: SeedResume[] = [
   {
     company: 'TechCorp',
     title: 'Full Stack Resume',
+    ats: 'stale',
     text: MID_RESUME,
     match: {
       score: 58,

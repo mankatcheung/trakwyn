@@ -274,6 +274,8 @@ import type { CompanyBriefingResolver } from '#src/interface-adapters/resolvers/
 import type { ComputeHealthScoreUseCase } from '#src/use-cases/application/ComputeHealthScoreUseCase.js';
 import type { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import type { ComputeResumeAtsScoreUseCase } from '#src/use-cases/application/ComputeResumeAtsScoreUseCase.js';
+import type { GetResumeAtsScoresUseCase } from '#src/use-cases/application/GetResumeAtsScoresUseCase.js';
+import type { DrizzleResumeAtsScoreRepository } from '#src/infrastructure/db/repositories/DrizzleResumeAtsScoreRepository.js';
 import type { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
 import type { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
 import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
@@ -634,6 +636,8 @@ export interface Cradle {
   streamChatWithAssistantUseCase: StreamChatWithAssistantUseCase;
   computeResumeMatchScoreUseCase: ComputeResumeMatchScoreUseCase;
   computeResumeAtsScoreUseCase: ComputeResumeAtsScoreUseCase;
+  getResumeAtsScoresUseCase: GetResumeAtsScoresUseCase;
+  resumeAtsScoreRepository: DrizzleResumeAtsScoreRepository;
   getResumeMatchesUseCase: GetResumeMatchesUseCase;
   resumeMatchRepository: DrizzleResumeMatchRepository;
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;

@@ -89,7 +89,10 @@
     "recheck": "重新检查",
     "passed": "已通过",
     "failed": "未通过",
-    "couldNotCheckTitle": "无法检查 ATS 可读性"
+    "couldNotCheckTitle": "无法检查 ATS 可读性",
+    "staleBadge": "已过期",
+    "staleReminder": "这份简历在检查后已修改。请重新检查以获得最新结果。",
+    "checkedAt": "检查于 {{date}}"
   },
   "companyBriefing": {
     "description": "生成关于该公司的 AI 调研简报：企业文化、近期新闻和面试建议。",

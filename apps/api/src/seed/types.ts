@@ -116,6 +116,11 @@ export interface SeedResume {
   /** The resume as plain text, one line per line. Empty models a draft with nothing in it yet. */
   text: string;
   match?: SeedResumeMatch;
+  /**
+   * The saved ATS check: scored from the text when seeding, `stale` against an
+   * earlier version of it, or `none` for a resume not checked yet. Defaults to fresh.
+   */
+  ats?: 'fresh' | 'stale' | 'none';
 }
 
 export interface SeedCoverLetter {

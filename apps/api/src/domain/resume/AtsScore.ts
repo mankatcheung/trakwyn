@@ -23,3 +23,17 @@ export interface AtsScoreResult {
   readable: boolean;
   checks: AtsCheck[];
 }
+
+/**
+ * The latest ATS-readiness result for one resume, as saved. A resume is either
+ * an editable draft or an uploaded file; exactly one of the two ids is set.
+ */
+export interface SavedAtsScore extends AtsScoreResult {
+  id: string;
+  applicationId: string;
+  documentDraftId: string | null;
+  documentId: string | null;
+  generatedAt: Date;
+  /** Hash of the resume text that was scored; see `hashResumeText`. */
+  resumeTextHash: string;
+}

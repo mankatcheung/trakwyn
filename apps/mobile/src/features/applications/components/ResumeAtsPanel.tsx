@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComputeResumeAtsScore } from '../hooks/useResumeAtsMutations';
+import { findResumeAtsScore, useResumeAtsScores } from '../hooks/useResumeAtsQueries';
 import type { AtsCheck, AtsScore, ResumeRef } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -9,6 +10,7 @@ import type { ThemeColors } from '../../../theme/colors';
 import { ChevronDownIcon, ChevronUpIcon } from './ApplicationIcons';
 
 interface ResumeAtsPanelProps {
+  applicationId: string;
   resume: ResumeRef;
   /** Distinguishes panels on one screen; used for test ids. */
   resumeId: string;
@@ -26,15 +28,18 @@ function scoreTone(ats: AtsScore, colors: ThemeColors) {
 /**
  * The ATS-readiness check for one resume (JEF-395): a "Check ATS" bar until
  * there is a result, then a score bar that expands in place to the checklist,
- * failed checks first with how to fix each. Separate from the job match, which
- * needs a job description and an AI key.
+ * failed checks first with how to fix each. The result is saved server-side, so
+ * it is still here after a restart; `isStale` says the resume's text has changed
+ * since it was scored. Separate from the job match, which needs a job
+ * description and an AI key.
  */
-export function ResumeAtsPanel({ resume, resumeId }: ResumeAtsPanelProps) {
+export function ResumeAtsPanel({ applicationId, resume, resumeId }: ResumeAtsPanelProps) {
   const { t } = useTranslation('applications');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const compute = useComputeResumeAtsScore();
-  const ats = compute.data;
+  const { data: scores } = useResumeAtsScores(applicationId);
+  const compute = useComputeResumeAtsScore(applicationId);
+  const ats = findResumeAtsScore(scores, resume);
   const [expanded, setExpanded] = useState(false);
 
   const onCompute = () => {
@@ -83,6 +88,7 @@ export function ResumeAtsPanel({ resume, resumeId }: ResumeAtsPanelProps) {
           {ats.readable
             ? t('resumeAts.bar', { score: ats.score, label: ats.label })
             : t('resumeAts.notReadableBar')}
+          {ats.isStale ? ` · ${t('resumeAts.staleBadge')}` : ''}
         </Text>
         <Chevron color={tone.text} size={16} />
       </Pressable>
@@ -92,6 +98,18 @@ export function ResumeAtsPanel({ resume, resumeId }: ResumeAtsPanelProps) {
           <Text style={styles.description}>
             {ats.readable ? t('resumeAts.description') : t('resumeAts.notReadable')}
           </Text>
+          <Text style={styles.checkedAt}>
+            {t('resumeAts.checkedAt', { date: new Date(ats.generatedAt).toLocaleString() })}
+          </Text>
+          {ats.isStale ? (
+            <View
+              style={styles.stale}
+              accessibilityRole="alert"
+              testID={`resume-ats-stale-${resumeId}`}
+            >
+              <Text style={styles.staleText}>{t('resumeAts.staleReminder')}</Text>
+            </View>
+          ) : null}
           <CheckGroup
             title={t('resumeAts.fixFirst', { count: failed.length })}
             checks={failed}
@@ -186,6 +204,15 @@ function createStyles(colors: ThemeColors) {
     disabled: { opacity: 0.6 },
     details: { gap: 10 },
     description: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
+    checkedAt: { fontSize: 12, color: colors.textFaint },
+    stale: {
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      backgroundColor: colors.warningSurface,
+      padding: 10,
+    },
+    staleText: { fontSize: 13, color: colors.warning },
     group: { gap: 6 },
     groupTitle: { fontSize: 12, fontWeight: '600', color: colors.textFaint },
     check: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, gap: 4 },

@@ -134,7 +134,7 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
               type="button"
               aria-pressed={activeFilter === id}
               onClick={() => setFilter(id)}
-              className={`min-h-9 min-w-0 flex-1 truncate whitespace-nowrap rounded-lg px-2 text-sm transition-colors ${
+              className={`min-h-9 min-w-0 flex-1 truncate rounded-lg px-2 text-sm whitespace-nowrap transition-colors ${
                 activeFilter === id
                   ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-gray-100'
                   : 'text-gray-700 dark:text-gray-300'

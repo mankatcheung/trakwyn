@@ -123,11 +123,19 @@ export interface AtsCheck {
 
 /** How readable a resume is to an applicant tracking system, 0-100 with its checklist. */
 export interface AtsScore {
+  id: string;
+  applicationId: string;
+  /** Exactly one of the two is set. */
+  documentDraftId: string | null;
+  documentId: string | null;
   score: number;
   label: string;
   /** False for a scan or an image: nothing could be read, so only the extraction check is listed. */
   readable: boolean;
   checks: AtsCheck[];
+  generatedAt: string;
+  /** The resume's text changed after this result was scored. */
+  isStale: boolean;
 }
 
 export interface CompanyBriefing {

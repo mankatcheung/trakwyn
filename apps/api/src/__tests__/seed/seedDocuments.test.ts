@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
 import { createTestDb, type TestDb } from '#src/__tests__/helpers/createTestDb.js';
-import { documentDraft, resumeMatch, user } from '#src/infrastructure/db/schema.js';
+import { documentDraft, resumeAtsScore, resumeMatch, user } from '#src/infrastructure/db/schema.js';
 import { seedApplications } from '#src/seed/steps/applications.js';
 import { seedDocuments } from '#src/seed/steps/documents.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
@@ -75,5 +75,59 @@ describe('seedDocuments', () => {
 
     expect(stale).toHaveLength(1);
     expect(resumes.find((d) => d.id === stale[0].documentDraftId)?.title).toBe('Full Stack Resume');
+  });
+
+  describe('saved ATS results', () => {
+    const savedByTitle = async () => {
+      const resumes = await drafts('resume');
+      const saved = await db.db.select().from(resumeAtsScore);
+      return {
+        resumes,
+        saved,
+        titleOf: (draftId: string | null) => resumes.find((d) => d.id === draftId)?.title,
+      };
+    };
+
+    it('saves a result for every resume except the one left unchecked', async () => {
+      const { saved, titleOf } = await savedByTitle();
+
+      expect(saved).toHaveLength(5);
+      expect(saved.every((r) => r.documentId === null && r.documentDraftId !== null)).toBe(true);
+      expect(saved.map((r) => titleOf(r.documentDraftId))).not.toContain(
+        'Resume (generated for Linear)',
+      );
+    });
+
+    it('saves the same score and checks the scorer gives the text', async () => {
+      const { resumes, saved } = await savedByTitle();
+
+      for (const row of saved) {
+        const draft = resumes.find((d) => d.id === row.documentDraftId)!;
+        const scored = scoreResumeText(draft.plainText);
+        expect(row).toMatchObject({
+          score: scored.score,
+          label: scored.label,
+          readable: scored.readable,
+        });
+        expect(JSON.parse(row.checksJson)).toEqual(scored.checks);
+      }
+    });
+
+    it('saves the empty draft as not readable', async () => {
+      const { saved, titleOf } = await savedByTitle();
+      const empty = saved.find((r) => titleOf(r.documentDraftId) === 'Resume (draft)');
+
+      expect(empty).toMatchObject({ score: 0, readable: false });
+    });
+
+    it('marks exactly one saved result as out of date by its text hash', async () => {
+      const { resumes, saved, titleOf } = await savedByTitle();
+      const stale = saved.filter((r) => {
+        const draft = resumes.find((d) => d.id === r.documentDraftId);
+        return draft && r.resumeTextHash !== hashResumeText(draft.plainText);
+      });
+
+      expect(stale.map((r) => titleOf(r.documentDraftId))).toEqual(['Full Stack Resume']);
+    });
   });
 });

@@ -1,28 +1,66 @@
 import { useState, type ReactNode } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { CheckCircle2Icon, ChevronDownIcon, ScanSearchIcon, XCircleIcon } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertTriangleIcon,
+  CheckCircle2Icon,
+  ChevronDownIcon,
+  ScanSearchIcon,
+  XCircleIcon,
+} from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import type { ResumeRef } from '../-resumeMatchQueries';
-import { COMPUTE_RESUME_ATS_SCORE, type AtsCheck, type AtsScore } from '../-resumeAtsQueries';
+import {
+  COMPUTE_RESUME_ATS_SCORE,
+  findResumeAtsScore,
+  resumeAtsScoresQueryKey,
+  resumeAtsScoresQueryOptions,
+  type AtsCheck,
+  type AtsScore,
+} from '../-resumeAtsQueries';
 
 const CHIP_CLASS =
   'inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors';
 
-/** The check's result, held in the component: the score is cheap to recompute, so it is not saved. */
-function useResumeAts(resume: ResumeRef, onComputed: () => void) {
+const sameResume = (a: AtsScore, b: AtsScore): boolean =>
+  (a.documentDraftId !== null && a.documentDraftId === b.documentDraftId) ||
+  (a.documentId !== null && a.documentId === b.documentId);
+
+/**
+ * The saved result for one resume, and the mutation that checks it again. The
+ * result is stored server-side, so it is still here after a reload; `isStale`
+ * says the resume's text has changed since it was scored.
+ */
+function useResumeAts(applicationId: string, resume: ResumeRef, onComputed: () => void) {
+  const qc = useQueryClient();
+  const { data } = useQuery(resumeAtsScoresQueryOptions(applicationId));
+  const ats = findResumeAtsScore(data?.resumeAtsScores, resume);
+
   const compute = useMutation({
     mutationFn: () =>
       gqlClient.request<{ computeResumeAtsScore: AtsScore }>(COMPUTE_RESUME_ATS_SCORE, {
         documentDraftId: 'documentDraftId' in resume ? resume.documentDraftId : null,
         documentId: 'documentId' in resume ? resume.documentId : null,
       }),
-    onSuccess: onComputed,
+    onSuccess: ({ computeResumeAtsScore: saved }) => {
+      qc.setQueryData<{ resumeAtsScores: AtsScore[] }>(
+        resumeAtsScoresQueryKey(applicationId),
+        (prev) => ({
+          resumeAtsScores: [
+            ...(prev?.resumeAtsScores ?? []).filter(
+              (s) => s.id !== saved.id && !sameResume(s, saved),
+            ),
+            saved,
+          ],
+        }),
+      );
+      onComputed();
+    },
   });
-  return { ats: compute.data?.computeResumeAtsScore, compute };
+  return { ats, compute };
 }
 
 type Compute = ReturnType<typeof useResumeAts>['compute'];
@@ -88,6 +126,7 @@ function AtsChip({
       aria-expanded={expanded}
       className={`${CHIP_CLASS} border-transparent whitespace-nowrap ${color.badge}`}
     >
+      {ats.isStale && <AlertTriangleIcon size={14} aria-label={t('resumeAts.stale')} />}
       <span>
         {ats.readable
           ? t('resumeAts.chip', { score: ats.score, label: ats.label })
@@ -146,7 +185,7 @@ function CheckGroup({ title, checks }: { title: string; checks: AtsCheck[] }) {
 }
 
 function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Compute }) {
-  const { t } = useLocale();
+  const { t, formatDate } = useLocale();
   const color = ats ? SCORE_COLORS[ats.readable ? scoreColor(ats.score) : 'red'] : null;
   const failed = ats?.checks.filter((c) => !c.passed) ?? [];
   const passed = ats?.checks.filter((c) => c.passed) ?? [];
@@ -167,6 +206,14 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
               <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                 {ats.readable ? t('resumeAts.description') : t('resumeAts.notReadable')}
               </p>
+              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                {t('resumeAts.checkedOn', {
+                  date: formatDate(new Date(ats.generatedAt), {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  }),
+                })}
+              </p>
             </div>
             <ComputeButton
               compute={compute}
@@ -174,6 +221,15 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
             />
           </div>
+          {ats.isStale && (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+            >
+              <AlertTriangleIcon size={14} className="mt-0.5 shrink-0" />
+              <span>{t('resumeAts.staleReminder')}</span>
+            </div>
+          )}
           <CheckGroup title={t('resumeAts.fixFirst', { count: failed.length })} checks={failed} />
           <CheckGroup title={t('resumeAts.passing', { count: passed.length })} checks={passed} />
         </>
@@ -189,6 +245,7 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
 }
 
 interface ResumeAtsProps {
+  applicationId: string;
   resume: ResumeRef;
   /** Hands the row the chip for its action cluster and the detail for under it, like `ResumeMatch`. */
   children: (parts: { chip: ReactNode; details: ReactNode }) => ReactNode;
@@ -197,12 +254,13 @@ interface ResumeAtsProps {
 /**
  * The ATS-readiness check for one resume (JEF-395): a "Check ATS" chip until
  * there is a result, then a score chip that expands in place to the checklist.
- * Separate from the job-match score, which needs a job and an AI key.
+ * The result is saved, so it is still here after a reload. Separate from the
+ * job-match score, which needs a job and an AI key.
  */
-export function ResumeAts({ resume, children }: ResumeAtsProps) {
+export function ResumeAts({ applicationId, resume, children }: ResumeAtsProps) {
   const [expanded, setExpanded] = useState(false);
   // A fresh result opens itself: the chip alone would hide what was just asked for.
-  const { ats, compute } = useResumeAts(resume, () => setExpanded(true));
+  const { ats, compute } = useResumeAts(applicationId, resume, () => setExpanded(true));
 
   const showDetails = (expanded && ats !== undefined) || compute.isError;
   return children({
