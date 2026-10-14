@@ -124,7 +124,7 @@ Documents uploaded before the private store existed are still in `uploads`. The 
 
    It removes a blob from `uploads` only after confirming it is in `documents` at the same size. Afterwards, confirm in the dashboard that `uploads` holds only `users/<id>/avatar/…` objects.
 
-8. **Clean up.** Remove the public fallback from `VercelBlobStorageProvider.getObject`, and delete the script (`src/copyDocumentsToPrivateStore.ts`, its `package.json` script, `infrastructure/storage/copyDocumentsToPrivateStore.ts`, `vercelBlobStoreClient.ts`, and their entries in `dependencyRule.test.ts` and `consoleUsage.test.ts`). `deleteMany` keeps deleting a private key from both stores until then, so a document the user deletes cannot survive in the public one.
+8. **Clean up (done).** The public fallback in `VercelBlobStorageProvider.getObject` and the copy script (`pnpm blob:copy-documents`) are removed, and `deleteMany` now removes each key only from the store it lives in. The steps above are kept as the record of how the move was done; the script is in git history before JEF-51's clean-up PR.
 
 To roll back before step 7, redeploy the previous API image: the public copies are intact and the old provider reads them. The exception is anything uploaded or exported since step 3, which exists only in `documents` and which the old image cannot read; run the copy in reverse by hand, or accept losing sight of those until the roll-forward. After step 7 every document exists only in `documents`.
 

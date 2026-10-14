@@ -55,14 +55,12 @@ const FORBIDDEN: Array<{ layer: string; mayNotImport: string[] }> = [
  */
 // instrumentation.ts is preloaded with `node --import` ahead of index.ts (JEF-346).
 // copyFromTurso.ts is the one-off JEF-342 data copy; it goes when Turso is retired.
-// copyDocumentsToPrivateStore.ts is the one-off JEF-51 Blob copy; it goes after the rollout.
 const ROOT_ENTRYPOINTS = [
   'index.ts',
   'instrumentation.ts',
   'migrate.ts',
   'seed.ts',
   'copyFromTurso.ts',
-  'copyDocumentsToPrivateStore.ts',
 ];
 
 /**
