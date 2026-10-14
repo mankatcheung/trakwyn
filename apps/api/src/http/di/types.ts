@@ -95,6 +95,7 @@ import type { WorkExperienceMapper } from '#src/interface-adapters/mappers/WorkE
 import type { EducationMapper } from '#src/interface-adapters/mappers/EducationMapper.js';
 import type { SkillMapper } from '#src/interface-adapters/mappers/SkillMapper.js';
 
+import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { AuthResolver } from '#src/interface-adapters/resolvers/AuthResolver.js';
 import type { ApplicationResolver } from '#src/interface-adapters/resolvers/ApplicationResolver.js';
 import type { NoteResolver } from '#src/interface-adapters/resolvers/NoteResolver.js';
@@ -329,6 +330,11 @@ export interface Cradle {
   cache: ICache;
   sessionBlocklist: ISessionBlocklist;
   passwordResetRateLimiter: IRateLimiter;
+  loginRateLimiter: IRateLimiter;
+  loginFailureRateLimiter: IRateLimiter;
+  registerRateLimiter: IRateLimiter;
+  registerWithoutCaptchaRateLimiter: IRateLimiter;
+  captchaVerifier: ICaptchaVerifier;
 
   // Raw repositories (used internally by the cached decorators)
   drizzleUserRepository: DrizzleUserRepository;

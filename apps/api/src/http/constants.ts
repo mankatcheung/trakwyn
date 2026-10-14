@@ -123,6 +123,31 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
   },
+  // Every login attempt, by email and by IP (JEF-401). A ceiling, not the
+  // captcha trigger: it stops a script from trying passwords forever once it
+  // has learned to skip the widget (the mobile mutations never show one).
+  LOGIN: {
+    MAX_ATTEMPTS: 20,
+    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  },
+  // Failed logins only. Once an email or an IP has this many in the window,
+  // the next web login must carry a solved captcha (JEF-401).
+  LOGIN_FAILURE: {
+    MAX_ATTEMPTS: 3,
+    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  },
+  // Sign-ups by IP. Each one sends a verification email, so this is also what
+  // keeps register from being an email-bombing tool (JEF-401).
+  REGISTER: {
+    MAX_ATTEMPTS: 5,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
+  },
+  // The tighter budget for a sign-up that carried no captcha (the mobile
+  // mutation), so it is not a cheap way around the web widget (JEF-401).
+  REGISTER_WITHOUT_CAPTCHA: {
+    MAX_ATTEMPTS: 3,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
+  },
   CHAT_MESSAGE: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

@@ -80,6 +80,8 @@
   "auth.createOne": "以创建账户。",
   "auth.verify": "验证",
   "auth.verifying": "验证中…",
+  "auth.captchaRequired": "请完成验证码后继续。",
+  "auth.captchaFailed": "验证码验证失败，请重试。",
   "auth.backToSignIn": "返回登录",
   "auth.createAccount": "创建账户",
   "auth.creatingAccount": "创建账户中…",

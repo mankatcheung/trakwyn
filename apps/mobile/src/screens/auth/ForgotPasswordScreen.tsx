@@ -19,8 +19,8 @@ import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
 
 const REQUEST_PASSWORD_RESET_MUTATION = `
-  mutation RequestPasswordReset($email: String!) {
-    requestPasswordReset(email: $email)
+  mutation RequestPasswordResetMobile($email: String!) {
+    requestPasswordResetMobile(email: $email)
   }
 `;
 

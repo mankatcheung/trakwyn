@@ -1,9 +1,9 @@
-mutation Register($email: String!, $password: String!) {
-  register(email: $email, password: $password)
+mutation Register($email: String!, $password: String!, $captchaToken: String) {
+  register(email: $email, password: $password, captchaToken: $captchaToken)
 }
 
-mutation Login($email: String!, $password: String!) {
-  login(email: $email, password: $password) {
+mutation Login($email: String!, $password: String!, $captchaToken: String) {
+  login(email: $email, password: $password, captchaToken: $captchaToken) {
     success
     totpRequired
     accessToken

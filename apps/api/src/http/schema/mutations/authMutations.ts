@@ -12,6 +12,7 @@ builder.mutationField('register', (t) =>
     args: {
       email: t.arg.string({ required: true }),
       password: t.arg.string({ required: true }),
+      captchaToken: t.arg.string(),
     },
     resolve: async (_root, args, ctx) => {
       const { authResolver } = ctx.diScope.cradle;
@@ -19,6 +20,7 @@ builder.mutationField('register', (t) =>
         args.email,
         args.password,
         deviceInfoFrom(ctx.request),
+        { token: args.captchaToken, enforce: true },
       );
       setAuthCookies(ctx.reply, tokens.accessToken, tokens.refreshToken);
       return tokens.accessToken;
@@ -32,6 +34,7 @@ builder.mutationField('login', (t) =>
     args: {
       email: t.arg.string({ required: true }),
       password: t.arg.string({ required: true }),
+      captchaToken: t.arg.string(),
     },
     resolve: async (_root, args, ctx) => {
       const { authResolver } = ctx.diScope.cradle;
@@ -39,6 +42,7 @@ builder.mutationField('login', (t) =>
         args.email,
         args.password,
         deviceInfoFrom(ctx.request),
+        { token: args.captchaToken, enforce: true },
       );
       if (result.tokens) {
         setAuthCookies(ctx.reply, result.tokens.accessToken, result.tokens.refreshToken);
@@ -158,11 +162,15 @@ builder.mutationField('requestPasswordReset', (t) =>
   t.boolean({
     args: {
       email: t.arg.string({ required: true }),
+      captchaToken: t.arg.string(),
     },
     resolve: async (_root, args, ctx) => {
       const { authResolver } = ctx.diScope.cradle;
       try {
-        await authResolver.requestPasswordReset(args.email, ctx.request.ip ?? null);
+        await authResolver.requestPasswordReset(args.email, ctx.request.ip ?? null, {
+          token: args.captchaToken,
+          enforce: true,
+        });
         return true;
       } catch (err) {
         throw fromCodedError(err);

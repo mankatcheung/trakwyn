@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { db } from '#src/infrastructure/db/client.js';
+import { buildCaptchaVerifier } from '#src/infrastructure/captcha/buildCaptchaVerifier.js';
 
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { MemoryCache } from '#src/infrastructure/cache/MemoryCache.js';
@@ -138,6 +139,10 @@ export const infrastructure = {
   // asFunction, not asClass: the constructor takes an options object, and
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
+  // asFunction so a mis-set CAPTCHA_PROVIDER throws on first use rather than at import.
+  captchaVerifier: asFunction(({ logger }: Cradle) => buildCaptchaVerifier(logger), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   outboundUrlPolicy: asFunction(({ logger }: Cradle) => new OutboundUrlPolicy({ logger }), {
     lifetime: Lifetime.SINGLETON,
   }),

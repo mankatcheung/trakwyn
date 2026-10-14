@@ -33,7 +33,7 @@ describe('ForgotPasswordScreen', () => {
   });
 
   it('requests a password reset for the primary email and shows a success message', async () => {
-    mockedGqlRequest.mockResolvedValue({ requestPasswordReset: true });
+    mockedGqlRequest.mockResolvedValue({ requestPasswordResetMobile: true });
 
     const { getByTestId, findByTestId } = await renderScreen();
 
@@ -41,9 +41,12 @@ describe('ForgotPasswordScreen', () => {
     await fireEvent.press(getByTestId('forgot-password-submit-button'));
 
     await findByTestId('forgot-password-success');
-    expect(mockedGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestPasswordReset'), {
-      email: 'user@example.com',
-    });
+    expect(mockedGqlRequest).toHaveBeenCalledWith(
+      expect.stringContaining('RequestPasswordResetMobile'),
+      {
+        email: 'user@example.com',
+      },
+    );
   });
 
   it('shows a validation error instead of submitting when the email is invalid', async () => {

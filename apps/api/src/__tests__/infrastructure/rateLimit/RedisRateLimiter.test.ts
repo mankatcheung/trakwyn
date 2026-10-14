@@ -117,6 +117,27 @@ describe('RedisRateLimiter', () => {
     expect(await limiterA.consume('shared-key')).toBe(false);
   });
 
+  describe('isLimited', () => {
+    it('turns true once the maximum has been consumed, without spending an attempt itself', async () => {
+      const { limiter } = makeLimiter(2, 60_000);
+
+      expect(await limiter.isLimited('key-1')).toBe(false);
+      await limiter.consume('key-1');
+      expect(await limiter.isLimited('key-1')).toBe(false);
+      await limiter.consume('key-1');
+      expect(await limiter.isLimited('key-1')).toBe(true);
+      expect(await limiter.isLimited('key-1')).toBe(true);
+    });
+
+    it('fails open when Redis errors', async () => {
+      const { limiter, redis } = makeLimiter(1, 60_000);
+      await limiter.consume('key-1');
+      redis.failing = true;
+
+      await expect(limiter.isLimited('key-1')).resolves.toBe(false);
+    });
+  });
+
   describe('resilience to Redis failures', () => {
     it('fails open (allows the request) when Redis errors, instead of throwing', async () => {
       const { limiter, redis } = makeLimiter(1, 60_000);

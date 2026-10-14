@@ -101,6 +101,7 @@ Secret IDs are the env var names in lower-kebab-case:
 | `blob-public-read-write-token`  | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s public Blob store (avatars)        |
 | `blob-private-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s private Blob store (documents)     |
 | `brevo-api-key`                 | Brevo API key (not the one `infra/brevo` uses)                                                   |
+| `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; create the widget in the dashboard)   |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
 | `digest-admin-secret`           | a new random value                                                                               |
 | `google-oauth-client-secret`    | Google OAuth client secret                                                                       |

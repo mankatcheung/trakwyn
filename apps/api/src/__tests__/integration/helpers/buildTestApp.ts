@@ -31,6 +31,24 @@ export async function buildTestApp(): Promise<TestApp> {
   vi.doMock('#src/infrastructure/db/client.js', () => ({ db, closeDb }));
   process.env[ENV.DATABASE_URL] = 'pglite:memory';
 
+  // A test file signs dozens of users up and in from one address, which the
+  // per-IP register and login budgets (JEF-401) exist to refuse. Only those
+  // budgets are lifted; the failed-login threshold that triggers the captcha
+  // keeps its real value so a test can still reach it.
+  vi.doMock('#src/http/constants.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('#src/http/constants.js')>();
+    const unlimited = { ...actual.RATE_LIMIT.LOGIN, MAX_ATTEMPTS: Number.MAX_SAFE_INTEGER };
+    return {
+      ...actual,
+      RATE_LIMIT: {
+        ...actual.RATE_LIMIT,
+        LOGIN: unlimited,
+        REGISTER: unlimited,
+        REGISTER_WITHOUT_CAPTCHA: unlimited,
+      },
+    };
+  });
+
   process.env[ENV.JWT_SECRET] ??= 'test-secret';
   process.env[ENV.JWT_REFRESH_SECRET] ??= 'test-refresh-secret';
   // Needed by any integration test that saves an LLM API key (LlmApiKeyCipher

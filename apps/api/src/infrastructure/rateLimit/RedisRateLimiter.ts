@@ -90,6 +90,26 @@ export class RedisRateLimiter implements IRateLimiter {
     }
   }
 
+  /** Fails open, like `consume`: an unreadable counter reads as "not limited". */
+  async isLimited(key: string): Promise<boolean> {
+    try {
+      const count = await this.breaker.execute(() => this.redis.get<number>(`${KEY_PREFIX}${key}`));
+      return count !== null && Number(count) >= this.maxAttempts;
+    } catch (err) {
+      this.metrics.recordFailOpen(
+        'rate_limit',
+        err instanceof CircuitBreakerOpenError ? 'circuit_open' : 'error',
+      );
+      if (!(err instanceof CircuitBreakerOpenError)) {
+        this.logger.error(
+          '[rate-limit] Redis error in isLimited — failing open (request allowed)',
+          err,
+        );
+      }
+      return false;
+    }
+  }
+
   private async increment(key: string): Promise<number> {
     const redisKey = `${KEY_PREFIX}${key}`;
     // Atomically create the key with its window TTL baked in via SET NX PX —

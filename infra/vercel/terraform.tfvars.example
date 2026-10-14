@@ -28,3 +28,8 @@ blob_store_region = "<region, e.g. fra1>"
 # apex_domain       = "trakwyn.com" # null if the project has no apex domain
 # api_url           = "https://api.trakwyn.com/graphql"
 # posthog_host      = "https://eu.i.posthog.com"
+
+# Cloudflare Turnstile site key (JEF-401). Create the widget in the Cloudflare
+# dashboard (Turnstile), allow the web app's hostnames, and paste the site key
+# here; its secret key goes to infra/gcp's `turnstile-secret-key` secret.
+# turnstile_site_key = ""

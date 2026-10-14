@@ -52,6 +52,13 @@ function limiter(
 
 export const rateLimiters = {
   passwordResetRateLimiter: limiter('passwordResetRateLimiter', RATE_LIMIT.PASSWORD_RESET_REQUEST),
+  loginRateLimiter: limiter('loginRateLimiter', RATE_LIMIT.LOGIN),
+  loginFailureRateLimiter: limiter('loginFailureRateLimiter', RATE_LIMIT.LOGIN_FAILURE),
+  registerRateLimiter: limiter('registerRateLimiter', RATE_LIMIT.REGISTER),
+  registerWithoutCaptchaRateLimiter: limiter(
+    'registerWithoutCaptchaRateLimiter',
+    RATE_LIMIT.REGISTER_WITHOUT_CAPTCHA,
+  ),
   totpRateLimiter: limiter('totpRateLimiter', RATE_LIMIT.TOTP_VERIFICATION),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
