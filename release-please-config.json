@@ -2,28 +2,23 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "bootstrap-sha": "ef813809b8a7d4d30bdb7fd7b3bb3f9482d99405",
   "separate-pull-requests": true,
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "server",
+      "components": ["api", "web"]
+    }
+  ],
   "packages": {
-    ".": {
-      "release-type": "node",
-      "component": "server",
-      "bump-minor-pre-major": true,
-      "exclude-paths": [
-        ".github",
-        "CLAUDE.md",
-        "DESIGN.md",
-        "README.md",
-        "apps/cli",
-        "apps/extension",
-        "apps/mobile",
-        "docs",
-        "infra",
-        "packages",
-        "pnpm-lock.yaml",
-        "pnpm-workspace.yaml",
-        "scripts",
-        "tsconfig.base.json",
-        "turbo.json"
-      ]
+    "apps/api": {
+      "release-type": "simple",
+      "component": "api",
+      "bump-minor-pre-major": true
+    },
+    "apps/web": {
+      "release-type": "simple",
+      "component": "web",
+      "bump-minor-pre-major": true
     },
     "apps/extension": {
       "release-type": "node",

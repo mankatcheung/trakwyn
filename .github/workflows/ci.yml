@@ -41,6 +41,10 @@ name: CI & Deploy
 on:
   push:
     branches: [main]
+    # The four '!' entries are the only files the server release PR
+    # (release.yml, JEF-389) edits under apps/api and apps/web. They must come
+    # after the globs they carve out of, or the negation has no effect, and no
+    # comment may sit inside the list (releaseVersioning.test.ts parses it).
     paths:
       - 'apps/api/**'
       - 'apps/web/**'
@@ -50,6 +54,10 @@ on:
       - 'pnpm-workspace.yaml'
       - '.github/workflows/ci.yml'
       - '.github/actions/**'
+      - '!apps/api/version.txt'
+      - '!apps/api/CHANGELOG.md'
+      - '!apps/web/version.txt'
+      - '!apps/web/CHANGELOG.md'
   pull_request:
     branches: [main]
 

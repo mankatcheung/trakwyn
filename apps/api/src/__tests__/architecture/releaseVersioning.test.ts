@@ -3,16 +3,17 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Five things are versioned (JEF-389): the Clipper, the mobile app, the CLI
- * and the server stack, which is `apps/api` and `apps/web` together under the
- * repo root's package.json (component `server`). release-please bumps each
- * one's package.json from the squash-commit titles on main and records the
- * result in `.release-please-manifest.json`.
+ * Five packages are versioned (JEF-389): the Clipper, the mobile app, the CLI,
+ * and `apps/api` and `apps/web`, which release-please's linked-versions plugin
+ * keeps on one shared `server` version. release-please bumps each one from the
+ * squash-commit titles on main and records the result in
+ * `.release-please-manifest.json`.
  *
- * The server version sits at the root, not in `apps/api` or `apps/web`,
- * because ci.yml deploys on `apps/api/**` and `apps/web/**`: a release PR that
- * edited either package.json would deploy on merge. The commit SHA still names
- * what is live; the server version is a label for self-hosters and changelogs.
+ * The server pair uses the `simple` release type, which writes `version.txt`
+ * and `CHANGELOG.md` instead of `package.json`. ci.yml deploys on
+ * `apps/api/**` and `apps/web/**`, so it negates exactly those two files; a
+ * release PR then never deploys. The commit SHA still names what is live; the
+ * server version labels changelogs and gives self-hosters something to pin.
  * `packages/ui` stays unversioned.
  *
  * This lives with the other repo rules because the config is repo-wide and
@@ -21,10 +22,20 @@ import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = join(process.cwd(), '..', '..');
 
-const VERSIONED_PACKAGES = ['.', 'apps/cli', 'apps/extension', 'apps/mobile'];
+const SERVER_PACKAGES = ['apps/api', 'apps/web'];
+const VERSIONED_PACKAGES = ['apps/api', 'apps/cli', 'apps/extension', 'apps/mobile', 'apps/web'];
 
-/** Under the root package, so the release PR must leave them out of `server`. */
-const EXCLUDED_FROM_SERVER = ['apps/cli', 'apps/extension', 'apps/mobile'];
+/** The file a package's version is read from; the server pair has no package.json version. */
+function versionFile(path: string): string {
+  return SERVER_PACKAGES.includes(path) ? 'version.txt' : 'package.json';
+}
+
+function readVersion(path: string): string {
+  const file = versionFile(path);
+  return file === 'version.txt'
+    ? readFileSync(join(REPO_ROOT, path, file), 'utf8').trim()
+    : readJson<{ version: string }>(join(path, file)).version;
+}
 
 const RELEASE_FILES = ['release-please-config.json', '.release-please-manifest.json'];
 
@@ -43,10 +54,21 @@ function ciPushPaths(): string[] {
     .map((line) => line.replace(/^\s*-\s*/, '').replace(/['"]/g, ''));
 }
 
+/** Whether a push touching `file` runs ci.yml: the last matching pattern wins, as on GitHub. */
+function triggersDeploy(file: string, patterns: string[]): boolean {
+  return patterns.reduce((triggered, pattern) => {
+    const negated = pattern.startsWith('!');
+    const glob = negated ? pattern.slice(1) : pattern;
+    const matches = file === glob || file.startsWith(glob.replace(/\*\*$/, ''));
+    return matches ? !negated : triggered;
+  }, false);
+}
+
 describe('release versioning', () => {
   const manifest = readJson<Record<string, string>>('.release-please-manifest.json');
   const config = readJson<{
-    packages: Record<string, { component?: string; 'exclude-paths'?: string[] }>;
+    plugins?: { type: string; groupName?: string; components?: string[] }[];
+    packages: Record<string, { component?: string; 'release-type'?: string }>;
   }>('release-please-config.json');
 
   it('versions exactly the installed artefacts and the server stack', () => {
@@ -54,24 +76,25 @@ describe('release versioning', () => {
     expect(Object.keys(manifest).sort()).toEqual(VERSIONED_PACKAGES);
   });
 
-  it.each(VERSIONED_PACKAGES)('keeps the manifest in step with %s/package.json', (path) => {
-    const { version } = readJson<{ version: string }>(join(path, 'package.json'));
+  it.each(VERSIONED_PACKAGES)('keeps the manifest in step with %s', (path) => {
+    const version = readVersion(path);
 
     expect(version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(manifest[path]).toBe(version);
   });
 
-  it('versions the server stack at the root and leaves the other packages out of it', () => {
-    const server = config.packages['.'];
+  it('links apps/api and apps/web into one server version', () => {
+    const linked = config.plugins?.find((plugin) => plugin.type === 'linked-versions');
+    const components = SERVER_PACKAGES.map((path) => config.packages[path].component);
 
-    expect(server.component).toBe('server');
-    expect(server['exclude-paths']).toEqual(expect.arrayContaining(EXCLUDED_FROM_SERVER));
+    expect(linked?.groupName).toBe('server');
+    expect([...(linked?.components ?? [])].sort()).toEqual([...components].sort());
+    expect(manifest['apps/api']).toBe(manifest['apps/web']);
   });
 
-  it('keeps apps/api and apps/web unversioned, so no release PR edits a deploy path', () => {
-    for (const path of ['apps/api', 'apps/web']) {
-      expect(config.packages).not.toHaveProperty(path);
-      expect(manifest).not.toHaveProperty(path);
+  it('releases the server pair as `simple`, so a release PR never edits its package.json', () => {
+    for (const path of SERVER_PACKAGES) {
+      expect(config.packages[path]['release-type']).toBe('simple');
     }
   });
 
@@ -79,18 +102,19 @@ describe('release versioning', () => {
     const pushPaths = ciPushPaths();
     const releaseTouched = [
       ...VERSIONED_PACKAGES.flatMap((path) => [
-        join(path, 'package.json'),
+        join(path, versionFile(path)),
         join(path, 'CHANGELOG.md'),
       ]),
       ...RELEASE_FILES,
     ];
 
-    const triggering = releaseTouched.filter((file) =>
-      pushPaths.some(
-        (pattern) => file === pattern || file.startsWith(pattern.replace(/\*\*$/, '')),
-      ),
-    );
+    expect(releaseTouched.filter((file) => triggersDeploy(file, pushPaths))).toEqual([]);
+  });
 
-    expect(triggering).toEqual([]);
+  it('still deploys when the server code changes', () => {
+    const pushPaths = ciPushPaths();
+
+    expect(triggersDeploy('apps/api/src/index.ts', pushPaths)).toBe(true);
+    expect(triggersDeploy('apps/web/package.json', pushPaths)).toBe(true);
   });
 });
