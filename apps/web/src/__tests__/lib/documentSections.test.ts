@@ -58,6 +58,12 @@ describe('document sections (JEF-396)', () => {
     expect(sectionSearchSchema.safeParse({ section: 'constructor' }).success).toBe(false);
   });
 
+  it('leads with a wide-only Overview section that links straight to it (JEF-403)', () => {
+    expect(ALL_SECTIONS[0]).toMatchObject({ id: 'overview', wideOnly: true });
+    expect(ALL_SECTIONS.filter((s) => s.wideOnly).map((s) => s.id)).toEqual(['overview']);
+    expect(sectionSearchSchema.parse({ section: 'overview' })).toEqual({ section: 'overview' });
+  });
+
   it('reads each tab badge from its own count', () => {
     const counts: SectionCounts = {
       notes: 0,

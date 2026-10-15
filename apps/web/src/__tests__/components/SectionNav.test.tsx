@@ -21,12 +21,23 @@ describe('SectionNav', () => {
     render(<SectionNav active="interviews" counts={counts} onOpen={() => {}} />);
     const nav = getNav();
 
-    expect(within(nav).getAllByRole('button')).toHaveLength(9);
+    expect(within(nav).getAllByRole('button')).toHaveLength(10);
     expect(within(nav).getByRole('button', { name: /Interviews/ })).toHaveAttribute(
       'aria-current',
       'page',
     );
     expect(within(nav).getByRole('button', { name: /Notes/ })).not.toHaveAttribute('aria-current');
+  });
+
+  it('puts Overview first and shows it only from lg (JEF-403)', () => {
+    render(<SectionNav active="overview" counts={counts} onOpen={() => {}} />);
+    const nav = getNav();
+
+    const [first] = within(nav).getAllByRole('button');
+    expect(first).toHaveTextContent('Overview');
+    expect(first).toHaveAttribute('aria-current', 'page');
+    expect(first).toHaveClass('hidden', 'lg:flex');
+    expect(within(nav).getByRole('button', { name: /Notes/ })).not.toHaveClass('hidden');
   });
 
   it('shows counts above zero and the generated marker for the briefing', () => {

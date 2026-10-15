@@ -93,7 +93,7 @@ export function SectionNav({ active, counts, onOpen }: SectionNavProps) {
                 type="button"
                 onClick={() => onOpen(section.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors lg:shrink-0 lg:gap-2 lg:px-2 lg:whitespace-nowrap ${
+                className={`${section.wideOnly ? 'hidden lg:flex' : 'flex'} items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors lg:shrink-0 lg:gap-2 lg:px-2 lg:whitespace-nowrap ${
                   isActive
                     ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'

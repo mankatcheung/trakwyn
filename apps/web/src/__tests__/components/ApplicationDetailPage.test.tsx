@@ -200,6 +200,71 @@ describe('ApplicationDetailPage', () => {
     });
   });
 
+  describe('overview (JEF-403)', () => {
+    const loadApp = () =>
+      mockGqlRequest.mockImplementation((query: string) => {
+        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
+        return Promise.resolve({ application: mockApp });
+      });
+    const defaultMatchMedia = window.matchMedia;
+    afterEach(() => {
+      window.matchMedia = defaultMatchMedia;
+    });
+    const stubWide = () => {
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(min-width: 1024px)',
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })) as unknown as typeof window.matchMedia;
+    };
+
+    it('opens on Overview from lg, instead of Notes', async () => {
+      stubWide();
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      const nav = within(screen.getByLabelText('Section navigation'));
+      expect(nav.getByRole('button', { name: /overview/i })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      expect(screen.queryByPlaceholderText(/add a note/i)).not.toBeInTheDocument();
+      // The Overview tab shows the job information in full.
+      expect(screen.getAllByText('Great role').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Remote').length).toBeGreaterThan(0);
+    });
+
+    it('keeps the job information in the header card below lg, with Notes as the section', async () => {
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.getByText('Great role')).toHaveClass('line-clamp-3');
+      expect(screen.getByText('Remote')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument();
+    });
+
+    it('does not list Overview on the phone index, only in the (CSS-hidden) tab bar', async () => {
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.getAllByRole('button', { name: /^overview/i })).toHaveLength(1);
+    });
+
+    it('treats ?section=overview below lg as no section, so there is no drill-down screen', async () => {
+      searchStore.set({ section: 'overview' });
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.queryByLabelText('Back to sections')).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument();
+    });
+  });
+
   it('shows the notes tab and the three document tabs, with no combined Documents tab', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
