@@ -1,11 +1,11 @@
 name: Mobile E2E (iOS)
 
-# The same seven Maestro flows as the Android job in ci.yml, on a simulator.
+# The same seven Maestro flows as the Android job in mobile-e2e-android.yml, on a simulator.
 #
 # Kept out of the per-PR path on purpose (JEF-300, D-2): an iOS build is Xcode's
 # to do and macOS runners queue longer, so this job costs an estimated 20-30
-# minutes against Android's 12-18. Android blocks every pull request; iOS runs
-# nightly, and can be pulled into any single PR by adding the `run-ios-e2e`
+# minutes against Android's 12-18. Both now run nightly, and
+# can be pulled into any single PR by adding the `run-ios-e2e`
 # label to it.
 #
 # It lives in its own file rather than as another job in ci.yml because ci.yml
@@ -200,7 +200,7 @@ jobs:
           name: maestro-ios
           # Maestro writes its screenshots and hierarchy dumps under a hidden
           # .maestro/tests/ tree, which upload-artifact skips by default (the
-          # Android job in ci.yml has the same setting).
+          # Android job has the same setting).
           include-hidden-files: true
           path: |
             ${{ runner.temp }}/maestro-debug/
