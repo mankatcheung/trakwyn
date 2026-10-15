@@ -374,7 +374,7 @@ jobs:
       # The APK is cached on everything that can change it: the app's sources
       # and config, the shared packages and the lockfile (android/ is generated
       # and ignored). The API URL is a constant of this job, so it is part of
-      # the key's prefix. A PR that only touches apps/api reuses the APK.
+      # the key. A PR that only touches apps/api reuses the APK.
       - name: Cache the release APK
         id: apk-cache
         uses: actions/cache@v4
