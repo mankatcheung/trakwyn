@@ -8,13 +8,21 @@
       "component": "server",
       "bump-minor-pre-major": true,
       "exclude-paths": [
+        ".github",
+        "CLAUDE.md",
+        "DESIGN.md",
+        "README.md",
         "apps/cli",
         "apps/extension",
         "apps/mobile",
         "docs",
         "infra",
         "packages",
-        "scripts"
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "scripts",
+        "tsconfig.base.json",
+        "turbo.json"
       ]
     },
     "apps/extension": {
