@@ -28,6 +28,16 @@ resource "google_artifact_registry_repository_iam_member" "deployer_push" {
   member     = google_service_account.github_deployer.member
 }
 
+# Writer on the base-image repo covers both halves: the mirror workflow
+# pushes to it, and CI pulls from it (JEF-407). It is a separate repository so
+# this grant cannot reach the api images, and the other way round.
+resource "google_artifact_registry_repository_iam_member" "deployer_base_images" {
+  location   = google_artifact_registry_repository.base.location
+  repository = google_artifact_registry_repository.base.name
+  role       = "roles/artifactregistry.writer"
+  member     = google_service_account.github_deployer.member
+}
+
 # On the one service rather than the project: the project (job-finder-503217)
 # is not dedicated to this API, and a deploy only needs to update this
 # service.
