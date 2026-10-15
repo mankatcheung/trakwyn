@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { mockGqlRequest, mockCaptureException, mockCaptureEvent, mockPutBlob } = vi.hoisted(() => ({
-  mockGqlRequest: vi.fn(),
-  mockCaptureException: vi.fn(),
-  mockCaptureEvent: vi.fn(),
-  mockPutBlob: vi.fn(),
-}));
+const { mockGqlRequest, mockCaptureException, mockCaptureEvent, mockPutBlob, mockNavigate } =
+  vi.hoisted(() => ({
+    mockNavigate: vi.fn(),
+    mockGqlRequest: vi.fn(),
+    mockCaptureException: vi.fn(),
+    mockCaptureEvent: vi.fn(),
+    mockPutBlob: vi.fn(),
+  }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -19,6 +21,7 @@ vi.mock('@tanstack/react-router', () => ({
     to: string;
     params?: Record<string, string>;
   }) => <a href={`${to}${params ? '/' + Object.values(params).join('/') : ''}`}>{children}</a>,
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -566,7 +569,7 @@ describe('DocumentList — one unified list (JEF-399)', () => {
     expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByText('Tailored for Acme')).toBeInTheDocument();
     expect(within(rows[0]).getByText('Draft')).toBeInTheDocument();
-    expect(within(rows[0]).getByRole('link', { name: 'Edit' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('link', { name: 'Tailored for Acme' })).toBeInTheDocument();
     expect(within(rows[1]).getByText('resume.pdf')).toBeInTheDocument();
     expect(within(rows[1]).getByText('PDF')).toBeInTheDocument();
     expect(within(rows[1]).queryByText('Draft')).not.toBeInTheDocument();
@@ -621,6 +624,76 @@ describe('DocumentList — one unified list (JEF-399)', () => {
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
     await screen.findByText(/create or upload one/i);
     expect(screen.queryByText(/click to upload/i)).not.toBeInTheDocument();
+  });
+
+  it('puts Upload file and New draft above the filter, on Resumes and Cover Letters (JEF-405)', async () => {
+    for (const category of ['resume', 'cover_letter'] as const) {
+      mockResponses({
+        documents: [{ ...mockDoc, documentType: category }],
+        documentDrafts: [{ ...mockDraft, type: category }],
+      });
+      const { unmount } = render(<DocumentList applicationId="app-1" category={category} />, {
+        wrapper: Wrapper,
+      });
+      const filter = await screen.findByRole('group', { name: 'Filter' });
+      const upload = screen.getByRole('button', { name: 'Upload file' });
+      const newDraft = screen.getByRole('link', { name: 'New Draft' });
+      const before = Node.DOCUMENT_POSITION_FOLLOWING;
+      expect(upload.compareDocumentPosition(filter) & before).toBeTruthy();
+      expect(newDraft.compareDocumentPosition(filter) & before).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it('keeps row actions in the more menu, and the name does the same as Preview (JEF-405)', async () => {
+    mockResponses({ documents: [mockDoc] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByRole('button', { name: 'resume.pdf' });
+    expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    const labels = screen.getAllByRole('menuitem').map((i) => i.textContent);
+    expect(labels).toEqual(['Preview', 'Open in new tab', 'Delete']);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Preview' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('previews a file when its name is clicked (JEF-405)', async () => {
+    mockResponses({ documents: [mockDoc] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'resume.pdf' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('offers Download instead of Preview for a file that cannot be previewed (JEF-405)', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    mockResponses({ documents: [{ ...mockDoc, name: 'cv.docx', mimeType: 'application/msword' }] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+    expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual([
+      'Download',
+      'Delete',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Download' }));
+    expect(open).toHaveBeenCalledWith(mockDoc.url, '_blank', 'noopener,noreferrer');
+    open.mockRestore();
+  });
+
+  it('edits a draft from the more menu (JEF-405)', async () => {
+    mockResponses({ documentDrafts: [mockDraft] });
+    render(<DocumentList applicationId="app-1" category="cover_letter" />, { wrapper: Wrapper });
+
+    await screen.findByRole('link', { name: 'My cover letter' });
+    expect(screen.queryByRole('link', { name: 'Edit' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/applications/$applicationId/documents/$draftId',
+      params: { applicationId: 'app-1', draftId: 'draft-1' },
+    });
   });
 
   it('opens the file picker from the Upload file button', async () => {
