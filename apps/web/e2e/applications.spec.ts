@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
+import { chooseApplicationAction } from './helpers/applications';
 
 test.describe('Job applications', () => {
   const password = 'SecurePass123';
@@ -39,10 +40,9 @@ test.describe('Job applications', () => {
     // finishes, so it 401s into the error boundary).
     await page.getByText('OldCo').click();
     await expect(page).toHaveURL(/\/applications\/[^/]+$/);
-    // Star/edit/delete live in the actions sheet behind one "More actions"
-    // trigger, not as header icon buttons (JEF-208).
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('link', { name: 'Edit' }).click();
+    // Star/edit/delete live behind one "More actions" trigger, not as header
+    // icon buttons (JEF-208).
+    await chooseApplicationAction(page, 'Edit');
 
     // Edit page pre-fills fields (no placeholder), and label/input aren't
     // associated via htmlFor — target the input via its sibling label text.
@@ -67,8 +67,7 @@ test.describe('Job applications', () => {
     // Delete — the button just starts a 5s undo-toast timer; the mutation
     // fires and navigates back to /applications once it elapses.
     await page.getByText('ToDelete').click();
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('button', { name: 'Delete application' }).click();
+    await chooseApplicationAction(page, 'Delete application');
     await page.waitForURL(/\/applications$/, { timeout: 8_000 });
 
     await expect(page.getByText('ToDelete')).not.toBeVisible();

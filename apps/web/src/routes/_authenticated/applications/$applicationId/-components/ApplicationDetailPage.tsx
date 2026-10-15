@@ -1,12 +1,12 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeftIcon, MoreHorizontalIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { deleteApplicationWithUndo } from '../../-deleteWithUndo';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
-import { Card, Skeleton } from '@trakwyn/ui';
+import { Card, Skeleton, useIsWideViewport } from '@trakwyn/ui';
 import { StatusBadge } from '../../../-components/StatusBadge';
 import { applicationQueryOptions, type Application } from '../-application-query';
 import type { BoardApplication } from '../../-board-queries';
@@ -15,6 +15,7 @@ import { TrashedApplicationView } from './TrashedApplicationView';
 import { HealthScorePanel, type HealthScore } from './HealthScorePanel';
 import { ApplicationInfoChips } from './ApplicationInfoChips';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
+import { ACTIONS_TRIGGER_CLASS, ApplicationActionsMenu } from './ApplicationActionsMenu';
 import { SectionIndex } from './SectionIndex';
 import { SectionNav } from './SectionNav';
 import { NotesTab } from './NotesTab';
@@ -65,6 +66,13 @@ export function ApplicationDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [actionsOpen, setActionsOpen] = useState(false);
+  // From `md` the actions are a popover; below it, the phone's bottom sheet.
+  const isWide = useIsWideViewport('md');
+  // Widening the window under an open sheet swaps it for the popover, so the
+  // sheet's open flag must not survive to reopen it on the way back down.
+  useEffect(() => {
+    if (isWide) setActionsOpen(false);
+  }, [isWide]);
 
   // `section` absent means the phone is on the index screen; the desktop has
   // no such state — its sidebar and content are always both on screen, so it
@@ -229,6 +237,26 @@ export function ApplicationDetailPage() {
 
   if (app.deletedAt) return <TrashedApplicationView app={app} />;
 
+  // One set of handlers for both presentations, so the popover and the sheet
+  // cannot drift apart on what an action does.
+  const actionHandlers = {
+    applicationId,
+    starred: app.starred,
+    status: app.status,
+    onToggleStar: () => toggleStar.mutate(!app.starred),
+    onChangeStatus: (status: ApplicationStatus) => changeStatus.mutate(status),
+    onDelete: () => {
+      // Sends the delete now and leaves immediately — undo is a real
+      // restoreApplication call, so there is nothing to wait for.
+      deleteApplicationWithUndo(
+        qc,
+        applicationId,
+        t('applicationDetail.applicationDeletedToast'),
+        () => navigate({ to: '/applications' }),
+      );
+    },
+  };
+
   const sectionContent = (
     <>
       {activeSection === 'notes' && (
@@ -321,14 +349,18 @@ export function ApplicationDetailPage() {
               company name. Star, edit and delete moved into the sheet, where
               they get labels and rows big enough to hit (JEF-208).
             */}
-            <button
-              type="button"
-              onClick={() => setActionsOpen(true)}
-              aria-label={t('applicationDetail.moreActions')}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <MoreHorizontalIcon size={20} />
-            </button>
+            {isWide ? (
+              <ApplicationActionsMenu {...actionHandlers} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActionsOpen(true)}
+                aria-label={t('applicationDetail.moreActions')}
+                className={ACTIONS_TRIGGER_CLASS}
+              >
+                <MoreHorizontalIcon size={20} />
+              </button>
+            )}
           </div>
 
           <div className="mt-3">
@@ -388,25 +420,13 @@ export function ApplicationDetailPage() {
         </div>
       </div>
 
-      <ApplicationActionsSheet
-        open={actionsOpen}
-        onClose={() => setActionsOpen(false)}
-        applicationId={applicationId}
-        starred={app.starred}
-        status={app.status}
-        onToggleStar={() => toggleStar.mutate(!app.starred)}
-        onChangeStatus={(status) => changeStatus.mutate(status)}
-        onDelete={() => {
-          // Sends the delete now and leaves immediately — undo is a real
-          // restoreApplication call, so there is nothing to wait for.
-          deleteApplicationWithUndo(
-            qc,
-            applicationId,
-            t('applicationDetail.applicationDeletedToast'),
-            () => navigate({ to: '/applications' }),
-          );
-        }}
-      />
+      {!isWide && (
+        <ApplicationActionsSheet
+          open={actionsOpen}
+          onClose={() => setActionsOpen(false)}
+          {...actionHandlers}
+        />
+      )}
     </div>
   );
 }

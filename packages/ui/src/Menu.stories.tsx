@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EllipsisVerticalIcon, PencilIcon, StarIcon, Trash2Icon, ZapIcon } from 'lucide-react';
-import { Menu } from './Menu';
+import { useState } from 'react';
+import {
+  ChevronLeftIcon,
+  EllipsisVerticalIcon,
+  PencilIcon,
+  StarIcon,
+  Trash2Icon,
+  ZapIcon,
+} from 'lucide-react';
+import { Menu, type MenuItem } from './Menu';
 
 const meta = {
   title: 'Overlay/Menu',
@@ -107,6 +115,72 @@ export const WithDisabledItem: Story = {
     </div>
   ),
 };
+
+function TwoPaneDemo() {
+  const [pane, setPane] = useState<'actions' | 'status'>('actions');
+  const [status, setStatus] = useState('Applied');
+
+  const items: MenuItem[] =
+    pane === 'actions'
+      ? [
+          { id: 'star', label: 'Star', icon: <StarIcon size={ICON} /> },
+          { id: 'status', label: 'Change status', keepOpen: true },
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: <Trash2Icon size={ICON} />,
+            destructive: true,
+            separated: true,
+          },
+        ]
+      : [
+          {
+            id: 'back',
+            label: 'Change status',
+            icon: <ChevronLeftIcon size={ICON} />,
+            keepOpen: true,
+          },
+          ...['Applied', 'Interviewing', 'Offer'].map((value) => ({
+            id: value,
+            label: value,
+            current: value === status,
+          })),
+        ];
+
+  return (
+    <div className="flex justify-end p-8">
+      <Menu
+        label={pane === 'actions' ? 'Actions' : 'Change status'}
+        breakpoint="md"
+        items={items}
+        onClose={() => setPane('actions')}
+        onSelect={(id) => {
+          if (id === 'status') setPane('status');
+          else if (id === 'back') setPane('actions');
+          else if (id !== 'star' && id !== 'delete') setStatus(id);
+        }}
+        trigger={(props) => (
+          <button
+            type="button"
+            {...props}
+            aria-label="More actions"
+            className="flex size-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          >
+            <EllipsisVerticalIcon size={20} />
+          </button>
+        )}
+      />
+    </div>
+  );
+}
+
+/**
+ * A second pane inside the same menu: the consumer swaps `items` when a
+ * `keepOpen` item is chosen, marks the current choice with `current`, and
+ * resets the pane from `onClose`. `breakpoint="md"` moves the switch between
+ * dropdown and sheet from `sm` (the default) up to `md`.
+ */
+export const TwoPanes: Story = { render: () => <TwoPaneDemo /> };
 
 /**
  * Below `sm` the same menu opens as a bottom sheet with 52px rows. Narrow the
