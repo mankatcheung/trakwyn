@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, rmSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -94,6 +95,65 @@ describe('mirror script', () => {
     } finally {
       rmSync(bad, { force: true });
     }
+  });
+});
+
+describe('mirror script copying', () => {
+  const script = join(REPO, '.github/scripts/mirror-base-images.sh');
+  const DIGEST = `sha256:${'a'.repeat(64)}`;
+
+  /**
+   * Runs the script with a stand-in `docker` first on PATH. It fails the
+   * first `failures` copies with a 429, then succeeds, and reports `reported`
+   * as the copied digest.
+   */
+  const run = (failures: number, reported: string) => {
+    const dir = mkdtempSync(join(tmpdir(), 'mirror-'));
+    try {
+      writeFileSync(join(dir, 'pins.txt'), `example.com/library/img:1@${DIGEST}\n`);
+      writeFileSync(join(dir, 'count'), '0');
+      writeFileSync(
+        join(dir, 'docker'),
+        [
+          '#!/usr/bin/env bash',
+          'case "$3" in',
+          '  create)',
+          `    n=$(($(cat "${dir}/count") + 1)); echo $n > "${dir}/count"`,
+          `    if (( n <= ${failures} )); then echo "429 Too Many Requests" >&2; exit 1; fi ;;`,
+          `  inspect) echo ${reported} ;;`,
+          'esac',
+        ].join('\n'),
+      );
+      chmodSync(join(dir, 'docker'), 0o755);
+      let status = 0;
+      try {
+        execFileSync(script, [join(dir, 'pins.txt'), 'registry.test/base'], {
+          env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, MIRROR_RETRY_DELAY: '0' },
+          stdio: 'pipe',
+        });
+      } catch (error) {
+        status = (error as { status: number }).status;
+      }
+      return { status, copies: Number(readFileSync(join(dir, 'count'), 'utf8')) };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it('succeeds first time when the copy keeps the pinned digest', () => {
+    expect(run(0, DIGEST)).toEqual({ status: 0, copies: 1 });
+  });
+
+  it('retries a copy that hits a rate limit, then succeeds', () => {
+    expect(run(2, DIGEST)).toEqual({ status: 0, copies: 3 });
+  });
+
+  it('gives up after five attempts', () => {
+    expect(run(99, DIGEST)).toEqual({ status: 1, copies: 5 });
+  });
+
+  it('fails when the copy has a different digest from the pin', () => {
+    expect(run(0, `sha256:${'b'.repeat(64)}`).status).toBe(1);
   });
 });
 
