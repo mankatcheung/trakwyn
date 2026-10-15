@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Base images mirrored into Artifact Registry (JEF-406)",
+      "managerFilePatterns": ["/^infra/base-images\\.txt$/"],
+      "matchStrings": [
+        "^(?<depName>[^\\s#:@]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})$"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "labels": ["Improvement"]
+}

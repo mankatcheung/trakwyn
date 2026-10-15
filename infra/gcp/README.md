@@ -182,6 +182,22 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 5. Check that traces, logs and metrics arrive in Axiom.
 6. Remove the Vercel API project.
 
+### Base images (JEF-406)
+
+CI builds and tests on `node` and `postgres`. Pulling them anonymously from a public registry fails with `429` when other runners on the same IP have used up its limit, so they are copied once into this project's own `base-images` repository and pulled from there. `terraform apply` creates the repository and grants the deployer service account write access to it; nothing else is needed on the GitHub side, because the `GCP_*` variables above are the ones the mirror uses.
+
+`infra/base-images.txt` pins each image by tag and digest. The `Mirror base images` workflow copies exactly those digests into the repository and fails if a copy does not keep its digest. It runs when the file changes on `main`, on demand (Actions → Mirror base images → Run workflow) and weekly. It runs on `main` only, because Workload Identity Federation issues tokens to nothing else.
+
+**First fill:** after the first `terraform apply`, run the workflow once and check that both images are there:
+
+```bash
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-images" --include-tags
+```
+
+**Bump an image:** Renovate opens a PR that changes a digest in `infra/base-images.txt` (it needs the Renovate GitHub app on the repository; `renovate.json` tells it how to read the file). Merging it runs the mirror. To bump by hand, change the line and merge; to get a digest, `docker buildx imagetools inspect <source>:<tag>`. Keep the `node` tag in step with `NODE_VERSION` in `apps/api/Dockerfile`; `baseImages.test.ts` fails when they differ.
+
+Nothing pulls from the mirror yet: the Dockerfile and CI switch over in JEF-407.
+
 ## Day two
 
 **Roll back:** send traffic to the previous revision. The next deploy moves traffic back to the newest revision.
