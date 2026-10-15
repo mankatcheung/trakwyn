@@ -44,9 +44,15 @@ test.describe('Resume ATS check', () => {
 
     await row.getByRole('button', { name: 'Check ATS' }).click();
 
-    await expect(row.getByText('Skills heading')).toBeVisible();
-    await expect(row.getByText(/Fix these first · \d/)).toBeVisible();
-    await expect(row.getByText(/Add a heading named “Skills”/)).toBeVisible();
+    // A fresh result opens the checklist in a modal (JEF-405), not in the row.
+    const dialog = page.getByRole('dialog', { name: 'ATS readiness' });
+    await expect(dialog.getByText('Skills heading')).toBeVisible();
+    await expect(dialog.getByText(/Fix these first · \d/)).toBeVisible();
+    await expect(dialog.getByText(/Add a heading named “Skills”/)).toBeVisible();
+    await shot(page, 'desktop-1440');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+
     // Separate from the job match, which stays its own chip.
     await expect(row.getByRole('button', { name: 'Generate match' })).toBeVisible();
 
@@ -57,11 +63,10 @@ test.describe('Resume ATS check', () => {
     await expect(reloaded.getByRole('button', { name: /ATS \d+ · / })).toBeVisible();
     await expect(reloaded.getByRole('button', { name: 'Check ATS' })).toHaveCount(0);
     await reloaded.getByRole('button', { name: /ATS \d+ · / }).click();
-    await expect(reloaded.getByText(/Add a heading named “Skills”/)).toBeVisible();
+    await expect(dialog.getByText(/Add a heading named “Skills”/)).toBeVisible();
 
-    await shot(page, 'desktop-1440');
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(reloaded.getByText('Skills heading')).toBeVisible();
+    await expect(dialog.getByText('Skills heading')).toBeVisible();
     await shot(page, 'mobile-390');
   });
 });
