@@ -24,6 +24,8 @@ export type { ModalProps, ModalSize } from './Modal';
 
 export { Menu } from './Menu';
 export type { MenuProps, MenuItem, MenuAlign } from './Menu';
+export { useIsWideViewport } from './useIsWideViewport';
+export type { WideViewportBreakpoint } from './useIsWideViewport';
 
 export { FormLabel } from './FormLabel';
 export type { FormLabelProps, FormLabelSize } from './FormLabel';
