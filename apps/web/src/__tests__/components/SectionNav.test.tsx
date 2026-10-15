@@ -59,13 +59,14 @@ describe('SectionNav', () => {
     expect(onOpen).toHaveBeenCalledWith('contacts');
   });
 
-  it('becomes a horizontal bar from lg while keeping the group headings for assistive tech', () => {
+  it('stays a vertical sidebar from md, with visible group headings and no horizontal scrolling (JEF-411)', () => {
     render(<SectionNav active="notes" counts={counts} onOpen={() => {}} />);
     const nav = getNav();
 
-    expect(nav).toHaveClass('md:flex', 'lg:flex-row', 'lg:w-full', 'lg:overflow-x-auto');
+    expect(nav).toHaveClass('md:flex', 'flex-col', 'sticky', 'w-52', 'overflow-y-auto');
+    expect(nav.className).not.toMatch(/\blg:/);
     const headings = within(nav).getAllByRole('heading', { level: 2 });
     expect(headings).toHaveLength(3);
-    headings.forEach((h) => expect(h).toHaveClass('lg:sr-only'));
+    headings.forEach((h) => expect(h).not.toHaveClass('sr-only', 'lg:sr-only'));
   });
 });

@@ -36,11 +36,11 @@ import { documentSectionCounts } from '../-sectionCounts';
 import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
 import { Route } from '../index';
 
-/** Where the section tabs become a horizontal bar and Overview appears (Tailwind `lg`). */
+/** Where Overview appears and the page widens to make room for the sidebar (Tailwind `lg`). */
 const WIDE_QUERY = '(min-width: 1024px)';
 
-/** Wide screens get a wider page; the section tabs sit above the content there (JEF-402). */
-const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-5xl xl:max-w-7xl';
+/** Wide screens get a wider page, which pays for the section sidebar's width (JEF-402, JEF-411). */
+const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-6xl xl:max-w-7xl';
 
 const UPDATE_APPLICATION = `
   mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {
@@ -383,7 +383,7 @@ export function ApplicationDetailPage() {
         </Card>
       </div>
 
-      <div className="flex flex-col gap-6 md:flex-row lg:flex-col">
+      <div className="flex flex-col gap-6 md:flex-row">
         <SectionNav active={activeSection} counts={counts} onOpen={openSectionAt} />
 
         {/* Phone: the index and a section are separate screens. Desktop: only the section. */}
