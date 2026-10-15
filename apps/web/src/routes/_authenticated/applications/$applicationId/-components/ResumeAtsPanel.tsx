@@ -1,16 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertTriangleIcon,
-  CheckCircle2Icon,
-  ChevronDownIcon,
-  ScanSearchIcon,
-  XCircleIcon,
-} from 'lucide-react';
+import { AlertTriangleIcon, CheckCircle2Icon, ScanSearchIcon, XCircleIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { Spinner } from '@trakwyn/ui';
+import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import type { ResumeRef } from '../-resumeMatchQueries';
 import {
@@ -34,7 +28,7 @@ const sameResume = (a: AtsScore, b: AtsScore): boolean =>
  * result is stored server-side, so it is still here after a reload; `isStale`
  * says the resume's text has changed since it was scored.
  */
-function useResumeAts(applicationId: string, resume: ResumeRef, onComputed: () => void) {
+function useResumeAts(applicationId: string, resume: ResumeRef, onSettled: () => void) {
   const qc = useQueryClient();
   const { data } = useQuery(resumeAtsScoresQueryOptions(applicationId));
   const ats = findResumeAtsScore(data?.resumeAtsScores, resume);
@@ -57,8 +51,10 @@ function useResumeAts(applicationId: string, resume: ResumeRef, onComputed: () =
           ],
         }),
       );
-      onComputed();
+      onSettled();
     },
+    // A first check that fails has no result to show, so the modal carries the error.
+    onError: onSettled,
   });
   return { ats, compute };
 }
@@ -100,13 +96,11 @@ function ComputeButton({
 function AtsChip({
   ats,
   compute,
-  expanded,
-  onToggle,
+  onOpen,
 }: {
   ats: AtsScore | undefined;
   compute: Compute;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
 }) {
   const { t } = useLocale();
   if (!ats) {
@@ -122,8 +116,8 @@ function AtsChip({
   return (
     <button
       type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
+      onClick={onOpen}
+      aria-haspopup="dialog"
       className={`${CHIP_CLASS} border-transparent whitespace-nowrap ${color.badge}`}
     >
       {ats.isStale && <AlertTriangleIcon size={14} aria-label={t('resumeAts.stale')} />}
@@ -132,11 +126,6 @@ function AtsChip({
           ? t('resumeAts.chip', { score: ats.score, label: ats.label })
           : t('resumeAts.notReadableChip')}
       </span>
-      <ChevronDownIcon
-        size={14}
-        aria-hidden="true"
-        className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
-      />
     </button>
   );
 }
@@ -199,8 +188,6 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                {t('resumeAts.title')}
-                {': '}
                 {ats.readable ? `${ats.score} · ${ats.label}` : ats.label}
               </p>
               <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
@@ -247,31 +234,30 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
 interface ResumeAtsProps {
   applicationId: string;
   resume: ResumeRef;
-  /** Hands the row the chip for its action cluster and the detail for under it, like `ResumeMatch`. */
+  /** Hands the row the chip for its action cluster and the modal the chip opens, like `ResumeMatch`. */
   children: (parts: { chip: ReactNode; details: ReactNode }) => ReactNode;
 }
 
 /**
  * The ATS-readiness check for one resume (JEF-395): a "Check ATS" chip until
- * there is a result, then a score chip that expands in place to the checklist.
- * The result is saved, so it is still here after a reload. Separate from the
- * job-match score, which needs a job and an AI key.
+ * there is a result, then a score chip that opens the checklist in a modal
+ * (JEF-405). The result is saved, so it is still here after a reload. Separate
+ * from the job-match score, which needs a job and an AI key.
  */
 export function ResumeAts({ applicationId, resume, children }: ResumeAtsProps) {
-  const [expanded, setExpanded] = useState(false);
-  // A fresh result opens itself: the chip alone would hide what was just asked for.
-  const { ats, compute } = useResumeAts(applicationId, resume, () => setExpanded(true));
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  // A fresh result or error opens itself: the chip alone would hide what was just asked for.
+  const { ats, compute } = useResumeAts(applicationId, resume, () => setOpen(true));
 
-  const showDetails = (expanded && ats !== undefined) || compute.isError;
   return children({
-    chip: (
-      <AtsChip
-        ats={ats}
-        compute={compute}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
-      />
+    chip: <AtsChip ats={ats} compute={compute} onOpen={() => setOpen(true)} />,
+    details: (
+      <Modal open={open} onClose={() => setOpen(false)} title={t('resumeAts.title')}>
+        <div className="p-4">
+          <AtsDetails ats={ats} compute={compute} />
+        </div>
+      </Modal>
     ),
-    details: showDetails ? <AtsDetails ats={ats} compute={compute} /> : null,
   });
 }

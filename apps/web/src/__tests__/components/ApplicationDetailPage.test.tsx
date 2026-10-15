@@ -372,7 +372,7 @@ describe('ApplicationDetailPage', () => {
       createdAt: '2024-01-02T00:00:00.000Z',
     };
 
-    it('opens an inline PDF preview when pressing Preview on a PDF', async () => {
+    it('opens an inline PDF preview when the file name is pressed (PDF)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -388,13 +388,13 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
 
-      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+      fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
 
       const iframe = await screen.findByTitle('resume.pdf');
       expect(iframe).toHaveAttribute('src', mockPdfDoc.url);
     });
 
-    it('opens an inline image preview when pressing Preview on an image', async () => {
+    it('opens an inline image preview when the file name is pressed (image)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockImageDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -410,7 +410,7 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('portfolio.png')).toBeInTheDocument());
 
-      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+      fireEvent.click(screen.getByRole('button', { name: 'portfolio.png' }));
 
       const img = await screen.findByAltText('portfolio.png');
       expect(img).toHaveAttribute('src', mockImageDoc.url);
@@ -430,7 +430,7 @@ describe('ApplicationDetailPage', () => {
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
-      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+      fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
       await screen.findByTitle('resume.pdf');
 
       const dialog = screen.getByTitle('resume.pdf').closest('div')!.parentElement!;
@@ -440,7 +440,7 @@ describe('ApplicationDetailPage', () => {
       expect(screen.queryByTitle('resume.pdf')).not.toBeInTheDocument();
     });
 
-    it('offers a download link, not Preview, for non-previewable documents (e.g. .docx)', async () => {
+    it('offers Download, not Preview, in the more menu for non-previewable documents (e.g. .docx)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -456,9 +456,10 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('cover-letter.docx')).toBeInTheDocument());
 
-      expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument();
-      const link = screen.getByRole('link', { name: 'Download' });
-      expect(link).toHaveAttribute('href', mockDocxDoc.url);
+      const row = screen.getByRole('listitem');
+      fireEvent.click(within(row).getByRole('button', { name: 'More actions' }));
+      expect(screen.queryByRole('menuitem', { name: 'Preview' })).not.toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'Download' })).toBeInTheDocument();
     });
   });
 

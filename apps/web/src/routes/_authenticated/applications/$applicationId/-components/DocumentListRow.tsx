@@ -1,17 +1,14 @@
 import type { ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { FileTextIcon, MoreVerticalIcon, PencilIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { fileExtension } from '#/lib/documentListItems';
-import { Badge, Button, Menu, type MenuItem } from '@trakwyn/ui';
+import { Badge, Menu, type MenuItem } from '@trakwyn/ui';
 import { isPreviewableMimeType } from './DocumentPreviewModal';
 import { ResumeMatch } from './ResumeMatchPanel';
 import { ResumeAts } from './ResumeAtsPanel';
 import type { ResumeRef } from '../-resumeMatchQueries';
 import type { Document, DocumentDraft } from '../-documentQueries';
-
-const ACTION_BUTTON_CLASS =
-  'inline-flex min-h-9 items-center rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700';
 
 interface RowShellProps {
   /** Blue for a draft, grey for a file, so the two read apart before any text. */
@@ -20,10 +17,9 @@ interface RowShellProps {
   title: ReactNode;
   badges: ReactNode;
   meta: string;
-  primary: ReactNode;
   menuItems: MenuItem[];
   onMenuSelect: (id: string) => void;
-  /** Set on Resumes, where each row carries its ATS check (JEF-395) and its match (JEF-397). */
+  /** Set on Resumes, where each row carries its ATS check (JEF-395) and its match (JEF-397), each opening a modal (JEF-405). */
   matchResume?: ResumeRef;
   applicationId: string;
 }
@@ -34,7 +30,6 @@ function RowShell({
   title,
   badges,
   meta,
-  primary,
   menuItems,
   onMenuSelect,
   matchResume,
@@ -42,7 +37,7 @@ function RowShell({
 }: RowShellProps) {
   const { t } = useLocale();
 
-  const render = (chip: ReactNode, details: ReactNode) => (
+  const render = (chip: ReactNode, modals: ReactNode) => (
     <li className="border-b border-gray-200 last:border-b-0 dark:border-gray-700">
       <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 px-4 py-3.5">
         <div
@@ -60,7 +55,6 @@ function RowShell({
         </div>
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           {chip}
-          {primary}
           <Menu
             label={t('documents.moreActions')}
             items={menuItems}
@@ -78,11 +72,7 @@ function RowShell({
           />
         </div>
       </div>
-      {details && (
-        <div className="border-t border-gray-100 bg-gray-50 p-4 sm:pl-19 dark:border-gray-700 dark:bg-gray-900/40">
-          {details}
-        </div>
-      )}
+      {modals}
     </li>
   );
 
@@ -97,12 +87,10 @@ function RowShell({
                 {ats.chip}
                 {match.chip}
               </>,
-              ats.details || match.details ? (
-                <div className="space-y-4">
-                  {ats.details}
-                  {match.details}
-                </div>
-              ) : null,
+              <>
+                {ats.details}
+                {match.details}
+              </>,
             )
           }
         </ResumeMatch>
@@ -121,6 +109,7 @@ interface DraftRowProps {
 
 export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRowProps) {
   const { t, formatDate } = useLocale();
+  const navigate = useNavigate();
   const editParams = { applicationId, draftId: draft.id };
   return (
     <RowShell
@@ -144,17 +133,19 @@ export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRow
       meta={t('documents.editedOn', {
         date: formatDate(new Date(draft.updatedAt), { dateStyle: 'medium' }),
       })}
-      primary={
-        <Link
-          to="/applications/$applicationId/documents/$draftId"
-          params={editParams}
-          className={ACTION_BUTTON_CLASS}
-        >
-          {t('documents.edit')}
-        </Link>
-      }
-      menuItems={[{ id: 'delete', label: t('common.delete'), destructive: true }]}
-      onMenuSelect={(id) => id === 'delete' && onDelete(draft)}
+      menuItems={[
+        { id: 'edit', label: t('documents.edit') },
+        { id: 'delete', label: t('common.delete'), destructive: true, separated: true },
+      ]}
+      onMenuSelect={(id) => {
+        if (id === 'delete') onDelete(draft);
+        else if (id === 'edit') {
+          void navigate({
+            to: '/applications/$applicationId/documents/$draftId',
+            params: editParams,
+          });
+        }
+      }}
       matchResume={withMatch ? { documentDraftId: draft.id } : undefined}
     />
   );
@@ -181,6 +172,9 @@ export function FileRow({
   const { t, formatDate } = useLocale();
   const extension = fileExtension(document.name, document.mimeType);
   const previewable = isPreviewableMimeType(document.mimeType);
+  // The name, the Preview menu item and Download are one action: look at the file.
+  const open = () =>
+    previewable ? onPreview(document) : window.open(document.url, '_blank', 'noopener,noreferrer');
   const meta = [
     t('documents.uploadedOn', {
       date: formatDate(new Date(document.createdAt), { dateStyle: 'medium' }),
@@ -195,9 +189,13 @@ export function FileRow({
       tile={<FileTextIcon size={20} />}
       tileClass="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
       title={
-        <span className="truncate text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+        <button
+          type="button"
+          onClick={open}
+          className="min-w-0 truncate text-left text-[15px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
+        >
           {document.name}
-        </span>
+        </button>
       }
       badges={
         <>
@@ -214,29 +212,15 @@ export function FileRow({
         </>
       }
       meta={meta}
-      primary={
-        previewable ? (
-          <Button variant="secondary" onClick={() => onPreview(document)}>
-            {t('documents.preview')}
-          </Button>
-        ) : (
-          <a
-            href={document.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={ACTION_BUTTON_CLASS}
-          >
-            {t('documents.download')}
-          </a>
-        )
-      }
       menuItems={[
-        { id: 'open', label: t('documents.openInNewTab') },
+        { id: 'open', label: previewable ? t('documents.preview') : t('documents.download') },
+        ...(previewable ? [{ id: 'newTab', label: t('documents.openInNewTab') }] : []),
         { id: 'delete', label: t('common.delete'), destructive: true, separated: true },
       ]}
       onMenuSelect={(id) => {
         if (id === 'delete') onDelete(document);
-        else if (id === 'open') window.open(document.url, '_blank', 'noopener,noreferrer');
+        else if (id === 'open') open();
+        else if (id === 'newTab') window.open(document.url, '_blank', 'noopener,noreferrer');
       }}
       matchResume={withMatch ? { documentId: document.id } : undefined}
     />

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
@@ -86,12 +86,13 @@ describe('ResumeMatch', () => {
     expect(screen.queryByText(/Good match/)).not.toBeInTheDocument();
   });
 
-  it('shows the saved score as a collapsed chip without calling the LLM mutation', async () => {
+  it('shows the saved score as a chip, with no modal, without calling the LLM mutation', async () => {
     mockApi({ matches: [draftMatch] });
     renderPanel({ documentDraftId: 'draft-1' });
 
     const chip = await chipName(/82 · Good match/);
-    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    expect(chip).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Strong overlap on core skills.')).not.toBeInTheDocument();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
       expect.stringContaining('mutation ComputeResumeMatchScore'),
@@ -99,20 +100,21 @@ describe('ResumeMatch', () => {
     );
   });
 
-  it('expands the chip in place to the summary and keywords, and collapses it again', async () => {
+  it('opens the summary and keywords in a modal from the chip, and closes it with Escape', async () => {
     mockApi({ matches: [draftMatch] });
     renderPanel({ documentDraftId: 'draft-1' });
 
     const chip = await chipName(/82 · Good match/);
     fireEvent.click(chip);
 
-    expect(chip).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Strong overlap on core skills.')).toBeInTheDocument();
-    expect(screen.getByText('TypeScript')).toBeInTheDocument();
-    expect(screen.getByText('Kubernetes')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Strong overlap on core skills.')).toBeInTheDocument();
+    expect(within(dialog).getByText('TypeScript')).toBeInTheDocument();
+    expect(within(dialog).getByText('Kubernetes')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
 
-    fireEvent.click(chip);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Strong overlap on core skills.')).not.toBeInTheDocument();
   });
 
@@ -135,10 +137,7 @@ describe('ResumeMatch', () => {
       expect.stringContaining('mutation ComputeResumeMatchScore'),
       { applicationId: 'app-1', documentDraftId: 'draft-1', documentId: null },
     );
-    expect(screen.getByRole('button', { name: /82 · Good match/ })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
   });
 

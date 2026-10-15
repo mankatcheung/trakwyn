@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangleIcon, ChevronDownIcon, TargetIcon } from 'lucide-react';
+import { AlertTriangleIcon, TargetIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { Spinner } from '@trakwyn/ui';
+import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import {
   COMPUTE_RESUME_MATCH_SCORE,
@@ -95,7 +95,7 @@ function KeywordList({
  * result is stored server-side, so it is still here after a reload; `isStale`
  * says the resume's text has changed since it was scored.
  */
-function useResumeMatch(applicationId: string, resume: ResumeRef, onComputed: () => void) {
+function useResumeMatch(applicationId: string, resume: ResumeRef, onSettled: () => void) {
   const qc = useQueryClient();
   const { data } = useQuery(resumeMatchesQueryOptions(applicationId));
   const match = findResumeMatch(data?.resumeMatches, resume);
@@ -119,8 +119,10 @@ function useResumeMatch(applicationId: string, resume: ResumeRef, onComputed: ()
           ],
         }),
       );
-      onComputed();
+      onSettled();
     },
+    // A first check that fails has no result to show, so the modal carries the error.
+    onError: onSettled,
   });
 
   return { match, compute };
@@ -166,13 +168,11 @@ function ComputeButton({
 function MatchChip({
   match,
   compute,
-  expanded,
-  onToggle,
+  onOpen,
 }: {
   match: ResumeMatch | undefined;
   compute: Compute;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
 }) {
   const { t } = useLocale();
   if (!match) {
@@ -188,19 +188,14 @@ function MatchChip({
   return (
     <button
       type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
+      onClick={onOpen}
+      aria-haspopup="dialog"
       className={`${CHIP_CLASS} border-transparent ${color.badge}`}
     >
       {match.isStale && <AlertTriangleIcon size={14} aria-label={t('resumeMatch.stale')} />}
       <span>
         {match.score} · {match.label}
       </span>
-      <ChevronDownIcon
-        size={14}
-        aria-hidden="true"
-        className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
-      />
     </button>
   );
 }
@@ -219,7 +214,7 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
             <ScoreRing match={match} />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                {t('resumeMatch.resumeMatchTitle')}
+                {match.label}
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {t('resumeMatch.generatedOn', {
@@ -279,33 +274,32 @@ interface ResumeMatchProps {
   applicationId: string;
   resume: ResumeRef;
   /**
-   * The chip belongs in the row's action cluster and the detail under the row,
-   * so this hands the row both pieces instead of laying them out itself. The
-   * detail is null until there is something to show: an expanded result, or an
-   * error from a first check that produced no result.
+   * The chip belongs in the row's action cluster, so this hands the row both
+   * pieces instead of laying them out itself. `details` is the modal the chip
+   * opens; it renders nothing while closed.
    */
   children: (parts: { chip: ReactNode; details: ReactNode }) => ReactNode;
 }
 
 /**
  * The match for one resume: a "Generate match" chip until there is a result,
- * then a score chip that expands in place to the summary and keywords (JEF-399).
+ * then a score chip that opens the summary and keywords in a modal (JEF-399,
+ * JEF-405).
  */
 export function ResumeMatch({ applicationId, resume, children }: ResumeMatchProps) {
-  const [expanded, setExpanded] = useState(false);
-  // A fresh result opens itself: the chip alone would hide what was just asked for.
-  const { match, compute } = useResumeMatch(applicationId, resume, () => setExpanded(true));
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  // A fresh result or error opens itself: the chip alone would hide what was just asked for.
+  const { match, compute } = useResumeMatch(applicationId, resume, () => setOpen(true));
 
-  const showDetails = (expanded && match !== undefined) || compute.isError;
   return children({
-    chip: (
-      <MatchChip
-        match={match}
-        compute={compute}
-        expanded={expanded}
-        onToggle={() => setExpanded((v) => !v)}
-      />
+    chip: <MatchChip match={match} compute={compute} onOpen={() => setOpen(true)} />,
+    details: (
+      <Modal open={open} onClose={() => setOpen(false)} title={t('resumeMatch.resumeMatchTitle')}>
+        <div className="p-4">
+          <MatchDetails match={match} compute={compute} />
+        </div>
+      </Modal>
     ),
-    details: showDetails ? <MatchDetails match={match} compute={compute} /> : null,
   });
 }

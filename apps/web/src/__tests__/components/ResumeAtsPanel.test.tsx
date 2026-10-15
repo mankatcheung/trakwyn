@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
@@ -176,16 +176,24 @@ describe('ResumeAts', () => {
     expect(screen.queryByText('Put your email near the top.')).not.toBeInTheDocument();
   });
 
-  it('collapses and reopens the checklist from the chip', async () => {
+  it('opens the checklist in a modal, closes it with Escape or the close button, and reopens it', async () => {
     mockApi({ saved: [goodScore] });
     renderPanel({ documentDraftId: 'draft-1' });
     const chip = await screen.findByRole('button', { name: /ATS 81/ });
+    expect(chip).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(chip);
-    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    const dialog = screen.getByRole('dialog', { name: 'ATS readiness' });
+    expect(within(dialog).getByText('Fix these first · 1')).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    chip.focus();
     fireEvent.click(chip);
-    expect(screen.queryByText('Fix these first · 1')).not.toBeInTheDocument();
-    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(chip).toHaveFocus();
   });
 
   it('says so when the resume changed after it was checked', async () => {

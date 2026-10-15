@@ -122,29 +122,6 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
 
   return (
     <div className="space-y-4">
-      {counts.drafts > 0 && counts.files > 0 && (
-        <div
-          role="group"
-          aria-label={t('documents.filterLabel')}
-          className="flex w-full rounded-[10px] bg-gray-200 p-[3px] dark:bg-gray-700"
-        >
-          {FILTERS.map(({ id, labelKey }) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={activeFilter === id}
-              onClick={() => setFilter(id)}
-              className={`min-h-9 min-w-0 flex-1 truncate rounded-lg px-2 text-sm whitespace-nowrap transition-colors ${
-                activeFilter === id
-                  ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-gray-100'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {t(labelKey)} {counts[id]}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex gap-2">
           <button
@@ -168,6 +145,29 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
         </div>
       </div>
 
+      {counts.drafts > 0 && counts.files > 0 && (
+        <div
+          role="group"
+          aria-label={t('documents.filterLabel')}
+          className="flex w-full rounded-[10px] bg-gray-200 p-[3px] dark:bg-gray-700"
+        >
+          {FILTERS.map(({ id, labelKey }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={activeFilter === id}
+              onClick={() => setFilter(id)}
+              className={`min-h-9 min-w-0 flex-1 truncate rounded-lg px-2 text-sm whitespace-nowrap transition-colors ${
+                activeFilter === id
+                  ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-gray-100'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {t(labelKey)} {counts[id]}
+            </button>
+          ))}
+        </div>
+      )}
       <DocumentUploadPanel
         applicationId={applicationId}
         category={category}
