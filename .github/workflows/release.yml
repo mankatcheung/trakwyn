@@ -1,9 +1,12 @@
 name: Release
 
 # Versions the artefacts people install: the Clipper (apps/extension), the
-# mobile app (apps/mobile) and the CLI (apps/cli) (JEF-389). apps/api and
-# apps/web are not versioned: they deploy on every merge (ci.yml) and the
-# commit SHA already identifies what is live.
+# mobile app (apps/mobile) and the CLI (apps/cli), plus the server stack,
+# apps/api and apps/web together, as component `server` (JEF-389). The server
+# version lives in the repo root's package.json and CHANGELOG.md, not in
+# apps/api or apps/web, because ci.yml deploys on those paths. It labels
+# changelogs and gives self-hosters something to pin to; the commit SHA still
+# identifies what is live.
 #
 # On every push to main, release-please reads the squash-commit titles since
 # each package's last release and opens or updates one release PR per package

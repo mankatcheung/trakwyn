@@ -126,7 +126,8 @@ cp apps/web/.env.example apps/web/.env
   An unchecked "tests" item means the issue isn't done.
 
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
-- **Releases (release-please, `.github/workflows/release.yml`):** only what people install is versioned: the Clipper (`apps/extension`), the mobile app (`apps/mobile`) and the CLI (`apps/cli`). `apps/api`, `apps/web` and `packages/ui` are not, because API and web deploy on every merge and the commit SHA names what is live.
+- **Releases (release-please, `.github/workflows/release.yml`):** the Clipper (`apps/extension`), the mobile app (`apps/mobile`), the CLI (`apps/cli`) and the server stack, `apps/api` and `apps/web` together (component `server`, tag `server-v…`). `packages/ui` is not versioned.
+  - **The server version lives in the root `package.json` and `CHANGELOG.md`,** not in `apps/api` or `apps/web`, because `ci.yml` deploys on those paths and a release PR editing them would deploy on merge. `exclude-paths` in `release-please-config.json` keeps Clipper, mobile, CLI, `packages`, `infra`, `docs` and `scripts` commits out of it. It labels changelogs and gives self-hosters something to pin to; the commit SHA still names what is live.
   - **The squash-commit title sets the bump:** `fix` is a patch, `feat` a minor, `!` or a `BREAKING CHANGE` footer a major (a minor while the package is below `1.0.0`). Other types (`chore`, `docs`, `ci`, …) release nothing.
   - **A commit belongs to a package by the files it touches,** not by the `(scope)` in its title.
   - **To release,** merge that package's open release PR. It bumps `package.json` and `CHANGELOG.md`, and the workflow tags it (`clipper-v0.2.0`) and creates the GitHub Release. Never edit a version or a changelog by hand. To force a number, such as mobile's first store release, put a `Release-As: 1.0.0` footer on a commit that touches the package.

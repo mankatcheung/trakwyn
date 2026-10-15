@@ -3,6 +3,20 @@
   "bootstrap-sha": "ef813809b8a7d4d30bdb7fd7b3bb3f9482d99405",
   "separate-pull-requests": true,
   "packages": {
+    ".": {
+      "release-type": "node",
+      "component": "server",
+      "bump-minor-pre-major": true,
+      "exclude-paths": [
+        "apps/cli",
+        "apps/extension",
+        "apps/mobile",
+        "docs",
+        "infra",
+        "packages",
+        "scripts"
+      ]
+    },
     "apps/extension": {
       "release-type": "node",
       "component": "clipper",
