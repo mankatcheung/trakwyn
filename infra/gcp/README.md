@@ -154,6 +154,7 @@ In GitHub → Settings → Secrets and variables → Actions → **Variables** (
 | `GCP_PROJECT_ID`   | `$PROJECT_ID`                                      |
 | `GCP_WIF_PROVIDER` | `terraform output -raw workload_identity_provider` |
 | `GCP_DEPLOYER_SA`  | `terraform output -raw deployer_service_account`   |
+| `GCP_CI_READER_SA` | `terraform output -raw ci_reader_service_account`  |
 
 The Vercel API project's secrets (`VERCEL_API_PROJECT_ID`) can be deleted; `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_WEB_PROJECT_ID` are still used by `deploy-web`.
 
@@ -186,7 +187,11 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 
 CI builds and tests on `node` and `postgres`. Pulling them anonymously from a public registry fails with `429` when other runners on the same IP have used up its limit, so they are copied once into this project's own `base-images` repository and pulled from there. `terraform apply` creates the repository and grants the deployer service account write access to it; nothing else is needed on the GitHub side, because the `GCP_*` variables above are the ones the mirror uses.
 
-`infra/base-images.txt` pins each image by tag and digest. The `Mirror base images` workflow copies exactly those digests into the repository and fails if a copy does not keep its digest. It runs when the file changes on `main`, on demand (Actions → Mirror base images → Run workflow) and weekly. It runs on `main` only, because Workload Identity Federation issues tokens to nothing else.
+`infra/base-images.txt` pins each image by tag and digest. The `Mirror base images` workflow copies exactly those digests into the repository and fails if a copy does not keep its digest. It runs when the file changes on `main`, on demand (Actions → Mirror base images → Run workflow) and weekly. It runs on `main` only, because it writes with the deployer account and Workload Identity Federation only lets `main` act as that.
+
+**Who may pull (JEF-407):** CI pulls the mirrored `node` and `postgres` through the `./.github/actions/base-images` action, which logs in to Artifact Registry and exports `NODE_IMAGE` and `POSTGRES_IMAGE` from the pin file. Pull-request jobs (`api-image`, `e2e`) act as `github-ci-reader`, which holds `artifactregistry.reader` on `base-images` and no other role. The provider admits pull-request tokens (`refs/pull/*`) for this repository, but only `main` may impersonate `github-deployer`, so a pull request cannot push images or deploy. `deploy-api` builds on the same mirrored `node` image with its own deployer login. Fork pull requests get no OIDC token from GitHub and cannot log in; that is accepted for a single-contributor repo.
+
+**Rolling out a change to these bindings:** a pull request's CI uses the workflow from the pull request, so apply Terraform and set `GCP_CI_READER_SA` before merging JEF-407, or its own `api-image` and `e2e` jobs cannot log in.
 
 **First fill:** after the first `terraform apply`, run the workflow once and check that both images are there:
 
@@ -194,9 +199,9 @@ CI builds and tests on `node` and `postgres`. Pulling them anonymously from a pu
 gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-images" --include-tags
 ```
 
-**Bump an image:** Renovate opens a PR that changes a digest in `infra/base-images.txt` (it needs the Renovate GitHub app on the repository; `renovate.json` tells it how to read the file). Merging it runs the mirror. To bump by hand, change the line and merge; to get a digest, `docker buildx imagetools inspect <source>:<tag>`. Keep the `node` tag in step with `NODE_VERSION` in `apps/api/Dockerfile`; `baseImages.test.ts` fails when they differ.
+**Bump an image:** Renovate opens a PR that changes a digest in `infra/base-images.txt` (it needs the Renovate GitHub app on the repository; `renovate.json` tells it how to read the file). Merge it first: the mirror runs on `main`, and the next CI run uses the new digest. A bump PR's own CI would pull a digest that is not mirrored yet, so expect it to fail until the mirror has run. To bump by hand, change the line and merge; to get a digest, `docker buildx imagetools inspect <source>:<tag>`. Keep the `node` tag in step with `NODE_VERSION` in `apps/api/Dockerfile`; `baseImages.test.ts` fails when they differ.
 
-Nothing pulls from the mirror yet: the Dockerfile and CI switch over in JEF-407.
+**If the mirror is unavailable:** there is no fallback to a public registry, so CI results stay reproducible. Re-run **Mirror base images**; copies are idempotent and keep their progress between attempts.
 
 ## Day two
 

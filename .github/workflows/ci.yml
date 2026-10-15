@@ -144,6 +144,11 @@ jobs:
     name: API image builds
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # google-github-actions/auth exchanges the GitHub OIDC token for the
+      # read-only CI reader's credentials (JEF-407).
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,6 +165,15 @@ jobs:
             echo "api=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The base image comes from our own Artifact Registry, not a public
+      # registry that rate-limits shared runner IPs (JEF-406, JEF-407).
+      - uses: ./.github/actions/base-images
+        if: steps.changes.outputs.api == 'true'
+        with:
+          project-id: ${{ vars.GCP_PROJECT_ID }}
+          workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service-account: ${{ vars.GCP_CI_READER_SA }}
+
       - uses: docker/setup-buildx-action@v3
         if: steps.changes.outputs.api == 'true'
 
@@ -171,6 +185,7 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: false
+          build-args: NODE_IMAGE=${{ env.NODE_IMAGE }}
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
@@ -178,27 +193,36 @@ jobs:
     name: Playwright E2E
     needs: [quality, build-test]
     runs-on: ubuntu-latest
-    # A real Postgres rather than PGlite, so the API under test talks to the
-    # database through the same `pg` pool production uses (unit and
-    # integration tests already cover PGlite).
-    services:
-      postgres:
-        # The AWS public mirror of the official image: anonymous pulls from
-        # Docker Hub are rate-limited on shared runner IPs (429).
-        image: public.ecr.aws/docker/library/postgres:17
-        env:
-          POSTGRES_USER: trakwyn
-          POSTGRES_PASSWORD: trakwyn
-          POSTGRES_DB: trakwyn_e2e
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U trakwyn"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/base-images
+        with:
+          project-id: ${{ vars.GCP_PROJECT_ID }}
+          workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service-account: ${{ vars.GCP_CI_READER_SA }}
+
+      # A real Postgres rather than PGlite, so the API under test talks to the
+      # database through the same `pg` pool production uses (unit and
+      # integration tests already cover PGlite). Started here rather than as a
+      # `services:` container: those are pulled before any step runs, so they
+      # cannot use the registry login above, and the mirror is what keeps this
+      # pull clear of public-registry rate limits (JEF-407).
+      - name: Start Postgres
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_USER=trakwyn -e POSTGRES_PASSWORD=trakwyn -e POSTGRES_DB=trakwyn_e2e \
+            -p 5432:5432 "$POSTGRES_IMAGE"
+          for _ in $(seq 1 30); do
+            docker exec postgres pg_isready -U trakwyn -d trakwyn_e2e && exit 0
+            sleep 2
+          done
+          docker logs postgres
+          echo "::error::Postgres did not become ready"
+          exit 1
 
       - uses: ./.github/actions/setup-project
 
@@ -533,6 +557,13 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
+      # The deployer account can read the base-images repo, so the build uses
+      # the same mirrored, digest-pinned node image as the PR check (JEF-407).
+      - name: Resolve the mirrored node image
+        env:
+          DEST: ${{ env.REGISTRY }}/${{ vars.GCP_PROJECT_ID }}/base-images
+        run: echo "NODE_IMAGE=$(.github/scripts/base-image-ref.sh node "$DEST")" >> "$GITHUB_ENV"
+
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/build-push-action@v6
@@ -541,8 +572,9 @@ jobs:
           file: apps/api/Dockerfile
           push: true
           tags: ${{ env.IMAGE }}
-          # Reported as the OTel service.version (JEF-362).
-          build-args: APP_RELEASE=${{ github.sha }}
+          build-args: |
+            NODE_IMAGE=${{ env.NODE_IMAGE }}
+            APP_RELEASE=${{ github.sha }}
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 

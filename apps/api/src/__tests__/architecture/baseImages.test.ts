@@ -13,8 +13,11 @@ import { describe, expect, it } from 'vitest';
  * - `renovate.json`, whose regex silently skips a line it cannot match, so an
  *   image would stop being bumped without anyone noticing;
  * - `apps/api/Dockerfile`, whose Node major is what the mirror must carry;
- * - the mirror workflow, which may only run where Workload Identity Federation
- *   issues tokens (`infra/gcp/wif.tf`).
+ * - the mirror workflow, which may only run on main, where the deployer account
+ *   that can write the mirror is reachable;
+ * - `ci.yml`, which must pull base images from the mirror (JEF-407) and never
+ *   from a public registry, and the Workload Identity bindings that decide who
+ *   may log in to do that.
  */
 
 const REPO = join(process.cwd(), '..', '..');
@@ -160,12 +163,116 @@ describe('mirror script copying', () => {
 describe('mirror workflow', () => {
   const workflow = read('.github/workflows/mirror-base-images.yml');
 
-  it('runs only on main, where Workload Identity Federation issues tokens', () => {
+  it('runs only on main, where the deployer account that writes the mirror is reachable', () => {
     expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
-    expect(read('infra/gcp/wif.tf')).toContain('assertion.ref == \\"refs/heads/main\\"');
   });
 
   it('is the one place that mirrors from the pin file', () => {
     expect(workflow).toContain('.github/scripts/mirror-base-images.sh infra/base-images.txt');
+  });
+});
+
+describe('workload identity (JEF-407)', () => {
+  const wif = read('infra/gcp/wif.tf');
+  const iam = read('infra/gcp/iam.tf');
+
+  /** One `resource "type" "name" { ... }` block, up to the next top-level `}`. */
+  const block = (source: string, type: string, name: string): string => {
+    const start = source.indexOf(`resource "${type}" "${name}"`);
+    expect(start, `${type}.${name}`).toBeGreaterThanOrEqual(0);
+    return source.slice(start, source.indexOf('\n}\n', start));
+  };
+
+  it('admits tokens from this repository on main and on pull requests only', () => {
+    const condition = /attribute_condition = (.+)/.exec(wif)?.[1] ?? '';
+    expect(condition).toContain('assertion.repository ==');
+    expect(condition).toContain('assertion.ref == \\"refs/heads/main\\"');
+    expect(condition).toContain('assertion.ref.startsWith(\\"refs/pull/\\")');
+  });
+
+  it('lets only main act as the deployer', () => {
+    const binding = block(wif, 'google_service_account_iam_member', 'github_impersonates_deployer');
+    expect(binding).toContain('attribute.ref/refs/heads/main');
+    expect(binding).not.toContain('attribute.repository');
+  });
+
+  it('lets the repository act as the read-only CI reader', () => {
+    const binding = block(
+      wif,
+      'google_service_account_iam_member',
+      'github_impersonates_ci_reader',
+    );
+    expect(binding).toContain('github_ci_reader');
+    expect(binding).toContain('attribute.repository');
+  });
+
+  it('gives the CI reader one role: reader on the base-images repo', () => {
+    const grants = [
+      ...(wif + iam).matchAll(/resource "[^"]+" "([^"]+)" \{[^}]*github_ci_reader\.member[^}]*\}/g),
+    ];
+    expect(grants.map((match) => match[1])).toEqual(['ci_reader_base_images']);
+    const grant = block(
+      iam,
+      'google_artifact_registry_repository_iam_member',
+      'ci_reader_base_images',
+    );
+    expect(grant).toContain('roles/artifactregistry.reader');
+    expect(grant).toContain('google_artifact_registry_repository.base.');
+  });
+});
+
+describe('ci.yml base images (JEF-407)', () => {
+  const ci = read('.github/workflows/ci.yml');
+  const job = (name: string): string => {
+    const start = ci.indexOf(`\n  ${name}:`);
+    expect(start, name).toBeGreaterThanOrEqual(0);
+    const next = ci.slice(start + 1).search(/\n {2}[a-z0-9-]+:\n/);
+    return ci.slice(start, next < 0 ? undefined : start + 1 + next);
+  };
+
+  it('pulls from no public registry', () => {
+    expect(ci).not.toMatch(/public\.ecr\.aws|docker\.io|mirror\.gcr\.io/);
+    expect(job('e2e')).not.toMatch(/^ {4}services:/m);
+  });
+
+  it('builds the API image on the mirrored node image, in the PR check and the deploy', () => {
+    expect(job('api-image')).toContain('NODE_IMAGE=${{ env.NODE_IMAGE }}');
+    expect(job('deploy-api')).toContain('NODE_IMAGE=${{ env.NODE_IMAGE }}');
+  });
+
+  it('logs in as the read-only reader on pull requests and never as the deployer', () => {
+    expect(job('api-image')).toContain('vars.GCP_CI_READER_SA');
+    expect(job('api-image')).not.toContain('GCP_DEPLOYER_SA');
+    expect(job('e2e')).toContain('vars.GCP_CI_READER_SA');
+    expect(job('e2e')).not.toContain('GCP_DEPLOYER_SA');
+    expect(job('e2e')).toContain('"$POSTGRES_IMAGE"');
+  });
+
+  it('keeps the Dockerfile default free of login', () => {
+    expect(read('apps/api/Dockerfile')).toMatch(
+      /^ARG NODE_IMAGE=mirror\.gcr\.io\/library\/node:\$\{NODE_VERSION\}-slim$/m,
+    );
+  });
+});
+
+describe('base-image-ref script', () => {
+  const ref = (name: string) =>
+    execFileSync(
+      join(REPO, '.github/scripts/base-image-ref.sh'),
+      [name, 'europe-west1-docker.pkg.dev/p/base-images'],
+      { encoding: 'utf8' },
+    ).trim();
+
+  it('resolves each pin to <repo>/<name>:<tag>@<digest>', () => {
+    for (const line of pinLines()) {
+      const [source, digest] = line.split('@');
+      const name = source.split('/').pop()?.split(':')[0] ?? '';
+      const tag = source.split(':').pop();
+      expect(ref(name)).toBe(`europe-west1-docker.pkg.dev/p/base-images/${name}:${tag}@${digest}`);
+    }
+  });
+
+  it('refuses a name that is not pinned', () => {
+    expect(() => ref('redis')).toThrow();
   });
 });

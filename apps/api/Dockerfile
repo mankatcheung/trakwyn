@@ -13,11 +13,13 @@
 # deploy-api ships a new image.
 
 ARG NODE_VERSION=24
-# AWS's public mirror of Docker Hub's official images, not Docker Hub itself:
-# the same image, but CI's anonymous pulls from Docker Hub failed with
-# `429 Too Many Requests` and took the Cloud Run deploy down with them
-# (run #1314). Override NODE_IMAGE to build from somewhere else.
-ARG NODE_IMAGE=public.ecr.aws/docker/library/node:${NODE_VERSION}-slim
+# Google's public cache of Docker Hub's official images: the same image and
+# digest, but without Docker Hub's anonymous rate limit, which took the Cloud
+# Run deploy down with `429 Too Many Requests` (run #1314). It is the default
+# so `docker build` needs no login. CI overrides NODE_IMAGE with our own
+# digest-pinned copy in Artifact Registry (infra/base-images.txt, JEF-406), so
+# the build depends on no public registry at all.
+ARG NODE_IMAGE=mirror.gcr.io/library/node:${NODE_VERSION}-slim
 
 FROM ${NODE_IMAGE} AS build
 WORKDIR /repo

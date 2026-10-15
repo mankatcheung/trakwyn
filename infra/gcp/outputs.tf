@@ -23,6 +23,11 @@ output "deployer_service_account" {
   value       = google_service_account.github_deployer.email
 }
 
+output "ci_reader_service_account" {
+  description = "GitHub repository variable GCP_CI_READER_SA: the read-only account pull-request CI pulls base images as."
+  value       = google_service_account.github_ci_reader.email
+}
+
 output "domain_dns_records" {
   description = "DNS records to create for the custom domain. Empty until Cloud Run has provisioned the mapping; run `terraform apply -refresh-only` to fetch them."
   value       = try(google_cloud_run_domain_mapping.api.status[0].resource_records, [])
