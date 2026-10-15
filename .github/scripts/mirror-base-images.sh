@@ -8,7 +8,13 @@
 #
 # <destination-repo> is e.g. europe-west1-docker.pkg.dev/<project>/base-images.
 # The caller has already logged in to it. Sources are pulled anonymously.
+#
+# MIRROR_ATTEMPTS (default 5) and MIRROR_RETRY_DELAY (seconds, default 30,
+# multiplied by the attempt number) govern the retry around each copy.
 set -euo pipefail
+
+attempts="${MIRROR_ATTEMPTS:-5}"
+retry_delay="${MIRROR_RETRY_DELAY:-30}"
 
 list_only=false
 if [[ "${1:-}" == "--list" ]]; then
@@ -51,6 +57,25 @@ if $list_only; then
   exit 0
 fi
 
+# A multi-platform image is one manifest per platform plus their layers, all
+# fetched at once from a registry that rate-limits anonymous clients by IP, so
+# a first attempt can get `429 Too Many Requests` partway (it did, for
+# postgres). Blobs already pushed are skipped on the next attempt, so each one
+# gets further than the last.
+copy_with_retry() {
+  local base="$1" digest="$2" dest="$3" attempt
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if docker buildx imagetools create --tag "$dest" "$base@$digest"; then
+      return 0
+    fi
+    if ((attempt < attempts)); then
+      echo "::warning::copy of $dest failed (attempt $attempt of $attempts); retrying in $((retry_delay * attempt))s"
+      sleep $((retry_delay * attempt))
+    fi
+  done
+  return 1
+}
+
 failed=0
 while read -r source digest dest; do
   echo "::group::$source -> $dest"
@@ -58,10 +83,12 @@ while read -r source digest dest; do
   # was written cannot change what is mirrored. The tag on the destination is
   # only a label for humans and for Renovate-free pulls.
   base="${source%:*}"
-  docker buildx imagetools create --tag "$dest" "$base@$digest"
-  copied="$(docker buildx imagetools inspect "$dest" --format '{{.Manifest.Digest}}')"
+  copied=""
+  if copy_with_retry "$base" "$digest" "$dest"; then
+    copied="$(docker buildx imagetools inspect "$dest" --format '{{.Manifest.Digest}}')"
+  fi
   if [[ "$copied" != "$digest" ]]; then
-    echo "::error::$dest has digest $copied, pinned $digest"
+    echo "::error::$dest is ${copied:-not copied}, pinned $digest"
     failed=1
   else
     echo "ok: $dest @ $digest"
