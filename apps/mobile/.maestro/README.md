@@ -60,7 +60,7 @@ while the API log recorded no request at all.
 
 ## How CI builds the app
 
-`.github/workflows/ci.yml`'s `mobile-e2e-android` job runs `expo prebuild`
+`.github/workflows/mobile-e2e-android.yml` (nightly, on demand, or with the `run-android-e2e` PR label) runs `expo prebuild`
 followed by Gradle rather than `eas build --local`. Both produce the same APK
 from the same continuous-native-generation setup, but prebuild needs no Expo
 account and no token — which is what keeps this tier working on pull requests
