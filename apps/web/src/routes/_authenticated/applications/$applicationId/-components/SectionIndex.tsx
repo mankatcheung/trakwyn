@@ -33,33 +33,37 @@ export function SectionIndex({ counts, onOpen }: SectionIndexProps) {
             {t(group.titleKey)}
           </h2>
           <Card className="overflow-hidden">
-            {group.sections.map((section, i) => {
-              const count = countFor(section);
-              const generated = generatedFor(section);
-              return (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => onOpen(section.id)}
-                  className={`flex w-full items-center gap-3 px-3.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                    i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
-                  }`}
-                  style={{ minHeight: '56px' }}
-                >
-                  <section.icon size={18} className={'text-gray-500'} />
-                  <span className={`flex-1 text-[15px] ${'text-gray-900 dark:text-gray-100'}`}>
-                    {t(section.labelKey)}
-                  </span>{' '}
-                  {generated !== null && <SectionGeneratedMarker generated={generated} size={16} />}
-                  {count !== null && count > 0 && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      {count}
-                    </span>
-                  )}
-                  <ChevronRightIcon size={16} className={'text-gray-300'} />
-                </button>
-              );
-            })}
+            {group.sections
+              .filter((section) => !section.wideOnly)
+              .map((section, i) => {
+                const count = countFor(section);
+                const generated = generatedFor(section);
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => onOpen(section.id)}
+                    className={`flex w-full items-center gap-3 px-3.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
+                      i > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
+                    }`}
+                    style={{ minHeight: '56px' }}
+                  >
+                    <section.icon size={18} className={'text-gray-500'} />
+                    <span className={`flex-1 text-[15px] ${'text-gray-900 dark:text-gray-100'}`}>
+                      {t(section.labelKey)}
+                    </span>{' '}
+                    {generated !== null && (
+                      <SectionGeneratedMarker generated={generated} size={16} />
+                    )}
+                    {count !== null && count > 0 && (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                        {count}
+                      </span>
+                    )}
+                    <ChevronRightIcon size={16} className={'text-gray-300'} />
+                  </button>
+                );
+              })}
           </Card>
         </div>
       ))}

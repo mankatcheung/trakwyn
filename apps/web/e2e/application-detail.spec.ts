@@ -8,8 +8,25 @@ test.describe('Application detail page', () => {
     await createApplication(page, { company: 'Acme Corp', role: 'Staff Engineer' });
   });
 
+  test('opens on the Overview tab on a wide screen, with the job info out of the header card', async ({
+    page,
+  }) => {
+    const nav = page.getByRole('navigation', { name: 'Section navigation' });
+    await expect(nav.getByRole('button', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    // Only one copy of the job info is on screen: the card's is hidden from lg.
+    await expect(page.getByText('Application health').filter({ visible: true })).toHaveCount(1);
+    await expect(page.getByPlaceholder('Add a note…')).toHaveCount(0);
+
+    await openTab(page, 'Notes');
+    await expect(page.getByPlaceholder('Add a note…')).toBeVisible();
+  });
+
   test('adds, edits, and deletes a note', async ({ page }) => {
-    // Notes tab is the default active tab.
+    // Overview is the default tab on a wide screen (JEF-403), so open Notes.
+    await openTab(page, 'Notes');
     await page.getByPlaceholder('Add a note…').fill('Recruiter said team is hiring fast.');
     await page.getByRole('button', { name: 'Add note' }).click();
 
