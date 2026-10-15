@@ -5,7 +5,8 @@
   "packages": {
     "apps/extension": {
       "release-type": "node",
-      "component": "clipper"
+      "component": "clipper",
+      "bump-minor-pre-major": true
     },
     "apps/mobile": {
       "release-type": "node",
