@@ -67,6 +67,7 @@ function triggersDeploy(file: string, patterns: string[]): boolean {
 describe('release versioning', () => {
   const manifest = readJson<Record<string, string>>('.release-please-manifest.json');
   const config = readJson<{
+    'group-pull-request-title-pattern'?: string;
     plugins?: { type: string; groupName?: string; components?: string[] }[];
     packages: Record<string, { component?: string; 'release-type'?: string }>;
   }>('release-please-config.json');
@@ -90,6 +91,17 @@ describe('release versioning', () => {
     expect(linked?.groupName).toBe('server');
     expect([...(linked?.components ?? [])].sort()).toEqual([...components].sort());
     expect(manifest['apps/api']).toBe(manifest['apps/web']);
+  });
+
+  it('parses the title the linked-versions plugin gives the server release PR', () => {
+    // The plugin hardcodes `chore${scope}: release <group> libraries`. release-please
+    // reads a merged PR's title back with this pattern; a miss means "Bad pull request
+    // title": no api/web tag or release, and every other release PR stops updating.
+    const linked = config.plugins?.find((plugin) => plugin.type === 'linked-versions');
+
+    expect(config['group-pull-request-title-pattern']).toBe(
+      `chore\${scope}: release ${linked?.groupName} libraries`,
+    );
   });
 
   it('releases the server pair as `simple`, so a release PR never edits its package.json', () => {
