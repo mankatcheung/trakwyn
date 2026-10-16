@@ -1,6 +1,6 @@
 {
   "name": "@trakwyn/mobile",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@posthog/react-native-plugin": "^2.9.4",
