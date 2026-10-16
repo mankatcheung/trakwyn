@@ -1,7 +1,7 @@
 {
   "apps/api": "0.2.0",
   "apps/web": "0.2.0",
-  "apps/extension": "0.1.0",
+  "apps/extension": "0.2.0",
   "apps/mobile": "0.2.0",
   "apps/cli": "0.0.1"
 }
