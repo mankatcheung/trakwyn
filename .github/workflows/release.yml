@@ -5,7 +5,10 @@ name: Release
 # apps/api and apps/web, which share one version through the linked-versions
 # plugin (JEF-389). The pair is released as `simple`, so a release PR edits
 # version.txt and CHANGELOG.md, never package.json, and ci.yml negates those
-# four files (and mobile's, which it also watches) in its push paths. The server version labels changelogs and gives
+# four files (and mobile's, which it also watches) in its push paths. The
+# plugin titles that PR "release server libraries" and release-please reads a
+# merged PR's title back with group-pull-request-title-pattern; if the two
+# differ it creates no api/web tag and stops updating the other release PRs. The server version labels changelogs and gives
 # self-hosters something to pin to; the commit SHA still identifies what is
 # live.
 #

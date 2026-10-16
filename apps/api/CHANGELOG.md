@@ -1,0 +1,26 @@
+# Changelog
+
+## [0.2.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.1.0...api-v0.2.0) (2026-10-16)
+
+
+### Features
+
+* ATS-readiness score for uploaded and created resumes, saved per resume (JEF-395) ([#959](https://github.com/mankatcheung/trakwyn/issues/959)) ([5adf194](https://github.com/mankatcheung/trakwyn/commit/5adf1940c010e0e4d9570631f2f47f0161b7e7de))
+* captcha and rate limits on register, login and password reset (JEF-401) ([#964](https://github.com/mankatcheung/trakwyn/issues/964)) ([88448fa](https://github.com/mankatcheung/trakwyn/commit/88448faa8b87d4cf89b8522942162f70c572be20))
+* **extension:** Google and GitHub login in the Trakwyn Clipper (JEF-383) ([#921](https://github.com/mankatcheung/trakwyn/issues/921)) ([ca48bee](https://github.com/mankatcheung/trakwyn/commit/ca48bee0ed1652d03b4228f505f01cf8ad22b95d))
+* **extension:** support Safari by building the Clipper with WXT (JEF-386) ([#924](https://github.com/mankatcheung/trakwyn/issues/924)) ([0f0a764](https://github.com/mankatcheung/trakwyn/commit/0f0a7647d846d0ba86769ead8592700aac7422dd))
+* practice interview questions and AI answers (JEF-393) ([#944](https://github.com/mankatcheung/trakwyn/issues/944)) ([dfdd213](https://github.com/mankatcheung/trakwyn/commit/dfdd2135b7df37b1e3e2bbefd5f9b459ce9ad314))
+* record questions and responses per interview round (JEF-392) ([#940](https://github.com/mankatcheung/trakwyn/issues/940)) ([074c688](https://github.com/mankatcheung/trakwyn/commit/074c68865b23c82ad47d355564594b4417265f45))
+* render the company briefing as markdown on web and mobile (JEF-391) ([#937](https://github.com/mankatcheung/trakwyn/issues/937)) ([5dc1bf1](https://github.com/mankatcheung/trakwyn/commit/5dc1bf1e1b0cfd26bb1e51dd2af419bd7618d329))
+* save resume match per resume and move it into the Resumes tab (JEF-397) ([#952](https://github.com/mankatcheung/trakwyn/issues/952)) ([b4bcc63](https://github.com/mankatcheung/trakwyn/commit/b4bcc63c7883982664b1d206560027262ca61434))
+* section counts on mobile and a generated marker for Company Briefing (JEF-398) ([#953](https://github.com/mankatcheung/trakwyn/issues/953)) ([1295273](https://github.com/mankatcheung/trakwyn/commit/129527350283e67890c8174328f5586dc609bab0))
+* serve documents through an authenticated route instead of a storage URL (JEF-51) ([#956](https://github.com/mankatcheung/trakwyn/issues/956)) ([ee86faf](https://github.com/mankatcheung/trakwyn/commit/ee86faf76bd2c0c172434e9c2945e2ccbe5d26df))
+* split documents into cover letters, resumes and other documents (JEF-396) ([#949](https://github.com/mankatcheung/trakwyn/issues/949)) ([cb4a6fc](https://github.com/mankatcheung/trakwyn/commit/cb4a6fcb1bf7c647babee5b734aff8e85d2fa87c))
+* store documents in a private Blob store (JEF-51) ([#957](https://github.com/mankatcheung/trakwyn/issues/957)) ([085ac9d](https://github.com/mankatcheung/trakwyn/commit/085ac9df6bcd9e7ef0c3c025043ce1a1c9afda4b))
+
+
+### Bug Fixes
+
+* **ci:** pull node and postgres from the AWS public mirror, not Docker Hub ([#941](https://github.com/mankatcheung/trakwyn/issues/941)) ([0f684a5](https://github.com/mankatcheung/trakwyn/commit/0f684a51989a059338c00097b05961c43dfb1e75))
+* retry mirror copies that hit a registry rate limit (JEF-406) ([#979](https://github.com/mankatcheung/trakwyn/issues/979)) ([80738c2](https://github.com/mankatcheung/trakwyn/commit/80738c2e0ec9cf57f5f4f02f05a788ac1aa316d6))
+* throttle verification emails so sign-up abuse can't drain the Brevo quota (JEF-400) ([#961](https://github.com/mankatcheung/trakwyn/issues/961)) ([8fe0b8b](https://github.com/mankatcheung/trakwyn/commit/8fe0b8ba96fec7dd8423c64c2508a8e6784777dd))
