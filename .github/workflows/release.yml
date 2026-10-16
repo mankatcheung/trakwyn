@@ -5,7 +5,7 @@ name: Release
 # apps/api and apps/web, which share one version through the linked-versions
 # plugin (JEF-389). The pair is released as `simple`, so a release PR edits
 # version.txt and CHANGELOG.md, never package.json, and ci.yml negates those
-# four files in its push paths. The server version labels changelogs and gives
+# four files (and mobile's, which it also watches) in its push paths. The server version labels changelogs and gives
 # self-hosters something to pin to; the commit SHA still identifies what is
 # live.
 #
