@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { db } from '#src/infrastructure/db/client.js';
+import { buildCaptchaVerifier } from '#src/infrastructure/captcha/buildCaptchaVerifier.js';
 
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { MemoryCache } from '#src/infrastructure/cache/MemoryCache.js';
@@ -24,6 +25,7 @@ import {
 import { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import { GoogleOidcTokenVerifier } from '#src/infrastructure/auth/GoogleOidcTokenVerifier.js';
 import { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
+import { DocumentFileLinkService } from '#src/infrastructure/auth/DocumentFileLinkService.js';
 import { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import { parseExtensionOAuthIds } from '#src/infrastructure/auth/extensionOAuthIds.js';
@@ -123,6 +125,7 @@ export const infrastructure = {
     },
   ),
   mcpOAuthConsentService: asClass(McpOAuthConsentService, { lifetime: Lifetime.SINGLETON }),
+  documentFileLinks: asClass(DocumentFileLinkService, { lifetime: Lifetime.SINGLETON }),
   // asFunction for the same options-object reason as outboundUrlPolicy below:
   // BrevoEmailService takes optional `{ metrics }` (JEF-356).
   emailService: asFunction(() => new EmailService(), { lifetime: Lifetime.SINGLETON }),
@@ -136,6 +139,10 @@ export const infrastructure = {
   // asFunction, not asClass: the constructor takes an options object, and
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
+  // asFunction so a mis-set CAPTCHA_PROVIDER throws on first use rather than at import.
+  captchaVerifier: asFunction(({ logger }: Cradle) => buildCaptchaVerifier(logger), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   outboundUrlPolicy: asFunction(({ logger }: Cradle) => new OutboundUrlPolicy({ logger }), {
     lifetime: Lifetime.SINGLETON,
   }),

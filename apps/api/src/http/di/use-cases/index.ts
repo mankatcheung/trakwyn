@@ -7,6 +7,7 @@ import { jobs } from './jobs.js';
 import { notes } from './notes.js';
 import { documents } from './documents.js';
 import { interviews } from './interviews.js';
+import { mockInterviews } from './mockInterviews.js';
 import { activity } from './activity.js';
 import { chat } from './chat.js';
 import { apiTokens } from './apiTokens.js';
@@ -32,6 +33,7 @@ export const useCases = {
   ...notes,
   ...documents,
   ...interviews,
+  ...mockInterviews,
   ...activity,
   ...chat,
   ...apiTokens,

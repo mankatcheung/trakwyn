@@ -8,7 +8,9 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
@@ -115,6 +117,8 @@ export const interviewRound = pgTable(
     interviewerName: text('interviewerName'),
     notes: text('notes'),
     outcome: text('outcome').notNull().default('pending'),
+    questionCount: integer('questionCount').notNull().default(0),
+    mockQuestionCount: integer('mockQuestionCount').notNull().default(0),
     pushNotificationSentAt: timestamp('pushNotificationSentAt', TIMESTAMP),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
@@ -125,6 +129,54 @@ export const interviewRound = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index('InterviewRound_applicationId_idx').on(table.applicationId)],
+);
+
+export const interviewQuestion = pgTable(
+  'InterviewQuestion',
+  {
+    id: text('id').primaryKey(),
+    interviewRoundId: text('interviewRoundId')
+      .notNull()
+      .references(() => interviewRound.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    answer: text('answer'),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index('InterviewQuestion_interviewRoundId_idx').on(table.interviewRoundId)],
+);
+
+/**
+ * Practice questions for a round (JEF-393). A separate table from
+ * `interviewQuestion`, which records what was actually asked, so the two never mix.
+ */
+export const mockInterviewQuestion = pgTable(
+  'MockInterviewQuestion',
+  {
+    id: text('id').primaryKey(),
+    interviewRoundId: text('interviewRoundId')
+      .notNull()
+      .references(() => interviewRound.id, { onDelete: 'cascade' }),
+    question: text('question').notNull(),
+    answer: text('answer'),
+    /** `user` or `ai`; `ai` marks an answer that began as an AI draft. */
+    answerSource: text('answerSource').notNull().default('user'),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index('MockInterviewQuestion_interviewRoundId_idx').on(table.interviewRoundId)],
 );
 
 export const note = pgTable(
@@ -220,6 +272,78 @@ export const documentDraft = pgTable(
   (table) => [
     index('DocumentDraft_applicationId_idx').on(table.applicationId),
     index('DocumentDraft_sourceDocumentId_idx').on(table.sourceDocumentId),
+  ],
+);
+
+export const resumeMatch = pgTable(
+  'ResumeMatch',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('applicationId')
+      .notNull()
+      .references(() => jobApplication.id, { onDelete: 'cascade' }),
+    // Exactly one of the two is set (see the check below). Each is unique, so a
+    // resume has one match and regenerating replaces it.
+    documentDraftId: text('documentDraftId')
+      .unique()
+      .references(() => documentDraft.id, { onDelete: 'cascade' }),
+    documentId: text('documentId')
+      .unique()
+      .references(() => document.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    label: text('label').notNull(),
+    matchedKeywords: text('matchedKeywords').notNull().default('[]'),
+    missingKeywords: text('missingKeywords').notNull().default('[]'),
+    summary: text('summary').notNull().default(''),
+    generatedAt: timestamp('generatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    resumeTextHash: text('resumeTextHash').notNull(),
+  },
+  (table) => [
+    index('ResumeMatch_applicationId_idx').on(table.applicationId),
+    check(
+      'ResumeMatch_one_resume_check',
+      sql`(${table.documentDraftId} IS NOT NULL) <> (${table.documentId} IS NOT NULL)`,
+    ),
+  ],
+);
+
+/**
+ * The latest ATS-readiness result for one resume (JEF-395): one row per draft
+ * or uploaded file, replaced when it is checked again. The checks are stored as
+ * the JSON the clients render, so a result reads back exactly as it was scored.
+ */
+export const resumeAtsScore = pgTable(
+  'ResumeAtsScore',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('applicationId')
+      .notNull()
+      .references(() => jobApplication.id, { onDelete: 'cascade' }),
+    // Exactly one of the two is set (see the check below). Each is unique, so a
+    // resume has one result and checking again replaces it.
+    documentDraftId: text('documentDraftId')
+      .unique()
+      .references(() => documentDraft.id, { onDelete: 'cascade' }),
+    documentId: text('documentId')
+      .unique()
+      .references(() => document.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    label: text('label').notNull(),
+    readable: boolean('readable').notNull(),
+    checksJson: text('checksJson').notNull().default('[]'),
+    generatedAt: timestamp('generatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    resumeTextHash: text('resumeTextHash').notNull(),
+  },
+  (table) => [
+    index('ResumeAtsScore_applicationId_idx').on(table.applicationId),
+    check(
+      'ResumeAtsScore_one_resume_check',
+      sql`(${table.documentDraftId} IS NOT NULL) <> (${table.documentId} IS NOT NULL)`,
+    ),
   ],
 );
 

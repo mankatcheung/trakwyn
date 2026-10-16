@@ -21,9 +21,36 @@ resource "google_service_account" "github_deployer" {
   display_name = "GitHub Actions deployer"
 }
 
+# The identity pull-request CI runs as (JEF-407): it pulls the mirrored base
+# images and can do nothing else. It holds no role on the api repository, Cloud
+# Run, the secrets or the runtime account, so code in a pull request that
+# borrows it can read two public images and no more.
+resource "google_service_account" "github_ci_reader" {
+  account_id   = "github-ci-reader"
+  display_name = "GitHub Actions read-only CI"
+}
+
+resource "google_artifact_registry_repository_iam_member" "ci_reader_base_images" {
+  location   = google_artifact_registry_repository.base.location
+  repository = google_artifact_registry_repository.base.name
+  role       = "roles/artifactregistry.reader"
+  member     = google_service_account.github_ci_reader.member
+}
+
 resource "google_artifact_registry_repository_iam_member" "deployer_push" {
   location   = google_artifact_registry_repository.api.location
   repository = google_artifact_registry_repository.api.name
+  role       = "roles/artifactregistry.writer"
+  member     = google_service_account.github_deployer.member
+}
+
+# Writer on the base-image repo is for the mirror workflow, which pushes to it;
+# deploy-api's build also reads it with this account. Pull-request CI uses the
+# read-only account above instead. It is a separate repository so this grant
+# cannot reach the api images, and the other way round.
+resource "google_artifact_registry_repository_iam_member" "deployer_base_images" {
+  location   = google_artifact_registry_repository.base.location
+  repository = google_artifact_registry_repository.base.name
   role       = "roles/artifactregistry.writer"
   member     = google_service_account.github_deployer.member
 }

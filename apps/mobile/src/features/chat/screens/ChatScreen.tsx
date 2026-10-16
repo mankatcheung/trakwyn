@@ -21,7 +21,7 @@ import {
 import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import { SendIcon } from '../components/SendIcon';
-import { AssistantMarkdown } from '../components/AssistantMarkdown';
+import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
@@ -133,7 +133,7 @@ export function ChatScreen() {
                 ]}
               >
                 {item.role === 'assistant' ? (
-                  <AssistantMarkdown content={item.content} />
+                  <Markdown content={item.content} />
                 ) : (
                   <Text style={styles.bubbleTextUser}>{item.content}</Text>
                 )}
@@ -147,7 +147,7 @@ export function ChatScreen() {
         <View style={[styles.bubbleRow, styles.sendingRow]}>
           <View style={[styles.bubble, styles.bubbleAssistant]}>
             {streamingText ? (
-              <AssistantMarkdown content={streamingText} />
+              <Markdown content={streamingText} />
             ) : (
               <ActivityIndicator
                 size="small"

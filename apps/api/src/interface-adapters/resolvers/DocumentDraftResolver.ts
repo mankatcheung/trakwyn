@@ -13,7 +13,7 @@ import type {
   DocumentDraftDTO,
 } from '#src/interface-adapters/mappers/DocumentDraftMapper.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
 import type { DocumentDTO } from '#src/interface-adapters/mappers/DocumentMapper.js';
 
 interface Deps {
@@ -29,7 +29,7 @@ interface Deps {
   exportDocumentDraftToPdfUseCase: IExportDocumentDraftToPdfUseCase;
   documentDraftMapper: DocumentDraftMapper;
   documentRepository: IDocumentRepository;
-  storageProvider: IStorageProvider;
+  documentFileLinks: IDocumentFileLinks;
 }
 
 interface CreateInput {
@@ -98,12 +98,18 @@ export class DocumentDraftResolver {
   async generateCoverLetterDraft(
     userId: string,
     applicationId: string,
-    resumeText?: string | null,
+    resume?: {
+      resumeText?: string | null;
+      resumeDocumentId?: string | null;
+      resumeDraftId?: string | null;
+    },
   ): Promise<DocumentDraftDTO> {
     const draft = await this.deps.generateCoverLetterDraftUseCase.execute({
       userId,
       applicationId,
-      resumeText,
+      resumeText: resume?.resumeText,
+      resumeDocumentId: resume?.resumeDocumentId,
+      resumeDraftId: resume?.resumeDraftId,
     });
     return this.deps.documentDraftMapper.toDTO(draft);
   }
@@ -124,7 +130,7 @@ export class DocumentDraftResolver {
 
   async exportDocumentDraftToPdf(userId: string, draftId: string): Promise<DocumentDTO> {
     const doc = await this.deps.exportDocumentDraftToPdfUseCase.execute({ userId, draftId });
-    const url = await this.deps.storageProvider.getSignedUrl(doc.storageKey);
+    const url = this.deps.documentFileLinks.urlFor(doc.id);
     const { DocumentMapper } = await import('#src/interface-adapters/mappers/DocumentMapper.js');
     const mapper = new DocumentMapper();
     return mapper.toDTO(doc, url);

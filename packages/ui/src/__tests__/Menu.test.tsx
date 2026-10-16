@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -303,6 +304,208 @@ describe('Menu', () => {
       await openMenu();
 
       expect(screen.getByRole('menu', { name: 'Key actions' })).toHaveStyle({ width: '224px' });
+    });
+  });
+  describe('breakpoint', () => {
+    /** A viewport of `width` px that answers each `min-width` query honestly. */
+    function stubWidth(width: number) {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        configurable: true,
+        value: (query: string) => ({
+          matches: width >= Number(/min-width:\s*(\d+)px/.exec(query)?.[1] ?? Infinity),
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }),
+      });
+    }
+
+    const renderAt = (breakpoint?: 'sm' | 'md') =>
+      render(
+        <Menu
+          label="Key actions"
+          items={ITEMS}
+          breakpoint={breakpoint}
+          onSelect={vi.fn()}
+          trigger={(triggerProps) => (
+            <button type="button" {...triggerProps}>
+              More actions
+            </button>
+          )}
+        />,
+      );
+
+    it('defaults to switching at sm, so existing menus are unchanged', async () => {
+      stubWidth(700);
+      renderAt();
+      await openMenu();
+
+      expect(screen.getByRole('menu', { name: 'Key actions' })).toHaveStyle({ position: 'fixed' });
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('is a sheet below the md breakpoint when asked to switch at md', async () => {
+      stubWidth(700);
+      renderAt('md');
+      await openMenu();
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('is a dropdown from the md breakpoint up when asked to switch at md', async () => {
+      stubWidth(768);
+      renderAt('md');
+      await openMenu();
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.getByRole('menu', { name: 'Key actions' })).toHaveStyle({ position: 'fixed' });
+    });
+  });
+
+  describe('onClose', () => {
+    function renderWithOnClose() {
+      const onClose = vi.fn();
+      render(
+        <div>
+          <p>elsewhere</p>
+          <Menu
+            label="Actions"
+            items={ITEMS}
+            onSelect={vi.fn()}
+            onClose={onClose}
+            trigger={(triggerProps) => (
+              <button type="button" {...triggerProps}>
+                More actions
+              </button>
+            )}
+          />
+        </div>,
+      );
+      return onClose;
+    }
+
+    it('is told when an item is chosen', async () => {
+      stubViewport(true);
+      const onClose = renderWithOnClose();
+      await openMenu();
+
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Test key' }));
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('is told when Escape closes it', async () => {
+      stubViewport(true);
+      const onClose = renderWithOnClose();
+      await openMenu();
+
+      await userEvent.keyboard('{Escape}');
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('is told when a click outside closes it', async () => {
+      stubViewport(true);
+      const onClose = renderWithOnClose();
+      await openMenu();
+
+      await userEvent.click(screen.getByText('elsewhere'));
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('is not told while it is only opening', async () => {
+      stubViewport(true);
+      const onClose = renderWithOnClose();
+      await openMenu();
+
+      expect(onClose).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('keepOpen and current', () => {
+    const PANES = {
+      root: [
+        { id: 'star', label: 'Star' },
+        { id: 'status', label: 'Change status', keepOpen: true },
+      ],
+      status: [
+        { id: 'back', label: 'Change status', keepOpen: true },
+        { id: 'applied', label: 'Applied', current: true },
+        { id: 'offer', label: 'Offer' },
+      ],
+    } satisfies Record<string, MenuItem[]>;
+
+    function Panes({ onSelect }: { onSelect: (id: string) => void }) {
+      const [pane, setPane] = useState<keyof typeof PANES>('root');
+      return (
+        <Menu
+          label="Actions"
+          items={PANES[pane]}
+          onSelect={(id) => {
+            if (id === 'status') setPane('status');
+            else if (id === 'back') setPane('root');
+            else onSelect(id);
+          }}
+          trigger={(triggerProps) => (
+            <button type="button" {...triggerProps}>
+              More actions
+            </button>
+          )}
+        />
+      );
+    }
+
+    it('stays open after a keepOpen item, so the consumer can swap the items', async () => {
+      stubViewport(true);
+      render(<Panes onSelect={vi.fn()} />);
+      await openMenu();
+
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Change status' }));
+
+      expect(screen.getByRole('menu', { name: 'Actions' })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'Applied' })).toBeInTheDocument();
+    });
+
+    it('puts focus on the first item of the new pane', async () => {
+      stubViewport(true);
+      render(<Panes onSelect={vi.fn()} />);
+      await openMenu();
+
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Change status' }));
+
+      expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
+    });
+
+    it('still closes and reports a normal item from the second pane', async () => {
+      stubViewport(true);
+      const onSelect = vi.fn();
+      render(<Panes onSelect={onSelect} />);
+      await openMenu();
+
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Change status' }));
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Offer' }));
+
+      expect(onSelect).toHaveBeenCalledWith('offer');
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('marks the current item for assistive tech and leaves the others unmarked', async () => {
+      stubViewport(true);
+      render(<Panes onSelect={vi.fn()} />);
+      await openMenu();
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Change status' }));
+
+      expect(screen.getByRole('menuitem', { name: 'Applied' })).toHaveAttribute(
+        'aria-current',
+        'true',
+      );
+      expect(screen.getByRole('menuitem', { name: 'Offer' })).not.toHaveAttribute('aria-current');
     });
   });
 });

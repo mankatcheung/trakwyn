@@ -124,9 +124,11 @@ describe('RegisterScreen', () => {
       reauthenticate: jest.fn(),
     });
 
-    const { getByText } = await renderScreen(push);
+    // By testID rather than by its label: the Maestro flows in .maestro/ tap
+    // this link by that id, so a rename has to fail here first (JEF-300, R-5).
+    const { getByTestId } = await renderScreen(push);
 
-    await fireEvent.press(getByText('Sign in'));
+    await fireEvent.press(getByTestId('register-login-link'));
 
     expect(push).toHaveBeenCalledWith('/login');
   });

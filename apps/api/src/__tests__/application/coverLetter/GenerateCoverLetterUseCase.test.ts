@@ -15,6 +15,7 @@ import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
@@ -142,6 +143,70 @@ describe('GenerateCoverLetterUseCase', () => {
     expect(userMessage.content).toContain('5 years at BigCorp building APIs');
   });
 
+  it("always includes the user's saved profile, alongside a selected resume (JEF-396)", async () => {
+    // The resume used to replace the profile. The profile is the source of
+    // truth the user maintains in Settings; a resume adds to it, never hides it.
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const llmProvider = makeLLMProvider();
+    const llmProviderFactory = makeLLMProviderFactory({
+      forUser: vi.fn().mockResolvedValue(llmProvider),
+    });
+
+    await new GenerateCoverLetterUseCase({
+      applicationRepository,
+      llmProviderFactory,
+      ...baseDeps({
+        workExperienceRepository: makeWorkExperienceRepository({
+          findAllByUserId: vi
+            .fn()
+            .mockResolvedValue([makeWorkExperience({ company: 'Globex', title: 'Platform Lead' })]),
+        }),
+      }),
+    } as never).execute({
+      applicationId: 'app-1',
+      userId: 'user-1',
+      resumeText: '5 years at BigCorp building APIs',
+    });
+
+    const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      Array<{ role: string; content: string }>,
+    ];
+    const userMessage = messages.find((m) => m.role === 'user')!.content;
+    expect(userMessage).toContain('Platform Lead at Globex');
+    expect(userMessage).toContain('5 years at BigCorp building APIs');
+  });
+
+  it('uses the profile alone when no resume is selected', async () => {
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const llmProvider = makeLLMProvider();
+    const llmProviderFactory = makeLLMProviderFactory({
+      forUser: vi.fn().mockResolvedValue(llmProvider),
+    });
+
+    await new GenerateCoverLetterUseCase({
+      applicationRepository,
+      llmProviderFactory,
+      ...baseDeps({
+        workExperienceRepository: makeWorkExperienceRepository({
+          findAllByUserId: vi
+            .fn()
+            .mockResolvedValue([makeWorkExperience({ company: 'Globex', title: 'Platform Lead' })]),
+        }),
+      }),
+    } as never).execute({ applicationId: 'app-1', userId: 'user-1' });
+
+    const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      Array<{ role: string; content: string }>,
+    ];
+    const userMessage = messages.find((m) => m.role === 'user')!.content;
+    expect(userMessage).toContain('Platform Lead at Globex');
+    expect(userMessage).not.toContain('My resume:');
+  });
+
   it('includes application context in the prompt', async () => {
     const app = makeApplication({
       company: 'Stripe',
@@ -198,7 +263,7 @@ describe('GenerateCoverLetterUseCase', () => {
       Array<{ role: string; content: string }>,
     ];
     const userMessage = messages.find((m) => m.role === 'user')!.content;
-    const beforeResume = userMessage.split('My background / resume:')[0];
+    const beforeResume = userMessage.split('My resume:')[0];
     expect(beforeResume).toContain('<untrusted_external_content>');
     expect(beforeResume).toContain('</untrusted_external_content>');
     expect(userMessage).not.toContain('<untrusted_external_content>5 years at BigCorp');

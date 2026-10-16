@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
-import { createApplication } from './helpers/applications';
+import { chooseApplicationAction, createApplication } from './helpers/applications';
 
 test.describe('Analytics', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,10 +19,9 @@ test.describe('Analytics', () => {
 
   test('reflects created applications in the totals and charts', async ({ page }) => {
     await createApplication(page, { company: 'Acme Corp', role: 'Staff Engineer' });
-    // Star/edit/delete live in the actions sheet behind one "More actions"
-    // trigger, not as header icon buttons (JEF-208).
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('link', { name: 'Edit' }).click();
+    // Star/edit/delete live behind one "More actions" trigger, not as header
+    // icon buttons (JEF-208).
+    await chooseApplicationAction(page, 'Edit');
     await page
       .getByText('Status', { exact: true })
       .locator('xpath=following-sibling::select')

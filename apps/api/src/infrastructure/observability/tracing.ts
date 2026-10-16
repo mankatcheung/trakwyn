@@ -16,7 +16,13 @@ import {
 // default-import synthesis resolves to that whole namespace rather than the
 // class, so import the named export instead.
 import { FastifyOtelInstrumentation } from '@fastify/otel';
-import { AUTH_HEADER, AXIOM, ENV, NODE_ENV } from '#src/infrastructure/config/constants.js';
+import {
+  AUTH_HEADER,
+  AXIOM,
+  DOCUMENT_FILE_ROUTE,
+  ENV,
+  NODE_ENV,
+} from '#src/infrastructure/config/constants.js';
 import { applyOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
 import { incomingSpanAttributes } from '#src/infrastructure/observability/incomingSpanAttributes.js';
 
@@ -197,6 +203,10 @@ export function startObservability(): void {
         '@opentelemetry/instrumentation-http': {
           applyCustomAttributesOnSpan: applyOperationSpanName,
           startIncomingSpanHook: incomingSpanAttributes,
+          // The token in a document file link (JEF-51) is that file's
+          // credential until it expires; keep it out of url.query and
+          // url.full. Fastify's log serializer does the same (index.ts).
+          redactedQueryParams: [DOCUMENT_FILE_ROUTE.TOKEN_PARAM],
         },
         '@opentelemetry/instrumentation-graphql': {
           ignoreTrivialResolveSpans: true,

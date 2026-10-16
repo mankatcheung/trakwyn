@@ -1,32 +1,46 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeftIcon, MoreHorizontalIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { deleteApplicationWithUndo } from '../../-deleteWithUndo';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
-import { Card, Skeleton } from '@trakwyn/ui';
+import { useMediaQuery } from '#/lib/useMediaQuery';
+import { Card, Skeleton, useIsWideViewport } from '@trakwyn/ui';
 import { StatusBadge } from '../../../-components/StatusBadge';
 import { applicationQueryOptions, type Application } from '../-application-query';
 import type { BoardApplication } from '../../-board-queries';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { TrashedApplicationView } from './TrashedApplicationView';
-import { HealthScorePanel, type HealthScore } from './HealthScorePanel';
-import { ApplicationInfoChips } from './ApplicationInfoChips';
+import type { HealthScore } from './HealthScorePanel';
+import { ApplicationJobInfo } from './ApplicationJobInfo';
+import { OverviewTab } from './OverviewTab';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
+import { ACTIONS_TRIGGER_CLASS, ApplicationActionsMenu } from './ApplicationActionsMenu';
 import { SectionIndex } from './SectionIndex';
-import { SectionSidebar } from './SectionSidebar';
+import { SectionNav } from './SectionNav';
 import { NotesTab } from './NotesTab';
 import { ActivityTab } from './ActivityTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ContactsTab } from './ContactsTab';
-import { DocumentsTab } from './DocumentsTab';
+import { DocumentList } from './DocumentList';
 import { CompanyBriefingTab } from './CompanyBriefingTab';
-import { CoverLetterTab } from './CoverLetterTab';
-import { ResumeMatchTab } from './ResumeMatchTab';
-import { sectionById, type SectionCounts, type SectionId } from '../-sections';
+import {
+  sectionById,
+  type ApiSectionCounts,
+  type SectionCounts,
+  type SectionId,
+} from '../-sections';
+import { documentSectionCounts } from '../-sectionCounts';
+import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
 import { Route } from '../index';
+
+/** Where Overview appears and the page widens to make room for the sidebar (Tailwind `lg`). */
+const WIDE_QUERY = '(min-width: 1024px)';
+
+/** Wide screens get a wider page, which pays for the section sidebar's width (JEF-402, JEF-411). */
+const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-6xl xl:max-w-7xl';
 
 const UPDATE_APPLICATION = `
   mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {
@@ -45,7 +59,7 @@ const SECTION_COUNTS_QUERY = `
   query ApplicationSectionCounts($id: ID!) {
     application(id: $id) {
       id
-      sectionCounts { notes interviews contacts documents documentDrafts offers }
+      sectionCounts { notes interviews contacts offers companyBriefing }
     }
   }
 `;
@@ -57,12 +71,22 @@ export function ApplicationDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [actionsOpen, setActionsOpen] = useState(false);
+  // From `md` the actions are a popover; below it, the phone's bottom sheet.
+  const actionsAsPopover = useIsWideViewport('md');
+  // Widening the window under an open sheet swaps it for the popover, so the
+  // sheet's open flag must not survive to reopen it on the way back down.
+  useEffect(() => {
+    if (actionsAsPopover) setActionsOpen(false);
+  }, [actionsAsPopover]);
 
   // `section` absent means the phone is on the index screen; the desktop has
-  // no such state — its sidebar and content are always both on screen, so it
-  // falls back to Notes.
-  const activeSection: SectionId = section ?? 'notes';
-  const openSection = section;
+  // no such state — its sidebar and content are always both on screen. There
+  // it falls back to Overview on a wide screen and to Notes below that, where
+  // there is no Overview (it stays in the header card). A `?section=overview`
+  // link opened on a narrower screen is treated as no section at all.
+  const isWide = useMediaQuery(WIDE_QUERY);
+  const openSection = section === 'overview' && !isWide ? undefined : section;
+  const activeSection: SectionId = openSection ?? (isWide ? 'overview' : 'notes');
 
   // Named in full rather than relatively: `to: '.'` resolves against whatever
   // the router thinks the current match is, which is one more thing to be
@@ -107,12 +131,34 @@ export function ApplicationDetailPage() {
   const { data: countsData } = useQuery({
     queryKey: ['sectionCounts', applicationId],
     queryFn: () =>
-      gqlClient.request<{ application: { sectionCounts: SectionCounts } }>(SECTION_COUNTS_QUERY, {
-        id: applicationId,
-      }),
+      gqlClient.request<{ application: { sectionCounts: ApiSectionCounts } }>(
+        SECTION_COUNTS_QUERY,
+        {
+          id: applicationId,
+        },
+      ),
     enabled: canLoadPanels,
   });
-  const counts = countsData?.application.sectionCounts;
+  // The three document badges count one category each, which the API does not
+  // offer, so they come from the lists the tabs render. Held back until both
+  // have arrived: a badge of 0 that becomes 3 would read as an empty section
+  // for a moment.
+  const { data: documentsData } = useQuery({
+    ...documentsQueryOptions(applicationId),
+    enabled: canLoadPanels,
+  });
+  const { data: draftsData } = useQuery({
+    ...documentDraftsQueryOptions(applicationId),
+    enabled: canLoadPanels,
+  });
+  const apiCounts = countsData?.application.sectionCounts;
+  const counts: SectionCounts | undefined =
+    apiCounts && documentsData && draftsData
+      ? {
+          ...apiCounts,
+          ...documentSectionCounts(documentsData.documents, draftsData.documentDrafts),
+        }
+      : undefined;
 
   // Star and status are the same mutation with a different field, so they
   // share one optimistic updater rather than two near-copies of it.
@@ -184,7 +230,7 @@ export function ApplicationDetailPage() {
 
   if (isAppError) {
     return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-8">
+      <div className={PAGE_WIDTH}>
         <ErrorState error={appError} onRetry={() => refetchApp()} />
       </div>
     );
@@ -199,8 +245,29 @@ export function ApplicationDetailPage() {
 
   if (app.deletedAt) return <TrashedApplicationView app={app} />;
 
+  // One set of handlers for both presentations, so the popover and the sheet
+  // cannot drift apart on what an action does.
+  const actionHandlers = {
+    applicationId,
+    starred: app.starred,
+    status: app.status,
+    onToggleStar: () => toggleStar.mutate(!app.starred),
+    onChangeStatus: (status: ApplicationStatus) => changeStatus.mutate(status),
+    onDelete: () => {
+      // Sends the delete now and leaves immediately — undo is a real
+      // restoreApplication call, so there is nothing to wait for.
+      deleteApplicationWithUndo(
+        qc,
+        applicationId,
+        t('applicationDetail.applicationDeletedToast'),
+        () => navigate({ to: '/applications' }),
+      );
+    },
+  };
+
   const sectionContent = (
     <>
+      {activeSection === 'overview' && <OverviewTab app={app} healthScore={healthScore} />}
       {activeSection === 'notes' && (
         <NotesTab applicationId={applicationId} enabled={canLoadPanels} />
       )}
@@ -209,10 +276,16 @@ export function ApplicationDetailPage() {
       )}
       {activeSection === 'contacts' && <ContactsTab applicationId={applicationId} />}
       {activeSection === 'activity' && <ActivityTab applicationId={applicationId} />}
-      {activeSection === 'documents' && <DocumentsTab applicationId={applicationId} />}
+      {activeSection === 'cover-letters' && (
+        <DocumentList applicationId={applicationId} category="cover_letter" />
+      )}
+      {activeSection === 'resumes' && (
+        <DocumentList applicationId={applicationId} category="resume" />
+      )}
+      {activeSection === 'other-documents' && (
+        <DocumentList applicationId={applicationId} category="other" />
+      )}
       {activeSection === 'company-briefing' && <CompanyBriefingTab applicationId={applicationId} />}
-      {activeSection === 'cover-letter' && <CoverLetterTab applicationId={applicationId} />}
-      {activeSection === 'resume-match' && <ResumeMatchTab applicationId={applicationId} />}
       {activeSection === 'offers' && (
         <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -236,7 +309,7 @@ export function ApplicationDetailPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-8">
+    <div className={PAGE_WIDTH}>
       {/*
         Phone only, and only when drilled into a section: Back returns to the
         index rather than leaving the application, and the company stays on
@@ -285,59 +358,33 @@ export function ApplicationDetailPage() {
               company name. Star, edit and delete moved into the sheet, where
               they get labels and rows big enough to hit (JEF-208).
             */}
-            <button
-              type="button"
-              onClick={() => setActionsOpen(true)}
-              aria-label={t('applicationDetail.moreActions')}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <MoreHorizontalIcon size={20} />
-            </button>
+            {actionsAsPopover ? (
+              <ApplicationActionsMenu {...actionHandlers} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActionsOpen(true)}
+                aria-label={t('applicationDetail.moreActions')}
+                className={ACTIONS_TRIGGER_CLASS}
+              >
+                <MoreHorizontalIcon size={20} />
+              </button>
+            )}
           </div>
 
           <div className="mt-3">
             <StatusBadge status={app.status} />
           </div>
 
-          <div className="mt-3">
-            <ApplicationInfoChips app={app} />
+          {/* From `lg` the same facts live in the Overview tab (JEF-403). */}
+          <div className="lg:hidden">
+            <ApplicationJobInfo app={app} healthScore={healthScore} collapseDescription />
           </div>
-
-          {app.followUpAt && (
-            <p className="mt-2 text-xs text-gray-400">{t('applicationDetail.emailReminderNote')}</p>
-          )}
-
-          {app.jobUrl && (
-            <div className="mt-3">
-              <dt className="text-xs text-gray-400">{t('applicationForm.jobUrlLabel')}</dt>
-              <a
-                href={app.jobUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs break-all text-blue-600 hover:underline"
-              >
-                {app.jobUrl}
-              </a>
-            </div>
-          )}
-
-          {app.description && (
-            <div className="mt-3">
-              <dt className="mb-1 text-xs text-gray-400">
-                {t('applicationDetail.descriptionLabel')}
-              </dt>
-              <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
-                {app.description}
-              </p>
-            </div>
-          )}
-
-          {healthScore && <HealthScorePanel healthScore={healthScore} />}
         </Card>
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <SectionSidebar active={activeSection} counts={counts} onOpen={openSectionAt} />
+        <SectionNav active={activeSection} counts={counts} onOpen={openSectionAt} />
 
         {/* Phone: the index and a section are separate screens. Desktop: only the section. */}
         {!openSection && <SectionIndex counts={counts} onOpen={openSectionAt} />}
@@ -352,25 +399,13 @@ export function ApplicationDetailPage() {
         </div>
       </div>
 
-      <ApplicationActionsSheet
-        open={actionsOpen}
-        onClose={() => setActionsOpen(false)}
-        applicationId={applicationId}
-        starred={app.starred}
-        status={app.status}
-        onToggleStar={() => toggleStar.mutate(!app.starred)}
-        onChangeStatus={(status) => changeStatus.mutate(status)}
-        onDelete={() => {
-          // Sends the delete now and leaves immediately — undo is a real
-          // restoreApplication call, so there is nothing to wait for.
-          deleteApplicationWithUndo(
-            qc,
-            applicationId,
-            t('applicationDetail.applicationDeletedToast'),
-            () => navigate({ to: '/applications' }),
-          );
-        }}
-      />
+      {!actionsAsPopover && (
+        <ApplicationActionsSheet
+          open={actionsOpen}
+          onClose={() => setActionsOpen(false)}
+          {...actionHandlers}
+        />
+      )}
     </div>
   );
 }

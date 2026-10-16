@@ -1,0 +1,12 @@
+# Base images CI builds and tests on, one per line: <source>:<tag>@<digest>.
+#
+# The mirror-base-images workflow copies exactly these digests into the
+# base-images Artifact Registry repo (infra/gcp); CI pulls them from there
+# rather than from the public registry (JEF-406). Renovate bumps the digests
+# (renovate.json); edit a line by hand only to change the tag.
+#
+# The mirrored name is the last path segment of the source, so
+# mirror.gcr.io/library/node:24-slim lands at <repo>/node:24-slim.
+# Keep the node tag in step with NODE_VERSION in apps/api/Dockerfile.
+mirror.gcr.io/library/node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5
+mirror.gcr.io/library/postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3

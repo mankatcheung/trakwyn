@@ -1,0 +1,62 @@
+mutation CreateMockInterviewQuestion($input: CreateMockInterviewQuestionInput!) {
+  createMockInterviewQuestion(input: $input) {
+    id
+    interviewRoundId
+    question
+    answer
+    answerSource
+    position
+    createdAt
+    updatedAt
+  }
+}
+
+mutation UpdateMockInterviewQuestion($id: ID!, $input: UpdateMockInterviewQuestionInput!) {
+  updateMockInterviewQuestion(id: $id, input: $input) {
+    id
+    interviewRoundId
+    question
+    answer
+    answerSource
+    position
+    createdAt
+    updatedAt
+  }
+}
+
+mutation DeleteMockInterviewQuestion($id: ID!) {
+  deleteMockInterviewQuestion(id: $id)
+}
+
+mutation ReorderMockInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!]!) {
+  reorderMockInterviewQuestions(interviewRoundId: $interviewRoundId, orderedIds: $orderedIds) {
+    id
+    interviewRoundId
+    question
+    answer
+    answerSource
+    position
+    createdAt
+    updatedAt
+  }
+}
+
+mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int) {
+  generateMockInterviewQuestions(
+    interviewRoundId: $interviewRoundId
+    prompt: $prompt
+    count: $count
+  ) {
+    suggestions
+    usedJobDescription
+    usedBriefing
+  }
+}
+
+mutation GenerateMockInterviewAnswer($mockInterviewQuestionId: ID!, $prompt: String) {
+  generateMockInterviewAnswer(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt) {
+    answer
+    usedJobDescription
+    usedBriefing
+  }
+}

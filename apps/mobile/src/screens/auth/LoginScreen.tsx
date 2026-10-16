@@ -154,12 +154,19 @@ export function LoginScreen() {
 
         <View style={styles.card}>
           <Text style={styles.title}>{t('auth:login.title')}</Text>
-          <Text style={styles.subtitle}>
-            {t('auth:login.noAccountPrefix')}{' '}
-            <Text style={styles.link} onPress={() => router.push('/register')}>
+          {/* Two sibling Texts in a row, not a nested Text: on Android a nested
+              Text is a span inside its parent's TextView — no view of its own,
+              no resource-id — so Maestro cannot find the link by testID. */}
+          <View style={styles.subtitleRow}>
+            <Text style={styles.subtitleText}>{t('auth:login.noAccountPrefix')}</Text>
+            <Text
+              style={[styles.subtitleText, styles.link]}
+              onPress={() => router.push('/register')}
+              testID="login-register-link"
+            >
               {t('auth:login.registerLink')}
             </Text>
-          </Text>
+          </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -282,6 +289,14 @@ function createStyles(colors: ThemeColors) {
     },
     title: { fontSize: 26, fontWeight: '700', color: colors.text },
     subtitle: { fontSize: 14, color: colors.textSubtle, marginTop: -8 },
+    subtitleRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'baseline',
+      gap: 4,
+      marginTop: -8,
+    },
+    subtitleText: { fontSize: 14, color: colors.textSubtle },
     link: { color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
     field: { gap: 6 },
     fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },

@@ -10,6 +10,10 @@ import type { ICreateApplicationUseCase } from '#src/use-cases/jobs/ICreateAppli
 import type { IUpdateApplicationUseCase } from '#src/use-cases/jobs/IUpdateApplicationUseCase.js';
 import type { ICreateNoteUseCase } from '#src/use-cases/notes/ICreateNoteUseCase.js';
 import type { ICreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/ICreateInterviewRoundUseCase.js';
+import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
+import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
+import type { ICreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/ICreateMockInterviewQuestionUseCase.js';
 import type { ICreateSkillUseCase } from '#src/use-cases/skill/ICreateSkillUseCase.js';
 import type { IUpdateSkillUseCase } from '#src/use-cases/skill/IUpdateSkillUseCase.js';
 import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEducationUseCase.js';
@@ -117,6 +121,10 @@ interface Deps {
   updateApplicationUseCase: IUpdateApplicationUseCase;
   createNoteUseCase: ICreateNoteUseCase;
   createInterviewRoundUseCase: ICreateInterviewRoundUseCase;
+  getMockInterviewQuestionsUseCase: IGetMockInterviewQuestionsUseCase;
+  generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
+  generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
+  createMockInterviewQuestionUseCase: ICreateMockInterviewQuestionUseCase;
   createSkillUseCase: ICreateSkillUseCase;
   updateSkillUseCase: IUpdateSkillUseCase;
   createEducationUseCase: ICreateEducationUseCase;
@@ -276,6 +284,42 @@ export class McpController {
             userId,
           });
           break;
+        case 'list_mock_interview_questions': {
+          const interviewRoundId = toStr(args.interviewRoundId);
+          if (!interviewRoundId) {
+            return this.invalid(observed, id, 'interviewRoundId is required');
+          }
+          result = await this.deps.getMockInterviewQuestionsUseCase.execute({
+            userId,
+            roundId: interviewRoundId,
+          });
+          break;
+        }
+        case 'generate_mock_interview_questions': {
+          const interviewRoundId = toStr(args.interviewRoundId);
+          if (!interviewRoundId) {
+            return this.invalid(observed, id, 'interviewRoundId is required');
+          }
+          result = await this.deps.generateMockQuestionsUseCase.execute({
+            userId,
+            roundId: interviewRoundId,
+            prompt: toStr(args.prompt),
+            count: toPositiveInt(args.count),
+          });
+          break;
+        }
+        case 'generate_mock_interview_answer': {
+          const mockInterviewQuestionId = toStr(args.mockInterviewQuestionId);
+          if (!mockInterviewQuestionId) {
+            return this.invalid(observed, id, 'mockInterviewQuestionId is required');
+          }
+          result = await this.deps.generateMockAnswerUseCase.execute({
+            userId,
+            questionId: mockInterviewQuestionId,
+            prompt: toStr(args.prompt),
+          });
+          break;
+        }
         case 'list_work_experiences':
           result = await this.deps.workExperienceRepository.findAllByUserId(userId);
           break;
@@ -387,6 +431,21 @@ export class McpController {
             scheduledAt: toDate(args.scheduledAt),
             interviewerName: toStr(args.interviewerName),
             notes: toStr(args.notes),
+          });
+          break;
+        }
+        case 'create_mock_interview_question': {
+          const interviewRoundId = toStr(args.interviewRoundId);
+          const question = toStr(args.question);
+          if (!interviewRoundId || !question) {
+            return this.invalid(observed, id, 'interviewRoundId and question are required');
+          }
+          result = await this.deps.createMockInterviewQuestionUseCase.execute({
+            userId,
+            roundId: interviewRoundId,
+            question,
+            answer: toStr(args.answer),
+            answerSource: args.answerSource === 'ai' ? 'ai' : 'user',
           });
           break;
         }

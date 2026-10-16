@@ -2,8 +2,8 @@ packages:
   - 'apps/*'
   - 'packages/*'
 overrides:
-  fast-uri@>=3.0.1 <4.0.0-0: 3.1.7
-  undici@>=7.0.0 <8.0.0-0: 7.29.0
+  fast-uri@>=3.0.1 <4.0.0-0: 3.1.8
+  undici@>=7.0.0 <8.0.0-0: 7.29.1
   lodash: 4.18.1
   mysql2: 3.24.4
   deepmerge-ts: 8.0.2
@@ -12,6 +12,10 @@ overrides:
   markdown-it@>=10.0.0 <11.0.0-0: 15.0.2
   linkify-it@>=2.0.0 <3.0.0-0: 6.1.0
   uuid@>=7.0.0 <8.0.0-0: 11.1.1
+  seroval@<1.6.3: 1.6.7
+  '@graphql-tools/utils@<12.0.1': 12.0.3
+  postcss-selector-parser@<7.1.6: 7.1.6
+  source-map-js@<1.2.2: 1.2.2
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/client': true

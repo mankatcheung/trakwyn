@@ -9,12 +9,20 @@
 import { vi } from 'vitest';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
 import type { IToolCallObserver, ToolCallMeta } from '#src/use-cases/ports/IToolCallObserver.js';
 
+/** Accepts every token unless overridden — the refusals are what tests assert on. */
+export const makeCaptchaVerifier = (overrides?: Partial<ICaptchaVerifier>): ICaptchaVerifier => ({
+  verify: vi.fn().mockResolvedValue(true),
+  ...overrides,
+});
+
 export const makeRateLimiter = (overrides?: Partial<IRateLimiter>): IRateLimiter => ({
   consume: vi.fn().mockResolvedValue(true),
+  isLimited: vi.fn().mockResolvedValue(false),
   ...overrides,
 });
 

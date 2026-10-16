@@ -18,6 +18,10 @@ import type { CachedNotificationRepository } from '#src/infrastructure/db/reposi
 import type { CachedDocumentRepository } from '#src/infrastructure/db/repositories/CachedDocumentRepository.js';
 import type { DrizzleInterviewRoundRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewRoundRepository.js';
 import type { CachedInterviewRoundRepository } from '#src/infrastructure/db/repositories/CachedInterviewRoundRepository.js';
+import type { DrizzleInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewQuestionRepository.js';
+import type { CachedInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedInterviewQuestionRepository.js';
+import type { DrizzleMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleMockInterviewQuestionRepository.js';
+import type { CachedMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedMockInterviewQuestionRepository.js';
 import type { CachedUserRepository } from '#src/infrastructure/db/repositories/CachedUserRepository.js';
 import type { CachedSkillRepository } from '#src/infrastructure/db/repositories/CachedSkillRepository.js';
 import type { CachedEducationRepository } from '#src/infrastructure/db/repositories/CachedEducationRepository.js';
@@ -54,6 +58,7 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import type { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import type { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
+import type { DocumentFileLinkService } from '#src/infrastructure/auth/DocumentFileLinkService.js';
 import type { OAuthStateService } from '#src/infrastructure/auth/OAuthStateService.js';
 import type { MobileOAuthHandoffService } from '#src/infrastructure/auth/MobileOAuthHandoffService.js';
 import type { IOAuthProvider } from '#src/use-cases/ports/IOAuthProvider.js';
@@ -77,6 +82,8 @@ import type { DocumentMapper } from '#src/interface-adapters/mappers/DocumentMap
 import type { DocumentDraftMapper } from '#src/interface-adapters/mappers/DocumentDraftMapper.js';
 import type { UserMapper } from '#src/interface-adapters/mappers/UserMapper.js';
 import type { InterviewRoundMapper } from '#src/interface-adapters/mappers/InterviewRoundMapper.js';
+import type { InterviewQuestionMapper } from '#src/interface-adapters/mappers/InterviewQuestionMapper.js';
+import type { MockInterviewQuestionMapper } from '#src/interface-adapters/mappers/MockInterviewQuestionMapper.js';
 import type { ActivityLogMapper } from '#src/interface-adapters/mappers/ActivityLogMapper.js';
 import type { ContactMapper } from '#src/interface-adapters/mappers/ContactMapper.js';
 import type { LoginEventMapper } from '#src/interface-adapters/mappers/LoginEventMapper.js';
@@ -88,6 +95,7 @@ import type { WorkExperienceMapper } from '#src/interface-adapters/mappers/WorkE
 import type { EducationMapper } from '#src/interface-adapters/mappers/EducationMapper.js';
 import type { SkillMapper } from '#src/interface-adapters/mappers/SkillMapper.js';
 
+import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { AuthResolver } from '#src/interface-adapters/resolvers/AuthResolver.js';
 import type { ApplicationResolver } from '#src/interface-adapters/resolvers/ApplicationResolver.js';
 import type { NoteResolver } from '#src/interface-adapters/resolvers/NoteResolver.js';
@@ -95,6 +103,8 @@ import type { DocumentResolver } from '#src/interface-adapters/resolvers/Documen
 import type { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
 import type { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
 import type { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
+import type { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
+import type { MockInterviewQuestionResolver } from '#src/interface-adapters/resolvers/MockInterviewQuestionResolver.js';
 import type { ActivityLogResolver } from '#src/interface-adapters/resolvers/ActivityLogResolver.js';
 import type { ContactResolver } from '#src/interface-adapters/resolvers/ContactResolver.js';
 import type { LoginEventResolver } from '#src/interface-adapters/resolvers/LoginEventResolver.js';
@@ -195,6 +205,18 @@ import type { CreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds
 import type { GetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/GetInterviewRoundsUseCase.js';
 import type { UpdateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/UpdateInterviewRoundUseCase.js';
 import type { DeleteInterviewRoundUseCase } from '#src/use-cases/interviewRounds/DeleteInterviewRoundUseCase.js';
+import type { CreateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/CreateInterviewQuestionUseCase.js';
+import type { GetInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/GetInterviewQuestionsUseCase.js';
+import type { UpdateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/UpdateInterviewQuestionUseCase.js';
+import type { DeleteInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/DeleteInterviewQuestionUseCase.js';
+import type { ReorderInterviewQuestionsUseCase } from '#src/use-cases/interviewQuestions/ReorderInterviewQuestionsUseCase.js';
+import type { CreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/CreateMockInterviewQuestionUseCase.js';
+import type { GetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/GetMockInterviewQuestionsUseCase.js';
+import type { UpdateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/UpdateMockInterviewQuestionUseCase.js';
+import type { DeleteMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/DeleteMockInterviewQuestionUseCase.js';
+import type { ReorderMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/ReorderMockInterviewQuestionsUseCase.js';
+import type { GenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockQuestionsUseCase.js';
+import type { GenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockAnswerUseCase.js';
 import type { GetActivityLogsUseCase } from '#src/use-cases/activityLogs/GetActivityLogsUseCase.js';
 import type { GetLoginHistoryUseCase } from '#src/use-cases/loginEvents/GetLoginHistoryUseCase.js';
 import type { GetSecurityActivityUseCase } from '#src/use-cases/securityEvents/GetSecurityActivityUseCase.js';
@@ -252,6 +274,11 @@ import type { CompanyBriefingMapper } from '#src/interface-adapters/mappers/Comp
 import type { CompanyBriefingResolver } from '#src/interface-adapters/resolvers/CompanyBriefingResolver.js';
 import type { ComputeHealthScoreUseCase } from '#src/use-cases/application/ComputeHealthScoreUseCase.js';
 import type { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
+import type { ComputeResumeAtsScoreUseCase } from '#src/use-cases/application/ComputeResumeAtsScoreUseCase.js';
+import type { GetResumeAtsScoresUseCase } from '#src/use-cases/application/GetResumeAtsScoresUseCase.js';
+import type { DrizzleResumeAtsScoreRepository } from '#src/infrastructure/db/repositories/DrizzleResumeAtsScoreRepository.js';
+import type { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
+import type { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
 import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import type { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
@@ -306,6 +333,11 @@ export interface Cradle {
   cache: ICache;
   sessionBlocklist: ISessionBlocklist;
   passwordResetRateLimiter: IRateLimiter;
+  loginRateLimiter: IRateLimiter;
+  loginFailureRateLimiter: IRateLimiter;
+  registerRateLimiter: IRateLimiter;
+  registerWithoutCaptchaRateLimiter: IRateLimiter;
+  captchaVerifier: ICaptchaVerifier;
 
   // Raw repositories (used internally by the cached decorators)
   drizzleUserRepository: DrizzleUserRepository;
@@ -332,6 +364,10 @@ export interface Cradle {
   documentRepository: CachedDocumentRepository;
   drizzleInterviewRoundRepository: DrizzleInterviewRoundRepository;
   interviewRoundRepository: CachedInterviewRoundRepository;
+  drizzleInterviewQuestionRepository: DrizzleInterviewQuestionRepository;
+  interviewQuestionRepository: CachedInterviewQuestionRepository;
+  drizzleMockInterviewQuestionRepository: DrizzleMockInterviewQuestionRepository;
+  mockInterviewQuestionRepository: CachedMockInterviewQuestionRepository;
   userRepository: CachedUserRepository;
   skillRepository: CachedSkillRepository;
   educationRepository: CachedEducationRepository;
@@ -355,12 +391,17 @@ export interface Cradle {
   offerRepository: DrizzleOfferRepository;
   emailVerificationTokenRepository: DrizzleEmailVerificationTokenRepository;
   totpBackupCodeRepository: DrizzleTotpBackupCodeRepository;
+  emailVerificationUserRateLimiter: IRateLimiter;
+  emailVerificationGlobalRateLimiter: IRateLimiter;
   totpRateLimiter: IRateLimiter;
   chatRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;
   parseJobDescriptionRateLimiter: IRateLimiter;
   computeResumeMatchScoreRateLimiter: IRateLimiter;
+  computeResumeAtsScoreRateLimiter: IRateLimiter;
   generateCompanyBriefingRateLimiter: IRateLimiter;
+  generateMockQuestionsRateLimiter: IRateLimiter;
+  generateMockAnswerRateLimiter: IRateLimiter;
   testLlmApiKeyRateLimiter: IRateLimiter;
   updatePasswordRateLimiter: IRateLimiter;
   requestEmailChangeRateLimiter: IRateLimiter;
@@ -380,6 +421,7 @@ export interface Cradle {
   oauthStateService: OAuthStateService;
   mobileOAuthHandoffService: MobileOAuthHandoffService;
   mcpOAuthConsentService: McpOAuthConsentService;
+  documentFileLinks: DocumentFileLinkService;
 
   applicationMapper: ApplicationMapper;
   apiTokenMapper: ApiTokenMapper;
@@ -391,6 +433,8 @@ export interface Cradle {
   documentDraftMapper: DocumentDraftMapper;
   userMapper: UserMapper;
   interviewRoundMapper: InterviewRoundMapper;
+  interviewQuestionMapper: InterviewQuestionMapper;
+  mockInterviewQuestionMapper: MockInterviewQuestionMapper;
   activityLogMapper: ActivityLogMapper;
   contactMapper: ContactMapper;
   loginEventMapper: LoginEventMapper;
@@ -413,6 +457,8 @@ export interface Cradle {
   documentDraftResolver: DocumentDraftResolver;
   userResolver: UserResolver;
   interviewRoundResolver: InterviewRoundResolver;
+  interviewQuestionResolver: InterviewQuestionResolver;
+  mockInterviewQuestionResolver: MockInterviewQuestionResolver;
   activityLogResolver: ActivityLogResolver;
   contactResolver: ContactResolver;
   loginEventResolver: LoginEventResolver;
@@ -528,6 +574,18 @@ export interface Cradle {
   getInterviewRoundsUseCase: GetInterviewRoundsUseCase;
   updateInterviewRoundUseCase: UpdateInterviewRoundUseCase;
   deleteInterviewRoundUseCase: DeleteInterviewRoundUseCase;
+  createInterviewQuestionUseCase: CreateInterviewQuestionUseCase;
+  getInterviewQuestionsUseCase: GetInterviewQuestionsUseCase;
+  updateInterviewQuestionUseCase: UpdateInterviewQuestionUseCase;
+  deleteInterviewQuestionUseCase: DeleteInterviewQuestionUseCase;
+  reorderInterviewQuestionsUseCase: ReorderInterviewQuestionsUseCase;
+  createMockInterviewQuestionUseCase: CreateMockInterviewQuestionUseCase;
+  getMockInterviewQuestionsUseCase: GetMockInterviewQuestionsUseCase;
+  updateMockInterviewQuestionUseCase: UpdateMockInterviewQuestionUseCase;
+  deleteMockInterviewQuestionUseCase: DeleteMockInterviewQuestionUseCase;
+  reorderMockInterviewQuestionsUseCase: ReorderMockInterviewQuestionsUseCase;
+  generateMockQuestionsUseCase: GenerateMockQuestionsUseCase;
+  generateMockAnswerUseCase: GenerateMockAnswerUseCase;
   getActivityLogsUseCase: GetActivityLogsUseCase;
   getLoginHistoryUseCase: GetLoginHistoryUseCase;
   getSecurityActivityUseCase: GetSecurityActivityUseCase;
@@ -585,6 +643,11 @@ export interface Cradle {
   chatTools: LLMToolDefinition[];
   streamChatWithAssistantUseCase: StreamChatWithAssistantUseCase;
   computeResumeMatchScoreUseCase: ComputeResumeMatchScoreUseCase;
+  computeResumeAtsScoreUseCase: ComputeResumeAtsScoreUseCase;
+  getResumeAtsScoresUseCase: GetResumeAtsScoresUseCase;
+  resumeAtsScoreRepository: DrizzleResumeAtsScoreRepository;
+  getResumeMatchesUseCase: GetResumeMatchesUseCase;
+  resumeMatchRepository: DrizzleResumeMatchRepository;
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;
   getCalendarEventsUseCase: GetCalendarEventsUseCase;
   getDocumentVersionOutcomesUseCase: GetDocumentVersionOutcomesUseCase;

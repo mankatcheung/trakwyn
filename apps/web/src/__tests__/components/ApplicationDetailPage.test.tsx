@@ -200,7 +200,72 @@ describe('ApplicationDetailPage', () => {
     });
   });
 
-  it('shows the notes and documents tabs', async () => {
+  describe('overview (JEF-403)', () => {
+    const loadApp = () =>
+      mockGqlRequest.mockImplementation((query: string) => {
+        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
+        return Promise.resolve({ application: mockApp });
+      });
+    const defaultMatchMedia = window.matchMedia;
+    afterEach(() => {
+      window.matchMedia = defaultMatchMedia;
+    });
+    const stubWide = () => {
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(min-width: 1024px)',
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })) as unknown as typeof window.matchMedia;
+    };
+
+    it('opens on Overview from lg, instead of Notes', async () => {
+      stubWide();
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      const nav = within(screen.getByLabelText('Section navigation'));
+      expect(nav.getByRole('button', { name: /overview/i })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      expect(screen.queryByPlaceholderText(/add a note/i)).not.toBeInTheDocument();
+      // The Overview tab shows the job information in full.
+      expect(screen.getAllByText('Great role').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Remote').length).toBeGreaterThan(0);
+    });
+
+    it('keeps the job information in the header card below lg, with Notes as the section', async () => {
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.getByText('Great role')).toHaveClass('line-clamp-3');
+      expect(screen.getByText('Remote')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument();
+    });
+
+    it('does not list Overview on the phone index, only in the (CSS-hidden) tab bar', async () => {
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.getAllByRole('button', { name: /^overview/i })).toHaveLength(1);
+    });
+
+    it('treats ?section=overview below lg as no section, so there is no drill-down screen', async () => {
+      searchStore.set({ section: 'overview' });
+      loadApp();
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      expect(screen.queryByLabelText('Back to sections')).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows the notes tab and the three document tabs, with no combined Documents tab', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
@@ -211,17 +276,16 @@ describe('ApplicationDetailPage', () => {
       expect(screen.getByText('Stripe')).toBeInTheDocument();
     });
 
-    expect(
-      within(screen.getByLabelText('Section navigation')).getByRole('button', { name: /notes/i }),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
-      }),
-    ).toBeInTheDocument();
+    const nav = within(screen.getByLabelText('Section navigation'));
+    expect(nav.getByRole('button', { name: /notes/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^cover letters/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^resumes/i })).toBeInTheDocument();
+    expect(nav.getByRole('button', { name: /^other documents/i })).toBeInTheDocument();
+    expect(nav.queryByRole('button', { name: /^documents/i })).not.toBeInTheDocument();
+    expect(nav.queryByRole('button', { name: /^cover letter$/i })).not.toBeInTheDocument();
   });
 
-  it('switches to documents tab and shows upload area', async () => {
+  it('switches to the other documents tab and offers an Upload file button', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -235,16 +299,16 @@ describe('ApplicationDetailPage', () => {
 
     fireEvent.click(
       within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
+        name: /other documents/i,
       }),
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/click to upload/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument();
     });
   });
 
-  it('renders existing documents in documents tab', async () => {
+  it('renders existing documents in the other documents tab', async () => {
     const mockDoc = {
       id: 'doc-1',
       applicationId: 'app-test-id',
@@ -267,7 +331,7 @@ describe('ApplicationDetailPage', () => {
 
     fireEvent.click(
       within(screen.getByLabelText('Section navigation')).getByRole('button', {
-        name: /documents/i,
+        name: /other documents/i,
       }),
     );
 
@@ -308,7 +372,7 @@ describe('ApplicationDetailPage', () => {
       createdAt: '2024-01-02T00:00:00.000Z',
     };
 
-    it('opens an inline PDF preview when clicking a PDF document name', async () => {
+    it('opens an inline PDF preview when the file name is pressed (PDF)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -319,7 +383,7 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /resumes/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
@@ -330,7 +394,7 @@ describe('ApplicationDetailPage', () => {
       expect(iframe).toHaveAttribute('src', mockPdfDoc.url);
     });
 
-    it('opens an inline image preview when clicking an image document name', async () => {
+    it('opens an inline image preview when the file name is pressed (image)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockImageDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -341,7 +405,7 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /other documents/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('portfolio.png')).toBeInTheDocument());
@@ -362,7 +426,7 @@ describe('ApplicationDetailPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /resumes/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
@@ -376,7 +440,7 @@ describe('ApplicationDetailPage', () => {
       expect(screen.queryByTitle('resume.pdf')).not.toBeInTheDocument();
     });
 
-    it('does not make non-previewable documents (e.g. .docx) clickable, and keeps the download link', async () => {
+    it('offers Download, not Preview, in the more menu for non-previewable documents (e.g. .docx)', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
@@ -387,18 +451,19 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(
         within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /documents/i,
+          name: /cover letters/i,
         }),
       );
       await waitFor(() => expect(screen.getByText('cover-letter.docx')).toBeInTheDocument());
 
-      expect(screen.queryByRole('button', { name: 'cover-letter.docx' })).not.toBeInTheDocument();
-      const link = screen.getByRole('link', { name: 'cover-letter.docx' });
-      expect(link).toHaveAttribute('href', mockDocxDoc.url);
+      const row = screen.getByRole('listitem');
+      fireEvent.click(within(row).getByRole('button', { name: 'More actions' }));
+      expect(screen.queryByRole('menuitem', { name: 'Preview' })).not.toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'Download' })).toBeInTheDocument();
     });
   });
 
-  describe('resume match tab preview (JEF-70)', () => {
+  describe('resume match inside the Resumes section (JEF-397)', () => {
     const mockPdfResume = {
       id: 'doc-1',
       applicationId: 'app-test-id',
@@ -409,56 +474,43 @@ describe('ApplicationDetailPage', () => {
       documentType: 'resume',
       createdAt: '2024-01-02T00:00:00.000Z',
     };
-    const mockDocxResume = {
-      ...mockPdfResume,
-      name: 'resume.docx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      url: 'https://example.com/resume.docx',
+
+    const openResumes = async (documents: unknown[]) => {
+      mockGqlRequest.mockImplementation((query: string) => {
+        if (query.includes('Documents')) return Promise.resolve({ documents });
+        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
+        return Promise.resolve({ application: mockApp });
+      });
+      render(<ApplicationDetailPage />, { wrapper: Wrapper });
+      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+      fireEvent.click(
+        within(screen.getByLabelText('Section navigation')).getByRole('button', {
+          name: /^resumes/i,
+        }),
+      );
     };
 
-    it('shows a Preview button for an uploaded PDF resume and opens the modal', async () => {
+    it('has no standalone Resume Match section', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfResume] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
       });
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
-      fireEvent.click(
-        within(screen.getByLabelText('Section navigation')).getByRole('button', {
+      expect(
+        within(screen.getByLabelText('Section navigation')).queryByRole('button', {
           name: /resume match/i,
         }),
-      );
-      await waitFor(() => {
-        expect(screen.getByText(/using your uploaded resume/i)).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /^preview$/i }));
-
-      const iframe = await screen.findByTitle('resume.pdf');
-      expect(iframe).toHaveAttribute('src', mockPdfResume.url);
+      ).not.toBeInTheDocument();
     });
 
-    it('does not show a Preview button for a non-previewable resume type', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxResume] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
-      render(<ApplicationDetailPage />, { wrapper: Wrapper });
-      await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+    it('offers to generate a match on an uploaded resume', async () => {
+      await openResumes([mockPdfResume]);
 
-      fireEvent.click(
-        within(screen.getByLabelText('Section navigation')).getByRole('button', {
-          name: /resume match/i,
-        }),
-      );
-      await waitFor(() => {
-        expect(screen.getByText(/using your uploaded resume/i)).toBeInTheDocument();
-      });
-
-      expect(screen.queryByRole('button', { name: /^preview$/i })).not.toBeInTheDocument();
+      expect(await screen.findByText('resume.pdf')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /generate match/i })).toBeInTheDocument();
     });
   });
 
@@ -587,17 +639,21 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     notes: 3,
     interviews: 2,
     contacts: 0,
-    documents: 1,
-    documentDrafts: 0,
     offers: 0,
+    companyBriefing: false,
   };
 
-  const respond = (extra: (query: string) => unknown = () => undefined) =>
+  const respond = (
+    extra: (query: string) => unknown = () => undefined,
+    sectionCounts: typeof counts = counts,
+  ) =>
     mockGqlRequest.mockImplementation((query: string) => {
       const custom = extra(query);
       if (custom !== undefined) return custom;
       if (query.includes('ApplicationSectionCounts'))
-        return Promise.resolve({ application: { id: 'app-test-id', sectionCounts: counts } });
+        return Promise.resolve({ application: { id: 'app-test-id', sectionCounts } });
+      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
+      if (query.includes('query Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
     });
@@ -620,6 +676,117 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     // Zero is not a badge saying "0" — the row just reads quieter.
     expect(within(nav).getByRole('button', { name: /^contacts$/i })).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: /contacts 0/i })).not.toBeInTheDocument();
+  });
+
+  it('marks Company Briefing as not generated until one exists', async () => {
+    respond();
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(
+        within(nav).getByRole('button', { name: /company briefing not generated/i }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('marks Company Briefing as generated once one exists, without a number', async () => {
+    respond(() => undefined, { ...counts, companyBriefing: true });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(
+        within(nav).getByRole('button', { name: /company briefing generated/i }),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(nav).queryByRole('button', { name: /company briefing not generated/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows no briefing marker before the counts arrive', async () => {
+    respond((query) =>
+      query.includes('ApplicationSectionCounts') ? new Promise(() => undefined) : undefined,
+    );
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    expect(within(nav).getByRole('button', { name: /^company briefing$/i })).toBeInTheDocument();
+  });
+
+  it('refreshes the counts when a briefing is generated, so the marker cannot go stale', async () => {
+    respond((query) =>
+      query.includes('GenerateCompanyBriefing')
+        ? Promise.resolve({
+            generateCompanyBriefing: {
+              id: 'b-1',
+              applicationId: 'app-test-id',
+              content: 'About Stripe',
+              generatedAt: '2024-01-03T00:00:00.000Z',
+            },
+          })
+        : query.includes('query CompanyBriefing')
+          ? Promise.resolve({ companyBriefing: null })
+          : undefined,
+    );
+    searchStore.set({ section: 'company-briefing' });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const countsCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('ApplicationSectionCounts'))
+        .length;
+    await waitFor(() => expect(countsCalls()).toBe(1));
+
+    fireEvent.click(await screen.findByRole('button', { name: /generate briefing/i }));
+
+    await waitFor(() => expect(countsCalls()).toBe(2));
+  });
+
+  it('badges each document tab with its own category, drafts and uploads together', async () => {
+    const upload = (id: string, documentType: string) => ({
+      id,
+      applicationId: 'app-test-id',
+      name: `${id}.pdf`,
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      url: `https://example.com/${id}.pdf`,
+      documentType,
+      version: null,
+      createdAt: '2024-01-02T00:00:00.000Z',
+    });
+    const draft = (id: string, type: string) => ({
+      id,
+      applicationId: 'app-test-id',
+      type,
+      title: id,
+      createdAt: '2024-01-02T00:00:00.000Z',
+      updatedAt: '2024-01-02T00:00:00.000Z',
+    });
+    respond((query) => {
+      if (query.includes('DocumentDrafts'))
+        return Promise.resolve({
+          documentDrafts: [draft('d1', 'cover_letter'), draft('d2', 'resume')],
+        });
+      if (query.includes('query Documents'))
+        return Promise.resolve({
+          documents: [upload('u1', 'resume'), upload('u2', 'portfolio'), upload('u3', 'other')],
+        });
+      return undefined;
+    });
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+
+    const nav = screen.getByLabelText('Section navigation');
+    await waitFor(() =>
+      expect(within(nav).getByRole('button', { name: /cover letters 1/i })).toBeInTheDocument(),
+    );
+    expect(within(nav).getByRole('button', { name: /resumes 2/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: /other documents 2/i })).toBeInTheDocument();
   });
 
   it('groups the sections under Track, Documents & AI and Outcome', async () => {
@@ -895,5 +1062,179 @@ describe('ApplicationDetailPage — trashed application', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }));
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/applications/trash' }));
+  });
+});
+
+describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', () => {
+  /** A viewport `width` px wide that answers each `min-width` query honestly. */
+  function stubWidth(width: number) {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: (query: string) => ({
+        matches: width >= Number(/min-width:\s*(\d+)px/.exec(query)?.[1] ?? Infinity),
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }),
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    searchStore.set({});
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('UpdateApplication'))
+        return Promise.resolve({ updateApplication: { id: 'app-test-id' } });
+      if (query.includes('DeleteApplication')) return Promise.resolve({ deleteApplication: true });
+      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
+      return Promise.resolve({ application: mockApp });
+    });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'matchMedia');
+  });
+
+  async function openActions() {
+    render(<ApplicationDetailPage />, { wrapper: Wrapper });
+    await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+  }
+
+  it('opens a popover, not a sheet, from the md breakpoint up', async () => {
+    stubWidth(768);
+    await openActions();
+
+    const menu = await screen.findByRole('menu', { name: 'More actions' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Star', 'Edit', 'Change status', 'Delete application']);
+  });
+
+  it('keeps the bottom sheet below the md breakpoint', async () => {
+    stubWidth(767);
+    await openActions();
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('stars from the popover and closes it', async () => {
+    stubWidth(1280);
+    await openActions();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Star' }));
+
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateApplication'),
+        expect.objectContaining({ id: 'app-test-id', input: { starred: true } }),
+      ),
+    );
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('goes to the edit page from the popover', async () => {
+    stubWidth(1280);
+    await openActions();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/applications/$applicationId/edit',
+      params: { applicationId: 'app-test-id' },
+    });
+  });
+
+  it('changes status in an inline second pane, marking the current one', async () => {
+    stubWidth(1280);
+    await openActions();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change status' }));
+
+    const menu = screen.getByRole('menu', { name: 'Change status' });
+    expect(within(menu).getByRole('menuitem', { name: 'Applied' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Interviewing' }));
+
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateApplication'),
+        expect.objectContaining({ id: 'app-test-id', input: { status: 'interviewing' } }),
+      ),
+    );
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('does not send a change when the current status is picked again', async () => {
+    stubWidth(1280);
+    await openActions();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change status' }));
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Applied' }));
+
+    expect(mockGqlRequest).not.toHaveBeenCalledWith(
+      expect.stringContaining('UpdateApplication'),
+      expect.anything(),
+    );
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('goes back from the status pane to the actions', async () => {
+    stubWidth(1280);
+    await openActions();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change status' }));
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Change status' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Star' })).toBeInTheDocument();
+  });
+
+  it('reopens on the actions, not the status list, after Escape from the second pane', async () => {
+    stubWidth(1280);
+    await openActions();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change status' }));
+
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Change status' }), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    expect(await screen.findByRole('menuitem', { name: 'Star' })).toBeInTheDocument();
+  });
+
+  it('deletes from the popover and leaves the page at once', async () => {
+    stubWidth(1280);
+    await openActions();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete application' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith({ to: '/applications' });
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('DeleteApplication'),
+        expect.objectContaining({ id: 'app-test-id' }),
+      ),
+    );
+  });
+
+  it('closes on an outside click', async () => {
+    stubWidth(1280);
+    await openActions();
+    await screen.findByRole('menu', { name: 'More actions' });
+
+    fireEvent.mouseDown(screen.getByText('Software Engineer'));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });

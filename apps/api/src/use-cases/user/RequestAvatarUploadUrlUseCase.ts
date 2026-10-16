@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid';
+import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
 import { assertAllowedAvatarMimeType } from '#src/use-cases/user/avatarValidation.js';
 import type {
@@ -31,6 +32,6 @@ export class RequestAvatarUploadUrlUseCase implements IRequestAvatarUploadUrlUse
       input.mimeType,
     );
 
-    return { uploadUrl, storageKey };
+    return { uploadUrl, storageKey, access: storageAccessFor(storageKey) };
   }
 }

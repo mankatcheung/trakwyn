@@ -1,4 +1,7 @@
-# syntax=docker/dockerfile:1
+# No `# syntax=docker/dockerfile:1` line: it makes BuildKit pull the frontend
+# image from Docker Hub, an anonymous pull that CI's shared runner IPs get
+# rate-limited on (429). The frontend bundled with BuildKit supports everything
+# used below (`RUN --mount=type=cache`).
 #
 # Production image for apps/api, deployed to Cloud Run (see infra/gcp/).
 # Build from the repo root — the pnpm workspace and lockfile live there:
@@ -10,8 +13,15 @@
 # deploy-api ships a new image.
 
 ARG NODE_VERSION=24
+# Google's public cache of Docker Hub's official images: the same image and
+# digest, but without Docker Hub's anonymous rate limit, which took the Cloud
+# Run deploy down with `429 Too Many Requests` (run #1314). It is the default
+# so `docker build` needs no login. CI overrides NODE_IMAGE with our own
+# digest-pinned copy in Artifact Registry (infra/base-images.txt, JEF-406), so
+# the build depends on no public registry at all.
+ARG NODE_IMAGE=mirror.gcr.io/library/node:${NODE_VERSION}-slim
 
-FROM node:${NODE_VERSION}-slim AS build
+FROM ${NODE_IMAGE} AS build
 WORKDIR /repo
 # corepack honours the root package.json's `packageManager` pin. HUSKY=0
 # skips the root `prepare` script's git hooks, which need a .git directory.
@@ -44,7 +54,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
  && rm -rf /out/src /out/drizzle /out/scripts /out/Dockerfile* /out/*.config.* \
           /out/tsconfig*.json
 
-FROM node:${NODE_VERSION}-slim AS runtime
+FROM ${NODE_IMAGE} AS runtime
 # The commit SHA this image was built from (JEF-362), reported as the OTel
 # service.version. CI passes it as a build arg; baking it into the image
 # rather than setting it on the Cloud Run service keeps Terraform, which owns

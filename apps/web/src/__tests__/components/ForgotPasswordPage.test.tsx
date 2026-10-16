@@ -42,6 +42,7 @@ describe('ForgotPasswordPage', () => {
     });
     expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestPasswordReset'), {
       email: 'test@example.com',
+      captchaToken: null,
     });
   });
 

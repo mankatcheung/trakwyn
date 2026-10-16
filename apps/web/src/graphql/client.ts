@@ -133,11 +133,22 @@ export function addTraceparent<T extends { url: string; headers?: HeadersInit }>
 /**
  * Reports the API unreachable or answering 5xx — which failures qualify is
  * `transportFailureProperties`, shared with the mobile app.
+ *
+ * A fetch rejected while the browser reports itself offline is the user's own
+ * connection, not an API outage, so it is not reported. This lives here, not
+ * in `transportFailureProperties`, which `transportFailureParity.test.ts`
+ * keeps identical to the mobile copy.
  */
 function reportTransportFailure(response: unknown, operationName: string | undefined): void {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   const properties = transportFailureProperties(response, operationName);
   if (properties) captureException(response, properties);
 }
+
+// UNAUTHORIZED errors whose session was refreshed successfully, so the request
+// that raised them is safe to send again. graphql-request throws the very
+// object it handed to `responseMiddleware`, which is what lets the two meet.
+const refreshedUnauthorized = new WeakSet<Error>();
 
 export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
   credentials: 'include',
@@ -173,6 +184,7 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
 
     const ok = await getOrStartRefresh();
     if (ok) {
+      if (response instanceof Error) refreshedUnauthorized.add(response);
       // Fresh access-token cookie is set — re-run all active queries so they pick it up.
       await queryClient.invalidateQueries();
     } else {
@@ -205,3 +217,19 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
     }
   },
 });
+
+// graphql-request has no retry hook, and `responseMiddleware` cannot replace
+// the result, so without this the request that hit the expired access token
+// still rejects after a successful refresh. Route loaders (the dashboard's
+// `ensureQueryData`) have no query to invalidate, so that rejection reached the
+// root error boundary and PostHog as a crash. Retried once; a second
+// UNAUTHORIZED is not tagged again by a failed refresh, and surfaces.
+const sendRequest = gqlClient.request.bind(gqlClient) as (...args: unknown[]) => Promise<unknown>;
+gqlClient.request = (async (...args: unknown[]) => {
+  try {
+    return await sendRequest(...args);
+  } catch (error) {
+    if (error instanceof Error && refreshedUnauthorized.has(error)) return sendRequest(...args);
+    throw error;
+  }
+}) as typeof gqlClient.request;

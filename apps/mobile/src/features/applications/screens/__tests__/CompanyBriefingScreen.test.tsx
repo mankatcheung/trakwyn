@@ -50,6 +50,30 @@ describe('CompanyBriefingScreen', () => {
     expect(mutate).toHaveBeenCalled();
   });
 
+  it('renders the briefing as markdown, not raw syntax', async () => {
+    mockedUseCompanyBriefing.mockReturnValue({
+      data: {
+        id: 'b1',
+        applicationId: 'app-1',
+        content: '## Culture signals\n\n- **Fast** pace\n- Flat hierarchy',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      isLoading: false,
+    } as never);
+    mockedUseGenerateCompanyBriefing.mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as never);
+
+    const { getByText, queryByText } = await renderScreen();
+
+    expect(getByText('Culture signals')).toBeTruthy();
+    expect(getByText('Fast')).toBeTruthy();
+    expect(getByText(/Flat hierarchy/)).toBeTruthy();
+    expect(queryByText(/##/)).toBeNull();
+    expect(queryByText(/\*\*/)).toBeNull();
+  });
+
   it('confirms before regenerating an existing briefing', async () => {
     const mutate = jest.fn();
     mockedUseCompanyBriefing.mockReturnValue({

@@ -12,6 +12,10 @@ builder.mutationField('generateCoverLetter', (t) =>
     type: DocumentDraftRef,
     args: {
       applicationId: t.arg.id({ required: true }),
+      // At most one of the two ids: one of this application's resumes to base
+      // the letter on (JEF-396). `resumeText` is for clients that predate it.
+      resumeDocumentId: t.arg.id({ required: false }),
+      resumeDraftId: t.arg.id({ required: false }),
       resumeText: t.arg.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
@@ -22,7 +26,11 @@ builder.mutationField('generateCoverLetter', (t) =>
         return await documentDraftResolver.generateCoverLetterDraft(
           ctx.user.sub,
           String(args.applicationId),
-          args.resumeText,
+          {
+            resumeText: args.resumeText,
+            resumeDocumentId: args.resumeDocumentId ? String(args.resumeDocumentId) : null,
+            resumeDraftId: args.resumeDraftId ? String(args.resumeDraftId) : null,
+          },
         );
       } catch (err) {
         throw fromCodedError(err);

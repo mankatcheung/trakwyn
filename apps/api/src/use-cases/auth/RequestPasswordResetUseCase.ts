@@ -4,6 +4,8 @@ import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IPasswordResetTokenRepository } from '#src/use-cases/ports/IPasswordResetTokenRepository.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
+import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
+import { assertCaptcha } from '#src/use-cases/auth/assertCaptcha.js';
 import { PASSWORD_RESET_TOKEN } from '#src/use-cases/constants.js';
 import type {
   IRequestPasswordResetUseCase,
@@ -15,6 +17,7 @@ interface Deps {
   passwordResetTokenRepository: IPasswordResetTokenRepository;
   emailService: IEmailService;
   passwordResetRateLimiter: IRateLimiter;
+  captchaVerifier: ICaptchaVerifier;
   generateId: () => string;
   webAppOrigin: string;
 }
@@ -23,6 +26,12 @@ export class RequestPasswordResetUseCase implements IRequestPasswordResetUseCase
   constructor(private readonly deps: Deps) {}
 
   async execute(input: RequestPasswordResetInput): Promise<void> {
+    // Captcha first, so a bot cannot spend a victim's per-email budget below
+    // (JEF-401). A refusal says nothing about whether the account exists.
+    if (input.enforceCaptcha) {
+      await assertCaptcha(this.deps.captchaVerifier, input.captchaToken, input.ipAddress);
+    }
+
     // Rate-limit by both email and IP *before* looking the account up, and by
     // the exact same amount of work regardless of outcome, so a rate-limit
     // response never reveals whether the account exists.

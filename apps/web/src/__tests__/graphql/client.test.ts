@@ -49,6 +49,9 @@ const { mockPosthog } = vi.hoisted(() => ({
 
 vi.mock('posthog-js', () => ({ default: mockPosthog }));
 
+// What the mocked client's `request` answers with, one entry per call.
+const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
+
 // GraphQLClient must be a real constructor (not an arrow fn) to support `new`
 vi.mock('graphql-request', () => ({
   GraphQLClient: vi.fn(function (
@@ -63,6 +66,14 @@ vi.mock('graphql-request', () => ({
       ? (response, request = DEFAULT_REQUEST) => real(response, request)
       : () => Promise.resolve();
     this.requestMiddleware = opts?.requestMiddleware;
+    // Like graphql-request: run the response middleware, then throw the very
+    // object it was given.
+    (this as unknown as { request: () => Promise<unknown> }).request = async () => {
+      const response = await mockSend();
+      await this.responseMiddleware(response);
+      if (response instanceof Error) throw response;
+      return response;
+    };
   }),
 }));
 
@@ -219,6 +230,51 @@ describe('refresh token deduplication', () => {
       expect(mockLocationHref).not.toHaveBeenCalled();
     },
   );
+
+  it('retries the request once after a successful refresh', async () => {
+    const unauthorized = Object.assign(new Error('Unauthorized'), {
+      response: { errors: [{ extensions: { code: 'UNAUTHORIZED' } }] },
+    });
+    mockSend.mockReset().mockResolvedValueOnce(unauthorized).mockResolvedValueOnce({ ok: true });
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: 'new' } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const { gqlClient } = await import('#/graphql/client');
+
+    await expect(
+      (gqlClient as unknown as { request: () => Promise<unknown> }).request(),
+    ).resolves.toEqual({
+      ok: true,
+    });
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry more than once when the retry is unauthorized too', async () => {
+    const unauthorized = () =>
+      Object.assign(new Error('Unauthorized'), {
+        response: { errors: [{ extensions: { code: 'UNAUTHORIZED' } }] },
+      });
+    mockSend
+      .mockReset()
+      .mockResolvedValueOnce(unauthorized())
+      .mockResolvedValueOnce(unauthorized());
+    fetchSpy.mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ data: { refreshToken: 'new' } }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    const { gqlClient } = await import('#/graphql/client');
+
+    await expect(
+      (gqlClient as unknown as { request: () => Promise<unknown> }).request(),
+    ).rejects.toThrow('Unauthorized');
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+  });
 
   it('does not refresh when response has no UNAUTHORIZED error', async () => {
     const { gqlClient } = await import('#/graphql/client');
@@ -418,6 +474,21 @@ describe('failure reporting', () => {
       expect.any(Error),
       expect.objectContaining({ kind: 'graphql_request_failed', network_error: true }),
     );
+  });
+
+  it('does not report a network failure while the browser is offline', async () => {
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    await middleware(new Error('Failed to fetch'), {
+      url: 'http://localhost:3000/graphql',
+      operationName: 'Applications',
+    });
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+    onLine.mockRestore();
   });
 
   it('names the operation, which is the one identifying detail that is safe to send', async () => {

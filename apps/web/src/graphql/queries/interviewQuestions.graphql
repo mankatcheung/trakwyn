@@ -1,0 +1,11 @@
+query InterviewQuestions($interviewRoundId: ID!) {
+  interviewQuestions(interviewRoundId: $interviewRoundId) {
+    id
+    interviewRoundId
+    question
+    answer
+    position
+    createdAt
+    updatedAt
+  }
+}

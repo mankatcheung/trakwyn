@@ -316,6 +316,12 @@ export const AI_PROMPT_INPUT = {
   CROSS_APPLICATION_CONTEXT_MAX_CHARS: 2000,
   /** Cover letter generation — how many *other* applications' notes/drafts to pull from, most recent first (JEF-249). */
   CROSS_APPLICATION_CONTEXT_MAX_APPLICATIONS: 3,
+  /** Practice question and answer generation — what the user asks for (JEF-393). */
+  MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS: 500,
+  /** Practice question and answer generation — the application's job description field (JEF-393). */
+  MOCK_INTERVIEW_JOB_DESCRIPTION_MAX_CHARS: 3000,
+  /** Practice question and answer generation — the stored company briefing (JEF-393). */
+  MOCK_INTERVIEW_BRIEFING_MAX_CHARS: 2000,
 } as const;
 
 /** In-app AI chat assistant settings. */
@@ -389,6 +395,35 @@ export const PAGINATION = {
 export const CONTENT_LIMITS = {
   APPLICATIONS_PER_USER: 50,
   DOCUMENTS_PER_APPLICATION: 10,
+  QUESTIONS_PER_ROUND: 50,
+  /** Practice questions have their own quota so they never use up the real one (JEF-393). */
+  MOCK_QUESTIONS_PER_ROUND: 30,
+} as const;
+
+/**
+ * The task sentence each practice-interview system prompt carries. The dev and
+ * e2e fake LLM route (`fakeLlmCompletions.routes.ts`) reads them to pick its
+ * canned reply, so they are stated once here rather than twice in prose.
+ */
+export const MOCK_INTERVIEW_PROMPT_TASK = {
+  QUESTIONS: 'write realistic questions the candidate could be asked in that round',
+  ANSWER: 'draft a strong answer the candidate can adapt',
+} as const;
+
+/** How many practice questions one generate request may ask the model for (JEF-393). */
+export const MOCK_QUESTION_GENERATION = {
+  DEFAULT_COUNT: 5,
+  MAX_COUNT: 10,
+  /** Output budget for a full batch of questions. */
+  QUESTIONS_MAX_TOKENS: 1024,
+  /** Output budget for one drafted answer; sized for INTERVIEW_QUESTION_LIMITS.ANSWER_MAX_CHARS. */
+  ANSWER_MAX_TOKENS: 1024,
+} as const;
+
+/** Length limits for the question and answer a user records against an interview round. */
+export const INTERVIEW_QUESTION_LIMITS = {
+  QUESTION_MAX_CHARS: 500,
+  ANSWER_MAX_CHARS: 4000,
 } as const;
 
 /** Named MIME type constants, for referencing specific types instead of repeating string literals. */
@@ -425,6 +460,44 @@ export const RESUME_TEXT_EXTRACTION = {
   MAX_BYTES: MAX_DOCUMENT_SIZE_BYTES,
   FETCH_TIMEOUT_MS: 15_000,
   EXTRACT_TIMEOUT_MS: 20_000,
+} as const;
+
+/**
+ * The ATS-readiness score (`scoreResumeText`). Every weight is points out of
+ * 100, so `WEIGHTS` must sum to `MAX_SCORE` (asserted in the scorer's tests).
+ * Retuning the score is a change to this block alone.
+ */
+export const ATS_SCORE = {
+  MAX_SCORE: 100,
+  WEIGHTS: {
+    EMAIL: 8,
+    PHONE: 7,
+    EXPERIENCE_HEADING: 12,
+    EDUCATION_HEADING: 9,
+    SKILLS_HEADING: 9,
+    DATES: 15,
+    LENGTH: 10,
+    BULLETS: 10,
+    QUANTIFIED_RESULTS: 10,
+    CLEAN_CHARACTERS: 10,
+  },
+  /** Fewer words than this and the text is treated as not extracted at all. */
+  MIN_READABLE_WORDS: 20,
+  /** A sensible resume length, in words. */
+  WORDS: { MIN: 300, MAX: 1000 },
+  /** Date mentions needed so at least one role has a start and an end. */
+  MIN_DATES: 2,
+  MIN_BULLETS: 3,
+  MIN_QUANTIFIED_BULLETS: 3,
+  /** Characters a parser drops (emoji, private-use glyphs, U+FFFD) before the check fails. */
+  MAX_UNUSUAL_CHARS: 5,
+  /** Lines that are mostly symbols before the check fails. */
+  MAX_SYMBOL_LINES: 2,
+  /** A line this long or longer, under the letter ratio below, is symbol-heavy. */
+  SYMBOL_LINE_MIN_CHARS: 8,
+  SYMBOL_LINE_MIN_ALNUM_RATIO: 0.5,
+  /** Lower bound of each band; below `FAIR` the label is "Needs work". */
+  BANDS: { EXCELLENT: 90, GOOD: 70, FAIR: 40 },
 } as const;
 
 /** MIME types accepted for avatar/profile-photo uploads. */
@@ -467,4 +540,15 @@ export const MCP_OAUTH = {
 export const AUTH_FAILURE_EVENTS = {
   LOGIN_FAILED: 'auth.login.failed',
   TOTP_FAILED: 'auth.totp.failed',
+} as const;
+
+/**
+ * How long a document's file link works (JEF-51). The link is handed out with
+ * every `Document.url`, so it has to outlast a page left open in a tab: web
+ * keeps the list it fetched and reads `url` when the user clicks, which can be
+ * well after the query ran. An hour is that grace period; a link that leaks
+ * dies on its own instead of working forever.
+ */
+export const DOCUMENT_FILE_LINK = {
+  TTL_S: 60 * 60,
 } as const;

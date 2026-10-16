@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
+import { chooseApplicationAction } from './helpers/applications';
 
 async function createApplication(page: import('@playwright/test').Page, company: string) {
   await page.getByRole('link', { name: 'Applications', exact: true }).click();
@@ -24,8 +25,7 @@ test.describe('Trash', () => {
     // "deletes an application", which already covers the immediate-delete +
     // navigate-away behavior (JEF-190). This test picks up from there.
     await page.getByText('TrashCo').click();
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('button', { name: 'Delete application' }).click();
+    await chooseApplicationAction(page, 'Delete application');
     await page.waitForURL(/\/applications$/, { timeout: 8_000 });
 
     await expect(page.getByText('TrashCo')).not.toBeVisible();
@@ -80,8 +80,7 @@ test.describe('Trash', () => {
     await createApplication(page, 'UndoCo');
 
     await page.getByText('UndoCo').click();
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('button', { name: 'Delete application' }).click();
+    await chooseApplicationAction(page, 'Delete application');
     await page.waitForURL(/\/applications$/, { timeout: 8_000 });
 
     await expect(page.getByText('Application deleted')).toBeVisible();
@@ -99,8 +98,7 @@ test.describe('Trash', () => {
     await createApplication(page, 'ForeverCo');
 
     await page.getByText('ForeverCo').click();
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('button', { name: 'Delete application' }).click();
+    await chooseApplicationAction(page, 'Delete application');
     await page.waitForURL(/\/applications$/, { timeout: 8_000 });
 
     await page.getByRole('link', { name: 'Trash' }).click();
@@ -119,8 +117,7 @@ test.describe('Trash', () => {
     await createApplication(page, 'EmptyMeCo');
 
     await page.getByText('EmptyMeCo').click();
-    await page.getByRole('button', { name: 'More actions' }).click();
-    await page.getByRole('button', { name: 'Delete application' }).click();
+    await chooseApplicationAction(page, 'Delete application');
     await page.waitForURL(/\/applications$/, { timeout: 8_000 });
 
     await page.getByRole('link', { name: 'Trash' }).click();

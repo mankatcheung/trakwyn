@@ -1,0 +1,46 @@
+name: Base images
+description: >
+  Logs in to the base-images Artifact Registry repo as a Google service
+  account and exports NODE_IMAGE and POSTGRES_IMAGE, the mirrored images pinned
+  in infra/base-images.txt (JEF-406, JEF-407). The caller checks out the
+  repository first and grants `id-token: write`.
+
+inputs:
+  project-id:
+    description: GCP project that holds the repo (vars.GCP_PROJECT_ID).
+    required: true
+  workload-identity-provider:
+    description: vars.GCP_WIF_PROVIDER.
+    required: true
+  service-account:
+    description: The account to act as. CI jobs use the read-only vars.GCP_CI_READER_SA.
+    required: true
+  registry:
+    description: Artifact Registry host.
+    default: europe-west1-docker.pkg.dev
+
+runs:
+  using: composite
+  steps:
+    - id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ inputs.workload-identity-provider }}
+        service_account: ${{ inputs.service-account }}
+        token_format: access_token
+
+    - uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
+
+    - name: Resolve the mirrored images
+      shell: bash
+      env:
+        DEST: ${{ inputs.registry }}/${{ inputs.project-id }}/base-images
+      run: |
+        {
+          echo "NODE_IMAGE=$(.github/scripts/base-image-ref.sh node "$DEST")"
+          echo "POSTGRES_IMAGE=$(.github/scripts/base-image-ref.sh postgres "$DEST")"
+        } >> "$GITHUB_ENV"

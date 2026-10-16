@@ -27,6 +27,8 @@ export const ENV = {
   STORAGE_PROVIDER: 'STORAGE_PROVIDER',
   BLOB_READ_WRITE_TOKEN: 'BLOB_READ_WRITE_TOKEN',
   BLOB_PUBLIC_READ_WRITE_TOKEN: 'BLOB_PUBLIC_READ_WRITE_TOKEN',
+  /** The private store's token: documents and exported PDFs (JEF-51). */
+  BLOB_PRIVATE_READ_WRITE_TOKEN: 'BLOB_PRIVATE_READ_WRITE_TOKEN',
   CACHE_PROVIDER: 'CACHE_PROVIDER',
   UPSTASH_REDIS_REST_URL: 'UPSTASH_REDIS_REST_URL',
   UPSTASH_REDIS_REST_TOKEN: 'UPSTASH_REDIS_REST_TOKEN',
@@ -63,6 +65,10 @@ export const ENV = {
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
+  /** `turnstile` | `disabled`. Unset means `turnstile` in production, `disabled` elsewhere (JEF-401). */
+  CAPTCHA_PROVIDER: 'CAPTCHA_PROVIDER',
+  /** Cloudflare Turnstile's secret key — the server half of the widget's site key. */
+  TURNSTILE_SECRET_KEY: 'TURNSTILE_SECRET_KEY',
   VAPID_PUBLIC_KEY: 'VAPID_PUBLIC_KEY',
   VAPID_PRIVATE_KEY: 'VAPID_PRIVATE_KEY',
   VAPID_SUBJECT: 'VAPID_SUBJECT',
@@ -122,6 +128,15 @@ export const DATABASE = {
   POOL_CONNECTION_TIMEOUT_MS: 10_000,
   /** OID of `int8` — what `count(*)` and `sum()` over `integer` return; parsed to a JS number. */
   INT8_OID: 20,
+} as const;
+
+/** Captcha provider selection and the Turnstile siteverify endpoint (JEF-401). */
+export const CAPTCHA = {
+  PROVIDER: { TURNSTILE: 'turnstile', DISABLED: 'disabled' },
+  TURNSTILE_VERIFY_URL: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+  VERIFY_TIMEOUT_MS: 5_000,
+  /** Turnstile tokens are at most 2048 characters; anything longer is not one. */
+  MAX_TOKEN_LENGTH: 2048,
 } as const;
 
 /** HTTP Authorization header. */
@@ -428,4 +443,14 @@ export const CACHE_KEYS = {
  */
 export const FAKE_OAUTH = {
   CONSENT_PATH: '/auth/oauth/fake-provider/authorize',
+} as const;
+
+/**
+ * The route that serves a stored document's file (JEF-51). Here rather than in
+ * `http/constants.ts` because `DocumentFileLinkService` builds the URL and
+ * infrastructure cannot import `http/`; `ROUTES.DOCUMENT_FILE` derives from it.
+ */
+export const DOCUMENT_FILE_ROUTE = {
+  PATH: '/documents/:id/file',
+  TOKEN_PARAM: 'token',
 } as const;

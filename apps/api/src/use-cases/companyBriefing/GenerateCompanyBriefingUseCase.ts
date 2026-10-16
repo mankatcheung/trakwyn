@@ -38,7 +38,7 @@ const SYSTEM_PROMPT = `You are a career research assistant preparing a candidate
 
 Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything time-sensitive — you have no reliable access to real-time information, and presenting stale or fabricated "recent" facts as current would be actively misleading. If you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
 
-Return plain text with short section headers, no markdown formatting.`;
+Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.`;
 
 export class GenerateCompanyBriefingUseCase {
   constructor(private readonly deps: Deps) {}

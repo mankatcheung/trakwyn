@@ -6,7 +6,11 @@ import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { OAuthButtons } from '#/components/OAuthButtons';
+import { ERROR_CODES } from '#/constants';
 import { getErrorMessage } from '#/lib/errors';
+import { getGqlErrorCode } from '#/lib/graphqlError';
+import { CaptchaWidget } from '#/components/CaptchaWidget';
+import { useCaptcha } from '#/lib/useCaptcha';
 import { LogoMark } from '#/components/LogoMark';
 import { LegalFooterLinks } from '#/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
@@ -29,8 +33,8 @@ const totpSchema = z.object({
 type TotpFormValues = z.infer<typeof totpSchema>;
 
 const LOGIN_MUTATION = `
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
+  mutation Login($email: String!, $password: String!, $captchaToken: String) {
+    login(email: $email, password: $password, captchaToken: $captchaToken) {
       success
       totpRequired
       accessToken
@@ -53,6 +57,8 @@ export function LoginPage() {
   };
   const destination = safeReturnTo(returnTo);
   const [pendingCredentials, setPendingCredentials] = useState<FormValues | null>(null);
+  const [captchaNeeded, setCaptchaNeeded] = useState(false);
+  const captcha = useCaptcha();
 
   const {
     register,
@@ -67,7 +73,7 @@ export function LoginPage() {
     try {
       const res = await gqlClient.request<{
         login: { success: boolean; totpRequired: boolean; accessToken: string | null };
-      }>(LOGIN_MUTATION, data);
+      }>(LOGIN_MUTATION, { ...data, captchaToken: captcha.token });
       if (res.login.totpRequired) {
         setPendingCredentials(data);
         return;
@@ -75,6 +81,20 @@ export function LoginPage() {
       await queryClient.resetQueries();
       await navigate({ to: destination as '/dashboard' });
     } catch (err: unknown) {
+      // A captcha token works once, whatever the outcome of the request.
+      if (captchaNeeded) captcha.reset();
+      const code = getGqlErrorCode(err);
+      if (code === ERROR_CODES.CAPTCHA_REQUIRED || code === ERROR_CODES.CAPTCHA_FAILED) {
+        // The API asks for a captcha only after repeated failures, so the
+        // widget appears now rather than on every sign-in.
+        setCaptchaNeeded(true);
+        setError('root', {
+          message: t(
+            code === ERROR_CODES.CAPTCHA_REQUIRED ? 'auth.captchaRequired' : 'auth.captchaFailed',
+          ),
+        });
+        return;
+      }
       setError('root', { message: getErrorMessage(err) });
     }
   };
@@ -159,7 +179,13 @@ export function LoginPage() {
               </Alert>
             )}
 
-            <Button type="submit" disabled={isSubmitting} fullWidth>
+            {captchaNeeded && <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />}
+
+            <Button
+              type="submit"
+              disabled={isSubmitting || (captchaNeeded && captcha.pending)}
+              fullWidth
+            >
               {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
           </form>

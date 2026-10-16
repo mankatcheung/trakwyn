@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
+import { CaptchaWidget } from '#/components/CaptchaWidget';
+import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
@@ -13,8 +15,8 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const REQUEST_PASSWORD_RESET_MUTATION = `
-  mutation RequestPasswordReset($email: String!) {
-    requestPasswordReset(email: $email)
+  mutation RequestPasswordReset($email: String!, $captchaToken: String) {
+    requestPasswordReset(email: $email, captchaToken: $captchaToken)
   }
 `;
 
@@ -27,6 +29,7 @@ const REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION = `
 export function ForgotPasswordPage() {
   const { t } = useLocale();
   const [recoveryMode, setRecoveryMode] = useState<'primary' | 'backup'>('primary');
+  const captcha = useCaptcha();
   const {
     register,
     handleSubmit,
@@ -40,8 +43,17 @@ export function ForgotPasswordPage() {
     // emails so this form can't be used to enumerate accounts.
     if (recoveryMode === 'backup') {
       await gqlClient.request(REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION, { backupEmail: data.email });
-    } else {
-      await gqlClient.request(REQUEST_PASSWORD_RESET_MUTATION, data);
+      return;
+    }
+    try {
+      await gqlClient.request(REQUEST_PASSWORD_RESET_MUTATION, {
+        ...data,
+        captchaToken: captcha.token,
+      });
+    } catch (err: unknown) {
+      // A captcha token works once, so a refused request needs a fresh one.
+      captcha.reset();
+      throw err;
     }
   };
 
@@ -75,7 +87,15 @@ export function ForgotPasswordPage() {
               {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
             </div>
 
-            <Button type="submit" disabled={isSubmitting} fullWidth>
+            {recoveryMode === 'primary' && (
+              <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />
+            )}
+
+            <Button
+              type="submit"
+              disabled={isSubmitting || (recoveryMode === 'primary' && captcha.pending)}
+              fullWidth
+            >
               {isSubmitting
                 ? t('security.sending')
                 : recoveryMode === 'backup'

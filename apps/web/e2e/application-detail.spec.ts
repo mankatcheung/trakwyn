@@ -8,8 +8,25 @@ test.describe('Application detail page', () => {
     await createApplication(page, { company: 'Acme Corp', role: 'Staff Engineer' });
   });
 
+  test('opens on the Overview tab on a wide screen, with the job info out of the header card', async ({
+    page,
+  }) => {
+    const nav = page.getByRole('navigation', { name: 'Section navigation' });
+    await expect(nav.getByRole('button', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    // Only one copy of the job info is on screen: the card's is hidden from lg.
+    await expect(page.getByText('Application health').filter({ visible: true })).toHaveCount(1);
+    await expect(page.getByPlaceholder('Add a note…')).toHaveCount(0);
+
+    await openTab(page, 'Notes');
+    await expect(page.getByPlaceholder('Add a note…')).toBeVisible();
+  });
+
   test('adds, edits, and deletes a note', async ({ page }) => {
-    // Notes tab is the default active tab.
+    // Overview is the default tab on a wide screen (JEF-403), so open Notes.
+    await openTab(page, 'Notes');
     await page.getByPlaceholder('Add a note…').fill('Recruiter said team is hiring fast.');
     await page.getByRole('button', { name: 'Add note' }).click();
 
@@ -97,7 +114,8 @@ test.describe('Application detail page', () => {
   });
 
   test('uploads and deletes a document', async ({ page }) => {
-    await openTab(page, 'Documents');
+    // An upload from the Resumes tab is a resume: the tab implies the type.
+    await openTab(page, 'Resumes');
 
     await page.locator('input[type="file"]').setInputFiles({
       name: 'resume.txt',
@@ -110,10 +128,31 @@ test.describe('Application detail page', () => {
 
     await expect(page.getByText('resume.txt')).toBeVisible();
 
-    const docRow = page
-      .getByText('resume.txt')
-      .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]');
-    await docRow.locator('button').last().click();
+    // Delete lives in the row's actions menu, next to the match chip and Preview.
+    const docRow = page.getByRole('listitem').filter({ hasText: 'resume.txt' });
+    await docRow.getByRole('button', { name: 'More actions' }).click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
     await expect(page.getByText('resume.txt')).not.toBeVisible();
+  });
+
+  test('shows an upload in exactly one of the three document tabs', async ({ page }) => {
+    await openTab(page, 'Resumes');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'only-a-resume.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Staff Engineer resume content for e2e test.'),
+    });
+    // No type to choose: the Resumes tab saves it as a resume.
+    await expect(page.getByLabel('Document type')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Confirm upload' }).click();
+    await expect(page.getByText('only-a-resume.txt')).toBeVisible();
+
+    await openTab(page, 'Cover letters');
+    await expect(page.getByText('No cover letters yet')).toBeVisible();
+    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
+
+    await openTab(page, 'Other documents');
+    await expect(page.getByText('No other documents yet')).toBeVisible();
+    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
   });
 });

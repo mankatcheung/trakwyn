@@ -28,4 +28,8 @@ export const ERROR_CODES = {
   AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
   /** Session is stale for a 2FA-enabled account attempting a sensitive change — caller must reauthenticate (see `reauthenticate` mutation) and retry. */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
+  /** The action needs a solved captcha and the request carried none (JEF-401) — the client shows the widget and retries. */
+  CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED',
+  /** The captcha token was sent but the verifier refused it (JEF-401) — expired, reused, or forged. */
+  CAPTCHA_FAILED: 'CAPTCHA_FAILED',
 } as const;

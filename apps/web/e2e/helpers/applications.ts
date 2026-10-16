@@ -31,6 +31,19 @@ export async function createApplication(
   return match[1];
 }
 
+/**
+ * Opens the "More actions" menu on the application detail page and chooses
+ * one of its items (Star, Edit, Change status, Delete application).
+ *
+ * Playwright's default viewport is wide, where the actions are a popover of
+ * `menuitem`s (JEF-404); a phone-width test gets the bottom sheet's buttons
+ * instead and should not use this helper.
+ */
+export async function chooseApplicationAction(page: Page, name: string): Promise<void> {
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name }).click();
+}
+
 /** Clicks a section-navigation tab on the application detail page (desktop sidebar). */
 export async function openTab(page: Page, label: string): Promise<void> {
   await page

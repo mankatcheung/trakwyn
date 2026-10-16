@@ -8,6 +8,7 @@ The DNS records, zone settings and email forwarding rules for `trakwyn.com`, as 
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dns.tf`           | Every record except Email Routing's: the apex and `www` (Vercel), `api` (Cloud Run), Brevo's DKIM CNAMEs and DMARC, and the Brevo and Google verification TXTs. |
 | `zone_settings.tf` | SSL mode Full (strict), Always Use HTTPS, minimum TLS 1.2. Imported unconditionally.                                                                            |
+| `turnstile.tf`     | The Turnstile widget for the sign-up, password-reset and repeated-failure sign-in captcha (JEF-401). Account-level, unlike the rest of this root.               |
 | `email_routing.tf` | Email Routing forwarding rules (`address@trakwyn.com` → a verified inbox), defined in `terraform.tfvars` as `email_routing_rules`.                              |
 
 Things worth knowing:
@@ -16,6 +17,7 @@ Things worth knowing:
 - **Zone settings do nothing today** for the same reason: they only act on proxied traffic. They are pinned so that stays true if a record is proxied later.
 - **Values are literals, not read from other roots.** The `api` target, `ghs.googlehosted.com`, is the same for every Cloud Run domain mapping, and `infra/gcp`'s `domain_dns_records` output is empty until the mapping is provisioned. The `www` target is specific to the Vercel project and comes from its domain settings page; `infra/vercel` does not output it. Reading either across roots would couple apply order for a value that does not change.
 - **A record removed from `dns.tf` is deleted from the zone** on the next apply. A record added in the dashboard is invisible to Terraform and never reported; add it to `local.records` to manage it. The same goes for a rule removed from, or never added to, `email_routing_rules`.
+- **The Turnstile widget is account-level, and its secret ends up in this root's state.** The provider returns the widget's `secret` as a computed attribute, so it is stored in the GCS state bucket, readable by anyone who can read that state. Terraform does not copy it anywhere. After the first apply, `terraform output -raw turnstile_site_key` goes into `infra/vercel`'s `turnstile_site_key`, and the secret into Secret Manager (below).
 - **Forwarding rules live in `terraform.tfvars`, not in a `.tf` file,** because each one names a personal inbox. The file is gitignored, so it is the one piece of this root's configuration that exists only on the machine that applies it. Keep a copy somewhere you would find it again.
 
 ## What it does not own
@@ -36,8 +38,9 @@ You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `in
 
 Create the token under **My Profile → API Tokens → Create Token → Custom token**, with:
 
-- **Permissions:** Zone · Zone · Read, Zone · DNS · Edit, Zone · Zone Settings · Edit, Zone · Email Routing Rules · Edit
+- **Permissions:** Zone · Zone · Read, Zone · DNS · Edit, Zone · Zone Settings · Edit, Zone · Email Routing Rules · Edit, and Account · Turnstile · Edit (for the widget)
 - **Zone Resources:** Include · Specific zone · `trakwyn.com`
+- **Account Resources:** Include · the account that owns the zone (for the widget)
 - a TTL (expiry)
 
 ```bash
@@ -50,7 +53,14 @@ terraform plan
 terraform apply
 ```
 
-`zone_id` is on the zone's **Overview** page, bottom right, under **API**.
+`zone_id` and `account_id` are both on the zone's **Overview** page, bottom right, under **API**.
+
+After the first apply, hand the widget's two keys on (JEF-401):
+
+```bash
+terraform output -raw turnstile_secret_key | gcloud secrets versions add turnstile-secret-key --data-file=-
+terraform output -raw turnstile_site_key     # into infra/vercel's turnstile_site_key
+```
 
 CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by hand.
 

@@ -84,26 +84,30 @@ cd apps/api && vercel env pull .env.production --environment=production && cd -
 
 The dry run never prints a value. It reports anything missing or left as a placeholder, and exits non-zero until every secret has one. `UPSTASH_REDIS_REST_TOKEN` is **not** in that file and has to come from the Upstash dashboard. `UPSTASH_REDIS_REST_URL` is not secret and belongs in `terraform.tfvars`, copied from `terraform -chdir=../upstash output -raw rest_url`. The database itself is Terraform in `infra/upstash` (JEF-378). Its value is copied rather than read across roots, because reading that root's state would also read the Redis credentials it holds (`infra/upstash/README.md`).
 
-`BLOB_PUBLIC_READ_WRITE_TOKEN` is never read from the file. The script fetches it from the Vercel API for the Blob store `infra/vercel` manages (JEF-381), using that root's `blob_store_id` and `team_id` outputs, and pipes it straight to Secret Manager. So apply `infra/vercel` first, and run the script with `TF_VAR_vercel_api_token` set (`source ../vercel/.envrc`). The token stays out of Terraform state on purpose: the provider's `vercel_blob_store_secrets` data source would have written it into state.
+`BLOB_PUBLIC_READ_WRITE_TOKEN` and `BLOB_PRIVATE_READ_WRITE_TOKEN` are never read from the file. The script fetches each from the Vercel API for the Blob stores `infra/vercel` manages (JEF-381, JEF-51), using that root's `blob_store_id` (avatars, public), `documents_blob_store_id` (documents, private) and `team_id` outputs, and pipes it straight to Secret Manager. So apply `infra/vercel` first, and run the script with `TF_VAR_vercel_api_token` set (`source ../vercel/.envrc`). The tokens stay out of Terraform state on purpose: the provider's `vercel_blob_store_secrets` data source would have written them into state.
+
+**Adding the private store to a running service** is a rollout with an order, because Cloud Run will not start a revision whose secret has no version: `infra/vercel/README.md`, "Moving documents to the private store".
 
 Secret IDs are the env var names in lower-kebab-case:
 
-| Secret ID                      | Value                                                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `jwt-secret`                   | copy from the current production config, or sessions are invalidated                             |
-| `jwt-refresh-secret`           | copy from the current production config                                                          |
-| `totp-encryption-key`          | copy from the current production config, or 2FA secrets can't be read                            |
-| `llm-api-key-encryption-key`   | copy from the current production config, or users' AI keys can't be read                         |
-| `database-url`                 | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below |
-| `upstash-redis-rest-token`     | Upstash token                                                                                    |
-| `blob-public-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s Blob store                         |
-| `brevo-api-key`                | Brevo API key (not the one `infra/brevo` uses)                                                   |
-| `cron-secret`                  | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand        |
-| `digest-admin-secret`          | a new random value                                                                               |
-| `google-oauth-client-secret`   | Google OAuth client secret                                                                       |
-| `github-oauth-client-secret`   | GitHub OAuth app secret                                                                          |
-| `vapid-private-key`            | copy from the current production config, or push subscriptions break                             |
-| `axiom-token`                  | Axiom ingest token                                                                               |
+| Secret ID                       | Value                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `jwt-secret`                    | copy from the current production config, or sessions are invalidated                                                           |
+| `jwt-refresh-secret`            | copy from the current production config                                                                                        |
+| `totp-encryption-key`           | copy from the current production config, or 2FA secrets can't be read                                                          |
+| `llm-api-key-encryption-key`    | copy from the current production config, or users' AI keys can't be read                                                       |
+| `database-url`                  | Neon **pooled** connection string (host contains `-pooler`), with `?sslmode=require` — see below                               |
+| `upstash-redis-rest-token`      | Upstash token                                                                                                                  |
+| `blob-public-read-write-token`  | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s public Blob store (avatars)                                      |
+| `blob-private-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s private Blob store (documents)                                   |
+| `brevo-api-key`                 | Brevo API key (not the one `infra/brevo` uses)                                                                                 |
+| `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; `terraform output -raw turnstile_secret_key` in `infra/cloudflare`) |
+| `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                      |
+| `digest-admin-secret`           | a new random value                                                                                                             |
+| `google-oauth-client-secret`    | Google OAuth client secret                                                                                                     |
+| `github-oauth-client-secret`    | GitHub OAuth app secret                                                                                                        |
+| `vapid-private-key`             | copy from the current production config, or push subscriptions break                                                           |
+| `axiom-token`                   | Axiom ingest token                                                                                                             |
 
 To set one by hand instead:
 
@@ -150,6 +154,7 @@ In GitHub → Settings → Secrets and variables → Actions → **Variables** (
 | `GCP_PROJECT_ID`   | `$PROJECT_ID`                                      |
 | `GCP_WIF_PROVIDER` | `terraform output -raw workload_identity_provider` |
 | `GCP_DEPLOYER_SA`  | `terraform output -raw deployer_service_account`   |
+| `GCP_CI_READER_SA` | `terraform output -raw ci_reader_service_account`  |
 
 The Vercel API project's secrets (`VERCEL_API_PROJECT_ID`) can be deleted; `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_WEB_PROJECT_ID` are still used by `deploy-web`.
 
@@ -177,6 +182,26 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 4. From `https://www.trakwyn.com`, check password login, TOTP, Google and GitHub sign-in, that a chat reply streams in, and a document upload.
 5. Check that traces, logs and metrics arrive in Axiom.
 6. Remove the Vercel API project.
+
+### Base images (JEF-406)
+
+CI builds and tests on `node` and `postgres`. Pulling them anonymously from a public registry fails with `429` when other runners on the same IP have used up its limit, so they are copied once into this project's own `base-images` repository and pulled from there. `terraform apply` creates the repository and grants the deployer service account write access to it; nothing else is needed on the GitHub side, because the `GCP_*` variables above are the ones the mirror uses.
+
+`infra/base-images.txt` pins each image by tag and digest. The `Mirror base images` workflow copies exactly those digests into the repository and fails if a copy does not keep its digest. It runs when the file changes on `main`, on demand (Actions → Mirror base images → Run workflow) and weekly. It runs on `main` only, because it writes with the deployer account and Workload Identity Federation only lets `main` act as that.
+
+**Who may pull (JEF-407):** CI pulls the mirrored `node` and `postgres` through the `./.github/actions/base-images` action, which logs in to Artifact Registry and exports `NODE_IMAGE` and `POSTGRES_IMAGE` from the pin file. Pull-request jobs (`api-image`, `e2e`) act as `github-ci-reader`, which holds `artifactregistry.reader` on `base-images` and no other role. The provider admits pull-request tokens (`refs/pull/*`) for this repository, but only `main` may impersonate `github-deployer`, so a pull request cannot push images or deploy. `deploy-api` builds on the same mirrored `node` image with its own deployer login. Fork pull requests get no OIDC token from GitHub and cannot log in; that is accepted for a single-contributor repo.
+
+**Rolling out a change to these bindings:** a pull request's CI uses the workflow from the pull request, so apply Terraform and set `GCP_CI_READER_SA` before merging JEF-407, or its own `api-image` and `e2e` jobs cannot log in.
+
+**First fill:** after the first `terraform apply`, run the workflow once and check that both images are there:
+
+```bash
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-images" --include-tags
+```
+
+**Bump an image:** Renovate opens a PR that changes a digest in `infra/base-images.txt` (it needs the Renovate GitHub app on the repository; `renovate.json` tells it how to read the file). Merge it first: the mirror runs on `main`, and the next CI run uses the new digest. A bump PR's own CI would pull a digest that is not mirrored yet, so expect it to fail until the mirror has run. To bump by hand, change the line and merge; to get a digest, `docker buildx imagetools inspect <source>:<tag>`. Keep the `node` tag in step with `NODE_VERSION` in `apps/api/Dockerfile`; `baseImages.test.ts` fails when they differ.
+
+**If the mirror is unavailable:** there is no fallback to a public registry, so CI results stay reproducible. Re-run **Mirror base images**; copies are idempotent and keep their progress between attempts.
 
 ## Day two
 

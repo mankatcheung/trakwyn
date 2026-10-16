@@ -1,7 +1,18 @@
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import { ROUTES } from '#src/http/constants.js';
+import { MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
 
 const FAKE_CHAT_REPLY = 'Fake assistant reply for e2e testing.';
+
+const FAKE_MOCK_QUESTIONS = {
+  questions: [
+    'Tell me about a system you designed that had to scale.',
+    'How do you decide between shipping fast and paying down technical debt?',
+    'Describe a time you disagreed with a teammate and how you resolved it.',
+  ],
+};
+const FAKE_MOCK_ANSWER =
+  'I would start by clarifying the goal, then walk through the trade-offs I weighed and what I learned.';
 
 /**
  * The OpenAI streaming chunk shape `OpenAICompatibleLLMProvider.
@@ -44,13 +55,33 @@ export function fakeLlmCompletionsRoutes(): RouteDefinition[] {
       method: 'POST',
       path: ROUTES.LLM_FAKE_COMPLETIONS,
       handler: async (req, res) => {
-        const body = req.body as { tools?: unknown } | undefined;
+        const body = req.body as
+          { tools?: unknown; messages?: Array<{ role?: string; content?: unknown }> } | undefined;
 
         if (body?.tools) {
           res
             .status(200)
             .header('Content-Type', 'text/event-stream')
             .send(fakeChatStreamBody(FAKE_CHAT_REPLY));
+          return;
+        }
+
+        // The practice-interview generators (JEF-393) say which task they are
+        // in their system prompt; everything else gets the resume reply below.
+        const system = (body?.messages ?? [])
+          .filter((m) => m.role === 'system' && typeof m.content === 'string')
+          .map((m) => m.content as string)
+          .join('\n');
+        if (system.includes(MOCK_INTERVIEW_PROMPT_TASK.QUESTIONS)) {
+          res.send({
+            choices: [
+              { message: { content: JSON.stringify(FAKE_MOCK_QUESTIONS), tool_calls: [] } },
+            ],
+          });
+          return;
+        }
+        if (system.includes(MOCK_INTERVIEW_PROMPT_TASK.ANSWER)) {
+          res.send({ choices: [{ message: { content: FAKE_MOCK_ANSWER, tool_calls: [] } }] });
           return;
         }
 

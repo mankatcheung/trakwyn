@@ -53,9 +53,11 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security';
 import { Route as AuthenticatedApplicationsApplicationIdIndexRouteImport } from './routes/_authenticated/applications/$applicationId/index';
 import { Route as AuthenticatedApplicationsApplicationIdEditRouteImport } from './routes/_authenticated/applications/$applicationId/edit';
+import { Route as AuthenticatedApplicationsApplicationIdCoverLettersNewRouteImport } from './routes/_authenticated/applications/$applicationId/cover-letters/new';
 import { Route as AuthenticatedApplicationsApplicationIdDocumentsDraftIdRouteImport } from './routes/_authenticated/applications/$applicationId/documents/$draftId';
 import { Route as AuthenticatedApplicationsApplicationIdDocumentsNewRouteImport } from './routes/_authenticated/applications/$applicationId/documents/new';
 import { Route as AuthenticatedApplicationsApplicationIdOffersIndexRouteImport } from './routes/_authenticated/applications/$applicationId/offers/index';
+import { Route as AuthenticatedApplicationsApplicationIdResumesNewRouteImport } from './routes/_authenticated/applications/$applicationId/resumes/new';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -295,6 +297,12 @@ const AuthenticatedApplicationsApplicationIdEditRoute =
     path: '/applications/$applicationId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any);
+const AuthenticatedApplicationsApplicationIdCoverLettersNewRoute =
+  AuthenticatedApplicationsApplicationIdCoverLettersNewRouteImport.update({
+    id: '/applications/$applicationId/cover-letters/new',
+    path: '/applications/$applicationId/cover-letters/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
 const AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute =
   AuthenticatedApplicationsApplicationIdDocumentsDraftIdRouteImport.update({
     id: '/applications/$applicationId/documents/$draftId',
@@ -311,6 +319,12 @@ const AuthenticatedApplicationsApplicationIdOffersIndexRoute =
   AuthenticatedApplicationsApplicationIdOffersIndexRouteImport.update({
     id: '/applications/$applicationId/offers/',
     path: '/applications/$applicationId/offers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedApplicationsApplicationIdResumesNewRoute =
+  AuthenticatedApplicationsApplicationIdResumesNewRouteImport.update({
+    id: '/applications/$applicationId/resumes/new',
+    path: '/applications/$applicationId/resumes/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any);
 
@@ -358,8 +372,10 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute;
   '/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/applications/$applicationId/': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
+  '/applications/$applicationId/cover-letters/new': typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRoute;
   '/applications/$applicationId/documents/$draftId': typeof AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute;
   '/applications/$applicationId/documents/new': typeof AuthenticatedApplicationsApplicationIdDocumentsNewRoute;
+  '/applications/$applicationId/resumes/new': typeof AuthenticatedApplicationsApplicationIdResumesNewRoute;
   '/applications/$applicationId/offers/': typeof AuthenticatedApplicationsApplicationIdOffersIndexRoute;
 }
 export interface FileRoutesByTo {
@@ -405,8 +421,10 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute;
   '/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
+  '/applications/$applicationId/cover-letters/new': typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRoute;
   '/applications/$applicationId/documents/$draftId': typeof AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute;
   '/applications/$applicationId/documents/new': typeof AuthenticatedApplicationsApplicationIdDocumentsNewRoute;
+  '/applications/$applicationId/resumes/new': typeof AuthenticatedApplicationsApplicationIdResumesNewRoute;
   '/applications/$applicationId/offers': typeof AuthenticatedApplicationsApplicationIdOffersIndexRoute;
 }
 export interface FileRoutesById {
@@ -455,8 +473,10 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute;
   '/_authenticated/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/_authenticated/applications/$applicationId/': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
+  '/_authenticated/applications/$applicationId/cover-letters/new': typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRoute;
   '/_authenticated/applications/$applicationId/documents/$draftId': typeof AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute;
   '/_authenticated/applications/$applicationId/documents/new': typeof AuthenticatedApplicationsApplicationIdDocumentsNewRoute;
+  '/_authenticated/applications/$applicationId/resumes/new': typeof AuthenticatedApplicationsApplicationIdResumesNewRoute;
   '/_authenticated/applications/$applicationId/offers/': typeof AuthenticatedApplicationsApplicationIdOffersIndexRoute;
 }
 export interface FileRouteTypes {
@@ -505,8 +525,10 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/applications/$applicationId/edit'
     | '/applications/$applicationId/'
+    | '/applications/$applicationId/cover-letters/new'
     | '/applications/$applicationId/documents/$draftId'
     | '/applications/$applicationId/documents/new'
+    | '/applications/$applicationId/resumes/new'
     | '/applications/$applicationId/offers/';
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -552,8 +574,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/applications/$applicationId/edit'
     | '/applications/$applicationId'
+    | '/applications/$applicationId/cover-letters/new'
     | '/applications/$applicationId/documents/$draftId'
     | '/applications/$applicationId/documents/new'
+    | '/applications/$applicationId/resumes/new'
     | '/applications/$applicationId/offers';
   id:
     | '__root__'
@@ -601,8 +625,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/applications/$applicationId/edit'
     | '/_authenticated/applications/$applicationId/'
+    | '/_authenticated/applications/$applicationId/cover-letters/new'
     | '/_authenticated/applications/$applicationId/documents/$draftId'
     | '/_authenticated/applications/$applicationId/documents/new'
+    | '/_authenticated/applications/$applicationId/resumes/new'
     | '/_authenticated/applications/$applicationId/offers/';
   fileRoutesById: FileRoutesById;
 }
@@ -939,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApplicationsApplicationIdEditRouteImport;
       parentRoute: typeof AuthenticatedRouteRoute;
     };
+    '/_authenticated/applications/$applicationId/cover-letters/new': {
+      id: '/_authenticated/applications/$applicationId/cover-letters/new';
+      path: '/applications/$applicationId/cover-letters/new';
+      fullPath: '/applications/$applicationId/cover-letters/new';
+      preLoaderRoute: typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRouteImport;
+      parentRoute: typeof AuthenticatedRouteRoute;
+    };
     '/_authenticated/applications/$applicationId/documents/$draftId': {
       id: '/_authenticated/applications/$applicationId/documents/$draftId';
       path: '/applications/$applicationId/documents/$draftId';
@@ -958,6 +991,13 @@ declare module '@tanstack/react-router' {
       path: '/applications/$applicationId/offers';
       fullPath: '/applications/$applicationId/offers/';
       preLoaderRoute: typeof AuthenticatedApplicationsApplicationIdOffersIndexRouteImport;
+      parentRoute: typeof AuthenticatedRouteRoute;
+    };
+    '/_authenticated/applications/$applicationId/resumes/new': {
+      id: '/_authenticated/applications/$applicationId/resumes/new';
+      path: '/applications/$applicationId/resumes/new';
+      fullPath: '/applications/$applicationId/resumes/new';
+      preLoaderRoute: typeof AuthenticatedApplicationsApplicationIdResumesNewRouteImport;
       parentRoute: typeof AuthenticatedRouteRoute;
     };
   }
@@ -1011,8 +1051,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssistantIndexRoute: typeof AuthenticatedAssistantIndexRoute;
   AuthenticatedApplicationsApplicationIdEditRoute: typeof AuthenticatedApplicationsApplicationIdEditRoute;
   AuthenticatedApplicationsApplicationIdIndexRoute: typeof AuthenticatedApplicationsApplicationIdIndexRoute;
+  AuthenticatedApplicationsApplicationIdCoverLettersNewRoute: typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRoute;
   AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute: typeof AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute;
   AuthenticatedApplicationsApplicationIdDocumentsNewRoute: typeof AuthenticatedApplicationsApplicationIdDocumentsNewRoute;
+  AuthenticatedApplicationsApplicationIdResumesNewRoute: typeof AuthenticatedApplicationsApplicationIdResumesNewRoute;
   AuthenticatedApplicationsApplicationIdOffersIndexRoute: typeof AuthenticatedApplicationsApplicationIdOffersIndexRoute;
 }
 
@@ -1034,10 +1076,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedApplicationsApplicationIdEditRoute,
   AuthenticatedApplicationsApplicationIdIndexRoute:
     AuthenticatedApplicationsApplicationIdIndexRoute,
+  AuthenticatedApplicationsApplicationIdCoverLettersNewRoute:
+    AuthenticatedApplicationsApplicationIdCoverLettersNewRoute,
   AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute:
     AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute,
   AuthenticatedApplicationsApplicationIdDocumentsNewRoute:
     AuthenticatedApplicationsApplicationIdDocumentsNewRoute,
+  AuthenticatedApplicationsApplicationIdResumesNewRoute:
+    AuthenticatedApplicationsApplicationIdResumesNewRoute,
   AuthenticatedApplicationsApplicationIdOffersIndexRoute:
     AuthenticatedApplicationsApplicationIdOffersIndexRoute,
 };

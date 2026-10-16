@@ -11,7 +11,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from './Modal';
-import { useIsWideViewport } from './useIsWideViewport';
+import { CheckIcon } from 'lucide-react';
+import { useIsWideViewport, type WideViewportBreakpoint } from './useIsWideViewport';
 
 export type MenuAlign = 'start' | 'end';
 
@@ -37,6 +38,13 @@ export interface MenuItem {
   disabled?: boolean;
   /** Draws a divider above this item. */
   separated?: boolean;
+  /**
+   * Leaves the menu open after this item is chosen. For an item that swaps
+   * the menu's own `items` — a second pane — rather than performing an action.
+   */
+  keepOpen?: boolean;
+  /** Marks the item as the current choice: `aria-current` and a check. */
+  current?: boolean;
 }
 
 export interface MenuProps {
@@ -53,6 +61,10 @@ export interface MenuProps {
   align?: MenuAlign;
   /** Names the menu for assistive tech, and titles the mobile sheet. */
   label: string;
+  /** Width from which this is a dropdown rather than a sheet. Defaults to `sm`. */
+  breakpoint?: WideViewportBreakpoint;
+  /** Called whenever the menu closes, however it closed — for resetting a pane. */
+  onClose?: () => void;
 }
 
 /**
@@ -76,13 +88,24 @@ export interface MenuProps {
  *
  * @category Overlay
  */
-export function Menu({ trigger, items, onSelect, align = 'end', label }: MenuProps) {
+export function Menu({
+  trigger,
+  items,
+  onSelect,
+  align = 'end',
+  label,
+  breakpoint,
+  onClose,
+}: MenuProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Bumped when a keepOpen item swaps the items, so focus is placed again on
+  // the new first item even when `activeIndex` is already 0.
+  const [focusTick, setFocusTick] = useState(0);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const isWide = useIsWideViewport();
+  const isWide = useIsWideViewport(breakpoint);
   const menuId = useId();
   const [position, setPosition] = useState<CSSProperties | null>(null);
 
@@ -90,8 +113,16 @@ export function Menu({ trigger, items, onSelect, align = 'end', label }: MenuPro
     .map((item, index) => (item.disabled ? -1 : index))
     .filter((index) => index !== -1);
 
+  // Held in a ref so a consumer passing a fresh function each render does not
+  // rebuild `close`, which the document listeners below depend on.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const close = useCallback((returnFocus = true) => {
     setOpen(false);
+    onCloseRef.current?.();
     if (returnFocus) triggerRef.current?.focus();
   }, []);
 
@@ -154,11 +185,16 @@ export function Menu({ trigger, items, onSelect, align = 'end', label }: MenuPro
 
   useEffect(() => {
     if (open && isWide) itemRefs.current[activeIndex]?.focus();
-  }, [open, isWide, activeIndex]);
+  }, [open, isWide, activeIndex, focusTick]);
 
   const choose = (item: MenuItem) => {
     if (item.disabled) return;
-    close();
+    if (item.keepOpen) {
+      setActiveIndex(0);
+      setFocusTick((tick) => tick + 1);
+    } else {
+      close();
+    }
     onSelect(item.id);
   };
 
@@ -244,11 +280,19 @@ export function Menu({ trigger, items, onSelect, align = 'end', label }: MenuPro
           }}
           tabIndex={sheet || index === activeIndex ? 0 : -1}
           disabled={item.disabled}
+          aria-current={item.current ? 'true' : undefined}
           onClick={() => choose(item)}
           className={itemClasses(item, sheet)}
         >
           {item.icon}
           {item.label}
+          {item.current && (
+            <CheckIcon
+              size={sheet ? 18 : 16}
+              className="ml-auto text-blue-600"
+              aria-hidden="true"
+            />
+          )}
         </button>
       </div>
     ));

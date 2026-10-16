@@ -11,6 +11,7 @@ jest.mock('../../hooks/useApplicationMutations', () => ({
   useDeleteApplication: jest.fn(),
   useUpdateApplication: jest.fn(),
 }));
+jest.mock('../../hooks/useSectionCounts', () => ({ useSectionCounts: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
   useLocalSearchParams: jest.fn(),
@@ -20,6 +21,7 @@ jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApplication, useApplicationHealthScore } from '../../hooks/useApplicationQueries';
 import { useDeleteApplication, useUpdateApplication } from '../../hooks/useApplicationMutations';
+import { useSectionCounts } from '../../hooks/useSectionCounts';
 import { ApplicationDetailScreen } from '../ApplicationDetailScreen';
 import type { Application } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -29,6 +31,7 @@ const mockedUseApplication = jest.mocked(useApplication);
 const mockedUseApplicationHealthScore = jest.mocked(useApplicationHealthScore);
 const mockedUseDeleteApplication = jest.mocked(useDeleteApplication);
 const mockedUseUpdateApplication = jest.mocked(useUpdateApplication);
+const mockedUseSectionCounts = jest.mocked(useSectionCounts);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockedUseTheme = jest.mocked(useTheme);
@@ -70,6 +73,7 @@ describe('ApplicationDetailScreen', () => {
     mockedUseApplicationHealthScore.mockReturnValue({ data: undefined } as never);
     mockedUseUpdateApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     jest.clearAllMocks();
+    mockedUseSectionCounts.mockReturnValue(undefined);
   });
 
   it('renders the application fields', async () => {
@@ -257,9 +261,18 @@ describe('ApplicationDetailScreen', () => {
   // './interviews' resolves against the parent of `[id]` in expo-router
   // (dropping applicationId from the URL entirely, 404ing the sub-screen's
   // query), so the id must be spelled out in the pushed path explicitly.
-  it.each(['notes', 'interviews', 'contacts', 'activity', 'documents', 'offers'])(
+  it.each([
+    ['notes', 'notes'],
+    ['interviews', 'interviews'],
+    ['contacts', 'contacts'],
+    ['activity', 'activity'],
+    ['coverLetters', 'cover-letters'],
+    ['resumes', 'resumes'],
+    ['otherDocuments', 'other-documents'],
+    ['offers', 'offers'],
+  ])(
     'navigates to the %s section with the applicationId in the path when its row is pressed',
-    async (section) => {
+    async (key, slug) => {
       const push = jest.fn();
       mockedUseApplication.mockReturnValue({
         data: application,
@@ -275,9 +288,89 @@ describe('ApplicationDetailScreen', () => {
 
       const { getByTestId } = await renderScreen(push);
 
-      await fireEvent.press(getByTestId(`section-index-${section}`));
+      await fireEvent.press(getByTestId(`section-index-${key}`));
 
-      expect(push).toHaveBeenCalledWith(`./1/${section}`);
+      expect(push).toHaveBeenCalledWith(`./1/${slug}`);
     },
   );
+
+  describe('section badges', () => {
+    const counts = {
+      notes: 3,
+      interviews: 0,
+      contacts: 1,
+      offers: 2,
+      companyBriefing: false,
+      coverLetters: 4,
+      resumes: 5,
+      otherDocuments: 6,
+    };
+
+    const renderWithCounts = (sectionCounts: typeof counts | undefined) => {
+      mockedUseApplication.mockReturnValue({
+        data: application,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as never);
+      mockedUseDeleteApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+      mockedUseSectionCounts.mockReturnValue(sectionCounts);
+      return renderScreen();
+    };
+
+    it('asks for the counts of this application', async () => {
+      await renderWithCounts(counts);
+
+      expect(mockedUseSectionCounts).toHaveBeenCalledWith('1');
+    });
+
+    it('badges the cover letters, resumes, other documents and offers tabs with their counts', async () => {
+      const { getByTestId } = await renderWithCounts(counts);
+
+      expect(getByTestId('section-count-coverLetters')).toHaveTextContent('4');
+      expect(getByTestId('section-count-resumes')).toHaveTextContent('5');
+      expect(getByTestId('section-count-otherDocuments')).toHaveTextContent('6');
+      expect(getByTestId('section-count-offers')).toHaveTextContent('2');
+    });
+
+    it('leaves an empty section unbadged rather than showing 0', async () => {
+      const { queryByTestId } = await renderWithCounts(counts);
+
+      expect(queryByTestId('section-count-interviews')).toBeNull();
+    });
+
+    it('does not badge Activity or Company briefing with a number', async () => {
+      const { queryByTestId } = await renderWithCounts({ ...counts, companyBriefing: true });
+
+      expect(queryByTestId('section-count-activity')).toBeNull();
+      expect(queryByTestId('section-count-companyBriefing')).toBeNull();
+    });
+
+    it('shows a dot labelled Not generated until a briefing exists', async () => {
+      const { getByTestId, queryByTestId, getByLabelText } = await renderWithCounts(counts);
+
+      expect(getByTestId('section-not-generated-companyBriefing')).toBeTruthy();
+      expect(getByLabelText('Not generated')).toBeTruthy();
+      expect(queryByTestId('section-generated-companyBriefing')).toBeNull();
+    });
+
+    it('shows a check labelled Generated once a briefing exists', async () => {
+      const { getByTestId, queryByTestId, getByLabelText } = await renderWithCounts({
+        ...counts,
+        companyBriefing: true,
+      });
+
+      expect(getByTestId('section-generated-companyBriefing')).toBeTruthy();
+      expect(getByLabelText('Generated')).toBeTruthy();
+      expect(queryByTestId('section-not-generated-companyBriefing')).toBeNull();
+    });
+
+    it('shows no badge or marker before the counts have loaded', async () => {
+      const { queryByTestId } = await renderWithCounts(undefined);
+
+      expect(queryByTestId('section-count-resumes')).toBeNull();
+      expect(queryByTestId('section-generated-companyBriefing')).toBeNull();
+      expect(queryByTestId('section-not-generated-companyBriefing')).toBeNull();
+    });
+  });
 });

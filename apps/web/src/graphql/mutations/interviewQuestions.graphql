@@ -1,0 +1,39 @@
+mutation CreateInterviewQuestion($input: CreateInterviewQuestionInput!) {
+  createInterviewQuestion(input: $input) {
+    id
+    interviewRoundId
+    question
+    answer
+    position
+    createdAt
+    updatedAt
+  }
+}
+
+mutation UpdateInterviewQuestion($id: ID!, $input: UpdateInterviewQuestionInput!) {
+  updateInterviewQuestion(id: $id, input: $input) {
+    id
+    interviewRoundId
+    question
+    answer
+    position
+    createdAt
+    updatedAt
+  }
+}
+
+mutation DeleteInterviewQuestion($id: ID!) {
+  deleteInterviewQuestion(id: $id)
+}
+
+mutation ReorderInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!]!) {
+  reorderInterviewQuestions(interviewRoundId: $interviewRoundId, orderedIds: $orderedIds) {
+    id
+    interviewRoundId
+    question
+    answer
+    position
+    createdAt
+    updatedAt
+  }
+}

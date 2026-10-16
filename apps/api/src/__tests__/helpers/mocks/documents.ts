@@ -6,14 +6,20 @@
  * imported by 157 test files.
  */
 
+import { Readable } from 'node:stream';
 import { vi } from 'vitest';
 import type { Document } from '#src/domain/document/Document.js';
 import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
+import type { ResumeMatch } from '#src/domain/resumeMatch/ResumeMatch.js';
+import type { SavedAtsScore } from '#src/domain/resume/AtsScore.js';
+import type { IResumeAtsScoreRepository } from '#src/use-cases/ports/IResumeAtsScoreRepository.js';
+import type { IResumeMatchRepository } from '#src/use-cases/ports/IResumeMatchRepository.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
-import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
 
 export const makeDocumentRepository = (
   overrides?: Partial<IDocumentRepository>,
@@ -24,6 +30,60 @@ export const makeDocumentRepository = (
   findById: vi.fn(),
   create: vi.fn(),
   delete: vi.fn(),
+  ...overrides,
+});
+
+export const makeResumeMatchRepository = (
+  overrides?: Partial<IResumeMatchRepository>,
+): IResumeMatchRepository => ({
+  findByApplicationId: vi.fn().mockResolvedValue([]),
+  upsert: vi.fn().mockImplementation((data: ResumeMatch) => Promise.resolve(data)),
+  ...overrides,
+});
+
+export const makeResumeMatch = (overrides?: Partial<ResumeMatch>): ResumeMatch => ({
+  id: 'match-1',
+  applicationId: 'app-1',
+  documentDraftId: 'draft-1',
+  documentId: null,
+  score: 80,
+  label: 'Good match',
+  matchedKeywords: ['TypeScript'],
+  missingKeywords: ['Kubernetes'],
+  summary: 'Solid fit.',
+  generatedAt: new Date('2026-10-12T12:00:00Z'),
+  resumeTextHash: 'hash',
+  ...overrides,
+});
+
+export const makeResumeAtsScoreRepository = (
+  overrides?: Partial<IResumeAtsScoreRepository>,
+): IResumeAtsScoreRepository => ({
+  findByApplicationId: vi.fn().mockResolvedValue([]),
+  upsert: vi.fn().mockImplementation((data: SavedAtsScore) => Promise.resolve(data)),
+  ...overrides,
+});
+
+export const makeSavedAtsScore = (overrides?: Partial<SavedAtsScore>): SavedAtsScore => ({
+  id: 'ats-1',
+  applicationId: 'app-1',
+  documentDraftId: 'draft-1',
+  documentId: null,
+  score: 81,
+  label: 'Good',
+  readable: true,
+  checks: [
+    {
+      id: 'skills_heading',
+      label: 'Skills heading',
+      passed: false,
+      points: 0,
+      maxPoints: 9,
+      hint: 'Add a heading named “Skills”.',
+    },
+  ],
+  generatedAt: new Date('2026-10-14T12:00:00Z'),
+  resumeTextHash: 'hash',
   ...overrides,
 });
 
@@ -80,9 +140,29 @@ export const makeDocumentTextExtractor = (
   ...overrides,
 });
 
+/** A stored file whose body is `body`; `size` defaults to its length, `null` models a backend that sends none. */
+export const makeStoredObject = (
+  body: Buffer | string = 'resume bytes',
+  size?: number | null,
+): StoredObject => {
+  const bytes = Buffer.from(body);
+  return { stream: Readable.from([bytes]), size: size === undefined ? bytes.byteLength : size };
+};
+
+export const makeDocumentFileLinks = (
+  overrides?: Partial<IDocumentFileLinks>,
+): IDocumentFileLinks => ({
+  urlFor: vi
+    .fn()
+    .mockImplementation((id: string) => `https://api.example.com/documents/${id}/file`),
+  verify: vi.fn().mockReturnValue(true),
+  ...overrides,
+});
+
 export const makeStorageProvider = (overrides?: Partial<IStorageProvider>): IStorageProvider => ({
   getPresignedUploadUrl: vi.fn(),
   getSignedUrl: vi.fn(),
+  getObject: vi.fn().mockImplementation(() => Promise.resolve(makeStoredObject())),
   putObject: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),

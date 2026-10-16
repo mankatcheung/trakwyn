@@ -1,0 +1,12 @@
+query MockInterviewQuestions($interviewRoundId: ID!) {
+  mockInterviewQuestions(interviewRoundId: $interviewRoundId) {
+    id
+    interviewRoundId
+    question
+    answer
+    answerSource
+    position
+    createdAt
+    updatedAt
+  }
+}

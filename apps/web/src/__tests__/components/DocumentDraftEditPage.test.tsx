@@ -104,6 +104,24 @@ describe('DocumentDraftEditPage — Export PDF', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
+  it("refetches the application's resume matches after a save, so a stale one shows its reminder (JEF-397)", async () => {
+    const { invalidate } = renderPage();
+    await clickExport();
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['resumeMatches', 'app-1'] }),
+    );
+  });
+
+  it("refetches the application's ATS results after a save, so a stale one shows its reminder (JEF-395)", async () => {
+    const { invalidate } = renderPage();
+    await clickExport();
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['resumeAtsScores', 'app-1'] }),
+    );
+  });
+
   it('refreshes the application documents list so the new PDF appears', async () => {
     const { invalidate } = renderPage();
     await clickExport();

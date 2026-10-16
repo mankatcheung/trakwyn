@@ -16,6 +16,8 @@ InterviewRoundRef.implement({
     interviewerName: t.exposeString('interviewerName', { nullable: true }),
     notes: t.exposeString('notes', { nullable: true }),
     outcome: t.expose('outcome', { type: InterviewRoundOutcomeEnum }),
+    questionCount: t.exposeInt('questionCount'),
+    mockQuestionCount: t.exposeInt('mockQuestionCount'),
     createdAt: t.exposeString('createdAt'),
     updatedAt: t.exposeString('updatedAt'),
   }),

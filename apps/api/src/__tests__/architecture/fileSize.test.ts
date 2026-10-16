@@ -30,11 +30,11 @@ const OVERSIZED_BY_DESIGN: Record<string, string> = {
   'http/di/types.ts':
     'The Awilix Cradle: one interface naming every registration. Splitting it into per-domain sub-cradles is possible but buys nothing today — its fan-in is 39 files, all inside http/, so it is a shotgun-surgery hub rather than a coupling one. Revisit if editing it becomes contentious, not because of its length.',
   'interface-adapters/mcp/McpController.ts':
-    'Almost entirely one method: the tools/call switch, 23 cases dispatching the tool catalogue. The switch is cohesive — it does exactly one thing and reads top to bottom — and its locality is load-bearing, since a tool advertised in TOOL_CATALOGUE but missing a case fails at call time. Scattering the cases across modules would separate the two halves the parity tests exist to keep together.',
+    'Almost entirely one method: the tools/call switch, 27 cases dispatching the tool catalogue. The switch is cohesive — it does exactly one thing and reads top to bottom — and its locality is load-bearing, since a tool advertised in TOOL_CATALOGUE but missing a case fails at call time. Scattering the cases across modules would separate the two halves the parity tests exist to keep together.',
   'infrastructure/db/repositories/DrizzleApplicationRepository.ts':
     'One class implementing one port, IApplicationRepository, across 16 methods. There is no seam: a repository cannot implement half an interface. It also owns the deletedAt Trash filter that every consumer relies on by construction, which is precisely the thing that must not end up in two places.',
   'interface-adapters/llm/toolCatalogue.ts':
-    'A declarative data table — 26 tool definitions in JSON Schema, plus about 40 lines deriving MCP_TOOLS and CHAT_TOOLS from it. Splitting a table across files makes it harder to read as a whole and easier to leave a tool half-defined; length here is the entry count, not complexity.',
+    'A declarative data table — 27 tool definitions in JSON Schema, plus about 40 lines deriving MCP_TOOLS and CHAT_TOOLS from it. Splitting a table across files makes it harder to read as a whole and easier to leave a tool half-defined; length here is the entry count, not complexity.',
   'infrastructure/config/constants.ts':
     "The infrastructure counterpart of use-cases/constants.ts: env names, vendor endpoints, cache internals and pool sizing, each documented with why it has its value. constantsPlacement.test.ts gives it the same one-place role for its layer. It crossed the limit when JEF-372 wrote down the reasoning behind DATABASE.POOL_MAX (Neon's pooler limit against Cloud Run's instance count), which the ticket asked to live beside the value.",
   'use-cases/constants.ts':

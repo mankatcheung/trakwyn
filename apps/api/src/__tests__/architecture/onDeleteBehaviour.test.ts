@@ -31,8 +31,10 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'DocumentDraft -> JobApplication': 'cascade',
   'Education -> User': 'cascade',
   'EmailVerificationToken -> User': 'cascade',
+  'InterviewQuestion -> InterviewRound': 'cascade', // what was asked in a round is part of the round
   'InterviewRound -> JobApplication': 'cascade',
   'JobApplication -> User': 'cascade',
+  'MockInterviewQuestion -> InterviewRound': 'cascade', // practice questions are prep for the round, so they go with it
   'LlmApiKey -> User': 'cascade',
   'LlmUsageEvent -> User': 'cascade',
   'LoginEvent -> User': 'cascade', // erasure beats retention — these rows hold IP, device and location
@@ -47,6 +49,12 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'Offer -> JobApplication': 'cascade',
   'PasswordResetToken -> User': 'cascade',
   'PushSubscription -> User': 'cascade',
+  'ResumeAtsScore -> Document': 'cascade', // a score for a file that no longer exists
+  'ResumeAtsScore -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
+  'ResumeAtsScore -> JobApplication': 'cascade',
+  'ResumeMatch -> Document': 'cascade', // a score for a file that no longer exists
+  'ResumeMatch -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
+  'ResumeMatch -> JobApplication': 'cascade',
   'SecurityEvent -> User': 'cascade', // erasure beats retention — these rows hold IP, device and location
   'Session -> User': 'cascade',
   'ShareLink -> User': 'cascade',

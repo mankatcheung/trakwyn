@@ -104,6 +104,7 @@ describe('LoginPage', () => {
       expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Login'), {
         email: 'test@example.com',
         password: 'password123',
+        captchaToken: null,
       });
     });
   });

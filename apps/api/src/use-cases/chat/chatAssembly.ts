@@ -6,6 +6,9 @@ import type { IGetApplicationUseCase } from '#src/use-cases/jobs/IGetApplication
 import type { IGetNotesUseCase } from '#src/use-cases/notes/IGetNotesUseCase.js';
 import type { IGetContactsUseCase } from '#src/use-cases/contacts/IGetContactsUseCase.js';
 import type { IGetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/IGetInterviewRoundsUseCase.js';
+import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
+import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
 import type { IGetActivityLogsUseCase } from '#src/use-cases/activityLogs/IGetActivityLogsUseCase.js';
@@ -53,6 +56,9 @@ export interface ChatToolDeps {
   getNotesUseCase: IGetNotesUseCase;
   getContactsUseCase: IGetContactsUseCase;
   getInterviewRoundsUseCase: IGetInterviewRoundsUseCase;
+  getMockInterviewQuestionsUseCase: IGetMockInterviewQuestionsUseCase;
+  generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
+  generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
   getDocumentsUseCase: IGetDocumentsUseCase;
   getOffersUseCase: IGetOffersUseCase;
   getActivityLogsUseCase: IGetActivityLogsUseCase;
@@ -132,6 +138,24 @@ async function dispatchChatTool(
       return await deps.getContactsUseCase.execute({ userId, applicationId });
     case 'list_interview_rounds':
       return await deps.getInterviewRoundsUseCase.execute({ userId, applicationId });
+    case 'list_mock_interview_questions':
+      return await deps.getMockInterviewQuestionsUseCase.execute({
+        userId,
+        roundId: String(args.interviewRoundId ?? ''),
+      });
+    case 'generate_mock_interview_questions':
+      return await deps.generateMockQuestionsUseCase.execute({
+        userId,
+        roundId: String(args.interviewRoundId ?? ''),
+        prompt: typeof args.prompt === 'string' ? args.prompt : undefined,
+        count: toPositiveInt(args.count),
+      });
+    case 'generate_mock_interview_answer':
+      return await deps.generateMockAnswerUseCase.execute({
+        userId,
+        questionId: String(args.mockInterviewQuestionId ?? ''),
+        prompt: typeof args.prompt === 'string' ? args.prompt : undefined,
+      });
     case 'list_work_experiences':
       return await deps.workExperienceRepository.findAllByUserId(userId);
     case 'list_educations':

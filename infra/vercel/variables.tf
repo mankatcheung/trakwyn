@@ -49,6 +49,12 @@ variable "posthog_host" {
   default     = "https://eu.i.posthog.com"
 }
 
+variable "turnstile_site_key" {
+  description = "Cloudflare Turnstile site key, baked into the bundle as VITE_TURNSTILE_SITE_KEY (JEF-401). Public by design; the matching secret key is the API's turnstile-secret-key secret (infra/gcp). Leave empty and the forms show no captcha, which the API refuses in production."
+  type        = string
+  default     = ""
+}
+
 variable "env_var_import_ids" {
   description = "One-time bootstrap: IDs of env vars that already exist on the project, keyed by name (e.g. { VITE_API_URL = \"AbC123\" }), so apply adopts them instead of failing on a duplicate. Leave {} once they are in state. See README.md for how to list them."
   type        = map(string)
@@ -66,6 +72,12 @@ variable "blob_store_name" {
 }
 
 variable "blob_store_region" {
-  description = "The Blob store's region (e.g. fra1), exactly as Vercel reports it. Like the name, a different value replaces the store."
+  description = "The Blob store's region (e.g. fra1), exactly as Vercel reports it. Like the name, a different value replaces the store. The private documents store is created in the same region."
   type        = string
+}
+
+variable "documents_blob_store_name" {
+  description = "Name of the private Blob store for documents (JEF-51), created by this root. Must differ from blob_store_name. Changing it later replaces the store and deletes every document, which prevent_destroy refuses."
+  type        = string
+  default     = "trakwyn-documents"
 }

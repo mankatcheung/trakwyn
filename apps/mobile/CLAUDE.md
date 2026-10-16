@@ -7,7 +7,7 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 - **Routing:** Expo Router, file-based under `app/`.
   - `app/_layout.tsx` waits for auth to restore, then picks `(app)` or `(auth)` with `Stack.Protected`.
   - `(auth)` holds `login` and `register`.
-  - `(app)` holds `index` (the applications list); `applications/new`, `[id]`, `[id]/edit`, `[id]/notes`, `[id]/documents` and `trash`; `conversations` and `conversations/[id]` (`id` is `new` for an unsaved thread); and `settings/{profile,security,notifications,ai}`.
+  - `(app)` holds `index` (the applications list); `applications/new`, `[id]`, `[id]/edit`, `[id]/notes`, `[id]/cover-letters`, `[id]/resumes`, `[id]/other-documents` (one screen per document category, JEF-396), `[id]/new-cover-letter`, `[id]/new-resume`, `[id]/documents/[draftId]` (the draft editor) and `trash`; `conversations` and `conversations/[id]` (`id` is `new` for an unsaved thread); and `settings/{profile,security,notifications,ai}`.
 - **Route files are thin re-exports** of screens in `src/features/*/screens/` or `src/screens/`. Screens use `expo-router` hooks directly rather than navigation props. Static titles are set in `(app)/_layout.tsx`; only screens that need runtime data, such as `ApplicationsListScreen`, set `<Stack.Screen options>` inline.
 - **No path alias:** imports are relative (`../src/...` from `app/`).
 

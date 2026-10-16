@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SendEmailVerificationUseCase } from '#src/use-cases/auth/SendEmailVerificationUseCase.js';
 import { makeEmailVerificationTokenRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
 const makeEmailService = (overrides?: Partial<IEmailService>): IEmailService => ({
@@ -18,6 +19,8 @@ const makeDeps = (overrides?: object) => ({
   userRepository: makeUserRepository(),
   emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
   emailService: makeEmailService(),
+  emailVerificationUserRateLimiter: makeRateLimiter(),
+  emailVerificationGlobalRateLimiter: makeRateLimiter(),
   generateId: vi.fn().mockReturnValue('generated-id'),
   webAppOrigin: 'http://localhost:3000',
   ...overrides,
@@ -79,5 +82,54 @@ describe('SendEmailVerificationUseCase', () => {
     const dayMs = 24 * 60 * 60 * 1000;
     expect(expiresAtMs).toBeGreaterThanOrEqual(before + dayMs - 1000);
     expect(expiresAtMs).toBeLessThanOrEqual(after + dayMs + 1000);
+  });
+
+  describe('rate limits (JEF-400)', () => {
+    const throttled = () => makeRateLimiter({ consume: vi.fn().mockResolvedValue(false) });
+
+    it.each([
+      ['per-user', 'emailVerificationUserRateLimiter'],
+      ['global', 'emailVerificationGlobalRateLimiter'],
+    ])('rejects with RATE_LIMITED when the %s limit is spent, sending nothing', async (_n, dep) => {
+      const user = makeUser({ id: 'user-1' });
+      const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
+      const emailVerificationTokenRepository = makeEmailVerificationTokenRepository();
+      const emailService = makeEmailService();
+
+      const err = await new SendEmailVerificationUseCase(
+        makeDeps({
+          userRepository,
+          emailVerificationTokenRepository,
+          emailService,
+          [dep]: throttled(),
+        }),
+      )
+        .execute('user-1')
+        .catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('RATE_LIMITED');
+      // The link already in the user's inbox must keep working.
+      expect(emailVerificationTokenRepository.deleteAllForUser).not.toHaveBeenCalled();
+      expect(emailService.sendEmailVerification).not.toHaveBeenCalled();
+    });
+
+    it('keys the per-user limit by user id and does not spend the global budget when it trips', async () => {
+      const user = makeUser({ id: 'user-1' });
+      const userLimiter = throttled();
+      const globalLimiter = makeRateLimiter();
+
+      await new SendEmailVerificationUseCase(
+        makeDeps({
+          userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(user) }),
+          emailVerificationUserRateLimiter: userLimiter,
+          emailVerificationGlobalRateLimiter: globalLimiter,
+        }),
+      )
+        .execute('user-1')
+        .catch(() => undefined);
+
+      expect(userLimiter.consume).toHaveBeenCalledWith('email-verification:user:user-1');
+      expect(globalLimiter.consume).not.toHaveBeenCalled();
+    });
   });
 });

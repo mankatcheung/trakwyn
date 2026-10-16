@@ -5,6 +5,8 @@ import {
   CalendarIcon,
   DollarSignIcon,
   FileTextIcon,
+  FileUserIcon,
+  InfoIcon,
   PenLineIcon,
   UploadIcon,
   UsersIcon,
@@ -12,7 +14,7 @@ import {
 } from 'lucide-react';
 
 /**
- * The nine sections of an application, grouped as the detail page presents
+ * The ten sections of an application, grouped as the detail page presents
  * them, in one place.
  *
  * The index, the desktop sidebar and the `?section=` URL schema all read this,
@@ -23,32 +25,63 @@ import {
  * query-param values.
  */
 export const SECTION_IDS = [
+  'overview',
   'notes',
   'interviews',
   'contacts',
   'activity',
-  'documents',
-  'cover-letter',
-  'resume-match',
   'company-briefing',
+  'resumes',
+  'cover-letters',
+  'other-documents',
   'offers',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
 
+/**
+ * Section ids that no longer exist, so a saved link or a back-button entry
+ * still opens somewhere sensible. `documents` held everything before JEF-396
+ * split it in three; Resumes is the closest single home for it. `resume-match`
+ * became a per-resume panel inside Resumes (JEF-397).
+ */
+export const LEGACY_SECTION_IDS: Record<string, SectionId> = {
+  documents: 'resumes',
+  'cover-letter': 'cover-letters',
+  'resume-match': 'resumes',
+};
+
+const resolveLegacySection = (value: unknown): unknown =>
+  typeof value === 'string' && Object.hasOwn(LEGACY_SECTION_IDS, value)
+    ? LEGACY_SECTION_IDS[value]
+    : value;
+
 /** Unknown or absent falls back to Notes rather than erroring the route. */
 export const sectionSearchSchema = z.object({
-  section: z.enum(SECTION_IDS).optional(),
+  section: z.preprocess(resolveLegacySection, z.enum(SECTION_IDS).optional()),
 });
 
-export interface SectionCounts {
+/** What the API's `sectionCounts` returns. */
+export interface ApiSectionCounts {
   notes: number;
   interviews: number;
   contacts: number;
-  documents: number;
-  documentDrafts: number;
   offers: number;
+  /** Whether a briefing has been generated: at most one exists, so a flag rather than a count. */
+  companyBriefing: boolean;
 }
+
+/**
+ * Derived on the client from the documents and drafts lists, because the API
+ * counts only totals and a tab's badge has to count its own category.
+ */
+export interface DocumentSectionCounts {
+  coverLetters: number;
+  resumes: number;
+  otherDocuments: number;
+}
+
+export type SectionCounts = ApiSectionCounts & DocumentSectionCounts;
 
 export interface SectionDef {
   id: SectionId;
@@ -56,10 +89,21 @@ export interface SectionDef {
   icon: LucideIcon;
   /**
    * Which count decides whether this section reads as empty. Sections without
-   * one (activity, résumé match, company briefing) are never dimmed — they
+   * one (activity, company briefing) are never dimmed — they
    * hold generated or derived content, not a list the user has filled.
    */
   countOf?: (counts: SectionCounts) => number;
+  /**
+   * For a section that holds one generated thing rather than a list: whether
+   * it exists yet. Shown as a check or a dot, never as a number.
+   */
+  generatedOf?: (counts: SectionCounts) => boolean;
+  /**
+   * Only the horizontal tab bar (`lg` and up) offers it. Below that the same
+   * facts stay in the header card, so the phone index and the `md` sidebar
+   * leave it out (JEF-403).
+   */
+  wideOnly?: boolean;
 }
 
 export interface SectionGroup {
@@ -71,6 +115,12 @@ export const SECTION_GROUPS: SectionGroup[] = [
   {
     titleKey: 'applicationDetail.groupTrack',
     sections: [
+      {
+        id: 'overview',
+        labelKey: 'applicationDetail.tabOverview',
+        icon: InfoIcon,
+        wideOnly: true,
+      },
       {
         id: 'notes',
         labelKey: 'applicationDetail.tabNotes',
@@ -96,22 +146,28 @@ export const SECTION_GROUPS: SectionGroup[] = [
     titleKey: 'applicationDetail.groupDocuments',
     sections: [
       {
-        id: 'documents',
-        labelKey: 'applicationDetail.tabDocuments',
-        icon: UploadIcon,
-        countOf: (c) => c.documents,
-      },
-      {
-        id: 'cover-letter',
-        labelKey: 'applicationDetail.tabCoverLetter',
-        icon: PenLineIcon,
-        countOf: (c) => c.documentDrafts,
-      },
-      { id: 'resume-match', labelKey: 'applicationDetail.tabResumeMatch', icon: FileTextIcon },
-      {
         id: 'company-briefing',
         labelKey: 'applicationDetail.tabCompanyBriefing',
         icon: Building2Icon,
+        generatedOf: (c) => c.companyBriefing,
+      },
+      {
+        id: 'resumes',
+        labelKey: 'applicationDetail.tabResumes',
+        icon: FileUserIcon,
+        countOf: (c) => c.resumes,
+      },
+      {
+        id: 'cover-letters',
+        labelKey: 'applicationDetail.tabCoverLetters',
+        icon: PenLineIcon,
+        countOf: (c) => c.coverLetters,
+      },
+      {
+        id: 'other-documents',
+        labelKey: 'applicationDetail.tabOtherDocuments',
+        icon: UploadIcon,
+        countOf: (c) => c.otherDocuments,
       },
     ],
   },

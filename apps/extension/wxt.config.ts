@@ -21,6 +21,9 @@ export default defineConfig({
   // `pnpm dev` at the root runs every app's `dev`: build and watch, don't
   // launch a browser. Load `.output/chrome-mv3-dev` unpacked instead.
   webExt: { disabled: true },
+  // Unset, WXT takes the first free port from 3000, which is the web app's
+  // whenever the extension starts first or alone. The API has 3001.
+  dev: { server: { port: 3002 } },
   manifest: ({ browser }) => ({
     name: 'Trakwyn Clipper',
     description: 'Save job postings directly to your Trakwyn account.',

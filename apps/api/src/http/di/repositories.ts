@@ -5,6 +5,8 @@ import { DrizzleApplicationRepository } from '#src/infrastructure/db/repositorie
 import { DrizzleNoteRepository } from '#src/infrastructure/db/repositories/DrizzleNoteRepository.js';
 import { DrizzleDocumentRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentRepository.js';
 import { DrizzleDocumentDraftRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentDraftRepository.js';
+import { DrizzleResumeAtsScoreRepository } from '#src/infrastructure/db/repositories/DrizzleResumeAtsScoreRepository.js';
+import { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
 import { DrizzleCompanyBriefingRepository } from '#src/infrastructure/db/repositories/DrizzleCompanyBriefingRepository.js';
 import { CachedApplicationRepository } from '#src/infrastructure/db/repositories/CachedApplicationRepository.js';
 import { CachedNoteRepository } from '#src/infrastructure/db/repositories/CachedNoteRepository.js';
@@ -14,6 +16,10 @@ import { CachedNotificationRepository } from '#src/infrastructure/db/repositorie
 import { CachedDocumentRepository } from '#src/infrastructure/db/repositories/CachedDocumentRepository.js';
 import { DrizzleInterviewRoundRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewRoundRepository.js';
 import { CachedInterviewRoundRepository } from '#src/infrastructure/db/repositories/CachedInterviewRoundRepository.js';
+import { DrizzleInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleInterviewQuestionRepository.js';
+import { CachedInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedInterviewQuestionRepository.js';
+import { DrizzleMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/DrizzleMockInterviewQuestionRepository.js';
+import { CachedMockInterviewQuestionRepository } from '#src/infrastructure/db/repositories/CachedMockInterviewQuestionRepository.js';
 import { CachedUserRepository } from '#src/infrastructure/db/repositories/CachedUserRepository.js';
 import { CachedSkillRepository } from '#src/infrastructure/db/repositories/CachedSkillRepository.js';
 import { CachedEducationRepository } from '#src/infrastructure/db/repositories/CachedEducationRepository.js';
@@ -63,6 +69,12 @@ export const repositories = {
   companyBriefingRepository: asClass(DrizzleCompanyBriefingRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
+  resumeMatchRepository: asClass(DrizzleResumeMatchRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  resumeAtsScoreRepository: asClass(DrizzleResumeAtsScoreRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
   documentDraftRepository: asClass(DrizzleDocumentDraftRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
@@ -106,6 +118,18 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   interviewRoundRepository: asClass(CachedInterviewRoundRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  drizzleInterviewQuestionRepository: asClass(DrizzleInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  interviewQuestionRepository: asClass(CachedInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  drizzleMockInterviewQuestionRepository: asClass(DrizzleMockInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  mockInterviewQuestionRepository: asClass(CachedMockInterviewQuestionRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   userRepository: asClass(CachedUserRepository, { lifetime: Lifetime.SINGLETON }),

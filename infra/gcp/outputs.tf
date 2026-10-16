@@ -8,6 +8,11 @@ output "image_repository" {
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.api.repository_id}/api"
 }
 
+output "base_image_repository" {
+  description = "Where the mirror-base-images workflow copies upstream base images to: <this>/<name>:<tag>."
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.base.repository_id}"
+}
+
 output "workload_identity_provider" {
   description = "GitHub repository variable GCP_WIF_PROVIDER."
   value       = google_iam_workload_identity_pool_provider.github.name
@@ -16,6 +21,11 @@ output "workload_identity_provider" {
 output "deployer_service_account" {
   description = "GitHub repository variable GCP_DEPLOYER_SA."
   value       = google_service_account.github_deployer.email
+}
+
+output "ci_reader_service_account" {
+  description = "GitHub repository variable GCP_CI_READER_SA: the read-only account pull-request CI pulls base images as."
+  value       = google_service_account.github_ci_reader.email
 }
 
 output "domain_dns_records" {
