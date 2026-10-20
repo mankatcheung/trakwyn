@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
-import { getAuth, getApiUrl } from '../../lib/storage';
+import { getAuth } from '../../lib/storage';
 import {
   ApiError,
   login,
@@ -16,6 +16,7 @@ import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
   CONTENT_MESSAGES,
+  DEFAULT_API_URL,
   OAUTH_PROVIDERS,
   OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
@@ -152,8 +153,7 @@ export function App() {
         description: jobData.description,
         source: jobData.source,
       });
-      const apiUrl = await getApiUrl();
-      const webUrl = apiUrl.replace('/graphql', '').replace(':3001', ':3000');
+      const webUrl = DEFAULT_API_URL.replace('/graphql', '').replace(':3001', ':3000');
       setScreen({
         type: 'saved',
         appId: app.id,

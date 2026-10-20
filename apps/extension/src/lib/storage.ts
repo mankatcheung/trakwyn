@@ -1,5 +1,5 @@
 import { browser } from 'wxt/browser';
-import { DEFAULT_API_URL, STORAGE_KEYS } from '../constants';
+import { STORAGE_KEYS } from '../constants';
 
 export interface AuthState {
   token: string;
@@ -34,13 +34,4 @@ export async function setAuth(auth: AuthState): Promise<void> {
 
 export async function clearAuth(): Promise<void> {
   await browser.storage.session.remove(STORAGE_KEYS.AUTH);
-}
-
-export async function getApiUrl(): Promise<string> {
-  const result = await browser.storage.sync.get({ [STORAGE_KEYS.API_URL]: DEFAULT_API_URL });
-  return result[STORAGE_KEYS.API_URL] as string;
-}
-
-export async function setApiUrl(apiUrl: string): Promise<void> {
-  await browser.storage.sync.set({ [STORAGE_KEYS.API_URL]: apiUrl });
 }

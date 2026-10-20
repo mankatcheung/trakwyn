@@ -1,5 +1,5 @@
 import { browser } from 'wxt/browser';
-import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
+import { getAuth, setAuth, clearAuth } from './storage';
 import { createPkcePair } from './pkce';
 import {
   OAuthCancelledError,
@@ -17,6 +17,7 @@ import { operationName, transportFailureProperties } from './observability/trans
 import {
   API_ERROR_CODES,
   AUTH_HEADER,
+  DEFAULT_API_URL,
   HTTP_SERVER_ERROR_MIN,
   OAUTH,
   OBSERVABILITY_EVENTS,
@@ -60,8 +61,7 @@ export function isUnauthorizedError(err: unknown): boolean {
   return err instanceof ApiError && err.code === API_ERROR_CODES.UNAUTHORIZED;
 }
 
-const UNREADABLE_RESPONSE =
-  "The API didn't answer as expected. Check the API URL in the extension's options and try again.";
+const UNREADABLE_RESPONSE = "The API didn't answer as expected. Please try again.";
 const SERVER_UNAVAILABLE = 'Trakwyn is having trouble right now. Please try again in a moment.';
 
 interface TokenPair {
@@ -74,7 +74,6 @@ async function gql<T>(
   variables?: Record<string, unknown>,
   token?: string,
 ): Promise<T> {
-  const apiUrl = await getApiUrl();
   const operation = operationName(query);
   // Each request is the root of its own trace in Axiom (JEF-387).
   const { traceId, traceparent } = newTraceContext();
@@ -94,7 +93,7 @@ async function gql<T>(
 
   let res: Response;
   try {
-    res = await fetch(apiUrl, {
+    res = await fetch(DEFAULT_API_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify({ query, variables }),
@@ -230,12 +229,13 @@ async function runWebAuthFlow(startUrl: string): Promise<string> {
  */
 export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
   const { verifier, challenge } = await createPkcePair();
-  const apiUrl = await getApiUrl();
   const redirectUrl = supportsWebAuthFlow()
-    ? await runWebAuthFlow(buildOAuthStartUrl(apiUrl, provider, challenge, browser.runtime.id))
+    ? await runWebAuthFlow(
+        buildOAuthStartUrl(DEFAULT_API_URL, provider, challenge, browser.runtime.id),
+      )
     : await runTabOAuth(
-        buildTabOAuthStartUrl(apiUrl, provider, challenge),
-        tabOAuthDoneUrl(apiUrl),
+        buildTabOAuthStartUrl(DEFAULT_API_URL, provider, challenge),
+        tabOAuthDoneUrl(DEFAULT_API_URL),
         verifier,
       );
   await redeemOAuthRedirect(redirectUrl, verifier);

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError, getCurrentUser, isUnauthorizedError } from './api';
 import { getAuth } from './storage';
+import { DEFAULT_API_URL } from '../constants';
 
 vi.mock('./storage', () => ({
   getAuth: vi.fn(),
   setAuth: vi.fn(),
   clearAuth: vi.fn(),
-  getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
 const user = {
@@ -40,7 +40,7 @@ describe('getCurrentUser', () => {
     await expect(getCurrentUser()).resolves.toEqual(user);
 
     const [url, init] = (globalThis.fetch as Mock).mock.calls[0];
-    expect(url).toBe('https://api.example.com/graphql');
+    expect(url).toBe(DEFAULT_API_URL);
     expect(init.headers.Authorization).toBe('Bearer tok');
     expect(JSON.parse(init.body).query).toContain('me { id email name avatarUrl }');
   });

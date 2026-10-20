@@ -6,11 +6,11 @@ import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
 import { ApiError, getCurrentUser, logout } from '../../lib/api';
 import { getAuth } from '../../lib/storage';
+import { DEFAULT_API_URL } from '../../constants';
 import { captureEvent, captureException } from '../../lib/observability/report';
 
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
-  getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
 vi.mock('../../lib/api', async (importOriginal) => {
@@ -78,7 +78,7 @@ describe('popup App', () => {
 
     expect(text).toContain('Ada Lovelace');
     expect(text).toContain('ada@example.com');
-    expect(text).not.toContain('api.example.com');
+    expect(text).not.toContain(new URL(DEFAULT_API_URL).host);
     expect(text).not.toMatch(/API:/);
     expect(rendered.container.querySelector('input')).toBeNull();
   });
