@@ -13,11 +13,8 @@ import { NavigationProgressBar } from '#/components/NavigationProgressBar';
 import { watchForServiceWorkerUpdate } from '#/lib/swUpdateToast';
 import { RouteErrorReporter } from '#/components/RouteErrorReporter';
 import { replayPendingOperations } from '#/lib/pendingOperations';
-import {
-  isStaleChunkError,
-  reloadForStaleChunk,
-  watchForStaleChunks,
-} from '#/lib/staleChunkReload';
+import { StaleChunkReloader } from '#/components/StaleChunkReloader';
+import { isStaleChunkError, watchForStaleChunks } from '#/lib/staleChunkReload';
 
 import appCss from '../styles.css?url';
 
@@ -73,13 +70,10 @@ function RouteError({ error }: { error: unknown }) {
   const { t } = useLocale();
   // A route chunk that 404s because the tab predates a deploy is not a bug to
   // report: reload once to pick up the new build (see staleChunkReload.ts).
-  const staleChunk = isStaleChunkError(error);
-  useEffect(() => {
-    if (staleChunk) reloadForStaleChunk();
-  }, [staleChunk]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      {!staleChunk && <RouteErrorReporter error={error} />}
+      <StaleChunkReloader error={error} />
+      {!isStaleChunkError(error) && <RouteErrorReporter error={error} />}
       <div className="space-y-4 text-center">
         <AlertTriangleIcon size={40} className="mx-auto text-red-500" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
