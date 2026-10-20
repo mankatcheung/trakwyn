@@ -5,7 +5,23 @@ import { makeSession, makeSessionRepository } from '#src/__tests__/helpers/mocks
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { SESSION } from '#src/use-cases/constants.js';
 
-const futureExpiry = () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const futureExpiry = () => new Date(Date.now() + 7 * DAY_MS);
+
+type SessionOverrides = Parameters<typeof makeSession>[0];
+
+/** `makeSession` is dated 2024, long past the absolute cap, so these cases start from a session created now. */
+const makeLiveSession = (overrides?: SessionOverrides) =>
+  makeSession({ createdAt: new Date(), ...overrides });
+
+/** A session `ageMs` old whose sliding window is still wide open. */
+const makeAgedSession = (ageMs: number, overrides?: SessionOverrides) =>
+  makeSession({
+    createdAt: new Date(Date.now() - ageMs),
+    expiresAt: futureExpiry(),
+    currentRefreshTokenId: 'current-id',
+    ...overrides,
+  });
 
 describe('RotateRefreshTokenUseCase', () => {
   beforeEach(() => {
@@ -25,7 +41,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('throws UNAUTHORIZED when the session has been revoked', async () => {
-    const session = makeSession({ expiresAt: futureExpiry(), revokedAt: new Date() });
+    const session = makeLiveSession({ expiresAt: futureExpiry(), revokedAt: new Date() });
     const sessionRepository = makeSessionRepository({
       findById: vi.fn().mockResolvedValue(session),
     });
@@ -40,7 +56,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('throws UNAUTHORIZED when the session has expired', async () => {
-    const session = makeSession({ expiresAt: new Date(Date.now() - 1000) });
+    const session = makeLiveSession({ expiresAt: new Date(Date.now() - 1000) });
     const sessionRepository = makeSessionRepository({
       findById: vi.fn().mockResolvedValue(session),
     });
@@ -55,7 +71,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('rotates the token on an exact match with the current refresh token id', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: 'current-id',
       previousRefreshTokenId: null,
@@ -85,7 +101,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('re-issues tokens bound to the current id without rotating again for a concurrent-refresh race within the grace window', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: 'current-id',
       previousRefreshTokenId: 'previous-id',
@@ -111,7 +127,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('treats a stale previous token outside the grace window as reuse', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: 'current-id',
       previousRefreshTokenId: 'previous-id',
@@ -133,7 +149,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('adopts the presented token as the baseline for a legacy session with no current token id', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: null,
       previousRefreshTokenId: null,
@@ -162,7 +178,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('adopts a generated placeholder for a legacy session with no current token id and no presented jti', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: null,
       previousRefreshTokenId: null,
@@ -193,7 +209,7 @@ describe('RotateRefreshTokenUseCase', () => {
   });
 
   it('revokes the session and throws UNAUTHORIZED when a stale/unknown token id is presented', async () => {
-    const session = makeSession({
+    const session = makeLiveSession({
       expiresAt: futureExpiry(),
       currentRefreshTokenId: 'current-id',
       previousRefreshTokenId: 'previous-id',
@@ -214,5 +230,103 @@ describe('RotateRefreshTokenUseCase', () => {
     expect(logger.error).toHaveBeenCalledWith(
       `Refresh token reuse detected for session ${session.id} (user ${session.userId})`,
     );
+  });
+
+  describe('absolute session lifetime', () => {
+    const nearCapAge = SESSION.ABSOLUTE_TTL_MS - DAY_MS;
+    const capOf = (session: { createdAt: Date }) =>
+      session.createdAt.getTime() + SESSION.ABSOLUTE_TTL_MS;
+
+    it('refuses a session older than the cap even though its sliding window is open', async () => {
+      const session = makeAgedSession(SESSION.ABSOLUTE_TTL_MS + 1000);
+      const sessionRepository = makeSessionRepository({
+        findById: vi.fn().mockResolvedValue(session),
+      });
+      const logger = makeLogger();
+
+      const err = await new RotateRefreshTokenUseCase({
+        sessionRepository,
+        generateId: vi.fn(),
+        logger,
+      })
+        .execute({ sessionId: session.id, presentedTokenId: 'current-id' })
+        .catch((e) => e);
+
+      expect((err as { code: string }).code).toBe(ERROR_CODES.UNAUTHORIZED);
+      expect(sessionRepository.rotateRefreshToken).not.toHaveBeenCalled();
+      expect(sessionRepository.touch).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('clamps expiresAt to the cap when a normal rotation would run past it', async () => {
+      const session = makeAgedSession(nearCapAge);
+      const sessionRepository = makeSessionRepository({
+        findById: vi.fn().mockResolvedValue(session),
+      });
+
+      const result = await new RotateRefreshTokenUseCase({
+        sessionRepository,
+        generateId: vi.fn().mockReturnValue('brand-new-id'),
+        logger: makeLogger(),
+      }).execute({ sessionId: session.id, presentedTokenId: 'current-id' });
+
+      expect(result.session.expiresAt.getTime()).toBe(capOf(session));
+      expect(sessionRepository.rotateRefreshToken).toHaveBeenCalledWith(
+        session.id,
+        expect.objectContaining({ expiresAt: new Date(capOf(session)) }),
+      );
+    });
+
+    it('clamps expiresAt to the cap on the grace-window re-issue', async () => {
+      const session = makeAgedSession(nearCapAge, {
+        previousRefreshTokenId: 'previous-id',
+        previousRotatedAt: new Date(Date.now() - 1000),
+      });
+      const sessionRepository = makeSessionRepository({
+        findById: vi.fn().mockResolvedValue(session),
+      });
+
+      await new RotateRefreshTokenUseCase({
+        sessionRepository,
+        generateId: vi.fn(),
+        logger: makeLogger(),
+      }).execute({ sessionId: session.id, presentedTokenId: 'previous-id' });
+
+      expect(sessionRepository.touch).toHaveBeenCalledWith(session.id, new Date(capOf(session)));
+    });
+
+    it('clamps expiresAt to the cap when adopting a legacy session', async () => {
+      const session = makeAgedSession(nearCapAge, { currentRefreshTokenId: null });
+      const sessionRepository = makeSessionRepository({
+        findById: vi.fn().mockResolvedValue(session),
+      });
+
+      await new RotateRefreshTokenUseCase({
+        sessionRepository,
+        generateId: vi.fn().mockReturnValue('brand-new-id'),
+        logger: makeLogger(),
+      }).execute({ sessionId: session.id, presentedTokenId: 'legacy-id' });
+
+      expect(sessionRepository.rotateRefreshToken).toHaveBeenCalledWith(
+        session.id,
+        expect.objectContaining({ expiresAt: new Date(capOf(session)) }),
+      );
+    });
+
+    it('leaves the sliding window alone for a young session', async () => {
+      const session = makeAgedSession(DAY_MS);
+      const sessionRepository = makeSessionRepository({
+        findById: vi.fn().mockResolvedValue(session),
+      });
+      const before = Date.now();
+
+      const result = await new RotateRefreshTokenUseCase({
+        sessionRepository,
+        generateId: vi.fn().mockReturnValue('brand-new-id'),
+        logger: makeLogger(),
+      }).execute({ sessionId: session.id, presentedTokenId: 'current-id' });
+
+      expect(result.session.expiresAt.getTime()).toBeGreaterThanOrEqual(before + SESSION.TTL_MS);
+    });
   });
 });
