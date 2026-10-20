@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
-import { getAuth, getApiUrl } from '../../lib/storage';
+import { getAuth, getApiUrl, getPersistedRefreshToken } from '../../lib/storage';
 import {
   ApiError,
   login,
@@ -63,6 +63,7 @@ export function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(null);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
 
   useEffect(() => {
     init();
@@ -71,6 +72,18 @@ export function App() {
   async function init() {
     const auth = await getAuth();
     if (!auth) {
+      // After a browser restart the session is gone but a "Keep me signed in"
+      // refresh token may remain; the background worker restores from it
+      // (JEF-421), joining its own startup refresh if that is still running.
+      if (await getPersistedRefreshToken()) {
+        const restored: boolean = await browser.runtime.sendMessage({
+          type: RUNTIME_MESSAGES.REFRESH_TOKEN,
+        });
+        if (restored) {
+          await loadReadyScreen();
+          return;
+        }
+      }
       setScreen({ type: 'login' });
       return;
     }
@@ -110,7 +123,7 @@ export function App() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(email, password, keepSignedIn);
       await loadReadyScreen();
     } catch (err) {
       reportUnexpected(err, 'login');
@@ -126,6 +139,7 @@ export function App() {
       const result: OAuthLoginResponse = await browser.runtime.sendMessage({
         type: RUNTIME_MESSAGES.OAUTH_LOGIN,
         provider,
+        keepSignedIn,
       });
       if (result.ok) {
         await loadReadyScreen();
@@ -184,6 +198,14 @@ export function App() {
           <p className="subtitle">Sign in to save job postings</p>
         </div>
         {screen.error && <div className="error-box">{screen.error}</div>}
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={keepSignedIn}
+            onChange={(e) => setKeepSignedIn(e.target.checked)}
+          />
+          Keep me signed in
+        </label>
         <div className="provider-buttons">
           {OAUTH_PROVIDERS.map(({ id, label }) => (
             <button

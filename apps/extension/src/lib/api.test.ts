@@ -6,6 +6,8 @@ vi.mock('./storage', () => ({
   getAuth: vi.fn(),
   setAuth: vi.fn(),
   clearAuth: vi.fn(),
+  clearSessionAuth: vi.fn(),
+  getPersistedRefreshToken: vi.fn(async () => null),
   getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 

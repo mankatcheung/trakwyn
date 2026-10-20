@@ -1,5 +1,12 @@
 import { browser } from 'wxt/browser';
-import { getAuth, setAuth, clearAuth, getApiUrl } from './storage';
+import {
+  getAuth,
+  setAuth,
+  clearAuth,
+  clearSessionAuth,
+  getApiUrl,
+  getPersistedRefreshToken,
+} from './storage';
 import { createPkcePair } from './pkce';
 import {
   OAuthCancelledError,
@@ -128,7 +135,10 @@ async function gql<T>(
  */
 async function authedGql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   let auth = await getAuth();
-  if (auth && Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
+  // No session but a persisted refresh token: the browser was restarted
+  // (JEF-421), and the same refresh restores it.
+  const restorable = !auth && (await getPersistedRefreshToken()) !== null;
+  if (restorable || (auth && Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS)) {
     await browser.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
     auth = await getAuth();
   }
@@ -173,15 +183,19 @@ export function tokenExpiry(accessToken: string): number {
   return exp * 1000;
 }
 
-async function storeTokens(tokens: TokenPair): Promise<void> {
-  await setAuth({
-    token: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-    expiresAt: tokenExpiry(tokens.accessToken),
-  });
+/** `persist` also keeps the refresh token across browser restarts ("Keep me signed in", JEF-421). */
+async function storeTokens(tokens: TokenPair, persist: boolean): Promise<void> {
+  await setAuth(
+    {
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokenExpiry(tokens.accessToken),
+    },
+    persist,
+  );
 }
 
-export async function login(email: string, password: string): Promise<void> {
+export async function login(email: string, password: string, keepSignedIn = false): Promise<void> {
   const data = await gql<{
     loginMobile: {
       totpRequired: boolean;
@@ -197,7 +211,7 @@ export async function login(email: string, password: string): Promise<void> {
   }
   const { accessToken, refreshToken } = data.loginMobile;
   if (!accessToken || !refreshToken) throw new ApiError('Login failed');
-  await storeTokens({ accessToken, refreshToken });
+  await storeTokens({ accessToken, refreshToken }, keepSignedIn);
 }
 
 /** Chrome has it; Safari has no `identity` API and signs in in a tab. */
@@ -228,7 +242,7 @@ async function runWebAuthFlow(startUrl: string): Promise<string> {
  * - Safari (JEF-386): to a fixed page on the API's origin, in a tab (see
  *   tabOAuth.ts).
  */
-export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
+export async function loginWithOAuth(provider: OAuthProvider, keepSignedIn = false): Promise<void> {
   const { verifier, challenge } = await createPkcePair();
   const apiUrl = await getApiUrl();
   const redirectUrl = supportsWebAuthFlow()
@@ -237,15 +251,20 @@ export async function loginWithOAuth(provider: OAuthProvider): Promise<void> {
         buildTabOAuthStartUrl(apiUrl, provider, challenge),
         tabOAuthDoneUrl(apiUrl),
         verifier,
+        keepSignedIn,
       );
-  await redeemOAuthRedirect(redirectUrl, verifier);
+  await redeemOAuthRedirect(redirectUrl, verifier, keepSignedIn);
 }
 
 /**
  * Turns the API's redirect into a stored session: an error slug becomes a
  * thrown error, and a handoff code is redeemed with `verifier`.
  */
-export async function redeemOAuthRedirect(redirectUrl: string, verifier: string): Promise<void> {
+export async function redeemOAuthRedirect(
+  redirectUrl: string,
+  verifier: string,
+  keepSignedIn = false,
+): Promise<void> {
   const result = parseOAuthRedirect(redirectUrl);
   if ('error' in result) {
     if (result.error === OAUTH.CANCELLED_SLUG) throw new OAuthCancelledError();
@@ -256,7 +275,7 @@ export async function redeemOAuthRedirect(redirectUrl: string, verifier: string)
     code: result.code,
     codeVerifier: verifier,
   });
-  await storeTokens(data.exchangeMobileOAuthCode);
+  await storeTokens(data.exchangeMobileOAuthCode, keepSignedIn);
 }
 
 export async function logout(): Promise<void> {
@@ -273,12 +292,17 @@ let refreshInFlight: Promise<boolean> | null = null;
 
 async function doRefresh(): Promise<boolean> {
   const auth = await getAuth();
-  if (!auth) return false;
+  const persisted = await getPersistedRefreshToken();
+  // With no session, a persisted token restores it after a browser restart.
+  const current = auth?.refreshToken ?? persisted;
+  if (!current) return false;
+  const persist = persisted !== null;
   try {
     const data = await gql<{ refreshTokenMobile: TokenPair }>(REFRESH, {
-      refreshToken: auth.refreshToken,
+      refreshToken: current,
     });
-    await storeTokens(data.refreshTokenMobile);
+    // The API rotates the token, so a persisted copy is overwritten with the new one.
+    await storeTokens(data.refreshTokenMobile, persist);
     return true;
   } catch (err) {
     // Until JEF-387 this signed the user out without a trace. `transport` is
@@ -291,7 +315,11 @@ async function doRefresh(): Promise<boolean> {
       ...(err instanceof ApiError && err.code ? { code: err.code } : {}),
     });
     if (reason === 'unexpected') void captureException(err, { action: 'token_refresh' });
-    await clearAuth();
+    // An unreachable API says nothing about the persisted token (the browser
+    // may have started offline), so keep it for the next try (JEF-421).
+    // Anything else ends the session everywhere.
+    if (persist && reason === 'transport') await clearSessionAuth();
+    else await clearAuth();
     return false;
   }
 }

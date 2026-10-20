@@ -20,6 +20,12 @@ export const DEFAULT_API_URL = resolveDefaultApiUrl({
 export const STORAGE_KEYS = {
   /** Session-scoped auth state. */
   AUTH: 'auth',
+  /**
+   * Local-scoped copy of the refresh token, present only when the user chose
+   * "Keep me signed in" (JEF-421). It outlives the browser; its presence is
+   * the choice. The access token is never stored here.
+   */
+  PERSISTED_REFRESH_TOKEN: 'persistedRefreshToken',
   /** Session-scoped Safari tab sign-in in progress (see lib/tabOAuth.ts). */
   PENDING_TAB_OAUTH: 'pendingTabOAuth',
   /** Sync-scoped configured API URL. */

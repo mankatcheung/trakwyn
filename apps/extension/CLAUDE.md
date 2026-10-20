@@ -26,10 +26,19 @@ pnpm package:safari  # build:safari, then (re)generate the Xcode project in safa
 
 Both tokens come from the API's `*Mobile` mutations and live in `browser.storage.session` (`lib/storage.ts`). The background worker owns refresh, since the API rotates refresh tokens (`RUNTIME_MESSAGES`).
 
+**Keep me signed in (JEF-421).** The sign-in screen has an unticked-by-default box. Ticked, `setAuth(auth, true)` also writes the **refresh token only** to `browser.storage.local` (`STORAGE_KEYS.PERSISTED_REFRESH_TOKEN`); the access token and `expiresAt` never leave `storage.session`. The key's presence is the choice, so nothing else records it.
+
+- **Restore:** a browser restart empties `storage.session` but not `storage.local`. `refreshToken()` falls back to the persisted token when there is no session, so the background's startup `scheduleRefresh`, the popup's `init` and `authedGql` all restore through the same single-flighted refresh.
+- **Rotation:** every refresh stores the new pair with the same `persist` flag, so the persisted copy is always the current token. The API treats a superseded token as reuse and revokes the session (`RotateRefreshTokenUseCase`), so a stale copy must never be left behind.
+- **Clearing:** sign-out (`clearAuth`) and a refresh the API refuses remove both copies. An **unreachable** API (the browser started offline) clears only the session (`clearSessionAuth`) and keeps the persisted token for the next try. A later sign-in without the box removes an older persisted token.
+- **Content scripts can read `storage.local`** (only `storage.session` is closed to them by default) and `content.ts` runs inside job-board pages, so `restrictLocalStorageToTrustedContexts` limits it to `TRUSTED_CONTEXTS` before every persisting write. It is applied per browser session, so it is called on each write rather than once. A browser without `setAccessLevel` is left as is. Never widen `storage.session`'s access level either.
+- **Safari tab sign-in** keeps the choice in the pending login (`PendingTabOAuth.keepSignedIn`), so a background restarted mid-login still honours it.
+- **The token is on disk unencrypted** in the browser profile, so the API's absolute session lifetime (`SESSION.ABSOLUTE_TTL_MS`, JEF-422) is what bounds a copied one. Keep the box opt-in.
+
 **Google/GitHub sign-in** runs in the background (the popup closes when the sign-in opens) and is chosen by feature detection in `lib/api.ts`:
 
 - **Chrome** (`identity` present, JEF-383): `launchWebAuthFlow` to `…/start?platform=extension&extensionId=…`, handed back on `https://<id>.chromiumapp.org/`. The ID must be in the API's `EXTENSION_OAUTH_IDS`. A Web Store build has its own permanent ID (the unpacked ID differs, since Chrome derives it from the folder), so create the draft listing first, take the ID from the dashboard and add it to the production `EXTENSION_OAUTH_IDS` (`infra/gcp`) before the listing goes live, or Chrome sign-in fails for every user.
-- **Safari** (no `identity` API, JEF-386): `lib/tabOAuth.ts` opens `…/start?platform=extension-tab` in a tab and watches it until it lands on the API's `/auth/oauth/extension/done`, then closes it. Safari may unload the background mid-login, so the login (tab ID and PKCE verifier) is also in `storage.session`, and `registerTabOAuthListeners` is registered when the background starts so a restarted one can still finish it. This is why the Safari manifest has `tabs`.
+- **Safari** (no `identity` API, JEF-386): `lib/tabOAuth.ts` opens `…/start?platform=extension-tab` in a tab and watches it until it lands on the API's `/auth/oauth/extension/done`, then closes it. Safari may unload the background mid-login, so the login (tab ID, PKCE verifier and "Keep me signed in" choice) is also in `storage.session`, and `registerTabOAuthListeners` is registered when the background starts so a restarted one can still finish it. This is why the Safari manifest has `tabs`.
 
 Either way, the handoff code is redeemed with `exchangeMobileOAuthCode` and this login's PKCE verifier.
 
