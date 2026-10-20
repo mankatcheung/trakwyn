@@ -34,7 +34,13 @@ export class RotateRefreshTokenUseCase {
       unauthorized();
     }
 
-    const expiresAt = new Date(Date.now() + SESSION.TTL_MS);
+    // The sliding window below never ends on its own; this does.
+    const absoluteExpiryMs = session.createdAt.getTime() + SESSION.ABSOLUTE_TTL_MS;
+    if (absoluteExpiryMs <= Date.now()) {
+      unauthorized();
+    }
+
+    const expiresAt = new Date(Math.min(Date.now() + SESSION.TTL_MS, absoluteExpiryMs));
 
     // Exact match on the current token — normal rotation.
     if (

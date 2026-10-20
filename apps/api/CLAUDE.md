@@ -26,6 +26,8 @@ Loaded when working under `apps/api`. The layer map, DI shape and cross-cutting 
 
 Access tokens are otherwise stateless, so every revocation also writes the `sid` to a blocklist that `AuthenticateRequestUseCase` checks. The writes live in `BlocklistingSessionRepository`, a decorator over `DrizzleSessionRepository` (the same inner/outer DI shape as `Cached*Repository`), so no call site has to remember. The store is Redis or an in-process map, chosen by `CACHE_PROVIDER`. **It fails open:** a store error means "not revoked" (at most the 15-minute token lifetime), and the DB `revokedAt` is still enforced at refresh.
 
+**Session lifetime (JEF-422).** A session slides forward 7 days (`SESSION.TTL_MS`) on every refresh, and `SESSION.ABSOLUTE_TTL_MS` (90 days from `createdAt`) caps that. `RotateRefreshTokenUseCase` refuses a refresh past the cap with the same `UNAUTHORIZED` as an expired session (no revocation, no reuse log) and clamps the new `expiresAt` to it in all three branches (normal, grace window, legacy adoption). Without it a refresh token that keeps being used, or a stolen one whose owner stopped refreshing so reuse is never seen, never expires. A session already older than the cap is signed out at its next refresh.
+
 ## MCP server
 
 `POST /mcp` (`http/routes/mcp.routes.ts`) is JSON-RPC 2.0, protocol `2024-11-05`, POST-only with no SSE or session handling. The route owns transport and auth; protocol logic lives in `interface-adapters/mcp/McpController.ts`.
