@@ -1,5 +1,11 @@
 import { browser } from 'wxt/browser';
-import { DEFAULT_API_URL, STORAGE_KEYS } from '../constants';
+import {
+  DEFAULT_API_URL,
+  DEFAULT_PARSE_MODE,
+  PARSE_MODES,
+  STORAGE_KEYS,
+  type ParseMode,
+} from '../constants';
 
 export interface AuthState {
   token: string;
@@ -43,4 +49,15 @@ export async function getApiUrl(): Promise<string> {
 
 export async function setApiUrl(apiUrl: string): Promise<void> {
   await browser.storage.sync.set({ [STORAGE_KEYS.API_URL]: apiUrl });
+}
+
+/** How the popup reads a posting. Anything unrecognised reads as the default. */
+export async function getParseMode(): Promise<ParseMode> {
+  const result = await browser.storage.sync.get(STORAGE_KEYS.PARSE_MODE);
+  const mode: unknown = result[STORAGE_KEYS.PARSE_MODE];
+  return PARSE_MODES.find((known) => known === mode) ?? DEFAULT_PARSE_MODE;
+}
+
+export async function setParseMode(mode: ParseMode): Promise<void> {
+  await browser.storage.sync.set({ [STORAGE_KEYS.PARSE_MODE]: mode });
 }

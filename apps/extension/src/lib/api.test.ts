@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { ApiError, getCurrentUser, isUnauthorizedError } from './api';
+import { ApiError, getCurrentUser, isUnauthorizedError, parseJobDescription } from './api';
 import { getAuth } from './storage';
 
 vi.mock('./storage', () => ({
@@ -84,5 +84,44 @@ describe('getCurrentUser', () => {
 describe('isUnauthorizedError', () => {
   it('is false for plain errors', () => {
     expect(isUnauthorizedError(new Error('UNAUTHORIZED'))).toBe(false);
+  });
+});
+
+describe('parseJobDescription', () => {
+  it('sends the text and returns the parsed fields', async () => {
+    const parsed = { company: 'Acme', role: 'Engineer', location: null, description: 'Text' };
+    respondWith({ data: { parseJobDescription: parsed } });
+
+    await expect(parseJobDescription('Acme is hiring')).resolves.toEqual(parsed);
+
+    const [, init] = (globalThis.fetch as Mock).mock.calls[0];
+    expect(init.headers.Authorization).toBe('Bearer tok');
+    expect(JSON.parse(init.body).variables).toEqual({ text: 'Acme is hiring' });
+  });
+
+  it.each([
+    ['AI_NOT_CONFIGURED', /provider key/],
+    ['AI_LIMIT_REACHED', /monthly token limit/],
+    ['AI_PROVIDER_ERROR', /provider returned an error/],
+    ['RATE_LIMITED', /too quickly/],
+  ])('maps %s to readable copy and keeps the code', async (code, copy) => {
+    respondWith({ data: null, errors: [{ message: 'raw', extensions: { code } }] });
+
+    const err = await parseJobDescription('x').catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).code).toBe(code);
+    expect((err as ApiError).message).toMatch(copy);
+  });
+
+  it('passes other errors through unchanged', async () => {
+    respondWith({
+      data: null,
+      errors: [{ message: 'Unauthorized', extensions: { code: 'UNAUTHORIZED' } }],
+    });
+
+    const err = await parseJobDescription('x').catch((e: unknown) => e);
+
+    expect(isUnauthorizedError(err)).toBe(true);
   });
 });

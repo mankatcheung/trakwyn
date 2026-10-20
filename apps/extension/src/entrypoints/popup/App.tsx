@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
-import { getAuth, getApiUrl } from '../../lib/storage';
+import { getAuth, getApiUrl, getParseMode } from '../../lib/storage';
 import {
   ApiError,
   login,
@@ -10,8 +10,9 @@ import {
   isUnauthorizedError,
   type CurrentUser,
 } from '../../lib/api';
-import type { JobData, ParsedJobPage } from '../../lib/parsers/types';
+import { REQUIRED_JOB_FIELDS, type JobData, type ParsedJobPage } from '../../lib/parsers/types';
 import { parserHealthProperties } from '../../lib/parsers/health';
+import { readTabWithAi } from '../../lib/aiRead';
 import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
@@ -23,18 +24,41 @@ import {
   type OAuthProvider,
 } from '../../constants';
 import { UserHeader } from './UserHeader';
+import { ClipCard } from './ClipCard';
 
 type Screen =
-  | { type: 'loading' }
+  | { type: 'loading'; message?: string }
   | { type: 'login'; error?: string }
-  | { type: 'ready'; jobData: JobData | null; user: CurrentUser }
+  | { type: 'ready'; user: CurrentUser; clip: Clip }
   | { type: 'saving' }
   | { type: 'saved'; appId: string; appUrl: string; company: string; role: string }
   | { type: 'error'; message: string };
 
-async function readActiveTabJobData(): Promise<JobData | null> {
+/** The tab being clipped. Absent when the page has no content script. */
+interface ClipTab {
+  id: number;
+  url: string;
+}
+
+interface Clip {
+  jobData: JobData | null;
+  tab: ClipTab | null;
+  /** The AI has been asked once for this clip, so it is not offered again (JEF-420). */
+  aiRead: boolean;
+  /** The AI filled part of the clip, so the user confirms it before saving. */
+  aiSuggested: boolean;
+  rereading: boolean;
+  /** Dismissible: why the AI result is missing, or what it did. */
+  notice?: string;
+}
+
+function lacksRequiredFields(jobData: JobData | null): boolean {
+  return !jobData || REQUIRED_JOB_FIELDS.some((field) => !jobData[field]);
+}
+
+async function readActiveTab(): Promise<{ jobData: JobData | null; tab: ClipTab | null }> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return null;
+  if (!tab?.id) return { jobData: null, tab: null };
   try {
     const response: Partial<ParsedJobPage> | undefined = await browser.tabs.sendMessage(tab.id, {
       type: CONTENT_MESSAGES.GET_JOB_DATA,
@@ -42,10 +66,36 @@ async function readActiveTabJobData(): Promise<JobData | null> {
     // A job board whose markup changed shows up as a spike of these (JEF-387).
     const unhealthy = response?.parserHealth && parserHealthProperties(response.parserHealth);
     if (unhealthy) void captureEvent(OBSERVABILITY_EVENTS.PARSER_RESULT, { ...unhealthy });
-    return response?.jobData ?? null;
+    return {
+      // The generic parser can leave `company` undefined despite its type
+      jobData: response?.jobData
+        ? {
+            ...response.jobData,
+            company: response.jobData.company ?? '',
+            role: response.jobData.role ?? '',
+          }
+        : null,
+      tab: tab.url ? { id: tab.id, url: tab.url } : null,
+    };
   } catch {
     // No content script on this page — there's no job data to clip
-    return null;
+    return { jobData: null, tab: null };
+  }
+}
+
+/**
+ * Asks the AI to read the tab and merges its answer into `clip` (JEF-420).
+ * A failure keeps the built-in result and says why, never a dead end.
+ */
+async function readWithAi(clip: Clip): Promise<Clip> {
+  if (!clip.tab) return clip;
+  try {
+    const { jobData, filled } = await readTabWithAi(clip.tab.id, clip.tab.url, clip.jobData);
+    return { ...clip, jobData, aiRead: true, aiSuggested: filled.length > 0, rereading: false };
+  } catch (err) {
+    reportUnexpected(err, 'ai_read');
+    const notice = err instanceof Error ? err.message : 'The AI read failed.';
+    return { ...clip, aiRead: true, rereading: false, notice };
   }
 }
 
@@ -90,8 +140,17 @@ export function App() {
 
   async function loadReadyScreen() {
     try {
-      const [user, jobData] = await Promise.all([getCurrentUser(), readActiveTabJobData()]);
-      setScreen({ type: 'ready', jobData, user });
+      const [user, read, mode] = await Promise.all([
+        getCurrentUser(),
+        readActiveTab(),
+        getParseMode(),
+      ]);
+      let clip: Clip = { ...read, aiRead: false, aiSuggested: false, rereading: false };
+      if (mode === 'ai' && clip.tab) {
+        setScreen({ type: 'loading', message: 'Reading the posting with AI…' });
+        clip = await readWithAi(clip);
+      }
+      setScreen({ type: 'ready', user, clip });
     } catch (err) {
       if (isUnauthorizedError(err)) {
         // The stored token was revoked or rejected — start over at sign-in
@@ -142,6 +201,11 @@ export function App() {
     setScreen({ type: 'login' });
   }
 
+  async function handleReread(user: CurrentUser, clip: Clip) {
+    setScreen({ type: 'ready', user, clip: { ...clip, rereading: true, notice: undefined } });
+    setScreen({ type: 'ready', user, clip: await readWithAi(clip) });
+  }
+
   async function handleSave(jobData: JobData) {
     setScreen({ type: 'saving' });
     try {
@@ -171,6 +235,7 @@ export function App() {
     return (
       <div className="container center">
         <div className="spinner" />
+        {screen.message && <p className="muted">{screen.message}</p>}
       </div>
     );
   }
@@ -270,23 +335,41 @@ export function App() {
   }
 
   // ready screen
-  const { jobData, user } = screen;
+  const { user, clip } = screen;
+  const { jobData } = clip;
 
   return (
     <div className="container">
       <UserHeader user={user} onSignOut={handleLogout} />
 
+      {clip.notice && (
+        <div className="error-box" role="status">
+          {clip.notice}{' '}
+          <button
+            className="btn btn-ghost"
+            onClick={() => setScreen({ type: 'ready', user, clip: { ...clip, notice: undefined } })}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {jobData ? (
-        <div className="job-card">
-          <div className="job-source">{jobData.source ?? 'Job posting'}</div>
-          <h2 className="job-role">{jobData.role}</h2>
-          <p className="job-company">{jobData.company}</p>
-          {jobData.location && <p className="job-location">📍 {jobData.location}</p>}
-          {jobData.description && (
-            <p className="job-description">{jobData.description.slice(0, 200)}…</p>
-          )}
-          <button onClick={() => handleSave(jobData)} className="btn btn-primary btn-full">
-            Save as Application
+        <ClipCard
+          // A re-read replaces the clip, so the editable draft starts over
+          key={clip.aiSuggested ? 'ai' : 'builtin'}
+          jobData={jobData}
+          aiSuggested={clip.aiSuggested}
+          canReread={clip.tab !== null && !clip.aiRead && lacksRequiredFields(jobData)}
+          rereading={clip.rereading}
+          onReread={() => handleReread(user, clip)}
+          onSave={handleSave}
+        />
+      ) : clip.tab && !clip.aiRead ? (
+        <div className="empty-state">
+          <p>Couldn't read this page.</p>
+          <button onClick={() => handleReread(user, clip)} className="btn btn-ghost">
+            Re-read with AI
           </button>
         </div>
       ) : (

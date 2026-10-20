@@ -4,13 +4,14 @@ import { browser, type Browser } from 'wxt/browser';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
-import { ApiError, getCurrentUser, logout } from '../../lib/api';
-import { getAuth } from '../../lib/storage';
+import { ApiError, getCurrentUser, logout, parseJobDescription } from '../../lib/api';
+import { getAuth, getParseMode } from '../../lib/storage';
 import { captureEvent, captureException } from '../../lib/observability/report';
 
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
   getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
+  getParseMode: vi.fn(async () => 'builtin'),
 }));
 
 vi.mock('../../lib/api', async (importOriginal) => {
@@ -21,6 +22,7 @@ vi.mock('../../lib/api', async (importOriginal) => {
     logout: vi.fn(),
     createApplication: vi.fn(),
     getCurrentUser: vi.fn(),
+    parseJobDescription: vi.fn(),
   };
 });
 
@@ -258,5 +260,105 @@ describe('popup App — error reporting (JEF-387)', () => {
     rendered = await render(<App />);
 
     expect(captureException).not.toHaveBeenCalled();
+  });
+});
+
+describe('popup App — AI parsing (JEF-420)', () => {
+  const tabUrl = 'https://jobs.example.com/1';
+  const complete = { company: 'Monument', role: 'Engineer', jobUrl: tabUrl };
+
+  beforeEach(() => {
+    vi.mocked(getParseMode).mockResolvedValue('builtin');
+    vi.mocked(parseJobDescription).mockReset();
+  });
+
+  /** The content script answers job data and page text; `jobData` null means the parsers found nothing. */
+  function pageWith(jobData: unknown) {
+    spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
+    spyAsync(browser.tabs, 'sendMessage').mockImplementation(async (_id, message) =>
+      (message as { type: string }).type === 'GET_PAGE_TEXT' ? 'Posting text' : { jobData },
+    );
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+  }
+
+  const button = (label: string) =>
+    [...rendered!.container.querySelectorAll('button')].find((b) => b.textContent === label);
+
+  it('sends nothing to the AI in built-in mode', async () => {
+    pageWith(complete);
+
+    rendered = await render(<App />);
+
+    expect(parseJobDescription).not.toHaveBeenCalled();
+    expect(rendered.container.textContent).toContain('Monument');
+  });
+
+  it('reads the page with the AI when that mode is chosen, and lets the user edit it', async () => {
+    vi.mocked(getParseMode).mockResolvedValue('ai');
+    pageWith(null);
+    vi.mocked(parseJobDescription).mockResolvedValue({
+      company: 'Globex',
+      role: 'Designer',
+      location: null,
+      description: null,
+    });
+
+    rendered = await render(<App />);
+
+    expect(parseJobDescription).toHaveBeenCalledExactlyOnceWith('Posting text');
+    expect(rendered.container.querySelector<HTMLInputElement>('#clip-company')!.value).toBe(
+      'Globex',
+    );
+    expect(rendered.container.querySelector<HTMLInputElement>('#clip-role')!.value).toBe(
+      'Designer',
+    );
+    expect(button('Re-read with AI')).toBeUndefined();
+  });
+
+  it('falls back to the built-in result with a notice when the AI fails', async () => {
+    vi.mocked(getParseMode).mockResolvedValue('ai');
+    pageWith(complete);
+    vi.mocked(parseJobDescription).mockRejectedValue(
+      new ApiError('Add your AI provider key in Trakwyn settings.', 'AI_NOT_CONFIGURED'),
+    );
+
+    rendered = await render(<App />);
+
+    expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
+      'AI provider key',
+    );
+    expect(rendered.container.textContent).toContain('Monument');
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it('offers "Re-read with AI" only when a required field is missing, even in built-in mode', async () => {
+    pageWith({ ...complete, company: undefined });
+    vi.mocked(parseJobDescription).mockResolvedValue({
+      company: 'Globex',
+      role: 'Other',
+      location: null,
+      description: null,
+    });
+
+    rendered = await render(<App />);
+    expect(parseJobDescription).not.toHaveBeenCalled();
+    await act(async () => button('Re-read with AI')!.click());
+
+    expect(parseJobDescription).toHaveBeenCalledOnce();
+    // The built-in role wins; the AI supplied only the company
+    expect(rendered.container.querySelector<HTMLInputElement>('#clip-role')!.value).toBe(
+      'Engineer',
+    );
+    expect(rendered.container.querySelector<HTMLInputElement>('#clip-company')!.value).toBe(
+      'Globex',
+    );
+  });
+
+  it('does not offer a re-read for a complete clip', async () => {
+    pageWith(complete);
+
+    rendered = await render(<App />);
+
+    expect(button('Re-read with AI')).toBeUndefined();
   });
 });

@@ -42,6 +42,16 @@ The Clipper reports faults to the same PostHog project as web and mobile, throug
 - **`traceparent` goes to the API only**, on every `gql` request. The same id is the `trace_id` on that request's failure event and on the next exception, which links a PostHog report to its Axiom trace.
 - **A report never throws or retries.** A failed send is dropped.
 
+## Reading a posting: built-in or AI (JEF-420)
+
+`parseMode` (`'builtin'` default, or `'ai'`) is in `storage.sync`, set on the options page (`ParseModeForm`); an unrecognised value reads as `builtin`.
+
+- **Built-in** is the content script's parsers (`GET_JOB_DATA`). **AI** adds `GET_PAGE_TEXT` (`lib/parsers/pageText.ts`: the main area's text, else the body, capped at `PAGE_TEXT_MAX_CHARS`, the API's `JOB_POSTING_MAX_CHARS`), then the existing `parseJobDescription(text)` mutation (`lib/api.ts`, via `lib/aiRead.ts`). No API change, and no new permission: it works only on the boards the content script matches.
+- **Merge rule** (`lib/parsers/mergeAiResult.ts`): the AI fills only fields the built-in parser left empty; a built-in value always wins, and a null or blank AI field never overwrites one. A clip the AI filled is editable in `ClipCard` before saving, since AI output is a suggestion.
+- **Re-read with AI** shows when the built-in result lacks `REQUIRED_JOB_FIELDS` (or found nothing), whatever the setting, and runs the same path once per popup.
+- **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the built-in result and shows a dismissible notice. There is no "AI configured" check: the API's `llmApiKeys` query would need a sign-in from the options page, so the `AI_NOT_CONFIGURED` answer is the signal.
+- **Privacy.** AI mode (or the button) sends the page's text to the user's own LLM provider through Trakwyn's API. Nothing is sent unless the user chose it. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
+
 ## Testing
 
 Vitest with `WxtVitest()`, which points `wxt/browser` at WXT's in-memory `fakeBrowser`. Call `fakeBrowser.reset()` in `beforeEach`. It does not restore properties a test deletes: `apiAuth.test.ts` removes `identity` to simulate Safari and puts it back itself.
