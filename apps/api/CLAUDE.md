@@ -100,6 +100,15 @@ Cloud Run `europe-west1` (web stays on Vercel, whose project is Terraform in `in
 - **`/admin/*` jobs** are driven by Cloud Scheduler with a Google **OIDC ID token** (JEF-336). `cronAuth.ts` verifies it via `IOidcTokenVerifier` (`GoogleOidcTokenVerifier`) and requires `aud` = `API_ORIGIN` and `email` = `CRON_INVOKER_SA`. `CRON_SECRET`/`DIGEST_ADMIN_SECRET` exist only for manual triggers. With none of the three configured, a route answers 503.
 - **Logs** reach Axiom's `AXIOM_LOGS_DATASET` through `otelLogDestination.ts` (teed to stdout). On SIGTERM, `http/gracefulShutdown.ts` drains within `SHUTDOWN.SERVER_CLOSE_TIMEOUT_MS`, inside Cloud Run's 10 s grace period.
 
+## Client compatibility (JEF-417)
+
+Some clients cannot be updated on demand: a mobile build in the stores, and a Clipper installed from the Chrome Web Store. A store release cannot be rolled back, only replaced; review and slow auto-update leave old versions in use for days to weeks. So the API is not changed the way a web-only schema is.
+
+- **The rule:** a field, mutation, argument, input field or enum value that a shipped Clipper or mobile version uses is not removed, renamed or changed incompatibly without a deprecation window. Incompatible means a removed or renamed name, a narrower input type, a new _required_ argument or input field, a changed output type, or a new value the client's code does not handle.
+- **The way through:** add the new shape beside the old one, mark the old one deprecated (Pothos `deprecationReason`), keep it working, and remove it only once the versions that use it are out of use. Mobile versions are in PostHog by `$app_version`, and Clipper versions by `release` on the Clipper health dashboard (`infra/posthog/README.md`). A new optional argument is always safe.
+- **The `*Mobile` mutations are the extension's contract** (`loginMobile`, `refreshTokenMobile`, `exchangeMobileOAuthCode` and the rest of `mobileAuthMutations.ts`), as well as mobile's. They return both tokens in the body because those clients have no cookie jar; do not fold them into the web mutations. Error codes a client maps to its own copy (`AI_NOT_CONFIGURED`, `RATE_LIMITED`, `UNAUTHORIZED`, …) are part of the contract too: a client that does not know a new code falls back to a generic message, so add codes, and do not repurpose one.
+- **What guards it:** `apps/extension/src/__tests__/graphqlDocuments.test.ts` validates every Clipper document against this schema, using `pnpm --filter @trakwyn/api schema:print` (`http/schema/printSchema.ts`: the Pothos schema as SDL, with no database or port), and mobile's integration tier does the same against a booted API. Each fails on a removed or renamed field or argument. Neither can see a behaviour change (a different error code, a changed default), so those need the deprecation window by hand. The extension's test is part of `pnpm test`, and `apps/extension/turbo.json` lists `apps/api/src/http` as an input, so an API-only change re-runs it instead of reusing Turbo's cached result.
+
 ## Testing
 
 Vitest.

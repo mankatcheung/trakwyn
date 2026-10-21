@@ -61,3 +61,17 @@ variable "crash_alert_app_version" {
   type        = string
   default     = null
 }
+
+# Clipper health (JEF-417). A starting point: the Clipper has no store traffic
+# yet, so there is no baseline to set it from.
+
+variable "clipper_parser_alert_daily" {
+  description = "Alert when one job board's parser results (a page the Clipper's parsers could not fully read) exceed this many in a day. A count, not a rate: the Clipper sends no clip events to divide by."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.clipper_parser_alert_daily > 0
+    error_message = "Must be above 0, or the alert fires on a quiet day."
+  }
+}
