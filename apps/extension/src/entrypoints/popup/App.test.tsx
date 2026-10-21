@@ -8,14 +8,16 @@ import {
   ApiError,
   getCurrentUser,
   hasDefaultAiKey,
+  login,
   logout,
   parseJobDescription,
 } from '../../lib/api';
-import { getAuth } from '../../lib/storage';
+import { getAuth, getPersistedRefreshToken } from '../../lib/storage';
 import { captureEvent, captureException } from '../../lib/observability/report';
 
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
+  getPersistedRefreshToken: vi.fn(async () => null),
   getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
@@ -177,6 +179,7 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
     expect(runtimeSendMessage).toHaveBeenCalledWith({
       type: 'OAUTH_LOGIN',
       provider: 'github',
+      keepSignedIn: false,
     });
     expect(rendered.container.textContent).toContain('Ada Lovelace');
   });
@@ -204,6 +207,116 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
     expect(rendered.container.querySelector('.error-box')?.textContent).toBe(
       'That linked account no longer exists.',
     );
+  });
+});
+
+describe('popup App — Keep me signed in (JEF-421)', () => {
+  beforeEach(() => {
+    vi.mocked(getAuth).mockResolvedValue(null);
+    vi.mocked(getPersistedRefreshToken).mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.mocked(getPersistedRefreshToken).mockResolvedValue(null);
+  });
+
+  function keepSignedInBox(): HTMLInputElement {
+    const box = rendered!.container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!box) throw new Error('No Keep me signed in checkbox');
+    return box;
+  }
+
+  async function type(input: HTMLInputElement, value: string) {
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+
+  it('offers an unticked "Keep me signed in" box on the sign-in screen', async () => {
+    rendered = await render(<App />);
+
+    expect(rendered.container.textContent).toContain('Keep me signed in');
+    expect(keepSignedInBox().checked).toBe(false);
+  });
+
+  it('keeps the session in memory only when the box is left unticked', async () => {
+    vi.mocked(login).mockResolvedValue(undefined);
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    rendered = await render(<App />);
+    await type(rendered.container.querySelector('input[type="email"]')!, 'ada@example.com');
+    await type(rendered.container.querySelector('input[type="password"]')!, 'pw');
+
+    await act(async () => {
+      rendered!.container.querySelector('form')!.requestSubmit();
+    });
+
+    expect(login).toHaveBeenCalledWith('ada@example.com', 'pw', false);
+  });
+
+  it('passes a ticked box to the password sign-in', async () => {
+    vi.mocked(login).mockResolvedValue(undefined);
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    rendered = await render(<App />);
+    await act(async () => {
+      keepSignedInBox().click();
+    });
+    await type(rendered.container.querySelector('input[type="email"]')!, 'ada@example.com');
+    await type(rendered.container.querySelector('input[type="password"]')!, 'pw');
+
+    await act(async () => {
+      rendered!.container.querySelector('form')!.requestSubmit();
+    });
+
+    expect(login).toHaveBeenCalledWith('ada@example.com', 'pw', true);
+  });
+
+  it('passes a ticked box to the Google/GitHub sign-in', async () => {
+    runtimeSendMessage.mockResolvedValue({ ok: true });
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    rendered = await render(<App />);
+    await act(async () => {
+      keepSignedInBox().click();
+    });
+
+    await act(async () => {
+      [...rendered!.container.querySelectorAll('button')]
+        .find((b) => b.textContent === 'Continue with Google')!
+        .click();
+    });
+
+    expect(runtimeSendMessage).toHaveBeenCalledWith({
+      type: 'OAUTH_LOGIN',
+      provider: 'google',
+      keepSignedIn: true,
+    });
+  });
+
+  it('restores a persisted session through the background worker after a browser restart', async () => {
+    vi.mocked(getPersistedRefreshToken).mockResolvedValue('persisted-refresh');
+    runtimeSendMessage.mockResolvedValue(true);
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+
+    rendered = await render(<App />);
+
+    expect(runtimeSendMessage).toHaveBeenCalledWith({ type: 'REFRESH_TOKEN' });
+    expect(rendered.container.textContent).toContain('Ada Lovelace');
+  });
+
+  it('shows the sign-in form when the persisted session cannot be restored', async () => {
+    vi.mocked(getPersistedRefreshToken).mockResolvedValue('persisted-refresh');
+    runtimeSendMessage.mockResolvedValue(false);
+
+    rendered = await render(<App />);
+
+    expect(getCurrentUser).not.toHaveBeenCalled();
+    expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
+  });
+
+  it('does not ask the background to restore when nothing is persisted', async () => {
+    rendered = await render(<App />);
+
+    expect(runtimeSendMessage).not.toHaveBeenCalled();
   });
 });
 

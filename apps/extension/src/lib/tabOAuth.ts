@@ -22,6 +22,8 @@ export interface PendingTabOAuth {
   tabId: number;
   verifier: string;
   doneUrl: string;
+  /** The "Keep me signed in" choice, carried to a background that finishes the login (JEF-421). */
+  keepSignedIn: boolean;
 }
 
 interface Waiter {
@@ -38,7 +40,8 @@ function isPendingTabOAuth(value: unknown): value is PendingTabOAuth {
   return (
     typeof pending?.tabId === 'number' &&
     typeof pending.verifier === 'string' &&
-    typeof pending.doneUrl === 'string'
+    typeof pending.doneUrl === 'string' &&
+    typeof pending.keepSignedIn === 'boolean'
   );
 }
 
@@ -71,6 +74,7 @@ export async function runTabOAuth(
   startUrl: string,
   doneUrl: string,
   verifier: string,
+  keepSignedIn = false,
 ): Promise<string> {
   const tab = await browser.tabs.create({ url: startUrl });
   const tabId = tab.id;
@@ -80,13 +84,22 @@ export async function runTabOAuth(
     waiters.set(tabId, { doneUrl, resolve, reject });
   });
   await browser.storage.session.set({
-    [STORAGE_KEYS.PENDING_TAB_OAUTH]: { tabId, verifier, doneUrl } satisfies PendingTabOAuth,
+    [STORAGE_KEYS.PENDING_TAB_OAUTH]: {
+      tabId,
+      verifier,
+      doneUrl,
+      keepSignedIn,
+    } satisfies PendingTabOAuth,
   });
   return redirect;
 }
 
 /** Finishes a login whose waiter was lost when the background restarted. */
-export type OrphanRedirectHandler = (redirectUrl: string, verifier: string) => Promise<void>;
+export type OrphanRedirectHandler = (
+  redirectUrl: string,
+  verifier: string,
+  keepSignedIn: boolean,
+) => Promise<void>;
 
 async function handleTabUrl(
   tabId: number,
@@ -106,7 +119,7 @@ async function handleTabUrl(
   if (waiter) {
     waiter.resolve(url);
   } else if (pending) {
-    await onOrphanRedirect(url, pending.verifier);
+    await onOrphanRedirect(url, pending.verifier, pending.keepSignedIn);
   }
 }
 

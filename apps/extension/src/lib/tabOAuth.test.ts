@@ -24,9 +24,11 @@ async function pendingLogin(): Promise<unknown> {
 }
 
 /** Starts a login and returns its tab ID with the (not yet settled) result. */
-async function startLogin(): Promise<{ tabId: number; result: Promise<string> }> {
+async function startLogin(
+  keepSignedIn?: boolean,
+): Promise<{ tabId: number; result: Promise<string> }> {
   const create = vi.spyOn(browser.tabs, 'create');
-  const result = runTabOAuth(START_URL, DONE_URL, 'verifier-1');
+  const result = runTabOAuth(START_URL, DONE_URL, 'verifier-1', keepSignedIn);
   await settle();
   const tab = await create.mock.results[0]!.value;
   return { tabId: tab.id, result };
@@ -47,7 +49,23 @@ describe('runTabOAuth', () => {
     const { tabId } = await startLogin();
 
     expect(browser.tabs.create).toHaveBeenCalledWith({ url: START_URL });
-    expect(await pendingLogin()).toEqual({ tabId, verifier: 'verifier-1', doneUrl: DONE_URL });
+    expect(await pendingLogin()).toEqual({
+      tabId,
+      verifier: 'verifier-1',
+      doneUrl: DONE_URL,
+      keepSignedIn: false,
+    });
+  });
+
+  it('remembers "Keep me signed in" for a background that has to finish the login', async () => {
+    const { tabId } = await startLogin(true);
+
+    expect(await pendingLogin()).toEqual({
+      tabId,
+      verifier: 'verifier-1',
+      doneUrl: DONE_URL,
+      keepSignedIn: true,
+    });
   });
 
   it('resolves with the done URL, closes the tab and forgets the login', async () => {
@@ -98,14 +116,23 @@ describe('a login that outlived its background instance', () => {
   beforeEach(async () => {
     // What a restarted background finds: the stored login, but no waiter.
     await browser.storage.session.set({
-      [STORAGE_KEYS.PENDING_TAB_OAUTH]: { tabId: 42, verifier: 'verifier-1', doneUrl: DONE_URL },
+      [STORAGE_KEYS.PENDING_TAB_OAUTH]: {
+        tabId: 42,
+        verifier: 'verifier-1',
+        doneUrl: DONE_URL,
+        keepSignedIn: true,
+      },
     });
   });
 
-  it('is finished from storage with the stored verifier', async () => {
+  it('is finished from storage with the stored verifier and "Keep me signed in" choice', async () => {
     await navigate(42, `${DONE_URL}?code=handoff-code`);
 
-    expect(onOrphanRedirect).toHaveBeenCalledWith(`${DONE_URL}?code=handoff-code`, 'verifier-1');
+    expect(onOrphanRedirect).toHaveBeenCalledWith(
+      `${DONE_URL}?code=handoff-code`,
+      'verifier-1',
+      true,
+    );
     expect(await pendingLogin()).toBeUndefined();
   });
 

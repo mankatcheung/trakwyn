@@ -1,6 +1,6 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { browser } from 'wxt/browser';
-import { getAuth } from '../lib/storage';
+import { getAuth, getPersistedRefreshToken } from '../lib/storage';
 import { loginWithOAuth, redeemOAuthRedirect, refreshToken } from '../lib/api';
 import { OAuthCancelledError } from '../lib/oauth';
 import { reportOAuthFailure } from '../lib/oauthReporting';
@@ -17,12 +17,19 @@ import {
 export type OAuthLoginResponse = { ok: true } | { ok: false; cancelled: boolean; error?: string };
 
 type RuntimeMessage =
-  | { type: typeof RUNTIME_MESSAGES.OAUTH_LOGIN; provider: OAuthProvider }
+  | {
+      type: typeof RUNTIME_MESSAGES.OAUTH_LOGIN;
+      provider: OAuthProvider;
+      keepSignedIn?: boolean;
+    }
   | { type: typeof RUNTIME_MESSAGES.REFRESH_TOKEN };
 
-async function handleOAuthLogin(provider: OAuthProvider): Promise<OAuthLoginResponse> {
+async function handleOAuthLogin(
+  provider: OAuthProvider,
+  keepSignedIn: boolean,
+): Promise<OAuthLoginResponse> {
   try {
-    await loginWithOAuth(provider);
+    await loginWithOAuth(provider, keepSignedIn);
     await scheduleRefresh();
     return { ok: true };
   } catch (err) {
@@ -41,9 +48,13 @@ async function handleOAuthLogin(provider: OAuthProvider): Promise<OAuthLoginResp
  * (JEF-386). Nobody is waiting for the answer: the popup closed when the tab
  * opened, and the next popup reads the stored session.
  */
-async function finishOrphanedTabLogin(redirectUrl: string, verifier: string): Promise<void> {
+async function finishOrphanedTabLogin(
+  redirectUrl: string,
+  verifier: string,
+  keepSignedIn: boolean,
+): Promise<void> {
   try {
-    await redeemOAuthRedirect(redirectUrl, verifier);
+    await redeemOAuthRedirect(redirectUrl, verifier, keepSignedIn);
     await scheduleRefresh();
   } catch (err) {
     // The next popup shows the sign-in screen, which is all the user sees of
@@ -54,7 +65,13 @@ async function finishOrphanedTabLogin(redirectUrl: string, verifier: string): Pr
 
 // Proactively refresh the token shortly before it expires
 async function scheduleRefresh() {
-  const auth = await getAuth();
+  let auth = await getAuth();
+  // A browser restart clears the session but not a persisted refresh token
+  // ("Keep me signed in", JEF-421): refreshing with it restores the session.
+  if (!auth && (await getPersistedRefreshToken())) {
+    await refreshToken();
+    auth = await getAuth();
+  }
   if (!auth) return;
   const msUntilRefresh = auth.expiresAt - Date.now() - REFRESH_LEEWAY_MS;
   if (msUntilRefresh <= 0) {
@@ -75,7 +92,9 @@ export default defineBackground(() => {
 
   // Registered synchronously so a restarted background still receives them.
   browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
-    if (message.type === RUNTIME_MESSAGES.OAUTH_LOGIN) return handleOAuthLogin(message.provider);
+    if (message.type === RUNTIME_MESSAGES.OAUTH_LOGIN) {
+      return handleOAuthLogin(message.provider, message.keepSignedIn === true);
+    }
     if (message.type === RUNTIME_MESSAGES.REFRESH_TOKEN) return refreshToken();
     return undefined;
   });
