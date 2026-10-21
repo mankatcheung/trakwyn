@@ -1,6 +1,7 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { browser } from 'wxt/browser';
 import { parseJobPage } from '../lib/parsers/index';
+import { extractPageText } from '../lib/parsers/pageText';
 import { CONTENT_MESSAGES } from '../constants';
 
 export default defineContentScript({
@@ -19,6 +20,9 @@ export default defineContentScript({
     // Answer with a promise rather than `sendResponse` + `return true`, which
     // Safari's `browser.runtime.onMessage` does not honour reliably.
     browser.runtime.onMessage.addListener((message: { type?: string }) => {
+      if (message.type === CONTENT_MESSAGES.GET_PAGE_TEXT) {
+        return Promise.resolve(extractPageText(document));
+      }
       if (message.type !== CONTENT_MESSAGES.GET_JOB_DATA) return undefined;
       // The content script reports nothing itself: the popup decides whether
       // `parserHealth` is worth a report (JEF-387).

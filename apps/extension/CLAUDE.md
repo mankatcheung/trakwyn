@@ -46,6 +46,16 @@ The Clipper reports faults to the same PostHog project as web and mobile, throug
 - **`traceparent` goes to the API only**, on every `gql` request. The same id is the `trace_id` on that request's failure event and on the next exception, which links a PostHog report to its Axiom trace.
 - **A report never throws or retries.** A failed send is dropped.
 
+## Reading a posting: built-in or AI (JEF-420)
+
+The popup shows two buttons on a job page (`ReadButtons`): **Read with parser** and **Read with AI**. The user chooses per clip; there is no stored setting and no options screen for it. The popup opens on the built-in result.
+
+- **Parser** is the content script's parsers (`GET_JOB_DATA`). **AI** adds `GET_PAGE_TEXT` (`lib/parsers/pageText.ts`: the main area's text, else the body, capped at `PAGE_TEXT_MAX_CHARS`, the API's `JOB_POSTING_MAX_CHARS`), then the existing `parseJobDescription(text)` mutation (`lib/api.ts`, via `lib/aiRead.ts`). No API change, and no new permission: it works only on the boards the content script matches.
+- **"Read with AI" is disabled without a default AI key.** `hasDefaultAiKey` (`lib/api.ts`) asks `me { defaultLlmProvider }` and `llmApiKeys { provider }` once as the popup opens and is true only when the default provider has a saved key (a default whose key was deleted would fail with `AI_NOT_CONFIGURED` only after the page text was sent). The disabled button links to the web app's `/settings/ai`. A failed check reads as "no key"; the parser still works.
+- **Merge rule** (`lib/parsers/mergeAiResult.ts`): the user asked for the AI, so its answer replaces the parser's for every field it gave; a null or blank AI field never overwrites a parsed one. It merges into the parser's result (`Clip.builtin`), not into an earlier AI read. A clip the AI changed is editable in `ClipCard` before saving, since AI output is a suggestion. **Read with parser** drops the AI result and reads the page again.
+- **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the clip and shows a dismissible notice.
+- **Privacy.** Only pressing **Read with AI** sends the page's text, to the user's own LLM provider through Trakwyn's API. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
+
 ## Testing
 
 Vitest with `WxtVitest()`, which points `wxt/browser` at WXT's in-memory `fakeBrowser`. Call `fakeBrowser.reset()` in `beforeEach`. It does not restore properties a test deletes: `apiAuth.test.ts` removes `identity` to simulate Safari and puts it back itself.

@@ -7,11 +7,13 @@ import {
   logout,
   createApplication,
   getCurrentUser,
+  hasDefaultAiKey,
   isUnauthorizedError,
   type CurrentUser,
 } from '../../lib/api';
 import type { JobData, ParsedJobPage } from '../../lib/parsers/types';
 import { parserHealthProperties } from '../../lib/parsers/health';
+import { readTabWithAi } from '../../lib/aiRead';
 import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
@@ -23,18 +25,57 @@ import {
   type OAuthProvider,
 } from '../../constants';
 import { UserHeader } from './UserHeader';
+import { ClipCard } from './ClipCard';
+import { ReadButtons, type ReadMethod } from './ReadButtons';
+
+interface ReadyScreen {
+  type: 'ready';
+  user: CurrentUser;
+  clip: Clip;
+  /** Where the user adds the AI key that "Read with AI" needs. */
+  settingsUrl: string;
+}
 
 type Screen =
-  | { type: 'loading' }
+  | { type: 'loading'; message?: string }
   | { type: 'login'; error?: string }
-  | { type: 'ready'; jobData: JobData | null; user: CurrentUser }
+  | ReadyScreen
   | { type: 'saving' }
   | { type: 'saved'; appId: string; appUrl: string; company: string; role: string }
   | { type: 'error'; message: string };
 
-async function readActiveTabJobData(): Promise<JobData | null> {
+/** The tab being clipped. Absent when the page has no content script. */
+interface ClipTab {
+  id: number;
+  url: string;
+}
+
+interface Clip {
+  /** What the clip shows: the built-in result, or that merged with the AI's. */
+  jobData: JobData | null;
+  /** The built-in parser's result, which an AI read is merged into. */
+  builtin: JobData | null;
+  tab: ClipTab | null;
+  /** The user has a default AI provider with a saved key (JEF-420). */
+  aiAvailable: boolean;
+  /** The AI changed or filled part of the clip, so the user confirms it before saving. */
+  aiSuggested: boolean;
+  /** Which read is running. */
+  busy: ReadMethod | null;
+  /** Counts reads, so a new result starts the editable draft over. */
+  readId: number;
+  /** Dismissible: why the AI result is missing. */
+  notice?: string;
+}
+
+/** The web app's origin, derived from the configured API URL. */
+function webUrlOf(apiUrl: string): string {
+  return apiUrl.replace('/graphql', '').replace(':3001', ':3000');
+}
+
+async function readActiveTab(): Promise<{ jobData: JobData | null; tab: ClipTab | null }> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return null;
+  if (!tab?.id) return { jobData: null, tab: null };
   try {
     const response: Partial<ParsedJobPage> | undefined = await browser.tabs.sendMessage(tab.id, {
       type: CONTENT_MESSAGES.GET_JOB_DATA,
@@ -42,11 +83,56 @@ async function readActiveTabJobData(): Promise<JobData | null> {
     // A job board whose markup changed shows up as a spike of these (JEF-387).
     const unhealthy = response?.parserHealth && parserHealthProperties(response.parserHealth);
     if (unhealthy) void captureEvent(OBSERVABILITY_EVENTS.PARSER_RESULT, { ...unhealthy });
-    return response?.jobData ?? null;
+    return {
+      // The generic parser can leave `company` undefined despite its type
+      jobData: response?.jobData
+        ? {
+            ...response.jobData,
+            company: response.jobData.company ?? '',
+            role: response.jobData.role ?? '',
+          }
+        : null,
+      tab: tab.url ? { id: tab.id, url: tab.url } : null,
+    };
   } catch {
     // No content script on this page — there's no job data to clip
-    return null;
+    return { jobData: null, tab: null };
   }
+}
+
+/**
+ * Asks the AI to read the tab and merges its answer into the built-in result
+ * (JEF-420). A failure keeps the clip and says why, never a dead end.
+ */
+async function readWithAi(clip: Clip): Promise<Clip> {
+  if (!clip.tab) return { ...clip, busy: null };
+  try {
+    const { jobData, filled } = await readTabWithAi(clip.tab.id, clip.tab.url, clip.builtin);
+    return {
+      ...clip,
+      jobData,
+      aiSuggested: filled.length > 0,
+      busy: null,
+      readId: clip.readId + 1,
+    };
+  } catch (err) {
+    reportUnexpected(err, 'ai_read');
+    const notice = err instanceof Error ? err.message : 'The AI read failed.';
+    return { ...clip, busy: null, notice };
+  }
+}
+
+/** Runs the built-in parser again, dropping any AI result. */
+async function readWithParser(clip: Clip): Promise<Clip> {
+  const { jobData } = await readActiveTab();
+  return {
+    ...clip,
+    jobData,
+    builtin: jobData,
+    aiSuggested: false,
+    busy: null,
+    readId: clip.readId + 1,
+  };
 }
 
 /**
@@ -90,8 +176,24 @@ export function App() {
 
   async function loadReadyScreen() {
     try {
-      const [user, jobData] = await Promise.all([getCurrentUser(), readActiveTabJobData()]);
-      setScreen({ type: 'ready', jobData, user });
+      const [user, read, aiAvailable, apiUrl] = await Promise.all([
+        getCurrentUser(),
+        readActiveTab(),
+        // A failed check leaves the AI button disabled: `gql` already reported
+        // an unreachable API, and the parser works without it.
+        hasDefaultAiKey().catch(() => false),
+        getApiUrl(),
+      ]);
+      const clip: Clip = {
+        jobData: read.jobData,
+        builtin: read.jobData,
+        tab: read.tab,
+        aiAvailable,
+        aiSuggested: false,
+        busy: null,
+        readId: 0,
+      };
+      setScreen({ type: 'ready', user, clip, settingsUrl: `${webUrlOf(apiUrl)}/settings/ai` });
     } catch (err) {
       if (isUnauthorizedError(err)) {
         // The stored token was revoked or rejected — start over at sign-in
@@ -142,6 +244,18 @@ export function App() {
     setScreen({ type: 'login' });
   }
 
+  async function handleRead(ready: ReadyScreen, method: ReadMethod) {
+    const { user, settingsUrl } = ready;
+    setScreen({
+      type: 'ready',
+      user,
+      settingsUrl,
+      clip: { ...ready.clip, busy: method, notice: undefined },
+    });
+    const clip = method === 'ai' ? await readWithAi(ready.clip) : await readWithParser(ready.clip);
+    setScreen({ type: 'ready', user, settingsUrl, clip });
+  }
+
   async function handleSave(jobData: JobData) {
     setScreen({ type: 'saving' });
     try {
@@ -152,8 +266,7 @@ export function App() {
         description: jobData.description,
         source: jobData.source,
       });
-      const apiUrl = await getApiUrl();
-      const webUrl = apiUrl.replace('/graphql', '').replace(':3001', ':3000');
+      const webUrl = webUrlOf(await getApiUrl());
       setScreen({
         type: 'saved',
         appId: app.id,
@@ -171,6 +284,7 @@ export function App() {
     return (
       <div className="container center">
         <div className="spinner" />
+        {screen.message && <p className="muted">{screen.message}</p>}
       </div>
     );
   }
@@ -270,24 +384,46 @@ export function App() {
   }
 
   // ready screen
-  const { jobData, user } = screen;
+  const { user, clip, settingsUrl } = screen;
+  const { jobData } = clip;
 
   return (
     <div className="container">
       <UserHeader user={user} onSignOut={handleLogout} />
 
-      {jobData ? (
-        <div className="job-card">
-          <div className="job-source">{jobData.source ?? 'Job posting'}</div>
-          <h2 className="job-role">{jobData.role}</h2>
-          <p className="job-company">{jobData.company}</p>
-          {jobData.location && <p className="job-location">📍 {jobData.location}</p>}
-          {jobData.description && (
-            <p className="job-description">{jobData.description.slice(0, 200)}…</p>
-          )}
-          <button onClick={() => handleSave(jobData)} className="btn btn-primary btn-full">
-            Save as Application
+      {clip.notice && (
+        <div className="error-box" role="status">
+          {clip.notice}{' '}
+          <button
+            className="btn btn-ghost"
+            onClick={() => setScreen({ ...screen, clip: { ...clip, notice: undefined } })}
+          >
+            Dismiss
           </button>
+        </div>
+      )}
+
+      {clip.tab && (
+        <ReadButtons
+          busy={clip.busy}
+          aiAvailable={clip.aiAvailable}
+          settingsUrl={settingsUrl}
+          onRead={(method) => handleRead(screen, method)}
+        />
+      )}
+
+      {jobData ? (
+        <ClipCard
+          // A new read replaces the clip, so the editable draft starts over
+          key={clip.readId}
+          jobData={jobData}
+          aiSuggested={clip.aiSuggested}
+          busy={clip.busy !== null}
+          onSave={handleSave}
+        />
+      ) : clip.tab ? (
+        <div className="empty-state">
+          <p>Couldn't read this page.</p>
         </div>
       ) : (
         <div className="empty-state">

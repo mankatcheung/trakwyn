@@ -327,3 +327,61 @@ export async function createApplication(input: {
   });
   return data.createApplication;
 }
+
+const PARSE_JOB_DESCRIPTION = `
+  mutation ParseJobDescription($text: String!) {
+    parseJobDescription(text: $text) { company role location description }
+  }
+`;
+
+export interface AiParsedJob {
+  company: string | null;
+  role: string | null;
+  location: string | null;
+  description: string | null;
+}
+
+/** What the user is told when the AI read fails with one of the API's codes. */
+const AI_ERROR_MESSAGES: Record<string, string> = {
+  [API_ERROR_CODES.AI_NOT_CONFIGURED]:
+    'Add your AI provider key in Trakwyn settings to read postings with AI.',
+  [API_ERROR_CODES.AI_LIMIT_REACHED]: 'Your AI key has reached its monthly token limit.',
+  [API_ERROR_CODES.AI_PROVIDER_ERROR]: 'Your AI provider returned an error. Try again later.',
+  [API_ERROR_CODES.AI_RESPONSE_INVALID]: "The AI couldn't make sense of this posting.",
+  [API_ERROR_CODES.RATE_LIMITED]: "You're reading postings too quickly. Try again in a minute.",
+};
+
+/**
+ * Sends the page's text to the API's AI parser (JEF-420), which uses the
+ * user's own provider key. Rejects with an `ApiError` carrying readable copy
+ * for the codes in `AI_ERROR_MESSAGES`.
+ */
+export async function parseJobDescription(text: string): Promise<AiParsedJob> {
+  try {
+    const data = await authedGql<{ parseJobDescription: AiParsedJob }>(PARSE_JOB_DESCRIPTION, {
+      text,
+    });
+    return data.parseJobDescription;
+  } catch (err) {
+    const message = err instanceof ApiError && err.code && AI_ERROR_MESSAGES[err.code];
+    if (message) throw new ApiError(message, err.code);
+    throw err;
+  }
+}
+
+const AI_AVAILABILITY = `query AiAvailability { me { defaultLlmProvider } llmApiKeys { provider } }`;
+
+/**
+ * Whether "Read with AI" can work (JEF-420): the user has a default provider
+ * and a saved key for it. A default whose key was deleted would otherwise fail
+ * with `AI_NOT_CONFIGURED` only after the page text was sent. Only the answer
+ * is returned; provider names are not kept.
+ */
+export async function hasDefaultAiKey(): Promise<boolean> {
+  const data = await authedGql<{
+    me: { defaultLlmProvider: string | null } | null;
+    llmApiKeys: Array<{ provider: string }>;
+  }>(AI_AVAILABILITY);
+  const provider = data.me?.defaultLlmProvider;
+  return !!provider && data.llmApiKeys.some((key) => key.provider === provider);
+}
