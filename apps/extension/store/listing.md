@@ -29,7 +29,7 @@ HOW IT WORKS
 
 PRIVACY
 • Reads a page only when you open the Clipper on a supported job site. Nothing is sent until you save.
-• Your sign-in is kept in the browser's session storage and sent only to the Trakwyn API.
+• Your sign-in is kept in the browser's session storage and sent only to the Trakwyn API. If you choose “Keep me signed in”, the refresh token is also kept in local storage on your device so you stay signed in after a restart.
 • Anonymous error reports contain no personal data, no tokens, no job content and no page addresses.
 • Your data is never sold.
 
@@ -76,7 +76,7 @@ Save job postings from supported job boards to the user's Trakwyn account.
 
 #### `storage`
 
-Keeps the user's sign-in state (in session storage) and the optional API address setting from the options page. Nothing else is stored.
+Keeps the user's sign-in state and the optional API address setting from the options page. The access token stays in session storage. The refresh token is also written to local storage only if the user ticks “Keep me signed in” when signing in, so they stay signed in after a browser restart; signing out removes it. Nothing else is stored.
 
 #### `activeTab`
 
@@ -99,7 +99,7 @@ No, this extension does not use remote code. All JavaScript ships in the package
 Tick these categories:
 
 - **Personally identifiable information**: the signed-in user's name and email, shown in the popup and held only as part of their session.
-- **Authentication information**: the user's sign-in credentials (email and password, or the Google/GitHub sign-in result) and the session tokens, sent only to the Trakwyn API.
+- **Authentication information**: the user's sign-in credentials (email and password, or the Google/GitHub sign-in result) and the session tokens, sent only to the Trakwyn API. With “Keep me signed in” the refresh token also stays on the user's device in local storage.
 - **Website content**: the job posting the user clips (title, company, location, description and link) and, only if they press Read with AI, the page text.
 
 Leave the other categories unticked, including **Personal communications**: the Clipper reads job postings and no messages or email. Anonymous error reports carry no data in any of these categories (they name the job board and an error, never content or a person).

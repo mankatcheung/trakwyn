@@ -58,6 +58,13 @@ describe('store listing copy', () => {
     },
   );
 
+  it('discloses that Keep me signed in keeps the refresh token on the device', () => {
+    // JEF-421: the refresh token is written to local storage when the user opts in.
+    expect(section('#### `storage`')).toMatch(/local storage/);
+    expect(section('#### `storage`')).toMatch(/Keep me signed in/);
+    expect(section('### Full description')).toMatch(/Keep me signed in/);
+  });
+
   it('justifies the content script hosts', () => {
     const justification = section('#### Content script hosts');
 
