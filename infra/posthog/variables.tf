@@ -61,3 +61,28 @@ variable "crash_alert_app_version" {
   type        = string
   default     = null
 }
+
+# Clipper health (JEF-417). A starting point: the Clipper has no store traffic
+# yet, so there is no baseline to set it from.
+
+variable "clipper_parser_alert_daily" {
+  description = "Alert when one job board's parser results (a page the Clipper's parsers could not fully read) exceed this many in a day. A count, not a rate: the Clipper sends no clip events to divide by."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.clipper_parser_alert_daily > 0
+    error_message = "Must be above 0, or the alert fires on a quiet day."
+  }
+}
+
+variable "clipper_alert_boards" {
+  description = "Job boards that get a parser-result alert. PostHog's plan allows 5 alerts in the project and the mobile crash alert uses one, so keep this to 4 or fewer or an apply fails with \"reached the limit of 5 alerts\". Every board stays on the dashboard either way. Ids are those of local.clipper_boards."
+  type        = list(string)
+  default     = ["linkedin", "indeed", "greenhouse", "workday"]
+
+  validation {
+    condition     = alltrue([for board in var.clipper_alert_boards : contains(["linkedin", "indeed", "glassdoor", "greenhouse", "lever", "workday"], board)])
+    error_message = "Each board must be one of linkedin, indeed, glassdoor, greenhouse, lever, workday."
+  }
+}

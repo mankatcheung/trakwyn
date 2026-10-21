@@ -32,6 +32,13 @@ export const STORAGE_KEYS = {
   API_URL: 'apiUrl',
 } as const;
 
+/**
+ * Page text sent to `parseJobDescription` is cut to this. The API reads the
+ * first `AI_PROMPT_INPUT.JOB_POSTING_MAX_CHARS` (8000) and drops the rest, so
+ * sending more only spends the user's bandwidth.
+ */
+export const PAGE_TEXT_MAX_CHARS = 8000;
+
 /** OAuth login through the API's handoff-code flow (JEF-383). */
 export const OAUTH = {
   /** The API's `OAUTH_PLATFORM.EXTENSION`: Chrome's `launchWebAuthFlow`. */
@@ -72,6 +79,8 @@ export const RUNTIME_MESSAGES = {
 /** Messages the popup sends the job-page content script. */
 export const CONTENT_MESSAGES = {
   GET_JOB_DATA: 'GET_JOB_DATA',
+  /** The visible text of the posting, for the AI parser (JEF-420). */
+  GET_PAGE_TEXT: 'GET_PAGE_TEXT',
 } as const;
 
 /** HTTP Authorization header. */
@@ -82,6 +91,12 @@ export const AUTH_HEADER = {
 /** GraphQL `extensions.code` values the extension reacts to. */
 export const API_ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
+  /** The API's AI errors, shown with their own copy (JEF-420). */
+  AI_NOT_CONFIGURED: 'AI_NOT_CONFIGURED',
+  AI_LIMIT_REACHED: 'AI_LIMIT_REACHED',
+  AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
+  AI_RESPONSE_INVALID: 'AI_RESPONSE_INVALID',
+  RATE_LIMITED: 'RATE_LIMITED',
 } as const;
 
 /** From this status up, a response is the API failing rather than answering. */

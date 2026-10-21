@@ -45,4 +45,10 @@ describe('TermsPage', () => {
     const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
     expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
   });
+
+  it('covers the Clipper browser extension', () => {
+    render(<TermsPage />);
+
+    expect(screen.getByRole('heading', { name: 'Browser extension' })).toBeInTheDocument();
+  });
 });

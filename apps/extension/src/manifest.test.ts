@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { API_URLS } from './apiUrls';
-import { buildManifest } from './manifest';
+import { buildManifest, WEB_STORE_PUBLIC_KEY } from './manifest';
+
+const WEB_STORE_EXTENSION_ID = 'pnpgngnojencbggokjhpfhmliijakmhe';
 
 const DEV_HOST_PERMISSION = `${new URL(API_URLS.DEVELOPMENT).origin}/*`;
 
@@ -34,5 +36,29 @@ describe('buildManifest permissions', () => {
     const { permissions } = buildManifest({ browser: 'safari', command: 'build' });
 
     expect(permissions).toEqual(['storage', 'activeTab', 'tabs']);
+  });
+});
+
+describe('buildManifest key', () => {
+  it.each(['build', 'serve'] as const)('pins a Chrome %s to the Web Store ID', (command) => {
+    const manifest = buildManifest({ browser: 'chrome', command });
+
+    expect(manifest.key).toBe(WEB_STORE_PUBLIC_KEY);
+  });
+
+  it('derives the Web Store ID from the key', async () => {
+    // Chrome's rule: the first 128 bits of the SHA-256 of the DER key, as a-p.
+    const der = Uint8Array.from(atob(WEB_STORE_PUBLIC_KEY), (c) => c.charCodeAt(0));
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', der));
+    const id = [...digest.slice(0, 16)]
+      .map((b) => (b >> 4).toString(16) + (b & 15).toString(16))
+      .join('')
+      .replace(/[0-9a-f]/g, (h) => String.fromCharCode(97 + parseInt(h, 16)));
+
+    expect(id).toBe(WEB_STORE_EXTENSION_ID);
+  });
+
+  it('leaves Safari without a key', () => {
+    expect(buildManifest({ browser: 'safari', command: 'build' }).key).toBeUndefined();
   });
 });

@@ -42,4 +42,18 @@ describe('PrivacyPage', () => {
     const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
     expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
   });
+
+  it('describes what the Clipper browser extension reads, stores and sends', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByRole('heading', { name: 'The Trakwyn Clipper browser extension' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/reads the job posting on the page you’re viewing/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Read with AI/)).toBeInTheDocument();
+    expect(screen.getByText(/session storage/i)).toBeInTheDocument();
+    expect(screen.getByText(/anonymous error reports/i)).toBeInTheDocument();
+  });
 });
