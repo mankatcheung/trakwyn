@@ -54,6 +54,11 @@ describe('PrivacyPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Read with AI/)).toBeInTheDocument();
     expect(screen.getByText(/session storage/i)).toBeInTheDocument();
+    // The opt-in persisted token is disclosed, not only the session copy.
+    expect(screen.getByText(/Keep me signed in/)).toBeInTheDocument();
+    expect(screen.getByText(/local storage/i)).toBeInTheDocument();
+    // The options page and its API address setting are gone (JEF-418).
+    expect(screen.queryByText(/API address/i)).not.toBeInTheDocument();
     expect(screen.getByText(/anonymous error reports/i)).toBeInTheDocument();
   });
 });
