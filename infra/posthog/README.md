@@ -1,4 +1,4 @@
-# infra/posthog: the PostHog project's privacy settings and mobile release health
+# infra/posthog: the PostHog project's privacy settings, mobile release health and Clipper health
 
 The PostHog project the web and mobile apps report errors and product events to (JEF-349), as Terraform (JEF-363). The clients already switch off everything that could record page content. This root sets the same switches on the project itself, so a dashboard toggle cannot quietly turn one back on, and a `plan` shows it if somebody does. It also publishes the project's public key, which `infra/vercel` reads instead of having it pasted into the Vercel dashboard.
 
@@ -10,6 +10,7 @@ The PostHog project the web and mobile apps report errors and product events to 
 | `posthog_project_settings.web` | The project-level switches below (imported).                                  |
 | Output `project_api_key`       | The public `phc_` key; `infra/vercel` sets it as `VITE_POSTHOG_KEY`.          |
 | `release_health.tf`            | The mobile release health dashboard and its alert (JEF-368, below).           |
+| `clipper_health.tf`            | The Clipper health dashboard and its parser alerts (JEF-417, below).          |
 
 ### Project settings
 
@@ -127,9 +128,40 @@ Tell them apart by `$lib = trakwyn-extension`. `context` is `background`, `popup
 
 **Why no consent gate.** The same reasoning as the server-side errors: these are operational reports about the extension, not analytics about a person, and they carry nothing that identifies one. `$process_person_profile: false`, a random `distinct_id` per event (nothing is stored on the device to link two reports), `$geoip_disable`, and `anonymize_ips` on the project. They never hold a token, the email, the OAuth handoff code, GraphQL variables, job content or a page URL: `parser_result` names the board, not the hostname, and every message and stack passes the same scrubber as the web app's. Only faults are sent. Counting clips or sign-ins would be product analytics and would need a consent decision first.
 
-The alert above triggers on new and reopened Error Tracking issues, so it covers the extension's `$exception` events unless it was given a filter that leaves them out (check for one on `$lib` or `web_event`). The other four events are plain events and have no alert yet.
+The alert above triggers on new and reopened Error Tracking issues, so it covers the extension's `$exception` events unless it was given a filter that leaves them out (check for one on `$lib` or `web_event`). The other four events are plain events: `clipper_health.tf` charts them and alerts on `parser_result` (below).
 
 The Chrome Web Store listing's privacy disclosure must say that anonymous error diagnostics are collected before a build with the key is published.
+
+### Clipper health (JEF-417)
+
+A store release cannot be rolled back, only replaced, and installed copies stay on an old version for days after an update. `clipper_health.tf` builds a **Clipper health** dashboard so a board that stopped parsing, or a release that broke something, shows up by `board` and by `release`.
+
+| Resource                                    | What                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `posthog_dashboard.clipper_health`          | The dashboard. Its first tile is `clipper_health_definitions.md`.                                      |
+| `posthog_insight.clipper_parser_by_board`   | `parser_result` per day, one line per job board. The alerts watch these lines.                         |
+| `posthog_insight.clipper_parser_by_release` | `parser_result` per day, split by `release`.                                                           |
+| `posthog_insight.clipper_faults_by_release` | `graphql_request_failed`, `token_refresh_failed` and `oauth_login_failed` per day, split by `release`. |
+| `posthog_alert.clipper_parser_spike`        | One per board: fires when the previous complete day's `parser_result` count for it exceeds the limit.  |
+| `posthog_dashboard_layout.clipper_health`   | Tile order and sizes. Authoritative: tiles added by hand lose their place on apply.                    |
+
+Everything filters on `$lib = trakwyn-extension`, because web, the web server and mobile report to the same project. `release` is the extension's manifest version.
+
+**What the numbers are.** Counts of fault reports, never of users or clips: the Clipper sends no product events (see "Why no consent gate"), so PostHog has no clip count to divide by, and every query reads "how many reports", not "what share". That is why the alert is an absolute count per board per day (`clipper_parser_alert_daily`, default `10`) and not a rate. It is a starting point; with no store traffic yet there is no baseline to set it from. Raise it if a quiet board keeps firing, lower it once the baseline is known.
+
+**Non-job pages count.** LinkedIn and Indeed send `parser_result` only when the URL names a job; Glassdoor, Greenhouse, Lever and Workday cannot tell, so a few reports from their non-job pages are normal. The alert is per board for this reason: one board's baseline differs from another's.
+
+**A new board.** `JOB_BOARDS` in `apps/extension/src/constants.ts` needs a matching entry in `local.clipper_boards`, or its reports appear only under the release split. `workday.com` and `myworkdayjobs.com` are both `workday`.
+
+| Variable                     | Default | Meaning                                                             |
+| ---------------------------- | ------- | ------------------------------------------------------------------- |
+| `clipper_parser_alert_daily` | `10`    | Alert when one board's `parser_result` count in a day exceeds this. |
+
+It notifies the same users as the mobile alert (`release_health_alert_user_ids`). The key also needs `dashboard:write`, `insight:write` and `alert:write`, as for mobile release health.
+
+**What to do when it fires.** Open the board's line, then Activity filtered to `parser_result` and that `board`: `missing_fields` says whether `company`, `role` or `description` went missing, and `parser` and `site_parser_failed` say whether the board's own parser ran or fell back to the generic one. Reproduce the page in `apps/extension/src/lib/parsers/__fixtures__`, fix, and ship it by the hotfix path in `apps/extension/CLAUDE.md`.
+
+**Checking it.** Apply, open the dashboard, and send a test event the way "Checking it end to end" does with `$lib` set to `trakwyn-extension`, `board` set to `linkedin` and `release` set to `0.0.0-test`; it appears on the `linkedin` line and under its own release. A day's count above the limit makes the alert's next daily check fire.
 
 ## Mobile release health (JEF-368)
 
@@ -206,7 +238,7 @@ For the same reason as `infra/axiom`: the PostHog personal API key is a provider
 
 You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `infra/gcp/README.md`), and a PostHog **personal** API key. The project key the clients use cannot manage anything.
 
-Create it under **Account settings → Personal API keys → Create personal API key**. Scope it to the one organization and project, and give it `project:read` and `project:write` (settings live on the project) plus `organization:read` (the project import resolves the organization). The release health dashboard (JEF-368) also needs `dashboard:write`, `insight:write` and `alert:write`, and `organization_member:read` to look up user IDs. If the first `plan` fails with a 403, the message names the missing scope.
+Create it under **Account settings → Personal API keys → Create personal API key**. Scope it to the one organization and project, and give it `project:read` and `project:write` (settings live on the project) plus `organization:read` (the project import resolves the organization). The release health dashboard (JEF-368) and the Clipper health dashboard (JEF-417) also need `dashboard:write`, `insight:write` and `alert:write`, and `organization_member:read` to look up user IDs. If the first `plan` fails with a 403, the message names the missing scope.
 
 ```bash
 cd infra/posthog

@@ -56,6 +56,22 @@ The popup shows two buttons on a job page (`ReadButtons`): **Read with parser** 
 - **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the clip and shows a dismissible notice.
 - **Privacy.** Only pressing **Read with AI** sends the page's text, to the user's own LLM provider through Trakwyn's API. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
 
+## After launch: compatibility and hotfixes (JEF-417)
+
+A store release cannot be rolled back, only replaced, and an installed copy stays on its version until the browser updates it. Two things break it in the field: the API changing under it, and a job board changing its page.
+
+- **API compatibility.** `src/__tests__/graphqlDocuments.test.ts` validates every document in `lib/api.ts` against the API's schema, printed by `pnpm --filter @trakwyn/api schema:print` (no API to boot), so a renamed or removed field fails CI. It extracts documents with `src/__tests__/support/extractGraphqlDocuments.ts`, a copy of mobile's, and reports an interpolation it cannot resolve rather than skipping the document. A new document goes in `lib/api.ts` as a template string, which the test then covers. What the API may and may not change is in `apps/api/CLAUDE.md` ("Client compatibility"); the `*Mobile` mutations are this app's contract.
+- **Seeing a break.** The Clipper health dashboard (`infra/posthog/README.md`, "Clipper health") charts `parser_result` per board and the API, refresh and sign-in failures per `release`, and alerts when one board's parser results pass a daily count.
+- **A board changed its page.** Reproduce it first: save the page's markup as a fixture in `src/lib/parsers/__fixtures__` (strip personal data and keep it small), write the failing parser test against it, then fix the parser. The fixtures are how every parser test runs, so the regression stays covered.
+- **Shipping an expedited fix.**
+  1. Land the fix as a `fix(extension): …` commit. release-please opens the Clipper release PR (root `CLAUDE.md`); merge it to bump the version and tag `clipper-v…`.
+  2. Build the zip without a local `.env` (a stray `VITE_API_URL` is baked into the bundle) and with the public `VITE_POSTHOG_KEY` set: `pnpm --filter @trakwyn/extension zip`.
+  3. Upload it in the Web Store dashboard (**Package → Upload new package**) and submit for review. The new version number must be higher than the live one.
+  4. Ask for an expedited review through Chrome Web Store developer support. Nothing guarantees it, and an ordinary review can take days, so assume the broken version stays live that long. Do not promise users a date.
+  5. After it is published, watch the dashboard's `release` split: the fix is working when the old version's line stops growing and the new one's stays flat. Installed copies update on the browser's own schedule, which can take days more.
+- **Safari ships separately.** It goes through the App Store and its own review (`package:safari`, above), so a parser fix reaches Safari users later than Chrome users. It reports under the same `release`.
+- **No forced update.** There is no minimum-supported-version signal from the API, so a very old Clipper cannot be told to update. If the compatibility rule is kept, that does not matter.
+
 ## Testing
 
 Vitest with `WxtVitest()`, which points `wxt/browser` at WXT's in-memory `fakeBrowser`. Call `fakeBrowser.reset()` in `beforeEach`. It does not restore properties a test deletes: `apiAuth.test.ts` removes `identity` to simulate Safari and puts it back itself.
