@@ -368,3 +368,20 @@ export async function parseJobDescription(text: string): Promise<AiParsedJob> {
     throw err;
   }
 }
+
+const AI_AVAILABILITY = `query AiAvailability { me { defaultLlmProvider } llmApiKeys { provider } }`;
+
+/**
+ * Whether "Read with AI" can work (JEF-420): the user has a default provider
+ * and a saved key for it. A default whose key was deleted would otherwise fail
+ * with `AI_NOT_CONFIGURED` only after the page text was sent. Only the answer
+ * is returned; provider names are not kept.
+ */
+export async function hasDefaultAiKey(): Promise<boolean> {
+  const data = await authedGql<{
+    me: { defaultLlmProvider: string | null } | null;
+    llmApiKeys: Array<{ provider: string }>;
+  }>(AI_AVAILABILITY);
+  const provider = data.me?.defaultLlmProvider;
+  return !!provider && data.llmApiKeys.some((key) => key.provider === provider);
+}

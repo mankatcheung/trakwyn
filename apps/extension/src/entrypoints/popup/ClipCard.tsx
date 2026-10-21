@@ -5,22 +5,13 @@ interface ClipCardProps {
   jobData: JobData;
   /** The AI supplied part of this clip, so it is a suggestion the user confirms. */
   aiSuggested: boolean;
-  /** Offer "Re-read with AI": the built-in parser left out a field a clip needs. */
-  canReread: boolean;
-  rereading: boolean;
-  onReread: () => void;
+  /** A read is running, so saving waits for its result. */
+  busy: boolean;
   onSave: (jobData: JobData) => void;
 }
 
 /** The clip, read-only as parsed, or editable when the AI filled it in (JEF-420). */
-export function ClipCard({
-  jobData,
-  aiSuggested,
-  canReread,
-  rereading,
-  onReread,
-  onSave,
-}: ClipCardProps) {
+export function ClipCard({ jobData, aiSuggested, busy, onSave }: ClipCardProps) {
   const [draft, setDraft] = useState(jobData);
   const clip = aiSuggested ? draft : jobData;
   const canSave = clip.company.trim() !== '' && clip.role.trim() !== '';
@@ -57,16 +48,11 @@ export function ClipCard({
       {clip.description && <p className="job-description">{clip.description.slice(0, 200)}…</p>}
       <button
         onClick={() => onSave(clip)}
-        disabled={!canSave || rereading}
+        disabled={!canSave || busy}
         className="btn btn-primary btn-full"
       >
         Save as Application
       </button>
-      {canReread && (
-        <button onClick={onReread} disabled={rereading} className="btn btn-ghost btn-full">
-          {rereading ? 'Reading…' : 'Re-read with AI'}
-        </button>
-      )}
     </div>
   );
 }

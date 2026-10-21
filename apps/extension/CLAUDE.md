@@ -48,13 +48,13 @@ The Clipper reports faults to the same PostHog project as web and mobile, throug
 
 ## Reading a posting: built-in or AI (JEF-420)
 
-`parseMode` (`'builtin'` default, or `'ai'`) is in `storage.sync`, set on the options page (`ParseModeForm`); an unrecognised value reads as `builtin`.
+The popup shows two buttons on a job page (`ReadButtons`): **Read with parser** and **Read with AI**. The user chooses per clip; there is no stored setting and no options screen for it. The popup opens on the built-in result.
 
-- **Built-in** is the content script's parsers (`GET_JOB_DATA`). **AI** adds `GET_PAGE_TEXT` (`lib/parsers/pageText.ts`: the main area's text, else the body, capped at `PAGE_TEXT_MAX_CHARS`, the API's `JOB_POSTING_MAX_CHARS`), then the existing `parseJobDescription(text)` mutation (`lib/api.ts`, via `lib/aiRead.ts`). No API change, and no new permission: it works only on the boards the content script matches.
-- **Merge rule** (`lib/parsers/mergeAiResult.ts`): the AI fills only fields the built-in parser left empty; a built-in value always wins, and a null or blank AI field never overwrites one. A clip the AI filled is editable in `ClipCard` before saving, since AI output is a suggestion.
-- **Re-read with AI** shows when the built-in result lacks `REQUIRED_JOB_FIELDS` (or found nothing), whatever the setting, and runs the same path once per popup.
-- **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the built-in result and shows a dismissible notice. There is no "AI configured" check: the API's `llmApiKeys` query would need a sign-in from the options page, so the `AI_NOT_CONFIGURED` answer is the signal.
-- **Privacy.** AI mode (or the button) sends the page's text to the user's own LLM provider through Trakwyn's API. Nothing is sent unless the user chose it. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
+- **Parser** is the content script's parsers (`GET_JOB_DATA`). **AI** adds `GET_PAGE_TEXT` (`lib/parsers/pageText.ts`: the main area's text, else the body, capped at `PAGE_TEXT_MAX_CHARS`, the API's `JOB_POSTING_MAX_CHARS`), then the existing `parseJobDescription(text)` mutation (`lib/api.ts`, via `lib/aiRead.ts`). No API change, and no new permission: it works only on the boards the content script matches.
+- **"Read with AI" is disabled without a default AI key.** `hasDefaultAiKey` (`lib/api.ts`) asks `me { defaultLlmProvider }` and `llmApiKeys { provider }` once as the popup opens and is true only when the default provider has a saved key (a default whose key was deleted would fail with `AI_NOT_CONFIGURED` only after the page text was sent). The disabled button links to the web app's `/settings/ai`. A failed check reads as "no key"; the parser still works.
+- **Merge rule** (`lib/parsers/mergeAiResult.ts`): the user asked for the AI, so its answer replaces the parser's for every field it gave; a null or blank AI field never overwrites a parsed one. It merges into the parser's result (`Clip.builtin`), not into an earlier AI read. A clip the AI changed is editable in `ClipCard` before saving, since AI output is a suggestion. **Read with parser** drops the AI result and reads the page again.
+- **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the clip and shows a dismissible notice.
+- **Privacy.** Only pressing **Read with AI** sends the page's text, to the user's own LLM provider through Trakwyn's API. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
 
 ## Testing
 

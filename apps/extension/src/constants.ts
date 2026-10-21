@@ -24,14 +24,7 @@ export const STORAGE_KEYS = {
   PENDING_TAB_OAUTH: 'pendingTabOAuth',
   /** Sync-scoped configured API URL. */
   API_URL: 'apiUrl',
-  /** Sync-scoped choice of how the popup reads a posting (JEF-420). */
-  PARSE_MODE: 'parseMode',
 } as const;
-
-/** Who reads a job posting: the deterministic parsers, or the API's AI parser (JEF-420). */
-export const PARSE_MODES = ['builtin', 'ai'] as const;
-export type ParseMode = (typeof PARSE_MODES)[number];
-export const DEFAULT_PARSE_MODE: ParseMode = 'builtin';
 
 /**
  * Page text sent to `parseJobDescription` is cut to this. The API reads the

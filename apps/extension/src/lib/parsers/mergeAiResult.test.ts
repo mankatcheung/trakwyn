@@ -13,14 +13,30 @@ const builtin: JobData = {
 const nothing = { company: null, role: null, location: null, description: null };
 
 describe('mergeAiResult', () => {
-  it('keeps built-in values when both parsers have one', () => {
+  it('takes the AI value where both parsers have one, and reports it', () => {
     const { jobData, filled } = mergeAiResult(
       builtin,
       { company: 'Other', role: 'Other role', location: 'Paris', description: 'AI text' },
       page,
     );
 
-    expect(jobData).toEqual(builtin);
+    expect(jobData).toEqual({
+      ...builtin,
+      company: 'Other',
+      role: 'Other role',
+      location: 'Paris',
+      description: 'AI text',
+    });
+    expect(filled).toEqual(['company', 'role', 'location', 'description']);
+  });
+
+  it('does not report a field the AI agreed with', () => {
+    const { filled } = mergeAiResult(
+      builtin,
+      { company: ' Acme ', role: 'Engineer', location: null, description: null },
+      page,
+    );
+
     expect(filled).toEqual([]);
   });
 

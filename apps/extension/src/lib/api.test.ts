@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { ApiError, getCurrentUser, isUnauthorizedError, parseJobDescription } from './api';
+import {
+  ApiError,
+  getCurrentUser,
+  hasDefaultAiKey,
+  isUnauthorizedError,
+  parseJobDescription,
+} from './api';
 import { getAuth } from './storage';
 
 vi.mock('./storage', () => ({
@@ -123,5 +129,33 @@ describe('parseJobDescription', () => {
     const err = await parseJobDescription('x').catch((e: unknown) => e);
 
     expect(isUnauthorizedError(err)).toBe(true);
+  });
+});
+
+describe('hasDefaultAiKey', () => {
+  const answer = (defaultLlmProvider: string | null, providers: string[]) =>
+    respondWith({
+      data: {
+        me: { defaultLlmProvider },
+        llmApiKeys: providers.map((provider) => ({ provider })),
+      },
+    });
+
+  it('is true when the default provider has a saved key', async () => {
+    answer('anthropic', ['openai', 'anthropic']);
+
+    await expect(hasDefaultAiKey()).resolves.toBe(true);
+  });
+
+  it('is false when no default provider is set', async () => {
+    answer(null, ['anthropic']);
+
+    await expect(hasDefaultAiKey()).resolves.toBe(false);
+  });
+
+  it('is false when the default provider has no saved key', async () => {
+    answer('anthropic', ['openai']);
+
+    await expect(hasDefaultAiKey()).resolves.toBe(false);
   });
 });

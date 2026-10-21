@@ -260,6 +260,19 @@ body {
 }
 
 /* ── Misc ── */
+.read-buttons {
+  margin-bottom: 12px;
+}
+
+.read-buttons-row {
+  display: flex;
+  gap: 8px;
+}
+
+.read-buttons-row .btn {
+  flex: 1;
+}
+
 .muted {
   color: #9ca3af;
   font-size: 12px;
