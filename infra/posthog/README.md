@@ -136,14 +136,14 @@ The Chrome Web Store listing's privacy disclosure must say that anonymous error 
 
 A store release cannot be rolled back, only replaced, and installed copies stay on an old version for days after an update. `clipper_health.tf` builds a **Clipper health** dashboard so a board that stopped parsing, or a release that broke something, shows up by `board` and by `release`.
 
-| Resource                                    | What                                                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `posthog_dashboard.clipper_health`          | The dashboard. Its first tile is `clipper_health_definitions.md`.                                      |
-| `posthog_insight.clipper_parser_by_board`   | `parser_result` per day, one line per job board. The alerts watch these lines.                         |
-| `posthog_insight.clipper_parser_by_release` | `parser_result` per day, split by `release`.                                                           |
-| `posthog_insight.clipper_faults_by_release` | `graphql_request_failed`, `token_refresh_failed` and `oauth_login_failed` per day, split by `release`. |
-| `posthog_alert.clipper_parser_spike`        | One per board: fires when the previous complete day's `parser_result` count for it exceeds the limit.  |
-| `posthog_dashboard_layout.clipper_health`   | Tile order and sizes. Authoritative: tiles added by hand lose their place on apply.                    |
+| Resource                                    | What                                                                                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `posthog_dashboard.clipper_health`          | The dashboard. Its first tile is `clipper_health_definitions.md`.                                                               |
+| `posthog_insight.clipper_parser_by_board`   | `parser_result` per day, one line per job board. The alerts watch these lines.                                                  |
+| `posthog_insight.clipper_parser_by_release` | `parser_result` per day, split by `release`.                                                                                    |
+| `posthog_insight.clipper_faults_by_release` | `graphql_request_failed`, `token_refresh_failed` and `oauth_login_failed` per day, split by `release`.                          |
+| `posthog_alert.clipper_parser_spike`        | One per board in `clipper_alert_boards`: fires when the previous complete day's `parser_result` count for it exceeds the limit. |
+| `posthog_dashboard_layout.clipper_health`   | Tile order and sizes. Authoritative: tiles added by hand lose their place on apply.                                             |
 
 Everything filters on `$lib = trakwyn-extension`, because web, the web server and mobile report to the same project. `release` is the extension's manifest version.
 
@@ -151,11 +151,14 @@ Everything filters on `$lib = trakwyn-extension`, because web, the web server an
 
 **Non-job pages count.** LinkedIn and Indeed send `parser_result` only when the URL names a job; Glassdoor, Greenhouse, Lever and Workday cannot tell, so a few reports from their non-job pages are normal. The alert is per board for this reason: one board's baseline differs from another's.
 
+**The alert limit.** PostHog's plan allows 5 alerts in the project, and `posthog_alert.crashed_sessions` uses one, so at most four boards can have an alert. Over that, an apply fails with `Your team has reached the limit of 5 alerts on your plan`, and because resources apply in parallel some alerts are created before the failing one, leaving the state part-applied. Glassdoor and Lever are charted but have no alert by default: they are the smallest, and Glassdoor has no URL check, so it is the noisiest. Swap them in by editing `clipper_alert_boards` (and dropping another), or raise the plan's limit and list all six.
+
 **A new board.** `JOB_BOARDS` in `apps/extension/src/constants.ts` needs a matching entry in `local.clipper_boards`, or its reports appear only under the release split. `workday.com` and `myworkdayjobs.com` are both `workday`.
 
-| Variable                     | Default | Meaning                                                             |
-| ---------------------------- | ------- | ------------------------------------------------------------------- |
-| `clipper_parser_alert_daily` | `10`    | Alert when one board's `parser_result` count in a day exceeds this. |
+| Variable                     | Default                                           | Meaning                                                             |
+| ---------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
+| `clipper_parser_alert_daily` | `10`                                              | Alert when one board's `parser_result` count in a day exceeds this. |
+| `clipper_alert_boards`       | `["linkedin", "indeed", "greenhouse", "workday"]` | Boards that get an alert. Keep it to 4 or fewer: see below.         |
 
 It notifies the same users as the mobile alert (`release_health_alert_user_ids`). The key also needs `dashboard:write`, `insight:write` and `alert:write`, as for mobile release health.
 

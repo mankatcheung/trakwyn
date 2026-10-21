@@ -121,8 +121,12 @@ resource "posthog_insight" "clipper_faults_by_release" {
 # One alert per board, because PostHog alerts watch one series. The count is
 # the previous complete day's, so a morning's handful is not a day. Ten is a
 # starting point: there is no store traffic yet to set it from.
+#
+# Only the boards in var.clipper_alert_boards get one: PostHog's plan allows 5
+# alerts in the project, and the mobile crash alert already uses one. Every
+# board stays on the chart above whether or not it has an alert.
 resource "posthog_alert" "clipper_parser_spike" {
-  for_each = { for index, board in local.clipper_boards : board => index }
+  for_each = { for index, board in local.clipper_boards : board => index if contains(var.clipper_alert_boards, board) }
 
   name    = "Clipper: ${each.key} parser results above ${var.clipper_parser_alert_daily} a day"
   insight = posthog_insight.clipper_parser_by_board.id
