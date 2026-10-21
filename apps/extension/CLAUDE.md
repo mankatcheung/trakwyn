@@ -15,7 +15,7 @@ pnpm package:safari  # build:safari, then (re)generate the Xcode project in safa
 
 - Load Chrome from `.output/chrome-mv3` (chrome://extensions → Load unpacked).
 - **Safari:** open `safari/Trakwyn Clipper/Trakwyn Clipper.xcodeproj`, run the "Trakwyn Clipper" scheme, then in Safari enable Develop → Allow Unsigned Extensions and turn the Clipper on in Settings → Extensions. The project references `.output/safari-mv3` in place, so after the first `package:safari` a `build:safari` plus an Xcode rebuild picks up changes. Re-run `package:safari` only to regenerate the project (e.g. a new permission). The bundle ID `com.trakwyn.clipper` is a placeholder until the App Store release.
-- **Version (JEF-389):** `package.json` holds it and release-please bumps it; `wxt.config.ts` sets none, so WXT writes that number into both manifests. Releasing is merging the Clipper's release PR (root `CLAUDE.md`), then building and uploading by hand. The Xcode project's `MARKETING_VERSION` is a committed copy that `package:safari` rewrites from `package.json`. A release PR does not touch it, so run `package:safari` after merging one and before a Safari build.
+- **Version (JEF-389):** `package.json` holds it and release-please bumps it; `wxt.config.ts` sets none, so WXT writes that number into both manifests. Releasing is merging the Clipper's release PR (root `CLAUDE.md`), then building and uploading by hand: see "Releasing the Clipper" below. The Xcode project's `MARKETING_VERSION` is a committed copy that `package:safari` rewrites from `package.json`. A release PR does not touch it, so run `package:safari` after merging one and before a Safari build.
 - **API URL (JEF-412):** `DEFAULT_API_URL` is `API_URLS.PRODUCTION` (`https://api.trakwyn.com/graphql`) in every build and `API_URLS.DEVELOPMENT` (localhost) only under `pnpm dev`; `VITE_API_URL` at build time overrides both (`.env.example`). `apiUrls.ts` is separate from `constants.ts` because `wxt.config.ts` imports it in Node, where `import.meta.env` is undefined. A user-set URL in the options page (`storage.sync`) still wins over the default.
 - **Manifest (JEF-412):** `src/manifest.ts` builds it for both browsers (`manifest.test.ts`). **A production build has no `host_permissions`:** only `pnpm dev` adds the local API. This is deliberate, because a host permission added in an update disables the extension until every user re-approves it, so the first store version has to be right.
   - The API needs none: `corsPlugin.ts` lets any `chrome-extension://` or `safari-web-extension://` origin through and sets no header allow-list, and the Clipper sends bearer tokens, not cookies. That holds for a self-hosted API running the same code, so the options page's custom URL needs no permission prompt either. If a proxy ever strips those CORS headers, add `optional_host_permissions` for it; an _optional_ permission can be added in any update without re-prompting.
@@ -57,6 +57,31 @@ The popup shows two buttons on a job page (`ReadButtons`): **Read with parser** 
 - **Failure is never a dead end.** `AI_NOT_CONFIGURED`, `AI_LIMIT_REACHED`, `AI_PROVIDER_ERROR`, `AI_RESPONSE_INVALID` and `RATE_LIMITED` get their own copy (`AI_ERROR_MESSAGES`); the popup keeps the clip and shows a dismissible notice.
 - **Privacy.** Only pressing **Read with AI** sends the page's text, to the user's own LLM provider through Trakwyn's API. Page text and the result are never reported to PostHog; `parser_result` is unchanged.
 
+## Releasing the Clipper (JEF-418)
+
+Web Store ID `pnpgngnojencbggokjhpfhmliijakmhe`. A published version can never be rolled back, only replaced by a higher one, and review takes hours to days, so the first public release is staged and every later one follows the same steps. The upload is by hand; automating it is a separate issue.
+
+1. **Pick the version.** release-please proposes it from the commit types since the last `clipper-v…` tag (root `CLAUDE.md`). To force one, such as `1.0.0` for the first public release, put a `Release-As: 1.0.0` footer on a commit that touches `apps/extension` (the squash-merge description of an extension PR will do). Never edit a version or `CHANGELOG.md` by hand.
+2. **Merge the Clipper's release PR.** It bumps `package.json` and `CHANGELOG.md`, and the workflow tags `clipper-v<version>` and creates the GitHub Release. Check that the PR touches only those two files.
+3. **Build from that tag.** Use a checkout of the tag with no `apps/extension/.env`: Vite reads it, and a stray `VITE_API_URL` is baked into the bundle (a blank shell variable does not override it). `pnpm setup:worktree` copies one in, so remove it.
+
+   ```bash
+   git switch --detach clipper-v<version>
+   mv apps/extension/.env apps/extension/.env.bak   # if present; put it back afterwards
+   VITE_POSTHOG_KEY=$(terraform -chdir=infra/posthog output -raw project_api_key) \
+     pnpm --filter @trakwyn/extension zip
+   ```
+
+   `VITE_POSTHOG_KEY` is the public project key. Without it the build sends no error reports, and the privacy policy says it does. Leave `VITE_API_URL` unset so the build talks to `https://api.trakwyn.com/graphql`.
+
+4. **Check the package** (`.output/trakwynextension-<version>-chrome.zip`). In its `manifest.json`: `version` equals the tag, `key` is the listing's public key (`manifest.ts`), `permissions` are `storage`, `activeTab` and `identity`, and there is no `host_permissions`. The bundle's only `localhost` is the unused development default in `apiUrls.ts`. If `permissions` or the content-script `matches` grew, the store disables the extension for every user until they re-approve it: do not ship that by accident.
+5. **Upload and submit.** In the dashboard, **Package → Upload new package** on the existing listing. For the first release set the distribution to **Unlisted** or **Trusted testers**, and turn **deferred publishing** on, so approval does not publish. If review asks about a permission, answer from `store/listing.md`; the data-use answers there must still match the privacy policy and what the build does (tokens, `storage`, what is sent), so change them together whenever the Clipper's storage or network use changes.
+6. **Verify the approved build from the store**, not an unpacked one: open the store link in a clean Chrome profile, install, then sign in with Google and with GitHub against production and clip a job from LinkedIn and from one other board. Check the extension's ID is the one above.
+7. **Go public, staged.** Set visibility to **Public** and publish with a staged rollout percentage. Raise it only while the Clipper health dashboard (`infra/posthog/README.md`) stays quiet for the new `release`: `graphql_request_failed`, `token_refresh_failed`, `oauth_login_failed` and `parser_result`. A later release can skip the restricted audience, but keep the staged rollout.
+8. **Confirm** the published version is the tag's. Installed copies update on the browser's own schedule, so the old version stays in use for days: that is why the API keeps old clients working (`apps/api/CLAUDE.md`, "Client compatibility").
+
+Safari is a separate release through the App Store (`package:safari`, above) and is not covered here.
+
 ## After launch: compatibility and hotfixes (JEF-417)
 
 A store release cannot be rolled back, only replaced, and an installed copy stays on its version until the browser updates it. Two things break it in the field: the API changing under it, and a job board changing its page.
@@ -65,9 +90,9 @@ A store release cannot be rolled back, only replaced, and an installed copy stay
 - **Seeing a break.** The Clipper health dashboard (`infra/posthog/README.md`, "Clipper health") charts `parser_result` per board and the API, refresh and sign-in failures per `release`, and alerts when one board's parser results pass a daily count.
 - **A board changed its page.** Reproduce it first: save the page's markup as a fixture in `src/lib/parsers/__fixtures__` (strip personal data and keep it small), write the failing parser test against it, then fix the parser. The fixtures are how every parser test runs, so the regression stays covered.
 - **Shipping an expedited fix.**
-  1. Land the fix as a `fix(extension): …` commit. release-please opens the Clipper release PR (root `CLAUDE.md`); merge it to bump the version and tag `clipper-v…`.
-  2. Build the zip without a local `.env` (a stray `VITE_API_URL` is baked into the bundle) and with the public `VITE_POSTHOG_KEY` set: `pnpm --filter @trakwyn/extension zip`.
-  3. Upload it in the Web Store dashboard (**Package → Upload new package**) and submit for review. The new version number must be higher than the live one.
+  1. Land the fix as a `fix(extension): …` commit and follow "Releasing the Clipper" above: merge the release PR, build from the tag, upload, submit. Skip the restricted audience and keep the staged rollout.
+  2. Check that no permission or content-script host was added (a re-approval prompt disables it for everyone).
+  3. Upload it in the Web Store dashboard and submit for review. The new version number must be higher than the live one.
   4. Ask for an expedited review through Chrome Web Store developer support. Nothing guarantees it, and an ordinary review can take days, so assume the broken version stays live that long. Do not promise users a date.
   5. After it is published, watch the dashboard's `release` split: the fix is working when the old version's line stops growing and the new one's stays flat. Installed copies update on the browser's own schedule, which can take days more.
 - **Safari ships separately.** It goes through the App Store and its own review (`package:safari`, above), so a parser fix reaches Safari users later than Chrome users. It reports under the same `release`.
