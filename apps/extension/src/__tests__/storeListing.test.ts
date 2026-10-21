@@ -65,6 +65,10 @@ describe('store listing copy', () => {
     expect(section('### Full description')).toMatch(/Keep me signed in/);
   });
 
+  it('does not describe an options page, which the Clipper no longer has', () => {
+    expect(listing).not.toMatch(/options page|API address/i);
+  });
+
   it('justifies the content script hosts', () => {
     const justification = section('#### Content script hosts');
 

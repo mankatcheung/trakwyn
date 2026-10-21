@@ -76,7 +76,7 @@ Save job postings from supported job boards to the user's Trakwyn account.
 
 #### `storage`
 
-Keeps the user's sign-in state and the optional API address setting from the options page. The access token stays in session storage. The refresh token is also written to local storage only if the user ticks “Keep me signed in” when signing in, so they stay signed in after a browser restart; signing out removes it. Nothing else is stored.
+Keeps the user's sign-in state. The access token stays in session storage. The refresh token is also written to local storage only if the user ticks “Keep me signed in” when signing in, so they stay signed in after a browser restart; signing out removes it. Nothing else is stored.
 
 #### `activeTab`
 

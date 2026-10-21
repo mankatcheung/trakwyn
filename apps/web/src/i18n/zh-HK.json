@@ -1094,7 +1094,7 @@
   "legal.privacy.clipperTitle": "Trakwyn Clipper 瀏覽器擴充功能",
   "legal.privacy.clipperBody": "如果你安裝了 Clipper，它只會在支援的求職網站（LinkedIn、Indeed、Glassdoor、Greenhouse、Lever 和 Workday）上，並且僅在你開啟它時，讀取你正在瀏覽的職位資料（職稱、公司、地點、描述和連結）。在你選擇儲存之前不會傳送任何內容；儲存後，這些資料會像你自行新增的申請一樣存入你的 Trakwyn 帳戶。",
   "legal.privacy.clipperAiBody": "如果你按下「Read with AI」，頁面文字會透過 Trakwyn 傳送至你以自己的金鑰設定的 AI 服務商，詳見「AI 功能」一節。不按該按鈕就不會傳送。",
-  "legal.privacy.clipperTokensBody": "Clipper 會把你的登入令牌存放在瀏覽器的工作階段儲存空間，只會傳送至 Trakwyn API，關閉瀏覽器後即清除。如果你在登入時剔選「Keep me signed in」，更新令牌（僅此令牌）還會以未加密形式存放在此裝置瀏覽器的本機儲存空間，讓你重新啟動後仍保持登入。登出會將其刪除，工作階段結束（最長為登入後 90 日）時同樣會刪除。它儲存的另一項設定是選項頁中的 API 位址，你的瀏覽器可能會在你的裝置之間同步該設定。",
+  "legal.privacy.clipperTokensBody": "Clipper 會把你的登入令牌存放在瀏覽器的工作階段儲存空間，只會傳送至 Trakwyn API，關閉瀏覽器後即清除。如果你在登入時剔選「Keep me signed in」，更新令牌（僅此令牌）還會以未加密形式存放在此裝置瀏覽器的本機儲存空間，讓你重新啟動後仍保持登入。登出會將其刪除，工作階段結束（最長為登入後 90 日）時同樣會刪除。它不會儲存其他任何內容。",
   "legal.privacy.clipperErrorsBody": "出現故障時（例如登入失敗或無法讀取某個職位），Clipper 會向我們的錯誤監察服務商 PostHog（歐盟）傳送匿名錯誤報告。每份報告只有隨機識別碼，沒有用戶檔案，也不查詢位置，且絕不包含你的令牌、電郵地址、職位內容或頁面網址。報告只會註明求職網站名稱，不會記錄你所在的確切網站。",
   "legal.privacy.cookiesTitle": "Cookie",
   "legal.privacy.cookiesBody": "我們使用維持你登入狀態所必需的 Cookie（無法關閉），並且只會在你選擇同意時使用分析 Cookie，以了解 Trakwyn 的使用情況。你可以隨時透過網站頁尾的「Cookie 偏好設定」查看或更改你的選擇。",
