@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/mankatcheung/trakwyn/compare/web-v0.2.0...web-v0.2.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **web:** reload once when a stale tab can't fetch a deployed chunk ([#1002](https://github.com/mankatcheung/trakwyn/issues/1002)) ([013c92c](https://github.com/mankatcheung/trakwyn/commit/013c92c0f33f1e7bb5f626a4f1a959725ff63b8e))
+
 ## [0.2.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.1.0...web-v0.2.0) (2026-10-16)
 
 

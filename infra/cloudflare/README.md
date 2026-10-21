@@ -62,6 +62,18 @@ terraform output -raw turnstile_secret_key | gcloud secrets versions add turnsti
 terraform output -raw turnstile_site_key     # into infra/vercel's turnstile_site_key
 ```
 
+Then confirm the three hand-offs, since a missing one shows no widget and the API refuses the forms (JEF-413):
+
+1. **Widget:** `terraform output turnstile_site_key` returns a key, and `var.turnstile_domains` includes `www.trakwyn.com`.
+2. **API:** `gcloud secrets versions list turnstile-secret-key` shows an enabled version, the running Cloud Run revision references it (`gcloud run services describe` lists `TURNSTILE_SECRET_KEY`), and `CAPTCHA_PROVIDER` is unset or `turnstile`, never `disabled`.
+3. **Web:** `infra/vercel` has `turnstile_site_key` set and the web project was redeployed after it (the key is baked into the bundle as `VITE_TURNSTILE_SITE_KEY`).
+
+Smoke test on production:
+
+- The widget renders on register and forgot-password, and each succeeds with it.
+- Submitting either without a token returns `CAPTCHA_REQUIRED`.
+- Fail sign-in for one test email `RATE_LIMIT.LOGIN_FAILURE.MAX_ATTEMPTS` times (3 in 15 minutes); the next load of the login page shows the widget, and a solved token then signs in.
+
 CI only runs `fmt` and `validate` on this root. `plan` and `apply` are run by hand.
 
 ### Adopting the live zone

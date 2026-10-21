@@ -1,3 +1,5 @@
+import { resolveDefaultApiUrl } from './apiUrls';
+
 /**
  * Centralised configuration and magic-value constants for the extension.
  *
@@ -5,8 +7,14 @@
  * one-off user-facing copy.
  */
 
-/** Fallback GraphQL endpoint when the user hasn't configured one. */
-export const DEFAULT_API_URL = 'http://localhost:3001/graphql';
+/**
+ * Fallback GraphQL endpoint when the user hasn't configured one: the local API
+ * under `wxt` dev, the production API in every build, or `VITE_API_URL`.
+ */
+export const DEFAULT_API_URL = resolveDefaultApiUrl({
+  dev: import.meta.env.DEV,
+  override: import.meta.env.VITE_API_URL,
+});
 
 /** `browser.storage` keys. */
 export const STORAGE_KEYS = {

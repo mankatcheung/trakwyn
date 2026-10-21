@@ -13,6 +13,8 @@ import { NavigationProgressBar } from '#/components/NavigationProgressBar';
 import { watchForServiceWorkerUpdate } from '#/lib/swUpdateToast';
 import { RouteErrorReporter } from '#/components/RouteErrorReporter';
 import { replayPendingOperations } from '#/lib/pendingOperations';
+import { StaleChunkReloader } from '#/components/StaleChunkReloader';
+import { isStaleChunkError, watchForStaleChunks } from '#/lib/staleChunkReload';
 
 import appCss from '../styles.css?url';
 
@@ -66,9 +68,12 @@ function NotFound() {
 // so RouteErrorReporter reports it explicitly (JEF-349).
 function RouteError({ error }: { error: unknown }) {
   const { t } = useLocale();
+  // A route chunk that 404s because the tab predates a deploy is not a bug to
+  // report: reload once to pick up the new build (see staleChunkReload.ts).
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <RouteErrorReporter error={error} />
+      <StaleChunkReloader error={error} />
+      {!isStaleChunkError(error) && <RouteErrorReporter error={error} />}
       <div className="space-y-4 text-center">
         <AlertTriangleIcon size={40} className="mx-auto text-red-500" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -122,6 +127,10 @@ function LocalizedDocument({ children }: { children: React.ReactNode }) {
   // of leaving an already-open install running stale code — see
   // swUpdateToast.ts for why this needs more than just skipWaiting().
   useEffect(() => watchForServiceWorkerUpdate(), []);
+
+  // Recover from a tab that predates a deploy asking for chunks that no
+  // longer exist — see staleChunkReload.ts.
+  useEffect(() => watchForStaleChunks(), []);
 
   // A delete waiting out its undo window lives in a setTimeout, which dies
   // with the tab. Anything that was still pending when the page went away is

@@ -1,15 +1,16 @@
 import { defineConfig } from 'wxt';
+import { buildManifest } from './src/manifest';
 
 /**
  * One source, one manifest per browser (JEF-386): `wxt build` for Chrome,
  * `wxt build -b safari` for the bundle `scripts/package-safari.sh` wraps in an
- * Xcode project.
+ * Xcode project. The manifest is `src/manifest.ts`.
  *
  * The browsers differ only in how OAuth sign-in reaches its redirect:
  * - Chrome: `identity.launchWebAuthFlow`.
  * - Safari: has no `identity` API, so it opens a tab and needs `tabs` to read
- *   that tab's URL when the API's origin isn't among the host permissions,
- *   e.g. a self-hosted API URL. See src/lib/tabOAuth.ts.
+ *   that tab's URL, since the API's origin is never among the host permissions.
+ *   See src/lib/tabOAuth.ts.
  */
 export default defineConfig({
   srcDir: 'src',
@@ -24,23 +25,5 @@ export default defineConfig({
   // Unset, WXT takes the first free port from 3000, which is the web app's
   // whenever the extension starts first or alone. The API has 3001.
   dev: { server: { port: 3002 } },
-  manifest: ({ browser }) => ({
-    name: 'Trakwyn Clipper',
-    description: 'Save job postings directly to your Trakwyn account.',
-    permissions: ['storage', 'activeTab', ...(browser === 'safari' ? ['tabs'] : ['identity'])],
-    host_permissions: [
-      'http://localhost:3001/*',
-      'https://*.linkedin.com/*',
-      'https://*.indeed.com/*',
-      'https://*.glassdoor.com/*',
-      'https://*.greenhouse.io/*',
-      'https://*.lever.co/*',
-      'https://*.workday.com/*',
-    ],
-    icons: {
-      16: 'icons/icon16.png',
-      48: 'icons/icon48.png',
-      128: 'icons/icon128.png',
-    },
-  }),
+  manifest: ({ browser, command }) => buildManifest({ browser, command }),
 });
