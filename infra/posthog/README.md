@@ -112,9 +112,9 @@ A new issue appears in Error Tracking within a minute or two, and the alert emai
 
 ## Browser extension errors (JEF-387)
 
-The Trakwyn Clipper (`apps/extension`) reports to this project too, from its background worker, popup and options page. Like the server-side errors above, the reports go straight to the capture endpoint (`/i/v0/e/`) with the public project key and no SDK. The key is read from `VITE_POSTHOG_KEY` when the extension is built; a build without it sends nothing.
+The Trakwyn Clipper (`apps/extension`) reports to this project too, from its background worker and popup. Like the server-side errors above, the reports go straight to the capture endpoint (`/i/v0/e/`) with the public project key and no SDK. The key is read from `VITE_POSTHOG_KEY` when the extension is built; a build without it sends nothing.
 
-Tell them apart by `$lib = trakwyn-extension`. `context` is `background`, `popup` or `options`, and `release` is the extension's manifest version.
+Tell them apart by `$lib = trakwyn-extension`. `context` is `background` or `popup`, and `release` is the extension's manifest version.
 
 | Event                    | When                                                               | Properties                                                 |
 | ------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------- |

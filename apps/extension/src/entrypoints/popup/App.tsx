@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
-import { getAuth, getApiUrl, getPersistedRefreshToken } from '../../lib/storage';
+import { getAuth, getPersistedRefreshToken } from '../../lib/storage';
 import {
   ApiError,
   login,
@@ -18,6 +18,7 @@ import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
   CONTENT_MESSAGES,
+  DEFAULT_API_URL,
   OAUTH_PROVIDERS,
   OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
@@ -189,13 +190,12 @@ export function App() {
 
   async function loadReadyScreen() {
     try {
-      const [user, read, aiAvailable, apiUrl] = await Promise.all([
+      const [user, read, aiAvailable] = await Promise.all([
         getCurrentUser(),
         readActiveTab(),
         // A failed check leaves the AI button disabled: `gql` already reported
         // an unreachable API, and the parser works without it.
         hasDefaultAiKey().catch(() => false),
-        getApiUrl(),
       ]);
       const clip: Clip = {
         jobData: read.jobData,
@@ -206,7 +206,12 @@ export function App() {
         busy: null,
         readId: 0,
       };
-      setScreen({ type: 'ready', user, clip, settingsUrl: `${webUrlOf(apiUrl)}/settings/ai` });
+      setScreen({
+        type: 'ready',
+        user,
+        clip,
+        settingsUrl: `${webUrlOf(DEFAULT_API_URL)}/settings/ai`,
+      });
     } catch (err) {
       if (isUnauthorizedError(err)) {
         // The stored token was revoked or rejected — start over at sign-in
@@ -280,7 +285,7 @@ export function App() {
         description: jobData.description,
         source: jobData.source,
       });
-      const webUrl = webUrlOf(await getApiUrl());
+      const webUrl = webUrlOf(DEFAULT_API_URL);
       setScreen({
         type: 'saved',
         appId: app.id,

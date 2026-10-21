@@ -10,7 +10,7 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Catches a render error in the popup or the options page (JEF-387). Without
+ * Catches a render error in the popup (JEF-387). Without
  * it React unmounts the whole tree and the user is left with a blank popup;
  * with it the error is reported and there is a way back.
  */

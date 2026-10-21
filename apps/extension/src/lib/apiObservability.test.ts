@@ -3,7 +3,7 @@ import { ApiError, getCurrentUser, login, refreshToken } from './api';
 import { clearAuth, getAuth } from './storage';
 import { captureEvent, captureException, wasReported } from './observability/report';
 import { getLastTraceId } from './observability/traceContext';
-import { OBSERVABILITY_EVENTS } from '../constants';
+import { DEFAULT_API_URL, OBSERVABILITY_EVENTS } from '../constants';
 
 vi.mock('./storage', () => ({
   getAuth: vi.fn(),
@@ -11,7 +11,6 @@ vi.mock('./storage', () => ({
   clearAuth: vi.fn(),
   clearSessionAuth: vi.fn(),
   getPersistedRefreshToken: vi.fn(async () => null),
-  getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
 // The reporter's own behaviour is report.test.ts; here it is only observed.
@@ -70,7 +69,7 @@ describe('trace context', () => {
     const [first, second] = fetchMock.mock.calls.map(
       ([url, init]) => [url, (init as { headers: Record<string, string> }).headers] as const,
     );
-    expect(first[0]).toBe('https://api.example.com/graphql');
+    expect(first[0]).toBe(DEFAULT_API_URL);
     expect(first[1].traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
     expect(second[1].traceparent).not.toBe(first[1].traceparent);
     expect(second[1].traceparent).toContain(getLastTraceId());
