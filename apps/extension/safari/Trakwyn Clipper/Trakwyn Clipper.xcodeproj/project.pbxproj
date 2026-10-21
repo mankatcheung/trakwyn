@@ -23,7 +23,6 @@
 		9CAB239C306D649000E611E5 /* content-scripts in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2394306D649000E611E5 /* content-scripts */; };
 		9CAB239D306D649000E611E5 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2395306D649000E611E5 /* icons */; };
 		9CAB239E306D649000E611E5 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2396306D649000E611E5 /* manifest.json */; };
-		9CAB239F306D649000E611E5 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2397306D649000E611E5 /* options.html */; };
 		9CAB23A0306D649000E611E5 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 9CAB2398306D649000E611E5 /* assets */; };
 /* End PBXBuildFile section */
 
@@ -69,7 +68,6 @@
 		9CAB2394306D649000E611E5 /* content-scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "content-scripts"; path = "../../../.output/safari-mv3/content-scripts"; sourceTree = "<group>"; };
 		9CAB2395306D649000E611E5 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = "../../../.output/safari-mv3/icons"; sourceTree = "<group>"; };
 		9CAB2396306D649000E611E5 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = "../../../.output/safari-mv3/manifest.json"; sourceTree = "<group>"; };
-		9CAB2397306D649000E611E5 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = "../../../.output/safari-mv3/options.html"; sourceTree = "<group>"; };
 		9CAB2398306D649000E611E5 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = "../../../.output/safari-mv3/assets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -148,7 +146,6 @@
 				9CAB2394306D649000E611E5 /* content-scripts */,
 				9CAB2395306D649000E611E5 /* icons */,
 				9CAB2396306D649000E611E5 /* manifest.json */,
-				9CAB2397306D649000E611E5 /* options.html */,
 				9CAB2398306D649000E611E5 /* assets */,
 			);
 			name = Resources;
@@ -245,7 +242,6 @@
 		9CAB237D306D649000E611E5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				9CAB239F306D649000E611E5 /* options.html in Resources */,
 				9CAB23A0306D649000E611E5 /* assets in Resources */,
 				9CAB239B306D649000E611E5 /* chunks in Resources */,
 				9CAB2399306D649000E611E5 /* background.js in Resources */,

@@ -28,8 +28,6 @@ export const STORAGE_KEYS = {
   PERSISTED_REFRESH_TOKEN: 'persistedRefreshToken',
   /** Session-scoped Safari tab sign-in in progress (see lib/tabOAuth.ts). */
   PENDING_TAB_OAUTH: 'pendingTabOAuth',
-  /** Sync-scoped configured API URL. */
-  API_URL: 'apiUrl',
 } as const;
 
 /**
@@ -132,7 +130,6 @@ export type ObservabilityEvent = (typeof OBSERVABILITY_EVENTS)[keyof typeof OBSE
 export const EXTENSION_CONTEXTS = {
   BACKGROUND: 'background',
   POPUP: 'popup',
-  OPTIONS: 'options',
 } as const;
 
 export type ExtensionContext = (typeof EXTENSION_CONTEXTS)[keyof typeof EXTENSION_CONTEXTS];

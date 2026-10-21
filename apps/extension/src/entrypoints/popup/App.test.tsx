@@ -4,6 +4,7 @@ import { browser, type Browser } from 'wxt/browser';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
+import { DEFAULT_API_URL } from '../../constants';
 import {
   ApiError,
   getCurrentUser,
@@ -18,7 +19,6 @@ import { captureEvent, captureException } from '../../lib/observability/report';
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
   getPersistedRefreshToken: vi.fn(async () => null),
-  getApiUrl: vi.fn(async () => 'https://api.example.com/graphql'),
 }));
 
 vi.mock('../../lib/api', async (importOriginal) => {
@@ -88,7 +88,7 @@ describe('popup App', () => {
 
     expect(text).toContain('Ada Lovelace');
     expect(text).toContain('ada@example.com');
-    expect(text).not.toContain('api.example.com');
+    expect(text).not.toContain(DEFAULT_API_URL);
     expect(text).not.toMatch(/API:/);
     expect(rendered.container.querySelector('input')).toBeNull();
   });

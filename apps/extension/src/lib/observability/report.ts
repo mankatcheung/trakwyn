@@ -143,7 +143,7 @@ export function captureException(
 /**
  * Names this JS context on every report and catches what nothing else did.
  * Call once, first thing, in an entrypoint. `globalThis` is the window in
- * the popup and options page and the worker scope in the background.
+ * the popup and the worker scope in the background.
  */
 export function initObservability(extensionContext: ExtensionContext): void {
   context = extensionContext;
