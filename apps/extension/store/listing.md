@@ -12,7 +12,7 @@ Trakwyn Clipper
 
 ### Short description
 
-Save job postings from LinkedIn, Indeed, Glassdoor, Greenhouse, Lever and Workday to your Trakwyn job search tracker in one click.
+Save the job posting you're viewing to your Trakwyn job search tracker in one click.
 
 ### Full description
 
@@ -21,7 +21,7 @@ Trakwyn Clipper saves the job posting you are looking at to your Trakwyn account
 Open the Clipper on a job posting and it reads the title, company, location and description. Check the details, fix anything that is off, and save it as an application in Trakwyn. No copying and pasting between tabs.
 
 HOW IT WORKS
-• Works on job pages from LinkedIn, Indeed, Glassdoor, Greenhouse, Lever and Workday.
+• Works on job pages from supported job boards and company career sites.
 • Read with parser: the built-in reader fills in the posting instantly.
 • Read with AI: for a page the parser gets wrong, let your own AI provider read it instead. This needs an AI key saved in Trakwyn, and the page text is sent only when you press the button.
 • You review the posting before anything is saved.
@@ -118,3 +118,7 @@ The approved use cases cover what the Clipper does: user data goes only to the T
 
 - Build the upload zip without a local `.env` (see `.env.example`): a stray `VITE_API_URL` is baked into the bundle. Set the public `VITE_POSTHOG_KEY` for the store build, because the privacy policy says the Clipper sends anonymous error reports.
 - The submission and rollout are a separate issue.
+
+## Review history
+
+- **1.0.0, rejected (2026-10-22): keyword spam** (violation ref "Yellow Argon"). The short description and the full description's "How it works" list both named "LinkedIn, Indeed, Glassdoor, Greenhouse, Lever and Workday", which the store treats as excessive or irrelevant keywords in the item's metadata. Fixed by describing the supported sites generically in the title, short description and full description. The hosts stay in the permission justification (`#### Content script hosts`), where the dashboard asks for them. `storeListing.test.ts` fails if a board name comes back into the descriptions. Do not name individual sites in the screenshots' or promo tile's text either.

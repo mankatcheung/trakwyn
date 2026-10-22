@@ -44,6 +44,15 @@ describe('store listing copy', () => {
     expect(section('### Short description').length).toBeLessThanOrEqual(SHORT_DESCRIPTION_MAX);
   });
 
+  it('does not list job-board names in the descriptions', () => {
+    // The Web Store rejected 1.0.0 for keyword spam ("LinkedIn, Indeed, Glassdoor,
+    // Greenhouse, Lever and Workday" in the description, JEF-418). The hosts belong
+    // in the permission justification, not in the store metadata.
+    const metadata = `${section('### Title')}\n${section('### Short description')}\n${section('### Full description')}`;
+
+    expect(metadata).not.toMatch(/linkedin|indeed|glassdoor|greenhouse|lever|workday/i);
+  });
+
   it('gives the contact and policy details the store requires', () => {
     expect(section('### Contact email')).toBe('contact@trakwyn.com');
     expect(section('### Privacy policy URL')).toBe('https://www.trakwyn.com/privacy');
