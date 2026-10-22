@@ -24,8 +24,7 @@
     "apps/extension": {
       "release-type": "node",
       "component": "clipper",
-      "bump-minor-pre-major": true,
-      "release-as": "1.0.0"
+      "bump-minor-pre-major": true
     },
     "apps/mobile": {
       "release-type": "node",
