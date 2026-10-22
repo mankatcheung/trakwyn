@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.0.0...clipper-v1.1.0) (2026-10-22)
+
+
+### Features
+
+* **extension:** upload the Clipper to the Chrome Web Store from the release workflow (JEF-419) ([#1026](https://github.com/mankatcheung/trakwyn/issues/1026)) ([65c61ba](https://github.com/mankatcheung/trakwyn/commit/65c61baa2f668f3fcef5be3e5be9c36be9ec180a))
+
 ## [1.0.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v0.2.0...clipper-v1.0.0) (2026-10-21)
 
 
