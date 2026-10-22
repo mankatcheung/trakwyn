@@ -11,14 +11,17 @@ pnpm dev             # build + watch Chrome into .output/chrome-mv3-dev (no brow
 pnpm build           # Chrome  -> .output/chrome-mv3
 pnpm build:safari    # Safari  -> .output/safari-mv3
 pnpm package:safari  # build:safari, then (re)generate the Xcode project in safari/
+pnpm build:firefox   # Firefox -> .output/firefox-mv3
+pnpm zip:firefox     # add-on zip + AMO sources zip in .output/
 ```
 
 - Load Chrome from `.output/chrome-mv3` (chrome://extensions → Load unpacked).
+- **Firefox (JEF-423):** load `.output/firefox-mv3` from `about:debugging` → This Firefox → Load Temporary Add-on (pick its `manifest.json`). See "Firefox" below for how it differs and how it is released.
 - **Safari:** open `safari/Trakwyn Clipper/Trakwyn Clipper.xcodeproj`, run the "Trakwyn Clipper" scheme, then in Safari enable Develop → Allow Unsigned Extensions and turn the Clipper on in Settings → Extensions. The project references `.output/safari-mv3` in place, so after the first `package:safari` a `build:safari` plus an Xcode rebuild picks up changes. Re-run `package:safari` only to regenerate the project (e.g. a new permission). The bundle ID `com.trakwyn.clipper` is a placeholder until the App Store release.
 - **Version (JEF-389):** `package.json` holds it and release-please bumps it; `wxt.config.ts` sets none, so WXT writes that number into both manifests. Releasing is merging the Clipper's release PR (root `CLAUDE.md`), then building and uploading by hand: see "Releasing the Clipper" below. The Xcode project's `MARKETING_VERSION` is a committed copy that `package:safari` rewrites from `package.json`. A release PR does not touch it, so run `package:safari` after merging one and before a Safari build.
 - **API URL (JEF-412, JEF-419):** `DEFAULT_API_URL` is `API_URLS.DEVELOPMENT` (localhost) only under `pnpm dev`, and `VITE_API_URL` at build time everywhere else (`.env.example`). The production URL is not in the source: the release workflow reads it from the `CLIPPER_API_URL` repository variable, and a `build` or `zip` without `VITE_API_URL` fails in a `build:before` hook in `wxt.config.ts` (`.env` counts). The check is a hook, not a throw in `resolveDefaultApiUrl`, because `wxt prepare` (postinstall, typecheck) imports that with no variable set and must keep working; the resolver returns an empty URL there. CI writes a placeholder `apps/extension/.env` before `pnpm build`, since nothing in CI calls the API. After `pnpm setup:worktree`, set `VITE_API_URL` in `apps/extension/.env` (the copied `.env.example` leaves it blank) before building. `apiUrls.ts` is separate from `constants.ts` because `wxt.config.ts` imports it in Node, where `import.meta.env` is undefined. There is no options page and no user-set URL (JEF-418): the first store version has no settings screen, so the extension talks only to the API it was built for.
 - **Manifest (JEF-412):** `src/manifest.ts` builds it for both browsers (`manifest.test.ts`). **A production build has no `host_permissions`:** only `pnpm dev` adds the local API. This is deliberate, because a host permission added in an update disables the extension until every user re-approves it, so the first store version has to be right.
-  - The API needs none: `corsPlugin.ts` lets any `chrome-extension://` or `safari-web-extension://` origin through and sets no header allow-list, and the Clipper sends bearer tokens, not cookies. If a proxy ever strips those CORS headers, add `optional_host_permissions` for it; an _optional_ permission can be added in any update without re-prompting.
+  - The API needs none: `corsPlugin.ts` lets any `chrome-extension://`, `safari-web-extension://` or `moz-extension://` origin through and sets no header allow-list, and the Clipper sends bearer tokens, not cookies. If a proxy ever strips those CORS headers, add `optional_host_permissions` for it; an _optional_ permission can be added in any update without re-prompting.
   - The job boards are covered by the content script's `matches` in `entrypoints/content.ts` (the real list), and the popup reads the tab through `activeTab`. Do not repeat them as `host_permissions`. A new board is a new `matches` entry, and the same re-approval warning applies to it.
 - Use `browser` from `wxt/browser`, never `chrome.*`. Message listeners return a promise rather than calling `sendResponse` and returning `true`, which Safari does not honour reliably.
 
@@ -91,7 +94,24 @@ To set up:
 
 `wxt submit --chrome-api-version v2 --dry-run` with the same variables in the environment checks the credentials without uploading. To rotate, create a new key, replace `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` and delete the old key in the Cloud console. Publishing stays manual for every release (patch or not) so the staged rollout is chosen by a person. These are plain Actions secrets, not a GitHub App: only the store call needs them, and the job runs inside the release workflow, so the `GITHUB_TOKEN` limitation in `release.yml` does not apply.
 
-Safari is a separate release through the App Store (`package:safari`, above) and is not covered here.
+Safari is a separate release through the App Store (`package:safari`, above) and is not covered here. Firefox is covered next.
+
+## Firefox (JEF-423)
+
+One source again: `pnpm build:firefox` and `pnpm zip:firefox` use the same entrypoints and the manifest from `src/manifest.ts` (`manifest.test.ts`). It differs from Chrome in four ways:
+
+- **Sign-in is the tab flow, like Safari.** Firefox exposes `browser.identity` only when the manifest asks for the permission, so the Firefox manifest has `tabs` and not `identity`, and `supportsWebAuthFlow()` in `lib/api.ts` is false there with no browser check. Do not add `identity`: its `launchWebAuthFlow` redirects to `*.extensions.allizom.org`, which the API would not redirect to, and no extension ID would go in `EXTENSION_OAUTH_IDS`. The API needs only `moz-extension://` in `EXTENSION_ORIGIN_SCHEMES` (its host is a per-install UUID, so CORS matches the scheme).
+- **Gecko settings.** `browser_specific_settings.gecko` carries the add-on ID `clipper@trakwyn.com` (`FIREFOX_ADDON_ID`; permanent once published), `strict_min_version` 140 (the first desktop Firefox that reads `data_collection_permissions`) and the data-collection declaration AMO requires of a new add-on. The declaration must match `store/firefox-listing.md`, `store/listing.md` and the privacy policy; change them together. There is no `key`, which is the Web Store's.
+- **Background.** MV3 in Firefox is an event page (`background.scripts`), which WXT emits. Nothing in it may assume a service-worker global.
+- **No `setAccessLevel`.** Firefox cannot restrict `storage.local` to trusted contexts (`restrictLocalStorageToTrustedContexts` leaves it as is), so on Firefox the "Keep me signed in" refresh token is readable from the content script's isolated world. It is not reachable by the page itself, and the box stays opt-in; do not run page-controlled code in the content script.
+
+**Releasing to AMO** (by hand; the release workflow only uploads to the Web Store). Version and tag are the Chrome ones (steps 1 and 2 above); the Firefox build comes from the same tag.
+
+1. Build from the `clipper-v<version>` tag with no `apps/extension/.env`, and `VITE_API_URL` (the production `/graphql` URL, the `CLIPPER_API_URL` repository variable) and `VITE_POSTHOG_KEY` set: `pnpm --filter @trakwyn/extension zip:firefox`. It writes `trakwynextension-<version>-firefox.zip` and `trakwynextension-<version>-sources.zip` to `.output/`.
+2. Check the manifest in the zip: `version` equals the tag, `permissions` are `storage`, `activeTab` and `tabs`, no `host_permissions`, no `key`, and the Gecko ID is the one above. A grown `permissions` or content-script `matches` prompts every user on update.
+3. Submit both zips on addons.mozilla.org (Developer Hub, 2FA account) as a **listed** add-on, with the copy from `store/firefox-listing.md`: the source-code build notes, the permission justifications and a demo account for the reviewer. The sources zip is rooted at the monorepo (`wxt.config.ts` `zip`) and was checked to build the same bundle with `pnpm install --frozen-lockfile`; if you change what the build needs from the repo root, change `includeSources` too, then unzip it in an empty directory and build it again.
+4. Review is automatic checks, then a human, and takes hours to days. A published version cannot be rolled back, only replaced by a higher one. After approval, install from the AMO page in a clean Firefox profile and check Google and GitHub sign-in against production and a clip.
+5. Hotfixes follow "After launch" below, uploaded to AMO as a new version.
 
 ## After launch: compatibility and hotfixes (JEF-417)
 

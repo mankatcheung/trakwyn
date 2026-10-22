@@ -8,8 +8,10 @@
     "dev:safari": "wxt -b safari",
     "build": "wxt build",
     "build:safari": "wxt build -b safari",
+    "build:firefox": "wxt build -b firefox",
     "package:safari": "./scripts/package-safari.sh",
     "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
     "postinstall": "wxt prepare",
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run"

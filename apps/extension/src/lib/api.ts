@@ -206,7 +206,10 @@ export async function login(email: string, password: string, keepSignedIn = fals
   await storeTokens({ accessToken, refreshToken }, keepSignedIn);
 }
 
-/** Chrome has it; Safari has no `identity` API and signs in in a tab. */
+/**
+ * Chrome has it. Safari has no `identity` API, and the Firefox manifest leaves
+ * the permission out (so Firefox hides it too), and both sign in in a tab.
+ */
 function supportsWebAuthFlow(): boolean {
   return typeof browser.identity?.launchWebAuthFlow === 'function';
 }
@@ -231,8 +234,8 @@ async function runWebAuthFlow(startUrl: string): Promise<string> {
  * handoff code, which only this login's PKCE verifier can redeem:
  * - Chrome (JEF-383): to this extension's `chromiumapp.org` URL, through
  *   `launchWebAuthFlow`.
- * - Safari (JEF-386): to a fixed page on the API's origin, in a tab (see
- *   tabOAuth.ts).
+ * - Safari (JEF-386) and Firefox (JEF-423): to a fixed page on the API's
+ *   origin, in a tab (see tabOAuth.ts).
  */
 export async function loginWithOAuth(provider: OAuthProvider, keepSignedIn = false): Promise<void> {
   const { verifier, challenge } = await createPkcePair();
