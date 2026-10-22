@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.2.1...api-v0.3.0) (2026-10-22)
+
+
+### Features
+
+* **extension:** keep me signed in across browser restarts (JEF-421) ([#1012](https://github.com/mankatcheung/trakwyn/issues/1012)) ([423dc78](https://github.com/mankatcheung/trakwyn/commit/423dc78bb994b9145e843aa399ae5e063ab8b5e1))
+
+
+### Bug Fixes
+
+* **api:** cap session lifetime at 90 days from creation (JEF-422) ([#1010](https://github.com/mankatcheung/trakwyn/issues/1010)) ([248b34d](https://github.com/mankatcheung/trakwyn/commit/248b34d59fc4c0ef1eca759113efba8065bbd115))
+
 ## [0.2.1](https://github.com/mankatcheung/trakwyn/compare/api-v0.2.0...api-v0.2.1) (2026-10-20)
 
 
