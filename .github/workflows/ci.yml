@@ -105,6 +105,10 @@ jobs:
           key: turbo-build-test-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-build-test-${{ runner.os }}-
 
+      # The Clipper's build refuses to run without an API URL (wxt.config.ts).
+      # Nothing here talks to it, so a placeholder in its own .env keeps the
+      # variable out of the web build's environment.
+      - run: echo 'VITE_API_URL=https://api.example.test/graphql' > apps/extension/.env
       - run: pnpm build
       # `pnpm build` builds the Clipper for Chrome; build the Safari bundle
       # too (JEF-386). Wrapping it in the Xcode app needs macOS, so that part
