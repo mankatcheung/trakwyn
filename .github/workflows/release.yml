@@ -69,9 +69,10 @@ jobs:
 
   # Runs only when this push released the Clipper, so an API, web, mobile or CLI
   # release skips it. Builds from the tag release-please just created, never
-  # from the pushed commit, and with no VITE_API_URL so the bundle talks to
-  # production. The store rejects a version number it has seen, so the checks
-  # run before the upload.
+  # from the pushed commit, and with the API URL from the CLIPPER_API_URL
+  # repository variable rather than the default compiled into the source. The
+  # store rejects a version number it has seen, so the checks run before the
+  # upload.
   clipper-store:
     name: Clipper zip and Web Store draft
     needs: release-please
@@ -90,8 +91,11 @@ jobs:
         env:
           # The public phc_ project key (infra/posthog), not a secret.
           VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
+          # The full /graphql URL of the production API.
+          VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
         run: |
           test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
+          test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip
 
@@ -106,6 +110,9 @@ jobs:
           if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
             echo "::error::Manifest has host_permissions"; exit 1
           fi
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+          }
           echo "ZIP=$zip" >> "$GITHUB_ENV"
 
       - name: Attach the zip to the GitHub Release

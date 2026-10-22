@@ -140,10 +140,10 @@ describe('release versioning', () => {
       expect(workflow).toContain("outputs['apps/extension--release_created']");
     });
 
-    it('builds from the tag with the PostHog key and no API URL override', () => {
+    it('builds from the tag with the PostHog key and the API URL from repository variables', () => {
       expect(job).toContain('ref: ${{ env.TAG }}');
       expect(job).toContain('vars.CLIPPER_POSTHOG_KEY');
-      expect(job).not.toContain('VITE_API_URL');
+      expect(job).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
     });
 
     it('checks the manifest before uploading, and uploads without submitting for review', () => {
