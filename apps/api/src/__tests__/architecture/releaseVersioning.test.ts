@@ -151,5 +151,11 @@ describe('release versioning', () => {
       expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('wxt submit'));
       expect(job).toContain('--chrome-skip-submit-review');
     });
+
+    it('authenticates to the Web Store API v2 with a service account, not a refresh token', () => {
+      expect(job).toContain('--chrome-api-version v2');
+      expect(job).toContain('secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY');
+      expect(job).not.toContain('CHROME_REFRESH_TOKEN');
+    });
   });
 });

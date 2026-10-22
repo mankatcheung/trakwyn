@@ -81,7 +81,15 @@ Web Store ID `pnpgngnojencbggokjhpfhmliijakmhe`. A published version can never b
 
 ### Web Store credentials for the upload job
 
-The job reads four repository secrets, all from the Chrome Web Store API (API v1.1, an OAuth client of type Desktop in a Google Cloud project with the Chrome Web Store API enabled): `CHROME_EXTENSION_ID` (the ID above), `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET` and `CHROME_REFRESH_TOKEN`. Run `pnpm --filter @trakwyn/extension exec wxt submit init` locally to create the client and print the refresh token, and set the secrets with `gh secret set`. The refresh token stops working if the OAuth consent screen is left in _Testing_ (it expires after 7 days; publish the app to _In production_), if the Google account's password changes or it is revoked, or after six months unused. To renew, re-run `wxt submit init` and replace `CHROME_REFRESH_TOKEN`. `wxt submit --dry-run` checks the credentials without uploading. The credentials belong to the account that owns the listing, so use one that cannot be locked out. These are plain Actions secrets, not a GitHub App: only the store call needs them, and the job runs inside the release workflow, so the `GITHUB_TOKEN` limitation in `release.yml` does not apply. Publishing stays manual for every release (patch or not) so the staged rollout is chosen by a person.
+The job uses Chrome Web Store API v2, which authenticates as a Google Cloud service account, so there is no consent screen and no refresh token to renew. It reads four repository secrets: `CHROME_EXTENSION_ID` (the ID above), `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` and `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` (the key's PEM, multi-line).
+
+To set up:
+
+1. In a Google Cloud project, enable the **Chrome Web Store API** and create a service account (no project roles are needed). Create a JSON key for it.
+2. In the Web Store developer dashboard (signed in as the listing's owner), open **Account** and add the service account's email as a user. This is the one step that cannot be scripted, and without it every call is refused. Copy the **Publisher ID** from the same page.
+3. Set the secrets: `gh secret set CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, and `gh secret set CHROME_SERVICE_ACCOUNT_PRIVATE_KEY < key.pem` with the JSON's `private_key` value written out as a PEM file (`jq -r .private_key key.json > key.pem`), then delete the JSON and the PEM.
+
+`wxt submit --chrome-api-version v2 --dry-run` with the same variables in the environment checks the credentials without uploading. To rotate, create a new key, replace `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` and delete the old key in the Cloud console. Publishing stays manual for every release (patch or not) so the staged rollout is chosen by a person. These are plain Actions secrets, not a GitHub App: only the store call needs them, and the job runs inside the release workflow, so the `GITHUB_TOKEN` limitation in `release.yml` does not apply.
 
 Safari is a separate release through the App Store (`package:safari`, above) and is not covered here.
 
