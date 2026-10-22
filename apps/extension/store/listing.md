@@ -116,7 +116,7 @@ The approved use cases cover what the Clipper does: user data goes only to the T
 
 ## Release notes for the submission
 
-- Build the upload zip without a local `.env` (see `.env.example`): a stray `VITE_API_URL` is baked into the bundle. Set the public `VITE_POSTHOG_KEY` for the store build, because the privacy policy says the Clipper sends anonymous error reports.
+- Build the upload zip without a local `.env` (see `.env.example`): and set `VITE_API_URL` to the production API explicitly (the release workflow does, from `CLIPPER_API_URL`): the URL is no longer in the source, and a stray one from a `.env` would be baked into the bundle. Set the public `VITE_POSTHOG_KEY` for the store build, because the privacy policy says the Clipper sends anonymous error reports.
 - The submission and rollout are a separate issue.
 
 ## Review history

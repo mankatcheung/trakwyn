@@ -6,8 +6,8 @@ describe('resolveDefaultApiUrl', () => {
     expect(resolveDefaultApiUrl({ dev: true })).toBe(API_URLS.DEVELOPMENT);
   });
 
-  it('points a production build at the production API', () => {
-    expect(resolveDefaultApiUrl({ dev: false })).toBe(API_URLS.PRODUCTION);
+  it('gives a non-dev build with no override no URL rather than a default', () => {
+    expect(resolveDefaultApiUrl({ dev: false })).toBe('');
   });
 
   it('lets a build-time override win in either mode', () => {
@@ -17,11 +17,8 @@ describe('resolveDefaultApiUrl', () => {
     expect(resolveDefaultApiUrl({ dev: false, override })).toBe(override);
   });
 
-  it.each([undefined, '', '   '])('ignores a blank override (%j)', (override) => {
-    expect(resolveDefaultApiUrl({ dev: false, override })).toBe(API_URLS.PRODUCTION);
-  });
-
-  it('ships the production API as the default for store builds', () => {
-    expect(API_URLS.PRODUCTION).toBe('https://api.trakwyn.com/graphql');
+  it.each([undefined, '', '   '])('treats a blank override as unset (%j)', (override) => {
+    expect(resolveDefaultApiUrl({ dev: false, override })).toBe('');
+    expect(resolveDefaultApiUrl({ dev: true, override })).toBe(API_URLS.DEVELOPMENT);
   });
 });

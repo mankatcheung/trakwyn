@@ -8,6 +8,7 @@ Terraform for everything `apps/api` needs on Google Cloud (JEF-335). `apps/web` 
 | `artifact_registry.tf` | Docker repository `trakwyn`, keeping the five newest images                                            |
 | `secrets.tf`           | One Secret Manager secret per sensitive env var, containers only                                       |
 | `iam.tf`               | Runtime service account (reads its secrets), CI's deployer account, and the scheduler's `cron-invoker` |
+| `chrome_web_store.tf`  | The service account the Clipper release job uploads to the Chrome Web Store as (JEF-419)               |
 | `wif.tf`               | Workload Identity Federation: this repo's `main` branch may act as the deployer, and nothing else can  |
 | `cloud_run.tf`         | The `trakwyn-api` service, public invoker binding, and the `api.trakwyn.com` domain mapping            |
 | `scheduler.tf`         | The three daily `/admin/*` jobs that replaced Vercel Cron, authenticated by OIDC token                 |
@@ -204,6 +205,16 @@ gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-ima
 **If the mirror is unavailable:** there is no fallback to a public registry, so CI results stay reproducible. Re-run **Mirror base images**; copies are idempotent and keep their progress between attempts.
 
 ## Day two
+
+**Rotate the Web Store key (JEF-419):** the Clipper release job authenticates to the Chrome Web Store as `chrome-web-store-publisher`, the one account here with a JSON key, because that API cannot use Workload Identity Federation. The key is not in Terraform, so it is not in state. After the first apply, add `terraform output -raw chrome_web_store_service_account` as a user in the Web Store dashboard (Account) and set the repository secrets as `apps/extension/CLAUDE.md` describes. To rotate:
+
+```bash
+SA=$(terraform output -raw chrome_web_store_service_account)
+gcloud iam service-accounts keys create /dev/stdout --iam-account="$SA" \
+  | jq -r .private_key | gh secret set CHROME_SERVICE_ACCOUNT_PRIVATE_KEY
+gcloud iam service-accounts keys list --iam-account="$SA"   # then delete the old one:
+gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
+```
 
 **Roll back:** send traffic to the previous revision. The next deploy moves traffic back to the newest revision.
 

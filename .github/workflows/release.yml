@@ -18,7 +18,12 @@ name: Release
 # belongs to a package by the files it touches, not by the scope in its title.
 # Merging a release PR bumps that package's package.json and CHANGELOG.md,
 # and this workflow then creates the tag (e.g. clipper-v1.1.0) and the GitHub
-# Release. Nothing is built or submitted to a store here.
+# Release. Only a Clipper release goes on to `clipper-store` (JEF-419): it
+# builds the zip from the tag, checks the manifest, attaches the zip to the
+# GitHub Release and uploads it to the Chrome Web Store as a draft. It never
+# submits for review or publishes; a person does that in the dashboard
+# (apps/extension/CLAUDE.md, "Releasing the Clipper"). Nothing else is built or
+# submitted to a store here.
 #
 # The packages and their starting versions are in release-please-config.json
 # and .release-please-manifest.json. None of the files a release PR touches
@@ -52,8 +57,77 @@ jobs:
   release-please:
     name: Release PRs, tags and GitHub Releases
     runs-on: ubuntu-latest
+    outputs:
+      clipper_released: ${{ steps.release.outputs['apps/extension--release_created'] }}
+      clipper_tag: ${{ steps.release.outputs['apps/extension--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Runs only when this push released the Clipper, so an API, web, mobile or CLI
+  # release skips it. Builds from the tag release-please just created, never
+  # from the pushed commit, and with the API URL from the CLIPPER_API_URL
+  # repository variable rather than the default compiled into the source. The
+  # store rejects a version number it has seen, so the checks run before the
+  # upload.
+  clipper-store:
+    name: Clipper zip and Web Store draft
+    needs: release-please
+    if: needs.release-please.outputs.clipper_released == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.release-please.outputs.clipper_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Build the zip
+        env:
+          # The public phc_ project key (infra/posthog), not a secret.
+          VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
+          # The full /graphql URL of the production API.
+          VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
+        run: |
+          test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
+          test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
+          rm -f apps/extension/.env
+          pnpm --filter @trakwyn/extension zip
+
+      - name: Check the manifest
+        run: |
+          zip=$(ls apps/extension/.output/*-chrome.zip)
+          manifest=$(unzip -p "$zip" manifest.json)
+          version=$(jq -r .version <<<"$manifest")
+          if [ "clipper-v$version" != "$TAG" ]; then
+            echo "::error::Manifest version $version does not match tag $TAG"; exit 1
+          fi
+          if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
+            echo "::error::Manifest has host_permissions"; exit 1
+          fi
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+          }
+          echo "ZIP=$zip" >> "$GITHUB_ENV"
+
+      - name: Attach the zip to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$ZIP" --clobber
+
+      - name: Upload to the Chrome Web Store as a draft
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+        run: |
+          pnpm --filter @trakwyn/extension exec wxt submit \
+            --chrome-api-version v2 \
+            --chrome-zip "$GITHUB_WORKSPACE/$ZIP" \
+            --chrome-skip-submit-review

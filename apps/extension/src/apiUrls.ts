@@ -1,10 +1,12 @@
 /**
- * The API the Clipper talks to by default. Kept apart from `constants.ts`
+ * The API the Clipper talks to. Only the local dev server's URL lives here: a
+ * build gets the production API from `VITE_API_URL`, set where it is built (the
+ * release workflow's `CLIPPER_API_URL` variable), so no deployed URL is in the
+ * source. Kept apart from `constants.ts`
  * because `wxt.config.ts` imports it in Node, where `import.meta.env` does not
  * exist, and `constants.ts` reads it.
  */
 export const API_URLS = {
-  PRODUCTION: 'https://api.trakwyn.com/graphql',
   DEVELOPMENT: 'http://localhost:3001/graphql',
 } as const;
 
@@ -15,9 +17,15 @@ interface DefaultApiUrlInput {
   override?: string;
 }
 
-/** A store build must never default to localhost; only the dev server does. */
+/**
+ * A store build must never default to localhost; only the dev server does.
+ * Any other build without an override gets an empty URL rather than a guess,
+ * so every request fails visibly. It cannot throw: `wxt prepare` (postinstall,
+ * typecheck) imports this with no `VITE_API_URL`. The release workflow refuses
+ * to build without it.
+ */
 export function resolveDefaultApiUrl({ dev, override }: DefaultApiUrlInput): string {
   const trimmed = override?.trim();
   if (trimmed) return trimmed;
-  return dev ? API_URLS.DEVELOPMENT : API_URLS.PRODUCTION;
+  return dev ? API_URLS.DEVELOPMENT : '';
 }

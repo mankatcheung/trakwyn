@@ -105,11 +105,18 @@ jobs:
           key: turbo-build-test-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-build-test-${{ runner.os }}-
 
+      # The Clipper's build refuses to run without an API URL (wxt.config.ts).
+      # Nothing here talks to it, so a placeholder in its own .env keeps the
+      # variable out of the web build's environment. It is removed before the
+      # tests, which expect the dev default (localhost) that a set variable
+      # would override.
+      - run: echo 'VITE_API_URL=https://api.example.test/graphql' > apps/extension/.env
       - run: pnpm build
       # `pnpm build` builds the Clipper for Chrome; build the Safari bundle
       # too (JEF-386). Wrapping it in the Xcode app needs macOS, so that part
       # stays local (apps/extension/scripts/package-safari.sh).
       - run: pnpm --filter @trakwyn/extension build:safari
+      - run: rm apps/extension/.env
       - run: pnpm test
 
       # The unit and component tiers run above, inside `pnpm test`. This one is

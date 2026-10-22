@@ -129,4 +129,33 @@ describe('release versioning', () => {
     expect(triggersDeploy('apps/api/src/index.ts', pushPaths)).toBe(true);
     expect(triggersDeploy('apps/web/package.json', pushPaths)).toBe(true);
   });
+
+  describe('release.yml Clipper store job (JEF-419)', () => {
+    const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
+    const job = workflow.slice(workflow.indexOf('  clipper-store:'));
+
+    it('runs only when release-please reports a Clipper release', () => {
+      expect(job).toContain('needs: release-please');
+      expect(job).toContain("if: needs.release-please.outputs.clipper_released == 'true'");
+      expect(workflow).toContain("outputs['apps/extension--release_created']");
+    });
+
+    it('builds from the tag with the PostHog key and the API URL from repository variables', () => {
+      expect(job).toContain('ref: ${{ env.TAG }}');
+      expect(job).toContain('vars.CLIPPER_POSTHOG_KEY');
+      expect(job).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
+    });
+
+    it('checks the manifest before uploading, and uploads without submitting for review', () => {
+      expect(job.indexOf('host_permissions')).toBeGreaterThan(-1);
+      expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('wxt submit'));
+      expect(job).toContain('--chrome-skip-submit-review');
+    });
+
+    it('authenticates to the Web Store API v2 with a service account, not a refresh token', () => {
+      expect(job).toContain('--chrome-api-version v2');
+      expect(job).toContain('secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY');
+      expect(job).not.toContain('CHROME_REFRESH_TOKEN');
+    });
+  });
 });

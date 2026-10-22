@@ -32,3 +32,8 @@ output "domain_dns_records" {
   description = "DNS records to create for the custom domain. Empty until Cloud Run has provisioned the mapping; run `terraform apply -refresh-only` to fetch them."
   value       = try(google_cloud_run_domain_mapping.api.status[0].resource_records, [])
 }
+
+output "chrome_web_store_service_account" {
+  description = "GitHub secret CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL; also add it as a user in the Web Store dashboard (Account)."
+  value       = google_service_account.chrome_web_store_publisher.email
+}
