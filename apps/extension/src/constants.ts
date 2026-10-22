@@ -9,7 +9,7 @@ import { resolveDefaultApiUrl } from './apiUrls';
 
 /**
  * Fallback GraphQL endpoint when the user hasn't configured one: the local API
- * under `wxt` dev, the production API in every build, or `VITE_API_URL`.
+ * under `wxt` dev, otherwise `VITE_API_URL`, which every other build must set.
  */
 export const DEFAULT_API_URL = resolveDefaultApiUrl({
   dev: import.meta.env.DEV,
