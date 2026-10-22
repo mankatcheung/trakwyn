@@ -85,7 +85,7 @@ The job uses Chrome Web Store API v2, which authenticates as a Google Cloud serv
 
 To set up:
 
-1. In a Google Cloud project, enable the **Chrome Web Store API** and create a service account (no project roles are needed). Create a JSON key for it.
+1. `terraform apply` in `infra/gcp` enables the **Chrome Web Store API** and creates the `chrome-web-store-publisher` service account (no project roles). Create its JSON key with `gcloud`, not Terraform, so it stays out of state (`infra/gcp/README.md`, "Rotate the Web Store key").
 2. In the Web Store developer dashboard (signed in as the listing's owner), open **Account** and add the service account's email as a user. This is the one step that cannot be scripted, and without it every call is refused. Copy the **Publisher ID** from the same page.
 3. Set the secrets: `gh secret set CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, and `gh secret set CHROME_SERVICE_ACCOUNT_PRIVATE_KEY < key.pem` with the JSON's `private_key` value written out as a PEM file (`jq -r .private_key key.json > key.pem`), then delete the JSON and the PEM.
 

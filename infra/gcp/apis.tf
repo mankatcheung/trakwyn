@@ -1,6 +1,7 @@
 locals {
   services = toset([
     "artifactregistry.googleapis.com",
+    "chromewebstore.googleapis.com",
     "cloudscheduler.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
