@@ -19,7 +19,7 @@ vi.mock('#/lib/analytics', () => ({
 
 import { StorageCard } from '#/routes/_authenticated/settings/-components/StorageCard';
 import { DocumentUploadPanel } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentUploadPanel';
-import { formatMegabytes, storageLevel } from '#/lib/storageUsage';
+import { formatMegabytes, storageLevel, storagePercent } from '#/lib/storageUsage';
 
 const MB = 1024 * 1024;
 
@@ -55,6 +55,13 @@ describe('storageLevel', () => {
     expect(storageLevel({ usedBytes: 99 * MB, limitBytes })).toBe('warning');
     expect(storageLevel({ usedBytes: 100 * MB, limitBytes })).toBe('full');
     expect(storageLevel({ usedBytes: 120 * MB, limitBytes })).toBe('full');
+  });
+
+  it('reads 100% only when the account is full, never from rounding', () => {
+    const limitBytes = 100 * MB;
+    expect(storagePercent({ usedBytes: 99.6 * MB, limitBytes })).toBe(99);
+    expect(storagePercent({ usedBytes: 100 * MB, limitBytes })).toBe(100);
+    expect(storagePercent({ usedBytes: 150 * MB, limitBytes })).toBe(100);
   });
 
   it('formats megabytes with at most one decimal', () => {

@@ -16,6 +16,8 @@ describe('storageLevel', () => {
 describe('storagePercent', () => {
   it('rounds, and never passes 100', () => {
     expect(storagePercent({ usedBytes: 12.4 * MB, limitBytes })).toBe(12);
+    expect(storagePercent({ usedBytes: 99.6 * MB, limitBytes })).toBe(99);
+    expect(storagePercent({ usedBytes: 100 * MB, limitBytes })).toBe(100);
     expect(storagePercent({ usedBytes: 150 * MB, limitBytes })).toBe(100);
   });
 });

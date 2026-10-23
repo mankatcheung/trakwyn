@@ -25,6 +25,12 @@ export function storageLevel({ usedBytes, limitBytes }: StorageUsage): StorageLe
   return usedBytes >= limitBytes * WARNING_FRACTION ? 'warning' : 'ok';
 }
 
+/** Share of the limit used, 0–100. Reads 100 only once the account is full, never from rounding. */
+export function storagePercent(usage: StorageUsage): number {
+  if (storageLevel(usage) === 'full') return 100;
+  return Math.min(99, Math.round((usage.usedBytes / usage.limitBytes) * 100));
+}
+
 export function storageLeftBytes({ usedBytes, limitBytes }: StorageUsage): number {
   return Math.max(0, limitBytes - usedBytes);
 }

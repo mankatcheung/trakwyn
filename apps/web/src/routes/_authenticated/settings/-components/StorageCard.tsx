@@ -1,11 +1,13 @@
 import { useLocale } from '#/lib/i18n';
-import { formatMegabytes, storageLevel, useStorageUsage } from '#/lib/storageUsage';
+import { formatMegabytes, storageLevel, storagePercent, useStorageUsage } from '#/lib/storageUsage';
 import { Card, ProgressBar } from '@trakwyn/ui';
 
+// The bar's default track is white-on-tint, which vanishes on a white card.
+const TRACK = 'bg-gray-200! dark:bg-gray-700!';
 const BAR_COLOR = {
-  ok: '',
-  warning: '[&>div]:bg-amber-500',
-  full: '[&>div]:bg-red-600',
+  ok: TRACK,
+  warning: `${TRACK} [&>div]:bg-amber-500`,
+  full: `${TRACK} [&>div]:bg-red-600`,
 } as const;
 
 export function StorageCard() {
@@ -14,7 +16,6 @@ export function StorageCard() {
   if (!usage) return null;
 
   const level = storageLevel(usage);
-  const percent = Math.min(100, Math.round((usage.usedBytes / usage.limitBytes) * 100));
 
   return (
     <Card className="space-y-4 p-5">
@@ -34,7 +35,7 @@ export function StorageCard() {
         {t('storage.usage', {
           used: formatMegabytes(usage.usedBytes),
           limit: formatMegabytes(usage.limitBytes),
-          percent,
+          percent: storagePercent(usage),
         })}
       </p>
       {level === 'warning' && (

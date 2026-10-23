@@ -16,8 +16,8 @@ export function formatMegabytes(bytes: number): string {
   return `${Math.round((bytes / BYTES_PER_MB) * 10) / 10} MB`;
 }
 
-/** Share of the limit used, 0–100. */
-export function storagePercent({ usedBytes, limitBytes }: StorageUsage): number {
-  if (limitBytes <= 0) return 100;
-  return Math.min(100, Math.round((usedBytes / limitBytes) * 100));
+/** Share of the limit used, 0–100. Reads 100 only once the account is full, never from rounding. */
+export function storagePercent(usage: StorageUsage): number {
+  if (usage.limitBytes <= 0 || storageLevel(usage) === 'full') return 100;
+  return Math.min(99, Math.round((usage.usedBytes / usage.limitBytes) * 100));
 }

@@ -94,6 +94,7 @@ describe('container wiring: noteRepository and documentRepository', () => {
         create: vi.fn(),
         delete: vi.fn(),
       }),
+      drizzleApplicationRepository: asValue({ findByIdIncludingTrashed: vi.fn() }),
       documentRepository: asClass(CachedDocumentRepository, { lifetime: Lifetime.SINGLETON }),
     });
     expect(container.resolve('documentRepository')).toBeInstanceOf(CachedDocumentRepository);
