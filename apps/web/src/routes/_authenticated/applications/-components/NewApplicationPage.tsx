@@ -5,7 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
+import { ERROR_CODES } from '#/constants';
+import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';
+import { getGqlErrorCode } from '#/lib/graphqlError';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
@@ -91,7 +94,9 @@ export function NewApplicationPage() {
         params: { applicationId: result.createApplication.id },
       });
     } catch (err) {
-      setError('root', { message: getErrorMessage(err) });
+      // The code rides along as the error `type`, so the render below can tell
+      // "you are at your plan's limit" from a failure.
+      setError('root', { type: getGqlErrorCode(err) ?? 'error', message: getErrorMessage(err) });
     }
   };
 
@@ -215,7 +220,13 @@ export function NewApplicationPage() {
           </label>
         </div>
 
-        {errors.root && <Alert>{errors.root.message}</Alert>}
+        {errors.root &&
+          (errors.root.type === ERROR_CODES.QUOTA_EXCEEDED ||
+          errors.root.type === ERROR_CODES.PLAN_REQUIRED ? (
+            <UpgradePrompt message={errors.root.message ?? ''} />
+          ) : (
+            <Alert>{errors.root.message}</Alert>
+          ))}
 
         <div className="flex gap-3 pt-2">
           <Button type="submit" disabled={isSubmitting}>

@@ -7,6 +7,7 @@ import type {
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import { NotFoundError, ForbiddenError } from '#src/use-cases/errors/DomainError.js';
 
 export interface ExportDocumentDraftToPdfCommand {
@@ -24,6 +25,7 @@ interface Deps {
   applicationRepository: IApplicationRepository;
   storageProvider: IStorageProvider;
   pdfRenderer: IPdfRenderer;
+  entitlementService: IEntitlementService;
   generateId: () => string;
 }
 
@@ -40,6 +42,8 @@ export class ExportDocumentDraftToPdfUseCase implements IExportDocumentDraftToPd
     if (!app || app.userId !== command.userId) {
       throw new ForbiddenError('Not authorized');
     }
+
+    const { limits } = await this.deps.entitlementService.forUserId(command.userId);
 
     const pdfBuffer = await this.deps.pdfRenderer.render({
       title: draft.title,
@@ -61,6 +65,7 @@ export class ExportDocumentDraftToPdfUseCase implements IExportDocumentDraftToPd
       storageKey,
       documentType: draft.type,
       sourceDraftId: draft.id,
+      storageLimitBytes: limits.documentBytes,
     };
 
     try {

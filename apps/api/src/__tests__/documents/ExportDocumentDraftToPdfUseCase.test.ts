@@ -9,6 +9,8 @@ import {
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
+import { PLAN_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ExportDocumentDraftToPdfUseCase', () => {
   const generateId = () => 'test-doc-id';
@@ -19,6 +21,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
     });
 
     const useCase = new ExportDocumentDraftToPdfUseCase({
+      entitlementService: makeEntitlementService(),
       documentDraftRepository,
       documentRepository: makeDocumentRepository(),
       applicationRepository: makeApplicationRepository(),
@@ -43,6 +46,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
     });
 
     const useCase = new ExportDocumentDraftToPdfUseCase({
+      entitlementService: makeEntitlementService(),
       documentDraftRepository,
       documentRepository: makeDocumentRepository(),
       applicationRepository,
@@ -76,6 +80,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
     });
 
     const useCase = new ExportDocumentDraftToPdfUseCase({
+      entitlementService: makeEntitlementService(),
       documentDraftRepository,
       documentRepository,
       applicationRepository,
@@ -104,6 +109,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
       storageKey: expect.stringContaining('documents/app-1/'),
       documentType: 'cover_letter',
       sourceDraftId: 'draft-1',
+      storageLimitBytes: PLAN_LIMITS.pro.documentBytes,
     });
   });
 
@@ -117,6 +123,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
         ),
     });
     const useCase = new ExportDocumentDraftToPdfUseCase({
+      entitlementService: makeEntitlementService(),
       documentDraftRepository: makeDocumentDraftRepository({
         findById: vi.fn().mockResolvedValue(makeDocumentDraft()),
       }),

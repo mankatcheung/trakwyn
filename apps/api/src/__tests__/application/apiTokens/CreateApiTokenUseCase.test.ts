@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { CreateApiTokenUseCase } from '#src/use-cases/apiTokens/CreateApiTokenUseCase.js';
 import { makeApiToken, makeApiTokenRepository } from '#src/__tests__/helpers/mocks/apiTokens.js';
 
@@ -7,7 +8,11 @@ describe('CreateApiTokenUseCase', () => {
     const storedToken = makeApiToken();
     const repo = makeApiTokenRepository({ create: vi.fn().mockResolvedValue(storedToken) });
     const generateId = vi.fn().mockReturnValue('token-1');
-    const useCase = new CreateApiTokenUseCase({ apiTokenRepository: repo, generateId });
+    const useCase = new CreateApiTokenUseCase({
+      entitlementService: makeEntitlementService(),
+      apiTokenRepository: repo,
+      generateId,
+    });
 
     const { rawToken, token } = await useCase.execute({ userId: 'user-1', name: 'CLI' });
 
@@ -23,7 +28,11 @@ describe('CreateApiTokenUseCase', () => {
 
   it('each call produces a unique raw token', async () => {
     const repo = makeApiTokenRepository({ create: vi.fn().mockResolvedValue(makeApiToken()) });
-    const useCase = new CreateApiTokenUseCase({ apiTokenRepository: repo, generateId: vi.fn() });
+    const useCase = new CreateApiTokenUseCase({
+      entitlementService: makeEntitlementService(),
+      apiTokenRepository: repo,
+      generateId: vi.fn(),
+    });
 
     const [a, b] = await Promise.all([
       useCase.execute({ userId: 'user-1', name: 'A' }),

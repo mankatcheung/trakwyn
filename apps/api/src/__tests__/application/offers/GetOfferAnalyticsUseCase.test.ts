@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAnalyticsUseCase.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeOffer, makeOfferRepository } from '#src/__tests__/helpers/mocks/offers.js';
@@ -11,6 +12,7 @@ describe('GetOfferAnalyticsUseCase', () => {
     });
 
     const result = await new GetOfferAnalyticsUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -49,6 +51,7 @@ describe('GetOfferAnalyticsUseCase', () => {
     });
 
     const result = await new GetOfferAnalyticsUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -94,6 +97,7 @@ describe('GetOfferAnalyticsUseCase', () => {
     });
 
     const result = await new GetOfferAnalyticsUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -128,6 +132,7 @@ describe('GetOfferAnalyticsUseCase', () => {
     });
 
     const result = await new GetOfferAnalyticsUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -149,6 +154,7 @@ describe('GetOfferAnalyticsUseCase', () => {
     });
 
     const result = await new GetOfferAnalyticsUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });

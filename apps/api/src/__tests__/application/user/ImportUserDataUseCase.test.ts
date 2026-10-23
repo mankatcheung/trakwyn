@@ -3,6 +3,11 @@ import { ImportUserDataUseCase } from '#src/use-cases/user/ImportUserDataUseCase
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ImportUserDataUseCase', () => {
   beforeEach(() => {
@@ -12,8 +17,30 @@ describe('ImportUserDataUseCase', () => {
   const makeDeps = (overrides?: object) => ({
     applicationRepository: makeApplicationRepository(),
     noteRepository: makeNoteRepository(),
+    entitlementService: makeEntitlementService(),
     generateId: vi.fn().mockReturnValue('generated-id'),
     ...overrides,
+  });
+
+  it('holds each imported application to the importing user plan limit', async () => {
+    const deps = makeDeps({
+      applicationRepository: makeApplicationRepository({
+        create: vi.fn().mockResolvedValue(makeApplication()),
+      }),
+      entitlementService: makeEntitlementService({
+        forUserId: vi.fn().mockResolvedValue(makeFreeEntitlements()),
+      }),
+    });
+
+    await new ImportUserDataUseCase(deps).execute(
+      'user-7',
+      JSON.stringify({ applications: [{ company: 'Acme', role: 'Engineer' }] }),
+    );
+
+    expect(deps.entitlementService.forUserId).toHaveBeenCalledWith('user-7');
+    expect(deps.applicationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ applicationLimit: CONTENT_LIMITS.APPLICATIONS_PER_USER }),
+    );
   });
 
   it('throws VALIDATION when the payload is not valid JSON', async () => {
@@ -96,6 +123,7 @@ describe('ImportUserDataUseCase', () => {
       location: 'Remote',
       salaryRange: '100k-120k',
       description: 'Great role',
+      applicationLimit: null,
     });
     expect(summary.applicationsImported).toBe(1);
     expect(summary.applicationsSkipped).toBe(0);

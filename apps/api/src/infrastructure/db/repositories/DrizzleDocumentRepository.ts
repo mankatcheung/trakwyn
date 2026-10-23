@@ -75,7 +75,7 @@ export class DrizzleDocumentRepository implements IDocumentRepository {
 
       // One conditional UPDATE, so two uploads confirmed together cannot both
       // pass the limit. Throwing rolls back the document-count reservation above.
-      const limit = CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES;
+      const limit = data.storageLimitBytes;
       const [charged] = await client
         .update(user)
         .set({ documentBytes: sql`${user.documentBytes} + ${data.sizeBytes}` })

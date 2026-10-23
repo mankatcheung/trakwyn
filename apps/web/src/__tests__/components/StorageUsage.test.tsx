@@ -19,7 +19,12 @@ vi.mock('#/lib/analytics', () => ({
 
 import { StorageCard } from '#/routes/_authenticated/settings/-components/StorageCard';
 import { DocumentUploadPanel } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentUploadPanel';
-import { formatMegabytes, storageLevel, storagePercent } from '#/lib/storageUsage';
+import {
+  formatMegabytes,
+  formatStorageSize,
+  storageLevel,
+  storagePercent,
+} from '#/lib/storageUsage';
 
 const MB = 1024 * 1024;
 
@@ -62,6 +67,15 @@ describe('storageLevel', () => {
     expect(storagePercent({ usedBytes: 99.6 * MB, limitBytes })).toBe(99);
     expect(storagePercent({ usedBytes: 100 * MB, limitBytes })).toBe(100);
     expect(storagePercent({ usedBytes: 150 * MB, limitBytes })).toBe(100);
+  });
+
+  it('switches to gigabytes from 1 GB, so a Pro limit reads 2 GB and not 2048 MB (JEF-344)', () => {
+    const GB = 1024 * MB;
+    expect(formatStorageSize(2 * GB)).toBe('2 GB');
+    expect(formatStorageSize(1.5 * GB)).toBe('1.5 GB');
+    expect(formatStorageSize(GB)).toBe('1 GB');
+    expect(formatStorageSize(1023 * MB)).toBe('1023 MB');
+    expect(formatStorageSize(100 * MB)).toBe('100 MB');
   });
 
   it('formats megabytes with at most one decimal', () => {

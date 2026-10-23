@@ -27,7 +27,7 @@ import type {
   ApplicationsPage,
 } from '#src/use-cases/ports/IApplicationRepository.js';
 import { txStorage, getClient } from '../transactionContext.js';
-import { CONTENT_LIMITS, REMINDER_WINDOW_MS } from '#src/use-cases/constants.js';
+import { REMINDER_WINDOW_MS } from '#src/use-cases/constants.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { LIKELY_GHOSTED_AFTER_DAYS } from '#src/use-cases/jobs/applicationStaleness.js';
 
@@ -212,16 +212,15 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(user.id, data.userId),
-            lt(user.applicationCount, CONTENT_LIMITS.APPLICATIONS_PER_USER),
-          ),
+          data.applicationLimit === null
+            ? eq(user.id, data.userId)
+            : and(eq(user.id, data.userId), lt(user.applicationCount, data.applicationLimit)),
         )
         .returning({ id: user.id });
 
       if (!reserved) {
         throw new QuotaExceededError(
-          `You have reached the maximum of ${CONTENT_LIMITS.APPLICATIONS_PER_USER} applications`,
+          `You have reached the maximum of ${data.applicationLimit} applications`,
         );
       }
 

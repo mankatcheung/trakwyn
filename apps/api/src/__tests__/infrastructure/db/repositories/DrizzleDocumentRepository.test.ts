@@ -12,6 +12,7 @@ const BASE_DOC = {
   mimeType: 'application/pdf',
   sizeBytes: 12345,
   storageKey: 'users/u1/applications/app-1/resume.pdf',
+  storageLimitBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
 };
 
 describe('DrizzleDocumentRepository', () => {
@@ -224,6 +225,25 @@ describe('DrizzleDocumentRepository', () => {
 
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       expect(await usedBytes()).toBeLessThanOrEqual(LIMIT);
+    });
+
+    it('enforces the limit the caller passes, not the Free one', async () => {
+      await db.db.update(user).set({ documentBytes: 1000 }).where(eq(user.id, 'u1'));
+
+      const err = await repo.create({ ...BASE_DOC, storageLimitBytes: 5000 }).catch((e) => e);
+
+      expect(err).toMatchObject({ code: 'QUOTA_EXCEEDED' });
+      expect(await db.db.select().from(document)).toHaveLength(0);
+      expect(await usedBytes()).toBe(1000);
+    });
+
+    it('lets a Pro limit take a document the Free limit would refuse', async () => {
+      const PRO_LIMIT = 2 * 1024 * 1024 * 1024;
+      await db.db.update(user).set({ documentBytes: LIMIT }).where(eq(user.id, 'u1'));
+
+      await repo.create({ ...BASE_DOC, storageLimitBytes: PRO_LIMIT });
+
+      expect(await usedBytes()).toBe(LIMIT + 12345);
     });
 
     it('lowers the total when a document is deleted', async () => {

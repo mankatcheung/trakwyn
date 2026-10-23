@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { SendWeeklyDigestUseCase } from '#src/use-cases/digest/SendWeeklyDigestUseCase.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlementService,
+} from '#src/__tests__/helpers/mocks/plans.js';
 import type { IEmailService, WeeklyDigestData } from '#src/use-cases/ports/IEmailService.js';
 
 function makeEmailService(): IEmailService {
@@ -24,6 +28,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -42,12 +47,33 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
     }).execute();
 
     expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
+    expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
+  });
+
+  it('skips a Free user: the digest is a Pro feature', async () => {
+    const user = makeUser();
+    const userRepository = makeUserRepository({ findAll: vi.fn().mockResolvedValue([user]) });
+    const applicationRepository = makeApplicationRepository({
+      findAllByUserId: vi.fn().mockResolvedValue([makeApplication()]),
+    });
+    const emailService = makeEmailService();
+
+    const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeFreeEntitlementService(),
+      userRepository,
+      applicationRepository,
+      emailService,
+    }).execute();
+
+    expect(result).toEqual({ totalUsers: 1, sent: 0, skipped: 1, failed: 0 });
+    expect(applicationRepository.findAllByUserId).not.toHaveBeenCalled();
     expect(emailService.sendWeeklyDigest).not.toHaveBeenCalled();
   });
 
@@ -58,6 +84,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -75,6 +102,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -96,6 +124,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -125,6 +154,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -146,6 +176,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -166,6 +197,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -189,6 +221,7 @@ describe('SendWeeklyDigestUseCase', () => {
       .mockResolvedValueOnce(undefined);
 
     const result = await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -217,6 +250,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -245,6 +279,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -270,6 +305,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,
@@ -295,6 +331,7 @@ describe('SendWeeklyDigestUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendWeeklyDigestUseCase({
+      entitlementService: makeEntitlementService(),
       userRepository,
       applicationRepository,
       emailService,

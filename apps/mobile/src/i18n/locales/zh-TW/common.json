@@ -9,5 +9,7 @@
   "errorGeneric": "發生錯誤，請再試一次。",
   "errorNetwork": "無法連接伺服器，請檢查網路連線後再試一次。",
   "confirm": "確認",
-  "back": "返回"
+  "back": "返回",
+  "errorPlanRequired": "{{message}} 請在網頁版管理你的方案。",
+  "errorPlanRequiredDefault": "這是專業版功能"
 }

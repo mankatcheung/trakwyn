@@ -9,5 +9,7 @@
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNetwork": "Could not reach the server. Check your connection and try again.",
   "confirm": "Confirm",
-  "back": "Back"
+  "back": "Back",
+  "errorPlanRequired": "{{message}} Manage your plan on the web.",
+  "errorPlanRequiredDefault": "This is a Pro feature"
 }

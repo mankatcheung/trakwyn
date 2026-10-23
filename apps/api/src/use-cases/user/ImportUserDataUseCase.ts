@@ -1,6 +1,7 @@
 import { QuotaExceededError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { INoteRepository } from '#src/use-cases/ports/INoteRepository.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import {
   APPLICATION_STATUSES,
   type ApplicationStatus,
@@ -14,6 +15,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   noteRepository: INoteRepository;
+  entitlementService: IEntitlementService;
   generateId: () => string;
 }
 
@@ -54,6 +56,8 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
       );
     }
 
+    const { limits } = await this.deps.entitlementService.forUserId(userId);
+
     const summary: ImportSummary = {
       applicationsImported: 0,
       applicationsSkipped: 0,
@@ -83,6 +87,7 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
           location: asNullableString(entry.location),
           salaryRange: asNullableString(entry.salaryRange),
           description: asNullableString(entry.description),
+          applicationLimit: limits.applications,
         });
       } catch (error) {
         if (error instanceof QuotaExceededError) {

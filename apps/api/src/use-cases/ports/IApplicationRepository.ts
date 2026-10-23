@@ -20,6 +20,13 @@ export interface CreateApplicationData {
   source?: string | null;
   followUpAt?: Date | null;
   tags?: ApplicationTagData[];
+  /**
+   * The most applications the owner may have, from their entitlements; `null`
+   * for no cap. Passed in because the repository reserves the slot in one
+   * conditional `UPDATE`, which is what keeps simultaneous creates from both
+   * passing the limit.
+   */
+  applicationLimit: number | null;
 }
 
 export interface UpdateApplicationData {

@@ -117,6 +117,7 @@ describe('CachedDocumentRepository', () => {
         mimeType: 'application/pdf',
         sizeBytes: 1024,
         storageKey: 'users/user-1/applications/app-1/resume.pdf',
+        storageLimitBytes: 2000000,
       });
 
       vi.mocked(inner.findAllByApplicationId).mockResolvedValue([doc]);
@@ -182,7 +183,7 @@ describe('CachedDocumentRepository', () => {
       vi.mocked(inner.create).mockResolvedValue(doc);
       expect(await cachedUser(cache)).toEqual({ documentBytes: 0 });
 
-      await repo.create({ ...doc });
+      await repo.create({ ...doc, storageLimitBytes: 2000000 });
 
       expect(
         await cache.getOrSet(CACHE_KEYS.userById('user-1'), async () => ({ documentBytes: 12345 })),

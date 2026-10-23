@@ -23,6 +23,8 @@ export const ERROR_CODES = {
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED',
   CAPTCHA_FAILED: 'CAPTCHA_FAILED',
+  /** The action belongs to a plan the user is not on (JEF-344): show an upgrade prompt, not a failure. */
+  PLAN_REQUIRED: 'PLAN_REQUIRED',
 } as const;
 
 /**

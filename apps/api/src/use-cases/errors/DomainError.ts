@@ -52,6 +52,13 @@ export class QuotaExceededError extends DomainError {
   }
 }
 
+/** The action belongs to a plan this user is not on (JEF-344). */
+export class PlanRequiredError extends DomainError {
+  constructor(message = 'This needs a Pro plan') {
+    super(message, ERROR_CODES.PLAN_REQUIRED);
+  }
+}
+
 /** The caller is not authenticated, or their credential no longer stands. */
 export class UnauthorizedError extends DomainError {
   constructor(message = 'Unauthorized') {

@@ -398,6 +398,73 @@ describe('SettingsIntegrationsPage', () => {
     });
   });
 
+  describe('Pro features (JEF-344)', () => {
+    const planRequired = (message: string) => ({
+      response: { errors: [{ message, extensions: { code: 'PLAN_REQUIRED' } }] },
+    });
+
+    it('offers the plan page when creating an API token needs Pro', async () => {
+      mockGqlRequest.mockImplementation((doc: string) => {
+        if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
+          return Promise.reject(planRequired('API tokens and MCP access is a Pro feature'));
+        }
+        return Promise.resolve({ apiTokens: [], mcpOAuthGrants: [], shareLinks: [] });
+      });
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      fireEvent.change(await screen.findByPlaceholderText('e.g. CI pipeline'), {
+        target: { value: 'ci' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /create token/i }));
+
+      expect(
+        await screen.findByText(/API tokens and MCP access is a Pro feature/),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'See what Pro includes' })).toHaveAttribute(
+        'href',
+        '/settings/plan',
+      );
+    });
+
+    it('offers the plan page when creating a share link needs Pro', async () => {
+      mockGqlRequest.mockImplementation((doc: string) => {
+        if (typeof doc === 'string' && doc.includes('mutation CreateShareLink')) {
+          return Promise.reject(planRequired('Share links is a Pro feature'));
+        }
+        return Promise.resolve({ apiTokens: [], mcpOAuthGrants: [], shareLinks: [] });
+      });
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      fireEvent.change(await screen.findByPlaceholderText('e.g. For my mentor'), {
+        target: { value: 'coach' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /create link/i }));
+
+      expect(await screen.findByText(/Share links is a Pro feature/)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'See what Pro includes' })).toBeInTheDocument();
+    });
+
+    it('shows other failures as a plain error, with no upgrade link', async () => {
+      mockGqlRequest.mockImplementation((doc: string) => {
+        if (typeof doc === 'string' && doc.includes('mutation CreateShareLink')) {
+          return Promise.reject({
+            response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
+          });
+        }
+        return Promise.resolve({ apiTokens: [], mcpOAuthGrants: [], shareLinks: [] });
+      });
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      fireEvent.change(await screen.findByPlaceholderText('e.g. For my mentor'), {
+        target: { value: 'coach' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /create link/i }));
+
+      expect(await screen.findByText('Nope')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'See what Pro includes' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('progressive disclosure of the create-share-link form (redesign)', () => {
     function respondByOperation(links: Array<Record<string, unknown>> = []) {
       mockGqlRequest.mockImplementation((doc: string) => {

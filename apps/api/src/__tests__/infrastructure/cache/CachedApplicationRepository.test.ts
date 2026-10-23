@@ -106,6 +106,7 @@ describe('CachedApplicationRepository', () => {
         company: 'Acme',
         role: 'SWE',
         status: 'draft',
+        applicationLimit: null,
       });
 
       // Next list fetch must go to inner again
@@ -264,6 +265,25 @@ describe('CachedApplicationRepository', () => {
       expect(inner.updateReminderSentAt).toHaveBeenCalledWith('unknown-id', expect.any(Date));
     });
   });
+  it('drops the owner from the user cache when an application is created (the user row holds the application count)', async () => {
+    const { repo, inner, cache } = makeRepo();
+    vi.mocked(inner.create).mockResolvedValue(app);
+    await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ applicationCount: 0 }));
+
+    await repo.create({
+      id: app.id,
+      userId: app.userId,
+      company: 'Acme',
+      role: 'SWE',
+      status: 'draft',
+      applicationLimit: null,
+    });
+
+    expect(
+      await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ applicationCount: 1 })),
+    ).toEqual({ applicationCount: 1 });
+  });
+
   it('drops the owner from the user cache when an application is deleted for good (its documents release bytes)', async () => {
     const { repo, inner, cache } = makeRepo();
     vi.mocked(inner.findByIdIncludingTrashed).mockResolvedValue(app);

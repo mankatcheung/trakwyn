@@ -40,6 +40,14 @@ export function formatMegabytes(bytes: number): string {
   return `${Math.round((bytes / BYTES_PER_MB) * 10) / 10} MB`;
 }
 
+const BYTES_PER_GB = 1024 * BYTES_PER_MB;
+
+/** Megabytes below 1 GB, gigabytes from there: `100 MB`, `12.5 MB`, `2 GB`. */
+export function formatStorageSize(bytes: number): string {
+  if (bytes < BYTES_PER_GB) return formatMegabytes(bytes);
+  return `${Math.round((bytes / BYTES_PER_GB) * 10) / 10} GB`;
+}
+
 /** The signed-in user's document storage, or null while loading or when the API sends none. */
 export function useStorageUsage(): StorageUsage | null {
   const { data } = useQuery({

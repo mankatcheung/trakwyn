@@ -316,6 +316,8 @@ import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy
 import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
+import type { GetBillingStatusUseCase } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
@@ -325,6 +327,9 @@ export interface Cradle {
   storageProvider: LocalStorageProvider | VercelBlobStorageProvider;
   generateId: () => string;
   now: () => Date;
+  plansEnforced: boolean;
+  entitlementService: IEntitlementService;
+  getBillingStatusUseCase: GetBillingStatusUseCase;
   webAppOrigin: string;
   /** Chrome extension IDs allowed to finish an OAuth login (JEF-383). */
   extensionOAuthIds: ReadonlySet<string>;

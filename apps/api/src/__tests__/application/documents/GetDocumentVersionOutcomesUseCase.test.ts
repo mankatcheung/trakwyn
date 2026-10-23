@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
 import { makeDocument, makeDocumentRepository } from '#src/__tests__/helpers/mocks/documents.js';
 import {
@@ -16,6 +17,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -52,6 +54,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -95,6 +98,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -123,6 +127,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -151,6 +156,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -184,6 +190,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -211,6 +218,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });
@@ -241,6 +249,7 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
     });
 
     const result = await new GetDocumentVersionOutcomesUseCase({
+      entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
     }).execute({ userId: 'user-1' });

@@ -1,6 +1,7 @@
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IEmailService, WeeklyDigestData } from '#src/use-cases/ports/IEmailService.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import { DIGEST_FREQUENCY, DIGEST_WINDOW_MS, DURATIONS_MS } from '#src/use-cases/constants.js';
 import { getWeeklyApplicationGoalStats } from '#src/use-cases/user/weeklyApplicationGoal.js';
 
@@ -8,6 +9,7 @@ interface Deps {
   userRepository: IUserRepository;
   applicationRepository: IApplicationRepository;
   emailService: IEmailService;
+  entitlementService: IEntitlementService;
 }
 
 export interface DigestSummary {
@@ -35,6 +37,12 @@ export class SendWeeklyDigestUseCase {
 
     const results = await Promise.allSettled(
       users.map(async (user) => {
+        // The digest is a Pro feature.
+        if (!this.deps.entitlementService.forUser(user).features.notifications) {
+          skipped++;
+          return;
+        }
+
         const frequency = user.digestFrequency ?? (user.weeklyDigestEnabled ? 'weekly' : 'off');
         if (
           frequency === DIGEST_FREQUENCY.OFF ||

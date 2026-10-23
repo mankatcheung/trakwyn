@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { GetAllOffersUseCase } from '#src/use-cases/offers/GetAllOffersUseCase.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeOffer, makeOfferRepository } from '#src/__tests__/helpers/mocks/offers.js';
@@ -11,6 +12,7 @@ describe('GetAllOffersUseCase', () => {
     });
 
     const result = await new GetAllOffersUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -35,6 +37,7 @@ describe('GetAllOffersUseCase', () => {
     });
 
     const result = await new GetAllOffersUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });
@@ -55,6 +58,7 @@ describe('GetAllOffersUseCase', () => {
     });
 
     const result = await new GetAllOffersUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository,
       applicationRepository,
     }).execute({ userId: 'user-1' });

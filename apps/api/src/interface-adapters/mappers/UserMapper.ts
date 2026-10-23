@@ -1,5 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
-import { storageLimitFor } from '#src/use-cases/documents/storageQuota.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 
 export interface UserDTO {
   id: string;
@@ -20,6 +20,12 @@ export interface UserDTO {
 }
 
 export class UserMapper {
+  private readonly entitlementService: IEntitlementService;
+
+  constructor({ entitlementService }: { entitlementService: IEntitlementService }) {
+    this.entitlementService = entitlementService;
+  }
+
   toDTO(user: User, avatarUrl: string | null): UserDTO {
     return {
       id: user.id,
@@ -36,7 +42,7 @@ export class UserMapper {
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,
       storageUsedBytes: user.documentBytes,
-      storageLimitBytes: storageLimitFor(user),
+      storageLimitBytes: this.entitlementService.forUser(user).limits.documentBytes,
     };
   }
 }

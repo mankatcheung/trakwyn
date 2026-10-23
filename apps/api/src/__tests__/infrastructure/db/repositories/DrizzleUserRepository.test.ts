@@ -42,6 +42,31 @@ describe('DrizzleUserRepository', () => {
       expect(u.followUpRemindersEnabled).toBe(true);
     });
 
+    it('puts a new user on the Free plan with no expiry or source', async () => {
+      const u = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+
+      expect(u.plan).toBe('free');
+      expect(u.planExpiresAt).toBeNull();
+      expect(u.planSource).toBeNull();
+    });
+
+    it('stores a Pro plan with its source and expiry, and reads it back', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      const expiresAt = new Date('2026-12-01T00:00:00.000Z');
+
+      const updated = await repo.update('u1', {
+        plan: 'pro',
+        planSource: 'trial',
+        planExpiresAt: expiresAt,
+      });
+      const reloaded = await repo.findById('u1');
+
+      expect(updated.plan).toBe('pro');
+      expect(reloaded?.plan).toBe('pro');
+      expect(reloaded?.planSource).toBe('trial');
+      expect(reloaded?.planExpiresAt).toEqual(expiresAt);
+    });
+
     it('defaults emailVerifiedAt to null', async () => {
       const u = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
       expect(u.emailVerifiedAt).toBeNull();

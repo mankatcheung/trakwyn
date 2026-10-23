@@ -34,6 +34,7 @@ import { LlmUsageSummaryMapper } from '#src/interface-adapters/mappers/LlmUsageS
 import { makeStorageProvider } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeLlmApiKey } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser } from '#src/__tests__/helpers/mocks/user.js';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 
 const stub = <T>(methods: Partial<T>): T => methods as T;
 
@@ -113,7 +114,7 @@ const makeDeps = (overrides?: object) => ({
   storageProvider: makeStorageProvider({
     getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed-url'),
   }),
-  userMapper: new UserMapper(),
+  userMapper: new UserMapper({ entitlementService: makeEntitlementService() }),
   ...overrides,
 });
 

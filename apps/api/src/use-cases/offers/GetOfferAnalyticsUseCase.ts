@@ -1,3 +1,4 @@
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { OfferPeriod } from '#src/domain/offer/Offer.js';
@@ -28,6 +29,7 @@ export interface OfferAnalytics {
 }
 
 interface Deps {
+  entitlementService: IEntitlementService;
   offerRepository: IOfferRepository;
   applicationRepository: IApplicationRepository;
 }
@@ -81,6 +83,7 @@ export class GetOfferAnalyticsUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GetOfferAnalyticsInput): Promise<OfferAnalytics> {
+    await this.deps.entitlementService.assertFeature(input.userId, 'analytics');
     const [offers, applications] = await Promise.all([
       this.deps.offerRepository.findAllByUserId(input.userId),
       this.deps.applicationRepository.findAllByUserId(input.userId),

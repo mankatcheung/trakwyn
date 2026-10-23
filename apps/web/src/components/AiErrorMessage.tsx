@@ -1,6 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
-import { AI_LIMIT_REACHED_CODE, AI_NOT_CONFIGURED_CODE } from '#/lib/graphqlError';
+import {
+  AI_LIMIT_REACHED_CODE,
+  AI_NOT_CONFIGURED_CODE,
+  PLAN_REQUIRED_CODE,
+} from '#/lib/graphqlError';
 
 export interface AiErrorMessageProps {
   /** The GraphQL `extensions.code`, or a `ChatStreamError`'s own `code`. */
@@ -34,6 +38,19 @@ export function AiErrorMessage({ code, fallback }: AiErrorMessageProps) {
           {t('resumeMatch.accountSettingsLinkText')}
         </Link>{' '}
         {t('ai.limitReachedSuffix')}
+      </>
+    );
+  }
+
+  // The Free plan's monthly AI allowance (or a Pro-only AI feature). The API's
+  // message already says which, so it is shown as it came, with the way out.
+  if (code === PLAN_REQUIRED_CODE) {
+    return (
+      <>
+        {fallback}{' '}
+        <Link to="/settings/plan" className="underline">
+          {t('plan.seePlans')}
+        </Link>
       </>
     );
   }

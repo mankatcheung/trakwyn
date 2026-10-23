@@ -1,5 +1,7 @@
 import { AlertTriangleIcon, RefreshCwIcon } from 'lucide-react';
+import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';
+import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
 import { Button } from '@trakwyn/ui';
 
@@ -16,6 +18,17 @@ interface ErrorStateProps {
  */
 export function ErrorState({ error, onRetry }: ErrorStateProps) {
   const { t } = useLocale();
+
+  // A feature this plan does not include is not a failure, and trying again
+  // changes nothing, so it gets the upgrade prompt rather than a retry.
+  if (getGqlErrorCode(error) === PLAN_REQUIRED_CODE) {
+    return (
+      <div className="mx-auto max-w-md py-12">
+        <UpgradePrompt message={getErrorMessage(error)} />
+      </div>
+    );
+  }
+
   return (
     <div className="py-12 text-center">
       <AlertTriangleIcon size={40} className="mx-auto mb-3 text-red-500" />

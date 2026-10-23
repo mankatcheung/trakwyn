@@ -31,6 +31,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/seed.ts",
+    "plan": "tsx src/plan.ts",
     "db:copy-from-turso": "tsx src/copyFromTurso.ts",
     "clean": "rm -rf dist"
   },

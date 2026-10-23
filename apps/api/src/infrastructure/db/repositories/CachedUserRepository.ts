@@ -65,28 +65,7 @@ export class CachedUserRepository implements IUserRepository {
     return result;
   }
 
-  async update(
-    id: string,
-    data: {
-      email?: string;
-      passwordHash?: string;
-      name?: string | null;
-      timezone?: string | null;
-      targetRole?: string | null;
-      emailVerifiedAt?: Date | null;
-      avatarKey?: string | null;
-      weeklyDigestEnabled?: boolean;
-      followUpRemindersEnabled?: boolean;
-      pushNotificationsEnabled?: boolean;
-      totpSecret?: string | null;
-      totpEnabled?: boolean;
-      defaultLlmProvider?: string | null;
-      customAiPrompt?: string | null;
-      useCrossApplicationContext?: boolean;
-      backupEmail?: string | null;
-      backupEmailVerifiedAt?: Date | null;
-    },
-  ): Promise<User> {
+  async update(id: string, data: Parameters<IUserRepository['update']>[1]): Promise<User> {
     const result = await this.inner.update(id, data);
     const oldEmail = this.emailByUserId.get(id);
     await this.cache.delete(CACHE_KEYS.userById(id));
