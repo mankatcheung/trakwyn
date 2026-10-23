@@ -44,7 +44,7 @@ importers:
     dependencies:
       '@fastify/awilix':
         specifier: ^8.2.1
-        version: 8.2.1(awilix@13.0.5)(fastify@5.12.5)
+        version: 8.2.1(awilix@13.0.5)(fastify@5.12.7)
       '@fastify/cookie':
         specifier: ^11.1.2
         version: 11.1.2
@@ -127,8 +127,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@electric-sql/pglite@0.4.3)(@libsql/client@0.17.4)(@opentelemetry/api@1.9.1)(@prisma/client@7.9.1(prisma@7.9.1(@types/node@24.13.4)(@types/react-dom@19.3.0(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.5)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3))(@types/pg@8.23.1)(@upstash/redis@1.38.4)(mysql2@3.24.4(@types/node@24.13.4))(pg@8.23.0)(postgres@3.4.7)(prisma@7.9.1(@types/node@24.13.4)(@types/react-dom@19.3.0(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.5)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))
       fastify:
-        specifier: ^5.12.5
-        version: 5.12.5
+        specifier: ^5.12.6
+        version: 5.12.7
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
@@ -7833,8 +7833,8 @@ packages:
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
 
-  fastify@5.12.5:
-    resolution: {integrity: sha512-OB2k1dlxs5/NAABqeKV2FUHkSD2BbENsCak8yULVcymn3fHIPDVa9TI3SDnJSWYSllZmSYuZXy2gTnsT+Sut1A==}
+  fastify@5.12.7:
+    resolution: {integrity: sha512-v4pEPsTRPuqlDIYiQFB+BHjVN4SdHX9u0ABk0ZDUKbbdY1vsNryUd1j4Z+jQEZajvYIVk047Kimva9/AJ79GYw==}
 
   fastparallel@2.4.1:
     resolution: {integrity: sha512-qUmhxPgNHmvRjZKBFUNI0oZuuH9OlSIOXmJ98lhKPxMZZ7zS/Fi0wRHOihDSz0R1YiIOjxzOY4bq65YTcdBi2Q==}
@@ -13909,11 +13909,11 @@ snapshots:
       ajv-formats: 3.0.1(ajv@8.20.0)
       fast-uri: 4.2.1
 
-  '@fastify/awilix@8.2.1(awilix@13.0.5)(fastify@5.12.5)':
+  '@fastify/awilix@8.2.1(awilix@13.0.5)(fastify@5.12.7)':
     dependencies:
       awilix: 13.0.5
       awilix-manager: 7.0.1(awilix@13.0.5)
-      fastify: 5.12.5
+      fastify: 5.12.7
       fastify-plugin: 6.0.0
 
   '@fastify/busboy@3.2.2': {}
@@ -20850,7 +20850,7 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify@5.12.5:
+  fastify@5.12.7:
     dependencies:
       '@fastify/ajv-compiler': 4.0.6
       '@fastify/error': 4.2.0
