@@ -1,4 +1,5 @@
-import type { DrizzleDb } from '#src/infrastructure/db/client.js';
+import type { DrizzleDb, DrizzleClient } from '#src/infrastructure/db/client.js';
+import { getClient } from '#src/infrastructure/db/transactionContext.js';
 import { eq } from 'drizzle-orm';
 import { pushSubscription } from '#src/infrastructure/db/schema.js';
 import type { IPushSubscriptionRepository } from '#src/use-cases/ports/IPushSubscriptionRepository.js';
@@ -12,8 +13,12 @@ interface Deps {
 export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepository {
   constructor(private readonly deps: Deps) {}
 
+  private get db(): DrizzleClient {
+    return getClient(this.deps.db);
+  }
+
   async findByUserId(userId: string): Promise<PushSubscription[]> {
-    const rows = await this.deps.db
+    const rows = await this.db
       .select()
       .from(pushSubscription)
       .where(eq(pushSubscription.userId, userId));
@@ -21,7 +26,7 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
   }
 
   async findByEndpoint(endpoint: string): Promise<PushSubscription | null> {
-    const rows = await this.deps.db
+    const rows = await this.db
       .select()
       .from(pushSubscription)
       .where(eq(pushSubscription.endpoint, endpoint))
@@ -31,7 +36,7 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
 
   async upsert(sub: Omit<PushSubscription, 'createdAt' | 'updatedAt'>): Promise<PushSubscription> {
     const now = new Date();
-    await this.deps.db
+    await this.db
       .insert(pushSubscription)
       .values({
         id: sub.id,
@@ -57,11 +62,11 @@ export class DrizzlePushSubscriptionRepository implements IPushSubscriptionRepos
   }
 
   async deleteByEndpoint(endpoint: string): Promise<void> {
-    await this.deps.db.delete(pushSubscription).where(eq(pushSubscription.endpoint, endpoint));
+    await this.db.delete(pushSubscription).where(eq(pushSubscription.endpoint, endpoint));
   }
 
   async deleteByUserId(userId: string): Promise<void> {
-    await this.deps.db.delete(pushSubscription).where(eq(pushSubscription.userId, userId));
+    await this.db.delete(pushSubscription).where(eq(pushSubscription.userId, userId));
   }
 
   private toDomain(row: typeof pushSubscription.$inferSelect): PushSubscription {

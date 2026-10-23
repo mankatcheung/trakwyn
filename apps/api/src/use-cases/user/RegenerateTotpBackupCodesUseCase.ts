@@ -17,12 +17,15 @@ import type {
   RegenerateTotpBackupCodesInput,
   RegenerateTotpBackupCodesOutput,
 } from './IRegenerateTotpBackupCodesUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   totpBackupCodeRepository: ITotpBackupCodeRepository;
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class RegenerateTotpBackupCodesUseCase implements IRegenerateTotpBackupCodesUseCase {
@@ -46,23 +49,27 @@ export class RegenerateTotpBackupCodesUseCase implements IRegenerateTotpBackupCo
     const backupCodes = Array.from({ length: TOTP_BACKUP_CODES.COUNT }, () =>
       randomBytes(TOTP_BACKUP_CODES.RANDOM_BYTES).toString('hex'),
     );
-    await this.deps.totpBackupCodeRepository.deleteAllForUser(input.userId);
-    await Promise.all(
-      backupCodes.map((code) =>
-        this.deps.totpBackupCodeRepository.create({
-          id: this.deps.generateId(),
-          userId: input.userId,
-          codeHash: createHash('sha256').update(code).digest('hex'),
-        }),
-      ),
-    );
+    // Delete-then-create must be atomic: a failure between them would leave the
+    // user with 2FA on and no backup codes at all.
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.totpBackupCodeRepository.deleteAllForUser(input.userId);
+      await Promise.all(
+        backupCodes.map((code) =>
+          this.deps.totpBackupCodeRepository.create({
+            id: this.deps.generateId(),
+            userId: input.userId,
+            codeHash: createHash('sha256').update(code).digest('hex'),
+          }),
+        ),
+      );
 
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId: input.userId,
-      eventType: 'totp_backup_codes_regenerated',
-      ipAddress: input.ipAddress ?? null,
-      userAgent: input.userAgent ?? null,
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId: input.userId,
+        eventType: 'totp_backup_codes_regenerated',
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      });
     });
 
     return { backupCodes };

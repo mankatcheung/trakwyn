@@ -11,12 +11,15 @@ import type {
   IImportUserDataUseCase,
   ImportSummary,
 } from '#src/use-cases/user/IImportUserDataUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   applicationRepository: IApplicationRepository;
   noteRepository: INoteRepository;
   entitlementService: IEntitlementService;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -75,19 +78,48 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
         continue;
       }
 
-      let app;
+      // One transaction per application: its row, appliedAt and notes land
+      // together or not at all, while a bad entry still leaves the rest of the
+      // import intact (a single transaction over the whole file would not).
+      let notesImported: number;
       try {
-        app = await this.deps.applicationRepository.create({
-          id: this.deps.generateId(),
-          userId,
-          company: entry.company,
-          role: entry.role,
-          status: asStatus(entry.status),
-          jobUrl: asNullableString(entry.jobUrl),
-          location: asNullableString(entry.location),
-          salaryRange: asNullableString(entry.salaryRange),
-          description: asNullableString(entry.description),
-          applicationLimit: limits.applications,
+        notesImported = await runInTransaction(this.deps.transactionManager, async () => {
+          const app = await this.deps.applicationRepository.create({
+            id: this.deps.generateId(),
+            userId,
+            company: entry.company as string,
+            role: entry.role as string,
+            status: asStatus(entry.status),
+            jobUrl: asNullableString(entry.jobUrl),
+            location: asNullableString(entry.location),
+            salaryRange: asNullableString(entry.salaryRange),
+            description: asNullableString(entry.description),
+            applicationLimit: limits.applications,
+          });
+
+          const appliedAt = asDate(entry.appliedAt);
+          if (appliedAt) {
+            await this.deps.applicationRepository.update(app.id, { appliedAt });
+          }
+
+          let notes = 0;
+          if (Array.isArray(entry.notes)) {
+            for (const note of entry.notes) {
+              if (
+                isRecord(note) &&
+                typeof note.content === 'string' &&
+                note.content.trim().length > 0
+              ) {
+                await this.deps.noteRepository.create({
+                  id: this.deps.generateId(),
+                  applicationId: app.id,
+                  content: note.content,
+                });
+                notes++;
+              }
+            }
+          }
+          return notes;
         });
       } catch (error) {
         if (error instanceof QuotaExceededError) {
@@ -97,29 +129,8 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
         throw error;
       }
 
-      const appliedAt = asDate(entry.appliedAt);
-      if (appliedAt) {
-        await this.deps.applicationRepository.update(app.id, { appliedAt });
-      }
-
       summary.applicationsImported++;
-
-      if (Array.isArray(entry.notes)) {
-        for (const note of entry.notes) {
-          if (
-            isRecord(note) &&
-            typeof note.content === 'string' &&
-            note.content.trim().length > 0
-          ) {
-            await this.deps.noteRepository.create({
-              id: this.deps.generateId(),
-              applicationId: app.id,
-              content: note.content,
-            });
-            summary.notesImported++;
-          }
-        }
-      }
+      summary.notesImported += notesImported;
 
       if (Array.isArray(entry.documents)) {
         // Exported document metadata has no storageKey — there's no file content to

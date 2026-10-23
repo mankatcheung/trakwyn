@@ -15,12 +15,15 @@ import type {
   IUpdatePasswordUseCase,
   UpdatePasswordInput,
 } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   updatePasswordRateLimiter: IRateLimiter;
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class UpdatePasswordUseCase implements IUpdatePasswordUseCase {
@@ -49,14 +52,16 @@ export class UpdatePasswordUseCase implements IUpdatePasswordUseCase {
     }
 
     const passwordHash = await bcrypt.hash(input.newPassword, 12);
-    await this.deps.userRepository.update(input.userId, { passwordHash });
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(input.userId, { passwordHash });
 
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId: input.userId,
-      eventType: 'password_changed',
-      ipAddress: input.ipAddress ?? null,
-      userAgent: input.userAgent ?? null,
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId: input.userId,
+        eventType: 'password_changed',
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      });
     });
   }
 }
