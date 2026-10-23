@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
 import { useExportUserData, useImportUserData } from '../hooks/useAccountData';
 import { getErrorMessage } from '../../../lib/errors';
+import { useStorageUsage } from '../hooks/useStorageUsage';
+import { formatMegabytes, storageLevel, storagePercent } from '../lib/storageUsage';
 import type { ImportSummary } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -38,6 +40,7 @@ export function DataScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const exportUserData = useExportUserData();
   const importUserData = useImportUserData();
+  const storage = useStorageUsage();
   const [importError, setImportError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportSummary | null>(null);
 
@@ -70,6 +73,45 @@ export function DataScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {storage ? (
+        <View style={styles.card} testID="storage-card">
+          <Text style={styles.title}>{t('data.storageTitle')}</Text>
+          <Text style={styles.description}>{t('data.storageDescription')}</Text>
+          <View
+            style={styles.track}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: storage.limitBytes, now: storage.usedBytes }}
+            testID="storage-bar"
+          >
+            <View
+              style={[
+                styles.fill,
+                { width: `${storagePercent(storage)}%` },
+                storageLevel(storage) === 'warning' ? styles.fillWarning : null,
+                storageLevel(storage) === 'full' ? styles.fillFull : null,
+              ]}
+            />
+          </View>
+          <Text style={styles.usage} testID="storage-usage">
+            {t('data.storageUsage', {
+              used: formatMegabytes(storage.usedBytes),
+              limit: formatMegabytes(storage.limitBytes),
+              percent: storagePercent(storage),
+            })}
+          </Text>
+          {storageLevel(storage) === 'warning' ? (
+            <Text style={styles.warning} testID="storage-warning">
+              {t('data.storageWarning')}
+            </Text>
+          ) : null}
+          {storageLevel(storage) === 'full' ? (
+            <Text style={styles.error} testID="storage-full">
+              {t('data.storageFull')}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
       <View style={styles.card}>
         <Text style={styles.title}>{t('data.exportTitle')}</Text>
         <Text style={styles.description}>{t('data.exportDescription')}</Text>
@@ -151,5 +193,16 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
     },
     success: { color: colors.success, fontSize: 13 },
+    usage: { color: colors.text, fontSize: 13 },
+    warning: { color: colors.warning, fontSize: 13 },
+    track: {
+      height: 8,
+      borderRadius: 4,
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceAlt,
+    },
+    fill: { height: '100%', borderRadius: 4, backgroundColor: colors.primary },
+    fillWarning: { backgroundColor: colors.warning },
+    fillFull: { backgroundColor: colors.danger },
   });
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, bigint, boolean, timestamp } from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 
 export const user = pgTable('User', {
@@ -17,6 +17,8 @@ export const user = pgTable('User', {
   pushNotificationsEnabled: boolean('pushNotificationsEnabled').notNull().default(false),
   weeklyApplicationGoal: integer('weeklyApplicationGoal').notNull().default(5),
   applicationCount: integer('applicationCount').notNull().default(0),
+  /** Running total of `Document.sizeBytes` over the user's applications, Trash included (JEF-425). */
+  documentBytes: bigint('documentBytes', { mode: 'number' }).notNull().default(0),
   totpSecret: text('totpSecret'),
   totpEnabled: boolean('totpEnabled').notNull().default(false),
   /**

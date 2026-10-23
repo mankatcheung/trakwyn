@@ -14,6 +14,8 @@ export interface User {
   followUpRemindersEnabled: boolean;
   pushNotificationsEnabled: boolean;
   weeklyApplicationGoal: number;
+  /** Bytes of documents stored, counted against the storage limit (JEF-425). */
+  documentBytes: number;
   totpSecret: string | null;
   totpEnabled: boolean;
   /** Which of the user's configured LlmApiKey providers is used for automatic AI features. */

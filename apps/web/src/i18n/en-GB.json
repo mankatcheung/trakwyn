@@ -1296,5 +1296,11 @@
   "mcp.authorizeTitle": "Authorise MCP access",
   "mcp.authorizationRequest": "is requesting access to your Trakwyn data.",
   "mcp.requestedScope": "Requested scope:",
-  "mcp.allowAccess": "Allow access"
+  "mcp.allowAccess": "Allow access",
+  "storage.title": "Storage",
+  "storage.description": "The total size of the documents you have uploaded across all your applications.",
+  "storage.usage": "{{used}} of {{limit}} used ({{percent}}%)",
+  "storage.left": "{{amount}} left",
+  "storage.warning": "You are close to your storage limit. Delete documents you no longer need to free up space.",
+  "storage.full": "Your storage is full. Delete a document to upload more."
 }

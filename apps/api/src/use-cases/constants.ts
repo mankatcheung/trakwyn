@@ -397,6 +397,8 @@ export const PAGINATION = {
 export const CONTENT_LIMITS = {
   APPLICATIONS_PER_USER: 50,
   DOCUMENTS_PER_APPLICATION: 10,
+  /** Total bytes of documents one user may store, across every application (Trash included, JEF-425). */
+  DOCUMENT_STORAGE_LIMIT_BYTES: 100 * 1024 * 1024,
   QUESTIONS_PER_ROUND: 50,
   /** Practice questions have their own quota so they never use up the real one (JEF-393). */
   MOCK_QUESTIONS_PER_ROUND: 30,

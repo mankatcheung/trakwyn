@@ -102,6 +102,30 @@ export type ApplicationStatus =
   | 'rejected'
   | 'withdrawn';
 
+export type AtsCheck = {
+  __typename?: 'AtsCheck';
+  hint?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  maxPoints?: Maybe<Scalars['Int']['output']>;
+  passed?: Maybe<Scalars['Boolean']['output']>;
+  points?: Maybe<Scalars['Int']['output']>;
+};
+
+export type AtsScore = {
+  __typename?: 'AtsScore';
+  applicationId?: Maybe<Scalars['ID']['output']>;
+  checks?: Maybe<Array<AtsCheck>>;
+  documentDraftId?: Maybe<Scalars['ID']['output']>;
+  documentId?: Maybe<Scalars['ID']['output']>;
+  generatedAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  isStale?: Maybe<Scalars['Boolean']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  readable?: Maybe<Scalars['Boolean']['output']>;
+  score?: Maybe<Scalars['Int']['output']>;
+};
+
 export type BulkRestoreResult = {
   __typename?: 'BulkRestoreResult';
   restored?: Maybe<Scalars['Int']['output']>;
@@ -557,6 +581,7 @@ export type Mutation = {
   bulkRestoreApplications?: Maybe<BulkRestoreResult>;
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
   compareOffers?: Maybe<Array<OfferComparison>>;
+  computeResumeAtsScore?: Maybe<AtsScore>;
   computeResumeMatchScore?: Maybe<ResumeMatch>;
   confirmAvatar?: Maybe<Scalars['String']['output']>;
   confirmBackupEmail?: Maybe<Scalars['Boolean']['output']>;
@@ -697,6 +722,12 @@ export type MutationBulkUpdateApplicationsArgs = {
 
 export type MutationCompareOffersArgs = {
   offerIds: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationComputeResumeAtsScoreArgs = {
+  documentDraftId?: InputMaybe<Scalars['ID']['input']>;
+  documentId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1409,6 +1440,7 @@ export type Query = {
   offerAnalytics?: Maybe<OfferAnalytics>;
   offers?: Maybe<Array<Offer>>;
   responseTimeAnalytics?: Maybe<ResponseTimeAnalytics>;
+  resumeAtsScores?: Maybe<Array<AtsScore>>;
   resumeMatches?: Maybe<Array<ResumeMatch>>;
   searchConversations?: Maybe<Array<Conversation>>;
   securityActivity?: Maybe<Array<SecurityActivityItem>>;
@@ -1520,6 +1552,11 @@ export type QueryOffersArgs = {
 };
 
 
+export type QueryResumeAtsScoresArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
+
 export type QueryResumeMatchesArgs = {
   applicationId: Scalars['ID']['input'];
 };
@@ -1538,6 +1575,7 @@ export type RequestUploadUrlInput = {
   applicationId: Scalars['ID']['input'];
   filename: Scalars['String']['input'];
   mimeType: Scalars['String']['input'];
+  sizeBytes?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type ResponseTimeAnalytics = {
@@ -1746,6 +1784,8 @@ export type User = {
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
+  storageLimitBytes?: Maybe<Scalars['Float']['output']>;
+  storageUsedBytes?: Maybe<Scalars['Float']['output']>;
   targetRole?: Maybe<Scalars['String']['output']>;
   timezone?: Maybe<Scalars['String']['output']>;
   useCrossApplicationContext?: Maybe<Scalars['Boolean']['output']>;

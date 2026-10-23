@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { FileTextIcon, PlusIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
+import { storageUsageQueryKey } from '#/lib/storageUsage';
 import { useLocale } from '#/lib/i18n';
 import { documentCategory, type DocumentCategory } from '#/lib/documentCategory';
 import {
@@ -107,6 +108,7 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
       onSettled: () => {
         qc.invalidateQueries({ queryKey: key });
         invalidateSectionCounts(qc, applicationId);
+        qc.invalidateQueries({ queryKey: storageUsageQueryKey });
       },
     });
   };

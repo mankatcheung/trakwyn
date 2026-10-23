@@ -6,6 +6,9 @@ import {
 import { nanoid } from 'nanoid';
 import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
+import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import { storageFullMessage, storageLimitFor } from '#src/use-cases/documents/storageQuota.js';
+import { assertValidSizeBytes } from '#src/use-cases/documents/documentValidation.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
 import { assertAllowedMimeType } from '#src/use-cases/documents/documentValidation.js';
@@ -19,6 +22,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   documentRepository: IDocumentRepository;
+  userRepository: IUserRepository;
   storageProvider: IStorageProvider;
 }
 
@@ -50,6 +54,18 @@ export class RequestUploadUrlUseCase implements IRequestUploadUrlUseCase {
       throw new QuotaExceededError(
         `This application already has the maximum of ${CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION} documents`,
       );
+    }
+
+    if (input.sizeBytes !== undefined) {
+      assertValidSizeBytes(input.sizeBytes);
+      const owner = await this.deps.userRepository.findById(input.userId);
+      if (!owner) {
+        throw new NotFoundError('User not found');
+      }
+      const limit = storageLimitFor(owner);
+      if (owner.documentBytes + input.sizeBytes > limit) {
+        throw new QuotaExceededError(storageFullMessage(owner.documentBytes, limit));
+      }
     }
 
     const sanitized = sanitizeFilename(input.filename);

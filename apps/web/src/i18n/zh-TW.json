@@ -1277,5 +1277,11 @@
   "mcp.authorizeTitle": "授權 MCP 存取",
   "mcp.authorizationRequest": "正在要求存取你的 Trakwyn 資料。",
   "mcp.requestedScope": "要求的存取權限：",
-  "mcp.allowAccess": "允許存取"
+  "mcp.allowAccess": "允許存取",
+  "storage.title": "儲存空間",
+  "storage.description": "你在所有求職申請中上傳的文件總大小。",
+  "storage.usage": "已使用 {{used}}，共 {{limit}}（{{percent}}%）",
+  "storage.left": "剩餘 {{amount}}",
+  "storage.warning": "你的儲存空間快用完了。刪除不再需要的文件以釋出空間。",
+  "storage.full": "你的儲存空間已滿。刪除一份文件後才能繼續上傳。"
 }

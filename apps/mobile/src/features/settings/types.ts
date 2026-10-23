@@ -82,6 +82,11 @@ export interface ImportSummary {
   documentsSkipped: number;
 }
 
+export interface StorageUsage {
+  usedBytes: number;
+  limitBytes: number;
+}
+
 export type ReauthenticateResult = {
   success: boolean;
   totpRequired: boolean;

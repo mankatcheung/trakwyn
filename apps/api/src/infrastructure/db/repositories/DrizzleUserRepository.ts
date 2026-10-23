@@ -105,6 +105,7 @@ export class DrizzleUserRepository implements IUserRepository {
       followUpRemindersEnabled: row.followUpRemindersEnabled,
       pushNotificationsEnabled: row.pushNotificationsEnabled,
       weeklyApplicationGoal: row.weeklyApplicationGoal,
+      documentBytes: row.documentBytes,
       totpSecret: row.totpSecret,
       totpEnabled: row.totpEnabled,
       defaultLlmProvider: row.defaultLlmProvider,

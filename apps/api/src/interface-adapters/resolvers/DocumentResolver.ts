@@ -49,12 +49,14 @@ export class DocumentResolver {
     applicationId: string,
     filename: string,
     mimeType: string,
+    sizeBytes?: number,
   ): Promise<UploadUrlPayload> {
     return this.deps.requestUploadUrlUseCase.execute({
       userId,
       applicationId,
       filename,
       mimeType,
+      sizeBytes,
     });
   }
 

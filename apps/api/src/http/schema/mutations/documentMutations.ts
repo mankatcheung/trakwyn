@@ -23,6 +23,7 @@ builder.mutationField('requestUploadUrl', (t) =>
         args.input.applicationId,
         args.input.filename,
         args.input.mimeType,
+        args.input.sizeBytes ?? undefined,
       );
     },
   }),

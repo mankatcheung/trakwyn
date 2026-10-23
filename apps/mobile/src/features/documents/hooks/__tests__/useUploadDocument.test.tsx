@@ -61,7 +61,12 @@ describe('useUploadDocument', () => {
 
     expect(uploaded).toEqual(document);
     expect(mockedGqlRequest).toHaveBeenNthCalledWith(1, expect.any(String), {
-      input: { applicationId: 'app-1', filename: 'resume.pdf', mimeType: 'application/pdf' },
+      input: {
+        applicationId: 'app-1',
+        filename: 'resume.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 1024,
+      },
     });
     expect(mockedUploadFileToStorage).toHaveBeenCalledWith(
       'http://localhost:3001/uploads/_upload/foo',

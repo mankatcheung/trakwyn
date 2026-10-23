@@ -91,6 +91,8 @@ export class CachedApplicationRepository implements IApplicationRepository {
     if (existing) {
       await this.cache.deleteByPrefix(CACHE_KEYS.appListPrefix(existing.userId));
       await this.cache.delete(CACHE_KEYS.appTrashList(existing.userId));
+      // Its documents went with it, and so did their share of `documentBytes` (JEF-425).
+      await this.cache.delete(CACHE_KEYS.userById(existing.userId));
     }
   }
 
