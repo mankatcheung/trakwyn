@@ -4,9 +4,10 @@ import { browser, type Browser } from 'wxt/browser';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { render, type Rendered } from '../../__tests__/render';
 import { App } from './App';
-import { DEFAULT_API_URL } from '../../constants';
+import { DEFAULT_API_URL, DEFAULT_WEB_URL } from '../../constants';
 import {
   ApiError,
+  createApplication,
   getCurrentUser,
   hasDefaultAiKey,
   login,
@@ -504,5 +505,45 @@ describe('popup App — AI parsing (JEF-420)', () => {
 
     expect(rendered.container.textContent).toContain('Monument');
     expect(rendered.container.querySelector('#clip-role')).toBeNull();
+  });
+});
+
+describe('popup App — links to the web app (JEF-428)', () => {
+  const tabUrl = 'https://jobs.example.com/1';
+
+  beforeEach(() => {
+    vi.mocked(hasDefaultAiKey).mockResolvedValue(false);
+    spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
+    spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
+      jobData: { company: 'Monument', role: 'Engineer', jobUrl: tabUrl },
+    });
+    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    vi.mocked(createApplication).mockResolvedValue({
+      id: 'app-1',
+      company: 'Monument',
+      role: 'Engineer',
+      status: 'APPLIED',
+    } as Awaited<ReturnType<typeof createApplication>>);
+  });
+
+  it('opens the saved application on the web app, not the API host', async () => {
+    rendered = await render(<App />);
+    const save = [...rendered.container.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Save as Application',
+    )!;
+    await act(async () => save.click());
+
+    const link = [...rendered.container.querySelectorAll('a')].find((a) =>
+      a.textContent?.startsWith('Open application'),
+    );
+    expect(link?.getAttribute('href')).toBe(`${DEFAULT_WEB_URL}/applications/app-1`);
+  });
+
+  it('links to AI settings on the web app', async () => {
+    rendered = await render(<App />);
+
+    expect(rendered.container.querySelector('a[href$="/settings/ai"]')?.getAttribute('href')).toBe(
+      `${DEFAULT_WEB_URL}/settings/ai`,
+    );
   });
 });
