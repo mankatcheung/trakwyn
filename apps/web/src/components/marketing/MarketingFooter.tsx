@@ -1,4 +1,6 @@
 import { Link } from '@tanstack/react-router';
+import { ExternalLink } from 'lucide-react';
+import { CLIPPER_WEB_STORE_URL } from '#/constants';
 import { LogoMark } from '#/components/LogoMark';
 import { LegalFooterLinks } from '#/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
@@ -63,6 +65,15 @@ export function MarketingFooter() {
               >
                 {t('marketing.footer.analyticsLink')}
               </Link>
+              <a
+                href={CLIPPER_WEB_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                {t('marketing.footer.clipperLink')}
+                <ExternalLink className="size-3" aria-hidden="true" />
+              </a>
             </div>
           </div>
           <div>
