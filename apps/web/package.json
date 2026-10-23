@@ -54,7 +54,7 @@
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.8",
     "tailwindcss": "^4.3.3",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
