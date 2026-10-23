@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
 const { mockHasSessionCookie, mockNavigate } = vi.hoisted(() => ({
   mockHasSessionCookie: vi.fn(),
@@ -113,6 +114,22 @@ describe('LandingPage', () => {
     expectEveryLinkNamedToPointAt(/AI assistant/, '/features/ai-assistant');
     expectEveryLinkNamedToPointAt(/Resume & cover letters/, '/features/resume-cover-letter');
     expectEveryLinkNamedToPointAt(/Analytics & insights/, '/features/analytics');
+  });
+
+  it('offers the Clipper between the feature cards and the steps (JEF-424)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const clipper = screen.getByRole('region', { name: 'landing.clipper.title' });
+    expect(within(clipper).getByRole('link', { name: 'landing.clipper.cta' })).toHaveAttribute(
+      'href',
+      CLIPPER_WEB_STORE_URL,
+    );
+    const features = screen.getByRole('link', { name: /Analytics & insights/ });
+    const steps = screen.getByText('landing.step1');
+    expect(features.compareDocumentPosition(clipper)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(clipper.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   describe('logged-in landing behaviour (JEF-236)', () => {

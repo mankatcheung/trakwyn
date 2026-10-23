@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import en from '#/i18n/en.json';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
 const { mockHasSessionCookie } = vi.hoisted(() => ({
   mockHasSessionCookie: vi.fn(),
@@ -54,6 +55,16 @@ describe('MarketingFooter', () => {
       'href',
       '/features/analytics',
     );
+  });
+
+  it('links the Product column to the Clipper on the Chrome Web Store (JEF-424)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<MarketingFooter />);
+
+    const link = screen.getByRole('link', { name: /Browser extension/ });
+    expect(link).toHaveAttribute('href', CLIPPER_WEB_STORE_URL);
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('shows "Sign in" for a logged-out visitor and "Go to dashboard" once a session is detected', () => {

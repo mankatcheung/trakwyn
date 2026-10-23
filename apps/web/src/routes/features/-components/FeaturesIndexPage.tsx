@@ -12,8 +12,10 @@ import {
   Puzzle,
   Globe,
   Check,
+  ExternalLink,
   type LucideIcon,
 } from 'lucide-react';
+import { CLIPPER_WEB_STORE_URL } from '#/constants';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { useLocale } from '#/lib/i18n';
@@ -152,7 +154,15 @@ const DEEP_DIVES: DeepDive[] = [
   },
 ];
 
-const EVERYTHING_ELSE: Array<{ icon: LucideIcon; titleKey: string; descriptionKey: string }> = [
+interface EverythingElseItem {
+  icon: LucideIcon;
+  titleKey: string;
+  descriptionKey: string;
+  /** Set when the entry is an install link rather than a plain description (JEF-424). */
+  external?: { href: string; linkLabelKey: string };
+}
+
+const EVERYTHING_ELSE: EverythingElseItem[] = [
   {
     icon: CalendarDays,
     titleKey: 'features.index.else.calendar.title',
@@ -187,6 +197,10 @@ const EVERYTHING_ELSE: Array<{ icon: LucideIcon; titleKey: string; descriptionKe
     icon: Puzzle,
     titleKey: 'features.index.else.extension.title',
     descriptionKey: 'features.index.else.extension.description',
+    external: {
+      href: CLIPPER_WEB_STORE_URL,
+      linkLabelKey: 'features.index.else.extension.linkLabel',
+    },
   },
   {
     icon: Globe,
@@ -267,20 +281,45 @@ export function FeaturesIndexPage() {
             {t('features.index.everythingElseTitle')}
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {EVERYTHING_ELSE.map((item) => (
-              <div
-                key={item.titleKey}
-                className="rounded-lg border border-gray-200 p-4 dark:border-gray-800"
-              >
-                <item.icon className="size-4 text-gray-500 dark:text-gray-400" />
-                <div className="mt-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {t(item.titleKey)}
+            {EVERYTHING_ELSE.map((item) => {
+              const content = (
+                <>
+                  <item.icon
+                    className={`size-4 ${item.external ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`}
+                  />
+                  <div className="mt-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {t(item.titleKey)}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t(item.descriptionKey)}
+                  </div>
+                  {item.external && (
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                      {t(item.external.linkLabelKey)}
+                      <ExternalLink className="size-3" aria-hidden="true" />
+                    </span>
+                  )}
+                </>
+              );
+              return item.external ? (
+                <a
+                  key={item.titleKey}
+                  href={item.external.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg border border-blue-200 p-4 transition-colors hover:border-blue-400 dark:border-blue-900 dark:hover:border-blue-700"
+                >
+                  {content}
+                </a>
+              ) : (
+                <div
+                  key={item.titleKey}
+                  className="rounded-lg border border-gray-200 p-4 dark:border-gray-800"
+                >
+                  {content}
                 </div>
-                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t(item.descriptionKey)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
