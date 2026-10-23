@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.3.0...web-v0.4.0) (2026-10-23)
+
+
+### Features
+
+* **web:** promote the Chrome Web Store Clipper on the marketing site (JEF-424) ([#1032](https://github.com/mankatcheung/trakwyn/issues/1032)) ([ff16161](https://github.com/mankatcheung/trakwyn/commit/ff16161d85ff72904ca74a91dcb01011a62535f8))
+
 ## [0.3.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.2.1...web-v0.3.0) (2026-10-22)
 
 
