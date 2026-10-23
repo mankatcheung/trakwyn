@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.3.0...api-v0.4.0) (2026-10-23)
+
+
+### Features
+
+* **extension:** upload the Clipper to the Chrome Web Store from the release workflow (JEF-419) ([#1026](https://github.com/mankatcheung/trakwyn/issues/1026)) ([65c61ba](https://github.com/mankatcheung/trakwyn/commit/65c61baa2f668f3fcef5be3e5be9c36be9ec180a))
+
 ## [0.3.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.2.1...api-v0.3.0) (2026-10-22)
 
 
