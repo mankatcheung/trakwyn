@@ -10,6 +10,8 @@ import type {
   ISaveLlmApiKeyUseCase,
   SaveLlmApiKeyInput,
 } from '#src/use-cases/user/ISaveLlmApiKeyUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
@@ -17,6 +19,7 @@ interface Deps {
   llmApiKeyCipher: ILlmApiKeyCipher;
   outboundUrlPolicy: IOutboundUrlPolicy;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class SaveLlmApiKeyUseCase implements ISaveLlmApiKeyUseCase {
@@ -41,23 +44,25 @@ export class SaveLlmApiKeyUseCase implements ISaveLlmApiKeyUseCase {
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
 
-    await this.deps.llmApiKeyRepository.upsert({
-      id: this.deps.generateId(),
-      userId: input.userId,
-      provider: input.provider,
-      apiKey: this.deps.llmApiKeyCipher.encrypt(
-        input.apiKey.trim(),
-        llmApiKeyCipherContext(input.userId, input.provider),
-      ),
-      model,
-      baseUrl: isCustom ? baseUrl : null,
-    });
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.llmApiKeyRepository.upsert({
+        id: this.deps.generateId(),
+        userId: input.userId,
+        provider: input.provider,
+        apiKey: this.deps.llmApiKeyCipher.encrypt(
+          input.apiKey.trim(),
+          llmApiKeyCipherContext(input.userId, input.provider),
+        ),
+        model,
+        baseUrl: isCustom ? baseUrl : null,
+      });
 
-    // First key ever configured becomes the default for automatic features —
-    // otherwise there'd be no default at all until the user visits settings
-    // to pick one, silently disabling cover letters/JD parsing/resume match.
-    if (!user.defaultLlmProvider) {
-      await this.deps.userRepository.update(input.userId, { defaultLlmProvider: input.provider });
-    }
+      // First key ever configured becomes the default for automatic features —
+      // otherwise there'd be no default at all until the user visits settings
+      // to pick one, silently disabling cover letters/JD parsing/resume match.
+      if (!user.defaultLlmProvider) {
+        await this.deps.userRepository.update(input.userId, { defaultLlmProvider: input.provider });
+      }
+    });
   }
 }

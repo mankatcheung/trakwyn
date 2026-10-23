@@ -3,6 +3,8 @@ import { createHash } from 'crypto';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IEmailVerificationTokenRepository } from '#src/use-cases/ports/IEmailVerificationTokenRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 import type {
   IConfirmEmailChangeUseCase,
   ConfirmEmailChangeInput,
@@ -13,6 +15,7 @@ interface Deps {
   emailVerificationTokenRepository: IEmailVerificationTokenRepository;
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class ConfirmEmailChangeUseCase implements IConfirmEmailChangeUseCase {
@@ -39,18 +42,21 @@ export class ConfirmEmailChangeUseCase implements IConfirmEmailChangeUseCase {
       throw new ConflictError('Email already in use');
     }
 
-    await this.deps.userRepository.update(verificationToken.userId, {
-      email: verificationToken.newEmail,
-      emailVerifiedAt: new Date(),
-    });
-    await this.deps.emailVerificationTokenRepository.markUsed(verificationToken.id);
+    const newEmail = verificationToken.newEmail;
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(verificationToken.userId, {
+        email: newEmail,
+        emailVerifiedAt: new Date(),
+      });
+      await this.deps.emailVerificationTokenRepository.markUsed(verificationToken.id);
 
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId: verificationToken.userId,
-      eventType: 'email_changed',
-      ipAddress: input.ipAddress ?? null,
-      userAgent: input.userAgent ?? null,
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId: verificationToken.userId,
+        eventType: 'email_changed',
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      });
     });
   }
 }

@@ -20,23 +20,22 @@ export class DrizzleLlmApiKeyRepository implements ILlmApiKeyRepository {
   }
 
   async upsert(data: UpsertLlmApiKeyData): Promise<LlmApiKey> {
-    const existing = await this.findByUserIdAndProvider(data.userId, data.provider);
-
-    if (existing) {
-      const [row] = await this.db
-        .update(llmApiKey)
-        .set({
+    // One statement, so two concurrent saves of the same (user, provider) cannot
+    // both miss the existing row and race into a unique-index violation.
+    // monthlyTokenLimit is deliberately left out of `set`: re-saving a key keeps it.
+    const [row] = await this.db
+      .insert(llmApiKey)
+      .values(data)
+      .onConflictDoUpdate({
+        target: [llmApiKey.userId, llmApiKey.provider],
+        set: {
           apiKey: data.apiKey,
           model: data.model,
           baseUrl: data.baseUrl,
           updatedAt: new Date(),
-        })
-        .where(eq(llmApiKey.id, existing.id))
-        .returning();
-      return this.toEntity(row);
-    }
-
-    const [row] = await this.db.insert(llmApiKey).values(data).returning();
+        },
+      })
+      .returning();
     return this.toEntity(row);
   }
 

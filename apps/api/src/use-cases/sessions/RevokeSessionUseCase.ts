@@ -1,11 +1,14 @@
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { ISessionRepository } from '#src/use-cases/ports/ISessionRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   sessionRepository: ISessionRepository;
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class RevokeSessionUseCase {
@@ -21,14 +24,16 @@ export class RevokeSessionUseCase {
     if (!session) {
       throw new NotFoundError('Session not found');
     }
-    await this.deps.sessionRepository.revoke(sessionId);
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.sessionRepository.revoke(sessionId);
 
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId,
-      eventType: 'session_revoked',
-      ipAddress,
-      userAgent,
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId,
+        eventType: 'session_revoked',
+        ipAddress,
+        userAgent,
+      });
     });
   }
 }

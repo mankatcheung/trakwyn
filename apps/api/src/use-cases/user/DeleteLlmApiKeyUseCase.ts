@@ -5,10 +5,13 @@ import type {
   IDeleteLlmApiKeyUseCase,
   DeleteLlmApiKeyInput,
 } from '#src/use-cases/user/IDeleteLlmApiKeyUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;
+  transactionManager?: ITransactionManager;
 }
 
 export class DeleteLlmApiKeyUseCase implements IDeleteLlmApiKeyUseCase {
@@ -18,10 +21,12 @@ export class DeleteLlmApiKeyUseCase implements IDeleteLlmApiKeyUseCase {
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
 
-    await this.deps.llmApiKeyRepository.delete(input.userId, input.provider);
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.llmApiKeyRepository.delete(input.userId, input.provider);
 
-    if (user.defaultLlmProvider === input.provider) {
-      await this.deps.userRepository.update(input.userId, { defaultLlmProvider: null });
-    }
+      if (user.defaultLlmProvider === input.provider) {
+        await this.deps.userRepository.update(input.userId, { defaultLlmProvider: null });
+      }
+    });
   }
 }
