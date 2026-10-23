@@ -42,6 +42,16 @@ export class ForbiddenError extends AppError {
   }
 }
 
+/**
+ * 403, not 402: clients branch on the `PLAN_REQUIRED` code, and 402 is
+ * handled unevenly by proxies and HTTP libraries.
+ */
+export class PlanRequiredAppError extends AppError {
+  constructor(message = 'This needs a Pro plan') {
+    super(message, 403, ERROR_CODES.PLAN_REQUIRED);
+  }
+}
+
 export class UserNotFoundError extends AppError {
   constructor(message = 'No account found with this email') {
     super(message, 404, ERROR_CODES.USER_NOT_FOUND);
@@ -161,6 +171,8 @@ export function fromCodedError(err: unknown): AppError {
         return new AiProviderAppError(err.message);
       case ERROR_CODES.STEP_UP_REQUIRED:
         return new StepUpRequiredError(err.message);
+      case ERROR_CODES.PLAN_REQUIRED:
+        return new PlanRequiredAppError(err.message);
     }
   }
   return new AppError('Internal server error', 500, ERROR_CODES.INTERNAL_ERROR);

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
@@ -60,6 +61,7 @@ describe('CompareOffersUseCase', () => {
       makeOffer({ id: 'offer-hourly', baseSalary: 60, bonus: null, period: 'hourly' }),
     ];
     const useCase = new CompareOffersUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository: makeOfferRepository(offers),
       applicationRepository: makeApplicationRepository(),
     });
@@ -81,6 +83,7 @@ describe('CompareOffersUseCase', () => {
 
   it('returns an empty comparison for no selected offers', async () => {
     const useCase = new CompareOffersUseCase({
+      entitlementService: makeEntitlementService(),
       offerRepository: makeOfferRepository([]),
       applicationRepository: makeApplicationRepository(),
     });

@@ -1,3 +1,4 @@
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import { DOCUMENT_TYPE } from '#src/use-cases/constants.js';
@@ -12,6 +13,7 @@ export interface DocumentVersionOutcome {
 }
 
 interface Deps {
+  entitlementService: IEntitlementService;
   documentRepository: IDocumentRepository;
   interviewRoundRepository: IInterviewRoundRepository;
 }
@@ -44,6 +46,7 @@ export class GetDocumentVersionOutcomesUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GetDocumentVersionOutcomesInput): Promise<DocumentVersionOutcome[]> {
+    await this.deps.entitlementService.assertFeature(input.userId, 'analytics');
     const [documents, interviewRounds] = await Promise.all([
       this.deps.documentRepository.findAllByUserId(input.userId),
       this.deps.interviewRoundRepository.findAllByUserId(input.userId),

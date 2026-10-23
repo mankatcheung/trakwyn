@@ -1,5 +1,6 @@
 import { API_TOKEN, MCP_OAUTH } from '#src/use-cases/constants.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { ValidateApiTokenUseCase } from '#src/use-cases/apiTokens/ValidateApiTokenUseCase.js';
 import type { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
 
@@ -21,6 +22,7 @@ export interface AuthenticateMcpRequestResult {
 }
 
 interface Deps {
+  entitlementService: IEntitlementService;
   validateApiTokenUseCase: ValidateApiTokenUseCase;
   validateMcpOAuthAccessTokenUseCase?: ValidateMcpOAuthAccessTokenUseCase;
 }
@@ -45,7 +47,11 @@ export class AuthenticateMcpRequestUseCase {
       if (!this.deps.validateMcpOAuthAccessTokenUseCase) return null;
       try {
         const result = await this.deps.validateMcpOAuthAccessTokenUseCase.execute(rawToken);
-        return result ? { sub: result.sub, scope: result.scope } : null;
+        if (!result) return null;
+        // MCP access is a Pro feature. (A manually created API token is
+        // checked the same way inside `ValidateApiTokenUseCase`.)
+        const { features } = await this.deps.entitlementService.forUserId(result.sub);
+        return features.apiAccess ? { sub: result.sub, scope: result.scope } : null;
       } catch {
         return null;
       }

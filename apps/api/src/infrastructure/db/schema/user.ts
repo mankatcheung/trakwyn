@@ -19,6 +19,12 @@ export const user = pgTable('User', {
   applicationCount: integer('applicationCount').notNull().default(0),
   /** Running total of `Document.sizeBytes` over the user's applications, Trash included (JEF-425). */
   documentBytes: bigint('documentBytes', { mode: 'number' }).notNull().default(0),
+  /** `free` or `pro` (JEF-344). What it allows is resolved in code (`resolveEntitlements`), not stored. */
+  plan: text('plan').notNull().default('free'),
+  /** When a Pro pass or trial ends; null for a Free plan and for an active subscription. */
+  planExpiresAt: timestamp('planExpiresAt', TIMESTAMP),
+  /** How the plan was obtained: `subscription`, `pass`, `trial` or `grant`. Null while on Free. */
+  planSource: text('planSource'),
   totpSecret: text('totpSecret'),
   totpEnabled: boolean('totpEnabled').notNull().default(false),
   /**

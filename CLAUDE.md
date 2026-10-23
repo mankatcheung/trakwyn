@@ -23,6 +23,8 @@ pnpm format
 
 pnpm db:generate         # migration SQL after schema.ts changes
 pnpm db:migrate          # apply migrations (src/migrate.ts, not drizzle-kit migrate)
+pnpm --filter @trakwyn/api plan set --email a@b.com --plan pro --days 30   # put a user on a plan by hand
+pnpm --filter @trakwyn/api plan grant-trial --dry-run                      # launch trial for existing users
 cd apps/api && pnpm db:studio   # stop `pnpm dev` first when on PGlite
 
 cd apps/web && pnpm codegen     # needs the API at localhost:3001
@@ -109,6 +111,10 @@ cp apps/web/.env.example apps/web/.env
   - It is strict only when `NODE_ENV=production`, because dev and CI point at the local fake provider (`LLM_PROVIDER_MODE=fake`). `OUTBOUND_URL_POLICY=strict|permissive` overrides that.
   - Check at save time (`SaveLlmApiKeyUseCase`, `TestLlmApiKeyUseCase`) _and_ on every call or redirect hop (`OpenAICompatibleLLMProvider`, `FetchJobPostingSourceResolver`), since DNS can be re-pointed.
   - Register it with `asFunction`, not `asClass`.
+- **Plans are decided by `IEntitlementService` (JEF-344), never by a constant in a use case.**
+  - A Pro feature calls `assertFeature(userId, feature)` first; a per-user cap is passed to the repository (`applicationLimit`, `storageLimitBytes`) instead of being read from `CONTENT_LIMITS` there.
+  - `PLANS_ENFORCED` is off by default, and then every feature is on but the caps that already existed stay. Only `EntitlementService` reads it.
+  - A downgrade never touches data. Details, and the Free AI allowance, are in `apps/api/CLAUDE.md`.
 - **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow

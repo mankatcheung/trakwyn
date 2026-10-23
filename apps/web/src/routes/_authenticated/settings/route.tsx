@@ -6,6 +6,7 @@ import {
   PlugIcon,
   BellIcon,
   DatabaseIcon,
+  GemIcon,
   BriefcaseIcon,
   SparklesIcon,
   AlertTriangleIcon,
@@ -25,6 +26,7 @@ function SettingsLayout() {
     { to: '/settings/ai', label: t('settings.ai'), icon: SparklesIcon },
     { to: '/settings/integrations', label: t('settings.integrations'), icon: PlugIcon },
     { to: '/settings/notifications', label: t('settings.notifications'), icon: BellIcon },
+    { to: '/settings/plan', label: t('settings.plan'), icon: GemIcon },
     { to: '/settings/data', label: t('settings.data'), icon: DatabaseIcon },
     // Last, deliberately: the only irreversible action in Settings.
     { to: '/settings/danger-zone', label: t('settings.dangerZone'), icon: AlertTriangleIcon },

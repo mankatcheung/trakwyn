@@ -15,6 +15,7 @@ const BASE_APP = {
   location: null,
   salaryRange: null,
   description: null,
+  applicationLimit: CONTENT_LIMITS.APPLICATIONS_PER_USER as number | null,
 };
 
 describe('DrizzleApplicationRepository', () => {
@@ -60,6 +61,37 @@ describe('DrizzleApplicationRepository', () => {
 
       await expect(repo.create(BASE_APP)).rejects.toMatchObject({ code: 'QUOTA_EXCEEDED' });
       expect(await db.db.select().from(jobApplication)).toHaveLength(0);
+    });
+
+    it('enforces the limit the caller passes, not a fixed one', async () => {
+      await db.db.update(user).set({ applicationCount: 3 }).where(eq(user.id, 'u1'));
+
+      const err = await repo.create({ ...BASE_APP, applicationLimit: 3 }).catch((e) => e);
+
+      expect(err).toMatchObject({ code: 'QUOTA_EXCEEDED' });
+      expect((err as Error).message).toBe('You have reached the maximum of 3 applications');
+      expect(await db.db.select().from(jobApplication)).toHaveLength(0);
+    });
+
+    it('accepts an application below a limit the caller passes', async () => {
+      await db.db.update(user).set({ applicationCount: 2 }).where(eq(user.id, 'u1'));
+
+      await repo.create({ ...BASE_APP, applicationLimit: 3 });
+
+      expect((await db.db.select({ count: user.applicationCount }).from(user))[0].count).toBe(3);
+    });
+
+    it('has no cap when the limit is null (Pro)', async () => {
+      await db.db
+        .update(user)
+        .set({ applicationCount: CONTENT_LIMITS.APPLICATIONS_PER_USER })
+        .where(eq(user.id, 'u1'));
+
+      await repo.create({ ...BASE_APP, applicationLimit: null });
+
+      expect((await db.db.select({ count: user.applicationCount }).from(user))[0].count).toBe(
+        CONTENT_LIMITS.APPLICATIONS_PER_USER + 1,
+      );
     });
   });
 

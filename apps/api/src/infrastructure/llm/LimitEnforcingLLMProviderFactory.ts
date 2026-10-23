@@ -1,5 +1,7 @@
-import { LlmLimitReachedError } from '#src/use-cases/errors/DomainError.js';
+import { LlmLimitReachedError, PlanRequiredError } from '#src/use-cases/errors/DomainError.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
+import type { User } from '#src/domain/user/User.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
@@ -16,6 +18,7 @@ interface Deps {
   userRepository: IUserRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;
   llmUsageEventRepository: ILlmUsageEventRepository;
+  entitlementService: IEntitlementService;
   now: () => Date;
 }
 
@@ -70,7 +73,15 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
 
     // Loaded once here and handed down as hints (F9): the inner factory
     // used to fetch the same user and key again on every call.
-    const user = provider ? undefined : await this.deps.userRepository.findById(userId);
+    let user = provider ? undefined : await this.deps.userRepository.findById(userId);
+
+    // Only when plans are enforced, so an instance that does not enforce them
+    // (every self-hosted one) pays no extra read here.
+    if (this.deps.entitlementService.enforced) {
+      user ??= await this.deps.userRepository.findById(userId);
+      await this.assertWithinFreeAllowance(userId, user);
+    }
+
     const requested = provider ?? user?.defaultLlmProvider ?? undefined;
     // No provider and no key are the inner factory's cases to report: it
     // returns null and the caller raises AI_NOT_CONFIGURED.
@@ -128,6 +139,34 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
 
   fromCredentials(credentials: LLMProviderCredentials): ILLMProvider | null {
     return this.deps.userLlmProviderFactory.fromCredentials(credentials);
+  }
+
+  /**
+   * The Free plan's AI allowance (JEF-344): a fixed number of AI actions per
+   * calendar month (UTC), counted as the LLM requests already recorded for the
+   * user. A chat turn that calls tools makes several requests and counts as
+   * several, which is how the usage meter in settings counts too.
+   *
+   * Reads the primary database like the token limit does, and fails the same
+   * way: an allowance that stops applying under load is not an allowance. A
+   * Pro plan has none, so it costs no read at all.
+   */
+  private async assertWithinFreeAllowance(userId: string, user: User | null): Promise<void> {
+    // Not found: the inner factory reports that, as it does without a key.
+    if (!user) return;
+    const allowance = this.deps.entitlementService.forUser(user).limits.aiActionsPerMonth;
+    if (allowance === null) return;
+
+    const summaries = await this.deps.llmUsageEventRepository.summarizeByUserId(
+      userId,
+      startOfUtcMonth(this.deps.now()),
+    );
+    const used = summaries.reduce((total, summary) => total + summary.requestCount, 0);
+    if (used >= allowance) {
+      throw new PlanRequiredError(
+        `The Free plan includes ${allowance} AI actions a month. Upgrade to Pro for unlimited AI.`,
+      );
+    }
   }
 
   private async usedTokensByProvider(userId: string): Promise<Map<string, number>> {

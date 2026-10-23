@@ -7,6 +7,7 @@ import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRe
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import {
   assertAllowedMimeType,
   assertValidSizeBytes,
@@ -20,6 +21,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   documentRepository: IDocumentRepository;
+  entitlementService: IEntitlementService;
   activityLogRepository?: IActivityLogRepository;
   storageProvider?: IStorageProvider;
   generateId: () => string;
@@ -59,6 +61,8 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
         }
       }
 
+      const { limits } = await this.deps.entitlementService.forUserId(input.userId);
+
       doc = await this.deps.documentRepository.create({
         id: this.deps.generateId(),
         applicationId: input.applicationId,
@@ -68,6 +72,7 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
         sizeBytes: input.sizeBytes,
         documentType: input.documentType,
         version: input.version,
+        storageLimitBytes: limits.documentBytes,
       });
     } catch (error) {
       // The client uploads directly to storage before this database step. Do

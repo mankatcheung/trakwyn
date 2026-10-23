@@ -134,6 +134,20 @@ describe('CachedUserRepository', () => {
       expect(inner.findById).toHaveBeenCalledTimes(2);
     });
 
+    it('invalidates the byId cache when the plan changes, so the new plan is read straight away', async () => {
+      const { repo, inner } = makeRepo();
+      vi.mocked(inner.findById).mockResolvedValue(user);
+      await repo.findById('user-1');
+
+      vi.mocked(inner.update).mockResolvedValue({ ...user, plan: 'pro', planSource: 'grant' });
+      await repo.update('user-1', { plan: 'pro', planSource: 'grant', planExpiresAt: null });
+
+      vi.mocked(inner.findById).mockResolvedValue({ ...user, plan: 'pro', planSource: 'grant' });
+      const reloaded = await repo.findById('user-1');
+      expect(inner.findById).toHaveBeenCalledTimes(2);
+      expect(reloaded?.plan).toBe('pro');
+    });
+
     it('invalidates both the old and new email cache entries when the email changes', async () => {
       const { repo, inner } = makeRepo();
       // Populate the byEmail cache under the old address (also records old→id mapping).

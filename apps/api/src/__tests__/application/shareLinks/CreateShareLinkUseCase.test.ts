@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { CreateShareLinkUseCase } from '#src/use-cases/shareLinks/CreateShareLinkUseCase.js';
 import { makeShareLink, makeShareLinkRepository } from '#src/__tests__/helpers/mocks/shareLinks.js';
 
@@ -7,7 +8,11 @@ describe('CreateShareLinkUseCase', () => {
     const storedLink = makeShareLink();
     const repo = makeShareLinkRepository({ create: vi.fn().mockResolvedValue(storedLink) });
     const generateId = vi.fn().mockReturnValue('share-link-1');
-    const useCase = new CreateShareLinkUseCase({ shareLinkRepository: repo, generateId });
+    const useCase = new CreateShareLinkUseCase({
+      entitlementService: makeEntitlementService(),
+      shareLinkRepository: repo,
+      generateId,
+    });
 
     const { rawToken, shareLink } = await useCase.execute({
       userId: 'user-1',
@@ -30,7 +35,11 @@ describe('CreateShareLinkUseCase', () => {
 
   it('each call produces a unique raw token', async () => {
     const repo = makeShareLinkRepository({ create: vi.fn().mockResolvedValue(makeShareLink()) });
-    const useCase = new CreateShareLinkUseCase({ shareLinkRepository: repo, generateId: vi.fn() });
+    const useCase = new CreateShareLinkUseCase({
+      entitlementService: makeEntitlementService(),
+      shareLinkRepository: repo,
+      generateId: vi.fn(),
+    });
 
     const [a, b] = await Promise.all([
       useCase.execute({ userId: 'user-1', name: 'A' }),

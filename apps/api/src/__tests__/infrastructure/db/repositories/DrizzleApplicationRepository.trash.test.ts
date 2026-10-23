@@ -24,6 +24,7 @@ describe('DrizzleApplicationRepository — trashed applications', () => {
     company: 'Acme',
     role: 'Engineer',
     status: 'applied' as const,
+    applicationLimit: null,
     ...over,
   });
 

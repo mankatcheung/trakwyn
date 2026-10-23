@@ -1,3 +1,5 @@
+import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+
 export interface User {
   id: string;
   email: string;
@@ -14,8 +16,15 @@ export interface User {
   followUpRemindersEnabled: boolean;
   pushNotificationsEnabled: boolean;
   weeklyApplicationGoal: number;
+  /** Applications owned, Trash included, counted against the application cap. */
+  applicationCount: number;
   /** Bytes of documents stored, counted against the storage limit (JEF-425). */
   documentBytes: number;
+  /** The plan the user is on (JEF-344). Use `resolveEntitlements` for what it allows: an expired Pro plan reads as Free there. */
+  plan: Plan;
+  /** When a Pro pass or trial ends; null for Free and for an active subscription. */
+  planExpiresAt: Date | null;
+  planSource: PlanSource | null;
   totpSecret: string | null;
   totpEnabled: boolean;
   /** Which of the user's configured LlmApiKey providers is used for automatic AI features. */

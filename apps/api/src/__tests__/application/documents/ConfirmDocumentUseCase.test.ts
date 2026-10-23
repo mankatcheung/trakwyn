@@ -7,6 +7,11 @@ import {
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
+import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ConfirmDocumentUseCase', () => {
   it('throws NOT_FOUND when the application does not exist', async () => {
@@ -15,6 +20,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -40,6 +46,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -65,6 +72,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -90,6 +98,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -115,6 +124,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -145,6 +155,7 @@ describe('ConfirmDocumentUseCase', () => {
     const generateId = vi.fn().mockReturnValue('doc-1');
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository,
       generateId,
@@ -168,7 +179,40 @@ describe('ConfirmDocumentUseCase', () => {
       sizeBytes: 12345,
       documentType: undefined,
       version: undefined,
+      storageLimitBytes: PLAN_LIMITS.pro.documentBytes,
     });
+  });
+
+  it("charges the upload against the owner's plan storage limit", async () => {
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const documentRepository = makeDocumentRepository({
+      create: vi.fn().mockResolvedValue(makeDocument()),
+    });
+    const entitlementService = makeEntitlementService({
+      forUserId: vi.fn().mockResolvedValue(makeFreeEntitlements()),
+    });
+
+    const useCase = new ConfirmDocumentUseCase({
+      entitlementService,
+      applicationRepository,
+      documentRepository,
+      generateId: vi.fn().mockReturnValue('doc-1'),
+    });
+    await useCase.execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+      storageKey: 'users/user-1/applications/app-1/resume.pdf',
+      name: 'resume.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 12345,
+    });
+
+    expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
+    expect(documentRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ storageLimitBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES }),
+    );
   });
 
   it('passes documentType and version to the repository', async () => {
@@ -177,6 +221,7 @@ describe('ConfirmDocumentUseCase', () => {
       create: vi.fn().mockResolvedValue(doc),
     });
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository: makeApplicationRepository({
         findById: vi.fn().mockResolvedValue(makeApplication()),
       }),
@@ -215,6 +260,7 @@ describe('ConfirmDocumentUseCase', () => {
       headObject: vi.fn().mockResolvedValue({ size: 1000 }),
     });
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository: makeApplicationRepository({
         findById: vi.fn().mockResolvedValue(makeApplication()),
       }),
@@ -252,6 +298,7 @@ describe('ConfirmDocumentUseCase', () => {
         create: vi.fn().mockResolvedValue(makeDocument()),
       });
       const useCase = new ConfirmDocumentUseCase({
+        entitlementService: makeEntitlementService(),
         applicationRepository: makeApplicationRepository({
           findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
         }),

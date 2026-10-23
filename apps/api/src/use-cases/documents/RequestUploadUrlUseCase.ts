@@ -7,7 +7,8 @@ import { nanoid } from 'nanoid';
 import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
-import { storageFullMessage, storageLimitFor } from '#src/use-cases/documents/storageQuota.js';
+import { storageFullMessage } from '#src/use-cases/documents/storageQuota.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import { assertValidSizeBytes } from '#src/use-cases/documents/documentValidation.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
@@ -23,6 +24,7 @@ interface Deps {
   applicationRepository: IApplicationRepository;
   documentRepository: IDocumentRepository;
   userRepository: IUserRepository;
+  entitlementService: IEntitlementService;
   storageProvider: IStorageProvider;
 }
 
@@ -62,7 +64,7 @@ export class RequestUploadUrlUseCase implements IRequestUploadUrlUseCase {
       if (!owner) {
         throw new NotFoundError('User not found');
       }
-      const limit = storageLimitFor(owner);
+      const limit = this.deps.entitlementService.forUser(owner).limits.documentBytes;
       if (owner.documentBytes + input.sizeBytes > limit) {
         throw new QuotaExceededError(storageFullMessage(owner.documentBytes, limit));
       }

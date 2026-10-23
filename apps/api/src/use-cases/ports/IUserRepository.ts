@@ -1,4 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
+import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
 
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
@@ -36,6 +37,9 @@ export interface IUserRepository {
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;
+      plan?: Plan;
+      planExpiresAt?: Date | null;
+      planSource?: PlanSource | null;
     },
   ): Promise<User>;
   delete(id: string): Promise<void>;

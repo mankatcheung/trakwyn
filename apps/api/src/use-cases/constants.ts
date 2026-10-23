@@ -214,6 +214,7 @@ export const TRASH = {
 
 /** Background-job and business-rule durations, in milliseconds. */
 export const DURATIONS_MS = {
+  DAY: 24 * 60 * 60 * 1000,
   WEEK: 7 * 24 * 60 * 60 * 1000, // weekly-digest window — 7 days
 } as const;
 
@@ -402,6 +403,50 @@ export const CONTENT_LIMITS = {
   QUESTIONS_PER_ROUND: 50,
   /** Practice questions have their own quota so they never use up the real one (JEF-393). */
   MOCK_QUESTIONS_PER_ROUND: 30,
+} as const;
+
+/**
+ * What each plan allows (JEF-344). The Free column is the per-user quotas
+ * above, stated once and referenced, so a Free user is held to exactly what
+ * the system already enforced before plans existed. `null` is "no limit".
+ *
+ * A change to what Pro includes is a change to this block alone.
+ */
+export const PLAN_LIMITS = {
+  free: {
+    applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
+    documentBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
+    /** AI actions with the user's own key per calendar month (UTC), counted as recorded LLM requests. */
+    aiActionsPerMonth: 5,
+  },
+  pro: {
+    applications: null,
+    documentBytes: 2 * 1024 * 1024 * 1024,
+    aiActionsPerMonth: null,
+  },
+} as const;
+
+/** The Pro-only capabilities, per plan. Free users keep their data and can still export it. */
+export const PLAN_FEATURES = {
+  free: {
+    notifications: false,
+    analytics: false,
+    offers: false,
+    shareLinks: false,
+    apiAccess: false,
+  },
+  pro: {
+    notifications: true,
+    analytics: true,
+    offers: true,
+    shareLinks: true,
+    apiAccess: true,
+  },
+} as const;
+
+/** How long the operator's launch trial gives an existing user Pro for (JEF-344). */
+export const PLAN_TRIAL = {
+  LAUNCH_DAYS: 30,
 } as const;
 
 /**

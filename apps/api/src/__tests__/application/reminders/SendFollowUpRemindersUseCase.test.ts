@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { SendFollowUpRemindersUseCase } from '#src/use-cases/reminders/SendFollowUpRemindersUseCase.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlementService,
+} from '#src/__tests__/helpers/mocks/plans.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
 const makeEmailService = (overrides?: Partial<IEmailService>): IEmailService => ({
@@ -29,6 +33,7 @@ describe('SendFollowUpRemindersUseCase', () => {
     const emailService = makeEmailService();
 
     const useCase = new SendFollowUpRemindersUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       userRepository,
       emailService,
@@ -59,6 +64,7 @@ describe('SendFollowUpRemindersUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendFollowUpRemindersUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       userRepository,
       emailService,
@@ -81,6 +87,7 @@ describe('SendFollowUpRemindersUseCase', () => {
     const emailService = makeEmailService();
 
     await new SendFollowUpRemindersUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       userRepository,
       emailService,
@@ -88,6 +95,29 @@ describe('SendFollowUpRemindersUseCase', () => {
 
     expect(emailService.sendFollowUpReminder).not.toHaveBeenCalled();
     expect(applicationRepository.updateReminderSentAt).not.toHaveBeenCalled();
+  });
+
+  it('skips a Free user: reminders are a Pro feature, and the application stays due', async () => {
+    const app = makeApplication({ followUpAt: new Date() });
+    const applicationRepository = makeApplicationRepository({
+      findDueForReminder: vi.fn().mockResolvedValue([app]),
+      updateReminderSentAt: vi.fn(),
+    });
+    const userRepository = makeUserRepository({
+      findById: vi.fn().mockResolvedValue(makeUser()),
+    });
+    const emailService = makeEmailService();
+
+    const summary = await new SendFollowUpRemindersUseCase({
+      entitlementService: makeFreeEntitlementService(),
+      applicationRepository,
+      userRepository,
+      emailService,
+    }).execute();
+
+    expect(emailService.sendFollowUpReminder).not.toHaveBeenCalled();
+    expect(applicationRepository.updateReminderSentAt).not.toHaveBeenCalled();
+    expect(summary).toEqual({ sent: 0, failed: 0, skipped: 1 });
   });
 
   it('continues past individual email failures without throwing', async () => {
@@ -112,6 +142,7 @@ describe('SendFollowUpRemindersUseCase', () => {
 
     await expect(
       new SendFollowUpRemindersUseCase({
+        entitlementService: makeEntitlementService(),
         applicationRepository,
         userRepository,
         emailService,
@@ -154,6 +185,7 @@ describe('SendFollowUpRemindersUseCase', () => {
     });
 
     const summary = await new SendFollowUpRemindersUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       userRepository,
       emailService,

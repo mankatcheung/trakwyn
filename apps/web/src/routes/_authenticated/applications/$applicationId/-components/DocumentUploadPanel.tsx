@@ -17,7 +17,7 @@ import {
 } from './documentUploadReporting';
 import { blobAccessOf } from './documentUploadAccess';
 import {
-  formatMegabytes,
+  formatStorageSize,
   storageLeftBytes,
   storageLevel,
   storageUsageQueryKey,
@@ -260,7 +260,7 @@ function StorageLeft({ usage }: { usage: StorageUsage }) {
   const color = level === 'warning' ? 'text-amber-600' : 'text-gray-500 dark:text-gray-400';
   return (
     <p className={`text-xs ${color}`}>
-      {t('storage.left', { amount: formatMegabytes(storageLeftBytes(usage)) })}
+      {t('storage.left', { amount: formatStorageSize(storageLeftBytes(usage)) })}
     </p>
   );
 }

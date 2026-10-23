@@ -1,3 +1,4 @@
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type {
@@ -7,6 +8,7 @@ import type {
 } from './IGetAllOffersUseCase.js';
 
 interface Deps {
+  entitlementService: IEntitlementService;
   offerRepository: IOfferRepository;
   applicationRepository: IApplicationRepository;
 }
@@ -16,6 +18,7 @@ export class GetAllOffersUseCase implements IGetAllOffersUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GetAllOffersInput): Promise<OfferWithApplication[]> {
+    await this.deps.entitlementService.assertFeature(input.userId, 'offers');
     const [offers, applications] = await Promise.all([
       this.deps.offerRepository.findAllByUserId(input.userId),
       this.deps.applicationRepository.findAllByUserId(input.userId),

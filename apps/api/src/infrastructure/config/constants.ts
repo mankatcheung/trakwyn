@@ -65,6 +65,12 @@ export const ENV = {
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
+  /**
+   * `'true'` makes the Free and Pro plans bite (JEF-344): Pro features are refused
+   * to Free users and the Free AI allowance applies. Unset or anything else, every
+   * user gets every feature, which is also what a self-hosted instance runs.
+   */
+  PLANS_ENFORCED: 'PLANS_ENFORCED',
   /** `turnstile` | `disabled`. Unset means `turnstile` in production, `disabled` elsewhere (JEF-401). */
   CAPTCHA_PROVIDER: 'CAPTCHA_PROVIDER',
   /** Cloudflare Turnstile's secret key — the server half of the widget's site key. */

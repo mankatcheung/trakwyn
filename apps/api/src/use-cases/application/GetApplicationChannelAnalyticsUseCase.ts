@@ -1,3 +1,4 @@
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { ApplicationStatus } from '#src/domain/application/ApplicationStatus.js';
 
@@ -27,6 +28,7 @@ export interface ApplicationChannelAnalytics {
 }
 
 interface Deps {
+  entitlementService: IEntitlementService;
   applicationRepository: IApplicationRepository;
 }
 
@@ -80,6 +82,7 @@ export class GetApplicationChannelAnalyticsUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GetApplicationChannelAnalyticsInput): Promise<ApplicationChannelAnalytics> {
+    await this.deps.entitlementService.assertFeature(input.userId, 'analytics');
     const applications = await this.deps.applicationRepository.findAllByUserId(input.userId);
 
     const sourceGroups = new Map<string, Group>();

@@ -1,3 +1,4 @@
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { OfferPeriod } from '#src/domain/offer/Offer.js';
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
@@ -9,6 +10,7 @@ import type {
 } from './ICompareOffersUseCase.js';
 
 interface Deps {
+  entitlementService: IEntitlementService;
   offerRepository: IOfferRepository;
   applicationRepository: IApplicationRepository;
 }
@@ -32,6 +34,7 @@ export class CompareOffersUseCase implements ICompareOffersUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: CompareOffersInput): Promise<OfferComparison[]> {
+    await this.deps.entitlementService.assertFeature(input.userId, 'offers');
     if (input.offerIds.length === 0) {
       return [];
     }

@@ -1,5 +1,10 @@
 import { useLocale } from '#/lib/i18n';
-import { formatMegabytes, storageLevel, storagePercent, useStorageUsage } from '#/lib/storageUsage';
+import {
+  formatStorageSize,
+  storageLevel,
+  storagePercent,
+  useStorageUsage,
+} from '#/lib/storageUsage';
 import { Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.
@@ -33,8 +38,8 @@ export function StorageCard() {
       />
       <p className="text-sm text-gray-900 dark:text-gray-100">
         {t('storage.usage', {
-          used: formatMegabytes(usage.usedBytes),
-          limit: formatMegabytes(usage.limitBytes),
+          used: formatStorageSize(usage.usedBytes),
+          limit: formatStorageSize(usage.limitBytes),
           percent: storagePercent(usage),
         })}
       </p>
