@@ -15,7 +15,7 @@ import {
 } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
-import { jobApplication, applicationTag, user } from '../schema.js';
+import { jobApplication, applicationTag, document, user } from '../schema.js';
 import type { Application } from '#src/domain/application/Application.js';
 import type { ApplicationStatus } from '#src/domain/application/ApplicationStatus.js';
 import type {
@@ -307,6 +307,14 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
 
   async delete(id: string): Promise<void> {
     const exec = async (client: DrizzleClient): Promise<void> => {
+      // Documents cascade with the application, so their bytes are released
+      // here, in the same transaction, before the rows are gone.
+      const [stored] = await client
+        .select({ bytes: sql<number>`coalesce(sum(${document.sizeBytes}), 0)` })
+        .from(document)
+        .where(eq(document.applicationId, id));
+      const releasedBytes = Number(stored?.bytes ?? 0);
+
       const [deleted] = await client
         .delete(jobApplication)
         .where(eq(jobApplication.id, id))
@@ -317,6 +325,7 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
         .update(user)
         .set({
           applicationCount: sql`case when ${user.applicationCount} > 0 then ${user.applicationCount} - 1 else 0 end`,
+          documentBytes: sql`case when ${user.documentBytes} > ${releasedBytes} then ${user.documentBytes} - ${releasedBytes} else 0 end`,
           updatedAt: new Date(),
         })
         .where(eq(user.id, deleted.userId));

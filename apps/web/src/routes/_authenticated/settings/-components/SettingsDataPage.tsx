@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Card } from '@trakwyn/ui';
+import { StorageCard } from './StorageCard';
 import { EXPORT_USER_DATA, IMPORT_USER_DATA, type ImportSummary, extractGqlError } from './shared';
 
 export function SettingsDataPage() {
@@ -51,6 +52,9 @@ export function SettingsDataPage() {
 
   return (
     <div className="space-y-8">
+      {/* ── Storage ── */}
+      <StorageCard />
+
       {/* ── Export ── */}
       <Card className="space-y-4 p-5">
         <div>

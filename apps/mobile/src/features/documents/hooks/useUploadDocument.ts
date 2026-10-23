@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gqlRequest } from '../../../graphql/client';
 import { CONFIRM_DOCUMENT_MUTATION, REQUEST_UPLOAD_URL_MUTATION } from '../graphql/operations';
 import { uploadFileToStorage } from '../lib/uploadFile';
+import { storageUsageQueryKey } from '../../settings/hooks/useStorageUsage';
 import { documentsQueryKey } from './useDocumentQueries';
 import type { Document, RequestUploadUrlResult } from '../types';
 
@@ -22,7 +23,12 @@ export function useUploadDocument(applicationId: string) {
       const { requestUploadUrl } = await gqlRequest<{
         requestUploadUrl: RequestUploadUrlResult;
       }>(REQUEST_UPLOAD_URL_MUTATION, {
-        input: { applicationId, filename: input.name, mimeType: input.mimeType },
+        input: {
+          applicationId,
+          filename: input.name,
+          mimeType: input.mimeType,
+          sizeBytes: input.sizeBytes,
+        },
       });
 
       await uploadFileToStorage(requestUploadUrl.uploadUrl, input.uri, input.mimeType);
@@ -43,6 +49,9 @@ export function useUploadDocument(applicationId: string) {
       );
       return confirmDocument;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: documentsQueryKey(applicationId) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: storageUsageQueryKey });
+      return queryClient.invalidateQueries({ queryKey: documentsQueryKey(applicationId) });
+    },
   });
 }

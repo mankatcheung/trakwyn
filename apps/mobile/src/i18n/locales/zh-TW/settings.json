@@ -77,7 +77,12 @@
     "applicationsImported_other": "已匯入 {{count}} 筆求職申請",
     "notesImported_other": "已匯入 {{count}} 則筆記",
     "applicationsSkipped": "已略過 {{count}} 筆求職申請",
-    "documentsSkipped": "已略過 {{count}} 份文件"
+    "documentsSkipped": "已略過 {{count}} 份文件",
+    "storageTitle": "儲存空間",
+    "storageDescription": "你在所有求職申請中上傳的文件總大小。",
+    "storageUsage": "已使用 {{used}}，共 {{limit}}（{{percent}}%）",
+    "storageWarning": "你的儲存空間快用完了。刪除不再需要的文件以釋出空間。",
+    "storageFull": "你的儲存空間已滿。刪除一份文件後才能繼續上傳。"
   },
   "experience": {
     "workExperienceTitle": "工作經歷",

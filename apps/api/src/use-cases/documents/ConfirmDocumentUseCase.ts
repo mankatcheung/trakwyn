@@ -1,4 +1,8 @@
-import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
@@ -41,6 +45,18 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
       }
       if (app.userId !== input.userId) {
         throw new ForbiddenError('Forbidden');
+      }
+
+      // The client says how big the file is, but only storage knows. A client
+      // that under-reports would otherwise slip past the storage limit.
+      if (this.deps.storageProvider) {
+        const stored = await this.deps.storageProvider.headObject(input.storageKey);
+        if (!stored) {
+          throw new ValidationError('The uploaded file was not found');
+        }
+        if (stored.size !== input.sizeBytes) {
+          throw new ValidationError('The uploaded file size does not match the reported size');
+        }
       }
 
       doc = await this.deps.documentRepository.create({

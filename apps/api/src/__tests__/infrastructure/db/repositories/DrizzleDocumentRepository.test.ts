@@ -39,7 +39,12 @@ describe('DrizzleDocumentRepository', () => {
       .update(jobApplication)
       .set({ documentCount: 0 })
       .where(eq(jobApplication.id, 'app-1'));
+    await db.db.update(user).set({ documentBytes: 0 }).where(eq(user.id, 'u1'));
   });
+
+  const usedBytes = async (): Promise<number> =>
+    (await db.db.select({ bytes: user.documentBytes }).from(user).where(eq(user.id, 'u1')))[0]
+      .bytes;
 
   describe('create', () => {
     it('persists a document and returns the entity', async () => {
@@ -166,6 +171,75 @@ describe('DrizzleDocumentRepository', () => {
       expect(
         (await db.db.select({ count: jobApplication.documentCount }).from(jobApplication))[0].count,
       ).toBe(0);
+    });
+  });
+  describe('storage limit (JEF-425)', () => {
+    const LIMIT = CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES;
+
+    it('adds the size of each document to the owner total', async () => {
+      await repo.create(BASE_DOC);
+      await repo.create({ ...BASE_DOC, id: 'doc-2', storageKey: 'b', sizeBytes: 500 });
+
+      expect(await usedBytes()).toBe(12845);
+    });
+
+    it('accepts a document that exactly fills the limit', async () => {
+      await db.db
+        .update(user)
+        .set({ documentBytes: LIMIT - 12345 })
+        .where(eq(user.id, 'u1'));
+
+      await repo.create(BASE_DOC);
+
+      expect(await usedBytes()).toBe(LIMIT);
+    });
+
+    it('refuses a document that would pass the limit, naming used and limit, and stores nothing', async () => {
+      await db.db
+        .update(user)
+        .set({ documentBytes: LIMIT - 100 })
+        .where(eq(user.id, 'u1'));
+
+      const err = await repo.create(BASE_DOC).catch((e) => e);
+
+      expect(err).toMatchObject({ code: 'QUOTA_EXCEEDED' });
+      expect((err as Error).message).toBe('Document storage is full: 100 MB of 100 MB used');
+      expect(await db.db.select().from(document)).toHaveLength(0);
+      expect(await usedBytes()).toBe(LIMIT - 100);
+      expect(
+        (await db.db.select({ count: jobApplication.documentCount }).from(jobApplication))[0].count,
+      ).toBe(0);
+    });
+
+    it('lets only one of two simultaneous uploads take the last space', async () => {
+      await db.db
+        .update(user)
+        .set({ documentBytes: LIMIT - 15000 })
+        .where(eq(user.id, 'u1'));
+
+      const results = await Promise.allSettled([
+        repo.create(BASE_DOC),
+        repo.create({ ...BASE_DOC, id: 'doc-2', storageKey: 'b' }),
+      ]);
+
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(await usedBytes()).toBeLessThanOrEqual(LIMIT);
+    });
+
+    it('lowers the total when a document is deleted', async () => {
+      await repo.create(BASE_DOC);
+      await repo.delete('doc-1');
+
+      expect(await usedBytes()).toBe(0);
+    });
+
+    it('never takes the total below zero', async () => {
+      await repo.create(BASE_DOC);
+      await db.db.update(user).set({ documentBytes: 10 }).where(eq(user.id, 'u1'));
+
+      await repo.delete('doc-1');
+
+      expect(await usedBytes()).toBe(0);
     });
   });
 });

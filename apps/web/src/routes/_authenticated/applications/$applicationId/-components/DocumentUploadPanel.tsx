@@ -16,6 +16,14 @@ import {
   type UploadProvider,
 } from './documentUploadReporting';
 import { blobAccessOf } from './documentUploadAccess';
+import {
+  formatMegabytes,
+  storageLeftBytes,
+  storageLevel,
+  storageUsageQueryKey,
+  useStorageUsage,
+  type StorageUsage,
+} from '#/lib/storageUsage';
 
 const REQUEST_UPLOAD_URL = `
   mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
@@ -53,6 +61,7 @@ export function DocumentUploadPanel({
 }: DocumentUploadPanelProps) {
   const { t } = useLocale();
   const qc = useQueryClient();
+  const storage = useStorageUsage();
   const allowedTypes = UPLOAD_TYPES_BY_CATEGORY[category];
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -74,7 +83,12 @@ export function DocumentUploadPanel({
       const { requestUploadUrl } = await gqlClient.request<{
         requestUploadUrl: { uploadUrl: string; storageKey: string; access?: string | null };
       }>(REQUEST_UPLOAD_URL, {
-        input: { applicationId, filename: file.name, mimeType: file.type },
+        input: {
+          applicationId,
+          filename: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
       });
 
       storageProvider = uploadProviderOf(requestUploadUrl.uploadUrl);
@@ -134,6 +148,7 @@ export function DocumentUploadPanel({
       });
       qc.invalidateQueries({ queryKey: documentsQueryKey(applicationId) });
       invalidateSectionCounts(qc, applicationId);
+      qc.invalidateQueries({ queryKey: storageUsageQueryKey });
       setPendingUpload(null);
     } catch (err) {
       // Only confirmDocument can throw here, and gqlClient reports its 5xx
@@ -164,6 +179,7 @@ export function DocumentUploadPanel({
             {t('documents.uploading')}
           </p>
         )}
+        {storage && <StorageLeft usage={storage} />}
         {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
       </>
     );
@@ -228,5 +244,23 @@ export function DocumentUploadPanel({
       </div>
       {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
     </div>
+  );
+}
+
+function StorageLeft({ usage }: { usage: StorageUsage }) {
+  const { t } = useLocale();
+  const level = storageLevel(usage);
+  if (level === 'full') {
+    return (
+      <p role="alert" className="text-xs text-red-600">
+        {t('storage.full')}
+      </p>
+    );
+  }
+  const color = level === 'warning' ? 'text-amber-600' : 'text-gray-500 dark:text-gray-400';
+  return (
+    <p className={`text-xs ${color}`}>
+      {t('storage.left', { amount: formatMegabytes(storageLeftBytes(usage)) })}
+    </p>
   );
 }

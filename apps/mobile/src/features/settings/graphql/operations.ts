@@ -420,3 +420,9 @@ export const DELETE_SKILL_MUTATION = `
     deleteSkill(id: $id)
   }
 `;
+
+export const STORAGE_USAGE_QUERY = `
+  query StorageUsage {
+    me { storageUsedBytes storageLimitBytes }
+  }
+`;

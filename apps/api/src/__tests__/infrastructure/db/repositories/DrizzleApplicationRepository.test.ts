@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { DrizzleApplicationRepository } from '#src/infrastructure/db/repositories/DrizzleApplicationRepository.js';
 import { createTestDb, type TestDb } from '#src/__tests__/helpers/createTestDb.js';
-import { user, jobApplication } from '#src/infrastructure/db/schema.js';
+import { user, jobApplication, document } from '#src/infrastructure/db/schema.js';
 import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 
 const BASE_APP = {
@@ -31,7 +31,10 @@ describe('DrizzleApplicationRepository', () => {
 
   beforeEach(async () => {
     await db.db.delete(jobApplication);
-    await db.db.update(user).set({ applicationCount: 0 }).where(eq(user.id, 'u1'));
+    await db.db
+      .update(user)
+      .set({ applicationCount: 0, documentBytes: 0 })
+      .where(eq(user.id, 'u1'));
   });
 
   describe('create', () => {
@@ -68,6 +71,52 @@ describe('DrizzleApplicationRepository', () => {
       await repo.delete('app-1');
 
       expect((await db.db.select({ count: user.applicationCount }).from(user))[0].count).toBe(0);
+    });
+
+    it('releases the bytes of the documents that cascade with the application', async () => {
+      await repo.create(BASE_APP);
+      await db.db.insert(document).values([
+        {
+          id: 'd1',
+          applicationId: 'app-1',
+          name: 'a.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 300,
+          storageKey: 'k1',
+        },
+        {
+          id: 'd2',
+          applicationId: 'app-1',
+          name: 'b.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 200,
+          storageKey: 'k2',
+        },
+      ]);
+      await db.db.update(user).set({ documentBytes: 800 }).where(eq(user.id, 'u1'));
+
+      await repo.delete('app-1');
+
+      expect((await db.db.select({ b: user.documentBytes }).from(user))[0].b).toBe(300);
+    });
+
+    it('releases a trashed application bytes only when it is deleted for good, never below zero', async () => {
+      await repo.create(BASE_APP);
+      await db.db.insert(document).values({
+        id: 'd1',
+        applicationId: 'app-1',
+        name: 'a.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 300,
+        storageKey: 'k1',
+      });
+      await db.db.update(user).set({ documentBytes: 100 }).where(eq(user.id, 'u1'));
+
+      await repo.softDelete('app-1', new Date());
+      expect((await db.db.select({ b: user.documentBytes }).from(user))[0].b).toBe(100);
+
+      await repo.delete('app-1');
+      expect((await db.db.select({ b: user.documentBytes }).from(user))[0].b).toBe(0);
     });
   });
 

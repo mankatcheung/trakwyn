@@ -1,4 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
+import { storageLimitFor } from '#src/use-cases/documents/storageQuota.js';
 
 export interface UserDTO {
   id: string;
@@ -14,6 +15,8 @@ export interface UserDTO {
   backupEmail: string | null;
   backupEmailVerifiedAt: Date | null;
   onboardingChecklistDismissedAt: Date | null;
+  storageUsedBytes: number;
+  storageLimitBytes: number;
 }
 
 export class UserMapper {
@@ -32,6 +35,8 @@ export class UserMapper {
       backupEmail: user.backupEmail,
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,
+      storageUsedBytes: user.documentBytes,
+      storageLimitBytes: storageLimitFor(user),
     };
   }
 }
