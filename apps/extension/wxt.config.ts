@@ -27,15 +27,19 @@ export default defineConfig({
   dev: { server: { port: 3002 } },
   manifest: ({ browser, command }) => buildManifest({ browser, command }),
   hooks: {
-    // A build or zip has no default API URL (apiUrls.ts), so refuse to produce
+    // A build or zip has no default API or web URL (apiUrls.ts), so refuse to produce
     // a bundle that cannot reach one. The dev server uses localhost; `wxt
     // prepare` never builds, so postinstall and typecheck are unaffected.
     // WXT has loaded `.env` into `process.env` by now.
     'build:before': (wxt) => {
-      if (wxt.config.command === 'build' && !process.env.VITE_API_URL?.trim()) {
-        throw new Error(
-          'VITE_API_URL is not set: a build needs the API URL it talks to (.env.example)',
-        );
+      if (wxt.config.command !== 'build') return;
+      for (const [name, what] of [
+        ['VITE_API_URL', 'the API URL it talks to'],
+        ['VITE_WEB_URL', 'the web app URL it links to'],
+      ] as const) {
+        if (!process.env[name]?.trim()) {
+          throw new Error(`${name} is not set: a build needs ${what} (.env.example)`);
+        }
       }
     },
   },

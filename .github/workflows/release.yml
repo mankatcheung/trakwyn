@@ -93,9 +93,12 @@ jobs:
           VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
           # The full /graphql URL of the production API.
           VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
+          # The web app's origin, e.g. https://www.trakwyn.com (not the API's).
+          VITE_WEB_URL: ${{ vars.CLIPPER_WEB_URL }}
         run: |
           test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
           test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
+          test -n "$VITE_WEB_URL" || { echo "::error::Repository variable CLIPPER_WEB_URL is not set"; exit 1; }
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip
 
@@ -112,6 +115,9 @@ jobs:
           fi
           unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
             echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+          }
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_WEB_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
           }
           echo "ZIP=$zip" >> "$GITHUB_ENV"
 
