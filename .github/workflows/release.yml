@@ -23,7 +23,8 @@ name: Release
 # permission or content-script host was added since the previous release),
 # attaches the zip to the GitHub Release and uploads it to the Chrome Web Store
 # and submits it for review (JEF-429). It never publishes; a person does that in
-# the dashboard (apps/extension/CLAUDE.md, "Releasing the Clipper"). Nothing
+# the dashboard: STAGED_PUBLISH holds an approved version until then
+# (apps/extension/CLAUDE.md, "Releasing the Clipper"). Nothing
 # else is built or submitted to a store here.
 #
 # The packages and their starting versions are in release-please-config.json
@@ -74,7 +75,7 @@ jobs:
   # repository variable rather than the default compiled into the source. The
   # store rejects a version number it has seen, so the checks run before the
   # upload. The package is submitted for review but never published: that stays
-  # a person's step (deferred publishing on, staged rollout chosen).
+  # a person's step (--chrome-publish-type STAGED_PUBLISH, rollout chosen).
   clipper-store:
     name: Clipper zip and Web Store submission
     needs: release-please
@@ -166,4 +167,5 @@ jobs:
         run: |
           pnpm --filter @trakwyn/extension exec wxt submit \
             --chrome-api-version v2 \
-            --chrome-zip "$GITHUB_WORKSPACE/$ZIP"
+            --chrome-zip "$GITHUB_WORKSPACE/$ZIP" \
+            --chrome-publish-type STAGED_PUBLISH
