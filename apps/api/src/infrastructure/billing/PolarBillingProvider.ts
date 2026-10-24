@@ -105,7 +105,11 @@ export class PolarBillingProvider implements IBillingProvider {
     return mapPolarEvent(signed.id, payload, this.passMonths);
   }
 
-  /** The status and path only: Polar's error body can echo what we sent, an email address among it. */
+  /**
+   * A refusal is reported as the status, the path and, for a validation error, the
+   * field names with Polar's messages. Never the values: the body can echo what we
+   * sent, an email address among it.
+   */
   private async post(path: string, body: unknown): Promise<unknown> {
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
@@ -117,9 +121,28 @@ export class PolarBillingProvider implements IBillingProvider {
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(POLAR.REQUEST_TIMEOUT_MS),
     });
-    if (!res.ok) throw new Error(`Polar answered ${res.status} for POST ${path}`);
+    if (!res.ok) {
+      throw new Error(`Polar answered ${res.status} for POST ${path}${await describeRefusal(res)}`);
+    }
     return res.json();
   }
+}
+
+const validationProblems = z.array(
+  z.object({ loc: z.array(z.union([z.string(), z.number()])), msg: z.string() }),
+);
+
+/** `: body.field: message; …` from a validation error's `detail`, or nothing if it has none. */
+async function describeRefusal(res: Response): Promise<string> {
+  const body: unknown = await res.json().catch(() => null);
+  const detail = z.object({ detail: validationProblems }).safeParse(body);
+  if (!detail.success) return '';
+  const problems = detail.data.detail
+    .slice(0, POLAR.MAX_REPORTED_PROBLEMS)
+    .map(
+      (problem) => `${problem.loc.join('.')}: ${problem.msg.slice(0, POLAR.MAX_PROBLEM_LENGTH)}`,
+    );
+  return problems.length > 0 ? `: ${problems.join('; ')}` : '';
 }
 
 /** A header that arrived exactly once, else undefined. */

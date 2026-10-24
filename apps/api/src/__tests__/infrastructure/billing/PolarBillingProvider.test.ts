@@ -98,6 +98,39 @@ describe('PolarBillingProvider.createCheckoutSession', () => {
     await expect(failure).rejects.not.toThrow(/a@b\.com/);
   });
 
+  it('names the fields and messages of a validation error, but never the values sent', async () => {
+    const fetchImpl = reply(
+      {
+        detail: [
+          {
+            loc: ['body', 'success_url'],
+            msg: 'Input should be a valid URL',
+            type: 'url_parsing',
+            input: 'https://a@b.com/leaked',
+          },
+          { loc: ['body', 'products', 0], msg: 'Product not found', input: 'a@b.com' },
+        ],
+      },
+      422,
+    );
+
+    const failure = make(fetchImpl).createCheckoutSession(checkoutData);
+
+    await expect(failure).rejects.toThrow(
+      'Polar answered 422 for POST /checkouts/: body.success_url: Input should be a valid URL; body.products.0: Product not found',
+    );
+    await expect(failure).rejects.not.toThrow(/a@b\.com|leaked/);
+  });
+
+  it('keeps the message short when Polar sends a long list of problems', async () => {
+    const detail = Array.from({ length: 20 }, (_, i) => ({ loc: ['body', `f${i}`], msg: 'bad' }));
+
+    const failure = make(reply({ detail }, 422)).createCheckoutSession(checkoutData);
+
+    await expect(failure).rejects.toThrow(/f0.*f4/);
+    await expect(failure).rejects.not.toThrow(/f5/);
+  });
+
   it('fails when Polar answers without a checkout url', async () => {
     await expect(make(reply({})).createCheckoutSession(checkoutData)).rejects.toThrow(/url/);
   });
