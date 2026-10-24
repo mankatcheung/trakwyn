@@ -2,7 +2,7 @@
 
 Polar is the merchant of record for Pro (JEF-426): it is the legal seller, collects and files VAT and sales tax, and handles chargebacks. There is no Terraform here; it is set up by hand in Polar's dashboard, and this file is the record of what to set.
 
-The API side is behind `IBillingProvider` (`apps/api/src/use-cases/ports/`). Only the **fake** adapter exists today, so none of this is needed for dev, CI or e2e (`BILLING_PROVIDER=fake`, no credentials). The Polar adapter is written once steps 1 and 2 below are confirmed. If either fails, apply to Paddle instead; only the adapter changes.
+The API side is behind `IBillingProvider` (`apps/api/src/use-cases/ports/`). The **fake** adapter serves dev, CI and e2e (`BILLING_PROVIDER=fake`, no credentials), so none of this is needed there. `PolarBillingProvider` (JEF-432) is selected by `BILLING_PROVIDER=polar` and needs every setting in section 2. Polar has been confirmed in section 1, so the provider is Polar and not Paddle.
 
 ## 1. Confirm before building the adapter
 
@@ -24,11 +24,46 @@ Create these in the sandbox first, then again in live. The IDs go in the API's e
 
 - The founder price is a **separate product**, not a discount code. The API picks it for users inside 60 days of signup (or of `BILLING_LIVE_FROM`, for earlier users), so it cannot be shared or stacked. It stays $9 for the life of that subscription; say so on the pricing page.
 - Show prices **tax-inclusive** in the UK and EU (the consumer norm). Set this in the dashboard and record it here.
-- Every checkout is created with the Trakwyn user id as metadata; the webhook maps events back to a user with it.
+- Every checkout is created with the Trakwyn user id as the external customer id and as `metadata.userId`; the webhook maps events back to a user with it.
+- **A pass is a one-off product, and Polar gives it no duration.** Trakwyn works out the expiry itself from the order, using the months of the product id below. Never describe a pass as expiring in Polar.
+- **Prices are per environment.** The sandbox and production have separate products, tokens and webhook secrets. Nothing carries over.
+
+### Settings
+
+| Setting                         | Kind   | Where                                        |
+| ------------------------------- | ------ | -------------------------------------------- |
+| `BILLING_PROVIDER`              | plain  | `polar`                                      |
+| `POLAR_SERVER`                  | plain  | `sandbox` or `production`; no default        |
+| `POLAR_PRODUCT_MONTHLY`         | plain  | the Pro monthly product's id                 |
+| `POLAR_PRODUCT_FOUNDER_MONTHLY` | plain  | the founder monthly product's id             |
+| `POLAR_PRODUCT_PASS_3M`         | plain  | the 3-month pass product's id                |
+| `POLAR_PRODUCT_PASS_6M`         | plain  | the 6-month pass product's id                |
+| `POLAR_ACCESS_TOKEN`            | secret | an organization access token for that server |
+| `POLAR_WEBHOOK_SECRET`          | secret | the `whsec_…` of that server's endpoint      |
+
+Plain values go in `plain_env` in `infra/gcp/terraform.tfvars` (see the commented block in `terraform.tfvars.example`) and locally in `apps/api/.env`; the two secrets go in Secret Manager as `polar-access-token` and `polar-webhook-secret`. The adapter names every missing setting on first use.
 
 ## 3. Webhook
 
-Endpoint: `https://<api origin>/billing/webhook`. Subscribe to the events that map onto `BillingWebhookEvent` (`apps/api/src/domain/billing/Billing.ts`): a subscription becoming active, a one-off order paid, a subscription cancelled or revoked, and an order refunded or disputed. The signature is verified over the raw body; the secret goes in Secret Manager next to the other API secrets (`infra/gcp`, `load-secrets.sh`) when the adapter lands.
+Endpoint: `https://<api origin>/billing/webhook`. In Polar, set the endpoint's format to **raw**, and subscribe to exactly these events (others are acknowledged and ignored, so extra ones are harmless but noisy):
+
+| Polar event                                      | Trakwyn                                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `subscription.active`, `subscription.uncanceled` | starts the plan (`uncanceled` clears the end date a cancellation set)                             |
+| `subscription.canceled`                          | ends the plan at the end of the paid period                                                       |
+| `subscription.revoked`                           | ends the plan at `ended_at`. Polar sends it when payment retries run out: a lapse, not a reversal |
+| `order.paid`                                     | a one-off order is a pass; a subscription's orders (first or renewal) are ignored                 |
+| `order.refunded`                                 | a full refund ends the plan now; a partial refund is ignored                                      |
+
+`past_due` is deliberately not acted on: a subscriber keeps Pro while Polar retries the card (about 21 days) and loses it at `revoked`. Polar has no dispute event; the refunds page says a lost dispute shows up as a refund, which is **not confirmed** and is one of the things to check in the sandbox (JEF-433).
+
+The signature is Standard Webhooks, verified over the raw body, with a five-minute tolerance. The adapter takes the secret as shown (`whsec_…`), which is right for secrets generated on or after 2026-09-08. A secret generated before that date is signed differently and fails here.
+
+A delivery that is signed correctly but whose body the adapter cannot read answers 500 on purpose: Polar redelivers up to ten times and the log names the event. After ten failures in a row Polar **disables the endpoint**, so a burst of 500s on `/billing/webhook` needs attention the same day.
+
+### Deploying the secrets
+
+The two Polar secrets are in `secret_env_vars`, and Cloud Run will not start a revision that references a secret with no version. So **before the next `terraform apply` in `infra/gcp`, load both** (sandbox values are fine while billing is off), then run `./load-secrets.sh <env-file> --apply`. Until then the dry run reports them as missing and exits non-zero. The plain settings can wait: with `BILLING_PROVIDER` unset in production the three billing paths fail closed on first use.
 
 ## 4. Refund policy
 
