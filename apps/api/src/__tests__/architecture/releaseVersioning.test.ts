@@ -146,10 +146,21 @@ describe('release versioning', () => {
       expect(job).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
     });
 
-    it('checks the manifest before uploading, and uploads without submitting for review', () => {
+    it('checks the manifest before uploading', () => {
       expect(job.indexOf('host_permissions')).toBeGreaterThan(-1);
       expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('wxt submit'));
-      expect(job).toContain('--chrome-skip-submit-review');
+    });
+
+    // JEF-429: with no person looking at the package before it goes to review,
+    // a grown permission list or content-script host (which disables the
+    // extension until every user re-approves it) has to stop the job instead.
+    it('submits for review only after checking nothing was added since the previous release', () => {
+      expect(job).not.toContain('--chrome-skip-submit-review');
+      const guard = job.indexOf('Check nothing was added since the previous release');
+      expect(guard).toBeGreaterThan(-1);
+      expect(guard).toBeLessThan(job.indexOf('wxt submit'));
+      expect(job).toContain('.permissions');
+      expect(job).toContain('.content_scripts[]?.matches[]?');
     });
 
     it('authenticates to the Web Store API v2 with a service account, not a refresh token', () => {
