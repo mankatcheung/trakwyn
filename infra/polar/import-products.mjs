@@ -72,7 +72,7 @@ export function findExisting(product, existing) {
   );
 }
 
-async function call(fetchImpl, server, token, path, init = {}) {
+export async function call(fetchImpl, server, token, path, init = {}) {
   const res = await fetchImpl(`${API_URL[server]}${path}`, {
     ...init,
     headers: {

@@ -78,6 +78,23 @@ Endpoint: `https://<api origin>/billing/webhook`. In Polar, set the endpoint's f
 
 `past_due` is deliberately not acted on: a subscriber keeps Pro while Polar retries the card (about 21 days) and loses it at `revoked`. Polar has no dispute event; the refunds page says a lost dispute shows up as a refund, which is **not confirmed** and is one of the things to check in the sandbox (JEF-433).
 
+### Creating the endpoint from a script
+
+`create-webhook-endpoint.mjs` registers the endpoint with exactly the events above, as `raw` payloads on API version `2026-10` (the shape the mapper's tests are written for). The token needs `webhooks:write`.
+
+```bash
+export POLAR_ACCESS_TOKEN=...              # the token for the environment below
+node create-webhook-endpoint.mjs https://<api origin>/billing/webhook --server sandbox            # dry run
+node create-webhook-endpoint.mjs https://<api origin>/billing/webhook --server sandbox --apply    # creates it
+```
+
+- The URL must be public https: Polar cannot reach localhost, so for local testing start a tunnel (`cloudflared tunnel --url http://localhost:3001`) and use its URL.
+- A new endpoint's `whsec_…` secret is printed **once**, as the `POLAR_WEBHOOK_SECRET=` line. It is a credential: put it in `apps/api/.env`, or in Secret Manager as `polar-webhook-secret` for production.
+- An endpoint already registered for that URL is left alone and its secret is not printed (find it in the Polar dashboard). The script warns if that endpoint is missing events, is not `raw`, or is disabled. Fix those in the dashboard.
+- If Polar reports that the endpoint uses the old signing scheme, the script says so: the API's verifier would reject every delivery, so create the endpoint again.
+- A tunnel URL changes each run; create a new endpoint for the new URL, and delete old ones in the dashboard (Polar disables an endpoint after ten failed deliveries in a row).
+- Tests: `node --test infra/polar/create-webhook-endpoint.test.mjs` (not run in CI).
+
 The signature is Standard Webhooks, verified over the raw body, with a five-minute tolerance. The adapter takes the secret as shown (`whsec_…`), which is right for secrets generated on or after 2026-09-08. A secret generated before that date is signed differently and fails here.
 
 A delivery that is signed correctly but whose body the adapter cannot read answers 500 on purpose: Polar redelivers up to ten times and the log names the event. After ten failures in a row Polar **disables the endpoint**, so a burst of 500s on `/billing/webhook` needs attention the same day.
