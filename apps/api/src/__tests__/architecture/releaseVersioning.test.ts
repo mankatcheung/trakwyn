@@ -156,8 +156,8 @@ describe('release versioning', () => {
     // extension until every user re-approves it) has to stop the job instead.
     it('submits for review only after checking nothing was added since the previous release', () => {
       expect(job).not.toContain('--chrome-skip-submit-review');
-      // Without this the API publishes the version the moment review approves it.
-      expect(job).toContain('--chrome-publish-type STAGED_PUBLISH');
+      // Approval publishes the release; say so rather than lean on the default.
+      expect(job).toContain('--chrome-publish-type DEFAULT_PUBLISH');
       const guard = job.indexOf('Check nothing was added since the previous release');
       expect(guard).toBeGreaterThan(-1);
       expect(guard).toBeLessThan(job.indexOf('wxt submit'));
