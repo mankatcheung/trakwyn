@@ -163,6 +163,7 @@ export const makeStorageProvider = (overrides?: Partial<IStorageProvider>): ISto
   getPresignedUploadUrl: vi.fn(),
   getSignedUrl: vi.fn(),
   getObject: vi.fn().mockImplementation(() => Promise.resolve(makeStoredObject())),
+  headObject: vi.fn().mockResolvedValue({ size: 12345 }),
   putObject: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),

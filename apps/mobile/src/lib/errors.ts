@@ -17,10 +17,27 @@ export function getNetworkMessage(): string {
   return i18n.t('common:errorNetwork');
 }
 
+const PLAN_REQUIRED_CODE = 'PLAN_REQUIRED';
+const SENTENCE_END = /[.!?。！？]$/;
+
+/**
+ * A Pro feature is not a failure and there is nothing to retry. Billing lives
+ * on the web (the app has no in-app purchase), so the message keeps what the
+ * API said, which names the feature, and says where to go (JEF-344).
+ */
+function planRequiredMessage(apiMessage: string | undefined): string {
+  const message = apiMessage ?? i18n.t('common:errorPlanRequiredDefault');
+  const sentence = SENTENCE_END.test(message) ? message : `${message}.`;
+  return i18n.t('common:errorPlanRequired', { message: sentence });
+}
+
 /** Turns any thrown error (GraphQL, network, or otherwise) into a single user-facing message. */
 export function getErrorMessage(error: unknown): string {
   if (isGraphQLErrorLike(error)) {
     const gqlError = error.response.errors?.[0];
+    if (gqlError?.extensions?.code === PLAN_REQUIRED_CODE) {
+      return planRequiredMessage(gqlError.message);
+    }
     return gqlError?.message ?? i18n.t('common:errorGeneric');
   }
 

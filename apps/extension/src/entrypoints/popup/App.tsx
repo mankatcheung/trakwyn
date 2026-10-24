@@ -18,7 +18,7 @@ import { captureEvent, captureException } from '../../lib/observability/report';
 import type { OAuthLoginResponse } from '../background';
 import {
   CONTENT_MESSAGES,
-  DEFAULT_API_URL,
+  DEFAULT_WEB_URL,
   OAUTH_PROVIDERS,
   OBSERVABILITY_EVENTS,
   REFRESH_LEEWAY_MS,
@@ -67,11 +67,6 @@ interface Clip {
   readId: number;
   /** Dismissible: why the AI result is missing. */
   notice?: string;
-}
-
-/** The web app's origin, derived from the configured API URL. */
-function webUrlOf(apiUrl: string): string {
-  return apiUrl.replace('/graphql', '').replace(':3001', ':3000');
 }
 
 async function readActiveTab(): Promise<{ jobData: JobData | null; tab: ClipTab | null }> {
@@ -210,7 +205,7 @@ export function App() {
         type: 'ready',
         user,
         clip,
-        settingsUrl: `${webUrlOf(DEFAULT_API_URL)}/settings/ai`,
+        settingsUrl: `${DEFAULT_WEB_URL}/settings/ai`,
       });
     } catch (err) {
       if (isUnauthorizedError(err)) {
@@ -285,11 +280,10 @@ export function App() {
         description: jobData.description,
         source: jobData.source,
       });
-      const webUrl = webUrlOf(DEFAULT_API_URL);
       setScreen({
         type: 'saved',
         appId: app.id,
-        appUrl: `${webUrl}/applications/${app.id}`,
+        appUrl: `${DEFAULT_WEB_URL}/applications/${app.id}`,
         company: app.company,
         role: app.role,
       });

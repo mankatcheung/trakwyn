@@ -8,6 +8,13 @@ import {
   makeLlmUsageEventRepository,
 } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import {
+  makeEntitlementService,
+  makeEntitlements,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
+import { PlanRequiredError } from '#src/use-cases/errors/DomainError.js';
 
 const NOW = new Date('2026-03-15T12:00:00.000Z');
 const NEXT_RESET = new Date('2026-04-01T00:00:00.000Z');
@@ -32,6 +39,8 @@ function build({
   usage = [] as ReturnType<typeof spent>[],
   defaultLlmProvider = 'openai' as string | null,
   llmFallbackWhenLimited = false,
+  // Plans not enforced, so the pre-existing cases below see no allowance.
+  entitlementService = makeEntitlementService({ enforced: false }) as IEntitlementService,
 }) {
   const provider = { complete: vi.fn(), completeWithToolsStream: vi.fn() };
   const inner = {
@@ -43,6 +52,9 @@ function build({
     })),
     fromCredentials: vi.fn().mockReturnValue(provider),
   };
+  const llmUsageEventRepository = makeLlmUsageEventRepository({
+    summarizeByUserId: vi.fn().mockResolvedValue(usage),
+  });
   const factory = new LimitEnforcingLLMProviderFactory({
     userLlmProviderFactory: inner,
     userRepository: makeUserRepository({
@@ -51,12 +63,11 @@ function build({
     llmApiKeyRepository: makeLlmApiKeyRepository({
       findAllByUserId: vi.fn().mockResolvedValue(keys),
     }),
-    llmUsageEventRepository: makeLlmUsageEventRepository({
-      summarizeByUserId: vi.fn().mockResolvedValue(usage),
-    }),
+    llmUsageEventRepository,
+    entitlementService,
     now: () => NOW,
   });
-  return { factory, inner, provider };
+  return { factory, inner, provider, llmUsageEventRepository };
 }
 
 describe('LimitEnforcingLLMProviderFactory', () => {
@@ -284,6 +295,91 @@ describe('LimitEnforcingLLMProviderFactory', () => {
       const [, providerId, , , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
       expect(providerId).toBe('anthropic');
       expect(hints?.key).toBe(spare);
+    });
+  });
+  describe('Free AI allowance (JEF-344)', () => {
+    const freeService = (enforced = true) =>
+      makeEntitlementService({
+        enforced,
+        forUser: vi.fn().mockReturnValue(makeFreeEntitlements()),
+      });
+    const requests = (count: number) => [{ ...spent('openai', 10), requestCount: count }];
+
+    it('allows an action while the month is under the allowance', async () => {
+      const { factory, provider } = build({
+        usage: requests(4),
+        entitlementService: freeService(),
+      });
+
+      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+    });
+
+    it('refuses the sixth action of the month with PlanRequiredError', async () => {
+      const { factory, inner } = build({
+        usage: requests(5),
+        entitlementService: freeService(),
+      });
+
+      const err = await factory.forUser('user-1', 'openai').catch((e) => e);
+
+      expect(err).toBeInstanceOf(PlanRequiredError);
+      expect((err as Error).message).toMatch(/5 AI actions a month/);
+      expect(inner.resolveForUser).not.toHaveBeenCalled();
+    });
+
+    it('counts requests across every provider', async () => {
+      const { factory } = build({
+        usage: [
+          { ...spent('openai', 10), requestCount: 3 },
+          { ...spent('anthropic', 10), requestCount: 2 },
+        ],
+        entitlementService: freeService(),
+      });
+
+      await expect(factory.forUser('user-1', 'openai')).rejects.toBeInstanceOf(PlanRequiredError);
+    });
+
+    it('counts only this calendar month', async () => {
+      const { factory, llmUsageEventRepository } = build({
+        usage: requests(1),
+        entitlementService: freeService(),
+      });
+
+      await factory.forUser('user-1', 'openai');
+
+      const [, since] = vi.mocked(llmUsageEventRepository.summarizeByUserId).mock.calls[0];
+      expect(since).toEqual(new Date('2026-03-01T00:00:00.000Z'));
+    });
+
+    it('has no allowance on Pro, and does not even read the month usage', async () => {
+      const entitlementService = makeEntitlementService({
+        forUser: vi.fn().mockReturnValue(makeEntitlements()),
+      });
+      const { factory, provider } = build({
+        keys: [key('openai', null)],
+        usage: requests(500),
+        entitlementService,
+      });
+
+      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+    });
+
+    it('does nothing when plans are not enforced, without loading anything extra', async () => {
+      const { factory, provider } = build({
+        usage: requests(500),
+        entitlementService: freeService(false),
+      });
+
+      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+    });
+
+    it('does not count a key test, which is not real usage', async () => {
+      const { factory, provider } = build({
+        usage: requests(500),
+        entitlementService: freeService(),
+      });
+
+      await expect(factory.forUser('user-1', 'openai', null, false)).resolves.toBe(provider);
     });
   });
 });

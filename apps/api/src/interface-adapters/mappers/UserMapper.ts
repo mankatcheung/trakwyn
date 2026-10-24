@@ -1,4 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 
 export interface UserDTO {
   id: string;
@@ -14,9 +15,17 @@ export interface UserDTO {
   backupEmail: string | null;
   backupEmailVerifiedAt: Date | null;
   onboardingChecklistDismissedAt: Date | null;
+  storageUsedBytes: number;
+  storageLimitBytes: number;
 }
 
 export class UserMapper {
+  private readonly entitlementService: IEntitlementService;
+
+  constructor({ entitlementService }: { entitlementService: IEntitlementService }) {
+    this.entitlementService = entitlementService;
+  }
+
   toDTO(user: User, avatarUrl: string | null): UserDTO {
     return {
       id: user.id,
@@ -32,6 +41,8 @@ export class UserMapper {
       backupEmail: user.backupEmail,
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,
+      storageUsedBytes: user.documentBytes,
+      storageLimitBytes: this.entitlementService.forUser(user).limits.documentBytes,
     };
   }
 }

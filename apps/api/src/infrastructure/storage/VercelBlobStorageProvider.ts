@@ -101,6 +101,16 @@ export class VercelBlobStorageProvider implements IStorageProvider {
     };
   }
 
+  async headObject(key: string): Promise<{ size: number } | null> {
+    try {
+      const blob = await head(key, { token: this.storeFor(key).token });
+      return { size: blob.size };
+    } catch (error) {
+      if (error instanceof BlobNotFoundError) return null;
+      throw error;
+    }
+  }
+
   async delete(key: string): Promise<void> {
     await this.deleteMany([key]);
   }

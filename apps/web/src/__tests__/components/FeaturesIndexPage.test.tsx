@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import en from '#/i18n/en.json';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, className }: { children: ReactNode; to: string; className?: string }) => (
@@ -62,8 +63,24 @@ describe('FeaturesIndexPage', () => {
       'Browser extension',
       '5 languages',
     ].forEach((title) => {
-      expect(screen.getByText(title)).toBeInTheDocument();
+      // "Browser extension" also labels the footer's Product link (JEF-424).
+      expect(screen.getAllByText(title).length).toBeGreaterThan(0);
     });
+  });
+
+  it('links the Browser extension entry to the Chrome Web Store listing (JEF-424)', () => {
+    render(<FeaturesIndexPage />);
+
+    // The footer carries a second "Browser extension" link, so find the tile
+    // by the copy only it has.
+    const tile = screen
+      .getAllByRole('link', { name: /Browser extension/ })
+      .find((link) => link.textContent?.includes('Add to Chrome'));
+    expect(tile).toBeDefined();
+    expect(tile).toHaveAttribute('href', CLIPPER_WEB_STORE_URL);
+    expect(tile).toHaveAttribute('target', '_blank');
+    expect(tile).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(tile).toHaveTextContent('LinkedIn, Indeed, Glassdoor, Greenhouse, Lever or Workday');
   });
 
   it('links the closing CTA to /register', () => {

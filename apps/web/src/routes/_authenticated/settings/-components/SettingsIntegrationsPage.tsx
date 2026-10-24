@@ -5,6 +5,8 @@ import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select, Skeleton } from '@trakwyn/ui';
+import { UpgradePrompt } from '#/components/UpgradePrompt';
+import { PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import {
   API_TOKENS_QUERY,
   CREATE_API_TOKEN,
@@ -21,7 +23,13 @@ import {
   type ShareLink,
   type CreateShareLinkPayload,
   extractGqlError,
+  extractGqlErrorCode,
 } from './shared';
+
+/** An inline failure under a form: the upgrade prompt when the action needs Pro, else a plain error. */
+function FormMessage({ message, needsPro }: { message: string; needsPro: boolean }) {
+  return needsPro ? <UpgradePrompt message={message} /> : <Alert>{message}</Alert>;
+}
 
 export function SettingsIntegrationsPage() {
   const { t } = useLocale();
@@ -43,11 +51,13 @@ export function SettingsIntegrationsPage() {
   const [apiTokenScope, setApiTokenScope] = useState<ApiTokenScope>('read');
   const [creatingApiToken, setCreatingApiToken] = useState(false);
   const [apiTokenError, setApiTokenError] = useState<string | null>(null);
+  const [apiTokenNeedsPro, setApiTokenNeedsPro] = useState(false);
 
   const onCreateApiToken = async () => {
     if (!apiTokenName.trim()) return;
     setCreatingApiToken(true);
     setApiTokenError(null);
+    setApiTokenNeedsPro(false);
     try {
       const res = await gqlClient.request<{ createApiToken: CreateApiTokenPayload }>(
         CREATE_API_TOKEN,
@@ -62,6 +72,7 @@ export function SettingsIntegrationsPage() {
       setApiTokenFormOverride(null);
       await qc.invalidateQueries({ queryKey: ['apiTokens'] });
     } catch (err) {
+      setApiTokenNeedsPro(extractGqlErrorCode(err) === PLAN_REQUIRED_CODE);
       setApiTokenError(extractGqlError(err) ?? t('integrations.createTokenFailed'));
     } finally {
       setCreatingApiToken(false);
@@ -75,6 +86,7 @@ export function SettingsIntegrationsPage() {
       await gqlClient.request(DELETE_API_TOKEN, { id });
       await qc.invalidateQueries({ queryKey: ['apiTokens'] });
     } catch (err) {
+      setApiTokenNeedsPro(false);
       setApiTokenError(extractGqlError(err) ?? t('integrations.deleteTokenFailed'));
     } finally {
       setDeletingApiTokenId(null);
@@ -118,6 +130,7 @@ export function SettingsIntegrationsPage() {
   const [shareLinkName, setShareLinkName] = useState('');
   const [creatingShareLink, setCreatingShareLink] = useState(false);
   const [shareLinkError, setShareLinkError] = useState<string | null>(null);
+  const [shareLinkNeedsPro, setShareLinkNeedsPro] = useState(false);
 
   const shareUrl = (token: string) =>
     `${window.location.origin}/share?token=${encodeURIComponent(token)}`;
@@ -126,6 +139,7 @@ export function SettingsIntegrationsPage() {
     if (!shareLinkName.trim()) return;
     setCreatingShareLink(true);
     setShareLinkError(null);
+    setShareLinkNeedsPro(false);
     try {
       const res = await gqlClient.request<{ createShareLink: CreateShareLinkPayload }>(
         CREATE_SHARE_LINK,
@@ -138,6 +152,7 @@ export function SettingsIntegrationsPage() {
       setShareLinkFormOverride(null);
       await qc.invalidateQueries({ queryKey: ['shareLinks'] });
     } catch (err) {
+      setShareLinkNeedsPro(extractGqlErrorCode(err) === PLAN_REQUIRED_CODE);
       setShareLinkError(extractGqlError(err) ?? t('integrations.createShareLinkFailed'));
     } finally {
       setCreatingShareLink(false);
@@ -151,6 +166,7 @@ export function SettingsIntegrationsPage() {
       await gqlClient.request(DELETE_SHARE_LINK, { id });
       await qc.invalidateQueries({ queryKey: ['shareLinks'] });
     } catch (err) {
+      setShareLinkNeedsPro(false);
       setShareLinkError(extractGqlError(err) ?? t('integrations.deleteShareLinkFailed'));
     } finally {
       setDeletingShareLinkId(null);
@@ -243,7 +259,7 @@ export function SettingsIntegrationsPage() {
 
         {!newApiToken && apiTokenFormOpen && (
           <>
-            {apiTokenError && <Alert>{apiTokenError}</Alert>}
+            {apiTokenError && <FormMessage message={apiTokenError} needsPro={apiTokenNeedsPro} />}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
                 <FormLabel>{t('integrations.tokenNameLabel')}</FormLabel>
@@ -452,7 +468,9 @@ export function SettingsIntegrationsPage() {
 
         {!newShareLink && shareLinkFormOpen && (
           <>
-            {shareLinkError && <Alert>{shareLinkError}</Alert>}
+            {shareLinkError && (
+              <FormMessage message={shareLinkError} needsPro={shareLinkNeedsPro} />
+            )}
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <FormLabel>{t('integrations.linkNameLabel')}</FormLabel>

@@ -16,6 +16,8 @@ export interface IStorageProvider {
   getSignedUrl(key: string, ttlSeconds?: number): Promise<string>;
   /** Opens a stored file for reading, or null when no object has that key. */
   getObject(key: string): Promise<StoredObject | null>;
+  /** The stored size in bytes, or null when no object has that key. */
+  headObject(key: string): Promise<{ size: number } | null>;
   putObject(key: string, data: Buffer, mimeType: string): Promise<void>;
   delete(key: string): Promise<void>;
   /**

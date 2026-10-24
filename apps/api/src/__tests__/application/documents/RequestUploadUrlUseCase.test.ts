@@ -4,6 +4,13 @@ import {
   makeDocumentRepository,
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
+import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
+import {
+  makeEntitlements,
+  makeEntitlementService,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 vi.mock('nanoid', () => ({ nanoid: vi.fn().mockReturnValue('fixed-nanoid') }));
@@ -19,8 +26,10 @@ describe('RequestUploadUrlUseCase', () => {
     });
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
+      userRepository: makeUserRepository(),
       storageProvider: makeStorageProvider(),
     });
     const err = await useCase
@@ -42,8 +51,10 @@ describe('RequestUploadUrlUseCase', () => {
     });
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
+      userRepository: makeUserRepository(),
       storageProvider: makeStorageProvider(),
     });
     const err = await useCase
@@ -68,8 +79,10 @@ describe('RequestUploadUrlUseCase', () => {
     });
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
+      userRepository: makeUserRepository(),
       storageProvider,
     });
     const result = await useCase.execute({
@@ -97,8 +110,10 @@ describe('RequestUploadUrlUseCase', () => {
     const storageProvider = makeStorageProvider();
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository,
+      userRepository: makeUserRepository(),
       storageProvider,
     });
     const err = await useCase
@@ -120,8 +135,10 @@ describe('RequestUploadUrlUseCase', () => {
     });
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
+      userRepository: makeUserRepository(),
       storageProvider: makeStorageProvider(),
     });
     const err = await useCase
@@ -146,8 +163,10 @@ describe('RequestUploadUrlUseCase', () => {
     });
 
     const useCase = new RequestUploadUrlUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
+      userRepository: makeUserRepository(),
       storageProvider,
     });
     const result = await useCase.execute({
@@ -159,5 +178,75 @@ describe('RequestUploadUrlUseCase', () => {
 
     // spaces → hyphens, accented chars and parens stripped
     expect(result.storageKey).toMatch(/fixed-nanoid-my-rsum-final-v2\.pdf$/);
+  });
+  describe('storage limit (JEF-425)', () => {
+    const request = (
+      sizeBytes: number | undefined,
+      documentBytes: number,
+      entitlements = makeFreeEntitlements(),
+    ) => {
+      const storageProvider = makeStorageProvider({
+        getPresignedUploadUrl: vi.fn().mockResolvedValue('https://upload.example.com/x'),
+      });
+      const useCase = new RequestUploadUrlUseCase({
+        entitlementService: makeEntitlementService({
+          forUser: vi.fn().mockReturnValue(entitlements),
+        }),
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        }),
+        documentRepository: makeDocumentRepository(),
+        userRepository: makeUserRepository({
+          findById: vi.fn().mockResolvedValue(makeUser({ id: 'user-1', documentBytes })),
+        }),
+        storageProvider,
+      });
+      const result = useCase.execute({
+        userId: 'user-1',
+        applicationId: 'app-1',
+        filename: 'resume.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes,
+      });
+      return { result, storageProvider };
+    };
+
+    it('refuses before issuing an upload URL when the file would not fit', async () => {
+      const { result, storageProvider } = request(
+        2_000_000,
+        CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES - 1_000_000,
+      );
+
+      const err = await result.catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('QUOTA_EXCEEDED');
+      expect((err as Error).message).toContain('of 100 MB used');
+      expect(storageProvider.getPresignedUploadUrl).not.toHaveBeenCalled();
+    });
+
+    it('allows a file that exactly fills the remaining space', async () => {
+      const { result } = request(
+        1_000_000,
+        CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES - 1_000_000,
+      );
+
+      await expect(result).resolves.toMatchObject({ uploadUrl: 'https://upload.example.com/x' });
+    });
+
+    it('uses the limit of the plan, so a file Free would refuse fits on Pro', async () => {
+      const { result } = request(
+        2_000_000,
+        CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES - 1_000_000,
+        makeEntitlements({ limits: { ...PLAN_LIMITS.pro } }),
+      );
+
+      await expect(result).resolves.toMatchObject({ uploadUrl: 'https://upload.example.com/x' });
+    });
+
+    it('still works for clients that send no size', async () => {
+      const { result } = request(undefined, CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES);
+
+      await expect(result).resolves.toMatchObject({ uploadUrl: 'https://upload.example.com/x' });
+    });
   });
 });

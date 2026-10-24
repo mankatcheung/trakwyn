@@ -11,12 +11,15 @@ import type {
   LoginOrSignupWithOAuthInput,
   LoginOrSignupWithOAuthOutput,
 } from '#src/use-cases/oauth/ILoginOrSignupWithOAuthUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   oauthAccountRepository: IOAuthAccountRepository;
   oauthProviderRegistry: IOAuthProviderRegistry;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class LoginOrSignupWithOAuthUseCase implements ILoginOrSignupWithOAuthUseCase {
@@ -48,7 +51,8 @@ export class LoginOrSignupWithOAuthUseCase implements ILoginOrSignupWithOAuthUse
       );
     }
 
-    const existingUser = await this.deps.userRepository.findByEmail(profile.email);
+    const email = profile.email;
+    const existingUser = await this.deps.userRepository.findByEmail(email);
     if (existingUser) {
       // Deliberately not auto-linking: silently attaching a new OAuth identity
       // to an existing account based only on a matching email is a known
@@ -59,21 +63,23 @@ export class LoginOrSignupWithOAuthUseCase implements ILoginOrSignupWithOAuthUse
       );
     }
 
-    const user = await this.deps.userRepository.create({
-      id: this.deps.generateId(),
-      email: profile.email,
-      passwordHash: null,
-      name: profile.name,
-      emailVerifiedAt: new Date(),
-    });
-    await this.deps.oauthAccountRepository.create({
-      id: this.deps.generateId(),
-      userId: user.id,
-      provider: input.provider,
-      providerAccountId: profile.providerAccountId,
-      email: profile.email,
-    });
+    return runInTransaction(this.deps.transactionManager, async () => {
+      const user = await this.deps.userRepository.create({
+        id: this.deps.generateId(),
+        email,
+        passwordHash: null,
+        name: profile.name,
+        emailVerifiedAt: new Date(),
+      });
+      await this.deps.oauthAccountRepository.create({
+        id: this.deps.generateId(),
+        userId: user.id,
+        provider: input.provider,
+        providerAccountId: profile.providerAccountId,
+        email,
+      });
 
-    return { user, isNewUser: true };
+      return { user, isNewUser: true };
+    });
   }
 }

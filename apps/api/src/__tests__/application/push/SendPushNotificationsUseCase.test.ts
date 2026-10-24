@@ -14,6 +14,10 @@ import {
   makePushSubscriptionRepository,
 } from '#src/__tests__/helpers/mocks/push.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlementService,
+} from '#src/__tests__/helpers/mocks/plans.js';
 
 const stub = <T>(methods: Partial<T>): T => methods as T;
 
@@ -38,10 +42,49 @@ const makeDeps = (overrides?: object) => ({
   webPushService: makeWebPushService(),
   expoPushService: makeExpoPushService(),
   createNotificationUseCase: makeCreateNotificationUseCase(),
+  entitlementService: makeEntitlementService(),
   ...overrides,
 });
 
 describe('SendPushNotificationsUseCase', () => {
+  it('sends nothing to a Free user: no inbox row, no push, and the round is not marked notified', async () => {
+    const round = makeInterviewRound({
+      id: 'round-1',
+      applicationId: 'app-1',
+      scheduledAt: new Date('2024-06-01T10:00:00.000Z'),
+    });
+    const app = makeApplication({ id: 'app-1', userId: 'user-1' });
+    const createNotificationUseCase = makeCreateNotificationUseCase();
+    const interviewRoundRepository = makeInterviewRoundRepository({
+      findUpcomingWithinWindow: vi.fn().mockResolvedValue([round]),
+      updatePushNotificationSentAt: vi.fn().mockResolvedValue(undefined),
+    });
+    const webPushService = makeWebPushService();
+    const deps = makeDeps({
+      entitlementService: makeFreeEntitlementService(),
+      interviewRoundRepository,
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(app),
+        findDueForReminder: vi.fn().mockResolvedValue([app]),
+      }),
+      userRepository: makeUserRepository({
+        findById: vi.fn().mockResolvedValue(makeUser({ pushNotificationsEnabled: true })),
+      }),
+      pushSubscriptionRepository: makePushSubscriptionRepository({
+        findByUserId: vi.fn().mockResolvedValue([makePushSubscription()]),
+      }),
+      webPushService,
+      createNotificationUseCase,
+    });
+
+    const summary = await new SendPushNotificationsUseCase(deps).execute();
+
+    expect(createNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(webPushService.send).not.toHaveBeenCalled();
+    expect(interviewRoundRepository.updatePushNotificationSentAt).not.toHaveBeenCalled();
+    expect(summary).toEqual({ delivered: 0, failed: 0 });
+  });
+
   it('persists an interview-reminder notification, even when the user has no push subscription', async () => {
     const round = makeInterviewRound({
       id: 'round-1',

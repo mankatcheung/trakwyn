@@ -20,6 +20,39 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(new TypeError('Network request failed'))).toBe(getNetworkMessage());
   });
 
+  describe('PLAN_REQUIRED (JEF-344)', () => {
+    it('keeps what the API said and tells the user where to manage their plan', () => {
+      expect(getErrorMessage(gqlError('Analytics is a Pro feature', 'PLAN_REQUIRED'))).toBe(
+        'Analytics is a Pro feature. Manage your plan on the web.',
+      );
+    });
+
+    it('does not double the full stop when the API message already ends with one', () => {
+      expect(
+        getErrorMessage(
+          gqlError(
+            'The Free plan includes 5 AI actions a month. Upgrade to Pro for unlimited AI.',
+            'PLAN_REQUIRED',
+          ),
+        ),
+      ).toBe(
+        'The Free plan includes 5 AI actions a month. Upgrade to Pro for unlimited AI. Manage your plan on the web.',
+      );
+    });
+
+    it('still says it is a Pro feature when the API sent no message', () => {
+      expect(getErrorMessage(gqlError(undefined, 'PLAN_REQUIRED'))).toBe(
+        'This is a Pro feature. Manage your plan on the web.',
+      );
+    });
+
+    it('leaves every other code alone', () => {
+      expect(getErrorMessage(gqlError('Too many requests', 'RATE_LIMITED'))).toBe(
+        'Too many requests',
+      );
+    });
+  });
+
   it('never leaks an arbitrary error message', () => {
     expect(getErrorMessage(new Error('ECONNRESET at 10.0.0.4'))).toBe(
       'Something went wrong. Please try again.',

@@ -2,6 +2,8 @@ import { nanoid } from 'nanoid';
 import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { db } from '#src/infrastructure/db/client.js';
+import { buildBillingProvider } from '#src/infrastructure/billing/buildBillingProvider.js';
+import { parseBillingLiveFrom } from '#src/infrastructure/billing/parseBillingLiveFrom.js';
 import { buildCaptchaVerifier } from '#src/infrastructure/captcha/buildCaptchaVerifier.js';
 
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
@@ -41,6 +43,7 @@ import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js'
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
 import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
 import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
+import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
@@ -103,6 +106,8 @@ export const infrastructure = {
   storageProvider: asClass(StorageProvider, { lifetime: Lifetime.SINGLETON }),
   generateId: asValue(() => nanoid()),
   now: asValue(() => new Date()),
+  plansEnforced: asValue(process.env[ENV.PLANS_ENFORCED] === 'true'),
+  entitlementService: asClass(EntitlementService, { lifetime: Lifetime.SINGLETON }),
   webAppOrigin: asValue(
     process.env[ENV.CORS_ORIGIN]?.split(',')[0]?.trim() ?? 'http://localhost:3000',
   ),
@@ -140,6 +145,11 @@ export const infrastructure = {
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
   // asFunction so a mis-set CAPTCHA_PROVIDER throws on first use rather than at import.
+  // asFunction so a missing or mis-set BILLING_PROVIDER throws on first use (JEF-426).
+  billingProvider: asFunction(() => buildBillingProvider(), { lifetime: Lifetime.SINGLETON }),
+  billingLiveFrom: asFunction(() => parseBillingLiveFrom(process.env[ENV.BILLING_LIVE_FROM]), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   captchaVerifier: asFunction(({ logger }: Cradle) => buildCaptchaVerifier(logger), {
     lifetime: Lifetime.SINGLETON,
   }),

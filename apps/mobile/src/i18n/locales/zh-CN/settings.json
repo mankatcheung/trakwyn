@@ -77,7 +77,12 @@
     "applicationsImported_other": "已导入 {{count}} 份求职申请",
     "notesImported_other": "已导入 {{count}} 条备注",
     "applicationsSkipped": "已跳过 {{count}} 份求职申请",
-    "documentsSkipped": "已跳过 {{count}} 份文件"
+    "documentsSkipped": "已跳过 {{count}} 份文件",
+    "storageTitle": "存储空间",
+    "storageDescription": "你在所有求职申请中上传的文档总大小。",
+    "storageUsage": "已使用 {{used}}，共 {{limit}}（{{percent}}%）",
+    "storageWarning": "你的存储空间快用完了。删除不再需要的文档以释放空间。",
+    "storageFull": "你的存储空间已满。删除一份文档后才能继续上传。"
   },
   "experience": {
     "workExperienceTitle": "工作经历",

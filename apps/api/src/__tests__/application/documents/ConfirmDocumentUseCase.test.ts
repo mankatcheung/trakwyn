@@ -5,7 +5,13 @@ import {
   makeDocumentRepository,
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
+import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
+import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ConfirmDocumentUseCase', () => {
   it('throws NOT_FOUND when the application does not exist', async () => {
@@ -14,6 +20,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -39,6 +46,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -64,6 +72,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -89,6 +98,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -114,6 +124,7 @@ describe('ConfirmDocumentUseCase', () => {
     });
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository: makeDocumentRepository(),
       generateId: vi.fn(),
@@ -144,6 +155,7 @@ describe('ConfirmDocumentUseCase', () => {
     const generateId = vi.fn().mockReturnValue('doc-1');
 
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository,
       documentRepository,
       generateId,
@@ -167,7 +179,40 @@ describe('ConfirmDocumentUseCase', () => {
       sizeBytes: 12345,
       documentType: undefined,
       version: undefined,
+      storageLimitBytes: PLAN_LIMITS.pro.documentBytes,
     });
+  });
+
+  it("charges the upload against the owner's plan storage limit", async () => {
+    const applicationRepository = makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+    });
+    const documentRepository = makeDocumentRepository({
+      create: vi.fn().mockResolvedValue(makeDocument()),
+    });
+    const entitlementService = makeEntitlementService({
+      forUserId: vi.fn().mockResolvedValue(makeFreeEntitlements()),
+    });
+
+    const useCase = new ConfirmDocumentUseCase({
+      entitlementService,
+      applicationRepository,
+      documentRepository,
+      generateId: vi.fn().mockReturnValue('doc-1'),
+    });
+    await useCase.execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+      storageKey: 'users/user-1/applications/app-1/resume.pdf',
+      name: 'resume.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 12345,
+    });
+
+    expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
+    expect(documentRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ storageLimitBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES }),
+    );
   });
 
   it('passes documentType and version to the repository', async () => {
@@ -176,6 +221,7 @@ describe('ConfirmDocumentUseCase', () => {
       create: vi.fn().mockResolvedValue(doc),
     });
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository: makeApplicationRepository({
         findById: vi.fn().mockResolvedValue(makeApplication()),
       }),
@@ -209,8 +255,12 @@ describe('ConfirmDocumentUseCase', () => {
           Object.assign(new Error('document limit reached'), { code: 'QUOTA_EXCEEDED' }),
         ),
     });
-    const storageProvider = makeStorageProvider({ delete: vi.fn().mockResolvedValue(undefined) });
+    const storageProvider = makeStorageProvider({
+      delete: vi.fn().mockResolvedValue(undefined),
+      headObject: vi.fn().mockResolvedValue({ size: 1000 }),
+    });
     const useCase = new ConfirmDocumentUseCase({
+      entitlementService: makeEntitlementService(),
       applicationRepository: makeApplicationRepository({
         findById: vi.fn().mockResolvedValue(makeApplication()),
       }),
@@ -232,5 +282,70 @@ describe('ConfirmDocumentUseCase', () => {
     expect(storageProvider.delete).toHaveBeenCalledWith(
       'users/user-1/applications/app-1/upload.pdf',
     );
+  });
+  describe('stored size (JEF-425)', () => {
+    const input = {
+      userId: 'user-1',
+      applicationId: 'app-1',
+      storageKey: 'users/user-1/applications/app-1/upload.pdf',
+      name: 'file.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1000,
+    };
+    const build = (head: { size: number } | null) => {
+      const storageProvider = makeStorageProvider({ headObject: vi.fn().mockResolvedValue(head) });
+      const documentRepository = makeDocumentRepository({
+        create: vi.fn().mockResolvedValue(makeDocument()),
+      });
+      const useCase = new ConfirmDocumentUseCase({
+        entitlementService: makeEntitlementService(),
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        }),
+        documentRepository,
+        storageProvider,
+        generateId: vi.fn().mockReturnValue('id'),
+      });
+      return { useCase, storageProvider, documentRepository };
+    };
+
+    it('rejects an upload whose stored size differs from the reported one, and removes the blob', async () => {
+      const { useCase, storageProvider, documentRepository } = build({ size: 9_000_000 });
+
+      const err = await useCase.execute(input).catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('VALIDATION');
+      expect(documentRepository.create).not.toHaveBeenCalled();
+      expect(storageProvider.delete).toHaveBeenCalledWith(input.storageKey);
+    });
+
+    it('rejects a confirm for an object that was never uploaded', async () => {
+      const { useCase, documentRepository } = build(null);
+
+      const err = await useCase.execute(input).catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('VALIDATION');
+      expect(documentRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('removes the blob when the repository refuses for a full account', async () => {
+      const { useCase, storageProvider, documentRepository } = build({ size: 1000 });
+      vi.mocked(documentRepository.create).mockRejectedValue(new QuotaExceededError('full'));
+
+      const err = await useCase.execute(input).catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('QUOTA_EXCEEDED');
+      expect(storageProvider.delete).toHaveBeenCalledWith(input.storageKey);
+    });
+
+    it('creates the document when the stored size matches', async () => {
+      const { useCase, documentRepository } = build({ size: 1000 });
+
+      await useCase.execute(input);
+
+      expect(documentRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ sizeBytes: 1000 }),
+      );
+    });
   });
 });

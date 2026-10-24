@@ -8,6 +8,8 @@ import type { IMcpOAuthClientRepository } from '#src/use-cases/ports/IMcpOAuthCl
 import type { IMcpOAuthRefreshTokenRepository } from '#src/use-cases/ports/IMcpOAuthRefreshTokenRepository.js';
 import type { IMcpOAuthTokenRepository } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   mcpOAuthAuthorizationCodeRepository: IMcpOAuthAuthorizationCodeRepository;
@@ -19,6 +21,7 @@ interface Deps {
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
   now: () => Date;
+  transactionManager?: ITransactionManager;
 }
 
 export interface ExchangeMcpOAuthAuthorizationCodeInput {
@@ -73,28 +76,41 @@ export class ExchangeMcpOAuthAuthorizationCodeUseCase {
 
     // Consumption is a conditional UPDATE, so two concurrent exchanges cannot
     // both win. The loser lands here rather than in the branch above.
-    const consumed = await this.deps.mcpOAuthAuthorizationCodeRepository.consume(
-      code.id,
-      this.deps.now(),
-    );
-    if (!consumed) {
+    //
+    // Consume and issue share one transaction so a failure while minting the
+    // tokens gives the code back rather than burning it with nothing issued.
+    // Losing the race is a *return value*, not a throw: revokeGrant must commit,
+    // and a throw out of the transaction would roll it back.
+    const issued = await runInTransaction(this.deps.transactionManager, async () => {
+      const consumed = await this.deps.mcpOAuthAuthorizationCodeRepository.consume(
+        code.id,
+        this.deps.now(),
+      );
+      if (!consumed) return null;
+
+      const token = await this.deps.createMcpOAuthAccessTokenUseCase.execute({
+        userId: code.userId,
+        clientId: code.clientId,
+        familyId: code.familyId,
+        scope: code.scope,
+      });
+      const refreshToken = await this.deps.createMcpOAuthRefreshTokenUseCase.execute({
+        userId: code.userId,
+        clientId: code.clientId,
+        familyId: code.familyId,
+        scope: code.scope,
+      });
+      return {
+        accessToken: token.rawToken,
+        refreshToken: refreshToken.rawToken,
+        token: token.token,
+      };
+    });
+    if (!issued) {
       await this.revokeGrant(code.familyId, code.userId);
       return null;
     }
-
-    const token = await this.deps.createMcpOAuthAccessTokenUseCase.execute({
-      userId: code.userId,
-      clientId: code.clientId,
-      familyId: code.familyId,
-      scope: code.scope,
-    });
-    const refreshToken = await this.deps.createMcpOAuthRefreshTokenUseCase.execute({
-      userId: code.userId,
-      clientId: code.clientId,
-      familyId: code.familyId,
-      scope: code.scope,
-    });
-    return { accessToken: token.rawToken, refreshToken: refreshToken.rawToken, token: token.token };
+    return issued;
   }
 
   private async revokeGrant(familyId: string, userId: string): Promise<void> {

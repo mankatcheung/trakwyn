@@ -2,6 +2,8 @@
 export const AI_NOT_CONFIGURED_CODE = 'AI_NOT_CONFIGURED';
 /** The key this call would have used has spent its monthly token limit (JEF-258). */
 export const AI_LIMIT_REACHED_CODE = 'AI_LIMIT_REACHED';
+/** The action needs a plan the user is not on, e.g. a Pro feature or the Free AI allowance (JEF-344). */
+export const PLAN_REQUIRED_CODE = 'PLAN_REQUIRED';
 
 /**
  * Extracts the GraphQL `extensions.code` from a graphql-request error —

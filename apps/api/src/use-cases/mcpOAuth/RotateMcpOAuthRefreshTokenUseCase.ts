@@ -6,6 +6,8 @@ import type { IMcpOAuthClientRepository } from '#src/use-cases/ports/IMcpOAuthCl
 import type { IMcpOAuthRefreshTokenRepository } from '#src/use-cases/ports/IMcpOAuthRefreshTokenRepository.js';
 import type { IMcpOAuthTokenRepository } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   mcpOAuthRefreshTokenRepository: IMcpOAuthRefreshTokenRepository;
@@ -16,6 +18,7 @@ interface Deps {
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
   now: () => Date;
+  transactionManager?: ITransactionManager;
 }
 
 export interface RotateMcpOAuthRefreshTokenInput {
@@ -49,29 +52,37 @@ export class RotateMcpOAuthRefreshTokenUseCase {
       return null;
     }
 
-    if (!(await this.deps.mcpOAuthRefreshTokenRepository.markUsed(token.id, now))) {
+    // markUsed and the replacement tokens commit together, so a failure while
+    // minting them leaves the presented refresh token usable instead of spent.
+    // Losing the markUsed race is a return value, not a throw: burnFamily must
+    // commit, and a throw out of the transaction would roll it back.
+    const rotated = await runInTransaction(this.deps.transactionManager, async () => {
+      if (!(await this.deps.mcpOAuthRefreshTokenRepository.markUsed(token.id, now))) return null;
+
+      const accessToken = await this.deps.createMcpOAuthAccessTokenUseCase.execute({
+        userId: token.userId,
+        clientId: token.clientId,
+        familyId: token.familyId,
+        scope: token.scope,
+      });
+      const refreshToken = await this.deps.createMcpOAuthRefreshTokenUseCase.execute({
+        userId: token.userId,
+        clientId: token.clientId,
+        scope: token.scope,
+        familyId: token.familyId,
+      });
+      return {
+        userId: token.userId,
+        accessToken: accessToken.rawToken,
+        refreshToken: refreshToken.rawToken,
+        accessTokenExpiresAt: accessToken.token.expiresAt,
+      };
+    });
+    if (!rotated) {
       await this.burnFamily(token.familyId, token.userId, now);
       return null;
     }
-
-    const accessToken = await this.deps.createMcpOAuthAccessTokenUseCase.execute({
-      userId: token.userId,
-      clientId: token.clientId,
-      familyId: token.familyId,
-      scope: token.scope,
-    });
-    const refreshToken = await this.deps.createMcpOAuthRefreshTokenUseCase.execute({
-      userId: token.userId,
-      clientId: token.clientId,
-      scope: token.scope,
-      familyId: token.familyId,
-    });
-    return {
-      userId: token.userId,
-      accessToken: accessToken.rawToken,
-      refreshToken: refreshToken.rawToken,
-      accessTokenExpiresAt: accessToken.token.expiresAt,
-    };
+    return rotated;
   }
 
   /**

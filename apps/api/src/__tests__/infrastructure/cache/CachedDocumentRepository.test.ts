@@ -2,12 +2,21 @@ import { describe, it, expect, vi } from 'vitest';
 import { CachedDocumentRepository } from '#src/infrastructure/db/repositories/CachedDocumentRepository.js';
 import { MemoryCache } from '#src/infrastructure/cache/MemoryCache.js';
 import { makeDocument, makeDocumentRepository } from '#src/__tests__/helpers/mocks/documents.js';
+import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { CACHE_KEYS } from '#src/infrastructure/config/constants.js';
 
 function makeRepo() {
   const inner = makeDocumentRepository();
   const cache = new MemoryCache(60_000);
-  const repo = new CachedDocumentRepository({ drizzleDocumentRepository: inner, cache });
-  return { repo, inner, cache };
+  const applications = makeApplicationRepository({
+    findByIdIncludingTrashed: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+  });
+  const repo = new CachedDocumentRepository({
+    drizzleDocumentRepository: inner,
+    drizzleApplicationRepository: applications,
+    cache,
+  });
+  return { repo, inner, cache, applications };
 }
 
 const doc = makeDocument();
@@ -108,6 +117,7 @@ describe('CachedDocumentRepository', () => {
         mimeType: 'application/pdf',
         sizeBytes: 1024,
         storageKey: 'users/user-1/applications/app-1/resume.pdf',
+        storageLimitBytes: 2000000,
       });
 
       vi.mocked(inner.findAllByApplicationId).mockResolvedValue([doc]);
@@ -139,8 +149,16 @@ describe('CachedDocumentRepository', () => {
     it('evicts the list cache from a second repo instance with no prior read on it (JEF-209 — the id→applicationId map this used to depend on is gone)', async () => {
       const inner = makeDocumentRepository();
       const cache = new MemoryCache(60_000);
-      const repoA = new CachedDocumentRepository({ drizzleDocumentRepository: inner, cache });
-      const repoB = new CachedDocumentRepository({ drizzleDocumentRepository: inner, cache });
+      const applications = makeApplicationRepository({
+        findByIdIncludingTrashed: vi.fn().mockResolvedValue(makeApplication()),
+      });
+      const deps = {
+        drizzleDocumentRepository: inner,
+        drizzleApplicationRepository: applications,
+        cache,
+      };
+      const repoA = new CachedDocumentRepository(deps);
+      const repoB = new CachedDocumentRepository(deps);
 
       vi.mocked(inner.findAllByApplicationId).mockResolvedValue([doc]);
       vi.mocked(inner.delete).mockResolvedValue(undefined);
@@ -152,6 +170,41 @@ describe('CachedDocumentRepository', () => {
       vi.mocked(inner.findAllByApplicationId).mockResolvedValue([]);
       await repoA.findAllByApplicationId('app-1');
       expect(inner.findAllByApplicationId).toHaveBeenCalledTimes(2);
+    });
+  });
+  describe('owner storage total (JEF-425)', () => {
+    const cachedUser = async (cache: MemoryCache) => {
+      await cache.getOrSet(CACHE_KEYS.userById('user-1'), async () => ({ documentBytes: 0 }));
+      return cache.getOrSet(CACHE_KEYS.userById('user-1'), async () => ({ documentBytes: 999 }));
+    };
+
+    it('drops the owner from the user cache when a document is created', async () => {
+      const { repo, inner, cache } = makeRepo();
+      vi.mocked(inner.create).mockResolvedValue(doc);
+      expect(await cachedUser(cache)).toEqual({ documentBytes: 0 });
+
+      await repo.create({ ...doc, storageLimitBytes: 2000000 });
+
+      expect(
+        await cache.getOrSet(CACHE_KEYS.userById('user-1'), async () => ({ documentBytes: 12345 })),
+      ).toEqual({
+        documentBytes: 12345,
+      });
+    });
+
+    it('drops the owner from the user cache when a document is deleted, even from the Trash', async () => {
+      const { repo, inner, cache, applications } = makeRepo();
+      vi.mocked(inner.delete).mockResolvedValue(undefined);
+      await cachedUser(cache);
+
+      await repo.delete('doc-1', 'app-1');
+
+      expect(applications.findByIdIncludingTrashed).toHaveBeenCalledWith('app-1');
+      expect(
+        await cache.getOrSet(CACHE_KEYS.userById('user-1'), async () => ({ documentBytes: 0 })),
+      ).toEqual({
+        documentBytes: 0,
+      });
     });
   });
 });

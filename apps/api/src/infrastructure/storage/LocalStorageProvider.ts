@@ -95,6 +95,13 @@ export class LocalStorageProvider implements IStorageProvider {
     return object && { stream: object.stream, size: object.size };
   }
 
+  async headObject(key: string): Promise<{ size: number } | null> {
+    const object = await this.openObject(key);
+    if (!object) return null;
+    object.stream.destroy();
+    return { size: object.size };
+  }
+
   async putObject(key: string, data: Buffer, _mimeType: string): Promise<void> {
     const filePath = join(this.uploadDir, key);
     await fs.mkdir(dirname(filePath), { recursive: true });

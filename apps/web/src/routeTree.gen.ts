@@ -49,6 +49,7 @@ import { Route as AuthenticatedSettingsDataRouteImport } from './routes/_authent
 import { Route as AuthenticatedSettingsExperienceRouteImport } from './routes/_authenticated/settings/experience';
 import { Route as AuthenticatedSettingsIntegrationsRouteImport } from './routes/_authenticated/settings/integrations';
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications';
+import { Route as AuthenticatedSettingsPlanRouteImport } from './routes/_authenticated/settings/plan';
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile';
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security';
 import { Route as AuthenticatedApplicationsApplicationIdIndexRouteImport } from './routes/_authenticated/applications/$applicationId/index';
@@ -273,6 +274,12 @@ const AuthenticatedSettingsNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any);
+const AuthenticatedSettingsPlanRoute =
+  AuthenticatedSettingsPlanRouteImport.update({
+    id: '/plan',
+    path: '/plan',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
 const AuthenticatedSettingsProfileRoute =
   AuthenticatedSettingsProfileRouteImport.update({
     id: '/profile',
@@ -365,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/settings/experience': typeof AuthenticatedSettingsExperienceRoute;
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsRoute;
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute;
+  '/settings/plan': typeof AuthenticatedSettingsPlanRoute;
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute;
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/applications/': typeof AuthenticatedApplicationsIndexRoute;
@@ -414,6 +422,7 @@ export interface FileRoutesByTo {
   '/settings/experience': typeof AuthenticatedSettingsExperienceRoute;
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsRoute;
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute;
+  '/settings/plan': typeof AuthenticatedSettingsPlanRoute;
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute;
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/applications': typeof AuthenticatedApplicationsIndexRoute;
@@ -466,6 +475,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/experience': typeof AuthenticatedSettingsExperienceRoute;
   '/_authenticated/settings/integrations': typeof AuthenticatedSettingsIntegrationsRoute;
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute;
+  '/_authenticated/settings/plan': typeof AuthenticatedSettingsPlanRoute;
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute;
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute;
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/settings/experience'
     | '/settings/integrations'
     | '/settings/notifications'
+    | '/settings/plan'
     | '/settings/profile'
     | '/settings/security'
     | '/applications/'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/settings/experience'
     | '/settings/integrations'
     | '/settings/notifications'
+    | '/settings/plan'
     | '/settings/profile'
     | '/settings/security'
     | '/applications'
@@ -618,6 +630,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/experience'
     | '/_authenticated/settings/integrations'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/plan'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/security'
     | '/_authenticated/applications/'
@@ -937,6 +950,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport;
       parentRoute: typeof AuthenticatedSettingsRouteRoute;
     };
+    '/_authenticated/settings/plan': {
+      id: '/_authenticated/settings/plan';
+      path: '/plan';
+      fullPath: '/settings/plan';
+      preLoaderRoute: typeof AuthenticatedSettingsPlanRouteImport;
+      parentRoute: typeof AuthenticatedSettingsRouteRoute;
+    };
     '/_authenticated/settings/profile': {
       id: '/_authenticated/settings/profile';
       path: '/profile';
@@ -1010,6 +1030,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsExperienceRoute: typeof AuthenticatedSettingsExperienceRoute;
   AuthenticatedSettingsIntegrationsRoute: typeof AuthenticatedSettingsIntegrationsRoute;
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute;
+  AuthenticatedSettingsPlanRoute: typeof AuthenticatedSettingsPlanRoute;
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute;
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute;
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute;
@@ -1025,6 +1046,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsIntegrationsRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsPlanRoute: AuthenticatedSettingsPlanRoute,
     AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
     AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,

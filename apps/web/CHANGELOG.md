@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.4.0...web-v0.5.0) (2026-10-23)
+
+
+### Features
+
+* add Free and Pro plans, entitlements and tier enforcement (JEF-344) ([#1038](https://github.com/mankatcheung/trakwyn/issues/1038)) ([9efb7ec](https://github.com/mankatcheung/trakwyn/commit/9efb7eccc64bf2f5eabd6bed629a812fbc9761be))
+* cap total document storage per user and show usage (JEF-425) ([#1034](https://github.com/mankatcheung/trakwyn/issues/1034)) ([d6e8d77](https://github.com/mankatcheung/trakwyn/commit/d6e8d77f30d678f2920a1df1be1b5756beb1956c))
+
+## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.3.0...web-v0.4.0) (2026-10-23)
+
+
+### Features
+
+* **web:** promote the Chrome Web Store Clipper on the marketing site (JEF-424) ([#1032](https://github.com/mankatcheung/trakwyn/issues/1032)) ([ff16161](https://github.com/mankatcheung/trakwyn/commit/ff16161d85ff72904ca74a91dcb01011a62535f8))
+
 ## [0.3.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.2.1...web-v0.3.0) (2026-10-22)
 
 

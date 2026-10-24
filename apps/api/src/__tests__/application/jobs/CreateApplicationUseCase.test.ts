@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateApplicationUseCase } from '#src/use-cases/jobs/CreateApplicationUseCase.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlements,
+} from '#src/__tests__/helpers/mocks/plans.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 
 describe('CreateApplicationUseCase', () => {
   it('creates an application with all provided fields', async () => {
@@ -10,7 +15,11 @@ describe('CreateApplicationUseCase', () => {
     });
     const generateId = vi.fn().mockReturnValue('app-1');
 
-    const useCase = new CreateApplicationUseCase({ applicationRepository, generateId });
+    const useCase = new CreateApplicationUseCase({
+      applicationRepository,
+      entitlementService: makeEntitlementService(),
+      generateId,
+    });
     const result = await useCase.execute({
       userId: 'user-1',
       company: 'Google',
@@ -35,6 +44,7 @@ describe('CreateApplicationUseCase', () => {
       source: null,
       followUpAt: null,
       tags: [],
+      applicationLimit: null,
     });
     expect(generateId).toHaveBeenCalled();
   });
@@ -45,7 +55,11 @@ describe('CreateApplicationUseCase', () => {
     });
     const generateId = vi.fn().mockReturnValue('app-1');
 
-    const useCase = new CreateApplicationUseCase({ applicationRepository, generateId });
+    const useCase = new CreateApplicationUseCase({
+      applicationRepository,
+      entitlementService: makeEntitlementService(),
+      generateId,
+    });
     await useCase.execute({ userId: 'user-1', company: 'Acme', role: 'Dev' });
 
     expect(applicationRepository.create).toHaveBeenCalledWith(
@@ -60,6 +74,7 @@ describe('CreateApplicationUseCase', () => {
 
     const useCase = new CreateApplicationUseCase({
       applicationRepository,
+      entitlementService: makeEntitlementService(),
       generateId: vi.fn().mockReturnValue('app-1'),
     });
     await useCase.execute({ userId: 'user-1', company: 'Acme', role: 'Dev' });
@@ -80,7 +95,11 @@ describe('CreateApplicationUseCase', () => {
     });
     const generateId = vi.fn().mockReturnValue('generated-id');
 
-    const useCase = new CreateApplicationUseCase({ applicationRepository, generateId });
+    const useCase = new CreateApplicationUseCase({
+      applicationRepository,
+      entitlementService: makeEntitlementService(),
+      generateId,
+    });
     await useCase.execute({
       userId: 'user-1',
       company: 'Acme',
@@ -98,5 +117,45 @@ describe('CreateApplicationUseCase', () => {
         ],
       }),
     );
+  });
+
+  describe('application limit from the plan', () => {
+    it("passes the user's own entitlement to the repository", async () => {
+      const applicationRepository = makeApplicationRepository({
+        create: vi.fn().mockResolvedValue(makeApplication()),
+      });
+      const entitlementService = makeEntitlementService({
+        forUserId: vi.fn().mockResolvedValue(makeFreeEntitlements()),
+      });
+
+      const useCase = new CreateApplicationUseCase({
+        applicationRepository,
+        entitlementService,
+        generateId: vi.fn().mockReturnValue('app-1'),
+      });
+      await useCase.execute({ userId: 'user-9', company: 'Acme', role: 'Dev' });
+
+      expect(entitlementService.forUserId).toHaveBeenCalledWith('user-9');
+      expect(applicationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ applicationLimit: CONTENT_LIMITS.APPLICATIONS_PER_USER }),
+      );
+    });
+
+    it('passes no cap for a plan without one', async () => {
+      const applicationRepository = makeApplicationRepository({
+        create: vi.fn().mockResolvedValue(makeApplication()),
+      });
+
+      const useCase = new CreateApplicationUseCase({
+        applicationRepository,
+        entitlementService: makeEntitlementService(),
+        generateId: vi.fn().mockReturnValue('app-1'),
+      });
+      await useCase.execute({ userId: 'user-1', company: 'Acme', role: 'Dev' });
+
+      expect(applicationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ applicationLimit: null }),
+      );
+    });
   });
 });

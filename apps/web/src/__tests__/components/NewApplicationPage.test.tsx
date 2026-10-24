@@ -99,6 +99,34 @@ describe('NewApplicationPage', () => {
     });
   });
 
+  it('offers the plan page when the application limit is reached (JEF-344)', async () => {
+    mockGqlRequest.mockRejectedValue({
+      response: {
+        errors: [
+          {
+            message: 'You have reached the maximum of 50 applications',
+            extensions: { code: 'QUOTA_EXCEEDED' },
+          },
+        ],
+      },
+    });
+    render(<NewApplicationPage />);
+
+    fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
+    fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
+      target: { value: 'Engineer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/maximum of 50 applications/)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('link', { name: 'See what Pro includes' })).toHaveAttribute(
+      'href',
+      '/settings/plan',
+    );
+  });
+
   it('shows error on API failure', async () => {
     mockGqlRequest.mockRejectedValue(new Error('network error'));
     render(<NewApplicationPage />);

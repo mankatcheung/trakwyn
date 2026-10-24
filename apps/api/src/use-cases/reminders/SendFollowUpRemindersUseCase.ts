@@ -1,11 +1,13 @@
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 
 interface Deps {
   applicationRepository: IApplicationRepository;
   userRepository: IUserRepository;
   emailService: IEmailService;
+  entitlementService: IEntitlementService;
 }
 
 export interface FollowUpRemindersSummary {
@@ -13,7 +15,7 @@ export interface FollowUpRemindersSummary {
   sent: number;
   /** Applications whose reminder threw; the run continued past each one. */
   failed: number;
-  /** Due applications whose owner is gone or has reminders turned off. */
+  /** Due applications whose owner is gone, has reminders turned off, or is not on a plan that includes them. */
   skipped: number;
 }
 
@@ -29,6 +31,12 @@ export class SendFollowUpRemindersUseCase {
     for (const app of apps) {
       const user = await this.deps.userRepository.findById(app.userId);
       if (!user || !user.followUpRemindersEnabled) {
+        skipped++;
+        continue;
+      }
+      // Reminders are a Pro feature. The application stays due, so upgrading
+      // later still sends it rather than losing it.
+      if (!this.deps.entitlementService.forUser(user).features.notifications) {
         skipped++;
         continue;
       }

@@ -5,6 +5,7 @@ import type { IPushSubscriptionRepository } from '#src/use-cases/ports/IPushSubs
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IWebPushService } from '#src/use-cases/ports/IWebPushService.js';
 import type { IExpoPushService } from '#src/use-cases/ports/IExpoPushService.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { ICreateNotificationUseCase } from '#src/use-cases/notifications/ICreateNotificationUseCase.js';
 import type { NotificationType } from '#src/domain/notification/Notification.js';
 import { NOTIFICATION_TYPE, REMINDER_WINDOW_MS } from '#src/use-cases/constants.js';
@@ -18,6 +19,7 @@ interface Deps {
   webPushService: IWebPushService;
   expoPushService: IExpoPushService;
   createNotificationUseCase: ICreateNotificationUseCase;
+  entitlementService: IEntitlementService;
 }
 
 interface NotificationPayload {
@@ -49,11 +51,24 @@ export class SendPushNotificationsUseCase {
 
     const now = new Date();
 
+    // Notifications are a Pro feature. A Free user's round or reminder is left
+    // untouched (no inbox row, round not marked as notified), so it is still
+    // there to send if they upgrade before it passes. One lookup per user.
+    const mayNotifyByUser = new Map<string, boolean>();
+    const mayNotify = async (userId: string): Promise<boolean> => {
+      const known = mayNotifyByUser.get(userId);
+      if (known !== undefined) return known;
+      const entitlements = await this.deps.entitlementService.forUserId(userId);
+      mayNotifyByUser.set(userId, entitlements.features.notifications);
+      return entitlements.features.notifications;
+    };
+
     for (const round of upcomingInterviews) {
       if (!round.scheduledAt) continue;
 
       const app = await this.deps.applicationRepository.findById(round.applicationId);
       if (!app) continue;
+      if (!(await mayNotify(app.userId))) continue;
 
       const timeStr = round.scheduledAt.toLocaleTimeString(undefined, {
         hour: 'numeric',
@@ -79,6 +94,7 @@ export class SendPushNotificationsUseCase {
     const dueForFollowUp = await this.deps.applicationRepository.findDueForReminder();
 
     for (const app of dueForFollowUp) {
+      if (!(await mayNotify(app.userId))) continue;
       const existing = notificationsByUser.get(app.userId) ?? [];
       existing.push({
         userId: app.userId,

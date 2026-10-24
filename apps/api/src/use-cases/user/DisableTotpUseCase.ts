@@ -8,12 +8,15 @@ import type {
   IDisableTotpUseCase,
   DisableTotpInput,
 } from '#src/use-cases/user/IDisableTotpUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   totpBackupCodeRepository: ITotpBackupCodeRepository;
   securityEventRepository: ISecurityEventRepository;
   generateId: () => string;
+  transactionManager?: ITransactionManager;
 }
 
 export class DisableTotpUseCase implements IDisableTotpUseCase {
@@ -27,18 +30,20 @@ export class DisableTotpUseCase implements IDisableTotpUseCase {
     const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) throw new UnauthorizedError('Invalid password');
 
-    await this.deps.userRepository.update(input.userId, {
-      totpEnabled: false,
-      totpSecret: null,
-    });
-    await this.deps.totpBackupCodeRepository.deleteAllForUser(input.userId);
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(input.userId, {
+        totpEnabled: false,
+        totpSecret: null,
+      });
+      await this.deps.totpBackupCodeRepository.deleteAllForUser(input.userId);
 
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId: input.userId,
-      eventType: 'totp_disabled',
-      ipAddress: input.ipAddress ?? null,
-      userAgent: input.userAgent ?? null,
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId: input.userId,
+        eventType: 'totp_disabled',
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      });
     });
   }
 }

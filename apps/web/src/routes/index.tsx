@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
+import { ClipperSection } from '#/components/marketing/ClipperSection';
 import { useLocale } from '#/lib/i18n';
 import { statusColor } from '#/lib/statusColors';
 import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'lucide-react';
@@ -245,6 +246,9 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Browser extension (JEF-424) */}
+        <ClipperSection />
 
         {/* How it works */}
         <section className="bg-gray-100 py-24 sm:py-32 dark:bg-gray-800/30">

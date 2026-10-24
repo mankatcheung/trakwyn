@@ -10,6 +10,13 @@ export interface CreateDocumentData {
   documentType?: string;
   version?: string | null;
   sourceDraftId?: string | null;
+  /**
+   * The most document bytes the owner may store, from their entitlements.
+   * Passed in because the repository charges the owner's total in one
+   * conditional `UPDATE`, which is what keeps simultaneous uploads from both
+   * passing the limit.
+   */
+  storageLimitBytes: number;
 }
 
 export interface IDocumentRepository {

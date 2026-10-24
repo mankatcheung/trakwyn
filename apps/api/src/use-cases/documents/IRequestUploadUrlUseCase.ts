@@ -5,6 +5,8 @@ export interface RequestUploadUrlInput {
   applicationId: string;
   filename: string;
   mimeType: string;
+  /** The file's size when the client knows it, so a full account is refused before the upload (JEF-425). Older clients omit it. */
+  sizeBytes?: number;
 }
 
 export interface RequestUploadUrlOutput {

@@ -2,11 +2,11 @@
 
 Guidance for Claude Code in this repository. Subsystem detail lives next to the code and loads when you work there:
 
-- `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, database, observability, use-case spans, deployment and testing.
+- `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, billing, database, observability, use-case spans, deployment and testing.
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
 - `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
 - `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, OAuth sign-in per browser, and error reporting to PostHog.
-- Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's two Blob stores and moving documents to the private one; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
+- Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's two Blob stores and moving documents to the private one; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/polar/README.md` (payment provider products, prices, webhook and launch; no Terraform) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
 
 ## Commands
 
@@ -23,6 +23,8 @@ pnpm format
 
 pnpm db:generate         # migration SQL after schema.ts changes
 pnpm db:migrate          # apply migrations (src/migrate.ts, not drizzle-kit migrate)
+pnpm --filter @trakwyn/api plan set --email a@b.com --plan pro --days 30   # put a user on a plan by hand
+pnpm --filter @trakwyn/api plan grant-trial --dry-run                      # launch trial for existing users
 cd apps/api && pnpm db:studio   # stop `pnpm dev` first when on PGlite
 
 cd apps/web && pnpm codegen     # needs the API at localhost:3001
@@ -109,6 +111,10 @@ cp apps/web/.env.example apps/web/.env
   - It is strict only when `NODE_ENV=production`, because dev and CI point at the local fake provider (`LLM_PROVIDER_MODE=fake`). `OUTBOUND_URL_POLICY=strict|permissive` overrides that.
   - Check at save time (`SaveLlmApiKeyUseCase`, `TestLlmApiKeyUseCase`) _and_ on every call or redirect hop (`OpenAICompatibleLLMProvider`, `FetchJobPostingSourceResolver`), since DNS can be re-pointed.
   - Register it with `asFunction`, not `asClass`.
+- **Plans are decided by `IEntitlementService` (JEF-344), never by a constant in a use case.**
+  - A Pro feature calls `assertFeature(userId, feature)` first; a per-user cap is passed to the repository (`applicationLimit`, `storageLimitBytes`) instead of being read from `CONTENT_LIMITS` there.
+  - `PLANS_ENFORCED` is off by default, and then every feature is on but the caps that already existed stay. Only `EntitlementService` reads it.
+  - A downgrade never touches data. Details, and the Free AI allowance, are in `apps/api/CLAUDE.md`.
 - **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CachedApplicationRepository } from '#src/infrastructure/db/repositories/CachedApplicationRepository.js';
 import { MemoryCache } from '#src/infrastructure/cache/MemoryCache.js';
+import { CACHE_KEYS } from '#src/infrastructure/config/constants.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 function makeRepo() {
@@ -105,6 +106,7 @@ describe('CachedApplicationRepository', () => {
         company: 'Acme',
         role: 'SWE',
         status: 'draft',
+        applicationLimit: null,
       });
 
       // Next list fetch must go to inner again
@@ -262,5 +264,36 @@ describe('CachedApplicationRepository', () => {
       await repo.updateReminderSentAt('unknown-id', new Date());
       expect(inner.updateReminderSentAt).toHaveBeenCalledWith('unknown-id', expect.any(Date));
     });
+  });
+  it('drops the owner from the user cache when an application is created (the user row holds the application count)', async () => {
+    const { repo, inner, cache } = makeRepo();
+    vi.mocked(inner.create).mockResolvedValue(app);
+    await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ applicationCount: 0 }));
+
+    await repo.create({
+      id: app.id,
+      userId: app.userId,
+      company: 'Acme',
+      role: 'SWE',
+      status: 'draft',
+      applicationLimit: null,
+    });
+
+    expect(
+      await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ applicationCount: 1 })),
+    ).toEqual({ applicationCount: 1 });
+  });
+
+  it('drops the owner from the user cache when an application is deleted for good (its documents release bytes)', async () => {
+    const { repo, inner, cache } = makeRepo();
+    vi.mocked(inner.findByIdIncludingTrashed).mockResolvedValue(app);
+    vi.mocked(inner.delete).mockResolvedValue(undefined);
+    await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ documentBytes: 500 }));
+
+    await repo.delete(app.id);
+
+    expect(
+      await cache.getOrSet(CACHE_KEYS.userById(app.userId), async () => ({ documentBytes: 0 })),
+    ).toEqual({ documentBytes: 0 });
   });
 });

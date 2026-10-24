@@ -15,7 +15,7 @@ import {
 } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
-import { jobApplication, applicationTag, user } from '../schema.js';
+import { jobApplication, applicationTag, document, user } from '../schema.js';
 import type { Application } from '#src/domain/application/Application.js';
 import type { ApplicationStatus } from '#src/domain/application/ApplicationStatus.js';
 import type {
@@ -27,7 +27,7 @@ import type {
   ApplicationsPage,
 } from '#src/use-cases/ports/IApplicationRepository.js';
 import { txStorage, getClient } from '../transactionContext.js';
-import { CONTENT_LIMITS, REMINDER_WINDOW_MS } from '#src/use-cases/constants.js';
+import { REMINDER_WINDOW_MS } from '#src/use-cases/constants.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { LIKELY_GHOSTED_AFTER_DAYS } from '#src/use-cases/jobs/applicationStaleness.js';
 
@@ -212,16 +212,15 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(user.id, data.userId),
-            lt(user.applicationCount, CONTENT_LIMITS.APPLICATIONS_PER_USER),
-          ),
+          data.applicationLimit === null
+            ? eq(user.id, data.userId)
+            : and(eq(user.id, data.userId), lt(user.applicationCount, data.applicationLimit)),
         )
         .returning({ id: user.id });
 
       if (!reserved) {
         throw new QuotaExceededError(
-          `You have reached the maximum of ${CONTENT_LIMITS.APPLICATIONS_PER_USER} applications`,
+          `You have reached the maximum of ${data.applicationLimit} applications`,
         );
       }
 
@@ -307,6 +306,14 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
 
   async delete(id: string): Promise<void> {
     const exec = async (client: DrizzleClient): Promise<void> => {
+      // Documents cascade with the application, so their bytes are released
+      // here, in the same transaction, before the rows are gone.
+      const [stored] = await client
+        .select({ bytes: sql<number>`coalesce(sum(${document.sizeBytes}), 0)` })
+        .from(document)
+        .where(eq(document.applicationId, id));
+      const releasedBytes = Number(stored?.bytes ?? 0);
+
       const [deleted] = await client
         .delete(jobApplication)
         .where(eq(jobApplication.id, id))
@@ -317,6 +324,7 @@ export class DrizzleApplicationRepository implements IApplicationRepository {
         .update(user)
         .set({
           applicationCount: sql`case when ${user.applicationCount} > 0 then ${user.applicationCount} - 1 else 0 end`,
+          documentBytes: sql`case when ${user.documentBytes} > ${releasedBytes} then ${user.documentBytes} - ${releasedBytes} else 0 end`,
           updatedAt: new Date(),
         })
         .where(eq(user.id, deleted.userId));

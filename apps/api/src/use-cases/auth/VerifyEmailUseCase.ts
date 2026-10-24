@@ -6,10 +6,13 @@ import type {
   IVerifyEmailUseCase,
   VerifyEmailInput,
 } from '#src/use-cases/auth/IVerifyEmailUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   emailVerificationTokenRepository: IEmailVerificationTokenRepository;
+  transactionManager?: ITransactionManager;
 }
 
 export class VerifyEmailUseCase implements IVerifyEmailUseCase {
@@ -28,9 +31,11 @@ export class VerifyEmailUseCase implements IVerifyEmailUseCase {
       throw new UnauthorizedError('Invalid or expired verification link');
     }
 
-    await this.deps.userRepository.update(verificationToken.userId, {
-      emailVerifiedAt: new Date(),
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(verificationToken.userId, {
+        emailVerifiedAt: new Date(),
+      });
+      await this.deps.emailVerificationTokenRepository.markUsed(verificationToken.id);
     });
-    await this.deps.emailVerificationTokenRepository.markUsed(verificationToken.id);
   }
 }

@@ -19,13 +19,15 @@ name: Release
 # Merging a release PR bumps that package's package.json and CHANGELOG.md,
 # and this workflow then creates the tag (e.g. clipper-v1.1.0) and the GitHub
 # Release. Only a Clipper release goes on to `clipper-store` (JEF-419): it
-# builds the zip from the tag, checks the manifest, attaches the zip to the
-# GitHub Release and uploads it to the Chrome Web Store as a draft. It never
-# submits for review or publishes; a person does that in the dashboard
-# (apps/extension/CLAUDE.md, "Releasing the Clipper"). A Clipper release also
-# runs `clipper-firefox-zip` (JEF-437), which builds and checks the Firefox zips
-# from the same tag and starts clipper-amo.yml, where the AMO submission waits
-# for a person's approval. Nothing else is built or submitted to a store here.
+# builds the zip from the tag, checks the manifest (including that no
+# permission or content-script host was added since the previous release),
+# attaches the zip to the GitHub Release and uploads it to the Chrome Web Store
+# and submits it for review (JEF-429). Approval publishes it to everyone, with
+# no further step (DEFAULT_PUBLISH; apps/extension/CLAUDE.md, "Releasing the
+# Clipper"). A Clipper release also runs `clipper-firefox-zip` (JEF-437), which
+# builds and checks the Firefox zips from the same tag and starts
+# clipper-amo.yml, where the AMO submission waits for a person's approval.
+# Nothing else is built or submitted to a store here.
 #
 # The packages and their starting versions are in release-please-config.json
 # and .release-please-manifest.json. None of the files a release PR touches
@@ -74,9 +76,11 @@ jobs:
   # from the pushed commit, and with the API URL from the CLIPPER_API_URL
   # repository variable rather than the default compiled into the source. The
   # store rejects a version number it has seen, so the checks run before the
-  # upload.
+  # upload. The package is submitted for review and, once approved, published
+  # with no further step (--chrome-publish-type DEFAULT_PUBLISH). Nobody reads
+  # the package first, so the guard step below is the only check on what grew.
   clipper-store:
-    name: Clipper zip and Web Store draft
+    name: Clipper zip and Web Store submission
     needs: release-please
     if: needs.release-please.outputs.clipper_released == 'true'
     runs-on: ubuntu-latest
@@ -95,9 +99,12 @@ jobs:
           VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
           # The full /graphql URL of the production API.
           VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
+          # The web app's origin, e.g. https://www.trakwyn.com (not the API's).
+          VITE_WEB_URL: ${{ vars.CLIPPER_WEB_URL }}
         run: |
           test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
           test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
+          test -n "$VITE_WEB_URL" || { echo "::error::Repository variable CLIPPER_WEB_URL is not set"; exit 1; }
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip
 
@@ -115,14 +122,46 @@ jobs:
           unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
             echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
           }
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_WEB_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
+          }
           echo "ZIP=$zip" >> "$GITHUB_ENV"
+
+      # A permission or content-script host added in an update disables the
+      # extension for every user until they re-approve it, and it is submitted
+      # for review below without a person looking at the package. So compare
+      # with the previous release's zip and stop if either grew.
+      - name: Check nothing was added since the previous release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prev=$(gh release list --limit 100 --json tagName -q '.[].tagName' \
+            | grep '^clipper-v' | { cat; echo "$TAG"; } | sort -uV \
+            | grep -B1 -x "$TAG" | head -n1)
+          if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
+            echo "::error::No earlier Clipper release to compare with; release this one by hand (apps/extension/CLAUDE.md)"; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/prev"
+          gh release download "$prev" --pattern '*-chrome.zip' --dir "$RUNNER_TEMP/prev" || {
+            echo "::error::$prev has no chrome zip to compare with; release this one by hand (apps/extension/CLAUDE.md)"; exit 1
+          }
+          old=$(unzip -p "$RUNNER_TEMP"/prev/*-chrome.zip manifest.json)
+          new=$(unzip -p "$ZIP" manifest.json)
+          added=$(jq -n --argjson old "$old" --argjson new "$new" '
+            def hosts: [.content_scripts[]?.matches[]?];
+            { permissions: (($new.permissions // []) - ($old.permissions // [])),
+              content_script_matches: ($new | hosts) - ($old | hosts) }
+            | with_entries(select(.value | length > 0))')
+          if [ "$added" != "{}" ]; then
+            echo "::error::Added since $prev: $added. Submit this one by hand, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
+          fi
 
       - name: Attach the zip to the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" "$ZIP" --clobber
 
-      - name: Upload to the Chrome Web Store as a draft
+      - name: Upload to the Chrome Web Store and submit for review
         env:
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
@@ -132,7 +171,7 @@ jobs:
           pnpm --filter @trakwyn/extension exec wxt submit \
             --chrome-api-version v2 \
             --chrome-zip "$GITHUB_WORKSPACE/$ZIP" \
-            --chrome-skip-submit-review
+            --chrome-publish-type DEFAULT_PUBLISH
 
   # The Firefox half of a Clipper release (JEF-437): builds the add-on and the
   # sources zip AMO asks for, from the same tag, checks the manifest and attaches

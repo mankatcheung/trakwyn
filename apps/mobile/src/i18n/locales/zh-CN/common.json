@@ -9,5 +9,7 @@
   "errorGeneric": "发生错误，请重试。",
   "errorNetwork": "无法连接服务器，请检查网络连接后重试。",
   "confirm": "确认",
-  "back": "返回"
+  "back": "返回",
+  "errorPlanRequired": "{{message}} 请在网页版管理你的套餐。",
+  "errorPlanRequiredDefault": "这是专业版功能"
 }

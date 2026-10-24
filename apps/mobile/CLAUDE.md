@@ -20,6 +20,7 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 - **Non-GraphQL callers** (the chat SSE stream) use `getValidAccessToken()` and `recoverFromUnauthorized()`.
 - **User-Agent:** `TrakwynMobile/<version> (<model>; <os>)`, which the API turns into the session label and records on its request spans as `app.client.version`, `device.model.name`, `os.name` and `os.version`. Change the format only together with `apps/api/src/infrastructure/device/trakwynClientUserAgent.ts`.
 - **Step-up:** `STEP_UP_REQUIRED` is handled by `src/auth/useStepUpReauth.tsx`.
+- **`PLAN_REQUIRED` (JEF-344):** `getErrorMessage` keeps the API's message, which names the Pro feature, and adds "Manage your plan on the web." There is no in-app purchase, so every screen that shows an error gets that state with no per-screen code.
 - **`expo start --web` is a dev preview only.** It keeps tokens in `localStorage`; shipping it would first require switching to the cookie mutations.
 
 ## Error reporting (JEF-349)

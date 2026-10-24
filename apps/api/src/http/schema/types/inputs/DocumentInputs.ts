@@ -5,6 +5,7 @@ export const RequestUploadUrlInput = builder.inputType('RequestUploadUrlInput', 
     applicationId: t.id({ required: true }),
     filename: t.string({ required: true }),
     mimeType: t.string({ required: true }),
+    sizeBytes: t.int({ required: false }),
   }),
 });
 

@@ -110,7 +110,7 @@ jobs:
       # variable out of the web build's environment. It is removed before the
       # tests, which expect the dev default (localhost) that a set variable
       # would override.
-      - run: echo 'VITE_API_URL=https://api.example.test/graphql' > apps/extension/.env
+      - run: printf 'VITE_API_URL=https://api.example.test/graphql\nVITE_WEB_URL=https://www.example.test\n' > apps/extension/.env
       - run: pnpm build
       # `pnpm build` builds the Clipper for Chrome; build the Safari bundle
       # too (JEF-386). Wrapping it in the Xcode app needs macOS, so that part

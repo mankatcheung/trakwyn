@@ -51,6 +51,8 @@ export class CachedApplicationRepository implements IApplicationRepository {
   async create(data: CreateApplicationData): Promise<Application> {
     const result = await this.inner.create(data);
     await this.cache.deleteByPrefix(CACHE_KEYS.appListPrefix(result.userId));
+    // The user row carries the application count (billing status reads it).
+    await this.cache.delete(CACHE_KEYS.userById(result.userId));
     return result;
   }
 
@@ -91,6 +93,8 @@ export class CachedApplicationRepository implements IApplicationRepository {
     if (existing) {
       await this.cache.deleteByPrefix(CACHE_KEYS.appListPrefix(existing.userId));
       await this.cache.delete(CACHE_KEYS.appTrashList(existing.userId));
+      // Its documents went with it, and so did their share of `documentBytes` (JEF-425).
+      await this.cache.delete(CACHE_KEYS.userById(existing.userId));
     }
   }
 

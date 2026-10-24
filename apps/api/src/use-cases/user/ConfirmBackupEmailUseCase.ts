@@ -6,10 +6,13 @@ import type {
   IConfirmBackupEmailUseCase,
   ConfirmBackupEmailInput,
 } from '#src/use-cases/user/IConfirmBackupEmailUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
   userRepository: IUserRepository;
   backupEmailVerificationTokenRepository: IBackupEmailVerificationTokenRepository;
+  transactionManager?: ITransactionManager;
 }
 
 export class ConfirmBackupEmailUseCase implements IConfirmBackupEmailUseCase {
@@ -28,14 +31,16 @@ export class ConfirmBackupEmailUseCase implements IConfirmBackupEmailUseCase {
       throw new UnauthorizedError('Invalid or expired confirmation link');
     }
 
-    await this.deps.userRepository.update(verificationToken.userId, {
-      backupEmail: verificationToken.newBackupEmail,
-      backupEmailVerifiedAt: new Date(),
-    });
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(verificationToken.userId, {
+        backupEmail: verificationToken.newBackupEmail,
+        backupEmailVerifiedAt: new Date(),
+      });
 
-    await this.deps.backupEmailVerificationTokenRepository.markUsed(verificationToken.id);
-    await this.deps.backupEmailVerificationTokenRepository.deleteAllForUser(
-      verificationToken.userId,
-    );
+      await this.deps.backupEmailVerificationTokenRepository.markUsed(verificationToken.id);
+      await this.deps.backupEmailVerificationTokenRepository.deleteAllForUser(
+        verificationToken.userId,
+      );
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { resolveDefaultApiUrl } from './apiUrls';
+import { resolveDefaultApiUrl, resolveDefaultWebUrl } from './apiUrls';
 
 /**
  * Centralised configuration and magic-value constants for the extension.
@@ -14,6 +14,15 @@ import { resolveDefaultApiUrl } from './apiUrls';
 export const DEFAULT_API_URL = resolveDefaultApiUrl({
   dev: import.meta.env.DEV,
   override: import.meta.env.VITE_API_URL,
+});
+
+/**
+ * The web app's origin: the local web app under `wxt` dev, otherwise
+ * `VITE_WEB_URL`, which every other build must set (JEF-428).
+ */
+export const DEFAULT_WEB_URL = resolveDefaultWebUrl({
+  dev: import.meta.env.DEV,
+  override: import.meta.env.VITE_WEB_URL,
 });
 
 /** `browser.storage` keys. */

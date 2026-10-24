@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { AuthenticateMcpRequestUseCase } from '#src/use-cases/auth/AuthenticateMcpRequestUseCase.js';
 import type { ValidateApiTokenUseCase } from '#src/use-cases/apiTokens/ValidateApiTokenUseCase.js';
 import type { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
+import {
+  makeEntitlementService,
+  makeFreeEntitlementService,
+} from '#src/__tests__/helpers/mocks/plans.js';
 
 function makeValidateApiTokenUseCase(
   execute?: ValidateApiTokenUseCase['execute'],
@@ -24,7 +28,10 @@ describe('AuthenticateMcpRequestUseCase', () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(
       vi.fn().mockResolvedValue({ sub: 'user-1', email: 'user@example.com', scope: 'full' }),
     );
-    const useCase = new AuthenticateMcpRequestUseCase({ validateApiTokenUseCase });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
+      validateApiTokenUseCase,
+    });
 
     const result = await useCase.execute('trakwyn_abc123');
 
@@ -38,7 +45,10 @@ describe('AuthenticateMcpRequestUseCase', () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(
       vi.fn().mockResolvedValue({ sub: 'user-1', email: 'user@example.com', scope: 'read' }),
     );
-    const useCase = new AuthenticateMcpRequestUseCase({ validateApiTokenUseCase });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
+      validateApiTokenUseCase,
+    });
 
     const result = await useCase.execute('trakwyn_readonly');
 
@@ -47,7 +57,10 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
   it('returns null for a JWT (MCP only accepts API tokens)', async () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase();
-    const useCase = new AuthenticateMcpRequestUseCase({ validateApiTokenUseCase });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
+      validateApiTokenUseCase,
+    });
 
     const result = await useCase.execute('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
 
@@ -57,7 +70,10 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
   it('returns null when the API token is not found', async () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(vi.fn().mockResolvedValue(null));
-    const useCase = new AuthenticateMcpRequestUseCase({ validateApiTokenUseCase });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
+      validateApiTokenUseCase,
+    });
 
     const result = await useCase.execute('trakwyn_unknown');
 
@@ -68,7 +84,10 @@ describe('AuthenticateMcpRequestUseCase', () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(
       vi.fn().mockRejectedValue(new Error('db error')),
     );
-    const useCase = new AuthenticateMcpRequestUseCase({ validateApiTokenUseCase });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
+      validateApiTokenUseCase,
+    });
 
     const result = await useCase.execute('trakwyn_broken');
 
@@ -83,6 +102,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
         vi.fn().mockResolvedValue({ sub: 'user-1', scope }),
       );
       const useCase = new AuthenticateMcpRequestUseCase({
+        entitlementService: makeEntitlementService(),
         validateApiTokenUseCase,
         validateMcpOAuthAccessTokenUseCase,
       });
@@ -101,6 +121,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
   it('sends an OAuth token to the OAuth validator, never to the API-token one', async () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase();
     const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
       validateApiTokenUseCase,
       validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
         vi.fn().mockResolvedValue(null),
@@ -113,8 +134,23 @@ describe('AuthenticateMcpRequestUseCase', () => {
     expect(validateApiTokenUseCase.execute).not.toHaveBeenCalled();
   });
 
+  it('rejects an OAuth grant whose owner is no longer on a plan with MCP access', async () => {
+    const entitlementService = makeFreeEntitlementService();
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService,
+      validateApiTokenUseCase: makeValidateApiTokenUseCase(),
+      validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
+        vi.fn().mockResolvedValue({ sub: 'user-1', scope: 'full' }),
+      ),
+    });
+
+    await expect(useCase.execute('trakwyn_mcp_access')).resolves.toBeNull();
+    expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
+  });
+
   it('rejects an OAuth token when no OAuth validator is wired in', async () => {
     const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService: makeEntitlementService(),
       validateApiTokenUseCase: makeValidateApiTokenUseCase(),
     });
 

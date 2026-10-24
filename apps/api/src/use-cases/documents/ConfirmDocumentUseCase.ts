@@ -1,8 +1,13 @@
-import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
 import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import {
   assertAllowedMimeType,
   assertValidSizeBytes,
@@ -16,6 +21,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   documentRepository: IDocumentRepository;
+  entitlementService: IEntitlementService;
   activityLogRepository?: IActivityLogRepository;
   storageProvider?: IStorageProvider;
   generateId: () => string;
@@ -43,6 +49,20 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
         throw new ForbiddenError('Forbidden');
       }
 
+      // The client says how big the file is, but only storage knows. A client
+      // that under-reports would otherwise slip past the storage limit.
+      if (this.deps.storageProvider) {
+        const stored = await this.deps.storageProvider.headObject(input.storageKey);
+        if (!stored) {
+          throw new ValidationError('The uploaded file was not found');
+        }
+        if (stored.size !== input.sizeBytes) {
+          throw new ValidationError('The uploaded file size does not match the reported size');
+        }
+      }
+
+      const { limits } = await this.deps.entitlementService.forUserId(input.userId);
+
       doc = await this.deps.documentRepository.create({
         id: this.deps.generateId(),
         applicationId: input.applicationId,
@@ -52,6 +72,7 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
         sizeBytes: input.sizeBytes,
         documentType: input.documentType,
         version: input.version,
+        storageLimitBytes: limits.documentBytes,
       });
     } catch (error) {
       // The client uploads directly to storage before this database step. Do

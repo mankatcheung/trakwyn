@@ -1,6 +1,6 @@
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
-import { document, jobApplication } from '../schema.js';
+import { document, jobApplication, user } from '../schema.js';
 import type { Document } from '#src/domain/document/Document.js';
 import type {
   IDocumentRepository,
@@ -9,6 +9,7 @@ import type {
 import { getClient, txStorage } from '../transactionContext.js';
 import { CONTENT_LIMITS, DEFAULTS } from '#src/use-cases/constants.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
+import { storageFullMessage } from '#src/use-cases/documents/storageQuota.js';
 
 export class DrizzleDocumentRepository implements IDocumentRepository {
   private readonly database: DrizzleDb;
@@ -64,12 +65,34 @@ export class DrizzleDocumentRepository implements IDocumentRepository {
             lt(jobApplication.documentCount, CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION),
           ),
         )
-        .returning({ id: jobApplication.id });
+        .returning({ id: jobApplication.id, userId: jobApplication.userId });
 
       if (!reserved) {
         throw new QuotaExceededError(
           `This application already has the maximum of ${CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION} documents`,
         );
+      }
+
+      // One conditional UPDATE, so two uploads confirmed together cannot both
+      // pass the limit. Throwing rolls back the document-count reservation above.
+      const limit = data.storageLimitBytes;
+      const [charged] = await client
+        .update(user)
+        .set({ documentBytes: sql`${user.documentBytes} + ${data.sizeBytes}` })
+        .where(
+          and(
+            eq(user.id, reserved.userId),
+            sql`${user.documentBytes} + ${data.sizeBytes} <= ${limit}`,
+          ),
+        )
+        .returning({ id: user.id });
+
+      if (!charged) {
+        const [owner] = await client
+          .select({ used: user.documentBytes })
+          .from(user)
+          .where(eq(user.id, reserved.userId));
+        throw new QuotaExceededError(storageFullMessage(owner?.used ?? 0, limit));
       }
 
       const [row] = await client
@@ -98,15 +121,25 @@ export class DrizzleDocumentRepository implements IDocumentRepository {
       const [deleted] = await client
         .delete(document)
         .where(eq(document.id, id))
-        .returning({ applicationId: document.applicationId });
+        .returning({ applicationId: document.applicationId, sizeBytes: document.sizeBytes });
       if (!deleted) return;
 
-      await client
+      const [owner] = await client
         .update(jobApplication)
         .set({
           documentCount: sql`case when ${jobApplication.documentCount} > 0 then ${jobApplication.documentCount} - 1 else 0 end`,
         })
-        .where(eq(jobApplication.id, deleted.applicationId));
+        .where(eq(jobApplication.id, deleted.applicationId))
+        .returning({ userId: jobApplication.userId });
+
+      if (owner) {
+        await client
+          .update(user)
+          .set({
+            documentBytes: sql`case when ${user.documentBytes} > ${deleted.sizeBytes} then ${user.documentBytes} - ${deleted.sizeBytes} else 0 end`,
+          })
+          .where(eq(user.id, owner.userId));
+      }
     };
 
     const ambient = txStorage.getStore();
