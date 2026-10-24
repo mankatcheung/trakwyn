@@ -15,3 +15,12 @@ export const PlanSourceEnum = builder.enumType('PlanSource', {
     grant: { value: 'grant' },
   },
 });
+
+export const CheckoutPlanEnum = builder.enumType('CheckoutPlan', {
+  description: 'What can be bought. The server picks the price, including any founder price.',
+  values: {
+    monthly: { value: 'monthly' },
+    pass3Months: { value: 'pass_3m' },
+    pass6Months: { value: 'pass_6m' },
+  },
+});

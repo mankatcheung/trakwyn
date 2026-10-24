@@ -10,7 +10,8 @@ import {
   type UsageLevel,
 } from '#/lib/billingStatus';
 import { formatStorageSize } from '#/lib/storageUsage';
-import { Badge, Card, ProgressBar } from '@trakwyn/ui';
+import { useBillingPortal, useCheckout, type CheckoutPlan } from '#/lib/billingCheckout';
+import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.
 const TRACK = 'bg-gray-200! dark:bg-gray-700!';
@@ -71,6 +72,7 @@ export function SettingsPlanPage() {
   return (
     <div className="space-y-8">
       <PlanSummary status={status} />
+      {status.enforced && <PlanActions status={status} />}
       <Usage status={status} />
       <Comparison status={status} />
     </div>
@@ -97,8 +99,73 @@ function PlanSummary({ status }: { status: BillingStatus }) {
           message.date ? { date: formatDate(message.date, { dateStyle: 'medium' }) } : {},
         )}
       </p>
-      {status.enforced && status.plan === 'free' && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.checkoutSoon')}</p>
+    </Card>
+  );
+}
+
+const PURCHASES: Array<{ plan: CheckoutPlan; labelKey: string }> = [
+  { plan: 'monthly', labelKey: 'plan.buyMonthly' },
+  { plan: 'pass3Months', labelKey: 'plan.buyPass3' },
+  { plan: 'pass6Months', labelKey: 'plan.buyPass6' },
+];
+
+/** Buy Pro, or manage what was bought. Only shown where plans are enforced. */
+function PlanActions({ status }: { status: BillingStatus }) {
+  const { t } = useLocale();
+  const checkout = useCheckout();
+  const portal = useBillingPortal();
+  const isSubscriber = status.plan === 'pro' && status.planSource === 'subscription';
+  const hasPaid = status.planSource === 'subscription' || status.planSource === 'pass';
+
+  return (
+    <Card className="space-y-4 p-5">
+      {!isSubscriber && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t('plan.upgradeTitle')}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('plan.upgradeDescription')}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {PURCHASES.map(({ plan, labelKey }) => (
+              <Button
+                key={plan}
+                variant={plan === 'monthly' ? 'primary' : 'secondary'}
+                disabled={checkout.isPending}
+                onClick={() => checkout.mutate(plan)}
+              >
+                {t(labelKey)}
+              </Button>
+            ))}
+          </div>
+          {status.planSource === 'pass' && status.plan === 'pro' && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.passForfeitNote')}</p>
+          )}
+          {checkout.isError && <Alert tone="error">{t('plan.checkoutFailed')}</Alert>}
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
+        </div>
+      )}
+      {hasPaid && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t('plan.manageTitle')}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('plan.manageDescription')}
+            </p>
+          </div>
+          <Button variant="secondary" disabled={portal.isPending} onClick={() => portal.mutate()}>
+            {t('plan.manageButton')}
+          </Button>
+          {portal.isError && <Alert tone="error">{t('plan.portalFailed')}</Alert>}
+          {isSubscriber && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
+          )}
+        </div>
       )}
     </Card>
   );

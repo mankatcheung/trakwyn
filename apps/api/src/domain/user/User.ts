@@ -25,6 +25,10 @@ export interface User {
   /** When a Pro pass or trial ends; null for Free and for an active subscription. */
   planExpiresAt: Date | null;
   planSource: PlanSource | null;
+  /** The payment provider's customer id (JEF-426); null until the first payment. */
+  billingCustomerId: string | null;
+  /** The active subscription at the payment provider (JEF-426); null for a pass or no payment. */
+  billingSubscriptionId: string | null;
   totpSecret: string | null;
   totpEnabled: boolean;
   /** Which of the user's configured LlmApiKey providers is used for automatic AI features. */

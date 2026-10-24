@@ -75,6 +75,10 @@ export const ENV = {
   CAPTCHA_PROVIDER: 'CAPTCHA_PROVIDER',
   /** Cloudflare Turnstile's secret key — the server half of the widget's site key. */
   TURNSTILE_SECRET_KEY: 'TURNSTILE_SECRET_KEY',
+  /** `fake` | `polar`. Unset means `fake` outside production; production must name one (JEF-426). */
+  BILLING_PROVIDER: 'BILLING_PROVIDER',
+  /** ISO date billing went live. Founder pricing counts 60 days from the later of this and signup. */
+  BILLING_LIVE_FROM: 'BILLING_LIVE_FROM',
   VAPID_PUBLIC_KEY: 'VAPID_PUBLIC_KEY',
   VAPID_PRIVATE_KEY: 'VAPID_PRIVATE_KEY',
   VAPID_SUBJECT: 'VAPID_SUBJECT',
@@ -143,6 +147,16 @@ export const CAPTCHA = {
   VERIFY_TIMEOUT_MS: 5_000,
   /** Turnstile tokens are at most 2048 characters; anything longer is not one. */
   MAX_TOKEN_LENGTH: 2048,
+} as const;
+
+/** Payment provider selection (JEF-426). */
+export const BILLING_ADAPTER = {
+  PROVIDER: { FAKE: 'fake', POLAR: 'polar' },
+  /** The fake provider signs its webhooks with this; it guards nothing real. */
+  FAKE_WEBHOOK_SECRET: 'fake-billing-webhook-secret',
+  FAKE_SIGNATURE_HEADER: 'x-fake-signature',
+  /** The largest webhook body accepted. Provider events are a few KB. */
+  WEBHOOK_BODY_LIMIT_BYTES: 256 * 1024,
 } as const;
 
 /** HTTP Authorization header. */

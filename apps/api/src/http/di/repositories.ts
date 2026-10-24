@@ -50,6 +50,7 @@ import { DrizzleMcpOAuthClientRepository } from '#src/infrastructure/db/reposito
 import { DrizzleMcpOAuthAuthorizationCodeRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthAuthorizationCodeRepository.js';
 import { DrizzleMcpOAuthRefreshTokenRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthRefreshTokenRepository.js';
 import { DrizzleMcpOAuthGrantRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthGrantRepository.js';
+import { DrizzleBillingEventRepository } from '#src/infrastructure/db/repositories/DrizzleBillingEventRepository.js';
 import { DrizzleShareLinkRepository } from '#src/infrastructure/db/repositories/DrizzleShareLinkRepository.js';
 import { DrizzleNotificationRepository } from '#src/infrastructure/db/repositories/DrizzleNotificationRepository.js';
 import { DrizzleLlmApiKeyRepository } from '#src/infrastructure/db/repositories/DrizzleLlmApiKeyRepository.js';
@@ -130,6 +131,9 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   mockInterviewQuestionRepository: asClass(CachedMockInterviewQuestionRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  billingEventRepository: asClass(DrizzleBillingEventRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   userRepository: asClass(CachedUserRepository, { lifetime: Lifetime.SINGLETON }),
