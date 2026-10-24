@@ -28,6 +28,27 @@ Create these in the sandbox first, then again in live. The IDs go in the API's e
 - **A pass is a one-off product, and Polar gives it no duration.** Trakwyn works out the expiry itself from the order, using the months of the product id below. Never describe a pass as expiring in Polar.
 - **Prices are per environment.** The sandbox and production have separate products, tokens and webhook secrets. Nothing carries over.
 
+### Creating the products from a file
+
+`import-products.mjs` creates the products in a JSON file through Polar's API, so the sandbox and production are built from the same file. It needs only Node and an organization access token for the environment:
+
+```bash
+cd infra/polar
+cp products.example.json products.json     # edit prices and names; products.json is yours
+export POLAR_ACCESS_TOKEN=...              # the token for the environment below
+
+node import-products.mjs products.json --server sandbox            # dry run: lists what it would create
+node import-products.mjs products.json --server sandbox --apply    # creates them
+```
+
+It prints the `POLAR_PRODUCT_*=<id>` lines to paste into `apps/api/.env` or `plain_env`. Notes:
+
+- **Dry run is the default, and `--server` has no default.** The token is read from the environment only and is never printed.
+- **Re-running is safe.** A product that already exists (same `metadata.trakwyn_key`, else the same name; archived ones are skipped) is left alone, never updated. To change a price, edit the product in Polar, or archive it and re-run.
+- **`prices` is sent to Polar exactly as written**, so any shape the API accepts works. `key` and `envVar` are ours: `key` is stored in the product's metadata, and `envVar` names the line printed for it. A pass has no `recurring_interval`, which makes it a one-off product.
+- **The example is USD only.** Polar's docs do not show how to attach EUR and GBP prices through the API (they describe a default-currency price plus others enabled per product). Create the products with USD, then enable the other currencies in the dashboard; once you know the API shape, add those price objects to the file. Tax display (`tax_behavior`) is left to the organization default, which the docs say is tax-inclusive in the UK and EU. Confirm it on a sandbox checkout.
+- Tests: `node --test infra/polar/import-products.test.mjs` (not run in CI).
+
 ### Settings
 
 | Setting                         | Kind   | Where                                        |
