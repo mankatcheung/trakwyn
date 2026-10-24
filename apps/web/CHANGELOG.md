@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.5.0...web-v0.6.0) (2026-10-24)
+
+
+### Features
+
+* take payment for Pro behind a provider-neutral billing port (JEF-426) ([#1049](https://github.com/mankatcheung/trakwyn/issues/1049)) ([7a45437](https://github.com/mankatcheung/trakwyn/commit/7a45437b840df8e4036187529a92796ce04495e8))
+
 ## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.4.0...web-v0.5.0) (2026-10-23)
 
 
