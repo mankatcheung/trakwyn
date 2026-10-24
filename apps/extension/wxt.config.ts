@@ -25,6 +25,21 @@ export default defineConfig({
   // Unset, WXT takes the first free port from 3000, which is the web app's
   // whenever the extension starts first or alone. The API has 3001.
   dev: { server: { port: 3002 } },
+  zip: {
+    // AMO asks for the source of a minified bundle (JEF-423). The archive is
+    // rooted at the monorepo so the lockfile that pins the build travels with
+    // it; the Xcode wrapper and the rest of the monorepo are not part of it.
+    sourcesRoot: '../..',
+    includeSources: [
+      'package.json',
+      'pnpm-lock.yaml',
+      'pnpm-workspace.yaml',
+      '.npmrc',
+      'tsconfig.base.json',
+      'apps/extension/**',
+    ],
+    excludeSources: ['apps/extension/safari/**'],
+  },
   manifest: ({ browser, command }) => buildManifest({ browser, command }),
   hooks: {
     // A build or zip has no default API or web URL (apiUrls.ts), so refuse to produce

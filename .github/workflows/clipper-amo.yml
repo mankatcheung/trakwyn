@@ -1,0 +1,78 @@
+name: Clipper on Firefox Add-ons
+
+# Submits a Clipper release to addons.mozilla.org (JEF-437). release.yml's
+# clipper-firefox-zip job builds the add-on and its sources zip from the
+# release tag, checks the manifest, attaches both to the GitHub Release and
+# starts this workflow with that tag. Run it by hand (Actions > Clipper on
+# Firefox Add-ons > Run workflow) to submit a tag again.
+#
+# AMO has no draft or deferred publishing: a listed version goes to review,
+# and an approved one goes live with no staged rollout. So the job runs in the
+# `amo` environment, whose required reviewer must approve it before anything
+# reaches AMO. That approval is the only gate; do not remove the environment.
+# It lives here, not in release.yml, because release.yml runs under a single
+# concurrency group and a job waiting there would hold every later release.
+#
+# One-time setup (apps/extension/CLAUDE.md, "Firefox"): the FIREFOX_JWT_ISSUER
+# and FIREFOX_JWT_SECRET secrets from AMO's Developer Hub (Manage API Keys),
+# and the `amo` environment with a required reviewer.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Clipper release tag to submit, e.g. clipper-v1.2.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  clipper-amo:
+    name: Submit to Firefox Add-ons
+    runs-on: ubuntu-latest
+    environment: amo
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Check the tag
+        run: |
+          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
+          }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: ./.github/actions/setup-project
+
+      # The zips release.yml checked, not a rebuild: what was checked is what
+      # AMO gets.
+      - name: Download the zips from the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --pattern '*-firefox.zip' --pattern '*-sources.zip' --dir amo
+          echo "ZIP=$(ls "$GITHUB_WORKSPACE"/amo/*-firefox.zip)" >> "$GITHUB_ENV"
+          echo "SOURCES_ZIP=$(ls "$GITHUB_WORKSPACE"/amo/*-sources.zip)" >> "$GITHUB_ENV"
+
+      # Listed, so it goes to review and on to the public listing once approved.
+      # Desktop only: Firefox for Android has not been tested, and its first
+      # version that reads data_collection_permissions (142) is newer than the
+      # manifest's strict_min_version.
+      - name: Submit to AMO
+        env:
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: |
+          pnpm --filter @trakwyn/extension exec wxt submit \
+            --firefox-zip "$ZIP" \
+            --firefox-sources-zip "$SOURCES_ZIP" \
+            --firefox-extension-id clipper@trakwyn.com \
+            --firefox-channel listed \
+            --firefox-compatibility firefox

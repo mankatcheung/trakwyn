@@ -11,8 +11,8 @@ export default fp(async function corsPlugin(fastify: FastifyInstance) {
   await fastify.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      // Allow browser extension requests: the Trakwyn Clipper in Chrome, and
-      // in Safari (JEF-386)
+      // Allow browser extension requests: the Trakwyn Clipper in Chrome,
+      // Safari (JEF-386) and Firefox (JEF-423)
       if (EXTENSION_ORIGIN_SCHEMES.some((scheme) => origin.startsWith(scheme))) {
         return cb(null, true);
       }

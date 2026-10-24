@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildManifest } from '../manifest';
+import { listingSection } from './support/listingSection';
 
 /**
  * Holds the Web Store listing copy (`store/listing.md`, JEF-416) to the
@@ -15,21 +16,7 @@ const listing = readFileSync(join(STORE_DIR, 'listing.md'), 'utf8');
 const TITLE_MAX = 45;
 const SHORT_DESCRIPTION_MAX = 132;
 
-/** The text under a heading, up to the next heading of the same or a higher level. */
-function section(heading: string): string {
-  const level = heading.match(/^#+/)?.[0].length ?? 1;
-  const lines = listing.split('\n');
-  const start = lines.indexOf(heading);
-  if (start === -1) throw new Error(`listing.md has no "${heading}" section`);
-  const end = lines.findIndex((line, i) => {
-    const hashes = i > start ? line.match(/^(#+) /)?.[1].length : undefined;
-    return hashes !== undefined && hashes <= level;
-  });
-  return lines
-    .slice(start + 1, end === -1 ? undefined : end)
-    .join('\n')
-    .trim();
-}
+const section = (heading: string): string => listingSection(listing, heading);
 
 function pngSize(path: string): { width: number; height: number; colorType: number } {
   const bytes = readFileSync(path);

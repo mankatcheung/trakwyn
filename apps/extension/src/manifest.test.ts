@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { API_URLS } from './apiUrls';
-import { buildManifest, WEB_STORE_PUBLIC_KEY } from './manifest';
+import {
+  buildManifest,
+  FIREFOX_ADDON_ID,
+  FIREFOX_MIN_VERSION,
+  WEB_STORE_PUBLIC_KEY,
+} from './manifest';
 
 const WEB_STORE_EXTENSION_ID = 'pnpgngnojencbggokjhpfhmliijakmhe';
 
@@ -13,16 +18,19 @@ describe('buildManifest host permissions', () => {
     expect(manifest.host_permissions).toEqual([DEV_HOST_PERMISSION]);
   });
 
-  it.each(['chrome', 'safari'])('asks a %s production build for no host permission', (browser) => {
-    const manifest = buildManifest({ browser, command: 'build' });
+  it.each(['chrome', 'safari', 'firefox'])(
+    'asks a %s production build for no host permission',
+    (browser) => {
+      const manifest = buildManifest({ browser, command: 'build' });
 
-    // The API answers extension origins through CORS, and the content script's
-    // own `matches` cover the job boards. A host permission added in an update
-    // disables the extension until each user re-approves it, so the first store
-    // version must not carry a dev grant or a duplicate of those.
-    expect(manifest.host_permissions ?? []).toEqual([]);
-    expect(JSON.stringify(manifest)).not.toContain('localhost');
-  });
+      // The API answers extension origins through CORS, and the content script's
+      // own `matches` cover the job boards. A host permission added in an update
+      // disables the extension until each user re-approves it, so the first store
+      // version must not carry a dev grant or a duplicate of those.
+      expect(manifest.host_permissions ?? []).toEqual([]);
+      expect(JSON.stringify(manifest)).not.toContain('localhost');
+    },
+  );
 });
 
 describe('buildManifest permissions', () => {
@@ -36,6 +44,55 @@ describe('buildManifest permissions', () => {
     const { permissions } = buildManifest({ browser: 'safari', command: 'build' });
 
     expect(permissions).toEqual(['storage', 'activeTab', 'tabs']);
+  });
+
+  it('signs in in a tab on Firefox, so it asks for tabs and not identity', () => {
+    // Firefox only exposes `browser.identity` when the manifest asks for it, so
+    // leaving `identity` out sends it down the same tab flow as Safari. Its
+    // `launchWebAuthFlow` redirect (`*.extensions.allizom.org`) is not one the
+    // API will redirect to.
+    const { permissions } = buildManifest({ browser: 'firefox', command: 'build' });
+
+    expect(permissions).toEqual(['storage', 'activeTab', 'tabs']);
+  });
+});
+
+describe('buildManifest Firefox settings', () => {
+  const gecko = () =>
+    (
+      buildManifest({ browser: 'firefox', command: 'build' }) as {
+        browser_specific_settings?: {
+          gecko?: {
+            id?: string;
+            strict_min_version?: string;
+            data_collection_permissions?: { required?: string[]; optional?: string[] };
+          };
+        };
+      }
+    ).browser_specific_settings?.gecko;
+
+  it('pins the add-on ID, which is permanent once published', () => {
+    expect(gecko()?.id).toBe(FIREFOX_ADDON_ID);
+  });
+
+  it('requires a Firefox that knows data_collection_permissions', () => {
+    expect(gecko()?.strict_min_version).toBe(FIREFOX_MIN_VERSION);
+  });
+
+  it('declares the data the store listing discloses', () => {
+    // AMO requires the declaration for a new add-on. It matches the Web Store
+    // data-usage answers in store/listing.md and the privacy policy.
+    expect(gecko()?.data_collection_permissions?.required).toEqual([
+      'personallyIdentifyingInfo',
+      'authenticationInfo',
+      'websiteContent',
+    ]);
+  });
+
+  it.each(['chrome', 'safari'])('leaves a %s build without Gecko settings', (browser) => {
+    expect(buildManifest({ browser, command: 'build' })).not.toHaveProperty(
+      'browser_specific_settings',
+    );
   });
 });
 
@@ -58,7 +115,8 @@ describe('buildManifest key', () => {
     expect(id).toBe(WEB_STORE_EXTENSION_ID);
   });
 
-  it('leaves Safari without a key', () => {
-    expect(buildManifest({ browser: 'safari', command: 'build' }).key).toBeUndefined();
+  it.each(['safari', 'firefox'])('leaves %s without a key', (browser) => {
+    // The key is the Web Store's; Firefox derives its ID from the Gecko one.
+    expect(buildManifest({ browser, command: 'build' }).key).toBeUndefined();
   });
 });

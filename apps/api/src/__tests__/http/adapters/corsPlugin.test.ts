@@ -88,6 +88,7 @@ describe('corsPlugin', () => {
     for (const origin of [
       'chrome-extension://abcdef',
       'safari-web-extension://0F2A6B1C-3D4E-4F50-8A9B-C0D1E2F3A4B5',
+      'moz-extension://5b6c3e0e-8a1f-4f1d-9d5e-2c7a9b1e4f10',
       'https://trakwyn-preview.vercel.app',
     ]) {
       const res = await app.inject({ method: 'GET', url: '/probe', headers: { origin } });
