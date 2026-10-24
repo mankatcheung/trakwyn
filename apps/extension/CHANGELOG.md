@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.1.0...clipper-v1.1.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **extension:** open saved applications on the web app, not the API host (JEF-428) ([#1043](https://github.com/mankatcheung/trakwyn/issues/1043)) ([4e76f2f](https://github.com/mankatcheung/trakwyn/commit/4e76f2f70ee80d610eb55f7e1db9ff5c2b6c2682))
+
 ## [1.1.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.0.0...clipper-v1.1.0) (2026-10-22)
 
 
