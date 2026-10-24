@@ -22,8 +22,10 @@ name: Release
 # builds the zip from the tag, checks the manifest, attaches the zip to the
 # GitHub Release and uploads it to the Chrome Web Store as a draft. It never
 # submits for review or publishes; a person does that in the dashboard
-# (apps/extension/CLAUDE.md, "Releasing the Clipper"). Nothing else is built or
-# submitted to a store here.
+# (apps/extension/CLAUDE.md, "Releasing the Clipper"). A Clipper release also
+# runs `clipper-firefox-zip` (JEF-437), which builds and checks the Firefox zips
+# from the same tag and starts clipper-amo.yml, where the AMO submission waits
+# for a person's approval. Nothing else is built or submitted to a store here.
 #
 # The packages and their starting versions are in release-please-config.json
 # and .release-please-manifest.json. None of the files a release PR touches
@@ -131,3 +133,81 @@ jobs:
             --chrome-api-version v2 \
             --chrome-zip "$GITHUB_WORKSPACE/$ZIP" \
             --chrome-skip-submit-review
+
+  # The Firefox half of a Clipper release (JEF-437): builds the add-on and the
+  # sources zip AMO asks for, from the same tag, checks the manifest and attaches
+  # both to the GitHub Release. It does not submit: AMO has no draft or deferred
+  # publishing (an approved listed version goes live), so the submission is
+  # clipper-amo.yml, which waits in the `amo` environment for a person to
+  # approve it. It is a separate workflow because this one runs under a single
+  # concurrency group, and a run waiting for a reviewer here would hold every
+  # later release until someone approved it. A workflow_dispatch is one of the
+  # two events GITHUB_TOKEN may start.
+  clipper-firefox-zip:
+    name: Clipper Firefox zips
+    needs: release-please
+    if: needs.release-please.outputs.clipper_released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      TAG: ${{ needs.release-please.outputs.clipper_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Build the Firefox zips
+        env:
+          # The public phc_ project key (infra/posthog), not a secret.
+          VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
+          # The full /graphql URL of the production API.
+          VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
+        run: |
+          test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
+          test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
+          rm -f apps/extension/.env
+          pnpm --filter @trakwyn/extension zip:firefox
+
+      - name: Check the Firefox manifest
+        run: |
+          zip=$(ls apps/extension/.output/*-firefox.zip)
+          sources=$(ls apps/extension/.output/*-sources.zip)
+          manifest=$(unzip -p "$zip" manifest.json)
+          version=$(jq -r .version <<<"$manifest")
+          if [ "clipper-v$version" != "$TAG" ]; then
+            echo "::error::Manifest version $version does not match tag $TAG"; exit 1
+          fi
+          if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
+            echo "::error::Manifest has host_permissions"; exit 1
+          fi
+          # The Chrome key belongs to the Web Store listing only.
+          if jq -e 'has("key")' <<<"$manifest" >/dev/null; then
+            echo "::error::Firefox manifest has the Chrome key"; exit 1
+          fi
+          # A grown permission list prompts every installed copy on update.
+          jq -e '.permissions == ["storage", "activeTab", "tabs"]' <<<"$manifest" >/dev/null || {
+            echo "::error::Firefox permissions changed: $(jq -c .permissions <<<"$manifest")"; exit 1
+          }
+          # The add-on ID is permanent: a different one is a different add-on.
+          jq -e '.browser_specific_settings.gecko.id == "clipper@trakwyn.com"' <<<"$manifest" >/dev/null || {
+            echo "::error::Gecko ID is not clipper@trakwyn.com"; exit 1
+          }
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+          }
+          echo "ZIP=$zip" >> "$GITHUB_ENV"
+          echo "SOURCES_ZIP=$sources" >> "$GITHUB_ENV"
+
+      - name: Attach the zips to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$ZIP" "$SOURCES_ZIP" --clobber
+
+      - name: Start the AMO submission (waits for approval)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run clipper-amo.yml --ref "${{ github.event.repository.default_branch }}" -f tag="$TAG"
