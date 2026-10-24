@@ -32,6 +32,15 @@ export class DrizzleUserRepository implements IUserRepository {
     return row ? this.toEntity(row) : null;
   }
 
+  async findByBillingCustomerId(customerId: string): Promise<User | null> {
+    const [row] = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.billingCustomerId, customerId))
+      .limit(1);
+    return row ? this.toEntity(row) : null;
+  }
+
   async findAll(): Promise<User[]> {
     const rows = await this.db.select().from(user).orderBy(asc(user.createdAt));
     return rows.map((r) => this.toEntity(r));
@@ -75,6 +84,8 @@ export class DrizzleUserRepository implements IUserRepository {
       plan?: Plan;
       planExpiresAt?: Date | null;
       planSource?: PlanSource | null;
+      billingCustomerId?: string | null;
+      billingSubscriptionId?: string | null;
     },
   ): Promise<User> {
     const [row] = await this.db
@@ -114,6 +125,8 @@ export class DrizzleUserRepository implements IUserRepository {
       plan: row.plan as Plan,
       planExpiresAt: row.planExpiresAt,
       planSource: row.planSource as PlanSource | null,
+      billingCustomerId: row.billingCustomerId,
+      billingSubscriptionId: row.billingSubscriptionId,
       totpSecret: row.totpSecret,
       totpEnabled: row.totpEnabled,
       defaultLlmProvider: row.defaultLlmProvider,

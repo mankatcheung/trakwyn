@@ -51,6 +51,8 @@ export const ROUTES = {
   DOCUMENT_FILE: DOCUMENT_FILE_ROUTE.PATH,
   DIGEST_SEND: '/admin/digest/send',
   TRASH_PURGE: '/admin/trash/purge',
+  /** The payment provider's webhook (JEF-426). Authenticated by its signature, not a session. */
+  BILLING_WEBHOOK: '/billing/webhook',
   REMINDERS_SEND: '/admin/reminders/send',
   PUSH_NOTIFICATIONS_SEND: '/admin/push-notifications/send',
   VAPID_PUBLIC_KEY: '/vapid-public-key',

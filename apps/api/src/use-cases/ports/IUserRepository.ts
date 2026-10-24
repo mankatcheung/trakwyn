@@ -5,6 +5,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByBackupEmail(email: string): Promise<User | null>;
+  findByBillingCustomerId(customerId: string): Promise<User | null>;
   findAll(): Promise<User[]>;
   create(data: {
     id: string;
@@ -40,6 +41,8 @@ export interface IUserRepository {
       plan?: Plan;
       planExpiresAt?: Date | null;
       planSource?: PlanSource | null;
+      billingCustomerId?: string | null;
+      billingSubscriptionId?: string | null;
     },
   ): Promise<User>;
   delete(id: string): Promise<void>;

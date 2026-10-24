@@ -47,6 +47,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'Notification -> User': 'cascade',
   'OAuthAccount -> User': 'cascade',
   'Offer -> JobApplication': 'cascade',
+  'BillingEvent -> User': 'cascade', // a processed-event marker has no meaning once its user is erased
   'PasswordResetToken -> User': 'cascade',
   'PushSubscription -> User': 'cascade',
   'ResumeAtsScore -> Document': 'cascade', // a score for a file that no longer exists

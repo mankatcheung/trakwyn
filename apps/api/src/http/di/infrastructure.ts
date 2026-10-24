@@ -2,6 +2,8 @@ import { nanoid } from 'nanoid';
 import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { db } from '#src/infrastructure/db/client.js';
+import { buildBillingProvider } from '#src/infrastructure/billing/buildBillingProvider.js';
+import { parseBillingLiveFrom } from '#src/infrastructure/billing/parseBillingLiveFrom.js';
 import { buildCaptchaVerifier } from '#src/infrastructure/captcha/buildCaptchaVerifier.js';
 
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
@@ -143,6 +145,11 @@ export const infrastructure = {
   // Awilix's proxy injection would hand it the cradle instead — resolving
   // `options.strict` as a dependency named "strict".
   // asFunction so a mis-set CAPTCHA_PROVIDER throws on first use rather than at import.
+  // asFunction so a missing or mis-set BILLING_PROVIDER throws on first use (JEF-426).
+  billingProvider: asFunction(() => buildBillingProvider(), { lifetime: Lifetime.SINGLETON }),
+  billingLiveFrom: asFunction(() => parseBillingLiveFrom(process.env[ENV.BILLING_LIVE_FROM]), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   captchaVerifier: asFunction(({ logger }: Cradle) => buildCaptchaVerifier(logger), {
     lifetime: Lifetime.SINGLETON,
   }),

@@ -54,7 +54,7 @@ Access tokens are otherwise stateless, so every revocation also writes the `sid`
 
 ## Plans and entitlements (JEF-344)
 
-Free and Pro. This is the tiering half; taking payment is JEF-426, which sets the same user fields from a provider's webhook.
+Free and Pro. This is the tiering half; taking payment is JEF-426 (see Billing below), which sets the same user fields from a provider's webhook.
 
 - **State vs policy.** The user row holds only `plan` (`free`/`pro`), `planExpiresAt` and `planSource` (`subscription`, `pass`, `trial`, `grant`). What a plan allows is code: `PLAN_LIMITS` and `PLAN_FEATURES` in `use-cases/constants.ts`, whose Free column _is_ `CONTENT_LIMITS`. `resolveEntitlements(plan, planExpiresAt, now)` (`use-cases/plans/`) is pure, and `effectivePlan` (domain) reads an expired pass or trial as Free, so nothing has to run to downgrade a user. Data is never touched by a downgrade: a user over a cap can read, export and delete, not add.
 - **`PLANS_ENFORCED` (default off) is read in one place**, `EntitlementService`. Not enforced means every Pro feature on and no AI allowance, **but the caps that already existed stay** (50 applications, 100 MB): lifting them would loosen a deployed system the moment this shipped. Every self-hosted instance runs this way. No use case checks the flag.
@@ -67,6 +67,17 @@ Free and Pro. This is the tiering half; taking payment is JEF-426, which sets th
 - **The user row is cached** (`CachedUserRepository`, five minutes). The repositories bust it on create/delete of an application and a document, and on `update`. A change made by the operator command goes around the cache, so it shows within five minutes.
 - **Operator command:** `pnpm --filter @trakwyn/api plan set --email <email> --plan <free|pro> [--days <n>]` records a `grant`; `plan grant-trial [--days <n>] [--dry-run]` gives every user who has never had a plan a Pro `trial` (30 days by default, `PLAN_TRIAL.LAUNCH_DAYS`), so it is run on the day enforcement is switched on, not in a migration, and a second run grants nothing twice. Both write to `DATABASE_URL` directly (`src/plan.ts`).
 - **Launch order:** ship with enforcement off, build payment (JEF-426), then set `PLANS_ENFORCED=true` and run `plan grant-trial`.
+
+## Billing (JEF-426)
+
+The payment side of the plans above. A **merchant of record** is the seller, so the owner (a UK sole trader) does no VAT or sales-tax filing. Polar is the chosen provider.
+
+- **Port and adapters:** `IBillingProvider` (`use-cases/ports/`): `createCheckoutSession`, `createPortalSession` and `parseWebhook` (signature check over the raw bytes, then a provider-neutral `BillingWebhookEvent`). `FakeBillingProvider` is the only adapter so far; the Polar one waits until Polar has accepted Trakwyn and its sandbox is confirmed to cover subscriptions and passes. `BILLING_PROVIDER` is `fake` or `polar`; unset means fake outside production and a throw on first use in production. Registered with `asFunction`, so a missing key fails on first use. Nothing outside `infrastructure/billing/` names a provider.
+- **The client names a plan, the API picks the price.** `CreateCheckoutSessionUseCase` turns `monthly` into `founder_monthly` when `now - max(createdAt, BILLING_LIVE_FROM) < 60 days`, so the founder price cannot be asked for or stacked. An active subscriber is refused (`CONFLICT`) rather than sold a pass or a second subscription; a pass holder may subscribe (the pass is forfeited, the Plan page says so) or buy another pass (it extends).
+- **The webhook is the only thing that sets a paid plan.** `POST /billing/webhook` (`http/routes/billing.routes.ts`) sits in its own plugin scope with a buffer parser, because the signature is over the bytes sent and the app-wide JSON parser would re-encode them. `HandleBillingWebhookUseCase` records the provider event id in `BillingEvent` _in the same transaction_ as the plan change: a replay finds the id and does nothing, a failure leaves neither so the provider's retry applies it once. A bad signature is 401; any other failure is 500 so the provider redelivers. Rules: subscription starts → `pro`/`subscription`/no expiry; pass → `pro`/`pass`/`max(now, current pass expiry) + 3 or 6 months`; cancellation → `planExpiresAt = end of paid period` (only for the subscription the user is on); refund or chargeback → free now (only when it reverses what the user is on). An event naming no known user is recorded and ignored, so it is not retried forever.
+- **User columns** `billingCustomerId` and `billingSubscriptionId` are provider-neutral. `BillingEvent` cascades with its `User`.
+- **Web:** checkout and the portal are on the Plan page (`/settings/plan`), shown only where `PLANS_ENFORCED` is on. The mutations are `createCheckoutSession(plan)` and `createBillingPortalSession`; both return a `url` to send the browser to.
+- **Dev:** with the fake provider, "checkout" returns to the Plan page with `?fake_checkout=<product>`; to complete a purchase post a body signed with `signFakeWebhook` (`infrastructure/billing/FakeBillingProvider.ts`) to `/billing/webhook`, as `billingWebhook.integration.test.ts` does. Provider setup and launch steps are in `infra/polar/README.md`.
 
 ## Email
 

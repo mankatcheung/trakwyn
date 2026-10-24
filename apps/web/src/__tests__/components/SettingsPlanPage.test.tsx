@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -127,5 +128,78 @@ describe('SettingsPlanPage', () => {
 
     expect(await screen.findByText('40 of 50 used (80%)')).toBeInTheDocument();
     expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+  });
+
+  describe('buying and managing Pro', () => {
+    const assign = vi.fn();
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'location', { value: { assign }, configurable: true });
+    });
+
+    it('offers the three purchases to a Free user and sends them to checkout', async () => {
+      serve(freeStatus());
+      mockGqlRequest.mockImplementation(async (query: string) =>
+        query.includes('CreateCheckoutSession')
+          ? { createCheckoutSession: { url: 'https://pay.example/c' } }
+          : { billingStatus: freeStatus() },
+      );
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByRole('button', { name: '3-month pass, $29' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '6-month pass, $49' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Open billing portal' })).toBeNull();
+
+      await userEvent.click(screen.getByRole('button', { name: '3-month pass, $29' }));
+
+      await waitFor(() => expect(assign).toHaveBeenCalledWith('https://pay.example/c'));
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('CreateCheckoutSession'),
+        { plan: 'pass3Months' },
+      );
+    });
+
+    it('shows only the portal to an active subscriber', async () => {
+      serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      expect(
+        await screen.findByRole('button', { name: 'Open billing portal' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Subscribe, $12 a month' })).toBeNull();
+    });
+
+    it('warns a pass holder that subscribing replaces the pass', async () => {
+      serve(
+        freeStatus({ plan: 'pro', planSource: 'pass', planExpiresAt: '2027-01-01T00:00:00.000Z' }),
+      );
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByText(/Subscribing replaces your pass/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open billing portal' })).toBeInTheDocument();
+    });
+
+    it('says so when checkout cannot start', async () => {
+      mockGqlRequest.mockImplementation(async (query: string) => {
+        if (query.includes('CreateCheckoutSession')) throw new Error('boom');
+        return { billingStatus: freeStatus() };
+      });
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Subscribe, $12 a month' }));
+
+      expect(
+        await screen.findByText('We could not start checkout. Please try again.'),
+      ).toBeInTheDocument();
+      expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('shows no purchase buttons when plans are not enforced', async () => {
+      serve(freeStatus({ enforced: false }));
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      await screen.findByText('Every feature is included on this server.');
+      expect(screen.queryByRole('button', { name: 'Subscribe, $12 a month' })).toBeNull();
+    });
   });
 });

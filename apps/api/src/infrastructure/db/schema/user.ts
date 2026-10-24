@@ -25,6 +25,10 @@ export const user = pgTable('User', {
   planExpiresAt: timestamp('planExpiresAt', TIMESTAMP),
   /** How the plan was obtained: `subscription`, `pass`, `trial` or `grant`. Null while on Free. */
   planSource: text('planSource'),
+  /** The payment provider's customer id, set by the first webhook (JEF-426). Provider-neutral. */
+  billingCustomerId: text('billingCustomerId'),
+  /** The active subscription's id at the payment provider; null for passes and non-payers. */
+  billingSubscriptionId: text('billingSubscriptionId'),
   totpSecret: text('totpSecret'),
   totpEnabled: boolean('totpEnabled').notNull().default(false),
   /**

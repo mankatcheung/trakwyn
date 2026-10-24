@@ -13,6 +13,7 @@ import { diScopeOf } from '#src/http/adapters/fastify/diScope.js';
 import { remindersRoutes } from '#src/http/routes/reminders.routes.js';
 import { pushNotificationsRoutes } from '#src/http/routes/pushNotifications.routes.js';
 import { digestRoutes } from '#src/http/routes/digest.routes.js';
+import { registerBillingWebhookRoute } from '#src/http/routes/billing.routes.js';
 import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
@@ -231,6 +232,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     bodyLimit: CHAT_STREAM.BODY_LIMIT_BYTES,
     handler: handleChatStream,
   });
+  registerBillingWebhookRoute(fastify, () => container.cradle);
   // Streams a stored file, so it too needs the real reply (JEF-51).
   fastify.route({
     method: 'GET',

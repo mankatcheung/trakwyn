@@ -49,6 +49,11 @@ export class CachedUserRepository implements IUserRepository {
     return this.inner.findByBackupEmail(email);
   }
 
+  // Not cached: read by the payment webhook only, and always for a write that follows.
+  findByBillingCustomerId(customerId: string): Promise<User | null> {
+    return this.inner.findByBillingCustomerId(customerId);
+  }
+
   async create(data: {
     id: string;
     email: string;

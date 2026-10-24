@@ -601,3 +601,9 @@ export const AUTH_FAILURE_EVENTS = {
 export const DOCUMENT_FILE_LINK = {
   TTL_S: 60 * 60,
 } as const;
+
+/** Paying for Pro (JEF-426). */
+export const BILLING = {
+  /** Users who upgrade within this many days of joining (or of billing going live) get the founder price. */
+  FOUNDER_WINDOW_DAYS: 60,
+} as const;
