@@ -59,7 +59,7 @@ export class PolarBillingProvider implements IBillingProvider {
         ? { customer_id: data.customerId }
         : { external_customer_id: data.userId, customer_email: data.email }),
     };
-    return checkoutResponse.parse(await this.post('/checkouts/', body));
+    return checkoutResponse.parse(await this.post('/checkouts/', body, [data.email, data.userId]));
   }
 
   async createPortalSession(data: { customerId: string; returnUrl: string }): Promise<{
@@ -107,10 +107,16 @@ export class PolarBillingProvider implements IBillingProvider {
 
   /**
    * A refusal is reported as the status, the path and, for a validation error, the
-   * field names with Polar's messages. Never the values: the body can echo what we
-   * sent, an email address among it.
+   * field names with Polar's messages. Polar's messages can quote what we sent, so
+   * every value in `redact` (the buyer's email and user id) is blanked first: the
+   * error is logged, and the logs go to Axiom and Cloud Logging, outside the
+   * erasure path (JEF-348).
    */
-  private async post(path: string, body: unknown): Promise<unknown> {
+  private async post(
+    path: string,
+    body: unknown,
+    redact: readonly string[] = [],
+  ): Promise<unknown> {
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
@@ -122,7 +128,8 @@ export class PolarBillingProvider implements IBillingProvider {
       signal: AbortSignal.timeout(POLAR.REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) {
-      throw new Error(`Polar answered ${res.status} for POST ${path}${await describeRefusal(res)}`);
+      const reason = await describeRefusal(res, redact);
+      throw new Error(`Polar answered ${res.status} for POST ${path}${reason}`);
     }
     return res.json();
   }
@@ -132,16 +139,30 @@ const validationProblems = z.array(
   z.object({ loc: z.array(z.union([z.string(), z.number()])), msg: z.string() }),
 );
 
+/** Every occurrence of each value, whatever its case, as the literal text it is. */
+function redacted(text: string, values: readonly string[]): string {
+  return values
+    .filter((value) => value.length > 0)
+    .reduce(
+      (safe, value) =>
+        safe.replace(
+          new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+          POLAR.REDACTED,
+        ),
+      text,
+    );
+}
+
 /** `: body.field: message; …` from a validation error's `detail`, or nothing if it has none. */
-async function describeRefusal(res: Response): Promise<string> {
+async function describeRefusal(res: Response, redact: readonly string[]): Promise<string> {
   const body: unknown = await res.json().catch(() => null);
   const detail = z.object({ detail: validationProblems }).safeParse(body);
   if (!detail.success) return '';
-  const problems = detail.data.detail
-    .slice(0, POLAR.MAX_REPORTED_PROBLEMS)
-    .map(
-      (problem) => `${problem.loc.join('.')}: ${problem.msg.slice(0, POLAR.MAX_PROBLEM_LENGTH)}`,
-    );
+  const problems = detail.data.detail.slice(0, POLAR.MAX_REPORTED_PROBLEMS).map((problem) => {
+    // Redact before cutting, so a value split by the cut cannot leave its first half behind.
+    const message = redacted(problem.msg, redact).slice(0, POLAR.MAX_PROBLEM_LENGTH);
+    return `${problem.loc.join('.')}: ${message}`;
+  });
   return problems.length > 0 ? `: ${problems.join('; ')}` : '';
 }
 

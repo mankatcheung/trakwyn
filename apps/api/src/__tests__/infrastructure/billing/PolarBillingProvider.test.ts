@@ -122,6 +122,46 @@ describe('PolarBillingProvider.createCheckoutSession', () => {
     await expect(failure).rejects.not.toThrow(/a@b\.com|leaked/);
   });
 
+  it('redacts the email and user id we sent when Polar quotes them in a message', async () => {
+    const fetchImpl = reply(
+      {
+        detail: [
+          {
+            loc: ['body', 'customer_email'],
+            msg: 'A@B.com is not a valid email address: the domain does not exist',
+          },
+          { loc: ['body', 'external_customer_id'], msg: 'user-1 is already taken by user-1' },
+        ],
+      },
+      422,
+    );
+
+    const failure = make(fetchImpl).createCheckoutSession(checkoutData);
+
+    await expect(failure).rejects.toThrow(
+      'body.customer_email: [redacted] is not a valid email address: the domain does not exist; body.external_customer_id: [redacted] is already taken by [redacted]',
+    );
+    await expect(failure).rejects.not.toThrow(/a@b\.com|user-1/i);
+  });
+
+  it('redacts a value that contains regular-expression characters literally', async () => {
+    const fetchImpl = reply(
+      {
+        detail: [
+          { loc: ['body', 'customer_email'], msg: 'a+b.c@x.com is invalid; aXb.c@x.com is not it' },
+        ],
+      },
+      422,
+    );
+
+    const failure = make(fetchImpl).createCheckoutSession({
+      ...checkoutData,
+      email: 'a+b.c@x.com',
+    });
+
+    await expect(failure).rejects.toThrow('[redacted] is invalid; aXb.c@x.com is not it');
+  });
+
   it('keeps the message short when Polar sends a long list of problems', async () => {
     const detail = Array.from({ length: 20 }, (_, i) => ({ loc: ['body', `f${i}`], msg: 'bad' }));
 

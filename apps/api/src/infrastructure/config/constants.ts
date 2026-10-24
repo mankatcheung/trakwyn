@@ -183,6 +183,8 @@ export const POLAR = {
   /** How much of a validation error is kept in the thrown message. */
   MAX_REPORTED_PROBLEMS: 5,
   MAX_PROBLEM_LENGTH: 160,
+  /** Stands in for a buyer's email or user id that Polar quoted back in a message. */
+  REDACTED: '[redacted]',
   WEBHOOK_HEADER: {
     ID: 'webhook-id',
     TIMESTAMP: 'webhook-timestamp',
