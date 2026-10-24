@@ -105,13 +105,22 @@ One source again: `pnpm build:firefox` and `pnpm zip:firefox` use the same entry
 - **Background.** MV3 in Firefox is an event page (`background.scripts`), which WXT emits. Nothing in it may assume a service-worker global.
 - **No `setAccessLevel`.** Firefox cannot restrict `storage.local` to trusted contexts (`restrictLocalStorageToTrustedContexts` leaves it as is), so on Firefox the "Keep me signed in" refresh token is readable from the content script's isolated world. It is not reachable by the page itself, and the box stays opt-in; do not run page-controlled code in the content script.
 
-**Releasing to AMO** (by hand; the release workflow only uploads to the Web Store). Version and tag are the Chrome ones (steps 1 and 2 above); the Firefox build comes from the same tag.
+**Releasing to AMO (JEF-437).** Version and tag are the Chrome ones (steps 1 and 2 above). AMO has no draft or deferred publishing, and no staged rollout: a listed version goes to review, and an approved one goes live. So CI builds and checks everything, and a person approves the submission.
 
-1. Build from the `clipper-v<version>` tag with no `apps/extension/.env`, and `VITE_API_URL` (the production `/graphql` URL, the `CLIPPER_API_URL` repository variable) and `VITE_POSTHOG_KEY` set: `pnpm --filter @trakwyn/extension zip:firefox`. It writes `trakwynextension-<version>-firefox.zip` and `trakwynextension-<version>-sources.zip` to `.output/`.
-2. Check the manifest in the zip: `version` equals the tag, `permissions` are `storage`, `activeTab` and `tabs`, no `host_permissions`, no `key`, and the Gecko ID is the one above. A grown `permissions` or content-script `matches` prompts every user on update.
-3. Submit both zips on addons.mozilla.org (Developer Hub, 2FA account) as a **listed** add-on, with the copy from `store/firefox-listing.md`: the source-code build notes, the permission justifications and a demo account for the reviewer. The sources zip is rooted at the monorepo (`wxt.config.ts` `zip`) and was checked to build the same bundle with `pnpm install --frozen-lockfile`; if you change what the build needs from the repo root, change `includeSources` too, then unzip it in an empty directory and build it again.
-4. Review is automatic checks, then a human, and takes hours to days. A published version cannot be rolled back, only replaced by a higher one. After approval, install from the AMO page in a clean Firefox profile and check Google and GitHub sign-in against production and a clip.
-5. Hotfixes follow "After launch" below, uploaded to AMO as a new version.
+1. **CI builds and checks the zips.** Merging the Clipper's release PR also runs `clipper-firefox-zip` in `.github/workflows/release.yml`. It checks out the `clipper-v<version>` tag, builds `zip:firefox` with the same repository variables as the Chrome job and no `.env`, and fails unless the manifest's `version` equals the tag, `permissions` are exactly `storage`, `activeTab` and `tabs`, there is no `host_permissions` and no `key`, the Gecko ID is `clipper@trakwyn.com` and the bundle contains `CLIPPER_API_URL`. It attaches `trakwynextension-<version>-firefox.zip` and `-sources.zip` to the GitHub Release, then starts `.github/workflows/clipper-amo.yml` for that tag.
+2. **Approve the submission.** `clipper-amo.yml` waits in the `amo` environment (Actions → the run → Review deployments). Approving submits the version to AMO, and AMO publishes it as soon as its own review approves it, so approve only when you would publish it. It downloads the two zips from the GitHub Release (what was checked is what is sent, not a rebuild) and runs `wxt submit` as a **listed**, desktop-only (`--firefox-compatibility firefox`) version with its sources. It is a separate workflow because `release.yml` runs under one concurrency group, and a job waiting there would hold every later release. To submit a tag again, run "Clipper on Firefox Add-ons" by hand with the tag; it accepts only `clipper-v<major>.<minor>.<patch>`.
+3. **Review** is automatic checks, then a human, and takes hours to days. The reviewer notes are per version and stay manual: if a reviewer asks, answer from `store/firefox-listing.md` (build notes, permission justifications, the demo account). A published version cannot be rolled back, only replaced by a higher one. After approval, install from the AMO page in a clean Firefox profile and check Google and GitHub sign-in against production and a clip.
+4. **Hotfixes** follow "After launch" below; the same two jobs submit the new version.
+
+The sources zip is rooted at the monorepo (`wxt.config.ts` `zip`) and was checked to build the same bundle with `pnpm install --frozen-lockfile`. If you change what the build needs from the repo root, change `includeSources` too, then unzip it in an empty directory and build it again.
+
+**One-time setup for the AMO job.**
+
+1. On addons.mozilla.org, Developer Hub → Manage API Keys, generate a JWT issuer and secret (signed in as the add-on's owner).
+2. `gh secret set FIREFOX_JWT_ISSUER` and `gh secret set FIREFOX_JWT_SECRET`, as **environment** secrets of `amo` (`--env amo`) so only an approved run can read them.
+3. Settings → Environments → New environment `amo`: add yourself as a required reviewer, and limit deployment branches to the default branch.
+
+`pnpm --filter @trakwyn/extension exec wxt submit --firefox-zip <zip> --firefox-extension-id clipper@trakwyn.com --dry-run` with the two variables in the environment checks the credentials without uploading. To rotate, regenerate the key in the Developer Hub and replace both secrets.
 
 ## After launch: compatibility and hotfixes (JEF-417)
 

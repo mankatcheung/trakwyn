@@ -55,6 +55,17 @@ function ciPushPaths(): string[] {
 }
 
 /** Whether a push touching `file` runs ci.yml: the last matching pattern wins, as on GitHub. */
+/**
+ * One job of a workflow: from its `  <name>:` line up to the next job at the
+ * same indent, so a job added after it is not read as part of it.
+ */
+function jobBlock(workflow: string, name: string): string {
+  const start = workflow.indexOf(`\n  ${name}:\n`);
+  if (start === -1) throw new Error(`release.yml has no ${name} job`);
+  const next = workflow.slice(start + 1).search(/\n  [a-z][\w-]*:\n/);
+  return next === -1 ? workflow.slice(start) : workflow.slice(start, start + 1 + next);
+}
+
 function triggersDeploy(file: string, patterns: string[]): boolean {
   return patterns.reduce((triggered, pattern) => {
     const negated = pattern.startsWith('!');
@@ -132,7 +143,7 @@ describe('release versioning', () => {
 
   describe('release.yml Clipper store job (JEF-419)', () => {
     const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
-    const job = workflow.slice(workflow.indexOf('  clipper-store:'));
+    const job = jobBlock(workflow, 'clipper-store');
 
     it('runs only when release-please reports a Clipper release', () => {
       expect(job).toContain('needs: release-please');
@@ -156,6 +167,59 @@ describe('release versioning', () => {
       expect(job).toContain('--chrome-api-version v2');
       expect(job).toContain('secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY');
       expect(job).not.toContain('CHROME_REFRESH_TOKEN');
+    });
+  });
+
+  describe('Clipper on Firefox Add-ons (JEF-437)', () => {
+    const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
+    const amoWorkflow = readFileSync(join(REPO_ROOT, '.github/workflows/clipper-amo.yml'), 'utf8');
+    const build = jobBlock(workflow, 'clipper-firefox-zip');
+    const submit = jobBlock(amoWorkflow, 'clipper-amo');
+
+    it('builds the Firefox zips only for a Clipper release, from the tag', () => {
+      expect(build).toContain('needs: release-please');
+      expect(build).toContain("if: needs.release-please.outputs.clipper_released == 'true'");
+      expect(build).toContain('ref: ${{ env.TAG }}');
+      expect(build).toContain('vars.CLIPPER_POSTHOG_KEY');
+      expect(build).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
+      expect(build).toContain('rm -f apps/extension/.env');
+      expect(build).toContain('zip:firefox');
+    });
+
+    it('checks the Firefox manifest before the zips leave the job', () => {
+      for (const check of ['host_permissions', 'has("key")', '"tabs"', 'clipper@trakwyn.com']) {
+        expect(build).toContain(check);
+        expect(build.indexOf(check)).toBeLessThan(build.indexOf('gh release upload'));
+      }
+      expect(build).toContain('*-sources.zip');
+    });
+
+    it('hands the submission to its own workflow, so waiting for approval holds up no other release', () => {
+      // release.yml runs under one concurrency group: a job waiting there for a
+      // reviewer would hold every later release until someone approved it.
+      expect(build).toContain('gh workflow run clipper-amo.yml');
+      expect(build).toContain('actions: write');
+      expect(workflow).not.toContain('environment: amo');
+      expect(build).not.toContain('wxt submit');
+      expect(build).not.toContain('FIREFOX_JWT');
+    });
+
+    it('submits to AMO only after a person approves it in the amo environment', () => {
+      // AMO has no draft or deferred publishing: an approved listed version
+      // goes live, so the environment's required reviewer is the only gate.
+      expect(amoWorkflow).toContain('workflow_dispatch:');
+      expect(submit).toContain('environment: amo');
+      expect(submit).toContain('^clipper-v[0-9]+\\.[0-9]+\\.[0-9]+$');
+      expect(submit).toContain('ref: ${{ env.TAG }}');
+      expect(submit.indexOf('environment: amo')).toBeLessThan(submit.indexOf('wxt submit'));
+    });
+
+    it('submits a listed, desktop-only version with its sources', () => {
+      expect(submit).toContain('--firefox-channel listed');
+      expect(submit).toContain('--firefox-compatibility firefox');
+      expect(submit).toContain('--firefox-sources-zip');
+      expect(submit).toContain('--firefox-extension-id clipper@trakwyn.com');
+      expect(submit).toContain('secrets.FIREFOX_JWT_SECRET');
     });
   });
 });
