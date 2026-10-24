@@ -103,6 +103,8 @@ Secret IDs are the env var names in lower-kebab-case:
 | `blob-private-read-write-token` | fetched from Vercel by `load-secrets.sh` for `infra/vercel`'s private Blob store (documents)                                   |
 | `brevo-api-key`                 | Brevo API key (not the one `infra/brevo` uses)                                                                                 |
 | `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; `terraform output -raw turnstile_secret_key` in `infra/cloudflare`) |
+| `polar-access-token`            | Polar organization access token for the environment `POLAR_SERVER` names (`infra/polar/README.md`)                             |
+| `polar-webhook-secret`          | the `whsec_…` secret of that environment's Polar webhook endpoint (`infra/polar/README.md`)                                    |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                      |
 | `digest-admin-secret`           | a new random value                                                                                                             |
 | `google-oauth-client-secret`    | Google OAuth client secret                                                                                                     |

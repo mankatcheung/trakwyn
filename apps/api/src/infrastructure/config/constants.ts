@@ -79,6 +79,17 @@ export const ENV = {
   BILLING_PROVIDER: 'BILLING_PROVIDER',
   /** ISO date billing went live. Founder pricing counts 60 days from the later of this and signup. */
   BILLING_LIVE_FROM: 'BILLING_LIVE_FROM',
+  /** Polar organization access token for the environment named by `POLAR_SERVER` (JEF-432). */
+  POLAR_ACCESS_TOKEN: 'POLAR_ACCESS_TOKEN',
+  /** The `whsec_…` secret of the Polar webhook endpoint, one per environment. */
+  POLAR_WEBHOOK_SECRET: 'POLAR_WEBHOOK_SECRET',
+  /** `sandbox` | `production`. No default: a live key must never be reached by omission. */
+  POLAR_SERVER: 'POLAR_SERVER',
+  /** Polar product ids, one per Trakwyn product (see `infra/polar/README.md`). */
+  POLAR_PRODUCT_MONTHLY: 'POLAR_PRODUCT_MONTHLY',
+  POLAR_PRODUCT_FOUNDER_MONTHLY: 'POLAR_PRODUCT_FOUNDER_MONTHLY',
+  POLAR_PRODUCT_PASS_3M: 'POLAR_PRODUCT_PASS_3M',
+  POLAR_PRODUCT_PASS_6M: 'POLAR_PRODUCT_PASS_6M',
   VAPID_PUBLIC_KEY: 'VAPID_PUBLIC_KEY',
   VAPID_PRIVATE_KEY: 'VAPID_PRIVATE_KEY',
   VAPID_SUBJECT: 'VAPID_SUBJECT',
@@ -157,6 +168,41 @@ export const BILLING_ADAPTER = {
   FAKE_SIGNATURE_HEADER: 'x-fake-signature',
   /** The largest webhook body accepted. Provider events are a few KB. */
   WEBHOOK_BODY_LIMIT_BYTES: 256 * 1024,
+} as const;
+
+/** Polar's API and webhook vocabulary (JEF-432). Only `PolarBillingProvider` and its mapper read it. */
+export const POLAR = {
+  SERVER: { SANDBOX: 'sandbox', PRODUCTION: 'production' },
+  API_URL: {
+    sandbox: 'https://sandbox-api.polar.sh/v1',
+    production: 'https://api.polar.sh/v1',
+  },
+  /** Pinned so a Polar change of "current" cannot change a payload under us. */
+  API_VERSION: '2026-10',
+  REQUEST_TIMEOUT_MS: 10_000,
+  /** How much of a validation error is kept in the thrown message. */
+  MAX_REPORTED_PROBLEMS: 5,
+  MAX_PROBLEM_LENGTH: 160,
+  /** Stands in for a buyer's email or user id that Polar quoted back in a message. */
+  REDACTED: '[redacted]',
+  WEBHOOK_HEADER: {
+    ID: 'webhook-id',
+    TIMESTAMP: 'webhook-timestamp',
+    SIGNATURE: 'webhook-signature',
+  },
+  /** The Trakwyn user id travels in checkout metadata under this key, and back on the order or subscription. */
+  METADATA_USER_ID: 'userId',
+  EVENT: {
+    SUBSCRIPTION_ACTIVE: 'subscription.active',
+    SUBSCRIPTION_UNCANCELED: 'subscription.uncanceled',
+    SUBSCRIPTION_CANCELED: 'subscription.canceled',
+    SUBSCRIPTION_REVOKED: 'subscription.revoked',
+    ORDER_PAID: 'order.paid',
+    ORDER_REFUNDED: 'order.refunded',
+  },
+  /** An order for a one-off product (a pass) is `purchase`; a subscription's first and later orders are not. */
+  ORDER_BILLING_REASON_PURCHASE: 'purchase',
+  ORDER_STATUS_REFUNDED: 'refunded',
 } as const;
 
 /** HTTP Authorization header. */

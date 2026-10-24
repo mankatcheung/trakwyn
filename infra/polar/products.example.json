@@ -1,0 +1,34 @@
+{
+  "products": [
+    {
+      "key": "monthly",
+      "envVar": "POLAR_PRODUCT_MONTHLY",
+      "name": "Trakwyn Pro monthly",
+      "description": "Trakwyn Pro, billed monthly. Cancel any time.",
+      "recurring_interval": "month",
+      "prices": [{ "amount_type": "fixed", "price_currency": "usd", "price_amount": 1200 }]
+    },
+    {
+      "key": "founder_monthly",
+      "envVar": "POLAR_PRODUCT_FOUNDER_MONTHLY",
+      "name": "Trakwyn Pro monthly (founder)",
+      "description": "Trakwyn Pro, billed monthly at the founder price, which stays $9 for as long as the subscription runs.",
+      "recurring_interval": "month",
+      "prices": [{ "amount_type": "fixed", "price_currency": "usd", "price_amount": 900 }]
+    },
+    {
+      "key": "pass_3m",
+      "envVar": "POLAR_PRODUCT_PASS_3M",
+      "name": "Trakwyn Pro 3-month pass",
+      "description": "Three months of Trakwyn Pro, paid once. It does not renew.",
+      "prices": [{ "amount_type": "fixed", "price_currency": "usd", "price_amount": 2900 }]
+    },
+    {
+      "key": "pass_6m",
+      "envVar": "POLAR_PRODUCT_PASS_6M",
+      "name": "Trakwyn Pro 6-month pass",
+      "description": "Six months of Trakwyn Pro, paid once. It does not renew.",
+      "prices": [{ "amount_type": "fixed", "price_currency": "usd", "price_amount": 4900 }]
+    }
+  ]
+}
