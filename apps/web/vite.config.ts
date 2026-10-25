@@ -69,6 +69,7 @@ const config = defineConfig(({ command }) => ({
               '/features/ai-assistant': { prerender: true },
               '/features/resume-cover-letter': { prerender: true },
               '/features/analytics': { prerender: true },
+              '/pricing': { prerender: true },
               '/privacy': { prerender: true },
               '/terms': { prerender: true },
               '/accessibility': { prerender: true },

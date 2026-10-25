@@ -31,6 +31,7 @@ const PRERENDERED_MARKETING: Record<string, string> = {
   '/features/ai-assistant': 'features/ai-assistant.tsx',
   '/features/resume-cover-letter': 'features/resume-cover-letter.tsx',
   '/features/analytics': 'features/analytics.tsx',
+  '/pricing': 'pricing.tsx',
   '/privacy': 'privacy.tsx',
   '/terms': 'terms.tsx',
   '/accessibility': 'accessibility.tsx',

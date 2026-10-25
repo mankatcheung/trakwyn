@@ -17,6 +17,7 @@ import { Route as ConfirmBackupEmailRouteImport } from './routes/confirm-backup-
 import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change';
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password';
 import { Route as LoginRouteImport } from './routes/login';
+import { Route as PricingRouteImport } from './routes/pricing';
 import { Route as PrivacyRouteImport } from './routes/privacy';
 import { Route as RegisterRouteImport } from './routes/register';
 import { Route as ResetPasswordRouteImport } from './routes/reset-password';
@@ -97,6 +98,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any);
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
   '/login': typeof LoginRoute;
+  '/pricing': typeof PricingRoute;
   '/privacy': typeof PrivacyRoute;
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
   '/login': typeof LoginRoute;
+  '/pricing': typeof PricingRoute;
   '/privacy': typeof PrivacyRoute;
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
   '/login': typeof LoginRoute;
+  '/pricing': typeof PricingRoute;
   '/privacy': typeof PrivacyRoute;
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/reset-password'
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/reset-password'
@@ -601,6 +612,7 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/register'
     | '/reset-password'
@@ -654,6 +666,7 @@ export interface RootRouteChildren {
   ConfirmEmailChangeRoute: typeof ConfirmEmailChangeRoute;
   ForgotPasswordRoute: typeof ForgotPasswordRoute;
   LoginRoute: typeof LoginRoute;
+  PricingRoute: typeof PricingRoute;
   PrivacyRoute: typeof PrivacyRoute;
   RegisterRoute: typeof RegisterRoute;
   ResetPasswordRoute: typeof ResetPasswordRoute;
@@ -724,6 +737,13 @@ declare module '@tanstack/react-router' {
       path: '/login';
       fullPath: '/login';
       preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/pricing': {
+      id: '/pricing';
+      path: '/pricing';
+      fullPath: '/pricing';
+      preLoaderRoute: typeof PricingRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/privacy': {
@@ -1122,6 +1142,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfirmEmailChangeRoute: ConfirmEmailChangeRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
