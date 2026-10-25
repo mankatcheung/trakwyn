@@ -23,6 +23,10 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 - **`PLAN_REQUIRED` (JEF-344):** `getErrorMessage` keeps the API's message, which names the Pro feature, and adds "Manage your plan on the web." There is no in-app purchase, so every screen that shows an error gets that state with no per-screen code.
 - **`expo start --web` is a dev preview only.** It keeps tokens in `localStorage`; shipping it would first require switching to the cookie mutations.
 
+## Email verification wall (JEF-438)
+
+`app/(app)/_layout.tsx` renders `VerifyEmailRequiredScreen` (`src/features/verification/`) instead of the tabs while `me.emailVerified` is false. Same rules as web: the app shows while the check is in flight or fails (the API enforces the wall), resend has a 60 s cooldown, and "Use a different email" reuses `useRequestEmailChange`. There is no window focus on a phone, so the check reruns when the app returns to the foreground.
+
 ## Error reporting (JEF-349)
 
 The same rules as web (`apps/web/CLAUDE.md`), with these differences:

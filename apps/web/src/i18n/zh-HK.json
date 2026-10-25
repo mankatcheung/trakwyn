@@ -1336,5 +1336,22 @@
   "plan.unlimited": "不限",
   "plan.perMonth": "每月 {{amount}} 次",
   "plan.included": "包含",
-  "plan.notIncluded": "不包含"
+  "plan.notIncluded": "不包含",
+  "verifyRequired.title": "請先驗證你的電郵",
+  "verifyRequired.body": "我們已將驗證連結發送至 {{email}}。請開啟連結以開始使用 Trakwyn。在此之前，你的帳戶會暫停使用。",
+  "verifyRequired.spamHint": "找不到郵件？請檢查垃圾郵件匣。郵件可能需要幾分鐘才會送達。",
+  "verifyRequired.resend": "重新發送驗證電郵",
+  "verifyRequired.sending": "發送中…",
+  "verifyRequired.resendIn": "{{seconds}} 秒後可重新發送",
+  "verifyRequired.sent": "新的連結已發送至 {{email}}。",
+  "verifyRequired.rateLimited": "你已多次要求驗證連結。請稍候幾分鐘後再試。",
+  "verifyRequired.resendFailed": "無法發送電郵，請再試一次。",
+  "verifyRequired.checkAgain": "我已驗證電郵",
+  "verifyRequired.stillUnverified": "你的電郵尚未驗證。請開啟我們寄給你的電郵中的連結。",
+  "verifyRequired.changeEmail": "地址不對？改用其他電郵",
+  "verifyRequired.changeEmailIntro": "輸入正確的地址和你的密碼，我們會將連結發送到該地址。",
+  "verifyRequired.changeEmailSubmit": "發送連結至此地址",
+  "verifyRequired.changeEmailSent": "請到 {{email}} 查看確認新地址的連結。",
+  "verifyRequired.changeEmailFailed": "無法更改電郵。",
+  "auth.continueToApp": "繼續"
 }

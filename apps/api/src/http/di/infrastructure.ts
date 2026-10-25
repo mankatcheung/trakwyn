@@ -4,6 +4,7 @@ import { asClass, asFunction, asValue, Lifetime, type NameAndRegistrationPair } 
 import { db } from '#src/infrastructure/db/client.js';
 import { buildBillingProvider } from '#src/infrastructure/billing/buildBillingProvider.js';
 import { parseBillingLiveFrom } from '#src/infrastructure/billing/parseBillingLiveFrom.js';
+import { resolveAutoVerifyEmail } from '#src/infrastructure/config/autoVerifyEmail.js';
 import { buildCaptchaVerifier } from '#src/infrastructure/captcha/buildCaptchaVerifier.js';
 
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
@@ -106,6 +107,8 @@ export const infrastructure = {
   storageProvider: asClass(StorageProvider, { lifetime: Lifetime.SINGLETON }),
   generateId: asValue(() => nanoid()),
   now: asValue(() => new Date()),
+  // asFunction so a test can set AUTO_VERIFY_EMAIL before the first sign-up (JEF-438).
+  autoVerifyEmail: asFunction(() => resolveAutoVerifyEmail(), { lifetime: Lifetime.SINGLETON }),
   plansEnforced: asValue(process.env[ENV.PLANS_ENFORCED] === 'true'),
   entitlementService: asClass(EntitlementService, { lifetime: Lifetime.SINGLETON }),
   webAppOrigin: asValue(

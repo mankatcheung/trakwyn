@@ -4,6 +4,8 @@ import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementServi
 export interface UserDTO {
   id: string;
   email: string;
+  /** False until the address is verified (JEF-438); clients show the verification wall. */
+  emailVerified: boolean;
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
@@ -30,6 +32,7 @@ export class UserMapper {
     return {
       id: user.id,
       email: user.email,
+      emailVerified: user.emailVerifiedAt !== null,
       name: user.name,
       timezone: user.timezone,
       targetRole: user.targetRole,

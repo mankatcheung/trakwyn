@@ -32,6 +32,7 @@ export const CHAT_MESSAGE_MAX_CHARS = 8000;
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   VALIDATION: 'VALIDATION',
+  RATE_LIMITED: 'RATE_LIMITED',
   /** A TOTP-enabled account's session is too old for a sensitive change; the API wants a fresh reauthentication first (JEF-44). */
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
   /** Client-side only: the request never reached the server. */

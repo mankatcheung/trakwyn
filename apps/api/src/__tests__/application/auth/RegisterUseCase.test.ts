@@ -33,6 +33,41 @@ describe('RegisterUseCase', () => {
     vi.clearAllMocks();
   });
 
+  describe('auto-verify (JEF-438)', () => {
+    const register = async (autoVerifyEmail: boolean) => {
+      const userRepository = makeUserRepository({
+        findByEmail: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(makeUser()),
+      });
+      const sendEmailVerificationUseCase = makeSendEmailVerificationUseCase();
+      await new RegisterUseCase({
+        ...makeCaptchaDeps(),
+        userRepository,
+        generateId: vi.fn().mockReturnValue('user-1'),
+        sendEmailVerificationUseCase,
+        autoVerifyEmail,
+      }).execute({ email: 'test@example.com', password: 'password123', enforceCaptcha: true });
+      return { userRepository, sendEmailVerificationUseCase };
+    };
+
+    it('creates the account verified and sends no email when auto-verify is on', async () => {
+      const { userRepository, sendEmailVerificationUseCase } = await register(true);
+
+      expect(userRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ emailVerifiedAt: expect.any(Date) }),
+      );
+      expect(sendEmailVerificationUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('leaves the account unverified and sends the email when auto-verify is off', async () => {
+      const { userRepository, sendEmailVerificationUseCase } = await register(false);
+
+      const created = vi.mocked(userRepository.create).mock.calls[0]![0];
+      expect(created.emailVerifiedAt).toBeUndefined();
+      expect(sendEmailVerificationUseCase.execute).toHaveBeenCalledWith('user-1');
+    });
+  });
+
   it('registers a new user and returns userId and email', async () => {
     const user = makeUser();
     const userRepository = makeUserRepository({

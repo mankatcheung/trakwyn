@@ -222,6 +222,22 @@ builder.mutationField('verifyEmail', (t) =>
   }),
 );
 
+builder.mutationField('resendVerificationEmail', (t) =>
+  t.boolean({
+    resolve: async (_root, _args, ctx) => {
+      if (!ctx.user)
+        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
+      const { authResolver } = ctx.diScope.cradle;
+      try {
+        await authResolver.resendVerificationEmail(ctx.user.sub);
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
+    },
+  }),
+);
+
 builder.mutationField('requestBackupEmailRecovery', (t) =>
   t.boolean({
     args: {

@@ -4,6 +4,7 @@ import type { ILoginWithTotpUseCase } from '#src/use-cases/auth/ILoginWithTotpUs
 import type { IReauthenticateUseCase } from '#src/use-cases/auth/IReauthenticateUseCase.js';
 import type { IRequestPasswordResetUseCase } from '#src/use-cases/auth/IRequestPasswordResetUseCase.js';
 import type { IResetPasswordUseCase } from '#src/use-cases/auth/IResetPasswordUseCase.js';
+import type { ISendEmailVerificationUseCase } from '#src/use-cases/auth/ISendEmailVerificationUseCase.js';
 import type { IVerifyEmailUseCase } from '#src/use-cases/auth/IVerifyEmailUseCase.js';
 import type { IRequestBackupEmailRecoveryUseCase } from '#src/use-cases/auth/IRequestBackupEmailRecoveryUseCase.js';
 import type { ITokenService, TokenPair } from '#src/use-cases/ports/ITokenService.js';
@@ -24,6 +25,7 @@ interface Deps {
   rotateRefreshTokenUseCase: RotateRefreshTokenUseCase;
   sessionRepository: ISessionRepository;
   verifyEmailUseCase: IVerifyEmailUseCase;
+  sendEmailVerificationUseCase: ISendEmailVerificationUseCase;
   requestBackupEmailRecoveryUseCase: IRequestBackupEmailRecoveryUseCase;
 }
 
@@ -176,6 +178,10 @@ export class AuthResolver {
 
   async verifyEmail(token: string): Promise<void> {
     await this.deps.verifyEmailUseCase.execute({ token });
+  }
+
+  async resendVerificationEmail(userId: string): Promise<void> {
+    await this.deps.sendEmailVerificationUseCase.execute(userId);
   }
 
   async requestPasswordReset(

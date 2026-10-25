@@ -20,6 +20,7 @@ const EXPECTED_ERROR_CODES: string[] = [
   ERROR_CODES.CAPTCHA_REQUIRED,
   ERROR_CODES.CAPTCHA_FAILED,
   ERROR_CODES.PLAN_REQUIRED,
+  ERROR_CODES.EMAIL_NOT_VERIFIED,
 ];
 
 export function formatError(err: GraphQLError, logger: ILogger): GraphQLError {

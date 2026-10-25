@@ -52,6 +52,13 @@ export class PlanRequiredAppError extends AppError {
   }
 }
 
+/** 403: the caller is signed in but may not act until the email is verified (JEF-438). */
+export class EmailNotVerifiedAppError extends AppError {
+  constructor(message = 'Verify your email address to continue') {
+    super(message, 403, ERROR_CODES.EMAIL_NOT_VERIFIED);
+  }
+}
+
 export class UserNotFoundError extends AppError {
   constructor(message = 'No account found with this email') {
     super(message, 404, ERROR_CODES.USER_NOT_FOUND);
@@ -173,6 +180,8 @@ export function fromCodedError(err: unknown): AppError {
         return new StepUpRequiredError(err.message);
       case ERROR_CODES.PLAN_REQUIRED:
         return new PlanRequiredAppError(err.message);
+      case ERROR_CODES.EMAIL_NOT_VERIFIED:
+        return new EmailNotVerifiedAppError(err.message);
     }
   }
   return new AppError('Internal server error', 500, ERROR_CODES.INTERNAL_ERROR);

@@ -97,11 +97,14 @@ export function RegisterPage() {
                 {t('auth.verificationSentSuffix')}
               </p>
             </div>
+            {/* Registering signs the user in, so "back to sign in" would only be
+                bounced to the app by /login. They go straight there; an
+                unverified account lands on the verification reminder. */}
             <Link
-              to="/login"
+              to="/dashboard"
               className="inline-block w-full rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
-              {t('auth.backToSignIn')}
+              {t('auth.continueToApp')}
             </Link>
           </div>
         </div>

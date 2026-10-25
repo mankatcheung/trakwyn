@@ -59,6 +59,13 @@ export class PlanRequiredError extends DomainError {
   }
 }
 
+/** The account's email address is not verified yet (JEF-438). */
+export class EmailNotVerifiedError extends DomainError {
+  constructor(message = 'Verify your email address to continue') {
+    super(message, ERROR_CODES.EMAIL_NOT_VERIFIED);
+  }
+}
+
 /** The caller is not authenticated, or their credential no longer stands. */
 export class UnauthorizedError extends DomainError {
   constructor(message = 'Unauthorized') {

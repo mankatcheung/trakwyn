@@ -41,6 +41,19 @@ describe('SendEmailVerificationUseCase', () => {
     expect((err as { code: string }).code).toBe('NOT_FOUND');
   });
 
+  it('does nothing for an account that is already verified', async () => {
+    const user = makeUser({ id: 'user-1', emailVerifiedAt: new Date() });
+    const deps = makeDeps({
+      userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(user) }),
+    });
+
+    await new SendEmailVerificationUseCase(deps).execute('user-1');
+
+    expect(deps.emailService.sendEmailVerification).not.toHaveBeenCalled();
+    expect(deps.emailVerificationTokenRepository.create).not.toHaveBeenCalled();
+    expect(deps.emailVerificationUserRateLimiter.consume).not.toHaveBeenCalled();
+  });
+
   it('deletes existing tokens, creates a new one, and emails a verification link', async () => {
     const user = makeUser({ id: 'user-1', email: 'test@example.com' });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
