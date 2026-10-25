@@ -21,6 +21,14 @@ export interface IBillingProvider {
   createPortalSession(data: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
 
   /**
+   * Ends a subscription now, not at the end of the paid period (JEF-439). Resolves when
+   * there is nothing left to stop, including when the subscription is already ended or the
+   * provider does not know it; throws when the provider cannot be reached or refuses, so
+   * the caller never assumes a charge has stopped.
+   */
+  revokeSubscription(subscriptionId: string): Promise<void>;
+
+  /**
    * Checks the signature over the exact bytes received, then parses.
    * Throws `UnauthorizedError` when the signature is missing or wrong.
    */

@@ -57,6 +57,13 @@ export class FakeBillingProvider implements IBillingProvider {
     return { url: url.toString() };
   }
 
+  /** Subscription ids revoked so far, for a test or a look at what dev would have stopped. */
+  readonly revokedSubscriptions: string[] = [];
+
+  async revokeSubscription(subscriptionId: string): Promise<void> {
+    this.revokedSubscriptions.push(subscriptionId);
+  }
+
   parseWebhook(
     rawBody: Buffer,
     headers: Record<string, string | string[] | undefined>,

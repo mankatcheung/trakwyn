@@ -655,6 +655,7 @@
   "data.skippedDocuments_other": "已略過 {{count}} 個文件（不支援）。",
   "data.dangerZoneTitle": "危險區域",
   "data.dangerZoneDescription": "永久刪除你的帳戶及所有相關資料。此操作無法復原。",
+  "data.dangerZoneSubscriptionNote": "如果你有生效中的訂閱，刪除帳戶時會立即取消。",
   "data.confirmPasswordLabel": "確認你的密碼",
   "data.deleting": "刪除中…",
   "data.deleteMyAccount": "刪除我的帳戶",

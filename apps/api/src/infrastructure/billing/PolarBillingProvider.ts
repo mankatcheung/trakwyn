@@ -74,6 +74,29 @@ export class PolarBillingProvider implements IBillingProvider {
     return { url: session.customer_portal_url };
   }
 
+  /**
+   * Ends the subscription now (`DELETE /subscriptions/{id}`, scope `subscriptions:write`),
+   * not at the end of the period. Polar answers 403 for one already revoked and 404 for one
+   * it does not have; both leave nothing to stop, so they count as done. A 409 means it is
+   * pending an update and the same call works shortly after, which the message says.
+   */
+  async revokeSubscription(subscriptionId: string): Promise<void> {
+    const path = `/subscriptions/${encodeURIComponent(subscriptionId)}`;
+    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      method: 'DELETE',
+      headers: this.authHeaders(),
+      signal: AbortSignal.timeout(POLAR.REQUEST_TIMEOUT_MS),
+    });
+    const { ALREADY_REVOKED, NOT_FOUND, PENDING_UPDATE } = POLAR.REVOKE_STATUS;
+    if (res.ok || res.status === ALREADY_REVOKED || res.status === NOT_FOUND) return;
+
+    const hint =
+      res.status === PENDING_UPDATE
+        ? ': the subscription is pending an update, try again shortly'
+        : '';
+    throw new Error(`Polar answered ${res.status} for DELETE ${path}${hint}`);
+  }
+
   parseWebhook(
     rawBody: Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -119,11 +142,7 @@ export class PolarBillingProvider implements IBillingProvider {
   ): Promise<unknown> {
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.deps.accessToken}`,
-        'Polar-Version': POLAR.API_VERSION,
-        'Content-Type': 'application/json',
-      },
+      headers: { ...this.authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(POLAR.REQUEST_TIMEOUT_MS),
     });
@@ -132,6 +151,13 @@ export class PolarBillingProvider implements IBillingProvider {
       throw new Error(`Polar answered ${res.status} for POST ${path}${reason}`);
     }
     return res.json();
+  }
+
+  private authHeaders(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.deps.accessToken}`,
+      'Polar-Version': POLAR.API_VERSION,
+    };
   }
 }
 
