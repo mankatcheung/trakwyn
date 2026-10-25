@@ -7,6 +7,7 @@ import type { IBillingProvider } from '#src/use-cases/ports/IBillingProvider.js'
 export const makeBillingProvider = (overrides?: Partial<IBillingProvider>): IBillingProvider => ({
   createCheckoutSession: vi.fn().mockResolvedValue({ url: 'https://pay.example/checkout' }),
   createPortalSession: vi.fn().mockResolvedValue({ url: 'https://pay.example/portal' }),
+  revokeSubscription: vi.fn().mockResolvedValue(undefined),
   parseWebhook: vi.fn(),
   ...overrides,
 });

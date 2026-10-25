@@ -680,6 +680,7 @@
   "data.skippedDocuments_other": "Skipped {{count}} documents (not supported).",
   "data.dangerZoneTitle": "Danger zone",
   "data.dangerZoneDescription": "Permanently delete your account and all associated data. This cannot be undone.",
+  "data.dangerZoneSubscriptionNote": "If you have an active subscription, it is cancelled straight away when your account is deleted.",
   "data.confirmPasswordLabel": "Confirm your password",
   "data.deleting": "Deleting…",
   "data.deleteMyAccount": "Delete my account",

@@ -103,10 +103,10 @@ A delivery that is signed correctly but whose body the adapter cannot read answe
 
 Use a separate token for setup and for the running API, so the one on the server cannot touch products or webhooks.
 
-| Token                          | Scopes                                                                                                                     | Used by                                              |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Setup (delete when done)       | `products:read`, `products:write`, `webhooks:write`                                                                        | `import-products.mjs`, `create-webhook-endpoint.mjs` |
-| Runtime (`POLAR_ACCESS_TOKEN`) | `checkouts:write`, `customer_sessions:write`, and `subscriptions:write` once the API revokes on account deletion (JEF-439) | the API                                              |
+| Token                          | Scopes                                                                                                                                                | Used by                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Setup (delete when done)       | `products:read`, `products:write`, `webhooks:write`                                                                                                   | `import-products.mjs`, `create-webhook-endpoint.mjs` |
+| Runtime (`POLAR_ACCESS_TOKEN`) | `checkouts:write`, `customer_sessions:write` and `subscriptions:write` (the API revokes a subscription when its owner deletes their account, JEF-439) | the API                                              |
 
 Polar's docs state `products:*`, `webhooks:write` and `subscriptions:write` on the reference pages; the checkout and customer-session scope names are not printed there, so take their spelling from the token screen. A 403 from Polar on a checkout or portal call usually means a scope is missing.
 
@@ -178,7 +178,7 @@ So disputes are handled by hand:
 
 The sandbox end-to-end run is done (JEF-433, results in that issue). What is left, in order:
 
-1. JEF-431 (terms, privacy, pricing copy, accountant) and JEF-439 (revoke the subscription when an account is deleted) are finished.
+1. JEF-431 (terms, privacy, pricing copy, accountant) is finished. JEF-439 (the API revokes the subscription when an account is deleted) is in place; its sandbox check, deleting a subscribed throwaway account and confirming in Polar that the subscription is revoked, has to be run once the live token carries `subscriptions:write`.
 2. Create the live products (`import-products.mjs --server production`), the live webhook endpoint and a live runtime token; add the live secrets as new versions of the same two Secret Manager secrets; set `POLAR_SERVER=production` and the live `POLAR_PRODUCT_*` ids; set `BILLING_PROVIDER=polar` and, if users signed up before launch, `BILLING_LIVE_FROM` (the day billing goes live). Enforcement stays off.
 3. Repeat one purchase and one refund (and revoke the subscription) with a real card.
 4. Set `PLANS_ENFORCED=true`, then `pnpm --filter @trakwyn/api plan grant-trial`.

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
+import { useBillingStatus } from '#/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, Card, FormLabel, Input } from '@trakwyn/ui';
 import { DELETE_ACCOUNT, deleteSchema, type DeleteForm, extractGqlError } from './shared';
@@ -18,6 +19,9 @@ export function SettingsDangerZonePage() {
   const { t } = useLocale();
   const navigate = useNavigate();
   const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
+  // Only a subscription keeps charging after the account is gone (JEF-439); a pass is one-off.
+  const billing = useBillingStatus();
+  const hasSubscription = billing?.plan === 'pro' && billing.planSource === 'subscription';
 
   // Delete form
   const deleteForm = useForm<DeleteForm>({ resolver: zodResolver(deleteSchema) });
@@ -43,6 +47,11 @@ export function SettingsDangerZonePage() {
           <p className="text-sm text-red-500 dark:text-red-400">
             {t('data.dangerZoneDescription')}
           </p>
+          {hasSubscription && (
+            <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+              {t('data.dangerZoneSubscriptionNote')}
+            </p>
+          )}
         </div>
         <form onSubmit={deleteForm.handleSubmit(onDeleteAccount)} className="space-y-3">
           <div className="max-w-sm">

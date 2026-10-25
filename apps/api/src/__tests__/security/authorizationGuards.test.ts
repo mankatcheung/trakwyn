@@ -18,7 +18,8 @@ import {
   makeDocumentRepository,
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { makeBillingProvider } from '#src/__tests__/helpers/mocks/billing.js';
+import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
@@ -71,6 +72,8 @@ const makeDeleteAccountDeps = (overrides?: {
   userRepository: makeUserRepository(),
   documentRepository: makeDocumentRepository({ findAllByUserId: vi.fn().mockResolvedValue([]) }),
   storageProvider: makeStorageProvider(),
+  billingProvider: makeBillingProvider(),
+  logger: makeLogger(),
   ...overrides,
 });
 
