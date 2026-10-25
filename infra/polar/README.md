@@ -7,7 +7,7 @@ The API side is behind `IBillingProvider` (`apps/api/src/use-cases/ports/`). The
 ## 1. Confirm before building the adapter
 
 - [x] Polar accepts Trakwyn (domain review) and a UK sole trader. The account was opened on 2026-10-24. The first product description, which led with "job search tracker for individual job seekers", was flagged as an unsupported use case (job boards and resume or hiring tools); the account opened after the description was reworded to say what the software does. Trakwyn has no job listings and no employer side. Polar may review the live site later, so keep the public wording accurate.
-- [x] Payouts: the Wise Business GBP account (UK account details) is linked as the payout account and the payout currency is **GBP**. Polar's payout accounts need a bank account in the business's country and currency, so USD, EUR and HKD Wise balances cannot be used. Customers pay in their local currency; Polar converts each sale to USD for the balance, and the payout converts to GBP, so there is nothing to convert by hand. Withdrawals are manual. Fees (Polar's fees page, which names them as Stripe's, with no Polar markup): $2 per month with an active payout, 0.25% + $0.25 per payout, and a cross-border (currency conversion) fee of 0.25% (EU) to 1% (other countries), which presumably includes the UK. No minimum payout is stated there. Withdraw in larger, less frequent amounts to keep the fixed costs small.
+- [x] Payouts: the Wise Business GBP account (UK account details) is linked as the payout account and the payout currency is **GBP**. Polar's payout accounts need a bank account in the business's country and currency, so USD, EUR and HKD Wise balances cannot be used. Every price is in USD (section 2), so Polar holds the balance in USD and the payout converts it to GBP, so there is nothing to convert by hand. Withdrawals are manual. Fees (Polar's fees page, which names them as Stripe's, with no Polar markup): $2 per month with an active payout, 0.25% + $0.25 per payout, and a cross-border (currency conversion) fee of 0.25% (EU) to 1% (other countries), which presumably includes the UK. No minimum payout is stated there. Withdraw in larger, less frequent amounts to keep the fixed costs small.
 - [x] The sandbox covers **both** subscriptions and one-off purchases.
 - [x] Polar's own refund terms and dispute handling against our policy below. Checked against the current terms (<https://polar.sh/legal/terms>) and found compatible with the 14-day, no-questions policy. From the docs: sellers can refund in full or in part, with no window or reason required; the processing fee is not returned on a refund (about 5% + $0.50 on the Starter plan); Polar can also refund up to 60 days after purchase to prevent chargebacks, so a refund can arrive after our 14 days and the webhook must map it to a reversal; a dispute costs $15 whatever the outcome, and buyers can file a chargeback for up to 120 days. Polar aims to keep the chargeback rate under 0.4% and escalates through refunds, held payouts and a blocked account if it climbs. No clause was found that obliges a seller to honour their own refund policy.
 
@@ -15,15 +15,17 @@ The API side is behind `IBillingProvider` (`apps/api/src/use-cases/ports/`). The
 
 Create these in the sandbox first, then again in live. The IDs go in the API's environment when the adapter lands.
 
-| Product              | Type                  | Price                              |
-| -------------------- | --------------------- | ---------------------------------- |
-| Pro monthly          | Subscription, monthly | $12, with local EUR and GBP prices |
-| Pro monthly, founder | Subscription, monthly | $9, with local EUR and GBP prices  |
-| Pro 3-month pass     | One-off               | $29, with local EUR and GBP prices |
-| Pro 6-month pass     | One-off               | $49, with local EUR and GBP prices |
+| Product              | Type                  | Price |
+| -------------------- | --------------------- | ----- |
+| Pro monthly          | Subscription, monthly | $12   |
+| Pro monthly, founder | Subscription, monthly | $9    |
+| Pro 3-month pass     | One-off               | $29   |
+| Pro 6-month pass     | One-off               | $49   |
+
+**USD only at launch, worldwide.** There are no EUR or GBP prices. One price list keeps the checkout simple, and it avoids a GBP to USD to GBP round trip on every local-currency sale (Polar converts each sale to USD for the balance, and the payout converts to GBP, so a local price pays two conversions). A buyer whose card is not in USD is converted by their own bank. Local currencies can be added later per product in the dashboard; decide the prices on purpose then (a tax-inclusive UK or EU price is higher than a plain conversion), and reword the pricing page so it does not show "$12" next to a different checkout price.
 
 - The founder price is a **separate product**, not a discount code. The API picks it for users inside 60 days of signup (or of `BILLING_LIVE_FROM`, for earlier users), so it cannot be shared or stacked. It stays $9 for the life of that subscription; say so on the pricing page.
-- Show prices **tax-inclusive** in the UK and EU (the consumer norm). Set this in the dashboard and record it here.
+- The $ price is **tax-inclusive** for UK and EU buyers (the consumer norm, and the organization default there), so a UK $9 sale shows $1.50 of VAT and leaves $7.50. Elsewhere, such as the US, tax is normally added on top of the price. Polar, as merchant of record, collects and files all of it; nothing is registered or filed by us for it. Confirm the tax behaviour per country with a sandbox checkout (billing country UK, US and Hong Kong; Hong Kong has no VAT or sales tax) and record it here.
 - Every checkout is created with the Trakwyn user id as the external customer id and as `metadata.userId`; the webhook maps events back to a user with it.
 - **A pass is a one-off product, and Polar gives it no duration.** Trakwyn works out the expiry itself from the order, using the months of the product id below. Never describe a pass as expiring in Polar.
 - **Prices are per environment.** The sandbox and production have separate products, tokens and webhook secrets. Nothing carries over.
@@ -46,7 +48,7 @@ It prints the `POLAR_PRODUCT_*=<id>` lines to paste into `apps/api/.env` or `pla
 - **Dry run is the default, and `--server` has no default.** The token is read from the environment only and is never printed.
 - **Re-running is safe.** A product that already exists (same `metadata.trakwyn_key`, else the same name; archived ones are skipped) is left alone, never updated. To change a price, edit the product in Polar, or archive it and re-run.
 - **`prices` is sent to Polar exactly as written**, so any shape the API accepts works. `key` and `envVar` are ours: `key` is stored in the product's metadata, and `envVar` names the line printed for it. A pass has no `recurring_interval`, which makes it a one-off product.
-- **The example is USD only.** Polar's docs do not show how to attach EUR and GBP prices through the API (they describe a default-currency price plus others enabled per product). Create the products with USD, then enable the other currencies in the dashboard; once you know the API shape, add those price objects to the file. Tax display (`tax_behavior`) is left to the organization default, which the docs say is tax-inclusive in the UK and EU. Confirm it on a sandbox checkout.
+- **The example is USD only, and that is the launch design.** Nothing more is needed in the dashboard. If local currencies are added later, Polar's docs do not show how to attach them through the API (they describe a default-currency price plus others enabled per product), so enable them in the dashboard and add the price objects to the file once the API shape is known. Tax display (`tax_behavior`) is left to the organization default, which the docs say is tax-inclusive in the UK and EU. Confirm it on a sandbox checkout.
 - Tests: `node --test infra/polar/import-products.test.mjs` (not run in CI).
 
 ### Settings
