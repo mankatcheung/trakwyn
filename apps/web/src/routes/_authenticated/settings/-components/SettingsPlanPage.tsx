@@ -145,6 +145,7 @@ function PlanActions({ status }: { status: BillingStatus }) {
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.passForfeitNote')}</p>
           )}
           {checkout.isError && <Alert tone="error">{t('plan.checkoutFailed')}</Alert>}
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.founderNote')}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
         </div>
       )}

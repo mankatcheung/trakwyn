@@ -61,4 +61,28 @@ describe('PrivacyPage', () => {
     expect(screen.queryByText(/API address/i)).not.toBeInTheDocument();
     expect(screen.getByText(/anonymous error reports/i)).toBeInTheDocument();
   });
+
+  it('says the merchant of record processes payment data (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { name: 'Payments' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/our merchant of record, Polar, collects your payment details/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/We never see or store your card number/)).toBeInTheDocument();
+  });
+
+  it('says Polar keeps its own purchase record after the account is deleted (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByText(/Polar keeps its own record of your purchases/)).toBeInTheDocument();
+  });
+
+  it('lists the payment provider among the service providers (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
+    ).toBeInTheDocument();
+  });
 });

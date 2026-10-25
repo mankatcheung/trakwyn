@@ -159,6 +159,32 @@ describe('SettingsPlanPage', () => {
       );
     });
 
+    it('says prices are in dollars and include VAT in the UK and EU (JEF-431)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      expect(
+        await screen.findByText(/Prices are in US dollars and include VAT in the UK and EU/),
+      ).toBeInTheDocument();
+    });
+
+    it('explains the $9 founder price and that it stays $9 (JEF-431)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      const note = await screen.findByText(/Founder price/);
+      expect(note).toHaveTextContent('$9 a month');
+      expect(note).toHaveTextContent('stays $9 for as long as that subscription runs');
+    });
+
+    it('does not show the founder note to an active subscriber (JEF-431)', async () => {
+      serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      await screen.findByRole('button', { name: 'Open billing portal' });
+      expect(screen.queryByText(/Founder price/)).toBeNull();
+    });
+
     it('shows only the portal to an active subscriber', async () => {
       serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
       render(<SettingsPlanPage />, { wrapper: Wrapper });

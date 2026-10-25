@@ -51,4 +51,36 @@ describe('TermsPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Browser extension' })).toBeInTheDocument();
   });
+
+  it('names the merchant of record as the seller of paid plans (JEF-431)', () => {
+    render(<TermsPage />);
+
+    expect(screen.getByRole('heading', { name: 'Paid plans and payments' })).toBeInTheDocument();
+    expect(screen.getByText(/our merchant of record, Polar/)).toBeInTheDocument();
+    expect(screen.getByText(/Polar is the seller of Pro to you/)).toBeInTheDocument();
+  });
+
+  it('states the prices, renewal, refund and founder price rules (JEF-431)', () => {
+    render(<TermsPage />);
+
+    expect(screen.getByText(/Prices are in US dollars/)).toBeInTheDocument();
+    expect(screen.getByText(/pass is a one-off payment/)).toBeInTheDocument();
+    expect(screen.getByText(/within 14 days of buying for a full refund/)).toBeInTheDocument();
+    expect(screen.getByText(/founder price of \$9 a month stays at \$9/)).toBeInTheDocument();
+  });
+
+  it('no longer says Trakwyn is free of charge (JEF-431)', () => {
+    render(<TermsPage />);
+
+    expect(screen.queryByText(/currently provided free of charge/)).toBeNull();
+    expect(screen.getByText(/Free plan and a paid Pro plan/)).toBeInTheDocument();
+  });
+
+  it('says deleting the account cancels a subscription (JEF-431)', () => {
+    render(<TermsPage />);
+
+    expect(
+      screen.getByText(/cancels any active Pro subscription straight away/),
+    ).toBeInTheDocument();
+  });
 });
