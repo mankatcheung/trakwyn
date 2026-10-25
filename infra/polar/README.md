@@ -76,7 +76,7 @@ Endpoint: `https://<api origin>/billing/webhook`. In Polar, set the endpoint's f
 | `order.paid`                                     | a one-off order is a pass; a subscription's orders (first or renewal) are ignored                 |
 | `order.refunded`                                 | a full refund ends the plan now; a partial refund is ignored                                      |
 
-`past_due` is deliberately not acted on: a subscriber keeps Pro while Polar retries the card (about 21 days) and loses it at `revoked`. Polar has no dispute event; the refunds page says a lost dispute shows up as a refund, which is **not confirmed** and is one of the things to check in the sandbox (JEF-433).
+`past_due` is deliberately not acted on: a subscriber keeps Pro while Polar retries the card (about 21 days) and loses it at `revoked`. Polar has no dispute event, and an escalated dispute reaches us as nothing at all (see "Disputes" in section 4).
 
 ### Creating the endpoint from a script
 
@@ -99,19 +99,88 @@ The signature is Standard Webhooks, verified over the raw body, with a five-minu
 
 A delivery that is signed correctly but whose body the adapter cannot read answers 500 on purpose: Polar redelivers up to ten times and the log names the event. After ten failures in a row Polar **disables the endpoint**, so a burst of 500s on `/billing/webhook` needs attention the same day.
 
-### Deploying the secrets
+### Token scopes
 
-The two Polar secrets are in `secret_env_vars`, and Cloud Run will not start a revision that references a secret with no version. So **before the next `terraform apply` in `infra/gcp`, load both** (sandbox values are fine while billing is off), then run `./load-secrets.sh <env-file> --apply`. Until then the dry run reports them as missing and exits non-zero. The plain settings can wait: with `BILLING_PROVIDER` unset in production the three billing paths fail closed on first use.
+Use a separate token for setup and for the running API, so the one on the server cannot touch products or webhooks.
+
+| Token                          | Scopes                                                                                                                     | Used by                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Setup (delete when done)       | `products:read`, `products:write`, `webhooks:write`                                                                        | `import-products.mjs`, `create-webhook-endpoint.mjs` |
+| Runtime (`POLAR_ACCESS_TOKEN`) | `checkouts:write`, `customer_sessions:write`, and `subscriptions:write` once the API revokes on account deletion (JEF-439) | the API                                              |
+
+Polar's docs state `products:*`, `webhooks:write` and `subscriptions:write` on the reference pages; the checkout and customer-session scope names are not printed there, so take their spelling from the token screen. A 403 from Polar on a checkout or portal call usually means a scope is missing.
+
+### Deploying the secrets (this order)
+
+Terraform creates the empty secret containers, and values are added out of band (`infra/gcp/secrets.tf`). Cloud Run will not start a revision that references a secret with no version. So for a new Polar secret:
+
+1. **Create the containers only**, with a targeted apply. This changes no running service:
+   ```bash
+   cd infra/gcp
+   terraform apply \
+     -target='google_secret_manager_secret.api["POLAR_ACCESS_TOKEN"]' \
+     -target='google_secret_manager_secret.api["POLAR_WEBHOOK_SECRET"]' \
+     -target='google_secret_manager_secret_iam_member.api_runtime["POLAR_ACCESS_TOKEN"]' \
+     -target='google_secret_manager_secret_iam_member.api_runtime["POLAR_WEBHOOK_SECRET"]'
+   ```
+2. **Add a version to each by hand**, with the value hidden:
+   ```bash
+   read -rs V; printf '%s' "$V" | gcloud secrets versions add polar-access-token --data-file=-
+   read -rs V; printf '%s' "$V" | gcloud secrets versions add polar-webhook-secret --data-file=-
+   unset V
+   ```
+3. **Then** set the plain settings in `plain_env` (`BILLING_PROVIDER`, `POLAR_SERVER`, the four `POLAR_PRODUCT_*`), run `terraform plan` (only the Cloud Run service's env should change) and `terraform apply`.
+
+**Do not use `load-secrets.sh` for these.** It cannot reach a secret that does not exist yet ("NO SECRET"), and `--apply` uploads a new version of _every_ secret it finds in its env file, which changes `latest` for secrets that work today (a different JWT secret signs everyone out). To replace sandbox values with live ones, add new versions with the same `gcloud` command, then roll out a new revision (Cloud Run reads `latest`, but running instances keep their old value).
+
+### Switching an environment on, and off again
+
+`createCheckoutSession` does not check `PLANS_ENFORCED`; only the Buy buttons are hidden by it. While `BILLING_PROVIDER=polar` is set on production, **any signed-in user could call the mutation by hand and, with sandbox credentials, pay with a test card and get Pro for free**. So a sandbox test against production (JEF-433) is done in one sitting and reverted:
+
+1. Revoke every sandbox subscription **immediately** (see section 4), then delete the sandbox webhook endpoint (it points at production; with the provider off the route answers 500 and Polar would disable it after ten failures).
+2. Remove the six plain settings from `plain_env` in `terraform.tfvars` and apply. The two secrets and their mounts can stay.
+3. Check: `/health` is 200, an unsigned `POST /billing/webhook` is **500** (no provider), and `createCheckoutSession` returns an error with no URL.
+4. Delete the throwaway accounts. Late events for a deleted user are recorded in `BillingEvent` with an empty `userId` and ignored; they hold no personal data and can be deleted.
+
+### What the sandbox run (JEF-433) showed
+
+- **Sandbox cards:** `4242 4242 4242 4242` pays; `4000 0000 0000 0259` pays and then raises a dispute. Use a UK or EU billing country to see VAT: a UK price is tax-inclusive, so $9 shows $1.50 of VAT (20/120 of the price).
+- **Receipts:** the sandbox sends customer emails only to members of the sandbox organisation; sub-addresses such as `you+e2e1@example.com` of a member are accepted.
+- **Email domains must resolve.** Polar rejects a `customer_email` whose domain does not exist (the seeded demo user `demo@trakwyn.app` cannot check out). Use an account with a real address.
+- **The Buy buttons are hidden while enforcement is off**, so call the mutations with an API token: `createCheckoutSession(plan: monthly | pass3Months | pass6Months)` and `createBillingPortalSession`.
+- **The user row is cached for five minutes**, and direct SQL changes bypass the cache. Wait five minutes after changing a row by hand before testing.
+- **A renewal cannot be triggered in the sandbox.** It is covered by the mapper's unit tests (an order with a subscription id is `ignored`, whatever its `billing_reason`); the first order of a subscription takes the same branch.
 
 ## 4. Refund policy
 
 14 days, no questions asked, for the monthly plan and the passes (matches the EU and UK cooling-off period for digital content). A refund downgrades the user immediately. Wording used on the Plan page: "Not happy? Email us within 14 days for a full refund. Cancelling stops renewal and you keep Pro until the end of the period you paid for."
 
+### Refunding a customer
+
+1. In the Polar dashboard, refund the order **in full**. A partial refund is ignored by the API and leaves the plan alone; an order refunded in full downgrades the user immediately.
+2. If the order was a subscription's, **revoke the subscription immediately** in the same sitting. Refunding an order does **not** end a Polar subscription. Left active, it keeps renewing (the customer is charged and, because renewals are ignored, stays on Free) and it blocks them from subscribing again ("You already have an active subscription"). Cancelling at period end is _not_ enough: that leaves the subscription active until the date.
+3. Passes are one-off, so a pass refund needs no second step.
+
+Refunding an older pass while the customer is on a subscription changes nothing, by design.
+
+### Disputes
+
+Polar handles a chargeback itself as merchant of record. It sends **no webhook and has no endpoint** for an escalated dispute (statuses `needs_response`, `under_review`, `lost`, `won`): in the sandbox a dispute raised on a pass stayed at "needs response" and nothing reached the API, so the user stayed on Pro. Only a refund that Polar issues to _prevent_ a dispute carries a dispute marker, and that arrives as `order.refunded`, which is handled.
+
+So disputes are handled by hand:
+
+- Watch Polar's dispute notifications and its dashboard.
+- To downgrade the user, run against the production database: `pnpm --filter @trakwyn/api plan set --email <email> --plan free`.
+- Each dispute costs $15 whatever the outcome (Polar's fees page). Polar aims to keep the chargeback rate under 0.4% and escalates through refunds, held payouts and a blocked account if it climbs. The 14-day refund is the main mitigation: easy to ask for, so a customer is less likely to go to their bank.
+- Open question for Polar support: is there a webhook or API for escalated disputes, and how long is a disputed amount held? If so, build detection as a follow-up.
+
 ## 5. Launch
 
-1. Test end to end in the sandbox: each of the four purchases, cancel in the portal, a refund, a replayed event, a bad signature.
-2. Set `BILLING_PROVIDER` and, if users signed up before launch, `BILLING_LIVE_FROM` (the day billing goes live) on the API.
-3. Switch the provider to live and repeat one purchase and one refund with a real card.
+The sandbox end-to-end run is done (JEF-433, results in that issue). What is left, in order:
+
+1. JEF-431 (terms, privacy, pricing copy, accountant) and JEF-439 (revoke the subscription when an account is deleted) are finished.
+2. Create the live products (`import-products.mjs --server production`), the live webhook endpoint and a live runtime token; add the live secrets as new versions of the same two Secret Manager secrets; set `POLAR_SERVER=production` and the live `POLAR_PRODUCT_*` ids; set `BILLING_PROVIDER=polar` and, if users signed up before launch, `BILLING_LIVE_FROM` (the day billing goes live). Enforcement stays off.
+3. Repeat one purchase and one refund (and revoke the subscription) with a real card.
 4. Set `PLANS_ENFORCED=true`, then `pnpm --filter @trakwyn/api plan grant-trial`.
 
 ## Open questions for an accountant
