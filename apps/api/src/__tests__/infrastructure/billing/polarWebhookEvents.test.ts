@@ -1,9 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { mapPolarEvent } from '#src/infrastructure/billing/polarWebhookEvents.js';
 
-// Payloads are shaped from Polar's webhook docs (https://polar.sh/docs), keeping the
-// fields the mapper reads. They are not captured deliveries: rollout 3 (JEF-433) runs
-// the real sandbox, which is the check that Polar's payloads still look like this.
+// Most payloads here are shaped from Polar's webhook docs (https://polar.sh/docs), keeping
+// the fields the mapper reads. One is a real delivery from the sandbox (see "a recorded
+// delivery" below), and the sandbox run in JEF-433 worked end to end with the rest.
 
 const PASS_MONTHS = new Map<string, 3 | 6>([
   ['prod-pass-3m', 3],
@@ -199,6 +200,42 @@ describe('mapPolarEvent', () => {
 
     it('throws on a body that is not an event at all', () => {
       expect(() => mapPolarEvent('evt-1', 'nope', PASS_MONTHS)).toThrow();
+    });
+  });
+
+  describe('a recorded delivery', () => {
+    // A real `order.paid` for a 3-month pass, sent by the Polar sandbox on 2026-10-25
+    // (JEF-433), with every id, name and address replaced by a placeholder. It is the one
+    // payload here that was not written from the docs.
+    const recorded = JSON.parse(
+      readFileSync(new URL('./fixtures/polarOrderPaidPass.json', import.meta.url), 'utf8'),
+    );
+    const passes = new Map<string, 3 | 6>([[recorded.data.product_id, 3]]);
+
+    it('maps to a 3-month pass for the user named by the external customer id', () => {
+      expect(mapPolarEvent('msg-recorded-1', recorded, passes)).toEqual({
+        id: 'msg-recorded-1',
+        userId: 'user-fixture-1',
+        customerId: '00000000-0000-4000-8000-0000000000c1',
+        kind: 'pass_purchased',
+        months: 3,
+      });
+    });
+
+    it('finds the user in the checkout metadata when the customer has no external id', () => {
+      const withoutExternalId = {
+        ...recorded,
+        data: { ...recorded.data, customer: { ...recorded.data.customer, external_id: null } },
+      };
+
+      expect(mapPolarEvent('msg-recorded-1', withoutExternalId, passes)).toMatchObject({
+        userId: 'user-fixture-1',
+        kind: 'pass_purchased',
+      });
+    });
+
+    it('fails, rather than dropping the payment, when the paid product is not a known pass', () => {
+      expect(() => mapPolarEvent('msg-recorded-1', recorded, new Map())).toThrow(/not a pass/);
     });
   });
 });

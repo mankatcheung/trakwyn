@@ -10,6 +10,12 @@
 # (JEF-381, JEF-51). That needs infra/vercel applied and initialised on this
 # machine, and TF_VAR_vercel_api_token set (infra/vercel/.envrc).
 #
+# POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET are deliberately not here. They are
+# per environment (sandbox or live) and are added by hand with
+# `gcloud secrets versions add`, in the order infra/polar/README.md gives. This
+# script uploads a new version of every secret it lists, so it must not be the
+# way a sandbox value is replaced by a live one.
+#
 #   ./load-secrets.sh ../../apps/api/.env.production            # dry run
 #   ./load-secrets.sh ../../apps/api/.env.production --apply    # upload
 #
@@ -34,8 +40,6 @@ SECRET_KEYS=(
   BLOB_PRIVATE_READ_WRITE_TOKEN
   BREVO_API_KEY
   TURNSTILE_SECRET_KEY
-  POLAR_ACCESS_TOKEN
-  POLAR_WEBHOOK_SECRET
   CRON_SECRET
   DIGEST_ADMIN_SECRET
   GOOGLE_OAUTH_CLIENT_SECRET
