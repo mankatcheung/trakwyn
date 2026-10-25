@@ -3,7 +3,7 @@ import { CONTACT_EMAIL } from '#/constants';
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'October 21, 2026';
+const LAST_UPDATED = 'October 25, 2026';
 
 /**
  * Drafted from what the app actually does, per JEF-202 — not legally
@@ -35,6 +35,14 @@ export function TermsPage() {
 
       <h2>{t('legal.terms.clipperTitle')}</h2>
       <p>{t('legal.terms.clipperBody')}</p>
+
+      <h2>{t('legal.terms.paymentsTitle')}</h2>
+      <p>{t('legal.terms.paymentsSeller')}</p>
+      <p>{t('legal.terms.paymentsPrices')}</p>
+      <p>{t('legal.terms.paymentsPlans')}</p>
+      <p>{t('legal.terms.paymentsRefund')}</p>
+      <p>{t('legal.terms.paymentsFounder')}</p>
+      <p>{t('legal.terms.paymentsDeletion')}</p>
 
       <h2>{t('legal.terms.acceptableTitle')}</h2>
       <p>{t('legal.terms.acceptableIntro')}</p>
