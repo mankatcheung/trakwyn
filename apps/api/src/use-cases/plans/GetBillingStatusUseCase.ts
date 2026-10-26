@@ -2,15 +2,12 @@ import { effectivePlan } from '#src/domain/plan/Plan.js';
 import type { Entitlements, Plan, PlanSource } from '#src/domain/plan/Plan.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
-import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { resolveEntitlements } from '#src/use-cases/plans/resolveEntitlements.js';
-import { startOfUtcMonth } from '#src/use-cases/shared/tokenLimit.js';
 
 interface Deps {
   userRepository: IUserRepository;
   entitlementService: IEntitlementService;
-  llmUsageEventRepository: ILlmUsageEventRepository;
   now: () => Date;
 }
 
@@ -36,8 +33,6 @@ export interface BillingStatus {
   usage: {
     applications: number;
     documentBytes: number;
-    /** AI actions this calendar month (UTC), counted as recorded LLM requests. */
-    aiActionsThisMonth: number;
   };
 }
 
@@ -55,10 +50,6 @@ export class GetBillingStatusUseCase {
 
     const now = this.deps.now();
     const entitlements = this.deps.entitlementService.forUser(user);
-    const summaries = await this.deps.llmUsageEventRepository.summarizeByUserId(
-      user.id,
-      startOfUtcMonth(now),
-    );
 
     return {
       enforced: this.deps.entitlementService.enforced,
@@ -71,7 +62,6 @@ export class GetBillingStatusUseCase {
       usage: {
         applications: user.applicationCount,
         documentBytes: user.documentBytes,
-        aiActionsThisMonth: summaries.reduce((total, s) => total + s.requestCount, 0),
       },
     };
   }

@@ -416,17 +416,19 @@ export const PLAN_LIMITS = {
   free: {
     applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
     documentBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
-    /** AI actions with the user's own key per calendar month (UTC), counted as recorded LLM requests. */
-    aiActionsPerMonth: 5,
   },
   pro: {
     applications: null,
     documentBytes: 2 * 1024 * 1024 * 1024,
-    aiActionsPerMonth: null,
   },
 } as const;
 
-/** The Pro-only capabilities, per plan. Free users keep their data and can still export it. */
+/**
+ * What each plan switches on, per plan. Free users keep their data and can
+ * still export it. AI actions with the user's own key are not here: they run
+ * on a key the user pays the provider for, so neither plan limits them
+ * (JEF-442), and neither is `mcpAccess`, which is on for both.
+ */
 export const PLAN_FEATURES = {
   free: {
     notifications: false,
@@ -434,6 +436,7 @@ export const PLAN_FEATURES = {
     offers: false,
     shareLinks: false,
     apiAccess: false,
+    mcpAccess: true,
   },
   pro: {
     notifications: true,
@@ -441,6 +444,7 @@ export const PLAN_FEATURES = {
     offers: true,
     shareLinks: true,
     apiAccess: true,
+    mcpAccess: true,
   },
 } as const;
 

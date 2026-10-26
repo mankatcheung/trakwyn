@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useBillingStatus } from '#/lib/billingStatus';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select, Skeleton } from '@trakwyn/ui';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
@@ -35,6 +36,8 @@ export function SettingsIntegrationsPage() {
   const { t } = useLocale();
   const qc = useQueryClient();
 
+  const billingStatus = useBillingStatus();
+
   // API tokens
   const { data: apiTokensData } = useQuery({
     queryKey: ['apiTokens'],
@@ -51,13 +54,11 @@ export function SettingsIntegrationsPage() {
   const [apiTokenScope, setApiTokenScope] = useState<ApiTokenScope>('read');
   const [creatingApiToken, setCreatingApiToken] = useState(false);
   const [apiTokenError, setApiTokenError] = useState<string | null>(null);
-  const [apiTokenNeedsPro, setApiTokenNeedsPro] = useState(false);
 
   const onCreateApiToken = async () => {
     if (!apiTokenName.trim()) return;
     setCreatingApiToken(true);
     setApiTokenError(null);
-    setApiTokenNeedsPro(false);
     try {
       const res = await gqlClient.request<{ createApiToken: CreateApiTokenPayload }>(
         CREATE_API_TOKEN,
@@ -72,7 +73,6 @@ export function SettingsIntegrationsPage() {
       setApiTokenFormOverride(null);
       await qc.invalidateQueries({ queryKey: ['apiTokens'] });
     } catch (err) {
-      setApiTokenNeedsPro(extractGqlErrorCode(err) === PLAN_REQUIRED_CODE);
       setApiTokenError(extractGqlError(err) ?? t('integrations.createTokenFailed'));
     } finally {
       setCreatingApiToken(false);
@@ -86,7 +86,6 @@ export function SettingsIntegrationsPage() {
       await gqlClient.request(DELETE_API_TOKEN, { id });
       await qc.invalidateQueries({ queryKey: ['apiTokens'] });
     } catch (err) {
-      setApiTokenNeedsPro(false);
       setApiTokenError(extractGqlError(err) ?? t('integrations.deleteTokenFailed'));
     } finally {
       setDeletingApiTokenId(null);
@@ -211,6 +210,11 @@ export function SettingsIntegrationsPage() {
                 {t('integrations.mcpHintLink')}
               </a>
             </p>
+            {billingStatus?.enforced && !billingStatus.features.apiAccess && (
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {t('integrations.tokenFreePlanNote')}
+              </p>
+            )}
           </div>
           {!apiTokenFormOpen && !newApiToken && (
             <Button
@@ -259,7 +263,7 @@ export function SettingsIntegrationsPage() {
 
         {!newApiToken && apiTokenFormOpen && (
           <>
-            {apiTokenError && <FormMessage message={apiTokenError} needsPro={apiTokenNeedsPro} />}
+            {apiTokenError && <Alert>{apiTokenError}</Alert>}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
                 <FormLabel>{t('integrations.tokenNameLabel')}</FormLabel>

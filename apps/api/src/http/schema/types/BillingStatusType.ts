@@ -14,7 +14,10 @@ PlanFeaturesRef.implement({
     analytics: t.exposeBoolean('analytics'),
     offers: t.exposeBoolean('offers'),
     shareLinks: t.exposeBoolean('shareLinks'),
-    apiAccess: t.exposeBoolean('apiAccess'),
+    apiAccess: t.exposeBoolean('apiAccess', {
+      description: 'The GraphQL API with an API token. MCP access is `mcpAccess`.',
+    }),
+    mcpAccess: t.exposeBoolean('mcpAccess'),
   }),
 });
 
@@ -24,7 +27,6 @@ PlanLimitsRef.implement({
   fields: (t) => ({
     applications: t.exposeInt('applications', { nullable: true }),
     documentBytes: t.exposeFloat('documentBytes'),
-    aiActionsPerMonth: t.exposeInt('aiActionsPerMonth', { nullable: true }),
   }),
 });
 
@@ -34,7 +36,6 @@ PlanUsageRef.implement({
   fields: (t) => ({
     applications: t.exposeInt('applications'),
     documentBytes: t.exposeFloat('documentBytes'),
-    aiActionsThisMonth: t.exposeInt('aiActionsThisMonth'),
   }),
 });
 

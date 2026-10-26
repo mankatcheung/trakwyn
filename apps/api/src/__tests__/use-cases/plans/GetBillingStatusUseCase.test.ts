@@ -4,28 +4,11 @@ import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { PLAN_LIMITS } from '#src/use-cases/constants.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
-import { makeLlmUsageEventRepository } from '#src/__tests__/helpers/mocks/llm.js';
 
 const NOW = new Date('2026-11-15T12:00:00.000Z');
 
-const usage = (provider: string, requestCount: number) => ({
-  provider,
-  requestCount,
-  promptTokens: 100,
-  completionTokens: 50,
-  cacheReadTokens: 0,
-  cacheWriteTokens: 0,
-  lastUsedAt: NOW,
-});
-
-function build(
-  user = makeUser(),
-  { plansEnforced = true, requests = [] as ReturnType<typeof usage>[] } = {},
-) {
+function build(user = makeUser(), { plansEnforced = true } = {}) {
   const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-  const llmUsageEventRepository = makeLlmUsageEventRepository({
-    summarizeByUserId: vi.fn().mockResolvedValue(requests),
-  });
   const entitlementService = new EntitlementService({
     userRepository,
     plansEnforced,
@@ -34,17 +17,14 @@ function build(
   const useCase = new GetBillingStatusUseCase({
     userRepository,
     entitlementService,
-    llmUsageEventRepository,
     now: () => NOW,
   });
-  return { useCase, llmUsageEventRepository };
+  return { useCase };
 }
 
 describe('GetBillingStatusUseCase', () => {
   it('reports a Free user with the Free limits and what they have used', async () => {
-    const { useCase } = build(makeUser({ applicationCount: 12, documentBytes: 3_000_000 }), {
-      requests: [usage('openai', 2), usage('anthropic', 1)],
-    });
+    const { useCase } = build(makeUser({ applicationCount: 12, documentBytes: 3_000_000 }));
 
     const status = await useCase.execute({ userId: 'user-1' });
 
@@ -56,11 +36,11 @@ describe('GetBillingStatusUseCase', () => {
       limits: {
         applications: PLAN_LIMITS.free.applications,
         documentBytes: PLAN_LIMITS.free.documentBytes,
-        aiActionsPerMonth: 5,
       },
-      usage: { applications: 12, documentBytes: 3_000_000, aiActionsThisMonth: 3 },
+      usage: { applications: 12, documentBytes: 3_000_000 },
     });
     expect(status.features.analytics).toBe(false);
+    expect(status.features.mcpAccess).toBe(true);
   });
 
   it('describes both plans, whichever one the user is on, so a client can compare them', async () => {
@@ -119,18 +99,6 @@ describe('GetBillingStatusUseCase', () => {
 
     expect(status.enforced).toBe(false);
     expect(Object.values(status.features).every(Boolean)).toBe(true);
-    expect(status.limits.aiActionsPerMonth).toBeNull();
-  });
-
-  it('counts AI actions from the start of the calendar month (UTC)', async () => {
-    const { useCase, llmUsageEventRepository } = build();
-
-    await useCase.execute({ userId: 'user-1' });
-
-    expect(llmUsageEventRepository.summarizeByUserId).toHaveBeenCalledWith(
-      'user-1',
-      new Date('2026-11-01T00:00:00.000Z'),
-    );
   });
 
   it('fails with NotFoundError for a user that does not exist', async () => {

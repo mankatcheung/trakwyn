@@ -15,7 +15,7 @@ describe('ValidateApiTokenUseCase', () => {
       entitlementService: makeEntitlementService(),
     });
 
-    const result = await useCase.execute('trakwyn_unknown');
+    const result = await useCase.execute('trakwyn_unknown', 'graphql');
 
     expect(result).toBeNull();
     expect(repo.updateLastUsed).not.toHaveBeenCalled();
@@ -38,28 +38,44 @@ describe('ValidateApiTokenUseCase', () => {
       entitlementService: makeEntitlementService(),
     });
 
-    const result = await useCase.execute(rawToken);
+    const result = await useCase.execute(rawToken, 'graphql');
 
     expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
     expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
   });
 
-  it('stops honouring a token whose owner is no longer on a plan with API access', async () => {
-    const token = makeApiToken({ id: 'token-1', userId: 'user-1' });
-    const repo = makeApiTokenRepository({
-      findByTokenHash: vi.fn().mockResolvedValue({ token, userEmail: 'user@example.com' }),
-      updateLastUsed: vi.fn().mockResolvedValue(undefined),
-    });
-    const entitlementService = makeFreeEntitlementService();
-    const useCase = new ValidateApiTokenUseCase({
-      apiTokenRepository: repo,
-      entitlementService,
+  describe('a token whose owner is on the Free plan', () => {
+    const build = () => {
+      const token = makeApiToken({ id: 'token-1', userId: 'user-1' });
+      const repo = makeApiTokenRepository({
+        findByTokenHash: vi.fn().mockResolvedValue({ token, userEmail: 'user@example.com' }),
+        updateLastUsed: vi.fn().mockResolvedValue(undefined),
+      });
+      const entitlementService = makeFreeEntitlementService();
+      const useCase = new ValidateApiTokenUseCase({
+        apiTokenRepository: repo,
+        entitlementService,
+      });
+      return { useCase, repo, entitlementService };
+    };
+
+    it('stops being honoured on the GraphQL API, which needs API access', async () => {
+      const { useCase, repo, entitlementService } = build();
+
+      const result = await useCase.execute('trakwyn_abc123', 'graphql');
+
+      expect(result).toBeNull();
+      expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
+      expect(repo.updateLastUsed).not.toHaveBeenCalled();
     });
 
-    const result = await useCase.execute('trakwyn_abc123');
+    it('is still honoured on MCP, which every plan includes', async () => {
+      const { useCase, repo } = build();
 
-    expect(result).toBeNull();
-    expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
-    expect(repo.updateLastUsed).not.toHaveBeenCalled();
+      const result = await useCase.execute('trakwyn_abc123', 'mcp');
+
+      expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+      expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
+    });
   });
 });
