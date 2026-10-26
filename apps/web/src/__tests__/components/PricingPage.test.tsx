@@ -83,6 +83,14 @@ describe('PricingPage', () => {
     expect(within(analytics).getByText('Included')).toBeInTheDocument();
   });
 
+  it('shows MCP access as included on both plans', () => {
+    render(<PricingPage />);
+
+    const mcp = within(screen.getByRole('row', { name: /MCP access/ }));
+    expect(mcp.getAllByText('Included')).toHaveLength(2);
+    expect(mcp.queryByText('Not included')).not.toBeInTheDocument();
+  });
+
   describe('against the API plan constants', () => {
     it('shows the Free application cap', () => {
       expect(API_CONSTANTS).toMatch(/APPLICATIONS_PER_USER: 50,/);
@@ -96,15 +104,18 @@ describe('PricingPage', () => {
       expect(en['pricing.proStorage']).toBe('2 GB');
     });
 
-    it('shows the Free AI allowance', () => {
-      expect(API_CONSTANTS).toMatch(/aiActionsPerMonth: 5,/);
-      expect(en['pricing.freeAi']).toBe('5 a month');
+    it('limits neither plan on AI actions, which run on the user’s own key', () => {
+      expect(API_CONSTANTS).not.toMatch(/aiActionsPerMonth/);
+      const { container } = render(<PricingPage />);
+      const row = within(screen.getByRole('row', { name: /AI actions/ }));
+      expect(row.getAllByText('Unlimited')).toHaveLength(2);
+      expect(container.textContent).not.toMatch(/AI actions.*a month/);
     });
 
-    it('lists exactly the features the API gates', () => {
+    it('lists exactly the features the API gates, with MCP the only one on Free', () => {
       const free = /PLAN_FEATURES = \{\s*free: \{([^}]*)\}/.exec(API_CONSTANTS)?.[1] ?? '';
       expect(free.match(/: false/g)).toHaveLength(5);
-      expect(free.match(/: true/g)).toBeNull();
+      expect(free.match(/(\w+): true/g)).toEqual(['mcpAccess: true']);
     });
   });
 });

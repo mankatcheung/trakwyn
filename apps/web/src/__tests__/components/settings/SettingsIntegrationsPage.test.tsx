@@ -82,6 +82,44 @@ describe('SettingsIntegrationsPage', () => {
     );
   });
 
+  describe('the Free plan note on API tokens (JEF-442)', () => {
+    const NOTE = /On the Free plan a token works with MCP only/;
+
+    const serveBilling = (enforced: boolean, apiAccess: boolean) =>
+      mockGqlRequest.mockImplementation((doc: string) =>
+        Promise.resolve(
+          typeof doc === 'string' && doc.includes('query BillingStatus')
+            ? { billingStatus: { enforced, features: { apiAccess, mcpAccess: true } } }
+            : { apiTokens: [] },
+        ),
+      );
+
+    it('tells a Free user their token is for MCP', async () => {
+      serveBilling(true, false);
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByText(NOTE)).toBeInTheDocument();
+    });
+
+    it('stays quiet for a Pro user', async () => {
+      serveBilling(true, true);
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      await screen.findByText('API tokens');
+      await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+      expect(screen.queryByText(NOTE)).toBeNull();
+    });
+
+    it('stays quiet where plans are not enforced', async () => {
+      serveBilling(false, false);
+      render(<SettingsIntegrationsPage />, { wrapper: Wrapper });
+
+      await screen.findByText('API tokens');
+      await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+      expect(screen.queryByText(NOTE)).toBeNull();
+    });
+  });
+
   describe('API token scope (JEF-170)', () => {
     /** The page issues several queries; resolve each by the operation it names. */
     function respondByOperation(tokens: Array<Record<string, unknown>> = []) {
@@ -403,10 +441,12 @@ describe('SettingsIntegrationsPage', () => {
       response: { errors: [{ message, extensions: { code: 'PLAN_REQUIRED' } }] },
     });
 
-    it('offers the plan page when creating an API token needs Pro', async () => {
+    it('never asks a Free user to upgrade to create an API token (JEF-442)', async () => {
       mockGqlRequest.mockImplementation((doc: string) => {
         if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
-          return Promise.reject(planRequired('API tokens and MCP access is a Pro feature'));
+          return Promise.reject({
+            response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
+          });
         }
         return Promise.resolve({ apiTokens: [], mcpOAuthGrants: [], shareLinks: [] });
       });
@@ -417,13 +457,8 @@ describe('SettingsIntegrationsPage', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: /create token/i }));
 
-      expect(
-        await screen.findByText(/API tokens and MCP access is a Pro feature/),
-      ).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'See what Pro includes' })).toHaveAttribute(
-        'href',
-        '/settings/plan',
-      );
+      expect(await screen.findByText('Nope')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'See what Pro includes' })).not.toBeInTheDocument();
     });
 
     it('offers the plan page when creating a share link needs Pro', async () => {

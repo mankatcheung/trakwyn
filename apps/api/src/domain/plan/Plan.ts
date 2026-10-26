@@ -7,14 +7,19 @@ export type Plan = 'free' | 'pro';
  */
 export type PlanSource = 'subscription' | 'pass' | 'trial' | 'grant';
 
-/** The Pro-only capabilities that are switched on or off as a whole. */
-export type PlanFeature = 'notifications' | 'analytics' | 'offers' | 'shareLinks' | 'apiAccess';
+/**
+ * The capabilities that are switched on or off as a whole. `mcpAccess` is on
+ * for every plan (JEF-442): an MCP client runs on the user's own AI key.
+ * `apiAccess` is the rest of the API, with a token, and stays Pro.
+ */
+export type PlanFeature =
+  'notifications' | 'analytics' | 'offers' | 'shareLinks' | 'apiAccess' | 'mcpAccess';
 
 /**
  * Everything a plan allows, resolved for one user at one instant.
  *
- * `limits.applications` and `limits.aiActionsPerMonth` are `null` for "no
- * limit". `documentBytes` is always a number: nobody gets unlimited storage.
+ * `limits.applications` is `null` for "no limit". `documentBytes` is always a
+ * number: nobody gets unlimited storage.
  */
 export interface Entitlements {
   /** The plan in force now: a Pro plan whose expiry has passed reads as `free`. */
@@ -23,7 +28,6 @@ export interface Entitlements {
   limits: {
     applications: number | null;
     documentBytes: number;
-    aiActionsPerMonth: number | null;
   };
 }
 

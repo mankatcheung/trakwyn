@@ -114,7 +114,7 @@ cp apps/web/.env.example apps/web/.env
 - **Plans are decided by `IEntitlementService` (JEF-344), never by a constant in a use case.**
   - A Pro feature calls `assertFeature(userId, feature)` first; a per-user cap is passed to the repository (`applicationLimit`, `storageLimitBytes`) instead of being read from `CONTENT_LIMITS` there.
   - `PLANS_ENFORCED` is off by default, and then every feature is on but the caps that already existed stay. Only `EntitlementService` reads it.
-  - A downgrade never touches data. Details, and the Free AI allowance, are in `apps/api/CLAUDE.md`.
+  - A downgrade never touches data. Details are in `apps/api/CLAUDE.md`. AI actions with the user's own key and MCP access are on for both plans (JEF-442).
 - **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow

@@ -16,13 +16,12 @@ function makeService(plansEnforced: boolean, user = makeUser()) {
 
 describe('EntitlementService', () => {
   describe('with plans not enforced (the default, and every self-hosted instance)', () => {
-    it('gives a Free user every feature and unlimited AI', () => {
+    it('gives a Free user every feature', () => {
       const { service } = makeService(false);
 
       const entitlements = service.forUser(makeUser({ plan: 'free' }));
 
       expect(Object.values(entitlements.features).every(Boolean)).toBe(true);
-      expect(entitlements.limits.aiActionsPerMonth).toBeNull();
     });
 
     it('keeps the caps the system enforced before plans existed', () => {
@@ -49,7 +48,16 @@ describe('EntitlementService', () => {
 
       expect(entitlements.plan).toBe('free');
       expect(entitlements.features.analytics).toBe(false);
-      expect(entitlements.limits.aiActionsPerMonth).toBe(PLAN_LIMITS.free.aiActionsPerMonth);
+      expect(entitlements.limits).toEqual({ ...PLAN_LIMITS.free });
+    });
+
+    it('gives a Free user MCP access but not API access with a token (JEF-442)', async () => {
+      const { service } = makeService(true);
+
+      await expect(service.assertFeature('user-1', 'mcpAccess')).resolves.toBeUndefined();
+      await expect(service.assertFeature('user-1', 'apiAccess')).rejects.toBeInstanceOf(
+        PlanRequiredError,
+      );
     });
 
     it('gives an active Pro subscription the Pro entitlements', () => {

@@ -82,7 +82,7 @@ describe('AuthenticateRequestUseCase', () => {
     const result = await useCase.execute('trakwyn_abc123');
 
     expect(result).toEqual({ sub: 'user-1', email: 'user@example.com' });
-    expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123');
+    expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123', 'graphql');
     expect(tokenService.verifyAccess).not.toHaveBeenCalled();
   });
 

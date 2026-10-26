@@ -15,7 +15,7 @@ interface Deps {
 
 /**
  * What an instance that does not enforce plans gives everyone: every Pro
- * feature and no AI allowance, but the per-user caps the system already
+ * feature, but the per-user caps the system already
  * enforced before plans existed (JEF-425's 100 MB, the application count).
  * Lifting those would loosen a deployed system the moment this ships, with
  * nothing in return, so "not enforced" turns features on and leaves the
@@ -27,7 +27,6 @@ const UNENFORCED: Entitlements = {
   limits: {
     applications: PLAN_LIMITS.free.applications,
     documentBytes: PLAN_LIMITS.free.documentBytes,
-    aiActionsPerMonth: null,
   },
 };
 
@@ -36,7 +35,8 @@ const FEATURE_LABEL: Record<PlanFeature, string> = {
   analytics: 'Analytics',
   offers: 'Offer tools',
   shareLinks: 'Share links',
-  apiAccess: 'API tokens and MCP access',
+  apiAccess: 'API access with a token',
+  mcpAccess: 'MCP access',
 };
 
 export class EntitlementService implements IEntitlementService {

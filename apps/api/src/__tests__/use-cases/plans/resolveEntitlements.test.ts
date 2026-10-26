@@ -31,7 +31,7 @@ describe('effectivePlan', () => {
 });
 
 describe('resolveEntitlements', () => {
-  it('gives a free user no Pro features', () => {
+  it('gives a free user no Pro features, but MCP access', () => {
     const entitlements = resolveEntitlements('free', null, NOW);
 
     expect(entitlements.plan).toBe('free');
@@ -41,6 +41,7 @@ describe('resolveEntitlements', () => {
       offers: false,
       shareLinks: false,
       apiAccess: false,
+      mcpAccess: true,
     });
   });
 
@@ -56,19 +57,18 @@ describe('resolveEntitlements', () => {
 
     expect(limits.applications).toBe(CONTENT_LIMITS.APPLICATIONS_PER_USER);
     expect(limits.documentBytes).toBe(CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES);
-    expect(limits.aiActionsPerMonth).toBe(PLAN_LIMITS.free.aiActionsPerMonth);
   });
 
-  it('gives a pro user no application cap, 2 GB of documents and unlimited AI', () => {
+  it('gives a pro user no application cap and 2 GB of documents', () => {
     const { limits } = resolveEntitlements('pro', null, NOW);
 
     expect(limits.applications).toBeNull();
     expect(limits.documentBytes).toBe(2 * 1024 * 1024 * 1024);
-    expect(limits.aiActionsPerMonth).toBeNull();
   });
 
-  it('states the free AI allowance as five actions a month', () => {
-    expect(resolveEntitlements('free', null, NOW).limits.aiActionsPerMonth).toBe(5);
+  it('limits neither plan on AI actions, which run on the user’s own key (JEF-442)', () => {
+    expect(Object.keys(PLAN_LIMITS.free).sort()).toEqual(['applications', 'documentBytes']);
+    expect(Object.keys(PLAN_LIMITS.pro).sort()).toEqual(['applications', 'documentBytes']);
   });
 
   it('resolves an expired pass to the free entitlements', () => {

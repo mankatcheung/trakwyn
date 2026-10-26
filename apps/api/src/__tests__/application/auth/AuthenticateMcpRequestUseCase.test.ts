@@ -2,8 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { AuthenticateMcpRequestUseCase } from '#src/use-cases/auth/AuthenticateMcpRequestUseCase.js';
 import type { ValidateApiTokenUseCase } from '#src/use-cases/apiTokens/ValidateApiTokenUseCase.js';
 import type { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
+import { PLAN_FEATURES } from '#src/use-cases/constants.js';
 import {
   makeEntitlementService,
+  makeFreeEntitlements,
   makeFreeEntitlementService,
 } from '#src/__tests__/helpers/mocks/plans.js';
 
@@ -38,7 +40,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
     // The scope is carried through, not discarded: McpController needs it to
     // refuse write tools for read-only tokens (JEF-176).
     expect(result).toEqual({ sub: 'user-1', scope: 'full' });
-    expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123');
+    expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123', 'mcp');
   });
 
   it('returns user id and scope for a READ-scope API token (MCP accepts any scope)', async () => {
@@ -134,7 +136,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
     expect(validateApiTokenUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('rejects an OAuth grant whose owner is no longer on a plan with MCP access', async () => {
+  it('accepts an OAuth grant whose owner is on the Free plan, which includes MCP (JEF-442)', async () => {
     const entitlementService = makeFreeEntitlementService();
     const useCase = new AuthenticateMcpRequestUseCase({
       entitlementService,
@@ -144,8 +146,30 @@ describe('AuthenticateMcpRequestUseCase', () => {
       ),
     });
 
-    await expect(useCase.execute('trakwyn_mcp_access')).resolves.toBeNull();
+    await expect(useCase.execute('trakwyn_mcp_access')).resolves.toEqual({
+      sub: 'user-1',
+      scope: 'full',
+    });
     expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
+  });
+
+  it('rejects an OAuth grant whose owner is on a plan without MCP access', async () => {
+    const entitlementService = makeEntitlementService({
+      forUserId: vi.fn().mockResolvedValue(
+        makeFreeEntitlements({
+          features: { ...PLAN_FEATURES.free, mcpAccess: false },
+        }),
+      ),
+    });
+    const useCase = new AuthenticateMcpRequestUseCase({
+      entitlementService,
+      validateApiTokenUseCase: makeValidateApiTokenUseCase(),
+      validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
+        vi.fn().mockResolvedValue({ sub: 'user-1', scope: 'full' }),
+      ),
+    });
+
+    await expect(useCase.execute('trakwyn_mcp_access')).resolves.toBeNull();
   });
 
   it('rejects an OAuth token when no OAuth validator is wired in', async () => {
