@@ -35,4 +35,29 @@ describe('AssertEmailVerifiedUseCase', () => {
       new AssertEmailVerifiedUseCase({ userRepository }).execute('gone'),
     ).resolves.toBeUndefined();
   });
+
+  it('lets an unverified user through when the wall is switched off (kill switch)', async () => {
+    const userRepository = makeUserRepository({
+      findById: vi.fn().mockResolvedValue(makeUser({ emailVerifiedAt: null })),
+    });
+
+    await expect(
+      new AssertEmailVerifiedUseCase({ userRepository, emailVerificationRequired: false }).execute(
+        'user-1',
+      ),
+    ).resolves.toBeUndefined();
+    expect(userRepository.findById).not.toHaveBeenCalled();
+  });
+
+  it('still refuses when the switch is explicitly on', async () => {
+    const userRepository = makeUserRepository({
+      findById: vi.fn().mockResolvedValue(makeUser({ emailVerifiedAt: null })),
+    });
+
+    await expect(
+      new AssertEmailVerifiedUseCase({ userRepository, emailVerificationRequired: true }).execute(
+        'user-1',
+      ),
+    ).rejects.toBeInstanceOf(EmailNotVerifiedError);
+  });
 });

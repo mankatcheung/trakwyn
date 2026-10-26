@@ -3,6 +3,8 @@ import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 
 interface Deps {
   userRepository: IUserRepository;
+  /** The kill switch (`EMAIL_VERIFICATION_REQUIRED`): false makes this a no-op. On when absent. */
+  emailVerificationRequired?: boolean;
 }
 
 /**
@@ -11,6 +13,8 @@ interface Deps {
  * work for the user, so the verification wall holds for every client and not
  * just the web app's full-page reminder.
  *
+ * The wall can be switched off for everyone with `EMAIL_VERIFICATION_REQUIRED=false`.
+ *
  * A user who no longer exists passes: the resolver that needs the row reports
  * the missing account itself.
  */
@@ -18,6 +22,7 @@ export class AssertEmailVerifiedUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(userId: string): Promise<void> {
+    if (this.deps.emailVerificationRequired === false) return;
     const user = await this.deps.userRepository.findById(userId);
     if (user && !user.emailVerifiedAt) {
       throw new EmailNotVerifiedError();

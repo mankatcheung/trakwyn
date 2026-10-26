@@ -18,6 +18,10 @@ plain_env = {
   AXIOM_LOGS_DATASET     = "trakwyn-api-logs"
   AXIOM_METRICS_DATASET  = "trakwyn-api-metrics"
 
+  # Email-verification wall kill switch (JEF-438). Leave it out in normal
+  # operation. "false" turns the wall off for everyone (README.md, "Day two").
+  # EMAIL_VERIFICATION_REQUIRED = "false"
+
   # Payment (JEF-432). Leave these out until billing goes live; with
   # BILLING_PROVIDER unset, production refuses checkout, the portal and the
   # webhook on first use. POLAR_SERVER is "sandbox" or "production" and has no

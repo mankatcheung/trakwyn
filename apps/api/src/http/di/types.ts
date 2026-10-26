@@ -344,6 +344,7 @@ export interface Cradle {
   handleBillingWebhookUseCase: HandleBillingWebhookUseCase;
   webAppOrigin: string;
   autoVerifyEmail: boolean;
+  emailVerificationRequired: boolean;
   /** Chrome extension IDs allowed to finish an OAuth login (JEF-383). */
   extensionOAuthIds: ReadonlySet<string>;
   logger: ILogger;

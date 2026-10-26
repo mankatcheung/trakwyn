@@ -198,3 +198,36 @@ describe('email verification wall, auto-verify on (dev and CI default)', () => {
     expect(applications.errors).toBeUndefined();
   });
 });
+
+describe('email verification wall, kill switch off (EMAIL_VERIFICATION_REQUIRED=false)', () => {
+  let testApp: TestApp;
+
+  beforeAll(async () => {
+    process.env[ENV.AUTO_VERIFY_EMAIL] = 'false';
+    process.env[ENV.EMAIL_VERIFICATION_REQUIRED] = 'false';
+    testApp = await buildTestApp();
+  });
+
+  afterAll(async () => {
+    delete process.env[ENV.AUTO_VERIFY_EMAIL];
+    delete process.env[ENV.EMAIL_VERIFICATION_REQUIRED];
+    await testApp.cleanup();
+  });
+
+  it('lets an unverified user use the app, and every client sees them as verified', async () => {
+    const token = await register(testApp);
+
+    const me = await gql<{ me: { emailVerified: boolean } }>(testApp, ME, undefined, token);
+    const applications = await gql(testApp, APPLICATIONS, undefined, token);
+    const chat = await testApp.app.inject({
+      method: 'POST',
+      url: ROUTES.CHAT_STREAM,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { conversationId: 'c', message: 'hi' },
+    });
+
+    expect(me.data!.me.emailVerified).toBe(true);
+    expect(applications.errors).toBeUndefined();
+    expect(chat.statusCode).not.toBe(403);
+  });
+});
