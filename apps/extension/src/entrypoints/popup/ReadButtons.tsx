@@ -1,10 +1,13 @@
 export type ReadMethod = 'parser' | 'ai';
 
+/** Whether "Read with AI" can work, or `'checking'` until the API answers (JEF-457). */
+export type AiAvailability = 'checking' | boolean;
+
 interface ReadButtonsProps {
   /** The method running now, if any; both buttons wait while one does. */
   busy: ReadMethod | null;
   /** The user has a default AI provider with a saved key. */
-  aiAvailable: boolean;
+  aiAvailable: AiAvailability;
   /** Where the user adds a key when `aiAvailable` is false. */
   settingsUrl: string;
   onRead: (method: ReadMethod) => void;
@@ -26,13 +29,15 @@ export function ReadButtons({ busy, aiAvailable, settingsUrl, onRead }: ReadButt
         <button
           type="button"
           onClick={() => onRead('ai')}
-          disabled={busy !== null || !aiAvailable}
+          disabled={busy !== null || aiAvailable !== true}
+          aria-busy={aiAvailable === 'checking'}
+          title={aiAvailable === 'checking' ? 'Checking for your AI key…' : undefined}
           className="btn btn-ghost"
         >
           {busy === 'ai' ? 'Reading…' : 'Read with AI'}
         </button>
       </div>
-      {!aiAvailable && (
+      {aiAvailable === false && (
         <p className="muted">
           <a href={settingsUrl} target="_blank" rel="noreferrer">
             Add a default AI key

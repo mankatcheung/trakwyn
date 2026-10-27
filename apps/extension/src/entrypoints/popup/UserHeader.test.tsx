@@ -13,7 +13,7 @@ const baseUser: CurrentUser = {
 
 let rendered: Rendered | undefined;
 
-async function renderHeader(user: CurrentUser, onSignOut = vi.fn()) {
+async function renderHeader(user: CurrentUser | null, onSignOut = vi.fn()) {
   rendered = await render(<UserHeader user={user} onSignOut={onSignOut} />);
   return rendered.container;
 }
@@ -66,6 +66,19 @@ describe('UserHeader', () => {
       el.querySelector<HTMLButtonElement>('button.logout')!.click();
     });
 
+    expect(onSignOut).toHaveBeenCalledOnce();
+  });
+
+  it('shows a placeholder, and still offers Sign out, before the user is known (JEF-457)', async () => {
+    const onSignOut = vi.fn();
+    const el = await renderHeader(null, onSignOut);
+
+    expect(el.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(el.querySelector('.skeleton-text')).not.toBeNull();
+    expect(el.querySelector('.user-name')).toBeNull();
+    act(() => {
+      el.querySelector<HTMLButtonElement>('button.logout')!.click();
+    });
     expect(onSignOut).toHaveBeenCalledOnce();
   });
 });

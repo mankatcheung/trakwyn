@@ -5,7 +5,10 @@ interface ClipCardProps {
   jobData: JobData;
   /** The AI supplied part of this clip, so it is a suggestion the user confirms. */
   aiSuggested: boolean;
-  /** A read is running, so saving waits for its result. */
+  /**
+   * Saving waits: a read is running, or the API has not yet confirmed who is
+   * signed in (JEF-457).
+   */
   busy: boolean;
   onSave: (jobData: JobData) => void;
 }

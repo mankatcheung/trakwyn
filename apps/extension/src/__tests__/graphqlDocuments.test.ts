@@ -36,7 +36,7 @@ describe('extension GraphQL documents', () => {
   it('has documents to validate', () => {
     // Without this, an extractor that quietly matched nothing would leave the
     // suite below green while checking not one document.
-    expect(documents.length).toBeGreaterThanOrEqual(7);
+    expect(documents.length).toBeGreaterThanOrEqual(6);
     expect(unresolved).toEqual([]);
   });
 

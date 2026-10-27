@@ -8,18 +8,19 @@ import { DEFAULT_API_URL, DEFAULT_WEB_URL } from '../../constants';
 import {
   ApiError,
   createApplication,
-  getCurrentUser,
-  hasDefaultAiKey,
+  getPopupBootstrap,
   login,
   logout,
   parseJobDescription,
 } from '../../lib/api';
-import { getAuth, getPersistedRefreshToken } from '../../lib/storage';
+import { getAuth, getCachedUser, getPersistedRefreshToken, setCachedUser } from '../../lib/storage';
 import { captureEvent, captureException } from '../../lib/observability/report';
 
 vi.mock('../../lib/storage', () => ({
   getAuth: vi.fn(),
   getPersistedRefreshToken: vi.fn(async () => null),
+  getCachedUser: vi.fn(async () => null),
+  setCachedUser: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../lib/api', async (importOriginal) => {
@@ -29,8 +30,7 @@ vi.mock('../../lib/api', async (importOriginal) => {
     login: vi.fn(),
     logout: vi.fn(),
     createApplication: vi.fn(),
-    getCurrentUser: vi.fn(),
-    hasDefaultAiKey: vi.fn(async () => false),
+    getPopupBootstrap: vi.fn(),
     parseJobDescription: vi.fn(),
   };
 });
@@ -47,6 +47,11 @@ const user = {
   avatarUrl: null,
 };
 
+/** The API's answer as the popup opens. */
+function signedIn(aiAvailable = false) {
+  vi.mocked(getPopupBootstrap).mockResolvedValue({ user, aiAvailable });
+}
+
 let rendered: Rendered | undefined;
 
 /**
@@ -54,6 +59,23 @@ let rendered: Rendered | undefined;
  * `vi.spyOn` types them by the last, callback one. The popup uses the promise form.
  */
 type AsyncSpy = MockInstance<(...args: unknown[]) => Promise<unknown>>;
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (err: unknown) => void;
+}
+
+/** A promise the test settles, to hold the popup at "the API has not answered yet". */
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (err: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 function spyAsync<T extends object>(target: T, method: keyof T & string): AsyncSpy {
   return vi.spyOn(target, method as never) as unknown as AsyncSpy;
@@ -82,7 +104,7 @@ afterEach(() => {
 
 describe('popup App', () => {
   it('shows the signed-in user and no API URL', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
 
     rendered = await render(<App />);
     const text = rendered.container.textContent ?? '';
@@ -95,7 +117,7 @@ describe('popup App', () => {
   });
 
   it('signs out and shows the sign-in form when the token is rejected', async () => {
-    vi.mocked(getCurrentUser).mockRejectedValue(new ApiError('Unauthorized', 'UNAUTHORIZED'));
+    vi.mocked(getPopupBootstrap).mockRejectedValue(new ApiError('Unauthorized', 'UNAUTHORIZED'));
 
     rendered = await render(<App />);
 
@@ -105,7 +127,7 @@ describe('popup App', () => {
   });
 
   it('shows a retryable error for other failures', async () => {
-    vi.mocked(getCurrentUser).mockRejectedValue(new ApiError('Network down', 'INTERNAL_ERROR'));
+    vi.mocked(getPopupBootstrap).mockRejectedValue(new ApiError('Network down', 'INTERNAL_ERROR'));
 
     rendered = await render(<App />);
 
@@ -118,14 +140,14 @@ describe('popup App', () => {
 
     rendered = await render(<App />);
 
-    expect(getCurrentUser).not.toHaveBeenCalled();
+    expect(getPopupBootstrap).not.toHaveBeenCalled();
     expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
   });
 
   it('renews an expired session through the background worker before loading', async () => {
     vi.mocked(getAuth).mockResolvedValue({ token: 'tok', refreshToken: 'r', expiresAt: 0 });
     runtimeSendMessage.mockResolvedValue(true);
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
 
     rendered = await render(<App />);
 
@@ -139,7 +161,7 @@ describe('popup App', () => {
 
     rendered = await render(<App />);
 
-    expect(getCurrentUser).not.toHaveBeenCalled();
+    expect(getPopupBootstrap).not.toHaveBeenCalled();
     expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
   });
 });
@@ -172,7 +194,7 @@ describe('popup App — Google and GitHub sign-in (JEF-383)', () => {
 
   it('asks the background worker to run the sign-in, then loads the account', async () => {
     runtimeSendMessage.mockResolvedValue({ ok: true });
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     rendered = await render(<App />);
 
     await click(providerButton('GitHub'));
@@ -243,7 +265,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
 
   it('keeps the session in memory only when the box is left unticked', async () => {
     vi.mocked(login).mockResolvedValue(undefined);
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     rendered = await render(<App />);
     await type(rendered.container.querySelector('input[type="email"]')!, 'ada@example.com');
     await type(rendered.container.querySelector('input[type="password"]')!, 'pw');
@@ -257,7 +279,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
 
   it('passes a ticked box to the password sign-in', async () => {
     vi.mocked(login).mockResolvedValue(undefined);
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     rendered = await render(<App />);
     await act(async () => {
       keepSignedInBox().click();
@@ -274,7 +296,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
 
   it('passes a ticked box to the Google/GitHub sign-in', async () => {
     runtimeSendMessage.mockResolvedValue({ ok: true });
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     rendered = await render(<App />);
     await act(async () => {
       keepSignedInBox().click();
@@ -296,7 +318,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
   it('restores a persisted session through the background worker after a browser restart', async () => {
     vi.mocked(getPersistedRefreshToken).mockResolvedValue('persisted-refresh');
     runtimeSendMessage.mockResolvedValue(true);
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
 
     rendered = await render(<App />);
 
@@ -310,7 +332,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
 
     rendered = await render(<App />);
 
-    expect(getCurrentUser).not.toHaveBeenCalled();
+    expect(getPopupBootstrap).not.toHaveBeenCalled();
     expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
   });
 
@@ -323,7 +345,7 @@ describe('popup App — Keep me signed in (JEF-421)', () => {
 
 describe('popup App — error reporting (JEF-387)', () => {
   it('reports a job board page the parsers could not read', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
       jobData: null,
       parserHealth: {
@@ -346,7 +368,7 @@ describe('popup App — error reporting (JEF-387)', () => {
   });
 
   it('reports nothing for a healthy parse, and none of the job itself', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
       jobData: { company: 'Monument', role: 'Engineer', jobUrl: 'https://example.com/1' },
       parserHealth: {
@@ -366,7 +388,7 @@ describe('popup App — error reporting (JEF-387)', () => {
 
   it('reports a failure it did not expect', async () => {
     const bug = new TypeError("Cannot read properties of undefined (reading 'id')");
-    vi.mocked(getCurrentUser).mockRejectedValue(bug);
+    vi.mocked(getPopupBootstrap).mockRejectedValue(bug);
 
     rendered = await render(<App />);
 
@@ -375,7 +397,7 @@ describe('popup App — error reporting (JEF-387)', () => {
   });
 
   it('does not report the API saying no', async () => {
-    vi.mocked(getCurrentUser).mockRejectedValue(new ApiError('Boom', 'INTERNAL_ERROR'));
+    vi.mocked(getPopupBootstrap).mockRejectedValue(new ApiError('Boom', 'INTERNAL_ERROR'));
 
     rendered = await render(<App />);
 
@@ -388,17 +410,16 @@ describe('popup App — AI parsing (JEF-420)', () => {
   const complete = { company: 'Monument', role: 'Engineer', jobUrl: tabUrl };
 
   beforeEach(() => {
-    vi.mocked(hasDefaultAiKey).mockResolvedValue(true);
     vi.mocked(parseJobDescription).mockReset();
   });
 
   /** The content script answers job data and page text; `jobData` null means the parsers found nothing. */
-  function pageWith(jobData: unknown) {
+  function pageWith(jobData: unknown, aiAvailable = true) {
     spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
     spyAsync(browser.tabs, 'sendMessage').mockImplementation(async (_id, message) =>
       (message as { type: string }).type === 'GET_PAGE_TEXT' ? 'Posting text' : { jobData },
     );
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn(aiAvailable);
   }
 
   const button = (label: string) =>
@@ -418,8 +439,7 @@ describe('popup App — AI parsing (JEF-420)', () => {
   });
 
   it('disables "Read with AI" and links to settings when there is no default AI key', async () => {
-    vi.mocked(hasDefaultAiKey).mockResolvedValue(false);
-    pageWith(complete);
+    pageWith(complete, false);
 
     rendered = await render(<App />);
 
@@ -430,14 +450,21 @@ describe('popup App — AI parsing (JEF-420)', () => {
     ).not.toBeNull();
   });
 
-  it('keeps the parser working when the AI availability check fails', async () => {
-    vi.mocked(hasDefaultAiKey).mockRejectedValue(new ApiError('Network down', 'INTERNAL_ERROR'));
+  it('keeps "Read with AI" disabled, with no settings link, while the check runs (JEF-457)', async () => {
     pageWith(complete);
+    const answer = deferred<{ user: typeof user; aiAvailable: boolean }>();
+    vi.mocked(getPopupBootstrap).mockReturnValue(answer.promise);
 
     rendered = await render(<App />);
 
-    expect(rendered.container.textContent).toContain('Monument');
     expect(button('Read with AI')!.disabled).toBe(true);
+    expect(button('Read with AI')!.getAttribute('aria-busy')).toBe('true');
+    expect(button('Read with parser')!.disabled).toBe(false);
+    expect(rendered.container.querySelector('a[href$="/settings/ai"]')).toBeNull();
+
+    await act(async () => answer.resolve({ user, aiAvailable: true }));
+
+    expect(button('Read with AI')!.disabled).toBe(false);
   });
 
   it('reads the page with the AI when asked, and lets the user edit it', async () => {
@@ -512,12 +539,11 @@ describe('popup App — links to the web app (JEF-428)', () => {
   const tabUrl = 'https://jobs.example.com/1';
 
   beforeEach(() => {
-    vi.mocked(hasDefaultAiKey).mockResolvedValue(false);
     spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
     spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
       jobData: { company: 'Monument', role: 'Engineer', jobUrl: tabUrl },
     });
-    vi.mocked(getCurrentUser).mockResolvedValue(user);
+    signedIn();
     vi.mocked(createApplication).mockResolvedValue({
       id: 'app-1',
       company: 'Monument',
@@ -545,5 +571,117 @@ describe('popup App — links to the web app (JEF-428)', () => {
     expect(rendered.container.querySelector('a[href$="/settings/ai"]')?.getAttribute('href')).toBe(
       `${DEFAULT_WEB_URL}/settings/ai`,
     );
+  });
+});
+
+describe('popup App — showing the clip before the API answers (JEF-457)', () => {
+  const tabUrl = 'https://jobs.example.com/1';
+  let answer: Deferred<{ user: typeof user; aiAvailable: boolean }>;
+
+  beforeEach(() => {
+    spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
+    spyAsync(browser.tabs, 'sendMessage').mockResolvedValue({
+      jobData: { company: 'Monument', role: 'Engineer', jobUrl: tabUrl },
+    });
+    answer = deferred();
+    vi.mocked(getPopupBootstrap).mockReturnValue(answer.promise);
+  });
+
+  const saveButton = () =>
+    [...rendered!.container.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Save as Application',
+    )!;
+
+  it('shows the parsed clip while the account request is still pending', async () => {
+    rendered = await render(<App />);
+
+    expect(rendered.container.textContent).toContain('Monument');
+    expect(rendered.container.textContent).toContain('Engineer');
+    expect(rendered.container.querySelector('.spinner')).toBeNull();
+    expect(rendered.container.querySelector('[aria-label="Loading your account"]')).not.toBeNull();
+  });
+
+  it('keeps Save disabled until the API confirms the user', async () => {
+    rendered = await render(<App />);
+    expect(saveButton().disabled).toBe(true);
+
+    await act(async () => answer.resolve({ user, aiAvailable: false }));
+
+    expect(saveButton().disabled).toBe(false);
+    expect(rendered.container.textContent).toContain('Ada Lovelace');
+  });
+
+  it('asks the API once as it opens', async () => {
+    rendered = await render(<App />);
+    await act(async () => answer.resolve({ user, aiAvailable: false }));
+
+    expect(getPopupBootstrap).toHaveBeenCalledOnce();
+  });
+
+  it('shows the cached user at once, then the API answer in its place', async () => {
+    vi.mocked(getCachedUser).mockResolvedValueOnce({ ...user, name: 'Ada (cached)' });
+
+    rendered = await render(<App />);
+    expect(rendered.container.querySelector('.user-name')?.textContent).toBe('Ada (cached)');
+    expect(saveButton().disabled).toBe(true);
+
+    await act(async () => answer.resolve({ user, aiAvailable: false }));
+
+    expect(rendered.container.querySelector('.user-name')?.textContent).toBe('Ada Lovelace');
+    expect(setCachedUser).toHaveBeenCalledExactlyOnceWith(user);
+  });
+
+  it('ends on sign-in, not the cached user, when the API rejects the session', async () => {
+    vi.mocked(getCachedUser).mockResolvedValueOnce(user);
+
+    rendered = await render(<App />);
+    await act(async () => answer.reject(new ApiError('Unauthorized', 'UNAUTHORIZED')));
+
+    expect(logout).toHaveBeenCalledOnce();
+    expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
+    expect(rendered.container.textContent).not.toContain('Ada Lovelace');
+    expect(setCachedUser).not.toHaveBeenCalled();
+  });
+
+  it('shows the clip while an expired session is renewed, then loads the account', async () => {
+    vi.mocked(getAuth).mockResolvedValue({ token: 'tok', refreshToken: 'r', expiresAt: 0 });
+    const renewal = deferred<boolean>();
+    runtimeSendMessage.mockReturnValue(renewal.promise);
+
+    rendered = await render(<App />);
+
+    expect(rendered.container.textContent).toContain('Monument');
+    expect(getPopupBootstrap).not.toHaveBeenCalled();
+
+    await act(async () => renewal.resolve(true));
+    await act(async () => answer.resolve({ user, aiAvailable: false }));
+
+    expect(rendered.container.textContent).toContain('Ada Lovelace');
+  });
+
+  it('goes to sign-in when the expired session cannot be renewed', async () => {
+    vi.mocked(getAuth).mockResolvedValue({ token: 'tok', refreshToken: 'r', expiresAt: 0 });
+    const renewal = deferred<boolean>();
+    runtimeSendMessage.mockReturnValue(renewal.promise);
+
+    rendered = await render(<App />);
+    await act(async () => renewal.resolve(false));
+
+    expect(getPopupBootstrap).not.toHaveBeenCalled();
+    expect(logout).not.toHaveBeenCalled();
+    expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
+  });
+
+  it('stays signed out when the account answers after the user signed out', async () => {
+    rendered = await render(<App />);
+    const signOut = [...rendered.container.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Sign out',
+    )!;
+    await act(async () => signOut.click());
+
+    await act(async () => answer.resolve({ user, aiAvailable: true }));
+
+    expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
+    expect(setCachedUser).not.toHaveBeenCalled();
   });
 });

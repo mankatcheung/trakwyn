@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi, type MockInstance } from 'vitest';
 import { browser, type Browser } from 'wxt/browser';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { getCurrentUser, login, loginWithOAuth, logout, refreshToken } from './api';
+import { getPopupBootstrap, login, loginWithOAuth, logout, refreshToken } from './api';
 import { OAuthCancelledError } from './oauth';
 import { registerTabOAuthListeners } from './tabOAuth';
 import { getAuth, getPersistedRefreshToken, setAuth } from './storage';
@@ -408,7 +408,7 @@ describe('Keep me signed in (JEF-421)', () => {
     });
   });
 
-  describe('getCurrentUser', () => {
+  describe('getPopupBootstrap', () => {
     it('asks the background to restore a persisted session before calling the API', async () => {
       await fakeBrowser.storage.local.set({ [PERSISTED]: 'refresh-1' });
       // Stands in for the background worker's REFRESH_TOKEN handler.
@@ -422,7 +422,7 @@ describe('Keep me signed in (JEF-421)', () => {
         graphqlResponse({ me: { id: 'u1', email: 'a@b.co', name: null, avatarUrl: null } }),
       );
 
-      const user = await getCurrentUser();
+      const { user } = await getPopupBootstrap();
 
       expect(sendMessage).toHaveBeenCalledWith({ type: RUNTIME_MESSAGES.REFRESH_TOKEN });
       expect(user.id).toBe('u1');

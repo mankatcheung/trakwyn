@@ -102,6 +102,28 @@ body {
   font-size: 12px;
 }
 
+/* Header placeholder while the account loads (JEF-457) */
+.skeleton {
+  display: block;
+  background: #e5e7eb;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+.skeleton-text {
+  width: 60%;
+  height: 12px;
+  border-radius: 4px;
+}
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 /* ── Form ── */
 .form {
   display: flex;

@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import { STORAGE_KEYS } from '../constants';
 import { captureException } from './observability/report';
+import type { CurrentUser } from './api';
 
 export interface AuthState {
   token: string;
@@ -71,13 +72,39 @@ export async function getPersistedRefreshToken(): Promise<string | null> {
   return typeof token === 'string' && token !== '' ? token : null;
 }
 
-/** Signs out: removes the session and any persisted refresh token. */
+/** Signs out: removes the session, the cached user and any persisted refresh token. */
 export async function clearAuth(): Promise<void> {
-  await browser.storage.session.remove(STORAGE_KEYS.AUTH);
+  await clearSessionAuth();
   await browser.storage.local.remove(STORAGE_KEYS.PERSISTED_REFRESH_TOKEN);
 }
 
 /** Drops the in-memory session only, keeping a persisted refresh token to retry with. */
 export async function clearSessionAuth(): Promise<void> {
-  await browser.storage.session.remove(STORAGE_KEYS.AUTH);
+  await browser.storage.session.remove([STORAGE_KEYS.AUTH, STORAGE_KEYS.CACHED_USER]);
+}
+
+function isCurrentUser(value: unknown): value is CurrentUser {
+  const user = value as Partial<CurrentUser> | undefined;
+  return (
+    typeof user?.id === 'string' &&
+    typeof user.email === 'string' &&
+    (user.name === null || typeof user.name === 'string') &&
+    (user.avatarUrl === null || typeof user.avatarUrl === 'string')
+  );
+}
+
+/**
+ * The user the API last confirmed in this browser session (JEF-457). It is
+ * only shown, never trusted: the popup confirms it with the API before
+ * anything can be saved. Kept in `storage.session`, which content scripts
+ * cannot read.
+ */
+export async function getCachedUser(): Promise<CurrentUser | null> {
+  const result = await browser.storage.session.get(STORAGE_KEYS.CACHED_USER);
+  const user: unknown = result[STORAGE_KEYS.CACHED_USER];
+  return isCurrentUser(user) ? user : null;
+}
+
+export async function setCachedUser(user: CurrentUser): Promise<void> {
+  await browser.storage.session.set({ [STORAGE_KEYS.CACHED_USER]: user });
 }

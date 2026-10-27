@@ -233,4 +233,6 @@ gcloud run services update-traffic trakwyn-api --region="$REGION" --to-revisions
 
 **Keep an instance warm:** set `min_instances = 1` in `terraform.tfvars` and apply. This costs about $10 a month more and removes cold starts.
 
+Production stays at `min_instances = 0` (JEF-457, decided 2026-10-27). The Clipper popup was the most visible cost of a cold start, because it held a spinner until the API answered. Since JEF-457 the popup shows the parsed clip before any request, so a cold start now delays only the header and the Save button. A warm request takes about 80 ms from the client. Revisit this if the popup's `popup:account-confirmed` timing (`apps/extension/CLAUDE.md`, "Popup startup") or web's first load after an idle spell is still slow enough to complain about.
+
 **Cost:** about $1–2 a month at 100 daily users with scale-to-zero. The breakdown is on JEF-335.

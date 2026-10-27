@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { browser } from 'wxt/browser';
-import { getAuth, getPersistedRefreshToken } from '../../lib/storage';
+import { getAuth, getCachedUser, getPersistedRefreshToken, setCachedUser } from '../../lib/storage';
 import {
   ApiError,
   login,
   logout,
   createApplication,
-  getCurrentUser,
-  hasDefaultAiKey,
+  getPopupBootstrap,
   isUnauthorizedError,
   type CurrentUser,
+  type PopupBootstrap,
 } from '../../lib/api';
 import type { JobData, ParsedJobPage } from '../../lib/parsers/types';
 import { parserHealthProperties } from '../../lib/parsers/health';
 import { readTabWithAi } from '../../lib/aiRead';
 import { captureEvent, captureException } from '../../lib/observability/report';
+import { markSinceOpen, timed } from '../../lib/startupTiming';
 import type { OAuthLoginResponse } from '../background';
 import {
   CONTENT_MESSAGES,
@@ -27,11 +28,10 @@ import {
 } from '../../constants';
 import { UserHeader } from './UserHeader';
 import { ClipCard } from './ClipCard';
-import { ReadButtons, type ReadMethod } from './ReadButtons';
+import { ReadButtons, type AiAvailability, type ReadMethod } from './ReadButtons';
 
 interface ReadyScreen {
   type: 'ready';
-  user: CurrentUser;
   clip: Clip;
   /** Where the user adds the AI key that "Read with AI" needs. */
   settingsUrl: string;
@@ -57,8 +57,6 @@ interface Clip {
   /** The built-in parser's result, which an AI read is merged into. */
   builtin: JobData | null;
   tab: ClipTab | null;
-  /** The user has a default AI provider with a saved key (JEF-420). */
-  aiAvailable: boolean;
   /** The AI changed or filled part of the clip, so the user confirms it before saving. */
   aiSuggested: boolean;
   /** Which read is running. */
@@ -140,74 +138,104 @@ function reportUnexpected(err: unknown, action: string): void {
   if (!(err instanceof ApiError)) void captureException(err, { action });
 }
 
+/**
+ * Who is signed in. The clip shows before the API answers (JEF-457), so this
+ * fills in afterwards, from the session's cached user first.
+ */
+interface Account {
+  user: CurrentUser | null;
+  /** The API has answered for this session; until then nothing can be saved. */
+  confirmed: boolean;
+  /** The user has a default AI provider with a saved key (JEF-420). */
+  aiAvailable: AiAvailability;
+}
+
+const UNCONFIRMED: Account = { user: null, confirmed: false, aiAvailable: 'checking' };
+
 export function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'loading' });
+  const [account, setAccount] = useState<Account>(UNCONFIRMED);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [oauthPending, setOAuthPending] = useState<OAuthProvider | null>(null);
   const [keepSignedIn, setKeepSignedIn] = useState(false);
+  // Each load bumps this, so an answer to a superseded one (the user signed
+  // out meanwhile) is dropped.
+  const loadId = useRef(0);
 
   useEffect(() => {
     init();
   }, []);
 
   async function init() {
-    const auth = await getAuth();
-    if (!auth) {
-      // After a browser restart the session is gone but a "Keep me signed in"
-      // refresh token may remain; the background worker restores from it
-      // (JEF-421), joining its own startup refresh if that is still running.
-      if (await getPersistedRefreshToken()) {
-        const restored: boolean = await browser.runtime.sendMessage({
-          type: RUNTIME_MESSAGES.REFRESH_TOKEN,
-        });
-        if (restored) {
-          await loadReadyScreen();
-          return;
-        }
-      }
+    const [auth, persisted] = await timed('storage', () =>
+      Promise.all([getAuth(), getPersistedRefreshToken()]),
+    );
+    // An expired access token is renewed by the background worker, which owns
+    // the rotating refresh token (JEF-383). After a browser restart the session
+    // is gone, but a "Keep me signed in" token may restore it (JEF-421).
+    const needsRefresh = auth ? Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS : !!persisted;
+    if (!auth && !needsRefresh) {
       setScreen({ type: 'login' });
       return;
     }
-    // An expired access token is renewed up front by the background worker,
-    // which owns the rotating refresh token (JEF-383).
-    if (Date.now() > auth.expiresAt - REFRESH_LEEWAY_MS) {
-      const refreshed: boolean = await browser.runtime.sendMessage({
-        type: RUNTIME_MESSAGES.REFRESH_TOKEN,
-      });
-      if (!refreshed) {
-        setScreen({ type: 'login' });
-        return;
-      }
-    }
-    await loadReadyScreen();
+    // Only the API call waits for the refresh; the clip shows meanwhile.
+    const session = needsRefresh
+      ? timed('refresh', (): Promise<boolean> =>
+          browser.runtime.sendMessage({ type: RUNTIME_MESSAGES.REFRESH_TOKEN }),
+        )
+      : Promise.resolve(true);
+    await loadReadyScreen(session);
   }
 
-  async function loadReadyScreen() {
-    try {
-      const [user, read, aiAvailable] = await Promise.all([
-        getCurrentUser(),
-        readActiveTab(),
-        // A failed check leaves the AI button disabled: `gql` already reported
-        // an unreachable API, and the parser works without it.
-        hasDefaultAiKey().catch(() => false),
-      ]);
-      const clip: Clip = {
+  /**
+   * Shows the clip from the local parser at once, with the cached user if
+   * there is one, then confirms the account with one API request (JEF-457).
+   * `session` resolves false when the stored session could not be renewed.
+   */
+  async function loadReadyScreen(session: Promise<boolean> = Promise.resolve(true)) {
+    const id = ++loadId.current;
+    const superseded = () => id !== loadId.current;
+    const bootstrap: Promise<PopupBootstrap | null> = session.then((ok) =>
+      ok ? timed('bootstrap', getPopupBootstrap) : null,
+    );
+    // Awaited below; this keeps a rejection that lands first from being
+    // reported as unhandled.
+    bootstrap.catch(() => undefined);
+
+    const [read, cachedUser] = await Promise.all([
+      timed('readActiveTab', readActiveTab),
+      getCachedUser().catch(() => null),
+    ]);
+    if (superseded()) return;
+    setAccount({ ...UNCONFIRMED, user: cachedUser });
+    setScreen({
+      type: 'ready',
+      clip: {
         jobData: read.jobData,
         builtin: read.jobData,
         tab: read.tab,
-        aiAvailable,
         aiSuggested: false,
         busy: null,
         readId: 0,
-      };
-      setScreen({
-        type: 'ready',
-        user,
-        clip,
-        settingsUrl: `${DEFAULT_WEB_URL}/settings/ai`,
-      });
+      },
+      settingsUrl: `${DEFAULT_WEB_URL}/settings/ai`,
+    });
+    markSinceOpen('clip-shown');
+
+    try {
+      const result = await bootstrap;
+      if (superseded()) return;
+      if (!result) {
+        // The background could not renew the session and has cleared it
+        setScreen({ type: 'login' });
+        return;
+      }
+      setAccount({ user: result.user, confirmed: true, aiAvailable: result.aiAvailable });
+      markSinceOpen('account-confirmed');
+      await setCachedUser(result.user).catch((err: unknown) => reportUnexpected(err, 'cache_user'));
     } catch (err) {
+      if (superseded()) return;
       if (isUnauthorizedError(err)) {
         // The stored token was revoked or rejected — start over at sign-in
         await logout();
@@ -254,20 +282,19 @@ export function App() {
   }
 
   async function handleLogout() {
+    loadId.current++;
     await logout();
     setScreen({ type: 'login' });
   }
 
-  async function handleRead(ready: ReadyScreen, method: ReadMethod) {
-    const { user, settingsUrl } = ready;
-    setScreen({
-      type: 'ready',
-      user,
-      settingsUrl,
-      clip: { ...ready.clip, busy: method, notice: undefined },
-    });
-    const clip = method === 'ai' ? await readWithAi(ready.clip) : await readWithParser(ready.clip);
-    setScreen({ type: 'ready', user, settingsUrl, clip });
+  /** Replaces the clip, unless the popup has left the ready screen meanwhile. */
+  function updateClip(clip: Clip) {
+    setScreen((current) => (current.type === 'ready' ? { ...current, clip } : current));
+  }
+
+  async function handleRead(clip: Clip, method: ReadMethod) {
+    updateClip({ ...clip, busy: method, notice: undefined });
+    updateClip(method === 'ai' ? await readWithAi(clip) : await readWithParser(clip));
   }
 
   async function handleSave(jobData: JobData) {
@@ -385,7 +412,7 @@ export function App() {
         <a href={screen.appUrl} target="_blank" rel="noreferrer" className="btn btn-primary">
           Open application →
         </a>
-        <button onClick={loadReadyScreen} className="btn btn-ghost">
+        <button onClick={() => loadReadyScreen()} className="btn btn-ghost">
           Save another
         </button>
       </div>
@@ -397,7 +424,7 @@ export function App() {
       <div className="container center">
         <div className="error-icon">⚠️</div>
         <p className="error-text">{screen.message}</p>
-        <button onClick={loadReadyScreen} className="btn btn-ghost">
+        <button onClick={() => loadReadyScreen()} className="btn btn-ghost">
           Try again
         </button>
       </div>
@@ -405,19 +432,24 @@ export function App() {
   }
 
   // ready screen
-  const { user, clip, settingsUrl } = screen;
+  const { clip, settingsUrl } = screen;
   const { jobData } = clip;
 
   return (
     <div className="container">
-      <UserHeader user={user} onSignOut={handleLogout} />
+      <UserHeader
+        // A fresh avatar URL gets a fresh try after a cached, expired one failed
+        key={account.user?.avatarUrl ?? ''}
+        user={account.user}
+        onSignOut={handleLogout}
+      />
 
       {clip.notice && (
         <div className="error-box" role="status">
           {clip.notice}{' '}
           <button
             className="btn btn-ghost"
-            onClick={() => setScreen({ ...screen, clip: { ...clip, notice: undefined } })}
+            onClick={() => updateClip({ ...clip, notice: undefined })}
           >
             Dismiss
           </button>
@@ -427,9 +459,9 @@ export function App() {
       {clip.tab && (
         <ReadButtons
           busy={clip.busy}
-          aiAvailable={clip.aiAvailable}
+          aiAvailable={account.aiAvailable}
           settingsUrl={settingsUrl}
-          onRead={(method) => handleRead(screen, method)}
+          onRead={(method) => handleRead(clip, method)}
         />
       )}
 
@@ -439,7 +471,7 @@ export function App() {
           key={clip.readId}
           jobData={jobData}
           aiSuggested={clip.aiSuggested}
-          busy={clip.busy !== null}
+          busy={clip.busy !== null || !account.confirmed}
           onSave={handleSave}
         />
       ) : clip.tab ? (
