@@ -8,7 +8,6 @@ import { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAnalytic
 import { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
 import { CreateShareLinkUseCase } from '#src/use-cases/shareLinks/CreateShareLinkUseCase.js';
-import { CreateApiTokenUseCase } from '#src/use-cases/apiTokens/CreateApiTokenUseCase.js';
 import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 
 /**
@@ -105,16 +104,6 @@ const GATED: Gated[] = [
         shareLinkRepository: untouchable,
         generateId: vi.fn(),
       }).execute({ userId: 'user-1', name: 'For my coach' }),
-  },
-  {
-    name: 'CreateApiTokenUseCase',
-    feature: 'apiAccess',
-    run: (entitlementService) =>
-      new CreateApiTokenUseCase({
-        entitlementService,
-        apiTokenRepository: untouchable,
-        generateId: vi.fn(),
-      }).execute({ userId: 'user-1', name: 'My CLI' }),
   },
 ];
 

@@ -201,6 +201,76 @@ describe('PolarBillingProvider.createPortalSession', () => {
   });
 });
 
+describe('PolarBillingProvider.revokeSubscription', () => {
+  it('sends a DELETE for the subscription, with the token and the pinned version', async () => {
+    const fetchImpl = reply({ id: 'sub-1', status: 'canceled' }, 200);
+
+    await make(fetchImpl).revokeSubscription('sub-1');
+
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('https://sandbox-api.polar.sh/v1/subscriptions/sub-1');
+    expect(init.method).toBe('DELETE');
+    expect(init.headers).toMatchObject({
+      Authorization: 'Bearer polar_oat_test',
+      'Polar-Version': '2026-10',
+    });
+    expect(init.body).toBeUndefined();
+  });
+
+  it('uses the production API when configured for it', async () => {
+    const fetchImpl = reply({}, 200);
+
+    await make(fetchImpl, 'production').revokeSubscription('sub-1');
+
+    expect(fetchImpl.mock.calls[0][0]).toBe('https://api.polar.sh/v1/subscriptions/sub-1');
+  });
+
+  it('puts the id in the path as one segment, whatever it contains', async () => {
+    const fetchImpl = reply({}, 200);
+
+    await make(fetchImpl).revokeSubscription('a/../b?x=1');
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      'https://sandbox-api.polar.sh/v1/subscriptions/a%2F..%2Fb%3Fx%3D1',
+    );
+  });
+
+  it('counts an already revoked subscription (403) as done', async () => {
+    await expect(
+      make(reply({ detail: 'This subscription is already revoked.' }, 403)).revokeSubscription(
+        'sub-1',
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it('counts a subscription Polar does not have (404) as done', async () => {
+    await expect(make(reply({}, 404)).revokeSubscription('sub-1')).resolves.toBeUndefined();
+  });
+
+  it('fails, and says it can be retried, when the subscription is pending an update (409)', async () => {
+    const failure = make(reply({}, 409)).revokeSubscription('sub-1');
+
+    await expect(failure).rejects.toThrow(
+      'Polar answered 409 for DELETE /subscriptions/sub-1: the subscription is pending an update, try again shortly',
+    );
+  });
+
+  it('fails with the status and path only for any other refusal', async () => {
+    const failure = make(reply({ detail: 'secret details a@b.com' }, 500)).revokeSubscription(
+      'sub-1',
+    );
+
+    await expect(failure).rejects.toThrow('Polar answered 500 for DELETE /subscriptions/sub-1');
+    await expect(failure).rejects.not.toThrow(/a@b\.com/);
+  });
+
+  it('fails when Polar cannot be reached', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error('network down'));
+
+    await expect(make(fetchImpl).revokeSubscription('sub-1')).rejects.toThrow('network down');
+  });
+});
+
 describe('PolarBillingProvider.parseWebhook', () => {
   const body = JSON.stringify({
     type: 'subscription.active',

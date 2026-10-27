@@ -48,10 +48,12 @@ export class AuthenticateMcpRequestUseCase {
       try {
         const result = await this.deps.validateMcpOAuthAccessTokenUseCase.execute(rawToken);
         if (!result) return null;
-        // MCP access is a Pro feature. (A manually created API token is
-        // checked the same way inside `ValidateApiTokenUseCase`.)
+        // MCP access is on for every plan today (JEF-442), but it is still a
+        // feature, so a plan that drops it stops working here. (A manually
+        // created API token is checked the same way inside
+        // `ValidateApiTokenUseCase`.)
         const { features } = await this.deps.entitlementService.forUserId(result.sub);
-        return features.apiAccess ? { sub: result.sub, scope: result.scope } : null;
+        return features.mcpAccess ? { sub: result.sub, scope: result.scope } : null;
       } catch {
         return null;
       }
@@ -60,7 +62,7 @@ export class AuthenticateMcpRequestUseCase {
     if (!rawToken.startsWith(API_TOKEN.PREFIX)) return null;
 
     try {
-      const result = await this.deps.validateApiTokenUseCase.execute(rawToken);
+      const result = await this.deps.validateApiTokenUseCase.execute(rawToken, 'mcp');
       return result ? { sub: result.sub, scope: result.scope } : null;
     } catch {
       return null;

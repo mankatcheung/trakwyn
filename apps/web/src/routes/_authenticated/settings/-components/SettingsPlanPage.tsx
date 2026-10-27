@@ -27,6 +27,7 @@ const FEATURE_ROWS: Array<{ feature: keyof PlanFeatures; labelKey: string }> = [
   { feature: 'analytics', labelKey: 'plan.rowAnalytics' },
   { feature: 'offers', labelKey: 'plan.rowOffers' },
   { feature: 'shareLinks', labelKey: 'plan.rowShareLinks' },
+  { feature: 'mcpAccess', labelKey: 'plan.rowMcpAccess' },
   { feature: 'apiAccess', labelKey: 'plan.rowApiAccess' },
 ];
 
@@ -145,6 +146,7 @@ function PlanActions({ status }: { status: BillingStatus }) {
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.passForfeitNote')}</p>
           )}
           {checkout.isError && <Alert tone="error">{t('plan.checkoutFailed')}</Alert>}
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.founderNote')}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
         </div>
       )}
@@ -213,19 +215,6 @@ function Usage({ status }: { status: BillingStatus }) {
         warningMessage={t('storage.warning')}
         fullMessage={t('storage.full')}
       />
-      <UsageMeter
-        title={t('plan.aiActions')}
-        used={usage.aiActionsThisMonth}
-        limit={limits.aiActionsPerMonth}
-        caption={countCaption(
-          usage.aiActionsThisMonth,
-          limits.aiActionsPerMonth,
-          'plan.usageOf',
-          'plan.usageNoLimit',
-        )}
-        warningMessage={t('plan.aiActionsWarning')}
-        fullMessage={t('plan.aiActionsFull')}
-      />
     </Card>
   );
 }
@@ -236,8 +225,6 @@ function Comparison({ status }: { status: BillingStatus }) {
 
   const limitCell = (limit: number | null) =>
     limit === null ? t('plan.unlimited') : String(limit);
-  const monthlyCell = (limit: number | null) =>
-    limit === null ? t('plan.unlimited') : t('plan.perMonth', { amount: limit });
   const featureCell = (terms: PlanTerms, feature: keyof PlanFeatures) =>
     terms.features[feature] ? t('plan.included') : t('plan.notIncluded');
 
@@ -254,8 +241,9 @@ function Comparison({ status }: { status: BillingStatus }) {
     },
     {
       label: t('plan.rowAi'),
-      free: monthlyCell(free.limits.aiActionsPerMonth),
-      pro: monthlyCell(pro.limits.aiActionsPerMonth),
+      // Runs on the user's own key, so neither plan limits it (JEF-442).
+      free: t('plan.unlimited'),
+      pro: t('plan.unlimited'),
     },
     ...FEATURE_ROWS.map(({ feature, labelKey }) => ({
       label: t(labelKey),

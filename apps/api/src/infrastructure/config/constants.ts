@@ -198,6 +198,8 @@ export const POLAR = {
   MAX_PROBLEM_LENGTH: 160,
   /** Stands in for a buyer's email or user id that Polar quoted back in a message. */
   REDACTED: '[redacted]',
+  /** What `DELETE /subscriptions/{id}` answers (JEF-439). 403 and 404 mean there is nothing left to revoke. */
+  REVOKE_STATUS: { ALREADY_REVOKED: 403, NOT_FOUND: 404, PENDING_UPDATE: 409 },
   WEBHOOK_HEADER: {
     ID: 'webhook-id',
     TIMESTAMP: 'webhook-timestamp',

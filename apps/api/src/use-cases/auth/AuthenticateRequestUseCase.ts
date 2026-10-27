@@ -35,7 +35,7 @@ export class AuthenticateRequestUseCase {
   async execute(rawToken: string): Promise<AuthenticateRequestResult | null> {
     if (rawToken.startsWith(API_TOKEN.PREFIX)) {
       try {
-        const result = await this.deps.validateApiTokenUseCase.execute(rawToken);
+        const result = await this.deps.validateApiTokenUseCase.execute(rawToken, 'graphql');
         if (result && result.scope === API_TOKEN_SCOPE.FULL) {
           return { sub: result.sub, email: result.email };
         }

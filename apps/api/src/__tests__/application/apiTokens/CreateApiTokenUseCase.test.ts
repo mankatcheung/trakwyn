@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { CreateApiTokenUseCase } from '#src/use-cases/apiTokens/CreateApiTokenUseCase.js';
 import { makeApiToken, makeApiTokenRepository } from '#src/__tests__/helpers/mocks/apiTokens.js';
 
@@ -9,7 +8,6 @@ describe('CreateApiTokenUseCase', () => {
     const repo = makeApiTokenRepository({ create: vi.fn().mockResolvedValue(storedToken) });
     const generateId = vi.fn().mockReturnValue('token-1');
     const useCase = new CreateApiTokenUseCase({
-      entitlementService: makeEntitlementService(),
       apiTokenRepository: repo,
       generateId,
     });
@@ -29,7 +27,6 @@ describe('CreateApiTokenUseCase', () => {
   it('each call produces a unique raw token', async () => {
     const repo = makeApiTokenRepository({ create: vi.fn().mockResolvedValue(makeApiToken()) });
     const useCase = new CreateApiTokenUseCase({
-      entitlementService: makeEntitlementService(),
       apiTokenRepository: repo,
       generateId: vi.fn(),
     });

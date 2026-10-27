@@ -8,19 +8,19 @@ const BILLING_STATUS_QUERY = `
       plan
       planExpiresAt
       planSource
-      features { notifications analytics offers shareLinks apiAccess }
-      limits { applications documentBytes aiActionsPerMonth }
+      features { notifications analytics offers shareLinks apiAccess mcpAccess }
+      limits { applications documentBytes }
       catalogue {
         free {
-          features { notifications analytics offers shareLinks apiAccess }
-          limits { applications documentBytes aiActionsPerMonth }
+          features { notifications analytics offers shareLinks apiAccess mcpAccess }
+          limits { applications documentBytes }
         }
         pro {
-          features { notifications analytics offers shareLinks apiAccess }
-          limits { applications documentBytes aiActionsPerMonth }
+          features { notifications analytics offers shareLinks apiAccess mcpAccess }
+          limits { applications documentBytes }
         }
       }
-      usage { applications documentBytes aiActionsThisMonth }
+      usage { applications documentBytes }
     }
   }
 `;
@@ -36,13 +36,13 @@ export interface PlanFeatures {
   offers: boolean;
   shareLinks: boolean;
   apiAccess: boolean;
+  mcpAccess: boolean;
 }
 
 /** `null` is "no limit". */
 export interface PlanLimits {
   applications: number | null;
   documentBytes: number;
-  aiActionsPerMonth: number | null;
 }
 
 export interface PlanTerms {
@@ -59,7 +59,7 @@ export interface BillingStatus {
   features: PlanFeatures;
   limits: PlanLimits;
   catalogue: { free: PlanTerms; pro: PlanTerms };
-  usage: { applications: number; documentBytes: number; aiActionsThisMonth: number };
+  usage: { applications: number; documentBytes: number };
 }
 
 /** The signed-in user's plan and usage, or null while loading. */

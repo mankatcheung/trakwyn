@@ -2,7 +2,7 @@ import { LegalPageLayout } from '#/components/LegalPageLayout';
 import { CONTACT_EMAIL } from '#/constants';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'October 21, 2026';
+const LAST_UPDATED = 'October 25, 2026';
 
 /**
  * Drafted from what the app actually collects and does, per JEF-202 — not
@@ -37,6 +37,10 @@ export function PrivacyPage() {
       <p>{t('legal.privacy.clipperAiBody')}</p>
       <p>{t('legal.privacy.clipperTokensBody')}</p>
       <p>{t('legal.privacy.clipperErrorsBody')}</p>
+
+      <h3>{t('legal.privacy.paymentsTitle')}</h3>
+      <p>{t('legal.privacy.paymentsBody')}</p>
+      <p>{t('legal.privacy.paymentsRetentionBody')}</p>
 
       <h3>{t('legal.privacy.cookiesTitle')}</h3>
       <p>{t('legal.privacy.cookiesBody')}</p>

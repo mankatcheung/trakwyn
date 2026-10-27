@@ -1453,7 +1453,9 @@ export type PlanCatalogue = {
 export type PlanFeatures = {
   __typename?: 'PlanFeatures';
   analytics?: Maybe<Scalars['Boolean']['output']>;
+  /** The GraphQL API with an API token. MCP access is `mcpAccess`. */
   apiAccess?: Maybe<Scalars['Boolean']['output']>;
+  mcpAccess?: Maybe<Scalars['Boolean']['output']>;
   notifications?: Maybe<Scalars['Boolean']['output']>;
   offers?: Maybe<Scalars['Boolean']['output']>;
   shareLinks?: Maybe<Scalars['Boolean']['output']>;
@@ -1462,7 +1464,6 @@ export type PlanFeatures = {
 /** What the user may hold. Null means no limit. */
 export type PlanLimits = {
   __typename?: 'PlanLimits';
-  aiActionsPerMonth?: Maybe<Scalars['Int']['output']>;
   applications?: Maybe<Scalars['Int']['output']>;
   documentBytes?: Maybe<Scalars['Float']['output']>;
 };
@@ -1483,7 +1484,6 @@ export type PlanTerms = {
 /** How much of each limit the user has used. */
 export type PlanUsage = {
   __typename?: 'PlanUsage';
-  aiActionsThisMonth?: Maybe<Scalars['Int']['output']>;
   applications?: Maybe<Scalars['Int']['output']>;
   documentBytes?: Maybe<Scalars['Float']['output']>;
 };

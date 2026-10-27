@@ -24,6 +24,7 @@ const NO_FEATURES = {
   offers: false,
   shareLinks: false,
   apiAccess: false,
+  mcpAccess: true,
 };
 const ALL_FEATURES = {
   notifications: true,
@@ -31,9 +32,10 @@ const ALL_FEATURES = {
   offers: true,
   shareLinks: true,
   apiAccess: true,
+  mcpAccess: true,
 };
-const FREE_LIMITS = { applications: 50, documentBytes: 100 * MB, aiActionsPerMonth: 5 };
-const PRO_LIMITS = { applications: null, documentBytes: 2048 * MB, aiActionsPerMonth: null };
+const FREE_LIMITS = { applications: 50, documentBytes: 100 * MB };
+const PRO_LIMITS = { applications: null, documentBytes: 2048 * MB };
 
 const freeStatus = (overrides: Partial<BillingStatus> = {}): BillingStatus => ({
   enforced: true,
@@ -46,7 +48,7 @@ const freeStatus = (overrides: Partial<BillingStatus> = {}): BillingStatus => ({
     free: { features: NO_FEATURES, limits: FREE_LIMITS },
     pro: { features: ALL_FEATURES, limits: PRO_LIMITS },
   },
-  usage: { applications: 12, documentBytes: 25 * MB, aiActionsThisMonth: 3 },
+  usage: { applications: 12, documentBytes: 25 * MB },
   ...overrides,
 });
 
@@ -75,7 +77,8 @@ describe('SettingsPlanPage', () => {
     expect(await screen.findByText('You are on the Free plan.')).toBeInTheDocument();
     expect(screen.getByText('12 of 50 used (24%)')).toBeInTheDocument();
     expect(screen.getByText('25 MB of 100 MB used (25%)')).toBeInTheDocument();
-    expect(screen.getByText('3 of 5 used (60%)')).toBeInTheDocument();
+    // AI runs on the user's own key, so there is no allowance to meter (JEF-442).
+    expect(screen.queryByText('AI actions this month')).toBeNull();
   });
 
   it('compares Free and Pro, row by row', async () => {
@@ -93,7 +96,22 @@ describe('SettingsPlanPage', () => {
     expect(within(applications!).getByText('Unlimited')).toBeInTheDocument();
   });
 
-  it('says when a Pro trial ends and shows no limit for AI', async () => {
+  it('shows AI actions as unlimited and MCP as included on both plans (JEF-442)', async () => {
+    serve(freeStatus());
+    render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+    const rows = within(await screen.findByRole('table')).getAllByRole('row');
+    const ai = rows.find((row) => within(row).queryByText('AI actions with your own key'));
+    const mcp = rows.find((row) => within(row).queryByText('MCP access'));
+    const api = rows.find((row) => within(row).queryByText('API access with a token'));
+
+    expect(within(ai!).getAllByText('Unlimited')).toHaveLength(2);
+    expect(within(mcp!).getAllByText('Included')).toHaveLength(2);
+    expect(within(api!).getByText('Not included')).toBeInTheDocument();
+    expect(within(api!).getByText('Included')).toBeInTheDocument();
+  });
+
+  it('says when a Pro trial ends and shows no application limit', async () => {
     serve(
       freeStatus({
         plan: 'pro',
@@ -106,7 +124,7 @@ describe('SettingsPlanPage', () => {
     render(<SettingsPlanPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/Your Pro trial ends on/)).toBeInTheDocument();
-    expect(screen.getByText('3 used, no limit')).toBeInTheDocument();
+    expect(screen.getByText('12 used, no limit')).toBeInTheDocument();
   });
 
   it('says every feature is included when plans are not enforced', async () => {
@@ -121,7 +139,7 @@ describe('SettingsPlanPage', () => {
   it('warns when a limit is nearly used and flags it when reached', async () => {
     serve(
       freeStatus({
-        usage: { applications: 40, documentBytes: 100 * MB, aiActionsThisMonth: 5 },
+        usage: { applications: 40, documentBytes: 100 * MB },
       }),
     );
     render(<SettingsPlanPage />, { wrapper: Wrapper });
@@ -157,6 +175,32 @@ describe('SettingsPlanPage', () => {
         expect.stringContaining('CreateCheckoutSession'),
         { plan: 'pass3Months' },
       );
+    });
+
+    it('says prices are in dollars and include VAT in the UK and EU (JEF-431)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      expect(
+        await screen.findByText(/Prices are in US dollars and include VAT in the UK and EU/),
+      ).toBeInTheDocument();
+    });
+
+    it('explains the $9 founder price and that it stays $9 (JEF-431)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      const note = await screen.findByText(/Founder price/);
+      expect(note).toHaveTextContent('$9 a month');
+      expect(note).toHaveTextContent('stays $9 for as long as that subscription runs');
+    });
+
+    it('does not show the founder note to an active subscriber (JEF-431)', async () => {
+      serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      await screen.findByRole('button', { name: 'Open billing portal' });
+      expect(screen.queryByText(/Founder price/)).toBeNull();
     });
 
     it('shows only the portal to an active subscriber', async () => {

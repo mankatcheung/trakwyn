@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { buildTestApp, type TestApp } from './helpers/buildTestApp.js';
 import type { Cradle } from '#src/http/di/types.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
+import { ROUTES } from '#src/http/constants.js';
 import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
 
 const REGISTER_MUTATION = `
@@ -18,9 +19,9 @@ const BILLING_STATUS_QUERY = `
       plan
       planExpiresAt
       planSource
-      features { notifications analytics offers shareLinks apiAccess }
-      limits { applications documentBytes aiActionsPerMonth }
-      usage { applications documentBytes aiActionsThisMonth }
+      features { notifications analytics offers shareLinks apiAccess mcpAccess }
+      limits { applications documentBytes }
+      usage { applications documentBytes }
     }
   }
 `;
@@ -44,8 +45,8 @@ const CHANNEL_ANALYTICS_QUERY = `
 `;
 
 const CREATE_API_TOKEN_MUTATION = `
-  mutation CreateApiToken($name: String!) {
-    createApiToken(name: $name) { id }
+  mutation CreateApiToken($name: String!, $scope: ApiTokenScope) {
+    createApiToken(name: $name, scope: $scope) { id token }
   }
 `;
 
@@ -155,8 +156,8 @@ describe('plans integration, plans enforced', () => {
         planExpiresAt: string | null;
         planSource: string | null;
         features: Record<string, boolean>;
-        limits: { applications: number | null; documentBytes: number; aiActionsPerMonth: number };
-        usage: { applications: number; documentBytes: number; aiActionsThisMonth: number };
+        limits: { applications: number | null; documentBytes: number };
+        usage: { applications: number; documentBytes: number };
       };
     }>;
 
@@ -172,13 +173,13 @@ describe('plans integration, plans enforced', () => {
         offers: false,
         shareLinks: false,
         apiAccess: false,
+        mcpAccess: true,
       },
       limits: {
         applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
         documentBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
-        aiActionsPerMonth: PLAN_LIMITS.free.aiActionsPerMonth,
       },
-      usage: { applications: 1, documentBytes: 0, aiActionsThisMonth: 0 },
+      usage: { applications: 1, documentBytes: 0 },
     });
   });
 
@@ -191,8 +192,8 @@ describe('plans integration, plans enforced', () => {
       `query {
         billingStatus {
           catalogue {
-            free { features { analytics } limits { applications documentBytes aiActionsPerMonth } }
-            pro { features { analytics } limits { applications documentBytes aiActionsPerMonth } }
+            free { features { analytics mcpAccess } limits { applications documentBytes } }
+            pro { features { analytics mcpAccess } limits { applications documentBytes } }
           }
         }
       }`,
@@ -204,19 +205,17 @@ describe('plans integration, plans enforced', () => {
     expect(body.errors).toBeUndefined();
     expect(body.data!.billingStatus.catalogue).toEqual({
       free: {
-        features: { analytics: false },
+        features: { analytics: false, mcpAccess: true },
         limits: {
           applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
           documentBytes: PLAN_LIMITS.free.documentBytes,
-          aiActionsPerMonth: PLAN_LIMITS.free.aiActionsPerMonth,
         },
       },
       pro: {
-        features: { analytics: true },
+        features: { analytics: true, mcpAccess: true },
         limits: {
           applications: null,
           documentBytes: PLAN_LIMITS.pro.documentBytes,
-          aiActionsPerMonth: null,
         },
       },
     });
@@ -224,7 +223,6 @@ describe('plans integration, plans enforced', () => {
 
   it.each([
     ['createShareLink', CREATE_SHARE_LINK_MUTATION, { name: 'For my coach' }],
-    ['createApiToken', CREATE_API_TOKEN_MUTATION, { name: 'My CLI' }],
     ['applicationChannelAnalytics', CHANNEL_ANALYTICS_QUERY, undefined],
   ])('refuses %s to a Free user with PLAN_REQUIRED (403)', async (_name, query, variables) => {
     const { token } = await registerAndLogin(testApp);
@@ -234,6 +232,42 @@ describe('plans integration, plans enforced', () => {
 
     expect(body.errors?.[0]?.extensions?.code).toBe('PLAN_REQUIRED');
     expect(body.errors?.[0]?.extensions?.statusCode).toBe(403);
+  });
+
+  describe('API tokens and MCP on the Free plan (JEF-442)', () => {
+    async function freeUserWithToken(scope: 'read' | 'full') {
+      const { token } = await registerAndLogin(testApp);
+      const res = await authedInject(testApp, token, CREATE_API_TOKEN_MUTATION, {
+        name: 'My MCP client',
+        scope,
+      });
+      const body = res.json() as GraphQLResponse<{ createApiToken: { token: string } }>;
+      expect(body.errors).toBeUndefined();
+      return body.data!.createApiToken.token;
+    }
+
+    it('lets a Free user create a token and use it on MCP', async () => {
+      const apiToken = await freeUserWithToken('full');
+
+      const res = await testApp.app.inject({
+        method: 'POST',
+        url: ROUTES.MCP,
+        headers: { authorization: `Bearer ${apiToken}` },
+        payload: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect((res.json() as { error?: unknown }).error).toBeUndefined();
+    });
+
+    it('refuses that same token on the GraphQL API, which needs API access', async () => {
+      const apiToken = await freeUserWithToken('full');
+
+      const res = await authedInject(testApp, apiToken, BILLING_STATUS_QUERY);
+      const body = res.json() as GraphQLResponse<unknown>;
+
+      expect(body.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+    });
   });
 
   it('still lets a Free user do everything in the Free column', async () => {

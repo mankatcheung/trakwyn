@@ -27,7 +27,7 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 
 ## Plans (JEF-344)
 
-- **`PLAN_REQUIRED` is an upgrade prompt, not a failure.** `ErrorState` and `AiErrorMessage` branch on it, and the forms that can hit it (new application at the cap, API token, share link) render `UpgradePrompt`. The text is the API's own message, which names the feature; the link goes to **Settings → Plan**.
+- **`PLAN_REQUIRED` is an upgrade prompt, not a failure.** `ErrorState` and `AiErrorMessage` branch on it, and the forms that can hit it (new application at the cap, share link) render `UpgradePrompt`. The text is the API's own message, which names the feature; the link goes to **Settings → Plan**.
 - **`useBillingStatus()`** (`lib/billingStatus.ts`) is the one reader of `billingStatus`. Settings → Plan shows the plan, usage against each limit and a Free/Pro comparison built from the API's `catalogue`, so no limit is copied into the web app. Buying Pro arrives with billing (JEF-426).
 - The web app uses inline query strings for this, like the storage card, so there is no `.graphql` file or codegen change.
 
