@@ -83,6 +83,22 @@ export const RUNTIME_MESSAGES = {
   REFRESH_TOKEN: 'REFRESH_TOKEN',
 } as const;
 
+/**
+ * Long-lived ports the background is connected to. The popup holds one open
+ * for as long as it is showing, so the background knows not to reload under it
+ * (JEF-455); the port disconnects by itself when the popup closes.
+ */
+export const RUNTIME_PORTS = {
+  POPUP: 'popup',
+} as const;
+
+/**
+ * How often a downloaded update that is waiting for the Clipper to go idle is
+ * checked again (JEF-455). A popup closing or tracked work finishing checks at
+ * once; this catches a tab sign-in finished by a restarted background.
+ */
+export const UPDATE_RELOAD_RETRY_MS = 60 * 1000;
+
 /** Messages the popup sends the job-page content script. */
 export const CONTENT_MESSAGES = {
   GET_JOB_DATA: 'GET_JOB_DATA',

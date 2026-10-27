@@ -51,6 +51,15 @@ async function loadPending(): Promise<PendingTabOAuth | null> {
   return isPendingTabOAuth(pending) ? pending : null;
 }
 
+/**
+ * Whether a tab sign-in is waiting to be finished. An update reload empties
+ * `storage.session` (JEF-455), which would lose its PKCE verifier, so the
+ * reloader waits while this is true.
+ */
+export async function hasPendingTabOAuth(): Promise<boolean> {
+  return (await loadPending()) !== null;
+}
+
 async function clearPending(): Promise<void> {
   await browser.storage.session.remove(STORAGE_KEYS.PENDING_TAB_OAUTH);
 }
