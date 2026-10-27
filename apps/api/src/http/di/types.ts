@@ -116,6 +116,7 @@ import type { CookieConsentResolver } from '#src/interface-adapters/resolvers/Co
 import type { SessionResolver } from '#src/interface-adapters/resolvers/SessionResolver.js';
 import type { McpController } from '#src/interface-adapters/mcp/McpController.js';
 
+import type { AssertEmailVerifiedUseCase } from '#src/use-cases/auth/AssertEmailVerifiedUseCase.js';
 import type { AuthenticateRequestUseCase } from '#src/use-cases/auth/AuthenticateRequestUseCase.js';
 import type { AuthenticateMcpRequestUseCase } from '#src/use-cases/auth/AuthenticateMcpRequestUseCase.js';
 import type { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
@@ -342,6 +343,8 @@ export interface Cradle {
   createBillingPortalSessionUseCase: CreateBillingPortalSessionUseCase;
   handleBillingWebhookUseCase: HandleBillingWebhookUseCase;
   webAppOrigin: string;
+  autoVerifyEmail: boolean;
+  emailVerificationRequired: boolean;
   /** Chrome extension IDs allowed to finish an OAuth login (JEF-383). */
   extensionOAuthIds: ReadonlySet<string>;
   logger: ILogger;
@@ -499,6 +502,7 @@ export interface Cradle {
   exchangeMobileOAuthCodeUseCase: ExchangeMobileOAuthCodeUseCase;
 
   authenticateRequestUseCase: AuthenticateRequestUseCase;
+  assertEmailVerifiedUseCase: AssertEmailVerifiedUseCase;
   authenticateMcpRequestUseCase: AuthenticateMcpRequestUseCase;
   validateMcpOAuthAccessTokenUseCase: ValidateMcpOAuthAccessTokenUseCase;
   createMcpOAuthAccessTokenUseCase: CreateMcpOAuthAccessTokenUseCase;

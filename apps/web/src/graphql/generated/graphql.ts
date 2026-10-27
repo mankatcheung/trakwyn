@@ -126,6 +126,25 @@ export type AtsScore = {
   score?: Maybe<Scalars['Int']['output']>;
 };
 
+/** A page at the payment provider to send the browser to (JEF-426). Use it once; it expires. */
+export type BillingRedirect = {
+  __typename?: 'BillingRedirect';
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type BillingStatus = {
+  __typename?: 'BillingStatus';
+  catalogue?: Maybe<PlanCatalogue>;
+  /** False when this instance does not enforce plans: every feature is then on. */
+  enforced?: Maybe<Scalars['Boolean']['output']>;
+  features?: Maybe<PlanFeatures>;
+  limits?: Maybe<PlanLimits>;
+  plan?: Maybe<Plan>;
+  planExpiresAt?: Maybe<Scalars['String']['output']>;
+  planSource?: Maybe<PlanSource>;
+  usage?: Maybe<PlanUsage>;
+};
+
 export type BulkRestoreResult = {
   __typename?: 'BulkRestoreResult';
   restored?: Maybe<Scalars['Int']['output']>;
@@ -146,6 +165,12 @@ export type CalendarEventType =
   | 'applied'
   | 'followUp'
   | 'interview';
+
+/** What can be bought. The server picks the price, including any founder price. */
+export type CheckoutPlan =
+  | 'monthly'
+  | 'pass3Months'
+  | 'pass6Months';
 
 export type CompanyBriefing = {
   __typename?: 'CompanyBriefing';
@@ -590,6 +615,10 @@ export type Mutation = {
   confirmTotpSetup?: Maybe<ConfirmTotpSetupResult>;
   createApiToken?: Maybe<CreateApiTokenPayload>;
   createApplication?: Maybe<JobApplication>;
+  /** Opens the payment provider's page to manage or cancel. Fails until the user has paid once. */
+  createBillingPortalSession?: Maybe<BillingRedirect>;
+  /** Starts a purchase of Pro. Refuses an active subscriber, who would pay twice for the same time. */
+  createCheckoutSession?: Maybe<BillingRedirect>;
   createContact?: Maybe<Contact>;
   createConversation?: Maybe<Conversation>;
   createDocumentDraft?: Maybe<DocumentDraft>;
@@ -663,6 +692,7 @@ export type Mutation = {
   requestPasswordReset?: Maybe<Scalars['Boolean']['output']>;
   requestPasswordResetMobile?: Maybe<Scalars['Boolean']['output']>;
   requestUploadUrl?: Maybe<UploadUrlPayload>;
+  resendVerificationEmail?: Maybe<Scalars['Boolean']['output']>;
   resetPassword?: Maybe<Scalars['Boolean']['output']>;
   restoreApplication?: Maybe<Scalars['Boolean']['output']>;
   revokeMcpOAuthGrant?: Maybe<Scalars['Boolean']['output']>;
@@ -773,6 +803,11 @@ export type MutationCreateApiTokenArgs = {
 
 export type MutationCreateApplicationArgs = {
   input: CreateApplicationInput;
+};
+
+
+export type MutationCreateCheckoutSessionArgs = {
+  plan: CheckoutPlan;
 };
 
 
@@ -1403,6 +1438,56 @@ export type ParsedJobDescription = {
   salary?: Maybe<Scalars['String']['output']>;
 };
 
+export type Plan =
+  | 'free'
+  | 'pro';
+
+/** Both plans side by side, whichever one the user is on. */
+export type PlanCatalogue = {
+  __typename?: 'PlanCatalogue';
+  free?: Maybe<PlanTerms>;
+  pro?: Maybe<PlanTerms>;
+};
+
+/** The Pro-only capabilities, on or off for this user. */
+export type PlanFeatures = {
+  __typename?: 'PlanFeatures';
+  analytics?: Maybe<Scalars['Boolean']['output']>;
+  /** The GraphQL API with an API token. MCP access is `mcpAccess`. */
+  apiAccess?: Maybe<Scalars['Boolean']['output']>;
+  mcpAccess?: Maybe<Scalars['Boolean']['output']>;
+  notifications?: Maybe<Scalars['Boolean']['output']>;
+  offers?: Maybe<Scalars['Boolean']['output']>;
+  shareLinks?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** What the user may hold. Null means no limit. */
+export type PlanLimits = {
+  __typename?: 'PlanLimits';
+  applications?: Maybe<Scalars['Int']['output']>;
+  documentBytes?: Maybe<Scalars['Float']['output']>;
+};
+
+export type PlanSource =
+  | 'grant'
+  | 'pass'
+  | 'subscription'
+  | 'trial';
+
+/** What one plan includes. */
+export type PlanTerms = {
+  __typename?: 'PlanTerms';
+  features?: Maybe<PlanFeatures>;
+  limits?: Maybe<PlanLimits>;
+};
+
+/** How much of each limit the user has used. */
+export type PlanUsage = {
+  __typename?: 'PlanUsage';
+  applications?: Maybe<Scalars['Int']['output']>;
+  documentBytes?: Maybe<Scalars['Float']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   activityLogs?: Maybe<Array<ActivityLog>>;
@@ -1412,6 +1497,8 @@ export type Query = {
   applicationHealthScore?: Maybe<ApplicationHealthScore>;
   applications?: Maybe<Array<JobApplication>>;
   applicationsPage?: Maybe<ApplicationConnection>;
+  /** Where the signed-in user stands against their plan's limits. */
+  billingStatus?: Maybe<BillingStatus>;
   calendarEvents?: Maybe<Array<CalendarEvent>>;
   chatHistory?: Maybe<Array<Message>>;
   companyBriefing?: Maybe<CompanyBriefing>;
@@ -1780,6 +1867,7 @@ export type User = {
   customAiPrompt?: Maybe<Scalars['String']['output']>;
   defaultLlmProvider?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
+  emailVerified?: Maybe<Scalars['Boolean']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;

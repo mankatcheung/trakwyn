@@ -7,13 +7,11 @@ export const uniqueEmail = (prefix: string) =>
 /**
  * Registers a new account, landing on /dashboard.
  *
- * Registration no longer navigates to /dashboard automatically — it shows a
- * "Check your email" screen instead (email verification is informational,
- * not a login gate). But `register` still sets an access token in memory
- * for the current tab, so the user is already authenticated at that point;
- * clicking through to /login (a client-side navigation, so the in-memory
- * token survives) immediately redirects back to /dashboard, since /login's
- * own beforeLoad guard bounces already-authenticated users away.
+ * Registration shows a "Check your email" screen first. `register` also signs
+ * the user in, so its "Continue" link goes straight to /dashboard. In e2e the
+ * API auto-verifies new accounts (AUTO_VERIFY_EMAIL defaults on outside
+ * production, JEF-438), so the dashboard is not hidden behind the
+ * verification wall.
  */
 export async function registerAndLogin(
   page: Page,
@@ -27,7 +25,7 @@ export async function registerAndLogin(
   await page.getByRole('button', { name: /create account/i }).click();
 
   await expect(page.getByRole('heading', { name: /check your email/i })).toBeVisible();
-  await page.getByRole('link', { name: /back to sign in/i }).click();
+  await page.getByRole('link', { name: /^continue$/i }).click();
 
   await expect(page).toHaveURL(/dashboard/);
 }

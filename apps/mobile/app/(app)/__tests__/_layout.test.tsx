@@ -29,11 +29,26 @@ jest.mock('expo-router', () => {
   return { Stack };
 });
 
+jest.mock('../../../src/features/verification/hooks/useEmailVerification', () => ({
+  useEmailVerification: jest.fn(),
+}));
+jest.mock('../../../src/features/verification/screens/VerifyEmailRequiredScreen', () => ({
+  VerifyEmailRequiredScreen: ({ email }: { email: string }) => {
+    const { Text } = require('react-native');
+    return <Text testID="verify-email-required">{email}</Text>;
+  },
+}));
+
 import { useTheme } from '../../../src/theme/ThemeContext';
 import { darkColors, lightColors } from '../../../src/theme/colors';
+import { useEmailVerification } from '../../../src/features/verification/hooks/useEmailVerification';
 import AppLayout from '../_layout';
 
 const mockedUseTheme = jest.mocked(useTheme);
+const mockedUseEmailVerification = jest.mocked(useEmailVerification);
+
+const verification = (data: { email: string; emailVerified: boolean } | null | undefined) =>
+  mockedUseEmailVerification.mockReturnValue({ data } as never);
 
 describe('AppLayout', () => {
   beforeEach(() => {
@@ -43,6 +58,31 @@ describe('AppLayout', () => {
       colors: lightColors,
       setMode: jest.fn(),
     } as never);
+    verification({ email: 'a@b.c', emailVerified: true });
+  });
+
+  describe('email-verification gate (JEF-438)', () => {
+    it('shows the reminder instead of the app for an unverified account', async () => {
+      verification({ email: 'new@example.com', emailVerified: false });
+
+      const { getByTestId, getByText, queryByTestId } = await render(<AppLayout />);
+
+      expect(getByTestId('verify-email-required')).toBeTruthy();
+      expect(getByText('new@example.com')).toBeTruthy();
+      expect(queryByTestId('app-stack-root')).toBeNull();
+    });
+
+    it.each([
+      ['a check still in flight', undefined],
+      ['a check that failed or found no user', null],
+    ])('renders the app for %s', async (_label, data) => {
+      verification(data);
+
+      const { getByTestId, queryByTestId } = await render(<AppLayout />);
+
+      expect(getByTestId('app-stack-root')).toBeTruthy();
+      expect(queryByTestId('verify-email-required')).toBeNull();
+    });
   });
 
   it('wraps the tab navigator and presents notifications as a modal outside any tab', async () => {

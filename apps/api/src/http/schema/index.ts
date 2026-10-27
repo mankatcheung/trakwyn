@@ -1,4 +1,5 @@
 import { builder } from '#src/http/schema/builder.js';
+import { enforceEmailVerification } from '#src/http/emailVerificationGate.js';
 
 // Types must be imported before queries/mutations to register with builder
 import './types/enums/ApplicationStatusEnum.js';
@@ -120,4 +121,4 @@ import './mutations/shareLinkMutations.js';
 import './mutations/billingMutations.js';
 import './mutations/cookieConsentMutations.js';
 
-export const schema = builder.toSchema();
+export const schema = enforceEmailVerification(builder.toSchema());

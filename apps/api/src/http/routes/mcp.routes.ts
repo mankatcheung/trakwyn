@@ -2,6 +2,7 @@ import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import type { IHttpResponse } from '#src/http/ports/IHttpResponse.js';
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
+import { EmailNotVerifiedError } from '#src/use-cases/errors/DomainError.js';
 import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
 import { ROUTES } from '#src/http/constants.js';
 import { recordOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
@@ -59,6 +60,18 @@ export function mcpRoutes(getCradle: () => Cradle): RouteDefinition[] {
             )
             .send({ error: 'Invalid or expired API token' });
           return;
+        }
+
+        // The verification wall (JEF-438) holds for MCP as well: a token
+        // minted by an unverified account reads and writes nothing.
+        try {
+          await getCradle().assertEmailVerifiedUseCase.execute(authResult.sub);
+        } catch (err) {
+          if (err instanceof EmailNotVerifiedError) {
+            res.status(403).send({ error: err.message, code: err.code });
+            return;
+          }
+          throw err;
         }
 
         const { status, body } = await mcpController.handle(

@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { DomainError } from '#src/use-cases/errors/DomainError.js';
+import { DomainError, EmailNotVerifiedError } from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { CHAT } from '#src/use-cases/constants.js';
 import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
@@ -72,6 +72,17 @@ export async function handleChatStream(
   if (!user) {
     reply.code(401).send({ error: 'Unauthorized' });
     return;
+  }
+  // The verification wall (JEF-438): refused before the stream opens, so the
+  // client gets a plain 403 it can read instead of an SSE error frame.
+  try {
+    await diScopeOf(request).cradle.assertEmailVerifiedUseCase.execute(user.sub);
+  } catch (err) {
+    if (err instanceof EmailNotVerifiedError) {
+      reply.code(403).send({ error: err.message, code: err.code });
+      return;
+    }
+    throw err;
   }
 
   const parsed = bodySchema.safeParse(request.body);

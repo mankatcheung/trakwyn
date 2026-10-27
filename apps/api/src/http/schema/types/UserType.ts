@@ -6,6 +6,7 @@ UserRef.implement({
   fields: (t) => ({
     id: t.exposeID('id'),
     email: t.exposeString('email'),
+    emailVerified: t.exposeBoolean('emailVerified'),
     name: t.exposeString('name', { nullable: true }),
     timezone: t.exposeString('timezone', { nullable: true }),
     targetRole: t.exposeString('targetRole', { nullable: true }),

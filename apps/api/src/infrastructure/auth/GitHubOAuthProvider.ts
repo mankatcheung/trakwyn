@@ -75,20 +75,18 @@ export class GitHubOAuthProvider implements IOAuthProvider {
     }
     const user = (await userResponse.json()) as GitHubUser;
 
-    let email = user.email;
-    let emailVerified = Boolean(email);
-    if (!email) {
-      // Private-email accounts don't return it on /user — look it up separately.
-      const emailsResponse = await fetch(OAUTH.GITHUB_EMAILS_URL, { headers: authHeader });
-      if (emailsResponse.ok) {
-        const emails = (await emailsResponse.json()) as GitHubEmail[];
-        const primary = emails.find((e) => e.primary) ?? emails[0];
-        if (primary) {
-          email = primary.email;
-          emailVerified = primary.verified;
-        }
-      }
+    // Always from /user/emails and never the profile's public `email` (JEF-438):
+    // that one is whatever the user chose to show, while the account is claimed
+    // by an address GitHub has verified, so only the verified primary counts.
+    // None (or a refused lookup) leaves the profile without an email, which the
+    // sign-in use case turns into a clear error.
+    let email: string | null = null;
+    const emailsResponse = await fetch(OAUTH.GITHUB_EMAILS_URL, { headers: authHeader });
+    if (emailsResponse.ok) {
+      const emails = (await emailsResponse.json()) as GitHubEmail[];
+      email = emails.find((e) => e.primary && e.verified)?.email ?? null;
     }
+    const emailVerified = email !== null;
 
     return {
       providerAccountId: String(user.id),
