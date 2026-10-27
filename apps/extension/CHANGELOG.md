@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.2.0...clipper-v1.2.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** clear all open Dependabot alerts via overrides and a lockfile bump ([#1088](https://github.com/mankatcheung/trakwyn/issues/1088)) ([59cd6d4](https://github.com/mankatcheung/trakwyn/commit/59cd6d45b4f4a4f979acc97cb075ca6d8def6873))
+
 ## [1.2.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.1.1...clipper-v1.2.0) (2026-10-27)
 
 
