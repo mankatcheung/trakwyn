@@ -46,6 +46,16 @@ name: Release
 on:
   push:
     branches: [main]
+  # Runs the Clipper store jobs again for a tag that already exists (JEF-454),
+  # with this workflow file as it is now. Re-running a failed job would use the
+  # file of the commit it first ran on, so a fix to a store job could not
+  # release that tag. release-please does not run, so nothing is tagged or
+  # versioned here.
+  workflow_dispatch:
+    inputs:
+      clipper_tag:
+        description: Existing Clipper release tag to build and submit, e.g. clipper-v1.2.0
+        required: true
 
 # issues: release-please tracks a release PR's state with labels.
 permissions:
@@ -60,6 +70,7 @@ concurrency:
 jobs:
   release-please:
     name: Release PRs, tags and GitHub Releases
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       clipper_released: ${{ steps.release.outputs['apps/extension--release_created'] }}
@@ -82,11 +93,19 @@ jobs:
   clipper-store:
     name: Clipper zip and Web Store submission
     needs: release-please
-    if: needs.release-please.outputs.clipper_released == 'true'
+    # !cancelled(): on a manual run release-please is skipped, which would skip
+    # this job too.
+    if: ${{ !cancelled() && (needs.release-please.outputs.clipper_released == 'true' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ needs.release-please.outputs.clipper_tag }}
+      TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}
     steps:
+      - name: Check the tag
+        run: |
+          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
+          }
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
@@ -150,7 +169,7 @@ jobs:
           added=$(jq -n --argjson old "$old" --argjson new "$new" '
             def hosts: [.content_scripts[]?.matches[]?];
             { permissions: (($new.permissions // []) - ($old.permissions // [])),
-              content_script_matches: ($new | hosts) - ($old | hosts) }
+              content_script_matches: (($new | hosts) - ($old | hosts)) }
             | with_entries(select(.value | length > 0))')
           if [ "$added" != "{}" ]; then
             echo "::error::Added since $prev: $added. Submit this one by hand, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
@@ -185,14 +204,22 @@ jobs:
   clipper-firefox-zip:
     name: Clipper Firefox zips
     needs: release-please
-    if: needs.release-please.outputs.clipper_released == 'true'
+    # !cancelled(): on a manual run release-please is skipped, which would skip
+    # this job too.
+    if: ${{ !cancelled() && (needs.release-please.outputs.clipper_released == 'true' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: write
     env:
-      TAG: ${{ needs.release-please.outputs.clipper_tag }}
+      TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}
     steps:
+      - name: Check the tag
+        run: |
+          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
+          }
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
@@ -205,9 +232,12 @@ jobs:
           VITE_POSTHOG_KEY: ${{ vars.CLIPPER_POSTHOG_KEY }}
           # The full /graphql URL of the production API.
           VITE_API_URL: ${{ vars.CLIPPER_API_URL }}
+          # The web app's origin, e.g. https://www.trakwyn.com (not the API's).
+          VITE_WEB_URL: ${{ vars.CLIPPER_WEB_URL }}
         run: |
           test -n "$VITE_POSTHOG_KEY" || { echo "::error::Repository variable CLIPPER_POSTHOG_KEY is not set"; exit 1; }
           test -n "$VITE_API_URL" || { echo "::error::Repository variable CLIPPER_API_URL is not set"; exit 1; }
+          test -n "$VITE_WEB_URL" || { echo "::error::Repository variable CLIPPER_WEB_URL is not set"; exit 1; }
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip:firefox
 
@@ -237,6 +267,9 @@ jobs:
           }
           unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
             echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+          }
+          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_WEB_URL }}" || {
+            echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
           }
           echo "ZIP=$zip" >> "$GITHUB_ENV"
           echo "SOURCES_ZIP=$sources" >> "$GITHUB_ENV"
