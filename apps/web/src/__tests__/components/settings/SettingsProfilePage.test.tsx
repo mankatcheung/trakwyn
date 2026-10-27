@@ -264,6 +264,22 @@ describe('SettingsProfilePage', () => {
     });
   });
   describe('email update form', () => {
+    it('shows the current email above the change form', async () => {
+      render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+      expect(await screen.findByText('test@example.com')).toBeInTheDocument();
+      expect(screen.getByText('Current email')).toBeInTheDocument();
+      expect(screen.queryByTestId('current-email-loading')).not.toBeInTheDocument();
+    });
+
+    it('shows a loading placeholder instead of the current email while the request is in flight', () => {
+      mockGqlRequest.mockReturnValue(new Promise(() => {}));
+      render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+      expect(screen.getByTestId('current-email-loading')).toBeInTheDocument();
+      expect(screen.queryByText('test@example.com')).not.toBeInTheDocument();
+    });
+
     it('calls requestEmailChange mutation with current password and new email', async () => {
       render(<SettingsProfilePage />, { wrapper: Wrapper });
       await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
