@@ -23,7 +23,7 @@
     "graphql": "^16.14.2",
     "jsdom": "^28.1.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.11",
+    "vitest": "^4.1.12",
     "wxt": "^0.21.4"
   },
   "dependencies": {
