@@ -231,6 +231,47 @@ describe('refresh token deduplication', () => {
     },
   );
 
+  // Regression: the hint outliving a rejected refresh made /login bounce back
+  // to the page whose request had just failed, so the refresh failed again on
+  // every load.
+  it('clears the session hint cookie itself when the refresh is rejected', async () => {
+    document.cookie = 'trakwyn_logged_in=1; path=/';
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: null } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const { gqlClient, hasSessionCookie } = await import('#/graphql/client');
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    expect(hasSessionCookie()).toBe(false);
+  });
+
+  it.each([
+    ['the API answers 5xx', () => new Response('Bad gateway', { status: 502 })],
+    [
+      'the API is unreachable',
+      () => {
+        throw new TypeError('Failed to fetch');
+      },
+    ],
+  ])('keeps the session when %s during the refresh', async (_label, answer) => {
+    document.cookie = 'trakwyn_logged_in=1; path=/';
+    fetchSpy.mockImplementation(async () => answer());
+    const { gqlClient, hasSessionCookie } = await import('#/graphql/client');
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    expect(mockLocationHref).not.toHaveBeenCalled();
+    expect(hasSessionCookie()).toBe(true);
+    document.cookie = 'trakwyn_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  });
+
   it('retries the request once after a successful refresh', async () => {
     const unauthorized = Object.assign(new Error('Unauthorized'), {
       response: { errors: [{ extensions: { code: 'UNAUTHORIZED' } }] },
@@ -561,6 +602,47 @@ describe('failure reporting', () => {
       expect.any(Error),
       expect.objectContaining({ kind: 'auth_session_hint_mismatch' }),
     );
+
+    document.cookie = 'trakwyn_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    fetchSpy.mockRestore();
+  });
+
+  // An expired or revoked session: the API's rejection clears the hint, so the
+  // browser and the server agree and there is nothing to report.
+  it('stays quiet when the rejection itself clears the hint cookie', async () => {
+    document.cookie = 'trakwyn_logged_in=1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      document.cookie = 'trakwyn_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+      return new Response(JSON.stringify({ data: { refreshToken: null } }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    await middleware({ errors: [{ extensions: { code: 'UNAUTHORIZED' } }] });
+
+    expect(mockPosthog.captureException).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('reports a burst of rejected requests once, not once per request', async () => {
+    document.cookie = 'trakwyn_logged_in=1';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ data: { refreshToken: null } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const { gqlClient } = await loadInitialised();
+    const middleware = (gqlClient as unknown as { responseMiddleware: Middleware })
+      .responseMiddleware;
+    const unauthorized = { errors: [{ extensions: { code: 'UNAUTHORIZED' } }] };
+    await Promise.all([middleware(unauthorized), middleware(unauthorized)]);
+
+    expect(mockPosthog.captureException).toHaveBeenCalledTimes(1);
+    expect(mockLocationHref).toHaveBeenCalledTimes(1);
 
     document.cookie = 'trakwyn_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     fetchSpy.mockRestore();
