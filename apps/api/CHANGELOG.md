@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.5.0...api-v0.6.0) (2026-10-27)
+
+
+### Features
+
+* add the Polar billing adapter and setup scripts (JEF-432) ([#1061](https://github.com/mankatcheung/trakwyn/issues/1061)) ([d2ac387](https://github.com/mankatcheung/trakwyn/commit/d2ac387a64fafb33e1611e01d80a248f21342f1b))
+* **extension:** build the Clipper for Firefox and prepare its AMO listing (JEF-423) ([#1030](https://github.com/mankatcheung/trakwyn/issues/1030)) ([44d70dd](https://github.com/mankatcheung/trakwyn/commit/44d70dda70431861c9256fabc5709c20db5acd7a))
+* make bring-your-own-key AI actions and MCP available on Free (JEF-442) ([#1073](https://github.com/mankatcheung/trakwyn/issues/1073)) ([2a3aec5](https://github.com/mankatcheung/trakwyn/commit/2a3aec5de5f14384d5e4e28031a05ce37077f68d))
+* revoke the Polar subscription when a user deletes their account (JEF-439) ([#1067](https://github.com/mankatcheung/trakwyn/issues/1067)) ([4074f19](https://github.com/mankatcheung/trakwyn/commit/4074f191ba57d5a76a278ffd36d504846d95b6a4))
+* take payment for Pro behind a provider-neutral billing port (JEF-426) ([#1049](https://github.com/mankatcheung/trakwyn/issues/1049)) ([7a45437](https://github.com/mankatcheung/trakwyn/commit/7a45437b840df8e4036187529a92796ce04495e8))
+
+
+### Bug Fixes
+
+* block unverified email accounts behind a verification wall (JEF-438) ([#1063](https://github.com/mankatcheung/trakwyn/issues/1063)) ([8b0ee3e](https://github.com/mankatcheung/trakwyn/commit/8b0ee3e057e733a380acb00e0187cca00fabf820))
+* **deps:** clear all open Dependabot alerts via overrides and a lockfile bump ([#1088](https://github.com/mankatcheung/trakwyn/issues/1088)) ([59cd6d4](https://github.com/mankatcheung/trakwyn/commit/59cd6d45b4f4a4f979acc97cb075ca6d8def6873))
+
 ## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.4.0...api-v0.5.0) (2026-10-23)
 
 

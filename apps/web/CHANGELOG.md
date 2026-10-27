@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.5.0...web-v0.6.0) (2026-10-27)
+
+
+### Features
+
+* add a public pricing page and update marketing copy for paid plans (JEF-441) ([#1071](https://github.com/mankatcheung/trakwyn/issues/1071)) ([82bbbd9](https://github.com/mankatcheung/trakwyn/commit/82bbbd92a672689992feb90dd4981b04768830f8))
+* add paid-plan terms, privacy and pricing copy (JEF-431) ([#1069](https://github.com/mankatcheung/trakwyn/issues/1069)) ([0f6fe48](https://github.com/mankatcheung/trakwyn/commit/0f6fe486c26a264889b0a10613f010fbe01be19b))
+* make bring-your-own-key AI actions and MCP available on Free (JEF-442) ([#1073](https://github.com/mankatcheung/trakwyn/issues/1073)) ([2a3aec5](https://github.com/mankatcheung/trakwyn/commit/2a3aec5de5f14384d5e4e28031a05ce37077f68d))
+* revoke the Polar subscription when a user deletes their account (JEF-439) ([#1067](https://github.com/mankatcheung/trakwyn/issues/1067)) ([4074f19](https://github.com/mankatcheung/trakwyn/commit/4074f191ba57d5a76a278ffd36d504846d95b6a4))
+* take payment for Pro behind a provider-neutral billing port (JEF-426) ([#1049](https://github.com/mankatcheung/trakwyn/issues/1049)) ([7a45437](https://github.com/mankatcheung/trakwyn/commit/7a45437b840df8e4036187529a92796ce04495e8))
+
+
+### Bug Fixes
+
+* block unverified email accounts behind a verification wall (JEF-438) ([#1063](https://github.com/mankatcheung/trakwyn/issues/1063)) ([8b0ee3e](https://github.com/mankatcheung/trakwyn/commit/8b0ee3e057e733a380acb00e0187cca00fabf820))
+* **deps:** clear all open Dependabot alerts via overrides and a lockfile bump ([#1088](https://github.com/mankatcheung/trakwyn/issues/1088)) ([59cd6d4](https://github.com/mankatcheung/trakwyn/commit/59cd6d45b4f4a4f979acc97cb075ca6d8def6873))
+
 ## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.4.0...web-v0.5.0) (2026-10-23)
 
 
