@@ -7,7 +7,7 @@ import type {
   CreateDocumentData,
 } from '#src/use-cases/ports/IDocumentRepository.js';
 import { getClient, txStorage } from '../transactionContext.js';
-import { CONTENT_LIMITS, DEFAULTS } from '#src/use-cases/constants.js';
+import { DEFAULTS } from '#src/use-cases/constants.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import { storageFullMessage } from '#src/use-cases/documents/storageQuota.js';
 
@@ -62,14 +62,14 @@ export class DrizzleDocumentRepository implements IDocumentRepository {
         .where(
           and(
             eq(jobApplication.id, data.applicationId),
-            lt(jobApplication.documentCount, CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION),
+            lt(jobApplication.documentCount, data.documentsPerApplicationLimit),
           ),
         )
         .returning({ id: jobApplication.id, userId: jobApplication.userId });
 
       if (!reserved) {
         throw new QuotaExceededError(
-          `This application already has the maximum of ${CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION} documents`,
+          `This application already has the maximum of ${data.documentsPerApplicationLimit} documents`,
         );
       }
 

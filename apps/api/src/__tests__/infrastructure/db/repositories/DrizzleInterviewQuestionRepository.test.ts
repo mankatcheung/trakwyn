@@ -49,7 +49,12 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
   describe('create', () => {
     it('persists a question without an answer and returns the entity', async () => {
-      const created = await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'Why us?' });
+      const created = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'Why us?',
+      });
 
       expect(created).toMatchObject({
         id: 'q1',
@@ -62,6 +67,7 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
     it('persists an answer when given', async () => {
       const created = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
         id: 'q1',
         interviewRoundId: 'r1',
         question: 'Why us?',
@@ -72,9 +78,24 @@ describe('DrizzleInterviewQuestionRepository', () => {
     });
 
     it('appends each new question after the last and counts them on the round', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
-      const second = await repo.create({ id: 'q2', interviewRoundId: 'r1', question: 'Two' });
-      const other = await repo.create({ id: 'q3', interviewRoundId: 'r2', question: 'Elsewhere' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
+      const second = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q2',
+        interviewRoundId: 'r1',
+        question: 'Two',
+      });
+      const other = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q3',
+        interviewRoundId: 'r2',
+        question: 'Elsewhere',
+      });
 
       expect(second.position).toBe(1);
       expect(other.position).toBe(0);
@@ -83,12 +104,32 @@ describe('DrizzleInterviewQuestionRepository', () => {
     });
 
     it('places a new question after the survivors when an earlier one was deleted', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
-      await repo.create({ id: 'q2', interviewRoundId: 'r1', question: 'Two' });
-      await repo.create({ id: 'q3', interviewRoundId: 'r1', question: 'Three' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q2',
+        interviewRoundId: 'r1',
+        question: 'Two',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q3',
+        interviewRoundId: 'r1',
+        question: 'Three',
+      });
       await repo.delete('q1');
 
-      const added = await repo.create({ id: 'q4', interviewRoundId: 'r1', question: 'Four' });
+      const added = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q4',
+        interviewRoundId: 'r1',
+        question: 'Four',
+      });
       const ids = (await repo.findAllByRoundId('r1')).map((q) => q.id);
 
       expect(added.position).toBe(3);
@@ -102,12 +143,34 @@ describe('DrizzleInterviewQuestionRepository', () => {
         .where(eq(interviewRound.id, 'r1'));
 
       const err = await repo
-        .create({ id: 'q-over', interviewRoundId: 'r1', question: 'One too many' })
+        .create({
+          id: 'q-over',
+          interviewRoundId: 'r1',
+          question: 'One too many',
+          questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        })
         .catch((e) => e);
 
       expect(err).toBeInstanceOf(QuotaExceededError);
       expect(await repo.findById('q-over')).toBeNull();
       expect(await questionCount('r1')).toBe(CONTENT_LIMITS.QUESTIONS_PER_ROUND);
+    });
+
+    it('enforces the limit it is given, not a built-in one', async () => {
+      await repo.create({
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+        questionsPerRoundLimit: 1,
+      });
+
+      const err = await repo
+        .create({ id: 'q2', interviewRoundId: 'r1', question: 'Two', questionsPerRoundLimit: 1 })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(QuotaExceededError);
+      expect(err.message).toContain('maximum of 1 questions');
+      expect(await questionCount('r1')).toBe(1);
     });
 
     it('limits each round on its own', async () => {
@@ -116,7 +179,12 @@ describe('DrizzleInterviewQuestionRepository', () => {
         .set({ questionCount: CONTENT_LIMITS.QUESTIONS_PER_ROUND })
         .where(eq(interviewRound.id, 'r1'));
 
-      const created = await repo.create({ id: 'q1', interviewRoundId: 'r2', question: 'Fine' });
+      const created = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r2',
+        question: 'Fine',
+      });
 
       expect(created.interviewRoundId).toBe('r2');
     });
@@ -124,9 +192,24 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
   describe('findAllByRoundId', () => {
     it('returns only that round, in position order', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
-      await repo.create({ id: 'q2', interviewRoundId: 'r1', question: 'Two' });
-      await repo.create({ id: 'q3', interviewRoundId: 'r2', question: 'Other' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q2',
+        interviewRoundId: 'r1',
+        question: 'Two',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q3',
+        interviewRoundId: 'r2',
+        question: 'Other',
+      });
       await repo.reorder('r1', ['q2', 'q1']);
 
       const result = await repo.findAllByRoundId('r1');
@@ -141,7 +224,12 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
   describe('update', () => {
     it('changes the question and answer', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'Old' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'Old',
+      });
 
       const updated = await repo.update('q1', { question: 'New', answer: 'Replied' });
 
@@ -149,7 +237,13 @@ describe('DrizzleInterviewQuestionRepository', () => {
     });
 
     it('leaves fields that are not provided, and clears an answer set to null', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'Q', answer: 'A' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'Q',
+        answer: 'A',
+      });
 
       const untouched = await repo.update('q1', { question: 'Q2' });
       const cleared = await repo.update('q1', { answer: null });
@@ -162,8 +256,18 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
   describe('delete', () => {
     it('removes the row and releases the quota slot', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
-      await repo.create({ id: 'q2', interviewRoundId: 'r1', question: 'Two' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q2',
+        interviewRoundId: 'r1',
+        question: 'Two',
+      });
 
       await repo.delete('q1');
 
@@ -178,14 +282,24 @@ describe('DrizzleInterviewQuestionRepository', () => {
     });
 
     it('frees room so a full round can take another question', async () => {
-      await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
       await db.db
         .update(interviewRound)
         .set({ questionCount: CONTENT_LIMITS.QUESTIONS_PER_ROUND })
         .where(eq(interviewRound.id, 'r1'));
 
       await repo.delete('q1');
-      const created = await repo.create({ id: 'q2', interviewRoundId: 'r1', question: 'Two' });
+      const created = await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'q2',
+        interviewRoundId: 'r1',
+        question: 'Two',
+      });
 
       expect(created.id).toBe('q2');
     });
@@ -193,9 +307,24 @@ describe('DrizzleInterviewQuestionRepository', () => {
 
   describe('reorder', () => {
     it('sets positions to the index in the given list', async () => {
-      await repo.create({ id: 'a', interviewRoundId: 'r1', question: 'A' });
-      await repo.create({ id: 'b', interviewRoundId: 'r1', question: 'B' });
-      await repo.create({ id: 'c', interviewRoundId: 'r1', question: 'C' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'a',
+        interviewRoundId: 'r1',
+        question: 'A',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'b',
+        interviewRoundId: 'r1',
+        question: 'B',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'c',
+        interviewRoundId: 'r1',
+        question: 'C',
+      });
 
       await repo.reorder('r1', ['c', 'a', 'b']);
 
@@ -208,8 +337,18 @@ describe('DrizzleInterviewQuestionRepository', () => {
     });
 
     it("does not move another round's questions", async () => {
-      await repo.create({ id: 'a', interviewRoundId: 'r1', question: 'A' });
-      await repo.create({ id: 'x', interviewRoundId: 'r2', question: 'X' });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'a',
+        interviewRoundId: 'r1',
+        question: 'A',
+      });
+      await repo.create({
+        questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+        id: 'x',
+        interviewRoundId: 'r2',
+        question: 'X',
+      });
 
       await repo.reorder('r1', ['x', 'a']);
 
@@ -218,7 +357,12 @@ describe('DrizzleInterviewQuestionRepository', () => {
   });
 
   it('deletes a round’s questions when the round is deleted', async () => {
-    await repo.create({ id: 'q1', interviewRoundId: 'r1', question: 'One' });
+    await repo.create({
+      questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
+      id: 'q1',
+      interviewRoundId: 'r1',
+      question: 'One',
+    });
 
     await db.db.delete(interviewRound).where(eq(interviewRound.id, 'r1'));
 

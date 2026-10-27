@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/CreateMockInterviewQuestionUseCase.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
-import { INTERVIEW_QUESTION_LIMITS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, INTERVIEW_QUESTION_LIMITS } from '#src/use-cases/constants.js';
 import type { IMockInterviewQuestionRepository } from '#src/use-cases/ports/IMockInterviewQuestionRepository.js';
 import {
   makeMockInterviewQuestion,
@@ -68,6 +68,7 @@ describe('CreateMockInterviewQuestionUseCase', () => {
       question: 'Why us?',
       answer: null,
       answerSource: 'user',
+      mockQuestionsPerRoundLimit: CONTENT_LIMITS.MOCK_QUESTIONS_PER_ROUND,
     });
   });
 

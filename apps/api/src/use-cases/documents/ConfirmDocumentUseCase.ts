@@ -3,6 +3,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
@@ -73,6 +74,7 @@ export class ConfirmDocumentUseCase implements IConfirmDocumentUseCase {
         documentType: input.documentType,
         version: input.version,
         storageLimitBytes: limits.documentBytes,
+        documentsPerApplicationLimit: CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION,
       });
     } catch (error) {
       // The client uploads directly to storage before this database step. Do

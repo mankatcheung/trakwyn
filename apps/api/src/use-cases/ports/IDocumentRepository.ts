@@ -17,6 +17,12 @@ export interface CreateDocumentData {
    * passing the limit.
    */
   storageLimitBytes: number;
+  /**
+   * The most documents one application may hold. Passed in, not read, so the
+   * repository only enforces it, in the same conditional `UPDATE` that
+   * reserves the slot.
+   */
+  documentsPerApplicationLimit: number;
 }
 
 export interface IDocumentRepository {

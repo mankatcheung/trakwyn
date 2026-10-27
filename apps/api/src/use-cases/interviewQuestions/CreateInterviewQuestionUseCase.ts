@@ -1,3 +1,4 @@
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IInterviewQuestionRepository } from '#src/use-cases/ports/IInterviewQuestionRepository.js';
@@ -25,12 +26,13 @@ export class CreateInterviewQuestionUseCase implements ICreateInterviewQuestionU
   async execute(input: CreateInterviewQuestionInput): Promise<CreateInterviewQuestionOutput> {
     const round = await findOwnedInterviewRound(this.deps, input.userId, input.roundId);
 
-    // The repository enforces the per-round quota atomically with the insert.
+    // The cap is decided here; the repository enforces it atomically with the insert.
     return this.deps.interviewQuestionRepository.create({
       id: this.deps.generateId(),
       interviewRoundId: round.id,
       question: normaliseQuestion(input.question),
       answer: normaliseAnswer(input.answer ?? null),
+      questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
     });
   }
 }

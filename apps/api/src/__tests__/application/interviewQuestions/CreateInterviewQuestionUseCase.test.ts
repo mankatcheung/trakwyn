@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateInterviewQuestionUseCase } from '#src/use-cases/interviewQuestions/CreateInterviewQuestionUseCase.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
-import { INTERVIEW_QUESTION_LIMITS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, INTERVIEW_QUESTION_LIMITS } from '#src/use-cases/constants.js';
 import type { IInterviewQuestionRepository } from '#src/use-cases/ports/IInterviewQuestionRepository.js';
 import {
   makeInterviewQuestion,
@@ -67,6 +67,7 @@ describe('CreateInterviewQuestionUseCase', () => {
       interviewRoundId: 'round-1',
       question: 'Why us?',
       answer: null,
+      questionsPerRoundLimit: CONTENT_LIMITS.QUESTIONS_PER_ROUND,
     });
   });
 
