@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.3.0...mobile-v0.3.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* block unverified email accounts behind a verification wall (JEF-438) ([#1063](https://github.com/mankatcheung/trakwyn/issues/1063)) ([8b0ee3e](https://github.com/mankatcheung/trakwyn/commit/8b0ee3e057e733a380acb00e0187cca00fabf820))
+
 ## [0.3.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.2.0...mobile-v0.3.0) (2026-10-23)
 
 
