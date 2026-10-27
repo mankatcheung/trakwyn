@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.1.1...clipper-v1.2.0) (2026-10-27)
+
+
+### Features
+
+* **extension:** build the Clipper for Firefox and prepare its AMO listing (JEF-423) ([#1030](https://github.com/mankatcheung/trakwyn/issues/1030)) ([44d70dd](https://github.com/mankatcheung/trakwyn/commit/44d70dda70431861c9256fabc5709c20db5acd7a))
+
 ## [1.1.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.1.0...clipper-v1.1.1) (2026-10-23)
 
 
