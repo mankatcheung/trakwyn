@@ -71,6 +71,19 @@ export const ENV = {
    * user gets every feature, which is also what a self-hosted instance runs.
    */
   PLANS_ENFORCED: 'PLANS_ENFORCED',
+  /**
+   * `true` | `false`. Whether a password sign-up is marked email-verified on the spot, with no
+   * mail sent (JEF-438). Unset means `true` outside production, so dev, CI and e2e (which have
+   * no inbox) never meet the verification wall, and `false` in production. Set `true` in
+   * production only for a self-hosted instance with no working email provider.
+   */
+  AUTO_VERIFY_EMAIL: 'AUTO_VERIFY_EMAIL',
+  /**
+   * Kill switch for the email-verification wall (JEF-438). `false` turns it off for everyone:
+   * the API stops refusing unverified accounts and reports them all as verified, so no client
+   * shows the reminder. Unset, or anything else, keeps it on.
+   */
+  EMAIL_VERIFICATION_REQUIRED: 'EMAIL_VERIFICATION_REQUIRED',
   /** `turnstile` | `disabled`. Unset means `turnstile` in production, `disabled` elsewhere (JEF-401). */
   CAPTCHA_PROVIDER: 'CAPTCHA_PROVIDER',
   /** Cloudflare Turnstile's secret key — the server half of the widget's site key. */

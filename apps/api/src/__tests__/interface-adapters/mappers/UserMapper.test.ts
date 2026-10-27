@@ -34,3 +34,31 @@ describe('UserMapper storage fields (JEF-425)', () => {
     );
   });
 });
+
+describe('UserMapper emailVerified (JEF-438)', () => {
+  const entitlementService = makeEntitlementService({
+    forUser: vi.fn().mockReturnValue(makeFreeEntitlements()),
+  });
+  const unverified = makeUser({ emailVerifiedAt: null });
+
+  it('reports an unverified address as unverified', () => {
+    expect(new UserMapper({ entitlementService }).toDTO(unverified, null).emailVerified).toBe(
+      false,
+    );
+  });
+
+  it('reports a verified address as verified', () => {
+    const dto = new UserMapper({ entitlementService }).toDTO(
+      makeUser({ emailVerifiedAt: new Date() }),
+      null,
+    );
+
+    expect(dto.emailVerified).toBe(true);
+  });
+
+  it('reports everyone as verified when the wall is switched off, so no client shows it', () => {
+    const mapper = new UserMapper({ entitlementService, emailVerificationRequired: false });
+
+    expect(mapper.toDTO(unverified, null).emailVerified).toBe(true);
+  });
+});

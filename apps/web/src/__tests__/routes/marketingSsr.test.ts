@@ -51,6 +51,7 @@ const EXCEPTIONS: Record<string, string> = {
   'forgot-password.tsx': 'token/query-param form',
   'reset-password.tsx': 'token/query-param form',
   'verify-email.tsx': 'token query param',
+  'verify-email-required.tsx': 'signed-in reminder, ssr: false',
   'confirm-email-change.tsx': 'token query param',
   'confirm-backup-email.tsx': 'token query param',
   'share.tsx': 'per-token shared summary',

@@ -25,6 +25,7 @@ pnpm db:generate         # migration SQL after schema.ts changes
 pnpm db:migrate          # apply migrations (src/migrate.ts, not drizzle-kit migrate)
 pnpm --filter @trakwyn/api plan set --email a@b.com --plan pro --days 30   # put a user on a plan by hand
 pnpm --filter @trakwyn/api plan grant-trial --dry-run                      # launch trial for existing users
+pnpm --filter @trakwyn/api email-verification backfill --before 2026-11-01 --dry-run  # mark pre-wall accounts verified
 cd apps/api && pnpm db:studio   # stop `pnpm dev` first when on PGlite
 
 cd apps/web && pnpm codegen     # needs the API at localhost:3001

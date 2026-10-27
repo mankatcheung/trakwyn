@@ -18,6 +18,13 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 - **Session detection:** `hasSessionCookie()` does a synchronous `document.cookie` read of the non-HttpOnly `trakwyn_logged_in` hint. It is used by `/`, `/login` and `/_authenticated`. These routes set **`ssr: false`**, because TanStack Start does not re-run `beforeLoad` on hydration otherwise. The cookie deploy prerequisites are in `apps/api/CLAUDE.md`.
 - **Codegen:** after changing `.graphql` files or the API schema, run `pnpm codegen` (the API must be running). **Never edit `src/graphql/generated/` by hand.**
 
+## Email verification wall (JEF-438)
+
+- **The guard is `beforeLoad` on `/_authenticated`**, which awaits `checkEmailVerification()` and redirects an unverified account to `/verify-email-required`, a full-page route outside the layout. It has to be a `beforeLoad` and not a component wrapped around the layout: child route loaders (the dashboard's `ensureQueryData`) run regardless and the API refuses each one, so the error boundary would replace the page before a component gate rendered. The cookie check stays synchronous and first. A failed check lets the user through, because the API enforces the wall itself (`apps/api/CLAUDE.md`); the guard is the polite layer.
+- **One request per session once verified.** `lib/emailVerification.ts` caches the answer under one query key, with an infinite `staleTime` once verified and 10 s while not. The wall page refetches on window focus, so verifying in another tab sends the user on to `/dashboard`; `/verify-email-required` itself redirects a verified user there, so it is never a dead end.
+- The page offers resend (a 60 s cooldown, a "wait a few minutes" message on `RATE_LIMITED`, a spam-folder hint), "I've verified", a different email (the `requestEmailChange` mutation, which needs the password) and sign out. Registering signs the user in, so the register confirmation links to `/dashboard`, not `/login` (which would only bounce them there).
+- The queries are inline strings in `lib/emailVerification.ts`, like Plans, so no `.graphql` file.
+
 ## Plans (JEF-344)
 
 - **`PLAN_REQUIRED` is an upgrade prompt, not a failure.** `ErrorState` and `AiErrorMessage` branch on it, and the forms that can hit it (new application at the cap, share link) render `UpgradePrompt`. The text is the API's own message, which names the feature; the link goes to **Settings → Plan**.

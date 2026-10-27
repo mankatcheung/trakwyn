@@ -17,10 +17,16 @@ import type { Cradle } from './types.js';
  * few milliseconds of token verification. The cost is not the span's runtime,
  * it is that every trace grows a step nobody asks a question about.
  *
+ * `AssertEmailVerifiedUseCase` (JEF-438) is on the same path: it runs once per
+ * root field of every authenticated GraphQL request.
+ *
  * An entry here must name a real registration — `useCaseTracing.test.ts`
  * fails otherwise, so an exemption cannot outlive the use case it excused.
  */
-export const UNTRACED_USE_CASES = new Set<string>(['authenticateRequestUseCase']);
+export const UNTRACED_USE_CASES = new Set<string>([
+  'authenticateRequestUseCase',
+  'assertEmailVerifiedUseCase',
+]);
 
 /**
  * Wraps one registration so the instance it resolves comes back traced.

@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
+import { checkEmailVerification } from '#/lib/emailVerification';
 import { AuthenticatedLayout } from './-components/AuthenticatedLayout';
 
 export const Route = createFileRoute('/_authenticated')({
@@ -12,6 +13,17 @@ export const Route = createFileRoute('/_authenticated')({
       // parameter is absent or unsafe.
       throw redirect({ to: '/login', search: { returnTo: location.href } });
     }
+    // An unverified account is sent to the full-page reminder before any child
+    // route loads (JEF-438): their loaders would all be refused by the API and
+    // land on the error boundary. Returning the promise makes the router wait
+    // for it, and the answer is cached, so this is one request per session
+    // once the user is verified.
+    return requireVerifiedEmail();
   },
   component: AuthenticatedLayout,
 });
+
+async function requireVerifiedEmail(): Promise<void> {
+  const state = await checkEmailVerification();
+  if (state && !state.emailVerified) throw redirect({ to: '/verify-email-required' });
+}

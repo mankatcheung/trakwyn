@@ -39,59 +39,67 @@ describe('GitHubOAuthProvider', () => {
   });
 
   describe('exchangeCodeForProfile', () => {
-    it('uses the public email from /user when present', async () => {
-      const mockFetch = vi
+    const githubFetch = (emails: unknown, emailsOk = true) =>
+      vi
         .fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'tok' }) })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ id: 42, name: 'Jeff Man', email: 'jeff@example.com' }),
-        });
-      vi.stubGlobal('fetch', mockFetch);
+          json: async () => ({ id: 42, name: 'Jeff Man', email: 'public@example.com' }),
+        })
+        .mockResolvedValueOnce({ ok: emailsOk, json: async () => emails });
 
-      const provider = new GitHubOAuthProvider();
-      const profile = await provider.exchangeCodeForProfile(
+    const exchange = () =>
+      new GitHubOAuthProvider().exchangeCodeForProfile(
         'auth-code',
         'https://api/cb',
         'my-verifier',
       );
 
-      expect(profile).toEqual({
+    it('takes the verified primary address from /user/emails', async () => {
+      const mockFetch = githubFetch([
+        { email: 'secondary@example.com', primary: false, verified: true },
+        { email: 'primary@example.com', primary: true, verified: true },
+      ]);
+      vi.stubGlobal('fetch', mockFetch);
+
+      expect(await exchange()).toEqual({
         providerAccountId: '42',
-        email: 'jeff@example.com',
+        email: 'primary@example.com',
         emailVerified: true,
         name: 'Jeff Man',
       });
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
-    it('falls back to /user/emails when the primary email is private', async () => {
-      const mockFetch = vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'tok' }) })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ id: 42, name: 'Jeff Man', email: null }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [
-            { email: 'secondary@example.com', primary: false, verified: true },
-            { email: 'primary@example.com', primary: true, verified: true },
-          ],
-        });
-      vi.stubGlobal('fetch', mockFetch);
-
-      const provider = new GitHubOAuthProvider();
-      const profile = await provider.exchangeCodeForProfile(
-        'auth-code',
-        'https://api/cb',
-        'my-verifier',
+    it('ignores the public profile email even when /user returns one', async () => {
+      vi.stubGlobal(
+        'fetch',
+        githubFetch([{ email: 'primary@example.com', primary: true, verified: true }]),
       );
 
-      expect(profile.email).toBe('primary@example.com');
-      expect(profile.emailVerified).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect((await exchange()).email).toBe('primary@example.com');
+    });
+
+    it('reports no email when the primary address is not verified', async () => {
+      vi.stubGlobal(
+        'fetch',
+        githubFetch([{ email: 'primary@example.com', primary: true, verified: false }]),
+      );
+
+      const profile = await exchange();
+
+      expect(profile.email).toBeNull();
+      expect(profile.emailVerified).toBe(false);
+    });
+
+    it('reports no email when /user/emails is refused', async () => {
+      vi.stubGlobal('fetch', githubFetch({ message: 'Forbidden' }, false));
+
+      const profile = await exchange();
+
+      expect(profile.email).toBeNull();
+      expect(profile.emailVerified).toBe(false);
     });
 
     it('throws when the token exchange returns no access_token', async () => {
