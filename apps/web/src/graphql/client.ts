@@ -60,10 +60,39 @@ export function hasSessionCookie(): boolean {
   return document.cookie.split('; ').some((entry) => entry.startsWith(`${LOGGED_IN_COOKIE}=`));
 }
 
-let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
+// Path the API sets the hint cookie on (COOKIE_PATH there). A cookie is only
+// deleted by a Set-Cookie naming the path and domain it was set with.
+const LOGGED_IN_COOKIE_PATH = '/';
 
-async function doRefresh(): Promise<boolean> {
+/**
+ * Deletes the hint cookie from the browser's side. The API clears it in the
+ * response that rejects a refresh, but when that Set-Cookie does not land (a
+ * Domain that no longer matches the one the cookie was set with, say) the hint
+ * outlives the session: `/login` sees it, sends the user back to the page whose
+ * request just failed, and the failed refresh repeats on every load. The API
+ * sets it with `Domain=COOKIE_DOMAIN`, which the web app does not know, so the
+ * host and every parent domain are tried; the browser ignores the ones that do
+ * not apply.
+ */
+function clearSessionHint(): void {
+  const expired = `${LOGGED_IN_COOKIE}=; Max-Age=0; path=${LOGGED_IN_COOKIE_PATH}`;
+  document.cookie = expired;
+  const labels = (window.location.hostname ?? '').split('.').filter(Boolean);
+  for (let i = 0; i < labels.length - 1; i++) {
+    document.cookie = `${expired}; domain=.${labels.slice(i).join('.')}`;
+  }
+}
+
+/**
+ * `rejected` is the API saying the session is over. `unavailable` is no answer
+ * at all (offline, 5xx, a body that is not GraphQL), which says nothing about
+ * the session and must not sign the user out.
+ */
+type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable';
+
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+async function doRefresh(): Promise<RefreshOutcome> {
   try {
     const raw = await fetch(API_URL, {
       method: 'POST',
@@ -71,25 +100,71 @@ async function doRefresh(): Promise<boolean> {
       headers: { 'Content-Type': 'application/json', ...traceHeaders(API_URL) },
       body: JSON.stringify({ query: REFRESH_MUTATION }),
     });
+    if (raw.status >= 500) return 'unavailable';
     const json = (await raw.json()) as {
       data?: { refreshToken?: string | null };
       errors?: unknown[];
     };
-    return (json.data?.refreshToken ?? null) !== null;
+    return (json.data?.refreshToken ?? null) !== null ? 'refreshed' : 'rejected';
   } catch {
-    return false;
+    return 'unavailable';
   }
 }
 
-function getOrStartRefresh(): Promise<boolean> {
-  if (!isRefreshing) {
-    isRefreshing = true;
-    refreshPromise = doRefresh().finally(() => {
-      isRefreshing = false;
-      refreshPromise = null;
+/**
+ * Ends the session in this tab after the API rejected a refresh: forgets the
+ * cached data and the hint cookie, then sends the user to /login.
+ */
+function endSession(): void {
+  // The API's rejection clears the hint cookie, so one still readable here is
+  // the fingerprint of a COOKIE_DOMAIN or CORS_ORIGIN misconfiguration (see
+  // apps/api/CLAUDE.md, Auth): the browser believes in a session the server
+  // has ended, which looks to the user like being signed out at random and
+  // looks like nothing at all on the server. A session that simply expired or
+  // was revoked elsewhere arrives here with the hint already gone.
+  if (hasSessionCookie()) {
+    captureException(new Error('Refresh failed while the session hint cookie was present'), {
+      kind: 'auth_session_hint_mismatch',
     });
   }
-  return refreshPromise!;
+  clearSessionHint();
+  queryClient.clear();
+  const { pathname, search, hash } = window.location;
+
+  // Already on an auth page — a late UNAUTHORIZED (a query left over from
+  // the session that just ended, say after deleting the account) would
+  // otherwise hard-reload the page the user is already on, discarding
+  // whatever they have typed into the sign-in form. Worse, assigning
+  // `location.href` while the browser is navigating aborts that
+  // navigation, which is how this surfaced: an E2E run leaving /login for
+  // /dashboard died with ERR_ABORTED.
+  if (pathname === '/login' || pathname === '/register') return;
+
+  // The session died mid-app. Carry the current URL to /login so signing
+  // in lands the user back where they were (JEF-233); the marketing root
+  // isn't a destination worth returning to, and environments without a
+  // readable location (tests) just get plain /login.
+  const intended =
+    typeof pathname === 'string' && pathname !== '/' ? `${pathname}${search}${hash}` : '';
+  window.location.href = intended ? `/login?returnTo=${encodeURIComponent(intended)}` : '/login';
+}
+
+/**
+ * The one place a refresh is started and its outcome acted on. Every request
+ * that hits UNAUTHORIZED while a refresh is in flight shares it, so a burst of
+ * failed queries makes one refresh call, and a rejected refresh ends the
+ * session once (one report, one redirect) however many requests were waiting.
+ */
+function getOrStartRefresh(): Promise<RefreshOutcome> {
+  refreshPromise ??= doRefresh()
+    .then((outcome) => {
+      if (outcome === 'rejected') endSession();
+      return outcome;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
 }
 
 /**
@@ -174,47 +249,13 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
       return;
     }
 
-    // Whether the browser believed it had a session going into this. The
-    // hint cookie and the refresh disagreeing is the fingerprint of a
-    // COOKIE_DOMAIN or CORS_ORIGIN misconfiguration (see apps/api/CLAUDE.md, Auth):
-    // login "succeeds", the hint cookie is readable, and the real HttpOnly
-    // cookies never arrive — which looks to the user like being signed out
-    // at random and looks like nothing at all on the server.
-    const believedSignedIn = hasSessionCookie();
-
-    const ok = await getOrStartRefresh();
-    if (ok) {
-      if (response instanceof Error) refreshedUnauthorized.add(response);
-      // Fresh access-token cookie is set — re-run all active queries so they pick it up.
-      await queryClient.invalidateQueries();
-    } else {
-      if (believedSignedIn) {
-        captureException(new Error('Refresh failed while the session hint cookie was present'), {
-          kind: 'auth_session_hint_mismatch',
-        });
-      }
-      queryClient.clear();
-      const { pathname, search, hash } = window.location;
-
-      // Already on an auth page — a late UNAUTHORIZED (a query left over from
-      // the session that just ended, say after deleting the account) would
-      // otherwise hard-reload the page the user is already on, discarding
-      // whatever they have typed into the sign-in form. Worse, assigning
-      // `location.href` while the browser is navigating aborts that
-      // navigation, which is how this surfaced: an E2E run leaving /login for
-      // /dashboard died with ERR_ABORTED.
-      if (pathname === '/login' || pathname === '/register') return;
-
-      // The session died mid-app. Carry the current URL to /login so signing
-      // in lands the user back where they were (JEF-233); the marketing root
-      // isn't a destination worth returning to, and environments without a
-      // readable location (tests) just get plain /login.
-      const intended =
-        typeof pathname === 'string' && pathname !== '/' ? `${pathname}${search}${hash}` : '';
-      window.location.href = intended
-        ? `/login?returnTo=${encodeURIComponent(intended)}`
-        : '/login';
-    }
+    // A rejected refresh has already ended the session inside
+    // getOrStartRefresh. An unavailable one leaves the session alone, so this
+    // request's own error surfaces and the next request tries again.
+    if ((await getOrStartRefresh()) !== 'refreshed') return;
+    if (response instanceof Error) refreshedUnauthorized.add(response);
+    // Fresh access-token cookie is set — re-run all active queries so they pick it up.
+    await queryClient.invalidateQueries();
   },
 });
 
