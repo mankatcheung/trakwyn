@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -64,6 +65,26 @@ function jobBlock(workflow: string, name: string): string {
   if (start === -1) throw new Error(`release.yml has no ${name} job`);
   const next = workflow.slice(start + 1).search(/\n  [a-z][\w-]*:\n/);
   return next === -1 ? workflow.slice(start) : workflow.slice(start, start + 1 + next);
+}
+
+/**
+ * When a Clipper store job runs: after release-please released the Clipper, or
+ * on a manual run that names an existing tag (JEF-454). `!cancelled()` because
+ * release-please is skipped on a manual run, which would otherwise skip these.
+ */
+const CLIPPER_JOB_IF =
+  "if: ${{ !cancelled() && (needs.release-please.outputs.clipper_released == 'true' || github.event_name == 'workflow_dispatch') }}";
+const CLIPPER_JOB_TAG =
+  'TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}';
+const CLIPPER_TAG_PATTERN = '^clipper-v[0-9]+\\.[0-9]+\\.[0-9]+$';
+
+function hasJq(): boolean {
+  try {
+    execFileSync('jq', ['--version']);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function triggersDeploy(file: string, patterns: string[]): boolean {
@@ -145,10 +166,62 @@ describe('release versioning', () => {
     const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
     const job = jobBlock(workflow, 'clipper-store');
 
-    it('runs only when release-please reports a Clipper release', () => {
+    it('runs only when release-please reports a Clipper release, or for a tag named by hand', () => {
       expect(job).toContain('needs: release-please');
-      expect(job).toContain("if: needs.release-please.outputs.clipper_released == 'true'");
+      expect(job).toContain(CLIPPER_JOB_IF);
+      expect(job).toContain(CLIPPER_JOB_TAG);
+      expect(job).toContain(CLIPPER_TAG_PATTERN);
       expect(workflow).toContain("outputs['apps/extension--release_created']");
+    });
+
+    // JEF-454: the guard's jq program did not compile on the runner's jq 1.7
+    // (an unparenthesised `a - b` object value, which jq 1.8 accepts), so it
+    // failed every release. Run the program itself rather than read its text.
+    it.skipIf(!hasJq())('runs a guard program that compiles and reports what was added', () => {
+      const program = job.match(
+        /added=\$\(jq -n --argjson old "\$old" --argjson new "\$new" '([\s\S]*?)'\)/,
+      )?.[1];
+      expect(program).toBeDefined();
+      const manifest = (permissions: string[], matches: string[]) =>
+        JSON.stringify({ permissions, content_scripts: [{ matches }] });
+      const run = (oldManifest: string, newManifest: string) =>
+        JSON.parse(
+          execFileSync(
+            'jq',
+            [
+              '-c',
+              '-n',
+              '--argjson',
+              'old',
+              oldManifest,
+              '--argjson',
+              'new',
+              newManifest,
+              program!,
+            ],
+            {
+              encoding: 'utf8',
+            },
+          ),
+        );
+      const previous = manifest(['storage'], ['https://a.example/*']);
+
+      expect(run(previous, previous)).toEqual({});
+      expect(
+        run(
+          previous,
+          manifest(['storage', 'tabs'], ['https://a.example/*', 'https://b.example/*']),
+        ),
+      ).toEqual({
+        permissions: ['tabs'],
+        content_script_matches: ['https://b.example/*'],
+      });
+    });
+
+    it('parenthesises each object value in the guard, so jq 1.7 can parse it', () => {
+      // A local jq 1.8 parses the unparenthesised form, so the test above alone
+      // would pass on a laptop and still fail on the runner.
+      expect(job).toContain('content_script_matches: (($new | hosts) - ($old | hosts))');
     });
 
     it('builds from the tag with the PostHog key and the API URL from repository variables', () => {
@@ -189,14 +262,26 @@ describe('release versioning', () => {
     const build = jobBlock(workflow, 'clipper-firefox-zip');
     const submit = jobBlock(amoWorkflow, 'clipper-amo');
 
-    it('builds the Firefox zips only for a Clipper release, from the tag', () => {
+    it('builds the Firefox zips only for a Clipper release or a tag named by hand, from the tag', () => {
       expect(build).toContain('needs: release-please');
-      expect(build).toContain("if: needs.release-please.outputs.clipper_released == 'true'");
+      expect(build).toContain(CLIPPER_JOB_IF);
+      expect(build).toContain(CLIPPER_JOB_TAG);
+      expect(build).toContain(CLIPPER_TAG_PATTERN);
       expect(build).toContain('ref: ${{ env.TAG }}');
       expect(build).toContain('vars.CLIPPER_POSTHOG_KEY');
       expect(build).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
       expect(build).toContain('rm -f apps/extension/.env');
       expect(build).toContain('zip:firefox');
+    });
+
+    // JEF-454: the build refuses to run without VITE_WEB_URL (JEF-428), and
+    // this job did not pass it, so 1.2.0's Firefox build failed.
+    it('builds with the web app URL and checks the bundle links to it, as the Chrome job does', () => {
+      expect(build).toContain('VITE_WEB_URL: ${{ vars.CLIPPER_WEB_URL }}');
+      expect(build).toContain('Repository variable CLIPPER_WEB_URL is not set');
+      const bundleCheck = build.indexOf('grep -qF "${{ vars.CLIPPER_WEB_URL }}"');
+      expect(bundleCheck).toBeGreaterThan(-1);
+      expect(bundleCheck).toBeLessThan(build.indexOf('gh release upload'));
     });
 
     it('checks the Firefox manifest before the zips leave the job', () => {
@@ -233,6 +318,21 @@ describe('release versioning', () => {
       expect(submit).toContain('--firefox-sources-zip');
       expect(submit).toContain('--firefox-extension-id clipper@trakwyn.com');
       expect(submit).toContain('secrets.FIREFOX_JWT_SECRET');
+    });
+  });
+
+  // JEF-454: re-running a failed job uses the workflow file of the commit it
+  // ran on, so a fix to a store job could not release a tag that already
+  // exists. A manual run with that tag runs only the store jobs.
+  describe('release.yml manual run for an existing Clipper tag (JEF-454)', () => {
+    const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
+
+    it('takes a Clipper tag as input', () => {
+      expect(workflow).toMatch(/workflow_dispatch:\n\s+inputs:\n\s+clipper_tag:/);
+    });
+
+    it('does not run release-please on a manual run', () => {
+      expect(jobBlock(workflow, 'release-please')).toContain("if: github.event_name == 'push'");
     });
   });
 });
