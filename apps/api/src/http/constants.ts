@@ -280,14 +280,22 @@ export const OAUTH_PLATFORM = {
   EXTENSION: 'extension',
   /**
    * The Clipper in a browser without `identity.launchWebAuthFlow` (Safari,
-   * JEF-386). It signs in in a tab and watches for ROUTES.EXTENSION_OAUTH_DONE
+   * JEF-386; Firefox, JEF-423). It signs in in a tab and watches for ROUTES.EXTENSION_OAUTH_DONE
    * on this API's origin, so there is no extension ID to allowlist.
    */
   EXTENSION_TAB: 'extension-tab',
 } as const;
 
-/** Origins of the Trakwyn Clipper's pages, which CORS lets through: Chrome, and Safari (JEF-386). */
-export const EXTENSION_ORIGIN_SCHEMES = ['chrome-extension://', 'safari-web-extension://'] as const;
+/**
+ * Origins of the Trakwyn Clipper's pages, which CORS lets through: Chrome,
+ * Safari (JEF-386) and Firefox (JEF-423). Firefox's host is a per-install UUID,
+ * so the scheme is all there is to match.
+ */
+export const EXTENSION_ORIGIN_SCHEMES = [
+  'chrome-extension://',
+  'safari-web-extension://',
+  'moz-extension://',
+] as const;
 
 /**
  * The page a tab-based extension login lands on (JEF-386). The extension
