@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.2.1...clipper-v1.3.0) (2026-10-27)
+
+
+### Features
+
+* **extension:** apply a downloaded update as soon as the Clipper is idle (JEF-455) ([#1095](https://github.com/mankatcheung/trakwyn/issues/1095)) ([5c82e41](https://github.com/mankatcheung/trakwyn/commit/5c82e41e6bf488df00288e1c58dd66102f5d0c6d))
+
 ## [1.2.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.2.0...clipper-v1.2.1) (2026-10-27)
 
 
