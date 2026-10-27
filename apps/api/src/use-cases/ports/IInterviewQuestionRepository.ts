@@ -5,6 +5,8 @@ export interface CreateInterviewQuestionData {
   interviewRoundId: string;
   question: string;
   answer?: string | null;
+  /** The most questions one round may hold; the repository enforces it atomically. */
+  questionsPerRoundLimit: number;
 }
 
 export interface UpdateInterviewQuestionData {
@@ -18,7 +20,7 @@ export interface IInterviewQuestionRepository {
   findById(id: string): Promise<InterviewQuestion | null>;
   /**
    * Appends to the end of the round. Reserves a slot against
-   * `CONTENT_LIMITS.QUESTIONS_PER_ROUND` atomically and throws
+   * `questionsPerRoundLimit` atomically and throws
    * `QuotaExceededError` when the round is full.
    */
   create(data: CreateInterviewQuestionData): Promise<InterviewQuestion>;

@@ -10,6 +10,8 @@ export interface CreateMockInterviewQuestionData {
   answer?: string | null;
   /** Defaults to `user`. */
   answerSource?: AnswerSource;
+  /** The most practice questions one round may hold; the repository enforces it atomically. */
+  mockQuestionsPerRoundLimit: number;
 }
 
 export interface UpdateMockInterviewQuestionData {
@@ -24,7 +26,7 @@ export interface IMockInterviewQuestionRepository {
   findById(id: string): Promise<MockInterviewQuestion | null>;
   /**
    * Appends to the end of the round. Reserves a slot against
-   * `CONTENT_LIMITS.MOCK_QUESTIONS_PER_ROUND` atomically and throws
+   * `mockQuestionsPerRoundLimit` atomically and throws
    * `QuotaExceededError` when the round is full.
    */
   create(data: CreateMockInterviewQuestionData): Promise<MockInterviewQuestion>;

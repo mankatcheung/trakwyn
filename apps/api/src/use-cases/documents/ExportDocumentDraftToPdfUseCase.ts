@@ -1,4 +1,5 @@
 import type { Document } from '#src/domain/document/Document.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type {
   IDocumentRepository,
@@ -66,6 +67,7 @@ export class ExportDocumentDraftToPdfUseCase implements IExportDocumentDraftToPd
       documentType: draft.type,
       sourceDraftId: draft.id,
       storageLimitBytes: limits.documentBytes,
+      documentsPerApplicationLimit: CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION,
     };
 
     try {

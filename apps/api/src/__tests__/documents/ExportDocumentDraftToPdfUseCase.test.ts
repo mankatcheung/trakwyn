@@ -10,7 +10,7 @@ import {
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
-import { PLAN_LIMITS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ExportDocumentDraftToPdfUseCase', () => {
   const generateId = () => 'test-doc-id';
@@ -110,6 +110,7 @@ describe('ExportDocumentDraftToPdfUseCase', () => {
       documentType: 'cover_letter',
       sourceDraftId: 'draft-1',
       storageLimitBytes: PLAN_LIMITS.pro.documentBytes,
+      documentsPerApplicationLimit: CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION,
     });
   });
 

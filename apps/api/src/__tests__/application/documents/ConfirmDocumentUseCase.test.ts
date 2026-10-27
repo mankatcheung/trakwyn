@@ -180,6 +180,7 @@ describe('ConfirmDocumentUseCase', () => {
       documentType: undefined,
       version: undefined,
       storageLimitBytes: PLAN_LIMITS.pro.documentBytes,
+      documentsPerApplicationLimit: CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION,
     });
   });
 

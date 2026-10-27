@@ -13,6 +13,7 @@ const BASE_DOC = {
   sizeBytes: 12345,
   storageKey: 'users/u1/applications/app-1/resume.pdf',
   storageLimitBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
+  documentsPerApplicationLimit: CONTENT_LIMITS.DOCUMENTS_PER_APPLICATION,
 };
 
 describe('DrizzleDocumentRepository', () => {
@@ -58,6 +59,23 @@ describe('DrizzleDocumentRepository', () => {
       expect(doc.sizeBytes).toBe(12345);
       expect(doc.storageKey).toBe('users/u1/applications/app-1/resume.pdf');
       expect(doc.createdAt).toBeInstanceOf(Date);
+    });
+
+    it('enforces the per-application limit it is given, not a built-in one', async () => {
+      await repo.create({ ...BASE_DOC, documentsPerApplicationLimit: 1 });
+
+      const err = await repo
+        .create({
+          ...BASE_DOC,
+          id: 'doc-2',
+          storageKey: 'path/to/cover.pdf',
+          documentsPerApplicationLimit: 1,
+        })
+        .catch((e) => e);
+
+      expect(err).toMatchObject({ code: 'QUOTA_EXCEEDED' });
+      expect(err.message).toContain('maximum of 1 documents');
+      expect(await db.db.select().from(document)).toHaveLength(1);
     });
 
     it('rejects creation at the per-application document limit', async () => {

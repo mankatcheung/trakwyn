@@ -1,3 +1,4 @@
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IMockInterviewQuestionRepository } from '#src/use-cases/ports/IMockInterviewQuestionRepository.js';
@@ -29,7 +30,7 @@ export class CreateMockInterviewQuestionUseCase implements ICreateMockInterviewQ
 
     const answer = normaliseAnswer(input.answer ?? null);
 
-    // The repository enforces the per-round quota atomically with the insert.
+    // The cap is decided here; the repository enforces it atomically with the insert.
     return this.deps.mockInterviewQuestionRepository.create({
       id: this.deps.generateId(),
       interviewRoundId: round.id,
@@ -37,6 +38,7 @@ export class CreateMockInterviewQuestionUseCase implements ICreateMockInterviewQ
       answer,
       // Without an answer there is nothing for the label to describe.
       answerSource: answer === null ? 'user' : (input.answerSource ?? 'user'),
+      mockQuestionsPerRoundLimit: CONTENT_LIMITS.MOCK_QUESTIONS_PER_ROUND,
     });
   }
 }

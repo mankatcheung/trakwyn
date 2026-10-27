@@ -39,7 +39,12 @@ describe('CachedMockInterviewQuestionRepository', () => {
     const { repo, inner, cache } = await makeRepo();
     vi.mocked(inner.create).mockResolvedValue(makeMockInterviewQuestion());
 
-    await repo.create({ id: 'question-1', interviewRoundId: 'round-1', question: 'Q' });
+    await repo.create({
+      id: 'question-1',
+      interviewRoundId: 'round-1',
+      question: 'Q',
+      mockQuestionsPerRoundLimit: 30,
+    });
 
     expect(await isCached(cache, CACHE_KEYS.roundById('round-1'))).toBe(false);
     expect(await isCached(cache, CACHE_KEYS.roundList('app-1'))).toBe(false);

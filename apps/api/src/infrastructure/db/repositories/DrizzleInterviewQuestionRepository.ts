@@ -3,7 +3,6 @@ import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { interviewQuestion, interviewRound } from '../schema.js';
 import type { InterviewQuestion } from '#src/domain/interviewRound/InterviewQuestion.js';
 import { getClient, txStorage } from '../transactionContext.js';
-import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import { QuotaExceededError } from '#src/use-cases/errors/DomainError.js';
 import type {
   IInterviewQuestionRepository,
@@ -50,14 +49,14 @@ export class DrizzleInterviewQuestionRepository implements IInterviewQuestionRep
         .where(
           and(
             eq(interviewRound.id, data.interviewRoundId),
-            lt(interviewRound.questionCount, CONTENT_LIMITS.QUESTIONS_PER_ROUND),
+            lt(interviewRound.questionCount, data.questionsPerRoundLimit),
           ),
         )
         .returning({ id: interviewRound.id });
 
       if (!reserved) {
         throw new QuotaExceededError(
-          `This interview round already has the maximum of ${CONTENT_LIMITS.QUESTIONS_PER_ROUND} questions`,
+          `This interview round already has the maximum of ${data.questionsPerRoundLimit} questions`,
         );
       }
 
