@@ -376,6 +376,7 @@
   "offerForm.notesLabel": "備註",
   "offerForm.saveOffer": "儲存聘書",
   "security.emailTitle": "電郵地址",
+  "security.currentEmailLabel": "目前電郵",
   "security.emailDescription": "更新用於登入的電郵。我們會將確認連結傳送至新地址，變更須經確認後才會生效。",
   "security.currentPasswordLabel": "目前密碼",
   "security.newEmailLabel": "新電郵",

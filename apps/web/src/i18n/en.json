@@ -396,6 +396,7 @@
   "offerForm.notesLabel": "Notes",
   "offerForm.saveOffer": "Save Offer",
   "security.emailTitle": "Email address",
+  "security.currentEmailLabel": "Current email",
   "security.emailDescription": "Update the email you sign in with. We'll send a confirmation link to the new address before the change takes effect.",
   "security.currentPasswordLabel": "Current password",
   "security.newEmailLabel": "New email",

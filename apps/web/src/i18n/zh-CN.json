@@ -376,6 +376,7 @@
   "offerForm.notesLabel": "备注",
   "offerForm.saveOffer": "保存录用通知",
   "security.emailTitle": "邮箱地址",
+  "security.currentEmailLabel": "当前邮箱",
   "security.emailDescription": "更新用于登录的邮箱。我们会向新地址发送确认链接，更改在确认后才会生效。",
   "security.currentPasswordLabel": "当前密码",
   "security.newEmailLabel": "新邮箱",

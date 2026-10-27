@@ -306,6 +306,14 @@ export function SettingsProfilePage() {
             {t('security.emailDescription')}
           </p>
         </div>
+        <div>
+          <FormLabel>{t('security.currentEmailLabel')}</FormLabel>
+          {meLoading ? (
+            <Skeleton className="h-5 w-48 rounded-sm" data-testid="current-email-loading" />
+          ) : (
+            <p className="text-sm text-gray-900 dark:text-gray-100">{me?.email}</p>
+          )}
+        </div>
         <form onSubmit={emailForm.handleSubmit(onUpdateEmail)} className="space-y-3">
           <div>
             <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
