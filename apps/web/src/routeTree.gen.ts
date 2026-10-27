@@ -24,6 +24,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password';
 import { Route as ShareRouteImport } from './routes/share';
 import { Route as TermsRouteImport } from './routes/terms';
 import { Route as VerifyEmailRouteImport } from './routes/verify-email';
+import { Route as VerifyEmailRequiredRouteImport } from './routes/verify-email-required';
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account';
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics';
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar';
@@ -133,6 +134,11 @@ const TermsRoute = TermsRouteImport.update({
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const VerifyEmailRequiredRoute = VerifyEmailRequiredRouteImport.update({
+  id: '/verify-email-required',
+  path: '/verify-email-required',
   getParentRoute: () => rootRouteImport,
 } as any);
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
@@ -356,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof ShareRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
+  '/verify-email-required': typeof VerifyEmailRequiredRoute;
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren;
   '/account': typeof AuthenticatedAccountRoute;
   '/analytics': typeof AuthenticatedAnalyticsRoute;
@@ -408,6 +415,7 @@ export interface FileRoutesByTo {
   '/share': typeof ShareRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
+  '/verify-email-required': typeof VerifyEmailRequiredRoute;
   '/account': typeof AuthenticatedAccountRoute;
   '/analytics': typeof AuthenticatedAnalyticsRoute;
   '/calendar': typeof AuthenticatedCalendarRoute;
@@ -461,6 +469,7 @@ export interface FileRoutesById {
   '/share': typeof ShareRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
+  '/verify-email-required': typeof VerifyEmailRequiredRoute;
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren;
   '/_authenticated/account': typeof AuthenticatedAccountRoute;
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute;
@@ -515,6 +524,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-required'
     | '/settings'
     | '/account'
     | '/analytics'
@@ -567,6 +577,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-required'
     | '/account'
     | '/analytics'
     | '/calendar'
@@ -619,6 +630,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-required'
     | '/_authenticated/settings'
     | '/_authenticated/account'
     | '/_authenticated/analytics'
@@ -673,6 +685,7 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRoute;
   TermsRoute: typeof TermsRoute;
   VerifyEmailRoute: typeof VerifyEmailRoute;
+  VerifyEmailRequiredRoute: typeof VerifyEmailRequiredRoute;
   FeaturesAiAssistantRoute: typeof FeaturesAiAssistantRoute;
   FeaturesAnalyticsRoute: typeof FeaturesAnalyticsRoute;
   FeaturesResumeCoverLetterRoute: typeof FeaturesResumeCoverLetterRoute;
@@ -786,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email';
       fullPath: '/verify-email';
       preLoaderRoute: typeof VerifyEmailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/verify-email-required': {
+      id: '/verify-email-required';
+      path: '/verify-email-required';
+      fullPath: '/verify-email-required';
+      preLoaderRoute: typeof VerifyEmailRequiredRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/_authenticated/account': {
@@ -1149,6 +1169,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  VerifyEmailRequiredRoute: VerifyEmailRequiredRoute,
   FeaturesAiAssistantRoute: FeaturesAiAssistantRoute,
   FeaturesAnalyticsRoute: FeaturesAnalyticsRoute,
   FeaturesResumeCoverLetterRoute: FeaturesResumeCoverLetterRoute,

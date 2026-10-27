@@ -4,6 +4,11 @@ import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementServi
 export interface UserDTO {
   id: string;
   email: string;
+  /**
+   * False until the address is verified (JEF-438); clients show the verification wall. True for
+   * everyone while the wall is switched off, so it means "may use the app", not strictly "proved".
+   */
+  emailVerified: boolean;
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
@@ -21,15 +26,24 @@ export interface UserDTO {
 
 export class UserMapper {
   private readonly entitlementService: IEntitlementService;
+  private readonly emailVerificationRequired: boolean;
 
-  constructor({ entitlementService }: { entitlementService: IEntitlementService }) {
+  constructor({
+    entitlementService,
+    emailVerificationRequired = true,
+  }: {
+    entitlementService: IEntitlementService;
+    emailVerificationRequired?: boolean;
+  }) {
     this.entitlementService = entitlementService;
+    this.emailVerificationRequired = emailVerificationRequired;
   }
 
   toDTO(user: User, avatarUrl: string | null): UserDTO {
     return {
       id: user.id,
       email: user.email,
+      emailVerified: !this.emailVerificationRequired || user.emailVerifiedAt !== null,
       name: user.name,
       timezone: user.timezone,
       targetRole: user.targetRole,

@@ -41,6 +41,8 @@ const CONSOLE_BY_DESIGN: Record<string, string> = {
     'The `pnpm db:seed` entrypoint. Same as migrate.ts — a missing DATABASE_URL has to be reported to whoever ran the command, before anything is wired up.',
   'plan.ts':
     'The `pnpm plan` operator command (JEF-344). Same as migrate.ts and seed.ts: it is a CLI run by hand with no Fastify instance, and what it prints (who is now on which plan, how many trials it granted, a missing DATABASE_URL, bad arguments) is the entire output the operator asked for.',
+  'emailVerification.ts':
+    'The `email-verification` operator command (JEF-438). Same as plan.ts: a CLI run by hand with no Fastify instance, and what it prints (how many accounts it marked verified or would, how many remain behind the wall, a missing DATABASE_URL, bad arguments) is the entire output the operator asked for.',
   'copyFromTurso.ts':
     'The one-off Turso to Postgres copy (JEF-342), a script run by hand and deleted once Turso is retired. Both this file and its exemption go at the same time.',
 };

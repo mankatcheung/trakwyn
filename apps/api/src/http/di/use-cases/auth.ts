@@ -1,5 +1,6 @@
 import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
+import { AssertEmailVerifiedUseCase } from '#src/use-cases/auth/AssertEmailVerifiedUseCase.js';
 import { AuthenticateRequestUseCase } from '#src/use-cases/auth/AuthenticateRequestUseCase.js';
 import { AuthenticateMcpRequestUseCase } from '#src/use-cases/auth/AuthenticateMcpRequestUseCase.js';
 import { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
@@ -17,6 +18,9 @@ import type { Cradle } from '../types.js';
 
 export const auth = {
   authenticateRequestUseCase: asClass(AuthenticateRequestUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  assertEmailVerifiedUseCase: asClass(AssertEmailVerifiedUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
   authenticateMcpRequestUseCase: asClass(AuthenticateMcpRequestUseCase, {

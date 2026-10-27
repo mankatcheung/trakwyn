@@ -19,6 +19,8 @@ interface Deps {
   captchaVerifier: ICaptchaVerifier;
   registerRateLimiter: IRateLimiter;
   registerWithoutCaptchaRateLimiter: IRateLimiter;
+  /** JEF-438: create the account already verified and send no email (dev, CI, e2e). Off when absent. */
+  autoVerifyEmail?: boolean;
 }
 
 export class RegisterUseCase implements IRegisterUseCase {
@@ -34,18 +36,23 @@ export class RegisterUseCase implements IRegisterUseCase {
       throw new ConflictError('Email already registered');
     }
 
+    const autoVerify = this.deps.autoVerifyEmail === true;
     const passwordHash = await bcrypt.hash(input.password, 12);
     const user = await this.deps.userRepository.create({
       id: this.deps.generateId(),
       email: input.email,
       passwordHash,
+      ...(autoVerify ? { emailVerifiedAt: new Date() } : {}),
     });
 
-    try {
-      await this.deps.sendEmailVerificationUseCase.execute(user.id);
-    } catch {
-      // Verification email delivery is non-critical — don't block account
-      // creation if the email provider is down or unconfigured (e.g. local dev).
+    if (!autoVerify) {
+      try {
+        await this.deps.sendEmailVerificationUseCase.execute(user.id);
+      } catch {
+        // Verification email delivery is non-critical — don't block account
+        // creation if the email provider is down or unconfigured (e.g. local dev).
+        // The user can ask for another link from the verification wall.
+      }
     }
 
     return { userId: user.id, email: user.email };

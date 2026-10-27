@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockHasSessionCookie } = vi.hoisted(() => ({
+const { mockHasSessionCookie, mockCheckEmailVerification } = vi.hoisted(() => ({
   mockHasSessionCookie: vi.fn().mockReturnValue(false),
+  mockCheckEmailVerification: vi.fn(),
+}));
+
+vi.mock('#/lib/emailVerification', () => ({
+  checkEmailVerification: mockCheckEmailVerification,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -48,6 +53,7 @@ describe('_authenticated route guard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockHasSessionCookie.mockReturnValue(false);
+    mockCheckEmailVerification.mockResolvedValue({ email: 'a@b.c', emailVerified: true });
   });
 
   it('redirects unauthenticated visitors to /login carrying where they were headed', async () => {
@@ -67,10 +73,47 @@ describe('_authenticated route guard', () => {
     });
   });
 
-  it('lets authenticated visitors through untouched', async () => {
+  it('lets verified visitors through untouched', async () => {
     mockHasSessionCookie.mockReturnValue(true);
     const guard = await loadGuard();
 
-    expect(() => guard({ location: { href: '/dashboard' } })).not.toThrow();
+    await expect(guard({ location: { href: '/dashboard' } })).resolves.toBeUndefined();
+  });
+
+  describe('email verification (JEF-438)', () => {
+    it('sends an unverified account to the full-page reminder before any child route loads', async () => {
+      mockHasSessionCookie.mockReturnValue(true);
+      mockCheckEmailVerification.mockResolvedValue({
+        email: 'new@example.com',
+        emailVerified: false,
+      });
+      const guard = await loadGuard();
+
+      const caught = await Promise.resolve(guard({ location: { href: '/dashboard' } })).catch(
+        (err: RedirectError) => err,
+      );
+
+      expect((caught as RedirectError).redirectOpts).toEqual({ to: '/verify-email-required' });
+    });
+
+    it('lets the visitor through when the check could not be made (the API still enforces the wall)', async () => {
+      mockHasSessionCookie.mockReturnValue(true);
+      mockCheckEmailVerification.mockResolvedValue(null);
+      const guard = await loadGuard();
+
+      await expect(guard({ location: { href: '/dashboard' } })).resolves.toBeUndefined();
+    });
+
+    it('does not ask for a signed-out visitor', async () => {
+      const guard = await loadGuard();
+
+      try {
+        await guard({ location: { href: '/dashboard' } });
+      } catch {
+        // the redirect to /login
+      }
+
+      expect(mockCheckEmailVerification).not.toHaveBeenCalled();
+    });
   });
 });

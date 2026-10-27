@@ -25,6 +25,8 @@ export const ERROR_CODES = {
   CAPTCHA_FAILED: 'CAPTCHA_FAILED',
   /** The action belongs to a plan the user is not on (JEF-344): show an upgrade prompt, not a failure. */
   PLAN_REQUIRED: 'PLAN_REQUIRED',
+  /** The account's email is not verified yet (JEF-438): the authenticated shell shows the verification reminder. */
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
 } as const;
 
 /**

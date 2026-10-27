@@ -34,4 +34,6 @@ export const ERROR_CODES = {
   CAPTCHA_FAILED: 'CAPTCHA_FAILED',
   /** The action needs a plan the user is not on (JEF-344) — the client shows an upgrade prompt rather than a failure. Distinct from QUOTA_EXCEEDED, which is a cap on something every plan has. */
   PLAN_REQUIRED: 'PLAN_REQUIRED',
+  /** The account's email address is not verified yet (JEF-438) — the client shows the full-page verification reminder rather than a failure. */
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
 } as const;

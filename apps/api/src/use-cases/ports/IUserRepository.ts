@@ -18,7 +18,7 @@ export interface IUserRepository {
     id: string,
     data: {
       email?: string;
-      passwordHash?: string;
+      passwordHash?: string | null;
       name?: string | null;
       timezone?: string | null;
       targetRole?: string | null;

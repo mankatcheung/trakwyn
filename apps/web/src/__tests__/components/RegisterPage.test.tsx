@@ -127,6 +127,20 @@ describe('RegisterPage', () => {
     expect(screen.getByText(/test@example.com/)).toBeInTheDocument();
   });
 
+  it('sends the signed-in user on to the app, not back to the login page (JEF-438)', async () => {
+    // Registering signs the user in, so /login would only bounce them to the
+    // app; an unverified account lands on the verification reminder there.
+    mockGqlRequest.mockResolvedValue({ register: 'access-token' });
+    render(<RegisterPage />);
+    fillForm('test@example.com', 'password123', 'password123');
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    const link = await screen.findByRole('link', { name: 'Continue' });
+
+    expect(link).toHaveAttribute('href', '/dashboard');
+    expect(screen.queryByText('Back to sign in')).not.toBeInTheDocument();
+  });
+
   it('shows API error on registration failure', async () => {
     mockGqlRequest.mockRejectedValue({
       response: { errors: [{ message: 'Email already registered' }] },

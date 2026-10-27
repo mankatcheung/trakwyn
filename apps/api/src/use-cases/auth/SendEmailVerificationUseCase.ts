@@ -23,6 +23,8 @@ export class SendEmailVerificationUseCase implements ISendEmailVerificationUseCa
   async execute(userId: string): Promise<void> {
     const user = await this.deps.userRepository.findById(userId);
     if (!user) throw new NotFoundError('User not found');
+    // Nothing to verify; a stale "resend" from a second tab must not mail a live link.
+    if (user.emailVerifiedAt) return;
 
     // Checked before the old token is deleted, so a throttled request leaves
     // the link already in the user's inbox working. The per-user limit goes

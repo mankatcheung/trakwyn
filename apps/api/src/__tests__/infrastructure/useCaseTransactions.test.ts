@@ -176,6 +176,8 @@ describe('use-case transactions (JEF-427)', () => {
             }),
           }),
         } as never,
+        sessionRepository: sessions,
+        emailVerificationTokenRepository: emailTokens,
         generateId: nanoid,
         transactionManager: tm,
       });
@@ -185,6 +187,37 @@ describe('use-case transactions (JEF-427)', () => {
       ).rejects.toThrow('simulated failure');
 
       expect(await users.findByEmail(email)).toBeNull();
+    });
+
+    it('leaves an unverified account untouched when taking it over fails (JEF-438)', async () => {
+      const userId = await makeUser('attacker-hash');
+      const email = (await users.findById(userId))!.email;
+      const useCase = new LoginOrSignupWithOAuthUseCase({
+        userRepository: users,
+        oauthAccountRepository: failing(oauthAccounts, 'create') as never,
+        oauthProviderRegistry: {
+          get: () => ({
+            exchangeCodeForProfile: async () => ({
+              providerAccountId: nanoid(),
+              email,
+              emailVerified: true,
+              name: null,
+            }),
+          }),
+        } as never,
+        sessionRepository: sessions,
+        emailVerificationTokenRepository: emailTokens,
+        generateId: nanoid,
+        transactionManager: tm,
+      });
+
+      await expect(
+        useCase.execute({ provider: 'google', code: 'c', redirectUri: 'r', codeVerifier: 'v' }),
+      ).rejects.toThrow('simulated failure');
+
+      const after = (await users.findById(userId))!;
+      expect(after.passwordHash).toBe('attacker-hash');
+      expect(after.emailVerifiedAt).toBeNull();
     });
   });
 

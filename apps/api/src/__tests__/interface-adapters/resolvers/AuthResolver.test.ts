@@ -8,6 +8,7 @@ import type { ILoginWithTotpUseCase } from '#src/use-cases/auth/ILoginWithTotpUs
 import type { IReauthenticateUseCase } from '#src/use-cases/auth/IReauthenticateUseCase.js';
 import type { IRequestPasswordResetUseCase } from '#src/use-cases/auth/IRequestPasswordResetUseCase.js';
 import type { IResetPasswordUseCase } from '#src/use-cases/auth/IResetPasswordUseCase.js';
+import type { ISendEmailVerificationUseCase } from '#src/use-cases/auth/ISendEmailVerificationUseCase.js';
 import type { IVerifyEmailUseCase } from '#src/use-cases/auth/IVerifyEmailUseCase.js';
 import type { IRequestBackupEmailRecoveryUseCase } from '#src/use-cases/auth/IRequestBackupEmailRecoveryUseCase.js';
 import type { ITokenService } from '#src/use-cases/ports/ITokenService.js';
@@ -86,6 +87,9 @@ const baseDeps = () => ({
   }),
   sessionRepository: makeSessionRepository(),
   verifyEmailUseCase: makeVerifyEmailUseCase(),
+  sendEmailVerificationUseCase: stub<ISendEmailVerificationUseCase>({
+    execute: vi.fn().mockResolvedValue(undefined),
+  }),
   requestBackupEmailRecoveryUseCase: stub<IRequestBackupEmailRecoveryUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
@@ -509,6 +513,33 @@ describe('AuthResolver', () => {
         .catch((e) => e);
 
       expect((err as { code: string }).code).toBe('UNAUTHORIZED');
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('sends a new verification link to the signed-in user', async () => {
+      const sendEmailVerificationUseCase = stub<ISendEmailVerificationUseCase>({
+        execute: vi.fn().mockResolvedValue(undefined),
+      });
+      const resolver = new AuthResolver({ ...baseDeps(), sendEmailVerificationUseCase });
+
+      await resolver.resendVerificationEmail('user-1');
+
+      expect(sendEmailVerificationUseCase.execute).toHaveBeenCalledWith('user-1');
+    });
+
+    it('propagates a rate-limit refusal', async () => {
+      const err = Object.assign(new Error('Too many verification emails.'), {
+        code: 'RATE_LIMITED',
+      });
+      const sendEmailVerificationUseCase = stub<ISendEmailVerificationUseCase>({
+        execute: vi.fn().mockRejectedValue(err),
+      });
+      const resolver = new AuthResolver({ ...baseDeps(), sendEmailVerificationUseCase });
+
+      await expect(resolver.resendVerificationEmail('user-1')).rejects.toMatchObject({
+        code: 'RATE_LIMITED',
+      });
     });
   });
 
