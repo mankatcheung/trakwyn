@@ -2,20 +2,22 @@ name: Clipper on Firefox Add-ons
 
 # Submits a Clipper release to addons.mozilla.org (JEF-437). release.yml's
 # clipper-firefox-zip job builds the add-on and its sources zip from the
-# release tag, checks the manifest, attaches both to the GitHub Release and
-# starts this workflow with that tag. Run it by hand (Actions > Clipper on
-# Firefox Add-ons > Run workflow) to submit a tag again.
+# release tag, checks the manifest and that no permission or content-script
+# host was added since the previous release, attaches both to the GitHub
+# Release and starts this workflow with that tag. Run it by hand (Actions >
+# Clipper on Firefox Add-ons > Run workflow) to submit a tag again.
 #
-# AMO has no draft or deferred publishing: a listed version goes to review,
-# and an approved one goes live with no staged rollout. So the job runs in the
-# `amo` environment, whose required reviewer must approve it before anything
-# reaches AMO. That approval is the only gate; do not remove the environment.
-# It lives here, not in release.yml, because release.yml runs under a single
-# concurrency group and a job waiting there would hold every later release.
+# It submits with no manual step (JEF-458), like the Web Store job: a listed
+# version goes to AMO's review and is published as soon as AMO passes it, with
+# no staged rollout. The checks in clipper-firefox-zip are what stand before
+# that review, so do not run this for a tag whose zips did not come from it.
+#
+# The job runs in the `amo` environment so the AMO secrets are readable by
+# this job alone, from the default branch only. Keep the environment.
 #
 # One-time setup (apps/extension/CLAUDE.md, "Firefox"): the FIREFOX_JWT_ISSUER
-# and FIREFOX_JWT_SECRET secrets from AMO's Developer Hub (Manage API Keys),
-# and the `amo` environment with a required reviewer.
+# and FIREFOX_JWT_SECRET secrets from AMO's Developer Hub (Manage API Keys), as
+# secrets of the `amo` environment.
 
 on:
   workflow_dispatch:
@@ -61,7 +63,7 @@ jobs:
           echo "ZIP=$(ls "$GITHUB_WORKSPACE"/amo/*-firefox.zip)" >> "$GITHUB_ENV"
           echo "SOURCES_ZIP=$(ls "$GITHUB_WORKSPACE"/amo/*-sources.zip)" >> "$GITHUB_ENV"
 
-      # Listed, so it goes to review and on to the public listing once approved.
+      # Listed, so it goes to review and on to the public listing once it passes.
       # Desktop only: Firefox for Android has not been tested, and its first
       # version that reads data_collection_permissions (142) is newer than the
       # manifest's strict_min_version.
