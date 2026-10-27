@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { browser, type Browser } from 'wxt/browser';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { OAuthCancelledError } from './oauth';
-import { isDoneUrl, registerTabOAuthListeners, runTabOAuth } from './tabOAuth';
+import { hasPendingTabOAuth, isDoneUrl, registerTabOAuthListeners, runTabOAuth } from './tabOAuth';
 import { STORAGE_KEYS } from '../constants';
 
 const START_URL = 'https://api.example.com/auth/oauth/google/start?platform=extension-tab';
@@ -142,6 +142,28 @@ describe('a login that outlived its background instance', () => {
 
     expect(onOrphanRedirect).not.toHaveBeenCalled();
     expect(await pendingLogin()).toBeUndefined();
+  });
+});
+
+// JEF-455: an update reload empties storage.session, so it waits while one is kept.
+describe('hasPendingTabOAuth', () => {
+  it('is false with no login in progress', async () => {
+    expect(await hasPendingTabOAuth()).toBe(false);
+  });
+
+  it('is true while a login is kept in storage.session, and false once it is done', async () => {
+    const { tabId, result } = await startLogin();
+    expect(await hasPendingTabOAuth()).toBe(true);
+
+    await navigate(tabId, `${DONE_URL}?code=handoff`);
+    await result;
+    expect(await hasPendingTabOAuth()).toBe(false);
+  });
+
+  it('ignores a malformed entry', async () => {
+    await browser.storage.session.set({ [STORAGE_KEYS.PENDING_TAB_OAUTH]: { tabId: 'x' } });
+
+    expect(await hasPendingTabOAuth()).toBe(false);
   });
 });
 
