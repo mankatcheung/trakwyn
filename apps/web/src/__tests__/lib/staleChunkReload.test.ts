@@ -81,7 +81,9 @@ describe('watchForStaleChunks', () => {
     const event = new Event('vite:preloadError', { cancelable: true });
     window.dispatchEvent(event);
     expect(reload).toHaveBeenCalledTimes(1);
-    expect(event.defaultPrevented).toBe(true);
+    // Preventing it would make Vite resolve the import to `undefined`, which
+    // the router then reads `.component` off before the reload lands.
+    expect(event.defaultPrevented).toBe(false);
 
     stop();
     sessionStorage.clear();

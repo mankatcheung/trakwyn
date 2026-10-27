@@ -46,10 +46,17 @@ export function clearStaleChunkGuard(): void {
  * fetched). Vite fires `vite:preloadError` when such an import fails; a
  * reload fetches the new entry and its matching chunks. The guard resets
  * once the page has stayed up for a while, proving the reload worked.
+ *
+ * The event is deliberately not `preventDefault()`ed. That tells Vite to
+ * swallow the error and resolve the import to `undefined`, and the reload is
+ * asynchronous: the router reads `undefined['component']` before the page
+ * goes away, and that TypeError is reported as a real bug. Left alone, the
+ * import rejects with the stale-chunk error, which `RouteError` recognises
+ * and does not report.
  */
 export function watchForStaleChunks(): () => void {
-  const handler = (event: Event) => {
-    if (reloadForStaleChunk()) event.preventDefault();
+  const handler = () => {
+    reloadForStaleChunk();
   };
   window.addEventListener('vite:preloadError', handler);
   const timer = setTimeout(clearStaleChunkGuard, GUARD_RESET_MS);
