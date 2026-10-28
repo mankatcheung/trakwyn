@@ -96,6 +96,17 @@ describe('AuthenticatedLayout', () => {
     expect(screen.getAllByText('Applications').length).toBeGreaterThanOrEqual(1);
   });
 
+  it('links the CV profile from the main nav rather than from Settings', () => {
+    render(<AuthenticatedLayout />, { wrapper: Wrapper });
+    // Open the drawer too, so its Settings sub-nav is in the document.
+    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
+
+    const profileLinks = screen.getAllByRole('link', { name: 'My profile' });
+    expect(profileLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of profileLinks) expect(link).toHaveAttribute('href', '/profile');
+    expect(document.querySelector('a[href="/settings/experience"]')).toBeNull();
+  });
+
   it('renders the Outlet for page content', () => {
     render(<AuthenticatedLayout />, { wrapper: Wrapper });
     expect(screen.getByTestId('outlet')).toBeInTheDocument();

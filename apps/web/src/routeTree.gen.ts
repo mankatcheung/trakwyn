@@ -44,6 +44,7 @@ import { Route as AuthenticatedApplicationsNewRouteImport } from './routes/_auth
 import { Route as AuthenticatedApplicationsTrashRouteImport } from './routes/_authenticated/applications/trash';
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant/index';
 import { Route as AuthenticatedAssistantHistoryRouteImport } from './routes/_authenticated/assistant/history';
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index';
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index';
 import { Route as AuthenticatedSettingsAiRouteImport } from './routes/_authenticated/settings/ai';
 import { Route as AuthenticatedSettingsDangerZoneRouteImport } from './routes/_authenticated/settings/danger-zone';
@@ -245,6 +246,12 @@ const AuthenticatedAssistantHistoryRoute =
     path: '/assistant/history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any);
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
@@ -391,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/applications/': typeof AuthenticatedApplicationsIndexRoute;
   '/assistant/': typeof AuthenticatedAssistantIndexRoute;
+  '/profile/': typeof AuthenticatedProfileIndexRoute;
   '/settings/': typeof AuthenticatedSettingsIndexRoute;
   '/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/applications/$applicationId/': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
@@ -443,6 +451,7 @@ export interface FileRoutesByTo {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/applications': typeof AuthenticatedApplicationsIndexRoute;
   '/assistant': typeof AuthenticatedAssistantIndexRoute;
+  '/profile': typeof AuthenticatedProfileIndexRoute;
   '/settings': typeof AuthenticatedSettingsIndexRoute;
   '/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
@@ -498,6 +507,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute;
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute;
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute;
+  '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute;
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute;
   '/_authenticated/applications/$applicationId/edit': typeof AuthenticatedApplicationsApplicationIdEditRoute;
   '/_authenticated/applications/$applicationId/': typeof AuthenticatedApplicationsApplicationIdIndexRoute;
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/applications/'
     | '/assistant/'
+    | '/profile/'
     | '/settings/'
     | '/applications/$applicationId/edit'
     | '/applications/$applicationId/'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/applications'
     | '/assistant'
+    | '/profile'
     | '/settings'
     | '/applications/$applicationId/edit'
     | '/applications/$applicationId'
@@ -659,6 +671,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/security'
     | '/_authenticated/applications/'
     | '/_authenticated/assistant/'
+    | '/_authenticated/profile/'
     | '/_authenticated/settings/'
     | '/_authenticated/applications/$applicationId/edit'
     | '/_authenticated/applications/$applicationId/'
@@ -941,6 +954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssistantHistoryRouteImport;
       parentRoute: typeof AuthenticatedRouteRoute;
     };
+    '/_authenticated/profile/': {
+      id: '/_authenticated/profile/';
+      path: '/profile';
+      fullPath: '/profile/';
+      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport;
+      parentRoute: typeof AuthenticatedRouteRoute;
+    };
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/';
       path: '/';
@@ -1111,6 +1131,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssistantHistoryRoute: typeof AuthenticatedAssistantHistoryRoute;
   AuthenticatedApplicationsIndexRoute: typeof AuthenticatedApplicationsIndexRoute;
   AuthenticatedAssistantIndexRoute: typeof AuthenticatedAssistantIndexRoute;
+  AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute;
   AuthenticatedApplicationsApplicationIdEditRoute: typeof AuthenticatedApplicationsApplicationIdEditRoute;
   AuthenticatedApplicationsApplicationIdIndexRoute: typeof AuthenticatedApplicationsApplicationIdIndexRoute;
   AuthenticatedApplicationsApplicationIdCoverLettersNewRoute: typeof AuthenticatedApplicationsApplicationIdCoverLettersNewRoute;
@@ -1134,6 +1155,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssistantHistoryRoute: AuthenticatedAssistantHistoryRoute,
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
+  AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedApplicationsApplicationIdEditRoute:
     AuthenticatedApplicationsApplicationIdEditRoute,
   AuthenticatedApplicationsApplicationIdIndexRoute:

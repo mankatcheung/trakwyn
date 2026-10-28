@@ -9,15 +9,26 @@ const { mockGqlRequest } = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (opts: object) => ({ ...opts, useSearch: () => ({}) }),
+  Link: ({ children, to, hash }: { children: React.ReactNode; to: string; hash?: string }) => (
+    <a href={hash ? `${to}#${hash}` : to}>{children}</a>
+  ),
 }));
 
 vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { Route } from '#/routes/_authenticated/settings/experience';
+import { Route } from '#/routes/_authenticated/profile/index';
 
-const SettingsExperiencePage = (Route as unknown as { component: ComponentType }).component;
+const ProfilePage = (Route as unknown as { component: ComponentType }).component;
+
+const skill = (id: string, name: string) => ({
+  id,
+  name,
+  category: null,
+  proficiency: null,
+  createdAt: '2020-01-01T00:00:00.000Z',
+});
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -25,7 +36,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={makeClient()}>{children}</QueryClientProvider>;
 }
 
-describe('SettingsExperiencePage', () => {
+describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
@@ -38,7 +49,7 @@ describe('SettingsExperiencePage', () => {
 
   it('shows loading placeholders instead of empty states while the requests are in flight', () => {
     mockGqlRequest.mockReturnValue(new Promise(() => {}));
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
 
     expect(screen.queryByText('No work experiences added yet.')).not.toBeInTheDocument();
     expect(screen.queryByText('No education entries added yet.')).not.toBeInTheDocument();
@@ -46,7 +57,7 @@ describe('SettingsExperiencePage', () => {
   });
 
   it('shows empty states for all three sections when there is no data', async () => {
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByText('No work experiences added yet.')).toBeInTheDocument();
@@ -79,7 +90,7 @@ describe('SettingsExperiencePage', () => {
       return Promise.resolve({});
     });
 
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
 
     await waitFor(() => {
       expect(screen.getByText('Software Engineer at Acme Corp')).toBeInTheDocument();
@@ -88,7 +99,7 @@ describe('SettingsExperiencePage', () => {
   });
 
   it('creates a new work experience via the form', async () => {
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
       expect(screen.getByText('No work experiences added yet.')).toBeInTheDocument();
     });
@@ -146,7 +157,7 @@ describe('SettingsExperiencePage', () => {
       return Promise.resolve({});
     });
 
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
       expect(screen.getByText('Software Engineer at Acme Corp')).toBeInTheDocument();
     });
@@ -161,7 +172,7 @@ describe('SettingsExperiencePage', () => {
   });
 
   it('creates a new skill via the form', async () => {
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
       expect(screen.getByText('No skills added yet.')).toBeInTheDocument();
     });
@@ -207,7 +218,7 @@ describe('SettingsExperiencePage', () => {
       return Promise.resolve({});
     });
 
-    render(<SettingsExperiencePage />, { wrapper: Wrapper });
+    render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
       expect(screen.getByText(/MIT/)).toBeInTheDocument();
     });
@@ -217,5 +228,84 @@ describe('SettingsExperiencePage', () => {
     expect(screen.getByDisplayValue('MIT')).toBeInTheDocument();
     expect(screen.getByDisplayValue('B.S.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
+  });
+
+  it('links each section from the in-page nav', async () => {
+    render(<ProfilePage />, { wrapper: Wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('No skills added yet.')).toBeInTheDocument();
+    });
+
+    const nav = screen.getByRole('navigation', { name: 'Profile sections' });
+    const hrefs = within(nav)
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'));
+    expect(hrefs).toEqual(['#work-experience', '#education', '#skills']);
+    for (const href of hrefs) {
+      expect(document.getElementById(href!.slice(1))).not.toBeNull();
+    }
+  });
+
+  it('shows 0% and points at adding a role when the profile is empty', async () => {
+    render(<ProfilePage />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Profile 0% complete')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('link', { name: "Add a role you've held" })).toHaveAttribute(
+      'href',
+      '/profile#work-experience',
+    );
+  });
+
+  it('asks for more skills once the other checks pass', async () => {
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('WorkExperiences')) {
+        return Promise.resolve({
+          workExperiences: [
+            {
+              id: 'we-1',
+              company: 'Acme Corp',
+              title: 'Software Engineer',
+              location: null,
+              startDate: '2020-01-01T00:00:00.000Z',
+              endDate: null,
+              description: 'Built things.',
+              createdAt: '2020-01-01T00:00:00.000Z',
+              updatedAt: '2020-01-01T00:00:00.000Z',
+            },
+          ],
+        });
+      }
+      if (query.includes('Educations')) {
+        return Promise.resolve({
+          educations: [
+            {
+              id: 'edu-1',
+              institution: 'MIT',
+              degree: null,
+              field: null,
+              startDate: '2015-09-01T00:00:00.000Z',
+              endDate: null,
+              description: null,
+              createdAt: '2015-09-01T00:00:00.000Z',
+              updatedAt: '2015-09-01T00:00:00.000Z',
+            },
+          ],
+        });
+      }
+      if (query.includes('Skills')) return Promise.resolve({ skills: [skill('s-1', 'Go')] });
+      return Promise.resolve({});
+    });
+
+    render(<ProfilePage />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Profile 75% complete')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('link', { name: 'Add at least 5 skills' })).toHaveAttribute(
+      'href',
+      '/profile#skills',
+    );
   });
 });

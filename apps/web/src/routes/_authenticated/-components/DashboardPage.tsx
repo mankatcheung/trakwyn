@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { OnboardingChecklist } from './OnboardingChecklist';
+import { CvProfileSummaryCard } from './CvProfileSummaryCard';
 import {
   applicationsQueryOptions,
   calendarEventsQueryOptions,
@@ -149,6 +150,8 @@ export function DashboardPage() {
           />
         </section>
       )}
+
+      <CvProfileSummaryCard />
 
       {upcomingEvents.length > 0 && (
         <div className="mb-10">

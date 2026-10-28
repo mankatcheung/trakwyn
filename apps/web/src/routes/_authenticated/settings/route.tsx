@@ -7,7 +7,6 @@ import {
   BellIcon,
   DatabaseIcon,
   GemIcon,
-  BriefcaseIcon,
   SparklesIcon,
   AlertTriangleIcon,
 } from 'lucide-react';
@@ -21,7 +20,6 @@ function SettingsLayout() {
   const { pathname } = useLocation();
   const SETTINGS_NAV = [
     { to: '/settings/profile', label: t('settings.profile'), icon: UserIcon },
-    { to: '/settings/experience', label: t('settings.experience'), icon: BriefcaseIcon },
     { to: '/settings/security', label: t('settings.security'), icon: ShieldIcon },
     { to: '/settings/ai', label: t('settings.ai'), icon: SparklesIcon },
     { to: '/settings/integrations', label: t('settings.integrations'), icon: PlugIcon },

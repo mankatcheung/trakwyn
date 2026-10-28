@@ -93,7 +93,7 @@ describe('OnboardingChecklist', () => {
     );
     expect(screen.getByText('Add your work experience and skills').closest('a')).toHaveAttribute(
       'href',
-      '/settings/experience',
+      '/profile',
     );
   });
 
