@@ -3,9 +3,8 @@ import { z } from 'zod';
 import { DomainError, EmailNotVerifiedError } from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { CHAT } from '#src/use-cases/constants.js';
-import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
-import { COOKIES } from '#src/http/constants.js';
 import { diScopeOf } from '#src/http/adapters/fastify/diScope.js';
+import { authenticateRoute } from '#src/http/routes/authenticateRoute.js';
 import { abortSignalFor } from '#src/http/adapters/fastify/buildGraphQLContext.js';
 
 // Guards against writing to a connection the client already left — once
@@ -37,26 +36,6 @@ const bodySchema = z.object({
 });
 
 /**
- * Same cookie-based JWT auth as `buildGraphQLContext.ts` (cookie, falling
- * back to a Bearer header for non-cookie clients) — duplicated rather than
- * shared, since that function builds a full `GraphQLContext` this route has
- * no use for and no Mercurius context to plug into.
- */
-async function authenticate(request: FastifyRequest): Promise<{ sub: string } | null> {
-  const cookieToken = request.cookies[COOKIES.ACCESS_TOKEN];
-  const authHeader = request.headers.authorization;
-  const bearerToken =
-    typeof authHeader === 'string' && authHeader.startsWith(AUTH_HEADER.BEARER_PREFIX)
-      ? authHeader.slice(AUTH_HEADER.BEARER_PREFIX.length)
-      : null;
-  const rawToken = cookieToken ?? bearerToken;
-  if (!rawToken) return null;
-
-  const { authenticateRequestUseCase } = diScopeOf(request).cradle;
-  return authenticateRequestUseCase.execute(rawToken);
-}
-
-/**
  * Streams the assistant's chat reply (JEF-239) — see `ROUTES.CHAT_STREAM`'s
  * doc comment for why this bypasses the `RouteDefinition`/`IHttpResponse`
  * abstraction and writes directly to the raw Fastify response. Registered
@@ -68,7 +47,7 @@ export async function handleChatStream(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const user = await authenticate(request);
+  const user = await authenticateRoute(request);
   if (!user) {
     reply.code(401).send({ error: 'Unauthorized' });
     return;

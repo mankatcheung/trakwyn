@@ -17,6 +17,10 @@ import { DrizzleMcpOAuthClientRepository } from '#src/infrastructure/db/reposito
 import { DrizzleMcpOAuthAuthorizationCodeRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthAuthorizationCodeRepository.js';
 import { DrizzleMcpOAuthRefreshTokenRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthRefreshTokenRepository.js';
 import { DrizzleMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/DrizzleMcpOAuthTokenRepository.js';
+import { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
+import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
+import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import { ImportCvProfileUseCase } from '#src/use-cases/profile/ImportCvProfileUseCase.js';
 import { ResetPasswordUseCase } from '#src/use-cases/auth/ResetPasswordUseCase.js';
 import { ConfirmEmailChangeUseCase } from '#src/use-cases/user/ConfirmEmailChangeUseCase.js';
 import { LoginOrSignupWithOAuthUseCase } from '#src/use-cases/oauth/LoginOrSignupWithOAuthUseCase.js';
@@ -473,5 +477,72 @@ describe('repository transaction participation (JEF-427)', () => {
     expect(all).toHaveLength(1);
     expect(['second', 'third']).toContain(all[0].apiKey);
     expect(all[0].monthlyTokenLimit).toBe(5000);
+  });
+
+  describe('ImportCvProfileUseCase (JEF-461)', () => {
+    const entries = {
+      workExperiences: [
+        { company: 'Acme', title: 'Engineer', startDate: new Date('2020-03-01T00:00:00Z') },
+      ],
+      educations: [{ institution: 'UC Berkeley', startDate: new Date('2012-01-01T00:00:00Z') }],
+      skills: [{ name: 'TypeScript' }],
+    };
+
+    async function makeUser(): Promise<string> {
+      const id = nanoid();
+      await new DrizzleUserRepository({ db: testDb.db }).create({
+        id,
+        email: `${id}@example.com`,
+        passwordHash: 'h',
+      });
+      return id;
+    }
+
+    function build(skillRepository: DrizzleSkillRepository) {
+      const { db } = testDb;
+      const workExperienceRepository = new DrizzleWorkExperienceRepository({ db });
+      const educationRepository = new DrizzleEducationRepository({ db });
+      return {
+        workExperienceRepository,
+        educationRepository,
+        useCase: new ImportCvProfileUseCase({
+          workExperienceRepository,
+          educationRepository,
+          skillRepository,
+          transactionManager: new DrizzleTransactionManager({ db: testDb.db }),
+          generateId: nanoid,
+        }),
+      };
+    }
+
+    it('rolls back the work experience and education when the skills fail', async () => {
+      const userId = await makeUser();
+      const skills = new DrizzleSkillRepository({ db: testDb.db });
+      const { useCase, workExperienceRepository, educationRepository } = build(
+        failing(skills, 'create'),
+      );
+
+      await expect(useCase.execute({ userId, ...entries })).rejects.toThrow('simulated failure');
+
+      expect(await workExperienceRepository.findAllByUserId(userId)).toEqual([]);
+      expect(await educationRepository.findAllByUserId(userId)).toEqual([]);
+      expect(await skills.findAllByUserId(userId)).toEqual([]);
+    });
+
+    it('commits all three sections together when nothing fails', async () => {
+      const userId = await makeUser();
+      const skills = new DrizzleSkillRepository({ db: testDb.db });
+      const { useCase, workExperienceRepository, educationRepository } = build(skills);
+
+      await expect(useCase.execute({ userId, ...entries })).resolves.toEqual({
+        workExperiences: 1,
+        educations: 1,
+        skills: 1,
+      });
+
+      expect(await workExperienceRepository.findAllByUserId(userId)).toHaveLength(1);
+      expect(await educationRepository.findAllByUserId(userId)).toHaveLength(1);
+      expect(await skills.findAllByUserId(userId)).toHaveLength(1);
+    });
   });
 });

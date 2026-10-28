@@ -1,5 +1,7 @@
 import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
+import { ParseCvUseCase } from '#src/use-cases/profile/ParseCvUseCase.js';
+import { ImportCvProfileUseCase } from '#src/use-cases/profile/ImportCvProfileUseCase.js';
 import { CreateWorkExperienceUseCase } from '#src/use-cases/workExperience/CreateWorkExperienceUseCase.js';
 import { UpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/UpdateWorkExperienceUseCase.js';
 import { DeleteWorkExperienceUseCase } from '#src/use-cases/workExperience/DeleteWorkExperienceUseCase.js';
@@ -13,6 +15,8 @@ import { DeleteSkillUseCase } from '#src/use-cases/skill/DeleteSkillUseCase.js';
 import type { Cradle } from '../types.js';
 
 export const profile = {
+  parseCvUseCase: asClass(ParseCvUseCase, { lifetime: Lifetime.TRANSIENT }),
+  importCvProfileUseCase: asClass(ImportCvProfileUseCase, { lifetime: Lifetime.TRANSIENT }),
   createWorkExperienceUseCase: asClass(CreateWorkExperienceUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),

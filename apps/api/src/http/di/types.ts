@@ -294,6 +294,8 @@ import type { RevokeSessionUseCase } from '#src/use-cases/sessions/RevokeSession
 import type { RevokeOtherSessionsUseCase } from '#src/use-cases/sessions/RevokeOtherSessionsUseCase.js';
 import type { StreamChatWithAssistantUseCase } from '#src/use-cases/chat/StreamChatWithAssistantUseCase.js';
 import type { LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
+import type { ParseCvUseCase } from '#src/use-cases/profile/ParseCvUseCase.js';
+import type { ImportCvProfileUseCase } from '#src/use-cases/profile/ImportCvProfileUseCase.js';
 import type { CreateWorkExperienceUseCase } from '#src/use-cases/workExperience/CreateWorkExperienceUseCase.js';
 import type { UpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/UpdateWorkExperienceUseCase.js';
 import type { DeleteWorkExperienceUseCase } from '#src/use-cases/workExperience/DeleteWorkExperienceUseCase.js';
@@ -416,6 +418,7 @@ export interface Cradle {
   chatRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;
   parseJobDescriptionRateLimiter: IRateLimiter;
+  parseCvRateLimiter: IRateLimiter;
   computeResumeMatchScoreRateLimiter: IRateLimiter;
   computeResumeAtsScoreRateLimiter: IRateLimiter;
   generateCompanyBriefingRateLimiter: IRateLimiter;
@@ -680,6 +683,8 @@ export interface Cradle {
   listSessionsUseCase: ListSessionsUseCase;
   revokeSessionUseCase: RevokeSessionUseCase;
   revokeOtherSessionsUseCase: RevokeOtherSessionsUseCase;
+  parseCvUseCase: ParseCvUseCase;
+  importCvProfileUseCase: ImportCvProfileUseCase;
   createWorkExperienceUseCase: CreateWorkExperienceUseCase;
   updateWorkExperienceUseCase: UpdateWorkExperienceUseCase;
   deleteWorkExperienceUseCase: DeleteWorkExperienceUseCase;

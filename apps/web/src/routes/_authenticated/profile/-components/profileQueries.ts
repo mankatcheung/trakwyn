@@ -158,6 +158,17 @@ export const DELETE_SKILL = `
   }
 `;
 
+/** The confirm step of the CV import (JEF-461); reading the file is `uploadCv` in `lib/cvImport`. */
+export const IMPORT_CV_PROFILE = `
+  mutation ImportCvProfile($input: ImportCvProfileInput!) {
+    importCvProfile(input: $input) {
+      workExperiences
+      educations
+      skills
+    }
+  }
+`;
+
 // ── Types ────────────────────────────────────────────────────────────────
 
 export type WorkExperience = {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildTestApp, type TestApp } from './helpers/buildTestApp.js';
 import { ENV, LLM_PROVIDER_MODE } from '#src/infrastructure/config/constants.js';
-import { MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
+import { CV_IMPORT_PROMPT_TASK, MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
 
 describe('fake LLM completions route — LLM_PROVIDER_MODE=fake', () => {
   let testApp: TestApp;
@@ -51,6 +51,33 @@ describe('fake LLM completions route — LLM_PROVIDER_MODE=fake', () => {
 
     const content = JSON.parse(res.json().choices[0].message.content);
     expect(content.questions).toHaveLength(3);
+  });
+
+  it('replies with a CV profile for the CV import prompt (JEF-461)', async () => {
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: '/llm-test/fake/chat/completions',
+      payload: {
+        model: 'fake-model',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a parser. Your task is to ${CV_IMPORT_PROMPT_TASK}.`,
+          },
+          { role: 'user', content: 'Jane Doe, Senior Engineer at Acme Corp' },
+        ],
+      },
+    });
+
+    const content = JSON.parse(res.json().choices[0].message.content);
+    expect(content.workExperiences[0]).toMatchObject({
+      company: 'Acme Corp',
+      title: 'Senior Engineer',
+      startDate: '2020-03',
+      endDate: 'Present',
+    });
+    expect(content.educations).toHaveLength(1);
+    expect(content.skills.map((s: { name: string }) => s.name)).toContain('TypeScript');
   });
 
   it('replies with a plain-text answer for the practice answer prompt (JEF-393)', async () => {

@@ -103,6 +103,7 @@ export const rateLimiters = {
     'parseJobDescriptionRateLimiter',
     RATE_LIMIT.PARSE_JOB_DESCRIPTION,
   ),
+  parseCvRateLimiter: limiter('parseCvRateLimiter', RATE_LIMIT.PARSE_CV),
   computeResumeMatchScoreRateLimiter: limiter(
     'computeResumeMatchScoreRateLimiter',
     RATE_LIMIT.COMPUTE_RESUME_MATCH_SCORE,

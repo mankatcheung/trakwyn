@@ -308,4 +308,27 @@ describe('ProfilePage', () => {
       '/profile#skills',
     );
   });
+
+  describe('importing from a CV (JEF-461)', () => {
+    it('opens the import dialog from the header button', () => {
+      render(<ProfilePage />, { wrapper: Wrapper });
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Import from CV' }));
+
+      expect(screen.getByRole('dialog', { name: 'Import from your CV' })).toBeInTheDocument();
+    });
+
+    it('closes the dialog again and leaves the profile as it was', async () => {
+      render(<ProfilePage />, { wrapper: Wrapper });
+      fireEvent.click(screen.getByRole('button', { name: 'Import from CV' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('No skills added yet.')).toBeInTheDocument();
+      });
+    });
+  });
 });
