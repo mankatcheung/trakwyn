@@ -170,6 +170,35 @@ describe('DrizzleLlmUsageEventRepository', () => {
       expect(await repo.summarizeByUserId('u1', new Date(0))).toEqual([]);
     });
 
+    it("reports lastUsedAt as the provider's most recent event, as a valid Date", async () => {
+      // `expect.any(Date)` also matches an Invalid Date, which is what the mapper's
+      // toISOString() threw on in production, so pin the exact instant.
+      await db.db.insert(llmUsageEvent).values([
+        {
+          id: 'evt-earlier',
+          userId: 'u1',
+          provider: 'openrouter',
+          model: null,
+          promptTokens: 1,
+          completionTokens: 1,
+          createdAt: new Date('2026-10-01T08:00:00.000Z'),
+        },
+        {
+          id: 'evt-latest',
+          userId: 'u1',
+          provider: 'openrouter',
+          model: null,
+          promptTokens: 1,
+          completionTokens: 1,
+          createdAt: new Date('2026-10-27T12:34:56.789Z'),
+        },
+      ]);
+
+      const [summary] = await repo.summarizeByUserId('u1', new Date(0));
+
+      expect(summary.lastUsedAt.toISOString()).toBe('2026-10-27T12:34:56.789Z');
+    });
+
     it('returns an empty array when nothing has been recorded', async () => {
       expect(await repo.summarizeByUserId('u1', new Date(0))).toEqual([]);
     });
