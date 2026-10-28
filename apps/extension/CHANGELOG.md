@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.3.0...clipper-v1.3.1) (2026-10-28)
+
+
+### Performance Improvements
+
+* **extension:** show the Clipper popup's clip before the API answers (JEF-457) ([#1103](https://github.com/mankatcheung/trakwyn/issues/1103)) ([6870a71](https://github.com/mankatcheung/trakwyn/commit/6870a71865d0aad950980d85f9e0cb9b626b9f8b))
+
 ## [1.3.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.2.1...clipper-v1.3.0) (2026-10-27)
 
 
