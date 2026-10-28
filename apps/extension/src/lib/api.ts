@@ -149,7 +149,6 @@ const LOGIN = `
     }
   }
 `;
-const ME = `query Me { me { id email name avatarUrl } }`;
 const REFRESH = `
   mutation RefreshTokenMobile($refreshToken: String!) {
     refreshTokenMobile(refreshToken: $refreshToken) { accessToken refreshToken }
@@ -278,12 +277,6 @@ export async function logout(): Promise<void> {
   await clearAuth();
 }
 
-export async function getCurrentUser(): Promise<CurrentUser> {
-  const data = await authedGql<{ me: CurrentUser | null }>(ME);
-  if (!data.me) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
-  return data.me;
-}
-
 let refreshInFlight: Promise<boolean> | null = null;
 
 async function doRefresh(): Promise<boolean> {
@@ -393,19 +386,41 @@ export async function parseJobDescription(text: string): Promise<AiParsedJob> {
   }
 }
 
-const AI_AVAILABILITY = `query AiAvailability { me { defaultLlmProvider } llmApiKeys { provider } }`;
+/**
+ * Everything the popup asks the API for as it opens, in one round trip
+ * (JEF-457): the user for the header, and what "Read with AI" needs.
+ */
+const POPUP_BOOTSTRAP = `
+  query PopupBootstrap {
+    me { id email name avatarUrl defaultLlmProvider }
+    llmApiKeys { provider }
+  }
+`;
+
+export interface PopupBootstrap {
+  user: CurrentUser;
+  /**
+   * Whether "Read with AI" can work (JEF-420): the user has a default provider
+   * and a saved key for it. A default whose key was deleted would otherwise
+   * fail with `AI_NOT_CONFIGURED` only after the page text was sent. Only the
+   * answer is kept; provider names are not.
+   */
+  aiAvailable: boolean;
+}
 
 /**
- * Whether "Read with AI" can work (JEF-420): the user has a default provider
- * and a saved key for it. A default whose key was deleted would otherwise fail
- * with `AI_NOT_CONFIGURED` only after the page text was sent. Only the answer
- * is returned; provider names are not kept.
+ * The signed-in user and their AI availability. A null `me` is unauthorized.
+ * A missing key list reads as no key, so the parser still works without it.
  */
-export async function hasDefaultAiKey(): Promise<boolean> {
+export async function getPopupBootstrap(): Promise<PopupBootstrap> {
   const data = await authedGql<{
-    me: { defaultLlmProvider: string | null } | null;
-    llmApiKeys: Array<{ provider: string }>;
-  }>(AI_AVAILABILITY);
-  const provider = data.me?.defaultLlmProvider;
-  return !!provider && data.llmApiKeys.some((key) => key.provider === provider);
+    me: (CurrentUser & { defaultLlmProvider?: string | null }) | null;
+    llmApiKeys?: Array<{ provider: string }> | null;
+  }>(POPUP_BOOTSTRAP);
+  if (!data.me) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
+  const { id, email, name, avatarUrl, defaultLlmProvider } = data.me;
+  const aiAvailable =
+    !!defaultLlmProvider &&
+    (data.llmApiKeys ?? []).some((key) => key.provider === defaultLlmProvider);
+  return { user: { id, email, name, avatarUrl }, aiAvailable };
 }

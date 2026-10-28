@@ -37,6 +37,11 @@ export const STORAGE_KEYS = {
   PERSISTED_REFRESH_TOKEN: 'persistedRefreshToken',
   /** Session-scoped Safari tab sign-in in progress (see lib/tabOAuth.ts). */
   PENDING_TAB_OAUTH: 'pendingTabOAuth',
+  /**
+   * Session-scoped copy of the last signed-in user, so the popup's header shows
+   * before the API answers (JEF-457). Cleared with the session.
+   */
+  CACHED_USER: 'cachedUser',
 } as const;
 
 /**

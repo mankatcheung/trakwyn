@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import {
-  ApiError,
-  getCurrentUser,
-  hasDefaultAiKey,
-  isUnauthorizedError,
-  parseJobDescription,
-} from './api';
+import { ApiError, getPopupBootstrap, isUnauthorizedError, parseJobDescription } from './api';
 import { getAuth } from './storage';
 import { DEFAULT_API_URL } from '../constants';
 
@@ -41,16 +35,28 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('getCurrentUser', () => {
-  it('queries `me` with the stored bearer token and returns the user', async () => {
-    respondWith({ data: { me: user } });
+describe('getPopupBootstrap', () => {
+  it('asks for the user and AI keys in one request with the stored bearer token', async () => {
+    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
 
-    await expect(getCurrentUser()).resolves.toEqual(user);
+    await expect(getPopupBootstrap()).resolves.toEqual({ user, aiAvailable: false });
 
+    expect(globalThis.fetch).toHaveBeenCalledOnce();
     const [url, init] = (globalThis.fetch as Mock).mock.calls[0];
     expect(url).toBe(DEFAULT_API_URL);
     expect(init.headers.Authorization).toBe('Bearer tok');
-    expect(JSON.parse(init.body).query).toContain('me { id email name avatarUrl }');
+    const { query } = JSON.parse(init.body) as { query: string };
+    expect(query).toContain('me { id email name avatarUrl defaultLlmProvider }');
+    expect(query).toContain('llmApiKeys { provider }');
+  });
+
+  it('keeps the provider name out of the user it returns', async () => {
+    respondWith({ data: { me: { ...user, defaultLlmProvider: 'anthropic' }, llmApiKeys: [] } });
+
+    const { user: returned } = await getPopupBootstrap();
+
+    expect(returned).toEqual(user);
+    expect(returned).not.toHaveProperty('defaultLlmProvider');
   });
 
   it('throws an unauthorized ApiError carrying the API error code', async () => {
@@ -59,7 +65,7 @@ describe('getCurrentUser', () => {
       errors: [{ message: 'Unauthorized', extensions: { code: 'UNAUTHORIZED' } }],
     });
 
-    const err = await getCurrentUser().catch((e: unknown) => e);
+    const err = await getPopupBootstrap().catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(ApiError);
     expect(isUnauthorizedError(err)).toBe(true);
@@ -68,20 +74,20 @@ describe('getCurrentUser', () => {
   it('treats a null `me` as unauthorized', async () => {
     respondWith({ data: { me: null } });
 
-    expect(isUnauthorizedError(await getCurrentUser().catch((e: unknown) => e))).toBe(true);
+    expect(isUnauthorizedError(await getPopupBootstrap().catch((e: unknown) => e))).toBe(true);
   });
 
   it('is unauthorized without calling the API when no token is stored', async () => {
     vi.mocked(getAuth).mockResolvedValue(null);
 
-    expect(isUnauthorizedError(await getCurrentUser().catch((e: unknown) => e))).toBe(true);
+    expect(isUnauthorizedError(await getPopupBootstrap().catch((e: unknown) => e))).toBe(true);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('keeps other API errors distinct from unauthorized', async () => {
     respondWith({ errors: [{ message: 'Boom', extensions: { code: 'INTERNAL_ERROR' } }] });
 
-    const err = await getCurrentUser().catch((e: unknown) => e);
+    const err = await getPopupBootstrap().catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).message).toBe('Boom');
@@ -134,30 +140,37 @@ describe('parseJobDescription', () => {
   });
 });
 
-describe('hasDefaultAiKey', () => {
-  const answer = (defaultLlmProvider: string | null, providers: string[]) =>
+describe('getPopupBootstrap — AI availability (JEF-420)', () => {
+  const answer = (defaultLlmProvider: string | null, providers: string[] | null) =>
     respondWith({
       data: {
-        me: { defaultLlmProvider },
-        llmApiKeys: providers.map((provider) => ({ provider })),
+        me: { ...user, defaultLlmProvider },
+        llmApiKeys: providers?.map((provider) => ({ provider })) ?? null,
       },
     });
+  const aiAvailable = async () => (await getPopupBootstrap()).aiAvailable;
 
   it('is true when the default provider has a saved key', async () => {
     answer('anthropic', ['openai', 'anthropic']);
 
-    await expect(hasDefaultAiKey()).resolves.toBe(true);
+    await expect(aiAvailable()).resolves.toBe(true);
   });
 
   it('is false when no default provider is set', async () => {
     answer(null, ['anthropic']);
 
-    await expect(hasDefaultAiKey()).resolves.toBe(false);
+    await expect(aiAvailable()).resolves.toBe(false);
   });
 
   it('is false when the default provider has no saved key', async () => {
     answer('anthropic', ['openai']);
 
-    await expect(hasDefaultAiKey()).resolves.toBe(false);
+    await expect(aiAvailable()).resolves.toBe(false);
+  });
+
+  it('reads a missing key list as no key', async () => {
+    answer('anthropic', null);
+
+    await expect(aiAvailable()).resolves.toBe(false);
   });
 });

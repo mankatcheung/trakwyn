@@ -82,9 +82,10 @@ describe('extractFromDirectory', () => {
   it('finds the documents the Clipper actually sends', () => {
     // A guard on the extractor itself: matching nothing would let
     // graphqlDocuments.test.ts validate an empty list and pass.
-    expect(documents.length).toBeGreaterThanOrEqual(7);
+    expect(documents.length).toBeGreaterThanOrEqual(6);
     expect(documents.map((d) => d.name)).toContain('LoginMobile');
     expect(documents.map((d) => d.name)).toContain('RefreshTokenMobile');
+    expect(documents.map((d) => d.name)).toContain('PopupBootstrap');
   });
 
   it('reads no test sources', () => {

@@ -65,7 +65,7 @@ Reuse `store/assets/screenshot-1-clip.png` and `store/assets/screenshot-2-saved.
 
 #### `storage`
 
-Keeps the user's sign-in state. The access token stays in session storage. The refresh token is also written to local storage only if the user ticks “Keep me signed in” when signing in, so they stay signed in after a browser restart; signing out removes it. Nothing else is stored.
+Keeps the user's sign-in state. The access token stays in session storage. The refresh token is also written to local storage only if the user ticks “Keep me signed in” when signing in, so they stay signed in after a browser restart; signing out removes it. The signed-in user's name, email and avatar link are also kept in session storage so the popup can show who is signed in before the API answers; they are cleared with the session. Nothing else is stored.
 
 #### `activeTab`
 

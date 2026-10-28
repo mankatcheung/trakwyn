@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, getCurrentUser, login, refreshToken } from './api';
+import { ApiError, getPopupBootstrap, login, refreshToken } from './api';
 import { clearAuth, getAuth } from './storage';
 import { captureEvent, captureException, wasReported } from './observability/report';
 import { getLastTraceId } from './observability/traceContext';
@@ -63,8 +63,8 @@ describe('trace context', () => {
     respond(200, { data: { me: { id: 'u1' } } });
     respond(200, { data: { me: { id: 'u1' } } });
 
-    await getCurrentUser();
-    await getCurrentUser();
+    await getPopupBootstrap();
+    await getPopupBootstrap();
 
     const [first, second] = fetchMock.mock.calls.map(
       ([url, init]) => [url, (init as { headers: Record<string, string> }).headers] as const,
@@ -81,10 +81,10 @@ describe('transport failures', () => {
     const failure = new TypeError('Failed to fetch');
     fetchMock.mockRejectedValueOnce(failure);
 
-    await expect(getCurrentUser()).rejects.toBe(failure);
+    await expect(getPopupBootstrap()).rejects.toBe(failure);
 
     expect(eventsNamed(OBSERVABILITY_EVENTS.GRAPHQL_REQUEST_FAILED)).toEqual([
-      { network_error: true, operation: 'Me', trace_id: getLastTraceId() },
+      { network_error: true, operation: 'PopupBootstrap', trace_id: getLastTraceId() },
     ]);
     // So the popup does not report the same failure again as an exception.
     expect(wasReported(failure)).toBe(true);
@@ -93,24 +93,24 @@ describe('transport failures', () => {
   it('reports a 5xx with its status, keeping the API message for the user', async () => {
     respond(500, { errors: [{ message: 'Boom', extensions: { code: 'INTERNAL_ERROR' } }] });
 
-    const err = await getCurrentUser().catch((e: unknown) => e);
+    const err = await getPopupBootstrap().catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).message).toBe('Boom');
     expect(eventsNamed(OBSERVABILITY_EVENTS.GRAPHQL_REQUEST_FAILED)).toEqual([
-      { status: 500, operation: 'Me', trace_id: getLastTraceId() },
+      { status: 500, operation: 'PopupBootstrap', trace_id: getLastTraceId() },
     ]);
   });
 
   it('reports a 5xx that is not JSON, and says so readably', async () => {
     respondWithHtml(502);
 
-    const err = await getCurrentUser().catch((e: unknown) => e);
+    const err = await getPopupBootstrap().catch((e: unknown) => e);
 
     // An outage, so the user is not sent to check their API URL.
     expect((err as Error).message).toMatch(/having trouble/);
     expect(eventsNamed(OBSERVABILITY_EVENTS.GRAPHQL_REQUEST_FAILED)).toEqual([
-      { status: 502, operation: 'Me', trace_id: getLastTraceId() },
+      { status: 502, operation: 'PopupBootstrap', trace_id: getLastTraceId() },
     ]);
   });
 
@@ -119,9 +119,9 @@ describe('transport failures', () => {
     respond(200, { errors: [{ message: 'Unauthorized', extensions: { code: 'UNAUTHORIZED' } }] });
     respondWithHtml(404);
 
-    await getCurrentUser().catch(() => undefined);
-    await getCurrentUser().catch(() => undefined);
-    const notFound = await getCurrentUser().catch((e: unknown) => e);
+    await getPopupBootstrap().catch(() => undefined);
+    await getPopupBootstrap().catch(() => undefined);
+    const notFound = await getPopupBootstrap().catch((e: unknown) => e);
 
     expect(captureEvent).not.toHaveBeenCalled();
     expect(wasReported(notFound)).toBe(false);
