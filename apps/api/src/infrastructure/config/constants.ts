@@ -256,6 +256,12 @@ export const OAUTH = {
   /** How long the signed `state` redirect param stays valid, in milliseconds. */
   STATE_TTL_MS: 5 * 60 * 1000, // 5 minutes
   /**
+   * How long a step-up ticket stays valid (JEF-463). The client opens the
+   * start route with it straight after minting it, so this only has to cover
+   * the browser opening.
+   */
+  REAUTH_TICKET_TTL_MS: 2 * 60 * 1000, // 2 minutes
+  /**
    * How long a mobile login's handoff code stays valid, in milliseconds
    * (JEF-275). It carries the finished session's tokens from the OAuth
    * callback (a browser redirect) to the app (a GraphQL mutation) across the

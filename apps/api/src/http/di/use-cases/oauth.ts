@@ -5,6 +5,7 @@ import { LinkOAuthAccountUseCase } from '#src/use-cases/oauth/LinkOAuthAccountUs
 import { UnlinkOAuthAccountUseCase } from '#src/use-cases/oauth/UnlinkOAuthAccountUseCase.js';
 import { ListLinkedOAuthAccountsUseCase } from '#src/use-cases/oauth/ListLinkedOAuthAccountsUseCase.js';
 import { ExchangeMobileOAuthCodeUseCase } from '#src/use-cases/oauth/ExchangeMobileOAuthCodeUseCase.js';
+import { ReauthenticateWithOAuthUseCase } from '#src/use-cases/oauth/ReauthenticateWithOAuthUseCase.js';
 
 import type { Cradle } from '../types.js';
 
@@ -20,6 +21,9 @@ export const oauth = {
     lifetime: Lifetime.TRANSIENT,
   }),
   exchangeMobileOAuthCodeUseCase: asClass(ExchangeMobileOAuthCodeUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  reauthenticateWithOAuthUseCase: asClass(ReauthenticateWithOAuthUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
 } satisfies NameAndRegistrationPair<Cradle>;

@@ -1,4 +1,8 @@
-import type { IOAuthProvider, OAuthProfile } from '#src/use-cases/ports/IOAuthProvider.js';
+import type {
+  AuthorizationUrlOptions,
+  IOAuthProvider,
+  OAuthProfile,
+} from '#src/use-cases/ports/IOAuthProvider.js';
 import type { OAuthProviderName } from '#src/domain/oauthAccount/OAuthAccount.js';
 import { FAKE_OAUTH } from '#src/infrastructure/config/constants.js';
 
@@ -19,29 +23,43 @@ import { FAKE_OAUTH } from '#src/infrastructure/config/constants.js';
  */
 abstract class FakeOAuthProvider implements IOAuthProvider {
   protected abstract readonly provider: OAuthProviderName;
+  abstract readonly supportsReauth: boolean;
 
   // redirectUri/codeChallenge are part of IOAuthProvider's contract (every
   // real caller — oauth.routes.ts — passes all three) but unused here: the
   // fake consent route derives its own redirect_uri, and there is no real
   // token exchange for a challenge to protect.
-  getAuthorizationUrl(state: string, _redirectUri: string, _codeChallenge: string): string {
+  getAuthorizationUrl(
+    state: string,
+    _redirectUri: string,
+    _codeChallenge: string,
+    _options?: AuthorizationUrlOptions,
+  ): string {
     const params = new URLSearchParams({ provider: this.provider, state });
     return `${FAKE_OAUTH.CONSENT_PATH}?${params.toString()}`;
   }
 
+  // The consent screen stands in for the user signing in, so a step-up that
+  // reaches the exchange has just "authenticated" (JEF-463) — but only for a
+  // provider that could report it, mirroring the real pair.
   async exchangeCodeForProfile(
     code: string,
     _redirectUri: string,
     _codeVerifier: string,
+    options: { requireAuthTime?: boolean } = {},
   ): Promise<OAuthProfile> {
-    return JSON.parse(Buffer.from(code, 'base64url').toString('utf8')) as OAuthProfile;
+    const profile = JSON.parse(Buffer.from(code, 'base64url').toString('utf8')) as OAuthProfile;
+    if (!options.requireAuthTime) return profile;
+    return { ...profile, authTime: this.supportsReauth ? new Date() : null };
   }
 }
 
 export class FakeGoogleOAuthProvider extends FakeOAuthProvider {
   protected readonly provider: OAuthProviderName = 'google';
+  readonly supportsReauth = true;
 }
 
 export class FakeGitHubOAuthProvider extends FakeOAuthProvider {
   protected readonly provider: OAuthProviderName = 'github';
+  readonly supportsReauth = false;
 }

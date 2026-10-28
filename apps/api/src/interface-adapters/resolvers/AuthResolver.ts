@@ -11,6 +11,8 @@ import type { ITokenService, TokenPair } from '#src/use-cases/ports/ITokenServic
 import type { ISessionRepository } from '#src/use-cases/ports/ISessionRepository.js';
 import type { CreateSessionUseCase } from '#src/use-cases/sessions/CreateSessionUseCase.js';
 import type { RotateRefreshTokenUseCase } from '#src/use-cases/sessions/RotateRefreshTokenUseCase.js';
+import type { RequestStepUpCodeUseCase } from '#src/use-cases/auth/RequestStepUpCodeUseCase.js';
+import type { VerifyStepUpCodeUseCase } from '#src/use-cases/auth/VerifyStepUpCodeUseCase.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 
 interface Deps {
@@ -18,6 +20,8 @@ interface Deps {
   loginUseCase: ILoginUseCase;
   loginWithTotpUseCase: ILoginWithTotpUseCase;
   reauthenticateUseCase: IReauthenticateUseCase;
+  requestStepUpCodeUseCase: Pick<RequestStepUpCodeUseCase, 'execute'>;
+  verifyStepUpCodeUseCase: Pick<VerifyStepUpCodeUseCase, 'execute'>;
   tokenService: ITokenService;
   requestPasswordResetUseCase: IRequestPasswordResetUseCase;
   resetPasswordUseCase: IResetPasswordUseCase;
@@ -156,24 +160,40 @@ export class AuthResolver {
     if (result.totpRequired) {
       return { totpRequired: true, tokens: null };
     }
+    return { totpRequired: false, tokens: await this.completeStepUp(result.user, sessionId) };
+  }
 
+  /** Mails a step-up code to an account with no password (JEF-463). */
+  async requestStepUpCode(userId: string): Promise<void> {
+    await this.deps.requestStepUpCodeUseCase.execute(userId);
+  }
+
+  /** Checks a mailed step-up code, then refreshes the session as `reauthenticate` does. */
+  async verifyStepUpCode(userId: string, sessionId: string, code: string): Promise<TokenPair> {
+    const user = await this.deps.verifyStepUpCodeUseCase.execute({ userId, code });
+    return this.completeStepUp(user, sessionId);
+  }
+
+  /**
+   * The end of every step-up (password, mailed code, provider sign-in): the
+   * same session, re-signed with a fresh `authTime`. Refused for a session
+   * that has been revoked or has expired since the request began, so a
+   * step-up cannot bring one back.
+   */
+  async completeStepUp(user: { id: string; email: string }, sessionId: string): Promise<TokenPair> {
     const session = await this.deps.sessionRepository.findById(sessionId);
     if (!session || session.revokedAt || session.expiresAt < new Date()) {
       throw Object.assign(new Error('Session expired — please log in again'), {
         code: ERROR_CODES.UNAUTHORIZED,
       });
     }
-
-    return {
-      totpRequired: false,
-      tokens: this.deps.tokenService.sign(
-        result.user.id,
-        result.user.email,
-        session.id,
-        session.currentRefreshTokenId!,
-        Date.now(),
-      ),
-    };
+    return this.deps.tokenService.sign(
+      user.id,
+      user.email,
+      session.id,
+      session.currentRefreshTokenId!,
+      Date.now(),
+    );
   }
 
   async verifyEmail(token: string): Promise<void> {

@@ -80,4 +80,52 @@ describe('OAuthStateService', () => {
 
     expect(service.issue('google', 'login').nonce).not.toBe(service.issue('google', 'login').nonce);
   });
+
+  describe('step-up (JEF-463)', () => {
+    it('carries the session a reauth state refreshes', () => {
+      const service = new OAuthStateService();
+      const { state } = service.issue('google', 'reauth', 'user-1', '/settings', 'session-1');
+
+      expect(service.verify(state)).toMatchObject({
+        mode: 'reauth',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        returnTo: '/settings',
+      });
+    });
+
+    it('round-trips a reauth ticket', () => {
+      const service = new OAuthStateService();
+
+      expect(
+        service.verifyReauthTicket(service.issueReauthTicket('user-1', 'session-1')),
+      ).toMatchObject({ userId: 'user-1', sessionId: 'session-1' });
+    });
+
+    it('never reads a state as a ticket, or a ticket as a state', () => {
+      const service = new OAuthStateService();
+      const { state } = service.issue('google', 'reauth', 'user-1', undefined, 'session-1');
+      const ticket = service.issueReauthTicket('user-1', 'session-1');
+
+      expect(() => service.verifyReauthTicket(state)).toThrow();
+      expect(() => service.verify(ticket)).toThrow();
+    });
+
+    it('refuses an expired ticket', () => {
+      vi.useFakeTimers();
+      const service = new OAuthStateService();
+      const ticket = service.issueReauthTicket('user-1', 'session-1');
+
+      vi.advanceTimersByTime(2 * 60 * 1000 + 1);
+
+      expect(() => service.verifyReauthTicket(ticket)).toThrow('expired');
+    });
+
+    it('refuses a ticket signed with another secret', () => {
+      const ticket = new OAuthStateService().issueReauthTicket('user-1', 'session-1');
+      process.env.JWT_SECRET = 'another-secret';
+
+      expect(() => new OAuthStateService().verifyReauthTicket(ticket)).toThrow('signature');
+    });
+  });
 });

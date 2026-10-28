@@ -159,6 +159,18 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
   },
+  // Step-up codes mailed per account (JEF-463). Each one replaces the last, so
+  // this only bounds the mail a signed-in session can send to its owner; the
+  // guesses at a code are held by TOTP_VERIFICATION's per-account budget.
+  STEP_UP_CODE_SEND: {
+    MAX_ATTEMPTS: 3,
+    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  },
+  // "Confirm deletion" mails per account (JEF-463), for the same reason.
+  ACCOUNT_DELETION_REQUEST: {
+    MAX_ATTEMPTS: 3,
+    WINDOW_MS: 60 * 60 * 1000, // 1 hour
+  },
   // Every login attempt, by email and by IP (JEF-401). A ceiling, not the
   // captcha trigger: it stops a script from trying passwords forever once it
   // has learned to skip the widget (the mobile mutations never show one).
