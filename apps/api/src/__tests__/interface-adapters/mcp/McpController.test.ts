@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeToolCallObserver } from '#src/__tests__/helpers/mocks/infrastructure.js';
-import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  PlanRequiredError,
+} from '#src/use-cases/errors/DomainError.js';
 import { McpController, MCP_TOOLS } from '#src/interface-adapters/mcp/McpController.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { JSON_RPC_ERROR, MCP } from '#src/interface-adapters/mcp/constants.js';
@@ -26,6 +30,13 @@ import type { IUpdateEducationUseCase } from '#src/use-cases/education/IUpdateEd
 import type { ICreateWorkExperienceUseCase } from '#src/use-cases/workExperience/ICreateWorkExperienceUseCase.js';
 import type { IUpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/IUpdateWorkExperienceUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
+import type { IDeleteApplicationUseCase } from '#src/use-cases/jobs/IDeleteApplicationUseCase.js';
+import type { IUpdateNoteUseCase } from '#src/use-cases/notes/IUpdateNoteUseCase.js';
+import type { ICreateContactUseCase } from '#src/use-cases/contacts/ICreateContactUseCase.js';
+import type { IUpdateContactUseCase } from '#src/use-cases/contacts/IUpdateContactUseCase.js';
+import type { IUpdateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/IUpdateInterviewRoundUseCase.js';
+import type { ICreateOfferUseCase } from '#src/use-cases/offers/ICreateOfferUseCase.js';
+import type { IUpdateOfferUseCase } from '#src/use-cases/offers/IUpdateOfferUseCase.js';
 import type { IGetActivityLogsUseCase } from '#src/use-cases/activityLogs/IGetActivityLogsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import type { GetResponseTimeAnalyticsUseCase } from '#src/use-cases/activityLogs/GetResponseTimeAnalyticsUseCase.js';
@@ -64,8 +75,15 @@ const makeDeps = () => ({
   getOfferAnalyticsUseCase: { execute: vi.fn() } as unknown as GetOfferAnalyticsUseCase,
   createApplicationUseCase: { execute: vi.fn() } as ICreateApplicationUseCase,
   updateApplicationUseCase: { execute: vi.fn() } as IUpdateApplicationUseCase,
+  deleteApplicationUseCase: { execute: vi.fn() } as IDeleteApplicationUseCase,
   createNoteUseCase: { execute: vi.fn() } as ICreateNoteUseCase,
+  updateNoteUseCase: { execute: vi.fn() } as IUpdateNoteUseCase,
+  createContactUseCase: { execute: vi.fn() } as ICreateContactUseCase,
+  updateContactUseCase: { execute: vi.fn() } as IUpdateContactUseCase,
   createInterviewRoundUseCase: { execute: vi.fn() } as ICreateInterviewRoundUseCase,
+  updateInterviewRoundUseCase: { execute: vi.fn() } as IUpdateInterviewRoundUseCase,
+  createOfferUseCase: { execute: vi.fn() } as ICreateOfferUseCase,
+  updateOfferUseCase: { execute: vi.fn() } as IUpdateOfferUseCase,
   getMockInterviewQuestionsUseCase: { execute: vi.fn() } as IGetMockInterviewQuestionsUseCase,
   generateMockQuestionsUseCase: { execute: vi.fn() } as IGenerateMockQuestionsUseCase,
   generateMockAnswerUseCase: { execute: vi.fn() } as IGenerateMockAnswerUseCase,
@@ -136,6 +154,33 @@ describe('McpController', () => {
       });
     });
 
+    describe('protocol version negotiation (JEF-468)', () => {
+      const negotiated = async (protocolVersion?: unknown) => {
+        const { body } = await controller.handle(
+          rpc('initialize', protocolVersion === undefined ? undefined : { protocolVersion }),
+          USER_ID,
+          'full',
+        );
+        return (body as { result: { protocolVersion: string } }).result.protocolVersion;
+      };
+
+      it('answers 2025-03-26, the first version with tool annotations, as its latest', () => {
+        expect(MCP.PROTOCOL_VERSION).toBe('2025-03-26');
+        expect(MCP.SUPPORTED_PROTOCOL_VERSIONS[0]).toBe(MCP.PROTOCOL_VERSION);
+      });
+
+      it.each(['2025-03-26', '2024-11-05'])('echoes a supported version (%s)', async (v) => {
+        expect(await negotiated(v)).toBe(v);
+      });
+
+      it.each([['2025-06-18'], ['1999-01-01'], [42], [undefined]])(
+        'answers its latest for a version it does not speak (%s)',
+        async (v) => {
+          expect(await negotiated(v)).toBe(MCP.PROTOCOL_VERSION);
+        },
+      );
+    });
+
     it('tells the client, once, that tool results are data and not instructions (F4)', async () => {
       const { body } = await controller.handle(rpc('initialize'), USER_ID, 'full');
 
@@ -145,15 +190,100 @@ describe('McpController', () => {
   });
 
   describe('tools/list', () => {
+    const listTools = async (scope: 'read' | 'full' = 'full') => {
+      const { body } = await controller.handle(rpc('tools/list'), USER_ID, scope);
+      return (
+        body as {
+          result: {
+            tools: Array<{
+              name: string;
+              annotations: Record<string, boolean>;
+              [key: string]: unknown;
+            }>;
+          };
+        }
+      ).result.tools;
+    };
+
     it('returns the advertised tool catalogue', async () => {
       const { body } = await controller.handle(rpc('tools/list'), USER_ID, 'full');
-      // `access` is internal metadata and must not go over the wire.
       const advertised = MCP_TOOLS.map(({ name, description, inputSchema }) => ({
         name,
         description,
         inputSchema,
       }));
       expect(body).toMatchObject({ result: { tools: advertised } });
+    });
+
+    it('keeps the internal access and destructive tags off the wire', async () => {
+      for (const tool of await listTools()) {
+        expect(tool).not.toHaveProperty('access');
+        expect(tool).not.toHaveProperty('destructive');
+      }
+    });
+
+    describe('annotations (JEF-468)', () => {
+      it('annotates every tool, derived from its access tag', async () => {
+        const tools = await listTools();
+        expect(tools).toHaveLength(MCP_TOOLS.length);
+        for (const tool of tools) {
+          const access = MCP_TOOLS.find((t) => t.name === tool.name)!.access;
+          expect(tool.annotations, tool.name).toEqual({
+            readOnlyHint: access === 'read',
+            destructiveHint: tool.name === 'trash_application',
+            idempotentHint: tool.name.startsWith('update_'),
+          });
+        }
+      });
+
+      it('marks trash_application, and only it, as destructive', async () => {
+        const destructive = (await listTools())
+          .filter((t) => t.annotations.destructiveHint)
+          .map((t) => t.name);
+        expect(destructive).toEqual(['trash_application']);
+      });
+
+      it('pins the write tools and their hints', async () => {
+        const writes = Object.fromEntries(
+          (await listTools())
+            .filter((t) => !t.annotations.readOnlyHint)
+            .map((t) => [
+              t.name,
+              [
+                t.annotations.destructiveHint && 'destructive',
+                t.annotations.idempotentHint && 'idempotent',
+              ]
+                .filter(Boolean)
+                .join(','),
+            ]),
+        );
+        expect(writes).toEqual({
+          create_application: '',
+          update_application: 'idempotent',
+          trash_application: 'destructive',
+          create_note: '',
+          update_note: 'idempotent',
+          create_contact: '',
+          update_contact: 'idempotent',
+          create_interview_round: '',
+          update_interview_round: 'idempotent',
+          create_offer: '',
+          update_offer: 'idempotent',
+          create_mock_interview_question: '',
+          create_skill: '',
+          update_skill: 'idempotent',
+          create_education: '',
+          update_education: 'idempotent',
+          create_work_experience: '',
+          update_work_experience: 'idempotent',
+        });
+      });
+
+      it('annotates what a read token sees as read-only', async () => {
+        for (const tool of await listTools('read')) {
+          expect(tool.annotations.readOnlyHint, tool.name).toBe(true);
+        }
+      });
     });
   });
 
@@ -419,6 +549,225 @@ describe('McpController', () => {
         expect(deps.createInterviewRoundUseCase.execute).toHaveBeenLastCalledWith(
           expect.objectContaining({ scheduledAt: undefined }),
         );
+      });
+    });
+
+    describe('JEF-468 write tools', () => {
+      type DepName = keyof ReturnType<typeof makeDeps>;
+      const call = (name: string, args: Record<string, unknown>, scope: 'read' | 'full' = 'full') =>
+        controller.handle(rpc('tools/call', { name, arguments: args }), USER_ID, scope);
+      const useCase = (dep: DepName) =>
+        vi.mocked((deps[dep] as { execute: (...a: unknown[]) => Promise<unknown> }).execute);
+
+      const cases: Array<{
+        tool: string;
+        dep: DepName;
+        args: Record<string, unknown>;
+        expected: Record<string, unknown>;
+        required: string;
+      }> = [
+        {
+          tool: 'update_note',
+          dep: 'updateNoteUseCase',
+          args: { noteId: 'n1', content: 'fixed' },
+          expected: { userId: USER_ID, noteId: 'n1', content: 'fixed' },
+          required: 'noteId and content are required',
+        },
+        {
+          tool: 'create_contact',
+          dep: 'createContactUseCase',
+          args: {
+            applicationId: 'app-1',
+            name: 'Ada',
+            email: 'ada@example.com',
+            role: 'Recruiter',
+          },
+          expected: {
+            userId: USER_ID,
+            applicationId: 'app-1',
+            name: 'Ada',
+            email: 'ada@example.com',
+            role: 'Recruiter',
+            phone: undefined,
+          },
+          required: 'applicationId and name are required',
+        },
+        {
+          tool: 'update_contact',
+          dep: 'updateContactUseCase',
+          args: { contactId: 'c1', phone: '+44 20 0000 0000' },
+          expected: {
+            userId: USER_ID,
+            contactId: 'c1',
+            phone: '+44 20 0000 0000',
+            name: undefined,
+          },
+          required: 'contactId is required',
+        },
+        {
+          tool: 'update_interview_round',
+          dep: 'updateInterviewRoundUseCase',
+          args: {
+            interviewRoundId: 'r1',
+            outcome: 'passed',
+            completedAt: '2026-10-01T09:00:00.000Z',
+            type: 'onsite',
+          },
+          expected: {
+            userId: USER_ID,
+            roundId: 'r1',
+            outcome: 'passed',
+            type: 'onsite',
+            completedAt: new Date('2026-10-01T09:00:00.000Z'),
+            scheduledAt: undefined,
+          },
+          required: 'interviewRoundId is required',
+        },
+        {
+          tool: 'create_offer',
+          dep: 'createOfferUseCase',
+          args: { applicationId: 'app-1', baseSalary: '120000', currency: 'GBP', period: 'yearly' },
+          expected: {
+            userId: USER_ID,
+            applicationId: 'app-1',
+            baseSalary: 120000,
+            currency: 'GBP',
+            period: 'yearly',
+            bonus: undefined,
+          },
+          required: 'applicationId and a non-negative baseSalary are required',
+        },
+        {
+          tool: 'update_offer',
+          dep: 'updateOfferUseCase',
+          args: { offerId: 'o1', bonus: 5000 },
+          expected: { userId: USER_ID, offerId: 'o1', bonus: 5000, baseSalary: undefined },
+          required: 'offerId is required',
+        },
+        {
+          tool: 'trash_application',
+          dep: 'deleteApplicationUseCase',
+          args: { applicationId: 'app-1' },
+          expected: { userId: USER_ID, applicationId: 'app-1' },
+          required: 'applicationId is required',
+        },
+      ];
+
+      it.each(cases)(
+        '$tool calls its use case as the caller, with the arguments narrowed',
+        async ({ tool, dep, args, expected }) => {
+          useCase(dep).mockResolvedValue({ id: 'x' });
+
+          const { body } = await call(tool, args);
+
+          expect(body).not.toHaveProperty('error');
+          expect(useCase(dep)).toHaveBeenCalledWith(expect.objectContaining(expected));
+          expect(deps.toolCallObserver.calls[0]?.reports).toEqual(['succeeded']);
+        },
+      );
+
+      it.each(cases)(
+        '$tool refuses a call missing its required arguments',
+        async ({ tool, dep, required }) => {
+          const { body } = await call(tool, {});
+
+          expect(body).toMatchObject({
+            error: { code: JSON_RPC_ERROR.INVALID_PARAMS, message: required },
+          });
+          expect(useCase(dep)).not.toHaveBeenCalled();
+        },
+      );
+
+      it.each(cases)(
+        '$tool is refused for a read token and never reaches the use case',
+        async ({ tool, dep, args }) => {
+          const { body } = await call(tool, args, 'read');
+
+          expect(body).toMatchObject({ error: { message: expect.stringMatching(/read-only/) } });
+          expect(useCase(dep)).not.toHaveBeenCalled();
+          expect(deps.toolCallObserver.calls[0]?.reports).toEqual(['refused']);
+        },
+      );
+
+      it.each(cases)(
+        "$tool answers another user's record as a client error, not a write",
+        async ({ tool, dep, args }) => {
+          // The use case owns the ownership check; the adapter's job is to pass
+          // the caller's id (asserted above) and surface the refusal as one.
+          useCase(dep).mockRejectedValue(new ForbiddenError());
+
+          const { body } = await call(tool, args);
+
+          expect(body).toMatchObject({
+            error: { code: JSON_RPC_ERROR.INVALID_PARAMS, data: { code: ERROR_CODES.FORBIDDEN } },
+          });
+          expect(body).not.toHaveProperty('result');
+        },
+      );
+
+      it('trash_application reports what it did, since the use case returns nothing', async () => {
+        useCase('deleteApplicationUseCase').mockResolvedValue(undefined);
+
+        const { body } = await call('trash_application', { applicationId: 'app-1' });
+
+        const text = (body as { result: { content: Array<{ text: string }> } }).result.content[0]!
+          .text;
+        expect(JSON.parse(text)).toEqual({ applicationId: 'app-1', trashed: true });
+      });
+
+      it('create_offer surfaces PLAN_REQUIRED as a client error with its code', async () => {
+        const planRequired = new PlanRequiredError();
+        useCase('createOfferUseCase').mockRejectedValue(planRequired);
+
+        const { body } = await call('create_offer', { applicationId: 'app-1', baseSalary: 1 });
+
+        expect(body).toMatchObject({
+          error: {
+            code: JSON_RPC_ERROR.INVALID_PARAMS,
+            message: planRequired.message,
+            data: { code: ERROR_CODES.PLAN_REQUIRED },
+          },
+        });
+        expect(deps.toolCallObserver.calls[0]).toMatchObject({
+          reports: ['failed'],
+          error: planRequired,
+        });
+      });
+
+      it.each([['-5'], [''], ['lots'], [null]])(
+        'create_offer refuses an unusable baseSalary (%s) rather than writing 0',
+        async (baseSalary) => {
+          await call('create_offer', { applicationId: 'app-1', baseSalary });
+
+          expect(deps.createOfferUseCase.execute).not.toHaveBeenCalled();
+        },
+      );
+
+      it('drops an enum value outside the domain set instead of writing it', async () => {
+        useCase('updateInterviewRoundUseCase').mockResolvedValue({});
+        useCase('updateOfferUseCase').mockResolvedValue({});
+
+        await call('update_interview_round', {
+          interviewRoundId: 'r1',
+          type: 'phone_screen',
+          outcome: 'great',
+        });
+        await call('update_offer', { offerId: 'o1', period: 'fortnightly' });
+
+        expect(deps.updateInterviewRoundUseCase.execute).toHaveBeenCalledWith(
+          expect.objectContaining({ type: undefined, outcome: undefined }),
+        );
+        expect(deps.updateOfferUseCase.execute).toHaveBeenCalledWith(
+          expect.objectContaining({ period: undefined }),
+        );
+      });
+
+      it('treats a prototype key as an unknown tool, not a handler', async () => {
+        const { body } = await call('toString', {});
+
+        expect(body).toMatchObject({
+          error: { code: JSON_RPC_ERROR.METHOD_NOT_FOUND, message: 'Unknown tool: toString' },
+        });
       });
     });
 
