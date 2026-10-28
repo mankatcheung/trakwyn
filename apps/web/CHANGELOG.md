@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.6.0...web-v0.7.0) (2026-10-28)
+
+
+### Features
+
+* show the current email in the web settings Email address section (JEF-456) ([#1099](https://github.com/mankatcheung/trakwyn/issues/1099)) ([f16f094](https://github.com/mankatcheung/trakwyn/commit/f16f094ecdf8b7a9bb81ba3d9ff0d2c6a5b5de81))
+
+
+### Bug Fixes
+
+* stop the sign-in loop when a refresh fails with the session hint cookie set ([#1094](https://github.com/mankatcheung/trakwyn/issues/1094)) ([bb4ba9a](https://github.com/mankatcheung/trakwyn/commit/bb4ba9a978431e418dfd5dad31d2d26380ad455f))
+* **web:** stop stale-chunk reload from resolving route imports to undefined ([#1098](https://github.com/mankatcheung/trakwyn/issues/1098)) ([6af1301](https://github.com/mankatcheung/trakwyn/commit/6af1301810527e9acb354ddc7c067339fc272a51))
+
+
+### Performance Improvements
+
+* **extension:** show the Clipper popup's clip before the API answers (JEF-457) ([#1103](https://github.com/mankatcheung/trakwyn/issues/1103)) ([6870a71](https://github.com/mankatcheung/trakwyn/commit/6870a71865d0aad950980d85f9e0cb9b626b9f8b))
+
 ## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.5.0...web-v0.6.0) (2026-10-27)
 
 
