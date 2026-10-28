@@ -9,7 +9,20 @@
 /** MCP (Model Context Protocol) server identity and JSON-RPC framing. */
 export const MCP = {
   JSONRPC_VERSION: '2.0',
-  PROTOCOL_VERSION: '2024-11-05',
+  /**
+   * Our latest protocol version, answered when a client asks for one we do
+   * not speak (JEF-468). 2025-03-26 is the first with tool annotations, and
+   * its Streamable HTTP transport is what `mcp.routes.ts` already serves
+   * (POST only, 405 for GET/DELETE). 2025-06-18 would also oblige the route
+   * to validate an `MCP-Protocol-Version` header on every request.
+   */
+  PROTOCOL_VERSION: '2025-03-26',
+  /**
+   * Every version `initialize` will agree to, newest first. A client that
+   * asks for one of these gets it back; 2024-11-05 stays so clients built
+   * before annotations keep connecting (they ignore the extra field).
+   */
+  SUPPORTED_PROTOCOL_VERSIONS: ['2025-03-26', '2024-11-05'],
   SERVER_NAME: 'trakwyn-mcp',
   SERVER_VERSION: '1.0.0',
   SCOPES: ['read', 'full'] as const,

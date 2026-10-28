@@ -1,25 +1,13 @@
 import type { ApplicationStatus } from '#src/domain/application/ApplicationStatus.js';
-import type { InterviewRoundType } from '#src/domain/interviewRound/InterviewRound.js';
 import type { IGetApplicationsPageUseCase } from '#src/use-cases/jobs/IGetApplicationsPageUseCase.js';
 import type { IGetApplicationUseCase } from '#src/use-cases/jobs/IGetApplicationUseCase.js';
 import type { IGetNotesUseCase } from '#src/use-cases/notes/IGetNotesUseCase.js';
 import type { IGetContactsUseCase } from '#src/use-cases/contacts/IGetContactsUseCase.js';
 import type { IGetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/IGetInterviewRoundsUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
-import type { ICreateApplicationUseCase } from '#src/use-cases/jobs/ICreateApplicationUseCase.js';
-import type { IUpdateApplicationUseCase } from '#src/use-cases/jobs/IUpdateApplicationUseCase.js';
-import type { ICreateNoteUseCase } from '#src/use-cases/notes/ICreateNoteUseCase.js';
-import type { ICreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/ICreateInterviewRoundUseCase.js';
 import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
 import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
 import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
-import type { ICreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/ICreateMockInterviewQuestionUseCase.js';
-import type { ICreateSkillUseCase } from '#src/use-cases/skill/ICreateSkillUseCase.js';
-import type { IUpdateSkillUseCase } from '#src/use-cases/skill/IUpdateSkillUseCase.js';
-import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEducationUseCase.js';
-import type { IUpdateEducationUseCase } from '#src/use-cases/education/IUpdateEducationUseCase.js';
-import type { ICreateWorkExperienceUseCase } from '#src/use-cases/workExperience/ICreateWorkExperienceUseCase.js';
-import type { IUpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/IUpdateWorkExperienceUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
 import type { IGetActivityLogsUseCase } from '#src/use-cases/activityLogs/IGetActivityLogsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
@@ -40,46 +28,30 @@ import type {
   ToolCallRecorder,
 } from '#src/use-cases/ports/IToolCallObserver.js';
 import { MCP_TOOLS } from '#src/interface-adapters/llm/toolCatalogue.js';
+import {
+  negotiateProtocolVersion,
+  toMcpToolDefinitions,
+} from '#src/interface-adapters/mcp/mcpToolDefinitions.js';
+import { toPositiveInt, toStr, type ToolArgs } from '#src/interface-adapters/mcp/toolArgs.js';
+import {
+  writeToolHandler,
+  type WriteToolDeps,
+} from '#src/interface-adapters/mcp/writeToolHandlers.js';
 
 // Re-exported for convenience: this adapter is where MCP's catalogue is
 // consumed, even though it's no longer where it's defined (JEF-177).
 export { MCP_TOOLS };
 
 /**
- * Tool arguments arrive straight off a JSON-RPC payload, so a numeric field
- * may show up as a number, a numeric string, or something unusable. Coerce
- * leniently and fall back to `undefined` for anything that isn't a positive
- * integer — the use case then applies its own default and clamps to
- * PAGINATION.MAX_LIMIT, so a bad value degrades to the default page rather
- * than erroring or being silently honoured.
+ * Use-case failures a client can act on, answered as INVALID_PARAMS with the
+ * code in `error.data`; anything else is INTERNAL_ERROR. PLAN_REQUIRED is
+ * here so `create_offer` on Free reads as "upgrade", not as a server fault.
  */
-function toStr(value: unknown): string | undefined {
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-/**
- * Strips the internal `access` tag — it's this server's metadata for scope
- * gating, not part of MCP's tool shape, so it never goes over the wire.
- */
-function advertise(tools: readonly (typeof MCP_TOOLS)[number][]) {
-  return tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
-}
-
-/**
- * Models emit dates as strings of varying quality. Anything that isn't a
- * real date becomes undefined rather than an Invalid Date, which would
- * otherwise reach the DB as NaN and be far harder to diagnose.
- */
-function toDate(value: unknown): Date | undefined {
-  if (typeof value !== 'string' || value.length === 0) return undefined;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? undefined : d;
-}
-
-function toPositiveInt(value: unknown): number | undefined {
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isInteger(n) && n > 0 ? n : undefined;
-}
+const CLIENT_ERROR_CODES: ReadonlySet<string> = new Set([
+  ERROR_CODES.NOT_FOUND,
+  ERROR_CODES.FORBIDDEN,
+  ERROR_CODES.PLAN_REQUIRED,
+]);
 
 /** HTTP status for a malformed JSON-RPC envelope (matches Fastify `reply.code`). */
 const HTTP_BAD_REQUEST = 400;
@@ -103,7 +75,7 @@ export interface McpResult {
   body: unknown;
 }
 
-interface Deps {
+interface Deps extends WriteToolDeps {
   getApplicationsPageUseCase: IGetApplicationsPageUseCase;
   getApplicationUseCase: IGetApplicationUseCase;
   getNotesUseCase: IGetNotesUseCase;
@@ -117,20 +89,9 @@ interface Deps {
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;
   getInterviewRoundAnalyticsUseCase: GetInterviewRoundAnalyticsUseCase;
   getOfferAnalyticsUseCase: GetOfferAnalyticsUseCase;
-  createApplicationUseCase: ICreateApplicationUseCase;
-  updateApplicationUseCase: IUpdateApplicationUseCase;
-  createNoteUseCase: ICreateNoteUseCase;
-  createInterviewRoundUseCase: ICreateInterviewRoundUseCase;
   getMockInterviewQuestionsUseCase: IGetMockInterviewQuestionsUseCase;
   generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
   generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
-  createMockInterviewQuestionUseCase: ICreateMockInterviewQuestionUseCase;
-  createSkillUseCase: ICreateSkillUseCase;
-  updateSkillUseCase: IUpdateSkillUseCase;
-  createEducationUseCase: ICreateEducationUseCase;
-  updateEducationUseCase: IUpdateEducationUseCase;
-  createWorkExperienceUseCase: ICreateWorkExperienceUseCase;
-  updateWorkExperienceUseCase: IUpdateWorkExperienceUseCase;
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
@@ -163,7 +124,7 @@ export class McpController {
           jsonrpc: MCP.JSONRPC_VERSION,
           id,
           result: {
-            protocolVersion: MCP.PROTOCOL_VERSION,
+            protocolVersion: negotiateProtocolVersion(params?.protocolVersion),
             capabilities: { tools: {} },
             serverInfo: { name: MCP.SERVER_NAME, version: MCP.SERVER_VERSION },
             instructions: MCP.INSTRUCTIONS,
@@ -178,7 +139,13 @@ export class McpController {
       // not the security boundary.
       const visible =
         scope === API_TOKEN_SCOPE.FULL ? MCP_TOOLS : MCP_TOOLS.filter((t) => t.access === 'read');
-      return { body: { jsonrpc: MCP.JSONRPC_VERSION, id, result: { tools: advertise(visible) } } };
+      return {
+        body: {
+          jsonrpc: MCP.JSONRPC_VERSION,
+          id,
+          result: { tools: toMcpToolDefinitions(visible) },
+        },
+      };
     }
 
     if (method === MCP_METHOD.TOOLS_CALL) {
@@ -228,7 +195,7 @@ export class McpController {
 
     // Not Record<string, string>: JSON-RPC arguments are arbitrary JSON, and
     // `limit` legitimately arrives as a number. Narrow per field below.
-    const args = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
+    const args = (params as { arguments?: ToolArgs } | undefined)?.arguments ?? {};
 
     try {
       let result: unknown;
@@ -372,189 +339,18 @@ export class McpController {
           result = { responseTime, channels, interviewRounds, offers };
           break;
         }
-        case 'create_application': {
-          const company = toStr(args.company);
-          const role = toStr(args.role);
-          if (!company || !role) {
-            return this.invalid(observed, id, 'company and role are required');
+        default: {
+          // Every write tool, dispatched from one table keyed by the
+          // catalogue's write-tool names (writeToolHandlers.ts).
+          const handler = writeToolHandler(toolName);
+          if (!handler) {
+            observed.invalidParams();
+            return this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Unknown tool: ${toolName}`);
           }
-          result = await this.deps.createApplicationUseCase.execute({
-            userId,
-            company,
-            role,
-            status: toStr(args.status) as ApplicationStatus | undefined,
-            jobUrl: toStr(args.jobUrl),
-            location: toStr(args.location),
-            salaryRange: toStr(args.salaryRange),
-            description: toStr(args.description),
-            source: toStr(args.source),
-          });
-          break;
+          const outcome = await handler(args, userId, this.deps);
+          if ('invalid' in outcome) return this.invalid(observed, id, outcome.invalid);
+          result = outcome.result;
         }
-        case 'update_application': {
-          const applicationId = toStr(args.applicationId);
-          if (!applicationId) {
-            return this.invalid(observed, id, 'applicationId is required');
-          }
-          result = await this.deps.updateApplicationUseCase.execute({
-            userId,
-            applicationId,
-            company: toStr(args.company),
-            role: toStr(args.role),
-            status: toStr(args.status) as ApplicationStatus | undefined,
-            jobUrl: toStr(args.jobUrl),
-            location: toStr(args.location),
-            salaryRange: toStr(args.salaryRange),
-            description: toStr(args.description),
-            source: toStr(args.source),
-          });
-          break;
-        }
-        case 'create_note': {
-          const applicationId = toStr(args.applicationId);
-          const content = toStr(args.content);
-          if (!applicationId || !content) {
-            return this.invalid(observed, id, 'applicationId and content are required');
-          }
-          result = await this.deps.createNoteUseCase.execute({ userId, applicationId, content });
-          break;
-        }
-        case 'create_interview_round': {
-          const applicationId = toStr(args.applicationId);
-          if (!applicationId) {
-            return this.invalid(observed, id, 'applicationId is required');
-          }
-          result = await this.deps.createInterviewRoundUseCase.execute({
-            userId,
-            applicationId,
-            type: toStr(args.type) as InterviewRoundType | undefined,
-            scheduledAt: toDate(args.scheduledAt),
-            interviewerName: toStr(args.interviewerName),
-            notes: toStr(args.notes),
-          });
-          break;
-        }
-        case 'create_mock_interview_question': {
-          const interviewRoundId = toStr(args.interviewRoundId);
-          const question = toStr(args.question);
-          if (!interviewRoundId || !question) {
-            return this.invalid(observed, id, 'interviewRoundId and question are required');
-          }
-          result = await this.deps.createMockInterviewQuestionUseCase.execute({
-            userId,
-            roundId: interviewRoundId,
-            question,
-            answer: toStr(args.answer),
-            answerSource: args.answerSource === 'ai' ? 'ai' : 'user',
-          });
-          break;
-        }
-        case 'create_skill': {
-          const name = toStr(args.name);
-          if (!name) return this.invalid(observed, id, 'name is required');
-          result = await this.deps.createSkillUseCase.execute({
-            userId,
-            name,
-            category: toStr(args.category),
-            proficiency: toStr(args.proficiency),
-          });
-          break;
-        }
-        case 'update_skill': {
-          const skillId = toStr(args.skillId);
-          if (!skillId) return this.invalid(observed, id, 'skillId is required');
-          result = await this.deps.updateSkillUseCase.execute({
-            id: skillId,
-            userId,
-            name: toStr(args.name),
-            category: toStr(args.category),
-            proficiency: toStr(args.proficiency),
-          });
-          break;
-        }
-        case 'create_education': {
-          const institution = toStr(args.institution);
-          // startDate is required by the use case, so an unparseable one has
-          // to be refused rather than dropped — toDate() yields undefined for
-          // junk, which would otherwise fail confusingly further down.
-          const startDate = toDate(args.startDate);
-          if (!institution || !startDate) {
-            return this.invalid(
-              observed,
-              id,
-              'institution and a valid ISO 8601 startDate are required',
-            );
-          }
-          result = await this.deps.createEducationUseCase.execute({
-            userId,
-            institution,
-            startDate,
-            degree: toStr(args.degree),
-            field: toStr(args.field),
-            endDate: toDate(args.endDate),
-            description: toStr(args.description),
-          });
-          break;
-        }
-        case 'update_education': {
-          const educationId = toStr(args.educationId);
-          if (!educationId) {
-            return this.invalid(observed, id, 'educationId is required');
-          }
-          result = await this.deps.updateEducationUseCase.execute({
-            id: educationId,
-            userId,
-            institution: toStr(args.institution),
-            degree: toStr(args.degree),
-            field: toStr(args.field),
-            startDate: toDate(args.startDate),
-            endDate: toDate(args.endDate),
-            description: toStr(args.description),
-          });
-          break;
-        }
-        case 'create_work_experience': {
-          const company = toStr(args.company);
-          const title = toStr(args.title);
-          const startDate = toDate(args.startDate);
-          if (!company || !title || !startDate) {
-            return this.invalid(
-              observed,
-              id,
-              'company, title and a valid ISO 8601 startDate are required',
-            );
-          }
-          result = await this.deps.createWorkExperienceUseCase.execute({
-            userId,
-            company,
-            title,
-            startDate,
-            location: toStr(args.location),
-            endDate: toDate(args.endDate),
-            description: toStr(args.description),
-          });
-          break;
-        }
-        case 'update_work_experience': {
-          const workExperienceId = toStr(args.workExperienceId);
-          if (!workExperienceId) {
-            return this.invalid(observed, id, 'workExperienceId is required');
-          }
-          result = await this.deps.updateWorkExperienceUseCase.execute({
-            id: workExperienceId,
-            userId,
-            company: toStr(args.company),
-            title: toStr(args.title),
-            location: toStr(args.location),
-            startDate: toDate(args.startDate),
-            endDate: toDate(args.endDate),
-            description: toStr(args.description),
-          });
-          break;
-        }
-        default:
-          observed.invalidParams();
-          return this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Unknown tool: ${toolName}`);
       }
 
       // Compact, not pretty-printed: this goes straight into an LLM's context
@@ -567,9 +363,10 @@ export class McpController {
       observed.failed(err);
       const code = (err as { code?: string }).code;
       const message = err instanceof Error ? err.message : 'Internal error';
-      const isClientError = code === ERROR_CODES.NOT_FOUND || code === ERROR_CODES.FORBIDDEN;
-      const rpcCode = isClientError ? JSON_RPC_ERROR.INVALID_PARAMS : JSON_RPC_ERROR.INTERNAL_ERROR;
-      return this.error(id, rpcCode, message);
+      if (code !== undefined && CLIENT_ERROR_CODES.has(code)) {
+        return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, message, { code });
+      }
+      return this.error(id, JSON_RPC_ERROR.INTERNAL_ERROR, message);
     }
   }
 
@@ -583,7 +380,11 @@ export class McpController {
     return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, message);
   }
 
-  private error(id: McpRequest['id'], code: number, message: string) {
-    return { jsonrpc: MCP.JSONRPC_VERSION, id, error: { code, message } };
+  private error(id: McpRequest['id'], code: number, message: string, data?: { code: string }) {
+    return {
+      jsonrpc: MCP.JSONRPC_VERSION,
+      id,
+      error: { code, message, ...(data ? { data } : {}) },
+    };
   }
 }
