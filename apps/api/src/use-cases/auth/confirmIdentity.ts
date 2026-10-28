@@ -11,7 +11,7 @@ export interface IdentityProof {
   /** Required from an account that has a password; ignored for one that has none. */
   currentPassword?: string | null;
   /** See `isSessionFresh`: null is an API token, undefined a pre-JEF-44 session. */
-  authTime: number | null | undefined;
+  authTime?: number | null;
 }
 
 /**

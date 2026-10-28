@@ -109,7 +109,7 @@ export class UserResolver {
 
   async requestEmailChange(
     userId: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     newEmail: string,
     authTime: number | null | undefined,
   ): Promise<void> {
@@ -353,7 +353,7 @@ export class UserResolver {
   async requestAddBackupEmail(
     userId: string,
     backupEmail: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     authTime: number | null | undefined,
   ): Promise<void> {
     await this.deps.requestAddBackupEmailUseCase.execute({
@@ -370,7 +370,7 @@ export class UserResolver {
 
   async removeBackupEmail(
     userId: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     authTime: number | null | undefined,
   ): Promise<void> {
     await this.deps.removeBackupEmailUseCase.execute({

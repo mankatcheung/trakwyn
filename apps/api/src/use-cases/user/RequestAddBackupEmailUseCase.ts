@@ -1,19 +1,15 @@
 import {
   NotFoundError,
   RateLimitedError,
-  StepUpRequiredError,
-  UnauthorizedError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
 import { createHash, randomBytes } from 'crypto';
-import bcrypt from 'bcryptjs';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/ports/IBackupEmailVerificationTokenRepository.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { BACKUP_EMAIL_VERIFICATION_TOKEN } from '#src/use-cases/constants.js';
-import { assertHasPassword } from '#src/use-cases/auth/passwordHashGuard.js';
-import { isSessionFresh } from '#src/use-cases/auth/sessionFreshness.js';
+import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import type {
   IRequestAddBackupEmailUseCase,
   RequestAddBackupEmailInput,
@@ -48,14 +44,7 @@ export class RequestAddBackupEmailUseCase implements IRequestAddBackupEmailUseCa
 
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
-    assertHasPassword(user.passwordHash);
-
-    const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
-    if (!valid) throw new UnauthorizedError('Invalid password');
-
-    if (user.totpEnabled && !isSessionFresh(input.authTime)) {
-      throw new StepUpRequiredError('Please verify your identity again to continue.');
-    }
+    await confirmIdentity(user, input);
 
     if (input.backupEmail === user.email) {
       throw new ValidationError('Backup email must be different from your current email');

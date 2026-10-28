@@ -1,15 +1,8 @@
-import {
-  NotFoundError,
-  RateLimitedError,
-  StepUpRequiredError,
-  UnauthorizedError,
-} from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import { NotFoundError, RateLimitedError } from '#src/use-cases/errors/DomainError.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/ports/IBackupEmailVerificationTokenRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
-import { assertHasPassword } from '#src/use-cases/auth/passwordHashGuard.js';
-import { isSessionFresh } from '#src/use-cases/auth/sessionFreshness.js';
+import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import type {
   IRemoveBackupEmailUseCase,
   RemoveBackupEmailInput,
@@ -34,14 +27,7 @@ export class RemoveBackupEmailUseCase implements IRemoveBackupEmailUseCase {
 
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
-    assertHasPassword(user.passwordHash);
-
-    const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
-    if (!valid) throw new UnauthorizedError('Invalid password');
-
-    if (user.totpEnabled && !isSessionFresh(input.authTime)) {
-      throw new StepUpRequiredError('Please verify your identity again to continue.');
-    }
+    await confirmIdentity(user, input);
 
     await this.deps.userRepository.update(input.userId, {
       backupEmail: null,
