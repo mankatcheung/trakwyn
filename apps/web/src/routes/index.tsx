@@ -5,14 +5,13 @@ import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { ClipperSection } from '#/components/marketing/ClipperSection';
 import { useLocale } from '#/lib/i18n';
+import { marketingHead, SITE_URL } from '#/lib/seo';
 import { statusColor } from '#/lib/statusColors';
 import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'lucide-react';
 
-const SITE_URL = 'https://www.trakwyn.com';
 const OG_TITLE = 'Trakwyn — Your Job Search, Organized and Powered by AI';
 const OG_DESCRIPTION =
   'Track applications on a Kanban board, get AI-drafted resumes and cover letters grounded in your real experience, and see the analytics behind your search. Everything you need to land your next role.';
-const OG_IMAGE = `${SITE_URL}/logo512.png`;
 
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
@@ -37,24 +36,7 @@ export const Route = createFileRoute('/')({
   // which is also why no ssr: false is needed here (see JEF-206) — the API
   // and web app are on separate domains, so hasSessionCookie() still can't
   // run on the server either way.
-  head: () => ({
-    meta: [
-      { title: OG_TITLE },
-      { name: 'description', content: OG_DESCRIPTION },
-      { property: 'og:type', content: 'website' },
-      { property: 'og:url', content: SITE_URL },
-      { property: 'og:title', content: OG_TITLE },
-      { property: 'og:description', content: OG_DESCRIPTION },
-      { property: 'og:image', content: OG_IMAGE },
-      { property: 'og:image:width', content: '512' },
-      { property: 'og:image:height', content: '512' },
-      { name: 'twitter:card', content: 'summary' },
-      { name: 'twitter:title', content: OG_TITLE },
-      { name: 'twitter:description', content: OG_DESCRIPTION },
-      { name: 'twitter:image', content: OG_IMAGE },
-    ],
-    links: [{ rel: 'canonical', href: SITE_URL }],
-  }),
+  head: () => marketingHead({ path: '/', title: OG_TITLE, description: OG_DESCRIPTION }),
   component: LandingPage,
 });
 

@@ -1,0 +1,24 @@
+<!--
+  Source of public/og-image.png, the link-preview card every marketing page
+  sends as og:image (JEF-462). Edit this, then run `node og/render.mjs`.
+
+  1200×630 is the size WhatsApp, Slack, LinkedIn and X all render as a large
+  landscape card. Everything sits in a centred column no wider than ~600px,
+  because some clients crop the card to a near-square around its centre.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Flat on purpose: a gradient takes the PNG past WhatsApp's ~300 KB limit. -->
+  <rect width="1200" height="630" fill="#1D4ED8"/>
+
+  <!-- The favicon mark (public/favicon.svg) inverted: white tile, blue chevrons. -->
+  <g transform="translate(512 96) scale(3.6667)">
+    <rect width="48" height="48" rx="10" fill="#ffffff"/>
+    <path d="M11.5 13 L23.5 24 L11.5 35" fill="none" stroke="#1D4ED8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+    <path d="M24.5 13 L36.5 24 L24.5 35" fill="none" stroke="#1D4ED8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g font-family="-apple-system, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif" text-anchor="middle" fill="#ffffff">
+    <text x="600" y="404" font-size="104" font-weight="700" letter-spacing="-2">Trakwyn</text>
+    <text x="600" y="476" font-size="42" font-weight="500" fill-opacity="0.85">Your job search, organized</text>
+  </g>
+</svg>

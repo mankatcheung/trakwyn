@@ -57,6 +57,18 @@ const EXCEPTIONS: Record<string, string> = {
   'share.tsx': 'per-token shared summary',
 };
 
+/**
+ * Marketing pages that may skip `marketingHead` (JEF-462), and so ship no
+ * link-preview card. Every other marketing page must use it, so a new one
+ * can't go out with no og:image, or with the square app icon WhatsApp used
+ * to blow up above the title.
+ */
+const NO_SOCIAL_CARD: Record<string, string> = {
+  'privacy.tsx': 'legal page, not shared as a link preview',
+  'terms.tsx': 'legal page, not shared as a link preview',
+  'accessibility.tsx': 'legal page, not shared as a link preview',
+};
+
 /** Walks src/routes, skipping private (-prefixed) files/dirs. */
 function discoverRouteFiles(dir: string): string[] {
   const found: string[] = [];
@@ -86,6 +98,22 @@ describe('marketing page SSR/prerender invariant', () => {
     for (const [path, file] of Object.entries(PRERENDERED_MARKETING)) {
       const source = readFileSync(join(ROUTES_DIR, file), 'utf8');
       expect(withoutComments(source), `${path} (${file})`).not.toMatch(/ssr:\s*false/);
+    }
+  });
+
+  it('every marketing route builds its head with marketingHead (the social card)', () => {
+    const marketingFiles = new Set(Object.values(PRERENDERED_MARKETING));
+    for (const file of Object.keys(NO_SOCIAL_CARD)) {
+      expect(marketingFiles, `stale NO_SOCIAL_CARD entry ${file}`).toContain(file);
+    }
+
+    for (const [path, file] of Object.entries(PRERENDERED_MARKETING)) {
+      if (file in NO_SOCIAL_CARD) continue;
+      const source = withoutComments(readFileSync(join(ROUTES_DIR, file), 'utf8'));
+      expect(source, `${path} (${file})`).toMatch(/head:\s*\(\)\s*=>\s*marketingHead\(/);
+      // The path it passes is the route's own, so og:url and the canonical
+      // link point at this page rather than one it was copied from.
+      expect(source, `${path} (${file}) passes its own path`).toContain(`path: '${path}'`);
     }
   });
 
