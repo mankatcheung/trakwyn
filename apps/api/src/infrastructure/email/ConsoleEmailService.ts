@@ -38,6 +38,29 @@ export class ConsoleEmailService implements IEmailService {
     console.log(`[email:console] backup email verification to ${to}: ${verifyUrl}`);
   }
 
+  async sendStepUpCode(to: string, code: string): Promise<void> {
+    console.log(`[email:console] step-up code to ${to}: ${code}`);
+  }
+
+  async sendAccountDeletionConfirmation(to: string, confirmUrl: string): Promise<void> {
+    console.log(`[email:console] account deletion confirmation to ${to}: ${confirmUrl}`);
+  }
+
+  async sendAccountDeletionScheduled(
+    to: string,
+    deletionDate: Date,
+    cancelUrl: string,
+    hadSubscription: boolean,
+  ): Promise<void> {
+    console.log(
+      `[email:console] account deletion scheduled to ${to}: ${deletionDate.toISOString()}${hadSubscription ? ' (subscription set to end)' : ''} · cancel: ${cancelUrl}`,
+    );
+  }
+
+  async sendAccountDeletionCancelled(to: string): Promise<void> {
+    console.log(`[email:console] account deletion cancelled to ${to}`);
+  }
+
   async sendNewDeviceLoginAlert(
     to: string,
     deviceLabel: string,

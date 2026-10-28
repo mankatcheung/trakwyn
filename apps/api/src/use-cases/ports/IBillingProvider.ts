@@ -29,6 +29,20 @@ export interface IBillingProvider {
   revokeSubscription(subscriptionId: string): Promise<void>;
 
   /**
+   * Stops a subscription renewing: it ends at the close of the paid period (JEF-463). Resolves
+   * when it is already set to end or the provider does not know it; throws when the provider
+   * cannot be reached or refuses, so the caller never assumes the next charge is stopped.
+   */
+  scheduleCancellation(subscriptionId: string): Promise<void>;
+
+  /**
+   * Undoes `scheduleCancellation`, so the subscription renews again (JEF-463). Resolves when it
+   * was not set to end or the provider does not know it; throws when the provider cannot be
+   * reached or refuses.
+   */
+  resumeSubscription(subscriptionId: string): Promise<void>;
+
+  /**
    * Checks the signature over the exact bytes received, then parses.
    * Throws `UnauthorizedError` when the signature is missing or wrong.
    */

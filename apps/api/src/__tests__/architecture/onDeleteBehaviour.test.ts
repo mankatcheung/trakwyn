@@ -50,6 +50,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'BillingEvent -> User': 'cascade', // a processed-event marker has no meaning once its user is erased
   'PasswordResetToken -> User': 'cascade',
   'PushSubscription -> User': 'cascade',
+  'UserActionToken -> User': 'cascade', // a step-up code or deletion link means nothing once its user is erased
   'ResumeAtsScore -> Document': 'cascade', // a score for a file that no longer exists
   'ResumeAtsScore -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
   'ResumeAtsScore -> JobApplication': 'cascade',

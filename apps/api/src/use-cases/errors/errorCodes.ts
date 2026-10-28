@@ -36,4 +36,6 @@ export const ERROR_CODES = {
   PLAN_REQUIRED: 'PLAN_REQUIRED',
   /** The account's email address is not verified yet (JEF-438) — the client shows the full-page verification reminder rather than a failure. */
   EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  /** The account is scheduled for deletion (JEF-463) — the client shows the "cancel deletion" screen rather than a failure. */
+  ACCOUNT_DELETION_SCHEDULED: 'ACCOUNT_DELETION_SCHEDULED',
 } as const;

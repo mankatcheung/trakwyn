@@ -11,6 +11,8 @@ export const SECURITY_EVENT_TYPES = [
   'mcp_oauth_refresh_reuse_detected',
   'mcp_oauth_code_reuse_detected',
   'mcp_oauth_token_revoked',
+  'account_deletion_scheduled',
+  'account_deletion_cancelled',
 ] as const;
 
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number];

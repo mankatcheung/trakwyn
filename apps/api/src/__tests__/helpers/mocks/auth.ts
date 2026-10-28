@@ -18,6 +18,8 @@ import type { LoginEvent } from '#src/domain/loginEvent/LoginEvent.js';
 import type { PasswordResetToken } from '#src/domain/passwordResetToken/PasswordResetToken.js';
 import type { SecurityEvent } from '#src/domain/securityEvent/SecurityEvent.js';
 import type { TotpBackupCode } from '#src/domain/totpBackupCode/TotpBackupCode.js';
+import type { UserActionToken } from '#src/domain/userActionToken/UserActionToken.js';
+import type { IUserActionTokenRepository } from '#src/use-cases/ports/IUserActionTokenRepository.js';
 import { TotpProvider } from '#src/infrastructure/auth/TotpProvider.js';
 
 export const makeLoginEventRepository = (
@@ -52,6 +54,28 @@ export const makeSecurityEvent = (overrides?: Partial<SecurityEvent>): SecurityE
   ipAddress: '127.0.0.1',
   userAgent: 'Mozilla/5.0',
   createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeUserActionTokenRepository = (
+  overrides?: Partial<IUserActionTokenRepository>,
+): IUserActionTokenRepository => ({
+  issue: vi.fn().mockImplementation(async (data) => makeUserActionToken(data)),
+  findLiveForUser: vi.fn().mockResolvedValue(null),
+  findByTokenHash: vi.fn().mockResolvedValue(null),
+  consume: vi.fn().mockResolvedValue(true),
+  deleteForUser: vi.fn().mockResolvedValue(undefined),
+  ...overrides,
+});
+
+export const makeUserActionToken = (overrides?: Partial<UserActionToken>): UserActionToken => ({
+  id: 'action-token-1',
+  userId: 'user-1',
+  purpose: 'account_deletion_confirm',
+  tokenHash: 'hashed-action-token',
+  expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+  usedAt: null,
+  createdAt: new Date('2024-01-01T00:00:00.000Z'),
   ...overrides,
 });
 

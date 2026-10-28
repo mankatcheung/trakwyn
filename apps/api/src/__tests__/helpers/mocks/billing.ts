@@ -8,6 +8,8 @@ export const makeBillingProvider = (overrides?: Partial<IBillingProvider>): IBil
   createCheckoutSession: vi.fn().mockResolvedValue({ url: 'https://pay.example/checkout' }),
   createPortalSession: vi.fn().mockResolvedValue({ url: 'https://pay.example/portal' }),
   revokeSubscription: vi.fn().mockResolvedValue(undefined),
+  scheduleCancellation: vi.fn().mockResolvedValue(undefined),
+  resumeSubscription: vi.fn().mockResolvedValue(undefined),
   parseWebhook: vi.fn(),
   ...overrides,
 });

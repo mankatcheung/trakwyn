@@ -60,6 +60,8 @@ export const user = pgTable('User', {
   backupEmailVerifiedAt: timestamp('backupEmailVerifiedAt', TIMESTAMP),
   /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
   onboardingChecklistDismissedAt: timestamp('onboardingChecklistDismissedAt', TIMESTAMP),
+  /** When the account will be purged (JEF-463); null unless a deletion is confirmed and not cancelled. */
+  deletionScheduledAt: timestamp('deletionScheduledAt', TIMESTAMP),
   createdAt: timestamp('createdAt', TIMESTAMP)
     .notNull()
     .$defaultFn(() => new Date()),

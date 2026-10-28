@@ -109,7 +109,11 @@ export type EmailTemplate =
   | 'password_reset'
   | 'email_verification'
   | 'backup_email_verification'
-  | 'new_device_login_alert';
+  | 'new_device_login_alert'
+  | 'step_up_code'
+  | 'account_deletion_confirmation'
+  | 'account_deletion_scheduled'
+  | 'account_deletion_cancelled';
 
 /** Whether the provider accepted the message. `failed` covers a non-2xx answer and a request that never got one. */
 export type EmailOutcome = 'sent' | 'failed';

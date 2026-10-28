@@ -45,6 +45,11 @@ export interface User {
   backupEmailVerifiedAt: Date | null;
   /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
   onboardingChecklistDismissedAt: Date | null;
+  /**
+   * When the account will be purged (JEF-463); null unless the user confirmed a
+   * deletion and has not cancelled it. While set, the account may only cancel.
+   */
+  deletionScheduledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

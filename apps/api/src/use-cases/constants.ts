@@ -46,14 +46,42 @@ export const SESSION = {
  * Step-up re-authentication settings (JEF-44). `authTime` — the epoch-ms of a
  * session's last full authentication (login or step-up reauth) — is carried
  * through the JWT and preserved across refreshes. For 2FA-enabled accounts,
- * sensitive account changes (email/password change, account deletion)
- * require `authTime` to be within this window, or a fresh TOTP step-up via
- * the `reauthenticate` mutation. Non-2FA accounts already re-verify their
- * password inline on every such mutation, so freshness adds no extra check
- * for them.
+ * sensitive account changes (email/password change) require `authTime` to
+ * be within this window, or a fresh TOTP step-up via the `reauthenticate`
+ * mutation. Non-2FA accounts already re-verify their password inline on
+ * every such mutation, so freshness adds no extra check for them. Account
+ * deletion requires a fresh session from everyone (JEF-463), which an
+ * account with no password gets through an OAuth or emailed-code step-up.
  */
 export const REAUTH = {
   FRESHNESS_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  /**
+   * How recently a provider must have authenticated the user for an OAuth
+   * step-up to count (JEF-463). The provider is asked for a fresh sign-in
+   * (`max_age=0`); this bounds clock skew and a slow consent screen.
+   */
+  OIDC_MAX_AUTH_AGE_MS: 5 * 60 * 1000, // 5 minutes
+} as const;
+
+/** The 6-digit code an account with no password steps up with (JEF-463). */
+export const STEP_UP_CODE = {
+  DIGITS: 6,
+  TTL_MS: 10 * 60 * 1000, // 10 minutes
+} as const;
+
+/** Account deletion (JEF-463): an emailed confirmation, then a grace period before the purge. */
+export const ACCOUNT_DELETION = {
+  /** Number of random bytes hex-encoded into a confirm or cancel link's token. */
+  RANDOM_BYTES: 32,
+  /** How long the "confirm deletion" link stays valid. */
+  CONFIRM_TTL_MS: 30 * 60 * 1000, // 30 minutes
+  /**
+   * Days between confirming and the purge. GDPR Art. 12(3) allows a month to
+   * act on erasure; 14 days leaves room for a failed purge run to be retried.
+   */
+  GRACE_PERIOD_DAYS: 14,
+  /** A scheduled account still present this long after its date is reported as overdue. */
+  OVERDUE_AFTER_MS: 3 * 24 * 60 * 60 * 1000, // 3 days
 } as const;
 
 /** API-token (`trakwyn_...`) settings. */

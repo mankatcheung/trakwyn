@@ -59,6 +59,13 @@ export class EmailNotVerifiedAppError extends AppError {
   }
 }
 
+/** 403: the account is scheduled for deletion and may only cancel it (JEF-463). */
+export class AccountDeletionScheduledAppError extends AppError {
+  constructor(message = 'This account is scheduled for deletion') {
+    super(message, 403, ERROR_CODES.ACCOUNT_DELETION_SCHEDULED);
+  }
+}
+
 export class UserNotFoundError extends AppError {
   constructor(message = 'No account found with this email') {
     super(message, 404, ERROR_CODES.USER_NOT_FOUND);
@@ -182,6 +189,8 @@ export function fromCodedError(err: unknown): AppError {
         return new PlanRequiredAppError(err.message);
       case ERROR_CODES.EMAIL_NOT_VERIFIED:
         return new EmailNotVerifiedAppError(err.message);
+      case ERROR_CODES.ACCOUNT_DELETION_SCHEDULED:
+        return new AccountDeletionScheduledAppError(err.message);
     }
   }
   return new AppError('Internal server error', 500, ERROR_CODES.INTERNAL_ERROR);

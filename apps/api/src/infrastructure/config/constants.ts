@@ -200,6 +200,14 @@ export const POLAR = {
   REDACTED: '[redacted]',
   /** What `DELETE /subscriptions/{id}` answers (JEF-439). 403 and 404 mean there is nothing left to revoke. */
   REVOKE_STATUS: { ALREADY_REVOKED: 403, NOT_FOUND: 404, PENDING_UPDATE: 409 },
+  /**
+   * `PATCH /subscriptions/{id}` with `cancel_at_period_end` (JEF-463). 403 is "already canceled,
+   * set to end, or not active" and 404 "not found": nothing left to stop or resume either way.
+   * A 409 is either `SubscriptionLocked` (pending an update, retry) or, on a resume,
+   * `SubscriptionNotScheduledToCancel`, which also leaves nothing to do.
+   */
+  UPDATE_STATUS: { NOT_CHANGEABLE: 403, NOT_FOUND: 404, CONFLICT: 409 },
+  NOT_SCHEDULED_TO_CANCEL_ERROR: 'SubscriptionNotScheduledToCancel',
   WEBHOOK_HEADER: {
     ID: 'webhook-id',
     TIMESTAMP: 'webhook-timestamp',
