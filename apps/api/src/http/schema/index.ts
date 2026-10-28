@@ -47,6 +47,8 @@ import './types/SessionType.js';
 import './types/WorkExperienceType.js';
 import './types/EducationType.js';
 import './types/SkillType.js';
+import './types/ImportCvProfileResultType.js';
+import './types/inputs/CvImportInputs.js';
 import './types/OfferType.js';
 import './types/ShareLinkType.js';
 
@@ -116,6 +118,7 @@ import './mutations/notificationMutations.js';
 import './mutations/workExperienceMutations.js';
 import './mutations/educationMutations.js';
 import './mutations/skillMutations.js';
+import './mutations/cvImportMutations.js';
 import './mutations/offerMutations.js';
 import './mutations/shareLinkMutations.js';
 import './mutations/billingMutations.js';

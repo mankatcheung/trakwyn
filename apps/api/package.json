@@ -40,6 +40,7 @@
     "@fastify/awilix": "^8.2.1",
     "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",
+    "@fastify/multipart": "^9.4.0",
     "@fastify/otel": "^0.20.1",
     "@fastify/static": "^10.1.3",
     "@opendocsg/pdf2md": "^0.2.9",

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { BriefcaseIcon, GraduationCapIcon, WrenchIcon } from 'lucide-react';
-import { Card, Skeleton } from '@trakwyn/ui';
+import { BriefcaseIcon, GraduationCapIcon, UploadIcon, WrenchIcon } from 'lucide-react';
+import { Button, Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { CvImportDialog } from './-components/CvImportDialog';
 import {
   WORK_EXPERIENCE_SECTION_ID,
   WorkExperienceSection,
@@ -29,17 +31,26 @@ const SECTION_LINKS = [
 function ProfilePage() {
   const { t } = useLocale();
   const profile = useProfileData();
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-8">
-      <header className="mb-6 sm:mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('profile.title')}
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-          {t('profile.description')}
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {t('profile.title')}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+            {t('profile.description')}
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => setImportOpen(true)}>
+          <span className="flex items-center gap-2">
+            <UploadIcon size={15} /> {t('cvImport.button')}
+          </span>
+        </Button>
       </header>
+      <CvImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
 
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[14rem_1fr] lg:items-start lg:gap-8">
         <aside className="space-y-4 lg:sticky lg:top-8">

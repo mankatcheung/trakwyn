@@ -18,6 +18,7 @@ import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
+import { registerCvImportRoute } from '#src/http/routes/cvImport.routes.js';
 import { storageAccessFor } from '#src/use-cases/shared/storageAccess.js';
 import { handleDocumentFile } from '#src/http/routes/documentFile.routes.js';
 import { oauthRoutes } from '#src/http/routes/oauth.routes.js';
@@ -233,6 +234,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     handler: handleChatStream,
   });
   registerBillingWebhookRoute(fastify, () => container.cradle);
+  registerCvImportRoute(fastify);
   // Streams a stored file, so it too needs the real reply (JEF-51).
   fastify.route({
     method: 'GET',

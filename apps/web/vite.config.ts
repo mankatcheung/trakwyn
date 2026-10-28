@@ -86,6 +86,8 @@ const config = defineConfig(({ command }) => ({
       '/auth': { target: 'http://localhost:3001', changeOrigin: true },
       '/oauth': { target: 'http://localhost:3001', changeOrigin: true },
       '/chat/stream': { target: 'http://localhost:3001', changeOrigin: true },
+      // Exact enough not to catch the web app's own /profile routes.
+      '/profile/cv-import': { target: 'http://localhost:3001', changeOrigin: true },
     },
   },
 }));

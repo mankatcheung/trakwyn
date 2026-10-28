@@ -47,6 +47,12 @@ export const ROUTES = {
    * abstraction, for the same reason.
    */
   CHAT_STREAM: '/chat/stream',
+  /**
+   * Reads an uploaded CV into profile entries (JEF-461). Multipart, so it
+   * cannot be a GraphQL mutation without raising the body limit for every
+   * operation; the file is held in memory and never stored.
+   */
+  CV_IMPORT: '/profile/cv-import',
   /** Serves a document's file behind a short-lived signed link (JEF-51). */
   DOCUMENT_FILE: DOCUMENT_FILE_ROUTE.PATH,
   DIGEST_SEND: '/admin/digest/send',
@@ -104,6 +110,26 @@ export const CRON_AUTH_EVENTS = {
  */
 export const CHAT_STREAM = {
   BODY_LIMIT_BYTES: 64 * 1024,
+} as const;
+
+/**
+ * `POST /profile/cv-import` (JEF-461). There is no `bodyLimit` here on
+ * purpose: Fastify applies it only to bodies it buffers, and a multipart
+ * upload is streamed, so the multipart parser's per-file limit
+ * (`CV_IMPORT.MAX_BYTES`) is what bounds it. A file over it is cut off and
+ * answered with 413 without being held in memory.
+ *
+ * The header exists because the auth cookies are `SameSite=None` and a
+ * multipart POST is a "simple" cross-site request: without it a page on
+ * another origin could post a file with the visitor's cookie and spend their
+ * AI key. A custom header forces a preflight, which `corsPlugin.ts` answers
+ * only for the origins it lists.
+ */
+export const CV_IMPORT_UPLOAD = {
+  REQUIRED_HEADER: 'x-trakwyn-upload',
+  REQUIRED_HEADER_VALUE: 'cv-import',
+  /** The form field the file is sent in; the route takes the first file whatever its name. */
+  FIELD_NAME: 'file',
 } as const;
 
 /**
@@ -228,6 +254,11 @@ export const RATE_LIMIT = {
   },
   PARSE_JOB_DESCRIPTION: {
     MAX_ATTEMPTS: 20,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
+  /** CV import (JEF-461): a parse reads a whole document and uses the user's own AI key. */
+  PARSE_CV: {
+    MAX_ATTEMPTS: 10,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
   COMPUTE_RESUME_MATCH_SCORE: {

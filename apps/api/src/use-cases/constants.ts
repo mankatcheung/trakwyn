@@ -325,6 +325,8 @@ export const AI_PROMPT_INPUT = {
   MOCK_INTERVIEW_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** Practice question and answer generation — the stored company briefing (JEF-393). */
   MOCK_INTERVIEW_BRIEFING_MAX_CHARS: 2000,
+  /** ParseCvUseCase — the text read from an uploaded CV (JEF-461). Longer than a posting: a CV is the whole document. */
+  CV_IMPORT_MAX_CHARS: 24000,
 } as const;
 
 /** In-app AI chat assistant settings. */
@@ -463,6 +465,13 @@ export const MOCK_INTERVIEW_PROMPT_TASK = {
   ANSWER: 'draft a strong answer the candidate can adapt',
 } as const;
 
+/**
+ * The task sentence the CV import's system prompt carries (JEF-461). The dev
+ * and e2e fake LLM route reads it to answer with a canned CV profile, as it
+ * does for `MOCK_INTERVIEW_PROMPT_TASK`.
+ */
+export const CV_IMPORT_PROMPT_TASK = 'extract structured data from a CV';
+
 /** How many practice questions one generate request may ask the model for (JEF-393). */
 export const MOCK_QUESTION_GENERATION = {
   DEFAULT_COUNT: 5,
@@ -513,6 +522,41 @@ export const RESUME_TEXT_EXTRACTION = {
   MAX_BYTES: MAX_DOCUMENT_SIZE_BYTES,
   FETCH_TIMEOUT_MS: 15_000,
   EXTRACT_TIMEOUT_MS: 20_000,
+} as const;
+
+/**
+ * File types the CV import reads (JEF-461). Not `ALLOWED_DOCUMENT_MIME_TYPES`:
+ * that list also admits legacy `.doc` and images, which `DocumentTextExtractor`
+ * cannot read.
+ */
+export const CV_IMPORT_MIME_TYPES = [MIME_TYPE.PDF, MIME_TYPE.DOCX, MIME_TYPE.TEXT_PLAIN] as const;
+
+/**
+ * Bounds on the CV import (JEF-461). The file is read from memory and never
+ * stored, so the size cap is the document upload cap rather than a second
+ * number. The entry and field limits keep a model that rambles, or a CV that
+ * lists everything, from filling the review list with noise.
+ */
+export const CV_IMPORT = {
+  MAX_BYTES: MAX_DOCUMENT_SIZE_BYTES,
+  /**
+   * Output budget for the parsed profile: the provider ceiling, since the
+   * default (512) cuts off the JSON of an ordinary CV. A very long CV can
+   * still reach it, and then fails as "the AI ran out of room".
+   */
+  MAX_OUTPUT_TOKENS: LLM.MAX_OUTPUT_TOKENS_CAP,
+  MAX_WORK_EXPERIENCES: 30,
+  MAX_EDUCATIONS: 15,
+  MAX_SKILLS: 60,
+  /** Company, title, location, institution, degree, field, skill name, category and proficiency. */
+  SHORT_FIELD_MAX_CHARS: 200,
+  /** A work experience or education description. */
+  DESCRIPTION_MAX_CHARS: 2000,
+  /** The levels the profile's skill picker offers; anything else the model writes is dropped. */
+  PROFICIENCY_LEVELS: ['beginner', 'intermediate', 'advanced', 'expert'],
+  /** The years a date from the model may fall in; outside them it is read as a mistake. */
+  MIN_YEAR: 1900,
+  MAX_YEAR: 2100,
 } as const;
 
 /**

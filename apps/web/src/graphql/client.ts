@@ -38,6 +38,13 @@ const GQL_CLIENT_URL = resolveClientUrl(API_URL);
  */
 export const CHAT_STREAM_URL = resolveClientUrl(API_URL.replace(/\/graphql$/, '/chat/stream'));
 
+/**
+ * Sibling of the GraphQL endpoint for the CV upload (JEF-461,
+ * `ROUTES.CV_IMPORT` on the API): a multipart POST, which GraphQL's JSON
+ * transport does not carry, derived the same way as the chat stream's.
+ */
+export const CV_IMPORT_URL = resolveClientUrl(API_URL.replace(/\/graphql$/, '/profile/cv-import'));
+
 const REFRESH_MUTATION = `mutation { refreshToken }`;
 
 // Non-HttpOnly hint cookie the API sets alongside the real HttpOnly

@@ -1,6 +1,6 @@
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import { ROUTES } from '#src/http/constants.js';
-import { MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
+import { CV_IMPORT_PROMPT_TASK, MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
 
 const FAKE_CHAT_REPLY = 'Fake assistant reply for e2e testing.';
 
@@ -13,6 +13,43 @@ const FAKE_MOCK_QUESTIONS = {
 };
 const FAKE_MOCK_ANSWER =
   'I would start by clarifying the goal, then walk through the trade-offs I weighed and what I learned.';
+
+/** What the CV import (JEF-461) reads out of any CV in dev and e2e: two roles, one degree, three skills. */
+const FAKE_CV_PROFILE = {
+  workExperiences: [
+    {
+      company: 'Acme Corp',
+      title: 'Senior Engineer',
+      location: 'Remote',
+      startDate: '2020-03',
+      endDate: 'Present',
+      description: 'Built distributed systems.',
+    },
+    {
+      company: 'Globex',
+      title: 'Software Engineer',
+      location: 'London',
+      startDate: '2016-06',
+      endDate: '2020-02',
+      description: 'Shipped the billing platform.',
+    },
+  ],
+  educations: [
+    {
+      institution: 'State University',
+      degree: 'BS',
+      field: 'Computer Science',
+      startDate: '2012-09',
+      endDate: '2016-05',
+      description: null,
+    },
+  ],
+  skills: [
+    { name: 'TypeScript', category: 'Language', proficiency: 'expert' },
+    { name: 'PostgreSQL', category: 'Database', proficiency: null },
+    { name: 'Communication', category: 'Soft skill', proficiency: null },
+  ],
+};
 
 /**
  * The OpenAI streaming chunk shape `OpenAICompatibleLLMProvider.
@@ -82,6 +119,12 @@ export function fakeLlmCompletionsRoutes(): RouteDefinition[] {
         }
         if (system.includes(MOCK_INTERVIEW_PROMPT_TASK.ANSWER)) {
           res.send({ choices: [{ message: { content: FAKE_MOCK_ANSWER, tool_calls: [] } }] });
+          return;
+        }
+        if (system.includes(CV_IMPORT_PROMPT_TASK)) {
+          res.send({
+            choices: [{ message: { content: JSON.stringify(FAKE_CV_PROFILE), tool_calls: [] } }],
+          });
           return;
         }
 
