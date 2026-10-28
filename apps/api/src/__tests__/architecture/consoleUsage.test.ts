@@ -53,6 +53,8 @@ const CONSOLE_BY_DESIGN: Record<string, string> = {
  * reason is a property of the directory rather than of the file.
  */
 const CONSOLE_BY_DESIGN_DIRS: Record<string, string> = {
+  evals:
+    'The `pnpm eval` runner (JEF-114), run by hand against real models. Its progress lines and results table are the entire output the person who ran it asked for, in a process with no server and no telemetry.',
   seed: 'The demo-data seeder, run from the CLI by `pnpm db:seed` and by scripts/setup-worktree.sh. Every line is progress output for a person watching it run, in a process with no server and no telemetry; JEF-351 put it explicitly out of scope for that reason.',
 };
 
