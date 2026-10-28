@@ -53,7 +53,7 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
       key: 'experience',
       label: t('onboardingChecklist.addExperience'),
       done: (data.workExperiences ?? []).length > 0,
-      to: '/settings/experience',
+      to: '/profile',
     },
   ];
 

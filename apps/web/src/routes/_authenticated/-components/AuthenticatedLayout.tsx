@@ -19,6 +19,7 @@ import {
   BriefcaseIcon,
   CalendarIcon,
   GitCompareArrowsIcon,
+  IdCardIcon,
   KeyboardIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -39,7 +40,6 @@ const AVATAR_QUERY = `query AccountAvatar { me { avatarUrl } }`;
 
 const SETTINGS_NAV = [
   { to: '/settings/profile', labelKey: 'settings.profile', icon: UserIcon },
-  { to: '/settings/experience', labelKey: 'settings.experience', icon: BriefcaseIcon },
   { to: '/settings/security', labelKey: 'settings.security', icon: ShieldIcon },
   { to: '/settings/ai', labelKey: 'settings.ai', icon: SparklesIcon },
   { to: '/settings/integrations', labelKey: 'settings.integrations', icon: PlugIcon },
@@ -52,6 +52,7 @@ const SETTINGS_NAV = [
 const MAIN_NAV = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboardIcon },
   { to: '/applications', labelKey: 'nav.applications', icon: BriefcaseIcon },
+  { to: '/profile', labelKey: 'nav.profile', icon: IdCardIcon },
   { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon },
   { to: '/offers', labelKey: 'nav.offers', icon: GitCompareArrowsIcon },
   { to: '/analytics', labelKey: 'nav.analytics', icon: BarChart2Icon },
