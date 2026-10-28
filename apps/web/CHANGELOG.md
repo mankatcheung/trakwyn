@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.7.0...web-v0.8.0) (2026-10-28)
+
+
+### Features
+
+* import the profile from an uploaded CV (JEF-461) ([#1113](https://github.com/mankatcheung/trakwyn/issues/1113)) ([6167a56](https://github.com/mankatcheung/trakwyn/commit/6167a5615fa5c6896559708e979b8794a07fe71a))
+* **web:** move the CV profile out of Settings to its own page (JEF-459) ([#1108](https://github.com/mankatcheung/trakwyn/issues/1108)) ([66631cc](https://github.com/mankatcheung/trakwyn/commit/66631ccb039e62f2444d75694cb8d6fa490509b9))
+
+
+### Bug Fixes
+
+* **web:** send a 1200×630 social card as the link preview (JEF-462) ([#1112](https://github.com/mankatcheung/trakwyn/issues/1112)) ([a6ba476](https://github.com/mankatcheung/trakwyn/commit/a6ba476402b5e85431841f5d3fdbba54274e8ce1))
+
 ## [0.7.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.6.0...web-v0.7.0) (2026-10-28)
 
 

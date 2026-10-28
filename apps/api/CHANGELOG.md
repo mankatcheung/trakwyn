@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.7.0...api-v0.8.0) (2026-10-28)
+
+
+### Features
+
+* import the profile from an uploaded CV (JEF-461) ([#1113](https://github.com/mankatcheung/trakwyn/issues/1113)) ([6167a56](https://github.com/mankatcheung/trakwyn/commit/6167a5615fa5c6896559708e979b8794a07fe71a))
+
 ## [0.7.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.6.0...api-v0.7.0) (2026-10-28)
 
 
