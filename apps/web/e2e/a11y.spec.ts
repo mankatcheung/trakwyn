@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { registerAndLogin, uniqueEmail } from './helpers/auth';
+import { registerAndLogin, registerToWelcome, uniqueEmail } from './helpers/auth';
 
 /**
  * Accessibility (axe-core) scans for key public pages.
@@ -73,5 +73,26 @@ test.describe('Accessibility scans – authenticated pages', () => {
     await page.goto('/applications');
     await expect(page.getByRole('heading', { name: 'Applications' })).toBeVisible();
     await scan(page, '/applications');
+  });
+});
+
+test.describe('Accessibility scans – first-run welcome flow (JEF-460)', () => {
+  test.beforeEach(async ({ page }) => {
+    // Same reason as the authenticated pages above: scan the settled page.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await registerToWelcome(page, {
+      email: uniqueEmail('a11y-welcome'),
+      password: 'SecurePass123',
+    });
+  });
+
+  test('the welcome and goals steps pass axe', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Welcome to Trakwyn' })).toBeVisible();
+    await scan(page, '/welcome (intro)');
+
+    await page.getByRole('button', { name: /get started/i }).click();
+    await page.getByRole('checkbox', { name: /ask the assistant/i }).check();
+    await expect(page.getByRole('heading', { name: 'What do you want help with?' })).toBeVisible();
+    await scan(page, '/welcome (goals)');
   });
 });

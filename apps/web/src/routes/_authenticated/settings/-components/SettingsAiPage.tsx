@@ -1,5 +1,5 @@
-import { CircleAlertIcon, CircleCheckIcon, PlusIcon, SparklesIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { PlusIcon, SparklesIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,30 +7,17 @@ import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { LlmApiKeyRow } from './LlmApiKeyRow';
-import {
-  Alert,
-  Button,
-  Card,
-  Checkbox,
-  FormLabel,
-  Input,
-  Select,
-  Skeleton,
-  Textarea,
-} from '@trakwyn/ui';
+import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
+import { Alert, Button, Card, Checkbox, Skeleton, Textarea } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
-  SAVE_LLM_API_KEY,
   DELETE_LLM_API_KEY,
   SET_DEFAULT_LLM_PROVIDER,
   SET_LLM_API_KEY_MONTHLY_LIMIT,
   TEST_LLM_API_KEY,
   UPDATE_PROFILE,
-  llmApiKeySchema,
   customAiPromptSchema,
-  CUSTOM_LLM_PROVIDER,
-  type LlmApiKeyForm,
   type CustomAiPromptForm,
   type LlmApiKey,
   type LlmUsageSummary,
@@ -38,22 +25,6 @@ import {
   LLM_PROVIDER_OPTIONS,
   extractGqlError,
 } from './shared';
-
-function TestResultLine({ result }: { result: TestLlmApiKeyResult }) {
-  const { t } = useLocale();
-  return (
-    <p
-      className={`mt-1 flex items-center gap-1 text-xs ${
-        result.ok ? 'text-green-600' : 'text-red-600'
-      }`}
-    >
-      {result.ok ? <CircleCheckIcon size={13} /> : <CircleAlertIcon size={13} />}
-      {result.ok
-        ? t('integrations.testKeySuccess')
-        : (result.error ?? t('integrations.testKeyFailed'))}
-    </p>
-  );
-}
 
 /**
  * Bring-your-own-key AI settings: provider keys, which provider is the
@@ -93,51 +64,12 @@ export function SettingsAiPage() {
   const availableProviderOptions = LLM_PROVIDER_OPTIONS.filter(
     (o) => !configuredProviders.has(o.value),
   );
-  const availableProviderValues = availableProviderOptions.map((o) => o.value).join(',');
-
-  const llmApiKeyForm = useForm<LlmApiKeyForm>({
-    resolver: zodResolver(llmApiKeySchema),
-    defaultValues: { provider: 'openrouter', apiKey: '', model: '', baseUrl: '' },
-  });
-  const llmApiKeyProvider = llmApiKeyForm.watch('provider');
-  const isCustomLlmProvider = llmApiKeyProvider === CUSTOM_LLM_PROVIDER;
-
-  useEffect(() => {
-    if (
-      availableProviderOptions.length > 0 &&
-      !availableProviderOptions.some((o) => o.value === llmApiKeyProvider)
-    ) {
-      llmApiKeyForm.setValue(
-        'provider',
-        availableProviderOptions[0].value as LlmApiKeyForm['provider'],
-      );
-    }
-  }, [availableProviderValues, llmApiKeyForm, llmApiKeyProvider, availableProviderOptions]);
-
   // Progressive disclosure (redesign): once at least one provider is
   // connected, the add-key form stays collapsed behind an "Add provider"
   // button rather than always sitting open — a manual toggle overrides the
   // "open when there's nothing configured yet" default in both directions.
   const [addProviderOverride, setAddProviderOverride] = useState<boolean | null>(null);
   const addProviderOpen = addProviderOverride ?? llmApiKeys.length === 0;
-
-  const onSaveLlmApiKey = async (data: LlmApiKeyForm) => {
-    try {
-      await gqlClient.request(SAVE_LLM_API_KEY, {
-        provider: data.provider,
-        apiKey: data.apiKey,
-        model: data.model?.trim() || undefined,
-        baseUrl: data.baseUrl?.trim() || undefined,
-      });
-      llmApiKeyForm.reset({ provider: data.provider, apiKey: '', model: '', baseUrl: '' });
-      setAddProviderOverride(false);
-      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
-    } catch (err) {
-      llmApiKeyForm.setError('root', {
-        message: extractGqlError(err) ?? t('integrations.saveApiKeyFailed'),
-      });
-    }
-  };
 
   const [removingProvider, setRemovingProvider] = useState<string | null>(null);
   const [llmKeyListError, setLlmKeyListError] = useState<string | null>(null);
@@ -197,51 +129,8 @@ export function SettingsAiPage() {
     }
   };
 
-  // Testing the add-key form's unsaved values, before Save (JEF-247).
-  const [testingFormKey, setTestingFormKey] = useState(false);
-  const [formTestResult, setFormTestResult] = useState<TestLlmApiKeyResult | null>(null);
-  const [watchedApiKey, watchedModel, watchedBaseUrl] = llmApiKeyForm.watch([
-    'apiKey',
-    'model',
-    'baseUrl',
-  ]);
-  const canTestLlmApiKeyForm =
-    !!watchedApiKey?.trim() &&
-    (!isCustomLlmProvider || (!!watchedModel?.trim() && !!watchedBaseUrl?.trim()));
-  // Editing the form after a test invalidates that result — don't leave a
-  // stale "Connection works" showing against a key the user has since changed.
-  useEffect(() => {
-    setFormTestResult(null);
-  }, [llmApiKeyProvider, watchedApiKey, watchedModel, watchedBaseUrl]);
-  const onTestLlmApiKeyForm = async () => {
-    setTestingFormKey(true);
-    setFormTestResult(null);
-    try {
-      const data = await gqlClient.request<{ testLlmApiKey: TestLlmApiKeyResult }>(
-        TEST_LLM_API_KEY,
-        {
-          provider: llmApiKeyProvider,
-          apiKey: watchedApiKey,
-          model: watchedModel?.trim() || undefined,
-          baseUrl: watchedBaseUrl?.trim() || undefined,
-        },
-      );
-      setFormTestResult(data.testLlmApiKey);
-    } catch (err) {
-      setFormTestResult({
-        ok: false,
-        error: extractGqlError(err) ?? t('integrations.testKeyFailed'),
-      });
-    } finally {
-      setTestingFormKey(false);
-    }
-  };
-
-  const closeAddProviderForm = () => {
-    setAddProviderOverride(false);
-    llmApiKeyForm.reset({ provider: llmApiKeyProvider, apiKey: '', model: '', baseUrl: '' });
-    setFormTestResult(null);
-  };
+  // Closing unmounts the form, which discards whatever was typed into it.
+  const closeAddProviderForm = () => setAddProviderOverride(false);
 
   // Monthly token limits (JEF-258). Both queries are invalidated: the keys
   // query holds the ceiling, the usage query decides whether it is reached.
@@ -392,100 +281,10 @@ export function SettingsAiPage() {
                       </button>
                     </div>
                   )}
-                  <form
-                    onSubmit={llmApiKeyForm.handleSubmit(onSaveLlmApiKey)}
-                    className="space-y-3"
-                  >
-                    <div>
-                      <FormLabel>{t('integrations.providerLabel')}</FormLabel>
-                      <Select {...llmApiKeyForm.register('provider')}>
-                        {availableProviderOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <FormLabel>{t('integrations.apiKeyLabel')}</FormLabel>
-                      <Input
-                        type="password"
-                        {...llmApiKeyForm.register('apiKey')}
-                        invalid={!!llmApiKeyForm.formState.errors.apiKey}
-                        placeholder="sk-…"
-                      />
-                      {llmApiKeyForm.formState.errors.apiKey && (
-                        <p className="mt-1 text-xs text-red-600">
-                          {llmApiKeyForm.formState.errors.apiKey.message}
-                        </p>
-                      )}
-                    </div>
-                    {isCustomLlmProvider ? (
-                      <>
-                        <div>
-                          <FormLabel>{t('integrations.baseUrlLabel')}</FormLabel>
-                          <Input
-                            type="url"
-                            {...llmApiKeyForm.register('baseUrl')}
-                            invalid={!!llmApiKeyForm.formState.errors.baseUrl}
-                            placeholder="https://your-endpoint.example.com/v1/chat/completions"
-                          />
-                          {llmApiKeyForm.formState.errors.baseUrl && (
-                            <p className="mt-1 text-xs text-red-600">
-                              {llmApiKeyForm.formState.errors.baseUrl.message}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <FormLabel>{t('integrations.modelLabel')}</FormLabel>
-                          <Input
-                            type="text"
-                            {...llmApiKeyForm.register('model')}
-                            invalid={!!llmApiKeyForm.formState.errors.model}
-                            placeholder="e.g. gpt-4o-mini"
-                          />
-                          {llmApiKeyForm.formState.errors.model && (
-                            <p className="mt-1 text-xs text-red-600">
-                              {llmApiKeyForm.formState.errors.model.message}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div>
-                        <FormLabel>
-                          {t('integrations.modelLabel')}{' '}
-                          <span className="font-normal text-gray-400">
-                            ({t('integrations.modelOptionalNote')})
-                          </span>
-                        </FormLabel>
-                        <Input
-                          type="text"
-                          {...llmApiKeyForm.register('model')}
-                          placeholder={t('integrations.providerDefaultPlaceholder')}
-                        />
-                      </div>
-                    )}
-                    {llmApiKeyForm.formState.errors.root && (
-                      <Alert>{llmApiKeyForm.formState.errors.root.message}</Alert>
-                    )}
-                    {formTestResult && <TestResultLine result={formTestResult} />}
-                    <div className="flex items-center gap-3">
-                      <Button type="submit" disabled={llmApiKeyForm.formState.isSubmitting}>
-                        {llmApiKeyForm.formState.isSubmitting
-                          ? t('applicationForm.saving')
-                          : t('integrations.addKey')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={onTestLlmApiKeyForm}
-                        disabled={!canTestLlmApiKeyForm || testingFormKey}
-                      >
-                        {testingFormKey ? t('integrations.testingKey') : t('integrations.testKey')}
-                      </Button>
-                    </div>
-                  </form>
+                  <AddLlmApiKeyForm
+                    providerOptions={availableProviderOptions}
+                    onSaved={() => setAddProviderOverride(false)}
+                  />
                 </div>
               ) : (
                 <button

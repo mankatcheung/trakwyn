@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
 import { checkEmailVerification } from '#/lib/emailVerification';
+import { checkOnboarding, needsWelcome } from '#/lib/onboarding';
 import { AuthenticatedLayout } from './-components/AuthenticatedLayout';
 
 export const Route = createFileRoute('/_authenticated')({
@@ -17,8 +18,9 @@ export const Route = createFileRoute('/_authenticated')({
     // route loads (JEF-438): their loaders would all be refused by the API and
     // land on the error boundary. Returning the promise makes the router wait
     // for it, and the answer is cached, so this is one request per session
-    // once the user is verified.
-    return requireVerifiedEmail();
+    // once the user is verified. A user who has never finished or skipped the
+    // welcome flow is then sent to it (JEF-460).
+    return requireVerifiedEmail().then(() => requireOnboarded(location.pathname));
   },
   component: AuthenticatedLayout,
 });
@@ -26,4 +28,9 @@ export const Route = createFileRoute('/_authenticated')({
 async function requireVerifiedEmail(): Promise<void> {
   const state = await checkEmailVerification();
   if (state && !state.emailVerified) throw redirect({ to: '/verify-email-required' });
+}
+
+async function requireOnboarded(pathname: string): Promise<void> {
+  const state = await checkOnboarding();
+  if (needsWelcome(state, pathname)) throw redirect({ to: '/welcome' });
 }

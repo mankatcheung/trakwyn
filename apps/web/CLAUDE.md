@@ -35,6 +35,15 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 - The page offers resend (a 60 s cooldown, a "wait a few minutes" message on `RATE_LIMITED`, a spam-folder hint), "I've verified", a different email (the `requestEmailChange` mutation, which needs the password) and sign out. Registering signs the user in, so the register confirmation links to `/dashboard`, not `/login` (which would only bounce them there).
 - The queries are inline strings in `lib/emailVerification.ts`, like Plans, so no `.graphql` file.
 
+## First-run welcome flow (JEF-460)
+
+- **The guard is the second half of `/_authenticated`'s `beforeLoad`**: after the email check passes, `checkOnboarding()` (`lib/onboarding.ts`) reads `me.onboardingCompletedAt` and `needsWelcome` sends a user who has never finished or skipped the flow to `/welcome`. `/welcome`, `/profile`, `/settings/*` and `/oauth` are exempt, because the flow links to them and they would bounce back. A failed check lets the user through: the flow is an offer, not a wall. `/welcome` itself sends a finished user to `/dashboard`.
+- **One request per session once finished,** like the email check: the answer is cached under `ONBOARDING_STATE_KEY` with an infinite `staleTime` once completed, and `useCompleteOnboarding` writes the finished state into that entry so the next navigation is not sent back.
+- **Steps** come from `welcomeSteps(goals)`: the profile step (the profile page's own `WorkExperienceSection`/`SkillsSection`) and the AI key step (`AddLlmApiKeyForm`, shared with Settings → AI) appear only for `AI_DOCUMENTS`/`ASSISTANT`. Every step can be skipped; "Skip setup" saves no goals.
+- **The goals also filter the dashboard checklist** (`isRelevantToGoals`). No goals stored (skipped, or an account from before the flow, which the migration marked complete) shows every item.
+- **`EmptyProfilePrompt`** stands in front of resume and cover-letter generation when the profile has no work experience and no skills. "Fill in profile" links to `/profile?returnTo=<here>`; the profile page shows a way back only for a value `sameOriginPath` (`lib/returnTo.ts`) accepts.
+- **e2e:** `registerAndLogin` skips the flow; specs about the flow start from `registerToWelcome`.
+
 ## Plans (JEF-344)
 
 - **`PLAN_REQUIRED` is an upgrade prompt, not a failure.** `ErrorState` and `AiErrorMessage` branch on it, and the forms that can hit it (new application at the cap, share link) render `UpgradePrompt`. The text is the API's own message, which names the feature; the link goes to **Settings → Plan**.

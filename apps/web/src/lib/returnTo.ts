@@ -14,3 +14,19 @@ export function safeReturnTo(value: string | undefined | null): string {
   if (value === '/login' || value === '/register') return '/dashboard';
   return value;
 }
+
+/** ASCII control characters, which a browser strips from a URL before resolving it. */
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
+
+/**
+ * A same-origin path to send the user back to, or `null` when `value` is not
+ * one (JEF-460). Stricter than `safeReturnTo`, and with no fallback: the
+ * caller shows no way back rather than a default. A backslash or a control
+ * character is refused because browsers read `/\evil.com` (or `/<tab>/evil.com`)
+ * as `//evil.com`.
+ */
+export function sameOriginPath(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return null;
+  if (value.includes('\\') || CONTROL_CHARACTER.test(value)) return null;
+  return value;
+}

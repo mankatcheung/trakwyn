@@ -4,17 +4,41 @@ import { CheckCircle2Icon, CircleIcon, XIcon } from 'lucide-react';
 import { Button, Card } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { hasAiGoal, type OnboardingGoal } from '#/lib/onboarding';
 import {
   DISMISS_ONBOARDING_CHECKLIST,
   onboardingChecklistQueryOptions,
   type OnboardingChecklistData,
 } from '../dashboard';
 
+type ChecklistItemKey = 'application' | 'mcp' | 'aiKey' | 'experience';
+
 interface ChecklistItem {
-  key: string;
+  key: ChecklistItemKey;
   label: string;
   done: boolean;
   to: string;
+}
+
+/**
+ * Whether an item is worth suggesting to someone with these welcome-flow goals
+ * (JEF-460). No goals stored (skipped, or an account from before the flow)
+ * keeps every item, as before.
+ */
+export function isRelevantToGoals(
+  key: ChecklistItemKey,
+  goals: readonly OnboardingGoal[],
+): boolean {
+  if (goals.length === 0) return true;
+  switch (key) {
+    case 'application':
+      return true;
+    case 'mcp':
+      return goals.includes('MCP');
+    case 'aiKey':
+    case 'experience':
+      return hasAiGoal(goals);
+  }
 }
 
 interface OnboardingChecklistProps {
@@ -30,7 +54,8 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
     onSuccess: () => qc.invalidateQueries({ queryKey: onboardingChecklistQueryOptions.queryKey }),
   });
 
-  const items: ChecklistItem[] = [
+  const goals = data.me?.onboardingGoals ?? [];
+  const allItems: ChecklistItem[] = [
     {
       key: 'application',
       label: t('onboardingChecklist.createApplication'),
@@ -56,6 +81,7 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
       to: '/profile',
     },
   ];
+  const items = allItems.filter((item) => isRelevantToGoals(item.key, goals));
 
   const dismissed = data.me?.onboardingChecklistDismissedAt != null;
   const allDone = items.every((item) => item.done);

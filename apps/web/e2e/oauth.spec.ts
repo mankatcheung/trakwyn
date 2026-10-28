@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerAndLogin, uniqueEmail } from './helpers/auth';
+import { registerAndLogin, skipWelcomeIfShown, uniqueEmail } from './helpers/auth';
 
 /**
  * Drives the real OAuth authorize -> provider -> callback round trip through
@@ -15,13 +15,13 @@ test.describe('OAuth sign-in', () => {
   test('signs in via Google OAuth and lands on the dashboard', async ({ page }) => {
     await page.goto('/login');
     await page.getByRole('link', { name: /sign in with google/i }).click();
-    await expect(page).toHaveURL(/dashboard/);
+    await skipWelcomeIfShown(page);
   });
 
   test('signs in via GitHub OAuth and lands on the dashboard', async ({ page }) => {
     await page.goto('/login');
     await page.getByRole('link', { name: /sign in with github/i }).click();
-    await expect(page).toHaveURL(/dashboard/);
+    await skipWelcomeIfShown(page);
   });
 
   // Not covered here: the user-cancels-at-the-provider (access_denied) path

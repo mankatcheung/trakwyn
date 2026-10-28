@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import type { OnboardingGoal } from '#/lib/onboarding';
 import { DashboardPage } from './-components/DashboardPage';
 
 const APPLICATIONS_QUERY = `
@@ -46,6 +47,7 @@ const ONBOARDING_CHECKLIST_QUERY = `
   query OnboardingChecklist {
     me {
       onboardingChecklistDismissedAt
+      onboardingGoals
     }
     apiTokens {
       id
@@ -118,7 +120,10 @@ type WeeklyApplicationGoal = {
 };
 
 type OnboardingChecklistData = {
-  me: { onboardingChecklistDismissedAt: string | null } | null;
+  me: {
+    onboardingChecklistDismissedAt: string | null;
+    onboardingGoals?: OnboardingGoal[];
+  } | null;
   apiTokens: { id: string }[];
   llmApiKeys: { provider: string }[];
   workExperiences: { id: string }[];

@@ -1,3 +1,5 @@
+import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
+
 /**
  * Application-policy constants: the rules the use-case layer enforces.
  *
@@ -655,3 +657,15 @@ export const BILLING = {
   /** Users who upgrade within this many days of joining (or of billing going live) get the founder price. */
   FOUNDER_WINDOW_DAYS: 60,
 } as const;
+
+/**
+ * What the first-run welcome flow offers to help with (JEF-460). Stored on the
+ * user and used to pick which onboarding steps and checklist items to show.
+ * The AI goals are the ones whose output is written from the user's profile.
+ */
+export const ONBOARDING_GOALS = [
+  'track_applications',
+  'ai_documents',
+  'assistant',
+  'mcp',
+] as const satisfies readonly OnboardingGoal[];

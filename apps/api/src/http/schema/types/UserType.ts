@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import type { UserDTO } from '#src/interface-adapters/mappers/UserMapper.js';
+import { OnboardingGoalEnum } from '#src/http/schema/types/enums/OnboardingGoalEnum.js';
 
 export const UserRef = builder.objectRef<UserDTO>('User');
 UserRef.implement({
@@ -27,6 +28,15 @@ UserRef.implement({
       type: 'String',
       nullable: true,
       resolve: (user) => user.onboardingChecklistDismissedAt?.toISOString() ?? null,
+    }),
+    onboardingGoals: t.field({
+      type: [OnboardingGoalEnum],
+      resolve: (user) => user.onboardingGoals,
+    }),
+    onboardingCompletedAt: t.field({
+      type: 'String',
+      nullable: true,
+      resolve: (user) => user.onboardingCompletedAt?.toISOString() ?? null,
     }),
   }),
 });
