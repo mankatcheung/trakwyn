@@ -1,4 +1,4 @@
-import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
+import { asClass, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { AuthResolver } from '#src/interface-adapters/resolvers/AuthResolver.js';
 import { ApplicationResolver } from '#src/interface-adapters/resolvers/ApplicationResolver.js';
@@ -26,6 +26,7 @@ import { EducationResolver } from '#src/interface-adapters/resolvers/EducationRe
 import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
 import { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.js';
+import { RATE_LIMIT } from '#src/http/constants.js';
 import { McpController } from '#src/interface-adapters/mcp/McpController.js';
 
 import type { Cradle } from './types.js';
@@ -63,4 +64,13 @@ export const resolvers = {
   // reached through a proposal the user confirms. An adapter, not a use case,
   // so it is registered here with the other adapters.
   chatWriteTools: asClass(ChatWriteTools, { lifetime: Lifetime.SINGLETON }),
+  // The longest a tripped `tools/call` limit can last, for the controller's
+  // `retryAfterSeconds` hint: it cannot import `http/constants`, and the
+  // limiter does not report what is left of its window (JEF-465).
+  mcpToolCallRetryAfterS: asValue(
+    Math.ceil(
+      Math.max(RATE_LIMIT.MCP_TOOL_CALL_READ.WINDOW_MS, RATE_LIMIT.MCP_TOOL_CALL_WRITE.WINDOW_MS) /
+        1000,
+    ),
+  ),
 } satisfies NameAndRegistrationPair<Cradle>;

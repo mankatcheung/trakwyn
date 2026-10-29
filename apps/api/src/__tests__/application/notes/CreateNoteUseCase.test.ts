@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateNoteUseCase } from '#src/use-cases/notes/CreateNoteUseCase.js';
+import { makeActivityLogRepository } from '#src/__tests__/helpers/mocks/activity.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
 
@@ -63,5 +64,33 @@ describe('CreateNoteUseCase', () => {
       applicationId: 'app-1',
       content: 'Great interview!',
     });
+  });
+
+  it('records the MCP source and token in the activity log, and nothing extra otherwise (JEF-466)', async () => {
+    const actor = { source: 'mcp' as const, apiTokenId: 'tok-1', apiTokenName: 'Claude Desktop' };
+    const build = () => {
+      const activityLogRepository = makeActivityLogRepository();
+      const useCase = new CreateNoteUseCase({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication()),
+        }),
+        noteRepository: makeNoteRepository({ create: vi.fn().mockResolvedValue(makeNote()) }),
+        activityLogRepository,
+        generateId: vi.fn().mockReturnValue('id-1'),
+      });
+      return { useCase, activityLogRepository };
+    };
+
+    const viaMcp = build();
+    await viaMcp.useCase.execute({ userId: 'user-1', applicationId: 'app-1', content: 'x', actor });
+    expect(viaMcp.activityLogRepository.append).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: JSON.stringify({ noteId: 'note-1', ...actor }) }),
+    );
+
+    const direct = build();
+    await direct.useCase.execute({ userId: 'user-1', applicationId: 'app-1', content: 'x' });
+    expect(direct.activityLogRepository.append).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: JSON.stringify({ noteId: 'note-1' }) }),
+    );
   });
 });

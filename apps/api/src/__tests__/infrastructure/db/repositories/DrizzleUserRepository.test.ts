@@ -99,6 +99,29 @@ describe('DrizzleUserRepository', () => {
       const u = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
       expect(u.avatarKey).toBeNull();
     });
+
+    it('starts a new user with no onboarding goals and the welcome flow not done', async () => {
+      const u = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+
+      expect(u.onboardingGoals).toEqual([]);
+      expect(u.onboardingCompletedAt).toBeNull();
+    });
+  });
+
+  describe('onboarding (JEF-460)', () => {
+    it('round-trips the goals and the completion time through update', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      const completedAt = new Date('2026-10-28T12:00:00.000Z');
+
+      await repo.update('u1', {
+        onboardingGoals: ['ai_documents', 'mcp'],
+        onboardingCompletedAt: completedAt,
+      });
+      const found = await repo.findById('u1');
+
+      expect(found?.onboardingGoals).toEqual(['ai_documents', 'mcp']);
+      expect(found?.onboardingCompletedAt?.toISOString()).toBe(completedAt.toISOString());
+    });
   });
 
   describe('findById', () => {

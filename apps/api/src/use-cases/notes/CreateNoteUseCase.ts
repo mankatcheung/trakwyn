@@ -1,3 +1,4 @@
+import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { INoteRepository } from '#src/use-cases/ports/INoteRepository.js';
@@ -38,7 +39,7 @@ export class CreateNoteUseCase implements ICreateNoteUseCase {
       applicationId: input.applicationId,
       actorId: input.userId,
       eventType: 'note_added',
-      payload: JSON.stringify({ noteId: note.id }),
+      payload: JSON.stringify({ noteId: note.id, ...actorPayload(input.actor) }),
     });
 
     return note;

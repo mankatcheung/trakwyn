@@ -55,7 +55,7 @@ export const makeLogger = (overrides?: Partial<ILogger>): ILogger => ({
 /** One call as a `makeToolCallObserver()` fake saw it: what it was told, and how it ended. */
 export interface ObservedToolCall {
   meta: ToolCallMeta;
-  /** Recorder methods called, in order: `succeeded`, `failed`, `invalid_params`, `refused`. */
+  /** Recorder methods called, in order: `succeeded`, `failed`, `invalid_params`, `rate_limited`, `refused`. */
   reports: string[];
   result?: unknown;
   error?: unknown;
@@ -90,6 +90,9 @@ export const makeToolCallObserver = (): FakeToolCallObserver => {
           proposed: (result) => {
             call.reports.push('proposed');
             call.result = result;
+          },
+          rateLimited: () => {
+            call.reports.push('rate_limited');
           },
           refused: (userId) => {
             call.reports.push('refused');

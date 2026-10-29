@@ -3,12 +3,15 @@ import { render, screen, within, fireEvent, waitFor } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ComponentType } from 'react';
 
-const { mockGqlRequest } = vi.hoisted(() => ({
+const { mockGqlRequest, mockNavigate, mockSearch } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
+  mockNavigate: vi.fn(),
+  mockSearch: vi.fn(() => ({}) as { returnTo?: string }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: object) => ({ ...opts, useSearch: () => ({}) }),
+  createFileRoute: () => (opts: object) => ({ ...opts, useSearch: mockSearch }),
+  useNavigate: () => mockNavigate,
   Link: ({ children, to, hash }: { children: React.ReactNode; to: string; hash?: string }) => (
     <a href={hash ? `${to}#${hash}` : to}>{children}</a>
   ),
@@ -39,6 +42,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearch.mockReturnValue({});
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
       if (query.includes('Educations')) return Promise.resolve({ educations: [] });
@@ -329,6 +333,41 @@ describe('ProfilePage', () => {
       await waitFor(() => {
         expect(screen.getByText('No skills added yet.')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('returnTo (JEF-460)', () => {
+    it('offers a way back to the page that sent the user here', async () => {
+      mockSearch.mockReturnValue({
+        returnTo: '/applications/app-1/documents/cover-letters/new',
+      });
+      render(<ProfilePage />, { wrapper: Wrapper });
+
+      fireEvent.click(screen.getByRole('button', { name: /back to where you were/i }));
+
+      expect(mockNavigate).toHaveBeenCalledWith({
+        href: '/applications/app-1/documents/cover-letters/new',
+      });
+    });
+
+    it.each(['https://evil.example', '//evil.example', '/\\evil.example'])(
+      'shows no way back for the off-site value %j',
+      (returnTo) => {
+        mockSearch.mockReturnValue({ returnTo });
+        render(<ProfilePage />, { wrapper: Wrapper });
+
+        expect(
+          screen.queryByRole('button', { name: /back to where you were/i }),
+        ).not.toBeInTheDocument();
+      },
+    );
+
+    it('shows no way back when nothing sent the user here', () => {
+      render(<ProfilePage />, { wrapper: Wrapper });
+
+      expect(
+        screen.queryByRole('button', { name: /back to where you were/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

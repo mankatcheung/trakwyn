@@ -237,6 +237,22 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000,
   },
+  // MCP `tools/call`, per credential (JEF-465). An agent stuck in a loop, or
+  // steered by injected instructions, would otherwise write without bound with
+  // a full-access token. Reads are cheap and an agent legitimately fans out
+  // (list, then get each row), so 300 in 5 minutes is one call a second. Writes
+  // change the user's data, so they get a fifth of that: 60 in 5 minutes is
+  // well above a person-paced session and still ends a runaway loop in a
+  // minute. The two budgets are separate, so a loop of reads never blocks a
+  // write.
+  MCP_TOOL_CALL_READ: {
+    MAX_ATTEMPTS: 300,
+    WINDOW_MS: 5 * 60 * 1000,
+  },
+  MCP_TOOL_CALL_WRITE: {
+    MAX_ATTEMPTS: 60,
+    WINDOW_MS: 5 * 60 * 1000,
+  },
   // Single-shot AI mutations (cover letter / JD parsing / resume match) — more
   // generous than CHAT_MESSAGE since each is a discrete action rather than a
   // back-and-forth conversation. BYOK means this only ever burns the calling

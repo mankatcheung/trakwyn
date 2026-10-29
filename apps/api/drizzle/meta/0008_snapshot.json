@@ -1,5 +1,5 @@
 {
-  "id": "f0bdd1e3-8603-4d2d-9e0d-add59f4784c4",
+  "id": "cc69a39f-d77a-421c-8231-c9442aa55cac",
   "prevId": "fc9c38cc-4f3a-4d25-b407-a5501b34a509",
   "version": "7",
   "dialect": "postgresql",
@@ -195,6 +195,19 @@
         },
         "onboardingChecklistDismissedAt": {
           "name": "onboardingChecklistDismissedAt",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboardingGoals": {
+          "name": "onboardingGoals",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "onboardingCompletedAt": {
+          "name": "onboardingCompletedAt",
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
@@ -3318,142 +3331,6 @@
           "value": "(\"ResumeMatch\".\"documentDraftId\" IS NOT NULL) <> (\"ResumeMatch\".\"documentId\" IS NOT NULL)"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.ChatActionProposal": {
-      "name": "ChatActionProposal",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "conversationId": {
-          "name": "conversationId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "messageId": {
-          "name": "messageId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "toolName": {
-          "name": "toolName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "args": {
-          "name": "args",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resolvedAt": {
-          "name": "resolvedAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "ChatActionProposal_conversationId_idx": {
-          "name": "ChatActionProposal_conversationId_idx",
-          "columns": [
-            {
-              "expression": "conversationId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "ChatActionProposal_userId_idx": {
-          "name": "ChatActionProposal_userId_idx",
-          "columns": [
-            {
-              "expression": "userId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ChatActionProposal_userId_User_id_fk": {
-          "name": "ChatActionProposal_userId_User_id_fk",
-          "tableFrom": "ChatActionProposal",
-          "tableTo": "User",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "ChatActionProposal_conversationId_Conversation_id_fk": {
-          "name": "ChatActionProposal_conversationId_Conversation_id_fk",
-          "tableFrom": "ChatActionProposal",
-          "tableTo": "Conversation",
-          "columnsFrom": ["conversationId"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.Conversation": {

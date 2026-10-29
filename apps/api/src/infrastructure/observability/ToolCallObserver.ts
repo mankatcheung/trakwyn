@@ -92,6 +92,8 @@ export class ToolCallObserver implements IToolCallObserver {
       [TRACING.TOOL_SURFACE_ATTRIBUTE]: meta.surface,
     };
     if (meta.tokenScope) attributes[TRACING.MCP_TOKEN_SCOPE_ATTRIBUTE] = meta.tokenScope;
+    if (meta.tokenId && access === 'write')
+      attributes[TRACING.MCP_TOKEN_ID_ATTRIBUTE] = meta.tokenId;
     return trace
       .getTracer(AXIOM.SERVICE_NAME)
       .startSpan(`${meta.surface}${TRACING.TOOL_SPAN_SUFFIX} ${tool}`, { attributes });
@@ -115,6 +117,9 @@ export class ToolCallObserver implements IToolCallObserver {
       proposed: (result) => {
         settlement.outcome = 'proposed';
         if (measure) settlement.resultBytes = serialisedBytes(result);
+      },
+      rateLimited: () => {
+        settlement.outcome = 'rate_limited';
       },
       refused: (userId) => {
         settlement.outcome = 'refused';

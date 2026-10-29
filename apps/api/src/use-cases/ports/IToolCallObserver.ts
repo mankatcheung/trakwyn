@@ -12,9 +12,16 @@ export type ToolSurface = 'mcp' | 'chat';
  * - `refused`: the token's scope does not allow the tool.
  * - `invalid_params`: the arguments, or the tool name itself, were unusable.
  * - `proposed`: chat saved a write for the user to confirm and changed nothing (JEF-469).
+ * - `rate_limited`: the credential spent its `tools/call` budget (JEF-465).
  */
 export type ToolCallOutcome =
-  'ok' | 'domain_error' | 'internal_error' | 'refused' | 'invalid_params' | 'proposed';
+  | 'ok'
+  | 'domain_error'
+  | 'internal_error'
+  | 'refused'
+  | 'invalid_params'
+  | 'proposed'
+  | 'rate_limited';
 
 /** What the observer is told about a call before it runs. No arguments, ever. */
 export interface ToolCallMeta {
@@ -27,6 +34,8 @@ export interface ToolCallMeta {
   name: string;
   /** MCP only. Chat is session-authenticated and has no token. */
   tokenScope?: ApiTokenScope;
+  /** MCP only: the calling credential's id. Recorded on write calls (JEF-466), so a bad write names the token to revoke. */
+  tokenId?: string;
 }
 
 /**
@@ -50,6 +59,8 @@ export interface ToolCallRecorder {
    * boundary, so it is also logged with the user and counted.
    */
   refused(userId: string): void;
+  /** The credential's call budget for this kind of tool is spent, so the tool did not run. */
+  rateLimited(): void;
 }
 
 /**

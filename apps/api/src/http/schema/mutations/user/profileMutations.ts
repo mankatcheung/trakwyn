@@ -6,6 +6,7 @@
  */
 
 import { DigestFrequencyEnum } from '#src/http/schema/types/enums/DigestFrequencyEnum.js';
+import { OnboardingGoalEnum } from '#src/http/schema/types/enums/OnboardingGoalEnum.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { GraphQLError } from 'graphql';
 import { ImportSummaryRef } from '#src/http/schema/types/ImportSummaryType.js';
@@ -148,6 +149,26 @@ builder.mutationField('dismissOnboardingChecklist', (t) =>
       const { userResolver } = ctx.diScope.cradle;
       try {
         await userResolver.dismissOnboardingChecklist(ctx.user.sub);
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
+    },
+  }),
+);
+
+builder.mutationField('completeOnboarding', (t) =>
+  t.boolean({
+    description: 'Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals.',
+    args: {
+      goals: t.arg({ type: [OnboardingGoalEnum], required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      if (!ctx.user)
+        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
+      const { userResolver } = ctx.diScope.cradle;
+      try {
+        await userResolver.completeOnboarding(ctx.user.sub, args.goals);
         return true;
       } catch (err) {
         throw fromCodedError(err);

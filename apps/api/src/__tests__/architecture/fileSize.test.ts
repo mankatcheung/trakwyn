@@ -31,6 +31,8 @@ const OVERSIZED_BY_DESIGN: Record<string, string> = {
     'The Awilix Cradle: one interface naming every registration. Splitting it into per-domain sub-cradles is possible but buys nothing today — its fan-in is 39 files, all inside http/, so it is a shotgun-surgery hub rather than a coupling one. Revisit if editing it becomes contentious, not because of its length.',
   'infrastructure/db/repositories/DrizzleApplicationRepository.ts':
     'One class implementing one port, IApplicationRepository, across 16 methods. There is no seam: a repository cannot implement half an interface. It also owns the deletedAt Trash filter that every consumer relies on by construction, which is precisely the thing that must not end up in two places.',
+  'interface-adapters/mcp/McpController.ts':
+    'One switch dispatching every read tool in the catalogue to its use case, plus the JSON-RPC envelope, the scope refusal and the call budget around it. The write tools are already split out (writeToolHandlers.ts); what is left is a flat case-per-tool list with no shared state, so cutting it in two would separate a tool from the switch that the parity tests check it against.',
   'interface-adapters/llm/toolCatalogue.ts':
     'A declarative data table — 34 tool definitions in JSON Schema (JEF-468 added seven write tools), the closed value sets their enums advertise, and about 50 lines deriving MCP_TOOLS, CHAT_TOOLS and the write-tool name type from it. Splitting a table across files makes it harder to read as a whole and easier to leave a tool half-defined; length here is the entry count, not complexity.',
   'infrastructure/config/constants.ts':

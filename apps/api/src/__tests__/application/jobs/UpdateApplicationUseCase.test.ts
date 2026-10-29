@@ -280,4 +280,53 @@ describe('UpdateApplicationUseCase', () => {
       }),
     );
   });
+
+  describe('attribution (JEF-466)', () => {
+    const actor = { source: 'mcp' as const, apiTokenId: 'tok-1', apiTokenName: 'Claude Desktop' };
+    const build = (existing = makeApplication({ status: 'draft', company: 'Acme' })) => {
+      const activityLogRepository = makeActivityLogRepository();
+      const useCase = new UpdateApplicationUseCase({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(existing),
+          update: vi.fn().mockResolvedValue(existing),
+        }),
+        activityLogRepository,
+        generateId: () => 'log-1',
+      });
+      return { useCase, activityLogRepository };
+    };
+
+    it('records the MCP source and token on a status change', async () => {
+      const { useCase, activityLogRepository } = build();
+      await useCase.execute({ userId: 'user-1', applicationId: 'app-1', status: 'applied', actor });
+
+      expect(activityLogRepository.append).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'status_changed',
+          payload: JSON.stringify({ from: 'draft', to: 'applied', ...actor }),
+        }),
+      );
+    });
+
+    it('records the MCP source and token on a field update', async () => {
+      const { useCase, activityLogRepository } = build();
+      await useCase.execute({ userId: 'user-1', applicationId: 'app-1', company: 'Globex', actor });
+
+      expect(activityLogRepository.append).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: 'field_updated',
+          payload: JSON.stringify({ fields: ['company'], ...actor }),
+        }),
+      );
+    });
+
+    it('leaves the payload as it was for a write made in the app', async () => {
+      const { useCase, activityLogRepository } = build();
+      await useCase.execute({ userId: 'user-1', applicationId: 'app-1', company: 'Globex' });
+
+      expect(activityLogRepository.append).toHaveBeenCalledWith(
+        expect.objectContaining({ payload: JSON.stringify({ fields: ['company'] }) }),
+      );
+    });
+  });
 });
