@@ -49,6 +49,8 @@ import {
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 
+import { RateLimiter } from '#src/infrastructure/rateLimit/RateLimiter.js';
+
 const USER_ID = 'user-1';
 
 const makeDeps = () => ({
@@ -98,6 +100,10 @@ const makeDeps = () => ({
   educationRepository: makeEducationRepository(),
   skillRepository: makeSkillRepository(),
   toolCallObserver: makeToolCallObserver(),
+  // Roomy enough that no other test in this file meets the limit.
+  mcpToolCallReadRateLimiter: new RateLimiter(10_000, 60_000),
+  mcpToolCallWriteRateLimiter: new RateLimiter(10_000, 60_000),
+  mcpToolCallRetryAfterS: 300,
 });
 
 const rpc = (method: string, params?: Record<string, unknown>, id: string | number = 1) => ({
@@ -1296,10 +1302,131 @@ describe('McpController', () => {
     });
   });
 
+  describe('tools/call rate limit (JEF-465)', () => {
+    const READ_MAX = 3;
+    const WRITE_MAX = 2;
+
+    const callAs = (tokenId: string | undefined, name: string, args: Record<string, unknown>) =>
+      controller.handle(rpc('tools/call', { name, arguments: args }), USER_ID, 'full', tokenId);
+
+    const writeArgs = { applicationId: 'app-1', content: 'x' };
+
+    beforeEach(() => {
+      deps = {
+        ...makeDeps(),
+        mcpToolCallReadRateLimiter: new RateLimiter(READ_MAX, 60_000),
+        mcpToolCallWriteRateLimiter: new RateLimiter(WRITE_MAX, 60_000),
+      };
+      controller = new McpController(deps);
+      vi.mocked(deps.skillRepository.findAllByUserId).mockResolvedValue([]);
+      vi.mocked(deps.createNoteUseCase.execute).mockResolvedValue({ id: 'n1' } as never);
+    });
+
+    it('lets reads through up to their budget, then rejects the next with a readable error', async () => {
+      for (let i = 0; i < READ_MAX; i++) {
+        const { body } = await callAs('api:t1', 'list_skills', {});
+        expect(body).not.toHaveProperty('error');
+      }
+
+      const { status, body } = await callAs('api:t1', 'list_skills', {});
+
+      expect(status).toBeUndefined();
+      expect(body).toMatchObject({
+        jsonrpc: '2.0',
+        id: 1,
+        error: {
+          code: JSON_RPC_ERROR.RATE_LIMITED,
+          message: expect.stringContaining('Too many read tool calls'),
+          data: { code: ERROR_CODES.RATE_LIMITED, retryAfterSeconds: 300 },
+        },
+      });
+      expect(deps.skillRepository.findAllByUserId).toHaveBeenCalledTimes(READ_MAX);
+    });
+
+    it('rejects the write after the budget while reads on the same token still pass', async () => {
+      for (let i = 0; i < WRITE_MAX; i++) await callAs('api:t1', 'create_note', writeArgs);
+
+      const blocked = await callAs('api:t1', 'create_note', writeArgs);
+      const read = await callAs('api:t1', 'list_skills', {});
+
+      expect(blocked.body).toMatchObject({ error: { code: JSON_RPC_ERROR.RATE_LIMITED } });
+      expect(deps.createNoteUseCase.execute).toHaveBeenCalledTimes(WRITE_MAX);
+      expect(read.body).not.toHaveProperty('error');
+    });
+
+    it('does not let a loop of reads use up the write budget', async () => {
+      for (let i = 0; i < READ_MAX + 1; i++) await callAs('api:t1', 'list_skills', {});
+
+      const { body } = await callAs('api:t1', 'create_note', writeArgs);
+
+      expect(body).not.toHaveProperty('error');
+    });
+
+    it('keeps a separate budget per token', async () => {
+      for (let i = 0; i < WRITE_MAX; i++) await callAs('api:t1', 'create_note', writeArgs);
+
+      const other = await callAs('api:t2', 'create_note', writeArgs);
+
+      expect(other.body).not.toHaveProperty('error');
+    });
+
+    it('falls back to the user when no token id is given', async () => {
+      for (let i = 0; i < WRITE_MAX; i++) await callAs(undefined, 'create_note', writeArgs);
+
+      const { body } = await callAs(undefined, 'create_note', writeArgs);
+
+      expect(body).toMatchObject({ error: { code: JSON_RPC_ERROR.RATE_LIMITED } });
+    });
+
+    it('does not spend the budget on a call the scope refuses', async () => {
+      for (let i = 0; i < WRITE_MAX + 1; i++) {
+        await controller.handle(
+          rpc('tools/call', { name: 'create_note', arguments: writeArgs }),
+          USER_ID,
+          'read',
+          'api:t1',
+        );
+      }
+
+      const { body } = await callAs('api:t1', 'create_note', writeArgs);
+
+      expect(body).not.toHaveProperty('error');
+    });
+
+    it('does not spend the budget on initialize or tools/list', async () => {
+      for (let i = 0; i < READ_MAX + 1; i++) {
+        await controller.handle(rpc('tools/list'), USER_ID, 'full', 'api:t1');
+        await controller.handle(rpc('initialize'), USER_ID, 'full', 'api:t1');
+      }
+
+      const { body } = await callAs('api:t1', 'list_skills', {});
+
+      expect(body).not.toHaveProperty('error');
+    });
+
+    it('reports the rejection to the observer as rate-limited, before any tool ran', async () => {
+      for (let i = 0; i < WRITE_MAX; i++) await callAs('api:t1', 'create_note', writeArgs);
+
+      await callAs('api:t1', 'create_note', writeArgs);
+
+      const calls = deps.toolCallObserver.calls;
+      expect(calls[calls.length - 1]).toMatchObject({
+        meta: { surface: 'mcp', name: 'create_note', tokenScope: 'full' },
+        reports: ['rate_limited'],
+      });
+    });
+  });
+
   describe('attribution (JEF-466)', () => {
     const actor = { source: 'mcp' as const, apiTokenId: 'tok-1', apiTokenName: 'Claude Desktop' };
     const callAs = (name: string, args: Record<string, unknown>) =>
-      controller.handle(rpc('tools/call', { name, arguments: args }), USER_ID, 'full', actor);
+      controller.handle(
+        rpc('tools/call', { name, arguments: args }),
+        USER_ID,
+        'full',
+        undefined,
+        actor,
+      );
 
     it.each([
       ['update_application', 'updateApplicationUseCase', { applicationId: 'a1', role: 'Lead' }],

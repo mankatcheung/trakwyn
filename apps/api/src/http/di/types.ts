@@ -435,6 +435,9 @@ export interface Cradle {
   mcpOAuthAuthorizationRateLimiter: IRateLimiter;
   mcpOAuthTokenRateLimiter: IRateLimiter;
   mcpOAuthRevocationRateLimiter: IRateLimiter;
+  mcpToolCallReadRateLimiter: IRateLimiter;
+  mcpToolCallWriteRateLimiter: IRateLimiter;
+  mcpToolCallRetryAfterS: number;
   totpProvider: ITotpProvider;
   oauthAccountRepository: DrizzleOAuthAccountRepository;
   googleOAuthProvider: IOAuthProvider;

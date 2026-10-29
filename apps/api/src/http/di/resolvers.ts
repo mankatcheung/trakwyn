@@ -1,4 +1,4 @@
-import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
+import { asClass, asValue, Lifetime, type NameAndRegistrationPair } from 'awilix';
 
 import { AuthResolver } from '#src/interface-adapters/resolvers/AuthResolver.js';
 import { ApplicationResolver } from '#src/interface-adapters/resolvers/ApplicationResolver.js';
@@ -25,6 +25,7 @@ import { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkEx
 import { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
 import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
+import { RATE_LIMIT } from '#src/http/constants.js';
 import { McpController } from '#src/interface-adapters/mcp/McpController.js';
 
 import type { Cradle } from './types.js';
@@ -58,4 +59,13 @@ export const resolvers = {
   skillResolver: asClass(SkillResolver, { lifetime: Lifetime.SINGLETON }),
   offerResolver: asClass(OfferResolver, { lifetime: Lifetime.SINGLETON }),
   mcpController: asClass(McpController, { lifetime: Lifetime.SINGLETON }),
+  // The longest a tripped `tools/call` limit can last, for the controller's
+  // `retryAfterSeconds` hint: it cannot import `http/constants`, and the
+  // limiter does not report what is left of its window (JEF-465).
+  mcpToolCallRetryAfterS: asValue(
+    Math.ceil(
+      Math.max(RATE_LIMIT.MCP_TOOL_CALL_READ.WINDOW_MS, RATE_LIMIT.MCP_TOOL_CALL_WRITE.WINDOW_MS) /
+        1000,
+    ),
+  ),
 } satisfies NameAndRegistrationPair<Cradle>;

@@ -10,10 +10,12 @@ interface Deps {
 }
 
 export interface ValidateApiTokenResult {
+  /** The token's own id, which MCP keys its call budget on (JEF-465). */
+  tokenId: string;
   sub: string;
   email: string;
   scope: ApiTokenScope;
-  tokenId: string;
+  /** The token's name, so a write can be attributed to it (JEF-466). */
   tokenName: string;
 }
 
@@ -47,11 +49,11 @@ export class ValidateApiTokenUseCase {
     await this.deps.apiTokenRepository.updateLastUsed(result.token.id);
 
     return {
+      tokenId: result.token.id,
+      tokenName: result.token.name,
       sub: result.token.userId,
       email: result.userEmail,
       scope: result.token.scope,
-      tokenId: result.token.id,
-      tokenName: result.token.name,
     };
   }
 }

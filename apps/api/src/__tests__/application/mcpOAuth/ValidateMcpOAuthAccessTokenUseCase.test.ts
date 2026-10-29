@@ -41,6 +41,7 @@ describe('ValidateMcpOAuthAccessTokenUseCase', () => {
     });
 
     await expect(useCase.execute('trakwyn_mcp_valid')).resolves.toEqual({
+      tokenId: 'token-1',
       sub: 'user-1',
       scope: 'read',
       grantId: 'grant-1',

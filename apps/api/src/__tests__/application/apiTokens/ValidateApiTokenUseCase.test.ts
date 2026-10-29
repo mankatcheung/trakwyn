@@ -41,10 +41,10 @@ describe('ValidateApiTokenUseCase', () => {
     const result = await useCase.execute(rawToken, 'graphql');
 
     expect(result).toEqual({
+      tokenId: 'token-1',
       sub: 'user-1',
       email: 'user@example.com',
       scope: 'full',
-      tokenId: 'token-1',
       tokenName: 'Claude',
     });
     expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
@@ -80,7 +80,13 @@ describe('ValidateApiTokenUseCase', () => {
 
       const result = await useCase.execute('trakwyn_abc123', 'mcp');
 
-      expect(result).toMatchObject({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+      expect(result).toEqual({
+        tokenId: 'token-1',
+        sub: 'user-1',
+        email: 'user@example.com',
+        scope: 'full',
+        tokenName: 'My CLI token',
+      });
       expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
     });
   });

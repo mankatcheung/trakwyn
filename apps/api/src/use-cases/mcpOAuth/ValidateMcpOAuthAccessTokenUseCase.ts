@@ -11,6 +11,8 @@ interface Deps {
 }
 
 export interface ValidateMcpOAuthAccessTokenResult {
+  /** The access token's own id, which MCP keys its call budget on (JEF-465). */
+  tokenId: string;
   sub: string;
   scope: McpOAuthScope;
   /** The grant id: what the user revokes in Settings, not the short-lived access token. */
@@ -35,6 +37,7 @@ export class ValidateMcpOAuthAccessTokenUseCase {
     await this.deps.mcpOAuthTokenRepository.updateLastUsed(token.id);
     const client = await this.deps.mcpOAuthClientRepository.findById(token.clientId);
     return {
+      tokenId: token.id,
       sub: token.userId,
       scope: token.scope,
       grantId: token.familyId,

@@ -59,4 +59,6 @@ export const JSON_RPC_ERROR = {
   METHOD_NOT_FOUND: -32601,
   INVALID_PARAMS: -32602,
   INTERNAL_ERROR: -32603,
+  /** Implementation-defined server error (-32000 to -32099): the credential's `tools/call` budget is spent (JEF-465). */
+  RATE_LIMITED: -32029,
 } as const;
