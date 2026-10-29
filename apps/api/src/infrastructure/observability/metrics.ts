@@ -57,6 +57,8 @@ export const METRICS = {
   TOOL_CALLS: 'trakwyn.tool.calls',
   /** A write tool refused to a read-scoped MCP token — attributes: tool, scope (JEF-365). */
   MCP_TOOL_REFUSED: 'trakwyn.mcp.tool_refused',
+  /** A document the schema refused to validate — attributes: client, client_version (JEF-472). Shows an old build dying out, or not. */
+  GRAPHQL_VALIDATION_FAILURES: 'trakwyn.graphql.validation_failures',
   /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
   LLM_CALLS: 'trakwyn.llm.calls',
   /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
@@ -147,6 +149,8 @@ export interface LlmCallMetric {
  * recorded events by injecting a fake, the same way `CircuitBreaker` is
  * injectable into the classes that use it.
  */
+export type GraphqlClientKind = 'mobile' | 'extension' | 'other';
+
 export interface IMetrics {
   recordCacheHit(): void;
   recordCacheMiss(): void;
@@ -179,6 +183,8 @@ export interface IMetrics {
   recordToolCall(surface: ToolSurface, tool: string, outcome: ToolCallOutcome): void;
   /** A write tool refused to an MCP token whose scope does not cover it (JEF-365). */
   recordMcpToolRefused(tool: string, scope: ApiTokenScope): void;
+  /** A GraphQL document failed validation against the schema (JEF-472). `clientVersion` is only known for the mobile app. */
+  recordGraphqlValidationFailure(client: GraphqlClientKind, clientVersion?: string): void;
   /** One LLM call finished, succeeded or not — counted and timed (JEF-113). */
   recordLlmCall(call: LlmCallMetric): void;
   /** Tokens one LLM call used in one direction (JEF-113). */
@@ -200,6 +206,7 @@ export const noopMetrics: IMetrics = {
   recordSecurityEvent: () => {},
   recordToolCall: () => {},
   recordMcpToolRefused: () => {},
+  recordGraphqlValidationFailure: () => {},
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
 };
@@ -228,6 +235,7 @@ class OtelMetrics implements IMetrics {
   private securityEvents?: Counter;
   private toolCalls?: Counter;
   private mcpToolRefused?: Counter;
+  private graphqlValidationFailures?: Counter;
   private llmCalls?: Counter;
   private llmTokens?: Counter;
   private llmDuration?: Histogram;
@@ -343,6 +351,14 @@ class OtelMetrics implements IMetrics {
       description: 'Write tools refused to an MCP token whose scope does not cover them',
     });
     this.mcpToolRefused.add(1, { tool, scope });
+  }
+
+  recordGraphqlValidationFailure(client: GraphqlClientKind, clientVersion?: string): void {
+    this.graphqlValidationFailures ??= this.meter.createCounter(
+      METRICS.GRAPHQL_VALIDATION_FAILURES,
+      { description: 'GraphQL documents that failed schema validation' },
+    );
+    this.graphqlValidationFailures.add(1, { client, client_version: clientVersion ?? 'unknown' });
   }
 
   recordLlmCall({

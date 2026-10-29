@@ -10,11 +10,17 @@ import type {
   OutboundUrlRefusalReason,
   PoolAcquirePhase,
   RateLimitSubject,
+  GraphqlClientKind,
 } from '#src/infrastructure/observability/metrics.js';
 import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
+
+export interface GraphqlValidationFailureEvent {
+  client: GraphqlClientKind;
+  clientVersion?: string;
+}
 
 export interface FailOpenEvent {
   component: MetricComponent;
@@ -74,6 +80,7 @@ export interface FakeMetrics extends IMetrics {
   securityEvents: SecurityEventType[];
   toolCalls: ToolCallEvent[];
   mcpToolRefused: McpToolRefusedEvent[];
+  graphqlValidationFailures: GraphqlValidationFailureEvent[];
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
 }
@@ -97,6 +104,7 @@ export function makeFakeMetrics(): FakeMetrics {
     securityEvents: [],
     toolCalls: [],
     mcpToolRefused: [],
+    graphqlValidationFailures: [],
     llmCalls: [],
     llmTokens: [],
     recordCacheHit: () => {
@@ -137,6 +145,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordMcpToolRefused: (tool, scope) => {
       fake.mcpToolRefused.push({ tool, scope });
+    },
+    recordGraphqlValidationFailure: (client, clientVersion) => {
+      fake.graphqlValidationFailures.push({ client, clientVersion });
     },
     recordLlmCall: (call) => {
       fake.llmCalls.push(call);
