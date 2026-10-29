@@ -111,9 +111,12 @@ test.describe('Account settings', () => {
 
   test('a confirmation link that is not real is refused and changes nothing', async ({ page }) => {
     await page.goto('/confirm-account-deletion?token=not-a-real-token');
-    await page.getByRole('button', { name: /delete my account/i }).click();
-
-    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
+    // The page is server-rendered, so a click before hydration never reaches the handler.
+    // Retry it rather than guessing a delay (see cookie-consent.spec.ts).
+    await expect(async () => {
+      await page.getByRole('button', { name: /delete my account/i }).click();
+      await expect(page.getByText(/invalid or has expired/i)).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/dashboard/);
   });
