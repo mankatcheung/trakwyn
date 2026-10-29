@@ -210,12 +210,12 @@ gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-ima
 
 ## Day two
 
-**Rotate the Web Store key (JEF-419):** the Clipper release job authenticates to the Chrome Web Store as `chrome-web-store-publisher`, the one account here with a JSON key, because that API cannot use Workload Identity Federation. The key is not in Terraform, so it is not in state. After the first apply, add `terraform output -raw chrome_web_store_service_account` as a user in the Web Store dashboard (Account) and set the repository secrets as `apps/extension/CLAUDE.md` describes. To rotate:
+**Rotate the Web Store key (JEF-419):** the Clipper release job authenticates to the Chrome Web Store as `chrome-web-store-publisher`, the one account here with a JSON key, because that API cannot use Workload Identity Federation. The key is not in Terraform, so it is not in state. After the first apply, add `terraform output -raw chrome_web_store_service_account` as a user in the Web Store dashboard (Account) and set the secrets of the `chrome` environment as `apps/extension/CLAUDE.md` describes. To rotate:
 
 ```bash
 SA=$(terraform output -raw chrome_web_store_service_account)
 gcloud iam service-accounts keys create /dev/stdout --iam-account="$SA" \
-  | jq -r .private_key | gh secret set CHROME_SERVICE_ACCOUNT_PRIVATE_KEY
+  | jq -r .private_key | gh secret set CHROME_SERVICE_ACCOUNT_PRIVATE_KEY --env chrome
 gcloud iam service-accounts keys list --iam-account="$SA"   # then delete the old one:
 gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 ```

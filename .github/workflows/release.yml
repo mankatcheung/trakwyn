@@ -18,13 +18,14 @@ name: Release
 # belongs to a package by the files it touches, not by the scope in its title.
 # Merging a release PR bumps that package's package.json and CHANGELOG.md,
 # and this workflow then creates the tag (e.g. clipper-v1.1.0) and the GitHub
-# Release. Only a Clipper release goes on to `clipper-store` (JEF-419): it
+# Release. Only a Clipper release goes on to `clipper-chrome-zip` (JEF-419): it
 # builds the zip from the tag, checks the manifest (including that no
 # permission or content-script host was added since the previous release),
-# attaches the zip to the GitHub Release and uploads it to the Chrome Web Store
-# and submits it for review (JEF-429). Approval publishes it to everyone, with
-# no further step (DEFAULT_PUBLISH; apps/extension/CLAUDE.md, "Releasing the
-# Clipper"). A Clipper release also runs `clipper-firefox-zip` (JEF-437), which
+# attaches the zip to the GitHub Release and starts clipper-cws.yml, which
+# uploads it to the Chrome Web Store and submits it for review (JEF-429, JEF-480).
+# Approval publishes it to everyone, with no further step (DEFAULT_PUBLISH;
+# apps/extension/CLAUDE.md, "Releasing the Clipper"). A Clipper release also
+# runs `clipper-firefox-zip` (JEF-437), which
 # builds and checks the Firefox zips from the same tag, with the same
 # nothing-added check, and starts clipper-amo.yml, which submits them to AMO
 # with no manual step either (JEF-458). Nothing else is built or submitted to a
@@ -88,16 +89,23 @@ jobs:
   # from the pushed commit, and with the API URL from the CLIPPER_API_URL
   # repository variable rather than the default compiled into the source. The
   # store rejects a version number it has seen, so the checks run before the
-  # upload. The package is submitted for review and, once approved, published
-  # with no further step (--chrome-publish-type DEFAULT_PUBLISH). Nobody reads
-  # the package first, so the guard step below is the only check on what grew.
-  clipper-store:
-    name: Clipper zip and Web Store submission
+  # upload. The zip is attached to the GitHub Release and clipper-cws.yml, which
+  # keeps the Web Store secrets in the `chrome` environment, submits it for
+  # review (JEF-480); once approved it is published with no further step
+  # (--chrome-publish-type DEFAULT_PUBLISH). Nobody reads the package first, so
+  # the guard step below is the only check on what grew. The submission is its
+  # own workflow so a tag can be submitted again by hand. A workflow_dispatch is
+  # one of the two events GITHUB_TOKEN may start.
+  clipper-chrome-zip:
+    name: Clipper Chrome zip
     needs: release-please
     # !cancelled(): on a manual run release-please is skipped, which would skip
     # this job too.
     if: ${{ !cancelled() && (needs.release-please.outputs.clipper_released == 'true' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     env:
       TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}
     steps:
@@ -181,17 +189,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" "$ZIP" --clobber
 
-      - name: Upload to the Chrome Web Store and submit for review
+      - name: Start the Web Store submission
         env:
-          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
-          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
-          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
-        run: |
-          pnpm --filter @trakwyn/extension exec wxt submit \
-            --chrome-api-version v2 \
-            --chrome-zip "$GITHUB_WORKSPACE/$ZIP" \
-            --chrome-publish-type DEFAULT_PUBLISH
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run clipper-cws.yml --ref "${{ github.event.repository.default_branch }}" -f tag="$TAG"
 
   # The Firefox half of a Clipper release (JEF-437): builds the add-on and the
   # sources zip AMO asks for, from the same tag, checks the manifest and that
@@ -275,7 +276,7 @@ jobs:
           echo "ZIP=$zip" >> "$GITHUB_ENV"
           echo "SOURCES_ZIP=$sources" >> "$GITHUB_ENV"
 
-      # As in clipper-store: a permission or content-script host added in an
+      # As in clipper-chrome-zip: a permission or content-script host added in an
       # update holds it for every user until they re-approve it, and nobody
       # looks at the package before AMO's review (JEF-458). So compare with the
       # previous release's Firefox zip (not its Chrome one, which asks for other
