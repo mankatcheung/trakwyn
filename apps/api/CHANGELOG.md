@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.9.0...api-v0.10.0) (2026-10-29)
+
+
+### Features
+
+* **extension:** send the Clipper's version in a request header (JEF-473) ([#1143](https://github.com/mankatcheung/trakwyn/issues/1143)) ([bb8279d](https://github.com/mankatcheung/trakwyn/commit/bb8279dce1cc1958cef4627a82caaa439e76228d))
+
 ## [0.9.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.8.0...api-v0.9.0) (2026-10-29)
 
 
