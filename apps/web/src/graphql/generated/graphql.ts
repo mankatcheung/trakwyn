@@ -166,6 +166,15 @@ export type CalendarEventType =
   | 'followUp'
   | 'interview';
 
+export type ChatActionProposal = {
+  __typename?: 'ChatActionProposal';
+  error?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  summary?: Maybe<Scalars['String']['output']>;
+  toolName?: Maybe<Scalars['String']['output']>;
+};
+
 /** What can be bought. The server picks the price, including any founder price. */
 export type CheckoutPlan =
   | 'monthly'
@@ -600,6 +609,7 @@ export type Message = {
   content?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  proposals?: Maybe<Array<ChatActionProposal>>;
   role?: Maybe<Scalars['String']['output']>;
 };
 
@@ -653,6 +663,7 @@ export type Mutation = {
   confirmAccountDeletion?: Maybe<Scalars['String']['output']>;
   confirmAvatar?: Maybe<Scalars['String']['output']>;
   confirmBackupEmail?: Maybe<Scalars['Boolean']['output']>;
+  confirmChatAction?: Maybe<ChatActionProposal>;
   confirmDocument?: Maybe<Document>;
   confirmEmailChange?: Maybe<Scalars['Boolean']['output']>;
   confirmTotpSetup?: Maybe<ConfirmTotpSetupResult>;
@@ -693,6 +704,7 @@ export type Mutation = {
   deleteSkill?: Maybe<Scalars['Boolean']['output']>;
   deleteWorkExperience?: Maybe<Scalars['Boolean']['output']>;
   disableTotp?: Maybe<Scalars['Boolean']['output']>;
+  dismissChatAction?: Maybe<ChatActionProposal>;
   dismissOnboardingChecklist?: Maybe<Scalars['Boolean']['output']>;
   emptyTrash?: Maybe<EmptyTrashResult>;
   exchangeMobileOAuthCode?: Maybe<MobileAuthPayload>;
@@ -847,6 +859,11 @@ export type MutationConfirmAvatarArgs = {
 
 export type MutationConfirmBackupEmailArgs = {
   token: Scalars['String']['input'];
+};
+
+
+export type MutationConfirmChatActionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1036,6 +1053,11 @@ export type MutationDeleteWorkExperienceArgs = {
 
 export type MutationDisableTotpArgs = {
   password: Scalars['String']['input'];
+};
+
+
+export type MutationDismissChatActionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 

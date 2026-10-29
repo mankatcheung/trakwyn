@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, index, jsonb } from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
@@ -36,7 +36,7 @@ export const message = pgTable(
     conversationId: text('conversationId')
       .notNull()
       .references(() => conversation.id, { onDelete: 'cascade' }),
-    role: text('role', { enum: ['user', 'assistant'] }).notNull(),
+    role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
     content: text('content').notNull(),
     /**
      * What the assistant looked up to produce this reply, as one short line
@@ -51,4 +51,41 @@ export const message = pgTable(
       .$defaultFn(() => new Date()),
   },
   (table) => [index('Message_conversationId_idx').on(table.conversationId)],
+);
+
+export const chatActionProposal = pgTable(
+  'ChatActionProposal',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    conversationId: text('conversationId')
+      .notNull()
+      .references(() => conversation.id, { onDelete: 'cascade' }),
+    /**
+     * The assistant message the proposal was made in. Not a foreign key:
+     * messages only go with their conversation, which already cascades here,
+     * and the id is attached after the reply is stored.
+     */
+    messageId: text('messageId'),
+    toolName: text('toolName').notNull(),
+    args: jsonb('args').$type<Record<string, unknown>>().notNull(),
+    summary: text('summary').notNull(),
+    status: text('status', {
+      enum: ['pending', 'confirmed', 'dismissed', 'expired', 'failed'],
+    })
+      .notNull()
+      .default('pending'),
+    error: text('error'),
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    resolvedAt: timestamp('resolvedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index('ChatActionProposal_conversationId_idx').on(table.conversationId),
+    index('ChatActionProposal_userId_idx').on(table.userId),
+  ],
 );

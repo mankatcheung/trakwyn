@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockTraceHeaders } = vi.hoisted(() => ({
+const { mockTraceHeaders, mockCapture } = vi.hoisted(() => ({
+  mockCapture: vi.fn(),
   mockTraceHeaders: vi.fn(() => ({
     traceparent: '00-' + 'a'.repeat(32) + '-' + 'b'.repeat(16) + '-01',
   })),
@@ -14,8 +15,11 @@ vi.mock('#/graphql/client', () => ({
 // The chat stream fires a product event on every send (JEF-349); stubbed
 // here so these tests stay about the SSE protocol.
 vi.mock('#/lib/analytics', () => ({
-  ANALYTICS_EVENTS: { ASSISTANT_USED: 'assistant_used' },
-  captureEvent: vi.fn(),
+  ANALYTICS_EVENTS: {
+    ASSISTANT_USED: 'assistant_used',
+    ASSISTANT_CHANGE_PROPOSED: 'assistant_change_proposed',
+  },
+  captureEvent: mockCapture,
 }));
 
 import { streamChatMessage, ChatStreamError } from '#/lib/chatStream';
@@ -40,6 +44,21 @@ describe('streamChatMessage', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('reports a proposal event to the caller and to analytics without its summary (JEF-469)', async () => {
+    const proposal = { id: 'p1', toolName: 'create_note', summary: 'Add a note on Acme' };
+    vi.mocked(fetch).mockResolvedValue(
+      streamResponse(
+        `event: proposal\ndata: ${JSON.stringify(proposal)}\n\nevent: done\ndata: {}\n\n`,
+      ) as never,
+    );
+    const onProposal = vi.fn();
+
+    await streamChatMessage({ conversationId: 'c', message: 'hi', onDelta: vi.fn(), onProposal });
+
+    expect(onProposal).toHaveBeenCalledWith(proposal);
+    expect(mockCapture).toHaveBeenCalledWith('assistant_change_proposed', { tool: 'create_note' });
   });
 
   it('posts to CHAT_STREAM_URL with credentials and the conversationId/message body', async () => {

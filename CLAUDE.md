@@ -116,6 +116,7 @@ cp apps/web/.env.example apps/web/.env
   - A Pro feature calls `assertFeature(userId, feature)` first; a per-user cap is passed to the repository (`applicationLimit`, `storageLimitBytes`) instead of being read from `CONTENT_LIMITS` there.
   - `PLANS_ENFORCED` is off by default, and then every feature is on but the caps that already existed stay. Only `EntitlementService` reads it.
   - A downgrade never touches data. Details are in `apps/api/CLAUDE.md`. AI actions with the user's own key and MCP access are on for both plans (JEF-442).
+- **Chat writes are proposals the user confirms (JEF-469).** Chat is offered the catalogue's non-destructive writes but never runs one: `executeChatTool` saves a `ChatActionProposal` and tells the model it was **not applied**; `confirmChatAction` applies the saved arguments once, in a transaction, through the same handlers as MCP. No delete is offered. Web and mobile render the cards from `chatHistory`. Details are in `apps/api/CLAUDE.md`.
 - **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow

@@ -616,16 +616,22 @@ export function isDestructive(tool: ToolDefinition): boolean {
 export const MCP_TOOLS = TOOL_CATALOGUE;
 
 /**
- * What the in-app chat assistant exposes: reads only.
+ * What the in-app chat assistant exposes (JEF-469): every read, plus every
+ * write that is not `destructive`.
  *
- * Chat is session-authenticated and has no token scope to gate on, so it
- * cannot safely offer write tools — a user talking to the assistant has
- * not opted into letting it mutate their data the way someone minting a
- * full-access token has. Declared here rather than filtered at the call
- * site so the two surfaces' selections sit side by side and diverging is
- * a visible edit.
+ * Chat is session-authenticated and has no token scope to gate on, so a write
+ * the model asks for is never run on the spot: it becomes a proposal the user
+ * confirms (`ChatWriteTools`, `chatAssembly.executeChatTool`). Deletes are not
+ * offered at all, however they would be confirmed. Declared here rather than
+ * filtered at the call site so the two surfaces' selections sit side by side
+ * and diverging is a visible edit.
  */
-export const CHAT_TOOLS = TOOL_CATALOGUE.filter((t) => t.access === 'read');
+export const CHAT_TOOLS = TOOL_CATALOGUE.filter((t) => t.access === 'read' || !isDestructive(t));
+
+/** The writes in {@link CHAT_TOOLS}: the ones chat can propose. */
+export const CHAT_WRITE_TOOLS = CHAT_TOOLS.filter(
+  (t): t is Extract<ToolDefinition, { access: 'write' }> => t.access === 'write',
+);
 
 /**
  * Adapts catalogue entries to the shape an LLM provider expects, dropping

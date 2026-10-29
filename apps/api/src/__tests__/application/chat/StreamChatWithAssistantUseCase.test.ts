@@ -5,6 +5,8 @@ import { CHAT } from '#src/use-cases/constants.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import {
   makeConversation,
+  makeChatActionProposalRepository,
+  makeChatWriteTools,
   makeConversationRepository,
   makeMessage,
   makeMessageRepository,
@@ -56,6 +58,8 @@ function makeDeps(overrides?: Record<string, unknown>) {
     }),
     generateId: vi.fn().mockReturnValue('generated-id'),
     toolCallObserver: makeToolCallObserver(),
+    chatWriteTools: makeChatWriteTools(),
+    chatActionProposalRepository: makeChatActionProposalRepository(),
     ...overrides,
   };
 }
@@ -93,6 +97,91 @@ async function collect(
 }
 
 const baseInput = { userId: 'user-1', conversationId: 'conv-1' };
+
+describe('StreamChatWithAssistantUseCase write proposals (JEF-469)', () => {
+  function proposingDeps() {
+    const llmProvider = makeStreamingProvider(
+      {
+        content: null,
+        toolCalls: [
+          {
+            id: 'call_1',
+            name: 'update_application',
+            arguments: { applicationId: 'app-1', status: 'interviewing' },
+          },
+        ],
+      },
+      { deltas: ['I have proposed it.'], content: 'I have proposed it.', toolCalls: [] },
+    );
+    const chatWriteTools = makeChatWriteTools({
+      has: vi.fn().mockImplementation((name: string) => name === 'update_application'),
+      prepare: vi.fn().mockResolvedValue({
+        args: { applicationId: 'app-1', status: 'interviewing' },
+        summary: 'Move Acme / Engineer to interviewing',
+      }),
+    });
+    return makeDeps({
+      chatWriteTools,
+      generateId: vi.fn().mockReturnValueOnce('prop-1').mockReturnValue('msg-id'),
+      llmProviderFactory: makeLLMProviderFactory({
+        resolveForUser: vi
+          .fn()
+          .mockResolvedValue({ provider: llmProvider, providerId: 'openai', fellBackFrom: null }),
+      }),
+    });
+  }
+
+  it('emits a proposal event, keeps going, and applies nothing', async () => {
+    const deps = proposingDeps();
+
+    const events = await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'move Acme to interviewing',
+    });
+
+    expect(events.map((e) => e.type)).toEqual(['proposal', 'delta', 'done']);
+    expect(events[0]).toEqual({
+      type: 'proposal',
+      id: 'prop-1',
+      toolName: 'update_application',
+      summary: 'Move Acme / Engineer to interviewing',
+    });
+    expect(deps.chatWriteTools.apply).not.toHaveBeenCalled();
+  });
+
+  it('tells the model on its second round that the change was only proposed', async () => {
+    const deps = proposingDeps();
+    const provider = (await deps.llmProviderFactory.resolveForUser('user-1', undefined, null))
+      ?.provider;
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'move Acme to interviewing',
+    });
+
+    const secondRound = vi.mocked(provider!.completeWithToolsStream).mock.calls[1][0];
+    const toolMessage = secondRound.find((m) => m.role === 'tool');
+    expect(toolMessage?.content).toContain('"status":"proposed"');
+    expect(toolMessage?.content).toContain('NOT applied');
+  });
+
+  it('attaches the proposal to the stored assistant reply for history', async () => {
+    const deps = proposingDeps();
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'move Acme to interviewing',
+    });
+
+    const replyCall = vi
+      .mocked(deps.messageRepository.create)
+      .mock.calls.find(([data]) => data.role === 'assistant');
+    expect(deps.chatActionProposalRepository.attachToMessage).toHaveBeenCalledWith(
+      ['prop-1'],
+      replyCall?.[0].id,
+    );
+  });
+});
 
 describe('StreamChatWithAssistantUseCase', () => {
   it('throws RATE_LIMITED when the rate limiter rejects the request', async () => {

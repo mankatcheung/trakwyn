@@ -102,6 +102,10 @@ export const makeToolCallObserver = (): FakeToolCallObserver => {
           invalidParams: () => {
             call.reports.push('invalid_params');
           },
+          proposed: (result) => {
+            call.reports.push('proposed');
+            call.result = result;
+          },
           rateLimited: () => {
             call.reports.push('rate_limited');
           },

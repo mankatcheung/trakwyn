@@ -126,6 +126,12 @@ export async function handleChatStream(
       if (event.type === 'delta') writeSSE(reply, 'delta', { text: event.text });
       else if (event.type === 'fallback')
         writeSSE(reply, 'fallback', { from: event.from, to: event.to });
+      else if (event.type === 'proposal')
+        writeSSE(reply, 'proposal', {
+          id: event.id,
+          toolName: event.toolName,
+          summary: event.summary,
+        });
       else writeSSE(reply, 'done', {});
     }
   } catch (err) {
