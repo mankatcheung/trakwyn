@@ -137,7 +137,7 @@ cp apps/web/.env.example apps/web/.env
 
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
 - **CI security checks (JEF-477):**
-  - Every third-party `uses:` in `.github/workflows/*.yml` and `.github/actions/*/action.yml` is pinned to a 40-character commit SHA with the tag in a trailing comment (`actions/checkout@<sha> # v4`). Renovate (`github-actions` manager, `helpers:pinGitHubActionDigests`) bumps them in one weekly PR, updating the SHA and the comment together. `actionPinning.test.ts` fails on a tag.
+  - Actions are referenced by major version (`actions/checkout@v4`). Renovate's `github-actions` manager bumps them in one weekly PR.
   - `ci.yml` runs `dependency-review` (fails on high severity) and `secret-scan` (gitleaks, config in `.gitleaks.toml`) on pull requests, and both are in `ci-ok`'s `needs`. A new e2e placeholder value needs an `e2e-only-` prefix or an allowlist entry.
   - `codeql.yml` scans JavaScript/TypeScript on pushes to main, on pull requests touching code and weekly. It is its own workflow because it needs `security-events: write`; results go to the Security tab and it is not part of `ci-ok`.
 - **Releases (release-please, `.github/workflows/release.yml`):** the Clipper (`apps/extension`), the mobile app (`apps/mobile`), the CLI (`apps/cli`) and the server stack, `apps/api` and `apps/web`, which share one version. `packages/ui` is not versioned.

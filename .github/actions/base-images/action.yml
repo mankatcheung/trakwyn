@@ -43,7 +43,7 @@ runs:
 
     - id: cache
       if: inputs.preload != ''
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/base-images-cache
         key: base-images-${{ runner.os }}-${{ inputs.preload }}-${{ hashFiles('infra/base-images.txt') }}
@@ -52,14 +52,14 @@ runs:
     # preloaded image and the job does not hand a reference to buildx.
     - id: auth
       if: inputs.preload == '' || steps.cache.outputs.cache-hit != 'true'
-      uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+      uses: google-github-actions/auth@v2
       with:
         workload_identity_provider: ${{ inputs.workload-identity-provider }}
         service_account: ${{ inputs.service-account }}
         token_format: access_token
 
     - if: steps.auth.outcome == 'success'
-      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
         username: oauth2accesstoken
