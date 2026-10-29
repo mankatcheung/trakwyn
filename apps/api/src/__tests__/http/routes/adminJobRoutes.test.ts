@@ -8,6 +8,7 @@ import { digestRoutes } from '#src/http/routes/digest.routes.js';
 import { pushNotificationsRoutes } from '#src/http/routes/pushNotifications.routes.js';
 import { remindersRoutes } from '#src/http/routes/reminders.routes.js';
 import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
+import { accountPurgeRoutes } from '#src/http/routes/accountPurge.routes.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
@@ -100,6 +101,24 @@ describe('admin job routes', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+  });
+
+  describe('account purge (JEF-463)', () => {
+    it('reports the accounts purged as processed, and the overdue count in the answer', async () => {
+      const cradle = cradleWith({
+        purgeScheduledAccountsUseCase: {
+          execute: vi.fn().mockResolvedValue({ purged: 2, failed: 1, overdue: 1 }),
+        },
+      });
+
+      const state = await runRoute(accountPurgeRoutes(getCradle(cradle)), cradle);
+
+      expect(state.logger.info).toHaveBeenCalledWith(
+        'job.account_purge.completed',
+        expect.objectContaining({ job: ADMIN_JOBS.ACCOUNT_PURGE, processed: 2, failed: 1 }),
+      );
+      expect(state.sent).toEqual({ ok: false, purged: 2, failed: 1, overdue: 1 });
+    });
   });
 
   describe('trash purge', () => {
@@ -251,6 +270,7 @@ describe('admin job routes', () => {
   describe('when no trigger is configured at all', () => {
     it.each([
       [ADMIN_JOBS.TRASH_PURGE, trashPurgeRoutes],
+      [ADMIN_JOBS.ACCOUNT_PURGE, accountPurgeRoutes],
       [ADMIN_JOBS.REMINDERS, remindersRoutes],
       [ADMIN_JOBS.DIGEST, digestRoutes],
       [ADMIN_JOBS.PUSH_NOTIFICATIONS, pushNotificationsRoutes],
@@ -273,6 +293,7 @@ describe('admin job routes', () => {
   it('registers each job on its own admin route', () => {
     const cradle = cradleWith({});
     expect(trashPurgeRoutes(getCradle(cradle))[0]!.path).toBe(ROUTES.TRASH_PURGE);
+    expect(accountPurgeRoutes(getCradle(cradle))[0]!.path).toBe(ROUTES.ACCOUNT_PURGE);
     expect(remindersRoutes(getCradle(cradle))[0]!.path).toBe(ROUTES.REMINDERS_SEND);
     expect(digestRoutes(getCradle(cradle))[0]!.path).toBe(ROUTES.DIGEST_SEND);
     expect(pushNotificationsRoutes(getCradle(cradle))[0]!.path).toBe(

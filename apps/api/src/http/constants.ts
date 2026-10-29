@@ -57,6 +57,8 @@ export const ROUTES = {
   DOCUMENT_FILE: DOCUMENT_FILE_ROUTE.PATH,
   DIGEST_SEND: '/admin/digest/send',
   TRASH_PURGE: '/admin/trash/purge',
+  /** Deletes accounts whose deletion grace period has run out (JEF-463). */
+  ACCOUNT_PURGE: '/admin/accounts/purge',
   /** The payment provider's webhook (JEF-426). Authenticated by its signature, not a session. */
   BILLING_WEBHOOK: '/billing/webhook',
   REMINDERS_SEND: '/admin/reminders/send',
@@ -89,6 +91,7 @@ export const ROUTES = {
 export const ADMIN_JOBS = {
   DIGEST: 'digest',
   TRASH_PURGE: 'trash_purge',
+  ACCOUNT_PURGE: 'account_purge',
   REMINDERS: 'reminders',
   PUSH_NOTIFICATIONS: 'push_notifications',
 } as const;

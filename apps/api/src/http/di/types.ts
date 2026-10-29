@@ -179,7 +179,11 @@ import type { ExportDocumentDraftToPdfUseCase } from '#src/use-cases/documents/E
 import type { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import type { ConfirmEmailChangeUseCase } from '#src/use-cases/user/ConfirmEmailChangeUseCase.js';
 import type { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
-import type { DeleteAccountUseCase } from '#src/use-cases/user/DeleteAccountUseCase.js';
+import type { RequestAccountDeletionUseCase } from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
+import type { ConfirmAccountDeletionUseCase } from '#src/use-cases/user/ConfirmAccountDeletionUseCase.js';
+import type { CancelAccountDeletionUseCase } from '#src/use-cases/user/CancelAccountDeletionUseCase.js';
+import type { PurgeScheduledAccountsUseCase } from '#src/use-cases/user/PurgeScheduledAccountsUseCase.js';
+import type { AssertAccountActiveUseCase } from '#src/use-cases/auth/AssertAccountActiveUseCase.js';
 import type { ExportUserDataUseCase } from '#src/use-cases/user/ExportUserDataUseCase.js';
 import type { GenerateTotpSecretUseCase } from '#src/use-cases/user/GenerateTotpSecretUseCase.js';
 import type { ConfirmTotpSetupUseCase } from '#src/use-cases/user/ConfirmTotpSetupUseCase.js';
@@ -577,7 +581,11 @@ export interface Cradle {
   requestEmailChangeUseCase: RequestEmailChangeUseCase;
   confirmEmailChangeUseCase: ConfirmEmailChangeUseCase;
   updatePasswordUseCase: UpdatePasswordUseCase;
-  deleteAccountUseCase: DeleteAccountUseCase;
+  requestAccountDeletionUseCase: RequestAccountDeletionUseCase;
+  confirmAccountDeletionUseCase: ConfirmAccountDeletionUseCase;
+  cancelAccountDeletionUseCase: CancelAccountDeletionUseCase;
+  purgeScheduledAccountsUseCase: PurgeScheduledAccountsUseCase;
+  assertAccountActiveUseCase: AssertAccountActiveUseCase;
   exportUserDataUseCase: ExportUserDataUseCase;
   generateTotpSecretUseCase: GenerateTotpSecretUseCase;
   confirmTotpSetupUseCase: ConfirmTotpSetupUseCase;

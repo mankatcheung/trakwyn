@@ -3,7 +3,6 @@ import { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js'
 import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
-import type { IDeleteAccountUseCase } from '#src/use-cases/user/IDeleteAccountUseCase.js';
 import type { IExportUserDataUseCase } from '#src/use-cases/user/IExportUserDataUseCase.js';
 import type { IGenerateTotpSecretUseCase } from '#src/use-cases/user/IGenerateTotpSecretUseCase.js';
 import type { IConfirmTotpSetupUseCase } from '#src/use-cases/user/IConfirmTotpSetupUseCase.js';
@@ -48,9 +47,11 @@ const makeDeps = (overrides?: object) => ({
   updatePasswordUseCase: stub<IUpdatePasswordUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
-  deleteAccountUseCase: stub<IDeleteAccountUseCase>({
-    execute: vi.fn().mockResolvedValue(undefined),
-  }),
+  requestAccountDeletionUseCase: { execute: vi.fn().mockResolvedValue(undefined) },
+  confirmAccountDeletionUseCase: {
+    execute: vi.fn().mockResolvedValue({ deletionScheduledAt: new Date('2026-11-12T00:00:00Z') }),
+  },
+  cancelAccountDeletionUseCase: { execute: vi.fn().mockResolvedValue(undefined) },
   exportUserDataUseCase: stub<IExportUserDataUseCase>({ execute: vi.fn() }),
   generateTotpSecretUseCase: stub<IGenerateTotpSecretUseCase>({ execute: vi.fn() }),
   confirmTotpSetupUseCase: stub<IConfirmTotpSetupUseCase>({
@@ -209,17 +210,34 @@ describe('UserResolver', () => {
     });
   });
 
-  describe('deleteAccount', () => {
-    it('delegates to deleteAccountUseCase with the correct arguments', async () => {
+  describe('account deletion (JEF-463)', () => {
+    it('passes a deletion request straight through', async () => {
       const deps = makeDeps();
-      const resolver = new UserResolver(deps);
+      const input = { userId: 'user-1', authTime: 1_700_000_000_000, legacyPassword: 'secret' };
 
-      await resolver.deleteAccount('user-1', 'secret', 1_700_000_000_000);
+      await new UserResolver(deps).requestAccountDeletion(input);
 
-      expect(deps.deleteAccountUseCase.execute).toHaveBeenCalledWith({
-        userId: 'user-1',
-        password: 'secret',
-        authTime: 1_700_000_000_000,
+      expect(deps.requestAccountDeletionUseCase.execute).toHaveBeenCalledWith(input);
+    });
+
+    it('returns the scheduled date from a confirmation', async () => {
+      const deps = makeDeps();
+
+      const date = await new UserResolver(deps).confirmAccountDeletion('raw-token');
+
+      expect(deps.confirmAccountDeletionUseCase.execute).toHaveBeenCalledWith({
+        token: 'raw-token',
+      });
+      expect(date).toEqual(new Date('2026-11-12T00:00:00Z'));
+    });
+
+    it('passes a cancellation straight through', async () => {
+      const deps = makeDeps();
+
+      await new UserResolver(deps).cancelAccountDeletion({ token: 'raw-token' });
+
+      expect(deps.cancelAccountDeletionUseCase.execute).toHaveBeenCalledWith({
+        token: 'raw-token',
       });
     });
   });

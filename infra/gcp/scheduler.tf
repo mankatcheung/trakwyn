@@ -29,6 +29,14 @@ locals {
       schedule    = "10 9 * * *"
       retry_count = 0
     }
+    # Deletes accounts whose deletion grace period has run out (JEF-463).
+    # Retried like the trash purge: an account already deleted is not found
+    # again, and one that failed is simply tried on the next run.
+    "account-purge" = {
+      path        = "/admin/accounts/purge"
+      schedule    = "15 9 * * *"
+      retry_count = 2
+    }
   }
 }
 

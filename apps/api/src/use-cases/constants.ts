@@ -82,6 +82,8 @@ export const ACCOUNT_DELETION = {
   GRACE_PERIOD_DAYS: 14,
   /** A scheduled account still present this long after its date is reported as overdue. */
   OVERDUE_AFTER_MS: 3 * 24 * 60 * 60 * 1000, // 3 days
+  /** The log event an alert watches for (infra/axiom). Renaming it means updating the monitor. */
+  OVERDUE_EVENT: 'account_purge.overdue',
 } as const;
 
 /** API-token (`trakwyn_...`) settings. */

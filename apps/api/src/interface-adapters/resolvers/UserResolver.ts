@@ -2,7 +2,15 @@ import type { DeviceInfo } from '#src/interface-adapters/resolvers/AuthResolver.
 import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
-import type { IDeleteAccountUseCase } from '#src/use-cases/user/IDeleteAccountUseCase.js';
+import type {
+  RequestAccountDeletionInput,
+  RequestAccountDeletionUseCase,
+} from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
+import type { ConfirmAccountDeletionUseCase } from '#src/use-cases/user/ConfirmAccountDeletionUseCase.js';
+import type {
+  CancelAccountDeletionInput,
+  CancelAccountDeletionUseCase,
+} from '#src/use-cases/user/CancelAccountDeletionUseCase.js';
 import type {
   IExportUserDataUseCase,
   ExportUserDataOutput,
@@ -71,7 +79,9 @@ interface Deps {
   requestEmailChangeUseCase: IRequestEmailChangeUseCase;
   confirmEmailChangeUseCase: IConfirmEmailChangeUseCase;
   updatePasswordUseCase: IUpdatePasswordUseCase;
-  deleteAccountUseCase: IDeleteAccountUseCase;
+  requestAccountDeletionUseCase: Pick<RequestAccountDeletionUseCase, 'execute'>;
+  confirmAccountDeletionUseCase: Pick<ConfirmAccountDeletionUseCase, 'execute'>;
+  cancelAccountDeletionUseCase: Pick<CancelAccountDeletionUseCase, 'execute'>;
   exportUserDataUseCase: IExportUserDataUseCase;
   generateTotpSecretUseCase: IGenerateTotpSecretUseCase;
   confirmTotpSetupUseCase: IConfirmTotpSetupUseCase;
@@ -146,12 +156,19 @@ export class UserResolver {
     });
   }
 
-  async deleteAccount(
-    userId: string,
-    password: string,
-    authTime: number | null | undefined,
-  ): Promise<void> {
-    await this.deps.deleteAccountUseCase.execute({ userId, password, authTime });
+  async requestAccountDeletion(input: RequestAccountDeletionInput): Promise<void> {
+    await this.deps.requestAccountDeletionUseCase.execute(input);
+  }
+
+  async confirmAccountDeletion(token: string): Promise<Date> {
+    const { deletionScheduledAt } = await this.deps.confirmAccountDeletionUseCase.execute({
+      token,
+    });
+    return deletionScheduledAt;
+  }
+
+  async cancelAccountDeletion(input: CancelAccountDeletionInput): Promise<void> {
+    await this.deps.cancelAccountDeletionUseCase.execute(input);
   }
 
   async exportUserData(userId: string): Promise<ExportUserDataOutput> {

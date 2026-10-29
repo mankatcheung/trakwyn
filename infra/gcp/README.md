@@ -177,7 +177,7 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 2. Once `https://api.trakwyn.com/health` answers from Cloud Run, check that the OAuth callback URLs registered with Google and GitHub are still `https://api.trakwyn.com/auth/oauth/<provider>/callback`. The host hasn't changed, so they should be.
 3. Run each scheduled job once and check the responses in Cloud Logging:
    ```bash
-   for job in digest-send reminders-send trash-purge; do
+   for job in digest-send reminders-send trash-purge account-purge; do
      gcloud scheduler jobs run "trakwyn-api-$job" --location="$REGION"
    done
    ```
