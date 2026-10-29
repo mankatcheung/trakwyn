@@ -137,14 +137,21 @@ All are scoped to the authenticated user — a token can never read another acco
 | `list_calendar_events`  | —                                          |
 | `get_analytics`         | —                                          |
 
-A full-access token also reaches these write tools, which create or update records (required arguments shown; each also accepts further optional fields to set):
+A full-access token also reaches these write tools, which create, update or trash records (required arguments shown; each also accepts further optional fields to set):
 
 | Tool                     | Required arguments              |
 | ------------------------ | ------------------------------- |
 | `create_application`     | `company`, `role`               |
 | `update_application`     | `applicationId`                 |
+| `trash_application`      | `applicationId`                 |
 | `create_note`            | `applicationId`, `content`      |
+| `update_note`            | `noteId`, `content`             |
+| `create_contact`         | `applicationId`, `name`         |
+| `update_contact`         | `contactId`                     |
 | `create_interview_round` | `applicationId`                 |
+| `update_interview_round` | `interviewRoundId`              |
+| `create_offer`           | `applicationId`, `baseSalary`   |
+| `update_offer`           | `offerId`                       |
 | `create_skill`           | `name`                          |
 | `update_skill`           | `skillId`                       |
 | `create_education`       | `institution`, `startDate`      |
@@ -152,7 +159,11 @@ A full-access token also reaches these write tools, which create or update recor
 | `create_work_experience` | `company`, `title`, `startDate` |
 | `update_work_experience` | `workExperienceId`              |
 
-Server identifies as `trakwyn-mcp` v1.0.0, MCP protocol `2024-11-05`. Supported methods: `initialize`, `tools/list`, `tools/call`.
+`trash_application` moves the application to Trash, where it can be restored from the web app for 30 days. Nothing is permanently deleted over MCP. `create_offer` needs a plan with offers and answers `PLAN_REQUIRED` (in `error.data.code`) otherwise.
+
+Every tool in `tools/list` carries MCP tool `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`), so a client can ask before calling a write tool. `trash_application` is the only one marked destructive.
+
+Server identifies as `trakwyn-mcp` v1.0.0. It speaks MCP protocol `2025-03-26` and still accepts `2024-11-05`: `initialize` answers with the client's version when it is one of those, otherwise with `2025-03-26`. Supported methods: `initialize`, `tools/list`, `tools/call`.
 
 For local development the endpoint is `http://localhost:3001/mcp`.
 

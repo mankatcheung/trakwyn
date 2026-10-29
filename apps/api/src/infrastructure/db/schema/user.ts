@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { pgTable, text, integer, bigint, boolean, timestamp } from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 
@@ -60,6 +61,13 @@ export const user = pgTable('User', {
   backupEmailVerifiedAt: timestamp('backupEmailVerifiedAt', TIMESTAMP),
   /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
   onboardingChecklistDismissedAt: timestamp('onboardingChecklistDismissedAt', TIMESTAMP),
+  /** Goals picked in the welcome flow (JEF-460), values of `ONBOARDING_GOALS`; empty when skipped. */
+  onboardingGoals: text('onboardingGoals')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  /** When the welcome flow was finished or skipped (JEF-460); null sends the user to it. */
+  onboardingCompletedAt: timestamp('onboardingCompletedAt', TIMESTAMP),
   /** When the account will be purged (JEF-463); null unless a deletion is confirmed and not cancelled. */
   deletionScheduledAt: timestamp('deletionScheduledAt', TIMESTAMP),
   createdAt: timestamp('createdAt', TIMESTAMP)

@@ -8,6 +8,7 @@ import { documentCategory } from '#/lib/documentCategory';
 import { useLocale } from '#/lib/i18n';
 import { Button, FormLabel, Select } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
+import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
 import {
   documentDraftsQueryKey,
   documentDraftsQueryOptions,
@@ -43,6 +44,8 @@ export function GenerateCoverLetterCard({ applicationId }: { applicationId: stri
   const navigate = useNavigate();
   const [choice, setChoice] = useState('');
   const pickerId = useId();
+  const profileEmpty = useIsProfileEmpty();
+  const [askAboutProfile, setAskAboutProfile] = useState(false);
 
   const { data: documentsData } = useQuery(documentsQueryOptions(applicationId));
   const { data: draftsData } = useQuery(documentDraftsQueryOptions(applicationId));
@@ -70,6 +73,9 @@ export function GenerateCoverLetterCard({ applicationId }: { applicationId: stri
       });
     },
   });
+
+  // An empty profile makes a generic letter, so ask first (JEF-460).
+  const startGenerate = () => (profileEmpty ? setAskAboutProfile(true) : generate.mutate());
 
   return (
     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
@@ -111,13 +117,22 @@ export function GenerateCoverLetterCard({ applicationId }: { applicationId: stri
         type="button"
         variant="secondary"
         className="mt-3"
-        onClick={() => generate.mutate()}
+        onClick={startGenerate}
         disabled={generate.isPending}
       >
         {generate.isPending
           ? t('documentDraft.generatingCoverLetter')
           : `✨ ${t('documentDraft.generateCoverLetter')}`}
       </Button>
+
+      {askAboutProfile && (
+        <EmptyProfilePrompt
+          onGenerateAnyway={() => {
+            setAskAboutProfile(false);
+            generate.mutate();
+          }}
+        />
+      )}
 
       {generate.isError && (
         <p className="mt-2 text-sm text-red-600 dark:text-red-400">

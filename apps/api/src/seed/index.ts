@@ -44,6 +44,8 @@ export async function runSeed(db: DrizzleDb): Promise<void> {
     timezone: 'America/New_York',
     targetRole: 'Senior Software Engineer',
     emailVerifiedAt: now,
+    // The demo account has data already; the first-run welcome flow (JEF-460) would only be in the way.
+    onboardingCompletedAt: now,
     weeklyDigestEnabled: true,
     followUpRemindersEnabled: true,
     totpEnabled: false,

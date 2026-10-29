@@ -24,6 +24,7 @@ import { GetLlmUsageSummaryUseCase } from '#src/use-cases/user/GetLlmUsageSummar
 import { GetNotificationPreferencesUseCase } from '#src/use-cases/user/GetNotificationPreferencesUseCase.js';
 import { UpdateNotificationPreferencesUseCase } from '#src/use-cases/user/UpdateNotificationPreferencesUseCase.js';
 import { DismissOnboardingChecklistUseCase } from '#src/use-cases/user/DismissOnboardingChecklistUseCase.js';
+import { CompleteOnboardingUseCase } from '#src/use-cases/user/CompleteOnboardingUseCase.js';
 import { UpdateProfileUseCase } from '#src/use-cases/user/UpdateProfileUseCase.js';
 import { GetUserUseCase } from '#src/use-cases/user/GetUserUseCase.js';
 import { RequestAvatarUploadUrlUseCase } from '#src/use-cases/user/RequestAvatarUploadUrlUseCase.js';
@@ -87,6 +88,7 @@ export const user = {
   dismissOnboardingChecklistUseCase: asClass(DismissOnboardingChecklistUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
+  completeOnboardingUseCase: asClass(CompleteOnboardingUseCase, { lifetime: Lifetime.TRANSIENT }),
   updateProfileUseCase: asClass(UpdateProfileUseCase, { lifetime: Lifetime.TRANSIENT }),
   getUserUseCase: asClass(GetUserUseCase, { lifetime: Lifetime.TRANSIENT }),
   requestAvatarUploadUrlUseCase: asClass(RequestAvatarUploadUrlUseCase, {

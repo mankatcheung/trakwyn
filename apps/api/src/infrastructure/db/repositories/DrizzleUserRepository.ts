@@ -3,6 +3,7 @@ import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { user } from '../schema.js';
 import type { User } from '#src/domain/user/User.js';
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { getClient } from '../transactionContext.js';
 
@@ -90,6 +91,8 @@ export class DrizzleUserRepository implements IUserRepository {
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;
+      onboardingGoals?: OnboardingGoal[];
+      onboardingCompletedAt?: Date | null;
       plan?: Plan;
       planExpiresAt?: Date | null;
       planSource?: PlanSource | null;
@@ -146,6 +149,8 @@ export class DrizzleUserRepository implements IUserRepository {
       backupEmail: row.backupEmail,
       backupEmailVerifiedAt: row.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: row.onboardingChecklistDismissedAt,
+      onboardingGoals: row.onboardingGoals as OnboardingGoal[],
+      onboardingCompletedAt: row.onboardingCompletedAt,
       deletionScheduledAt: row.deletionScheduledAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

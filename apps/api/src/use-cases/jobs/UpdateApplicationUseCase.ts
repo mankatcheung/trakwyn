@@ -1,3 +1,4 @@
+import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
@@ -67,7 +68,11 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
             applicationId: input.applicationId,
             actorId: input.userId,
             eventType: 'status_changed',
-            payload: JSON.stringify({ from: app.status, to: input.status }),
+            payload: JSON.stringify({
+              from: app.status,
+              to: input.status,
+              ...actorPayload(input.actor),
+            }),
           });
         } else {
           const primitiveFields = [
@@ -99,7 +104,7 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
               applicationId: input.applicationId,
               actorId: input.userId,
               eventType: 'field_updated',
-              payload: JSON.stringify({ fields: changed }),
+              payload: JSON.stringify({ fields: changed, ...actorPayload(input.actor) }),
             });
           }
         }

@@ -151,4 +151,26 @@ describe('CreateInterviewRoundUseCase', () => {
       expect.anything(),
     );
   });
+
+  it('records the MCP source and token in the activity log (JEF-466)', async () => {
+    const actor = { source: 'mcp' as const, apiTokenId: 'tok-1', apiTokenName: 'Claude Desktop' };
+    const activityLogRepository = makeActivityLogRepository();
+    const useCase = new CreateInterviewRoundUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(makeApplication()),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        create: vi.fn().mockResolvedValue(makeInterviewRound({ id: 'round-1', type: 'phone' })),
+      }),
+      activityLogRepository,
+      generateId: vi.fn().mockReturnValue('id-1'),
+    });
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', actor });
+
+    expect(activityLogRepository.append).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: JSON.stringify({ roundId: 'round-1', type: 'phone', ...actor }),
+      }),
+    );
+  });
 });

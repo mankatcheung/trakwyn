@@ -1,3 +1,5 @@
+import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
+
 /**
  * Application-policy constants: the rules the use-case layer enforces.
  *
@@ -642,6 +644,8 @@ export const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
  * validate against), not a route the server registers.
  */
 export const MCP_OAUTH = {
+  /** Names a grant in the activity log when its client row is gone (JEF-466). */
+  FALLBACK_CLIENT_NAME: 'MCP client',
   RESOURCE: '/mcp',
   CLIENT_ID_PREFIX: 'trakwyn_mcp_client_',
   CLIENT_ID_RANDOM_BYTES: 16,
@@ -685,3 +689,15 @@ export const BILLING = {
   /** Users who upgrade within this many days of joining (or of billing going live) get the founder price. */
   FOUNDER_WINDOW_DAYS: 60,
 } as const;
+
+/**
+ * What the first-run welcome flow offers to help with (JEF-460). Stored on the
+ * user and used to pick which onboarding steps and checklist items to show.
+ * The AI goals are the ones whose output is written from the user's profile.
+ */
+export const ONBOARDING_GOALS = [
+  'track_applications',
+  'ai_documents',
+  'assistant',
+  'mcp',
+] as const satisfies readonly OnboardingGoal[];

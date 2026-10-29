@@ -1,4 +1,5 @@
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 
 export interface User {
   id: string;
@@ -45,6 +46,10 @@ export interface User {
   backupEmailVerifiedAt: Date | null;
   /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
   onboardingChecklistDismissedAt: Date | null;
+  /** What the user picked in the welcome flow (JEF-460); empty when skipped or never asked. */
+  onboardingGoals: OnboardingGoal[];
+  /** When the user finished or skipped the welcome flow (JEF-460); null until then, which sends them to it. */
+  onboardingCompletedAt: Date | null;
   /**
    * When the account will be purged (JEF-463); null unless the user confirmed a
    * deletion and has not cancelled it. While set, the account may only cancel.

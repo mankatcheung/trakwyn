@@ -16,6 +16,7 @@ uploads/
 .vercel
 apps/api/src/index.js
 apps/api/src/generated/
+apps/api/.eval-cache/
 *.tsbuildinfo
 storybook-static
 

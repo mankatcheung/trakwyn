@@ -75,4 +75,46 @@ describe('ActivityTab', () => {
       expect(screen.getByText('something_new')).toBeInTheDocument();
     });
   });
+
+  it('labels a change an MCP client made with the token it used (JEF-466)', async () => {
+    mockGqlRequest.mockResolvedValue({
+      activityLogs: [
+        {
+          id: 'log-3',
+          eventType: 'field_updated',
+          payload: JSON.stringify({
+            fields: ['role'],
+            source: 'mcp',
+            apiTokenId: 'tok-1',
+            apiTokenName: 'Claude Desktop',
+          }),
+          createdAt: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText(/via Claude Desktop \(MCP\)/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows no attribution for a change made in the app', async () => {
+    mockGqlRequest.mockResolvedValue({
+      activityLogs: [
+        {
+          id: 'log-4',
+          eventType: 'field_updated',
+          payload: JSON.stringify({ fields: ['role'] }),
+          createdAt: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Fields updated')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/\(MCP\)/)).not.toBeInTheDocument();
+  });
 });

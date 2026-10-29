@@ -1,3 +1,4 @@
+import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import type {
   InterviewRound,
   InterviewRoundType,
@@ -13,6 +14,8 @@ export interface CreateInterviewRoundInput {
   interviewerName?: string | null;
   notes?: string | null;
   outcome?: InterviewRoundOutcome;
+  /** Set when an MCP client made the change; recorded in the activity log. */
+  actor?: McpActor;
 }
 
 export type CreateInterviewRoundOutput = InterviewRound;

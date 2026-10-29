@@ -160,4 +160,9 @@ export const rateLimiters = {
     'mcpOAuthRevocationRateLimiter',
     RATE_LIMIT.MCP_OAUTH_REVOCATION,
   ),
+  mcpToolCallReadRateLimiter: limiter('mcpToolCallReadRateLimiter', RATE_LIMIT.MCP_TOOL_CALL_READ),
+  mcpToolCallWriteRateLimiter: limiter(
+    'mcpToolCallWriteRateLimiter',
+    RATE_LIMIT.MCP_TOOL_CALL_WRITE,
+  ),
 } satisfies NameAndRegistrationPair<Cradle>;

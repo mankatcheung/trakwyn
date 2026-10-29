@@ -645,6 +645,8 @@ export type Mutation = {
   /** Cancels the signed-in account’s scheduled deletion. Without a session, pass the token from the mailed link instead. */
   cancelAccountDeletion?: Maybe<Scalars['Boolean']['output']>;
   compareOffers?: Maybe<Array<OfferComparison>>;
+  /** Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals. */
+  completeOnboarding?: Maybe<Scalars['Boolean']['output']>;
   computeResumeAtsScore?: Maybe<AtsScore>;
   computeResumeMatchScore?: Maybe<ResumeMatch>;
   /** The mailed link: schedules the deletion and returns its date (ISO 8601). Needs no session; ends every session, so the cookies are cleared. */
@@ -810,6 +812,11 @@ export type MutationCancelAccountDeletionArgs = {
 
 export type MutationCompareOffersArgs = {
   offerIds: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationCompleteOnboardingArgs = {
+  goals: Array<OnboardingGoal>;
 };
 
 
@@ -1512,6 +1519,12 @@ export type OfferWithApplication = {
   role?: Maybe<Scalars['String']['output']>;
 };
 
+export type OnboardingGoal =
+  | 'AI_DOCUMENTS'
+  | 'ASSISTANT'
+  | 'MCP'
+  | 'TRACK_APPLICATIONS';
+
 export type ParsedJobDescription = {
   __typename?: 'ParsedJobDescription';
   company?: Maybe<Scalars['String']['output']>;
@@ -1965,6 +1978,8 @@ export type User = {
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
+  onboardingCompletedAt?: Maybe<Scalars['String']['output']>;
+  onboardingGoals?: Maybe<Array<OnboardingGoal>>;
   /** How this user confirms it is them before a sensitive change, in the order to offer them (JEF-463). */
   stepUpMethods?: Maybe<Array<StepUpMethod>>;
   storageLimitBytes?: Maybe<Scalars['Float']['output']>;

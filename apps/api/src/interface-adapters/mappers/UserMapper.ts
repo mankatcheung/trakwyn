@@ -1,4 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
+import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 
 export interface UserDTO {
@@ -20,6 +21,8 @@ export interface UserDTO {
   backupEmail: string | null;
   backupEmailVerifiedAt: Date | null;
   onboardingChecklistDismissedAt: Date | null;
+  onboardingGoals: OnboardingGoal[];
+  onboardingCompletedAt: Date | null;
   storageUsedBytes: number;
   storageLimitBytes: number;
   hasPassword: boolean;
@@ -58,6 +61,8 @@ export class UserMapper {
       backupEmail: user.backupEmail,
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,
+      onboardingGoals: user.onboardingGoals,
+      onboardingCompletedAt: user.onboardingCompletedAt,
       storageUsedBytes: user.documentBytes,
       storageLimitBytes: this.entitlementService.forUser(user).limits.documentBytes,
       hasPassword: user.passwordHash !== null,

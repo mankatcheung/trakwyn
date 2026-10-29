@@ -1,5 +1,5 @@
 {
-  "id": "5630c75b-ce7d-4f97-8c80-588849f4f03a",
+  "id": "cc69a39f-d77a-421c-8231-c9442aa55cac",
   "prevId": "fc9c38cc-4f3a-4d25-b407-a5501b34a509",
   "version": "7",
   "dialect": "postgresql",
@@ -199,8 +199,15 @@
           "primaryKey": false,
           "notNull": false
         },
-        "deletionScheduledAt": {
-          "name": "deletionScheduledAt",
+        "onboardingGoals": {
+          "name": "onboardingGoals",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "onboardingCompletedAt": {
+          "name": "onboardingCompletedAt",
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
@@ -915,108 +922,6 @@
           "columns": ["codeHash"]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.UserActionToken": {
-      "name": "UserActionToken",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "purpose": {
-          "name": "purpose",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tokenHash": {
-          "name": "tokenHash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "usedAt": {
-          "name": "usedAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "UserActionToken_userId_purpose_key": {
-          "name": "UserActionToken_userId_purpose_key",
-          "columns": [
-            {
-              "expression": "userId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "purpose",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "UserActionToken_tokenHash_idx": {
-          "name": "UserActionToken_tokenHash_idx",
-          "columns": [
-            {
-              "expression": "tokenHash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "UserActionToken_userId_User_id_fk": {
-          "name": "UserActionToken_userId_User_id_fk",
-          "tableFrom": "UserActionToken",
-          "tableTo": "User",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

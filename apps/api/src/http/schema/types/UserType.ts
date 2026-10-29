@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import type { UserDTO } from '#src/interface-adapters/mappers/UserMapper.js';
+import { OnboardingGoalEnum } from '#src/http/schema/types/enums/OnboardingGoalEnum.js';
 import { StepUpMethodEnum } from '#src/http/schema/types/enums/StepUpMethodEnum.js';
 
 export const UserRef = builder.objectRef<UserDTO>('User');
@@ -28,6 +29,15 @@ UserRef.implement({
       type: 'String',
       nullable: true,
       resolve: (user) => user.onboardingChecklistDismissedAt?.toISOString() ?? null,
+    }),
+    onboardingGoals: t.field({
+      type: [OnboardingGoalEnum],
+      resolve: (user) => user.onboardingGoals,
+    }),
+    onboardingCompletedAt: t.field({
+      type: 'String',
+      nullable: true,
+      resolve: (user) => user.onboardingCompletedAt?.toISOString() ?? null,
     }),
     hasPassword: t.exposeBoolean('hasPassword', {
       description: 'False for an account created through Google or GitHub that never set one.',

@@ -57,13 +57,11 @@ describe('AccountDeletionScheduledScreen (JEF-463)', () => {
   });
 
   it('shows the error when cancelling fails', async () => {
-    const mutateAsync = jest
-      .fn()
-      .mockRejectedValue(
-        Object.assign(new Error('fail'), {
-          response: { errors: [{ message: 'Try again later' }] },
-        }),
-      );
+    const mutateAsync = jest.fn().mockRejectedValue(
+      Object.assign(new Error('fail'), {
+        response: { errors: [{ message: 'Try again later' }] },
+      }),
+    );
     jest
       .mocked(useCancelAccountDeletion)
       .mockReturnValue({ mutateAsync, isPending: false } as never);

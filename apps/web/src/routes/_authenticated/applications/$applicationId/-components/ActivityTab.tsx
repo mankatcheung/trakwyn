@@ -47,6 +47,19 @@ function formatActivityPayload(eventType: string, payloadStr: string): string {
   return '';
 }
 
+/** "via Claude Desktop (MCP)" for a change an MCP client made (JEF-466); null for the user's own. */
+function formatActor(payloadStr: string): string | null {
+  try {
+    const p = JSON.parse(payloadStr);
+    if (p?.source !== 'mcp') return null;
+    const name =
+      typeof p.apiTokenName === 'string' && p.apiTokenName ? p.apiTokenName : 'an API token';
+    return `via ${name} (MCP)`;
+  } catch {
+    return null;
+  }
+}
+
 export function ActivityTab({ applicationId }: { applicationId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['activityLogs', applicationId],
@@ -65,6 +78,7 @@ export function ActivityTab({ applicationId }: { applicationId: string }) {
       ) : null}
       {logs.map((log) => {
         const detail = formatActivityPayload(log.eventType, log.payload);
+        const actor = formatActor(log.payload);
         return (
           <Card key={log.id} className="flex items-start gap-3 p-3">
             <span className="mt-0.5 text-lg leading-none">{EVENT_ICONS[log.eventType] ?? '•'}</span>
@@ -75,6 +89,7 @@ export function ActivityTab({ applicationId }: { applicationId: string }) {
               </p>
               <p className="mt-0.5 text-xs text-gray-400">
                 {new Date(log.createdAt).toLocaleString()}
+                {actor && <span className="ml-2">· {actor}</span>}
               </p>
             </div>
           </Card>

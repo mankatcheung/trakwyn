@@ -3,15 +3,6 @@ import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEma
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
 import type {
-  RequestAccountDeletionInput,
-  RequestAccountDeletionUseCase,
-} from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
-import type { ConfirmAccountDeletionUseCase } from '#src/use-cases/user/ConfirmAccountDeletionUseCase.js';
-import type {
-  CancelAccountDeletionInput,
-  CancelAccountDeletionUseCase,
-} from '#src/use-cases/user/CancelAccountDeletionUseCase.js';
-import type {
   IExportUserDataUseCase,
   ExportUserDataOutput,
 } from '#src/use-cases/user/IExportUserDataUseCase.js';
@@ -57,6 +48,7 @@ import type {
 } from '#src/use-cases/user/IGetNotificationPreferencesUseCase.js';
 import type { IUpdateNotificationPreferencesUseCase } from '#src/use-cases/user/IUpdateNotificationPreferencesUseCase.js';
 import type { IDismissOnboardingChecklistUseCase } from '#src/use-cases/user/IDismissOnboardingChecklistUseCase.js';
+import type { ICompleteOnboardingUseCase } from '#src/use-cases/user/ICompleteOnboardingUseCase.js';
 import type { IUpdateProfileUseCase } from '#src/use-cases/user/IUpdateProfileUseCase.js';
 import type { IGetUserUseCase } from '#src/use-cases/user/IGetUserUseCase.js';
 import type {
@@ -79,9 +71,6 @@ interface Deps {
   requestEmailChangeUseCase: IRequestEmailChangeUseCase;
   confirmEmailChangeUseCase: IConfirmEmailChangeUseCase;
   updatePasswordUseCase: IUpdatePasswordUseCase;
-  requestAccountDeletionUseCase: Pick<RequestAccountDeletionUseCase, 'execute'>;
-  confirmAccountDeletionUseCase: Pick<ConfirmAccountDeletionUseCase, 'execute'>;
-  cancelAccountDeletionUseCase: Pick<CancelAccountDeletionUseCase, 'execute'>;
   exportUserDataUseCase: IExportUserDataUseCase;
   generateTotpSecretUseCase: IGenerateTotpSecretUseCase;
   confirmTotpSetupUseCase: IConfirmTotpSetupUseCase;
@@ -101,6 +90,7 @@ interface Deps {
   getNotificationPreferencesUseCase: IGetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: IUpdateNotificationPreferencesUseCase;
   dismissOnboardingChecklistUseCase: IDismissOnboardingChecklistUseCase;
+  completeOnboardingUseCase: ICompleteOnboardingUseCase;
   updateProfileUseCase: IUpdateProfileUseCase;
   getUserUseCase: IGetUserUseCase;
   requestAvatarUploadUrlUseCase: IRequestAvatarUploadUrlUseCase;
@@ -154,21 +144,6 @@ export class UserResolver {
       ipAddress: device.ipAddress,
       userAgent: device.userAgent,
     });
-  }
-
-  async requestAccountDeletion(input: RequestAccountDeletionInput): Promise<void> {
-    await this.deps.requestAccountDeletionUseCase.execute(input);
-  }
-
-  async confirmAccountDeletion(token: string): Promise<Date> {
-    const { deletionScheduledAt } = await this.deps.confirmAccountDeletionUseCase.execute({
-      token,
-    });
-    return deletionScheduledAt;
-  }
-
-  async cancelAccountDeletion(input: CancelAccountDeletionInput): Promise<void> {
-    await this.deps.cancelAccountDeletionUseCase.execute(input);
   }
 
   async exportUserData(userId: string): Promise<ExportUserDataOutput> {
@@ -314,6 +289,10 @@ export class UserResolver {
 
   async dismissOnboardingChecklist(userId: string): Promise<void> {
     await this.deps.dismissOnboardingChecklistUseCase.execute(userId);
+  }
+
+  async completeOnboarding(userId: string, goals: readonly string[]): Promise<void> {
+    await this.deps.completeOnboardingUseCase.execute(userId, goals);
   }
 
   async updateProfile(

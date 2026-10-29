@@ -28,7 +28,7 @@ builder.mutationField('requestAccountDeletion', (t) =>
     resolve: async (_root, _args, ctx) => {
       const user = sessionUser(ctx);
       try {
-        await ctx.diScope.cradle.userResolver.requestAccountDeletion({
+        await ctx.diScope.cradle.accountDeletionResolver.request({
           userId: user.sub,
           authTime: sessionAuthTime(user),
         });
@@ -48,7 +48,7 @@ builder.mutationField('deleteAccount', (t) =>
     resolve: async (_root, args, ctx) => {
       const user = sessionUser(ctx);
       try {
-        await ctx.diScope.cradle.userResolver.requestAccountDeletion({
+        await ctx.diScope.cradle.accountDeletionResolver.request({
           userId: user.sub,
           authTime: sessionAuthTime(user),
           legacyPassword: args.password,
@@ -68,7 +68,7 @@ builder.mutationField('confirmAccountDeletion', (t) =>
     args: { token: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
       try {
-        const date = await ctx.diScope.cradle.userResolver.confirmAccountDeletion(args.token);
+        const date = await ctx.diScope.cradle.accountDeletionResolver.confirm(args.token);
         clearAuthCookies(ctx.reply);
         return date.toISOString();
       } catch (err) {
@@ -86,7 +86,7 @@ builder.mutationField('cancelAccountDeletion', (t) =>
     resolve: async (_root, args, ctx) => {
       if (!args.token && !ctx.user) throw unauthorized();
       try {
-        await ctx.diScope.cradle.userResolver.cancelAccountDeletion(
+        await ctx.diScope.cradle.accountDeletionResolver.cancel(
           args.token ? { token: args.token } : { userId: ctx.user!.sub },
         );
         return true;

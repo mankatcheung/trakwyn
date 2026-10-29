@@ -85,6 +85,8 @@ export function mcpRoutes(getCradle: () => Cradle): RouteDefinition[] {
           req.body,
           authResult.sub,
           authResult.scope,
+          authResult.tokenId,
+          authResult.actor,
         );
         res.status(status ?? 200).send(body);
       },

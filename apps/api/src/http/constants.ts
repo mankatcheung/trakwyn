@@ -162,18 +162,10 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
   },
-  // Step-up codes mailed per account (JEF-463). Each one replaces the last, so
-  // this only bounds the mail a signed-in session can send to its owner; the
-  // guesses at a code are held by TOTP_VERIFICATION's per-account budget.
-  STEP_UP_CODE_SEND: {
-    MAX_ATTEMPTS: 3,
-    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-  },
-  // "Confirm deletion" mails per account (JEF-463), for the same reason.
-  ACCOUNT_DELETION_REQUEST: {
-    MAX_ATTEMPTS: 3,
-    WINDOW_MS: 60 * 60 * 1000, // 1 hour
-  },
+  // Mail a signed-in session can send its owner (JEF-463): step-up codes and "confirm deletion"
+  // links, per account. Guesses at a code are held by TOTP_VERIFICATION's per-account budget.
+  STEP_UP_CODE_SEND: { MAX_ATTEMPTS: 3, WINDOW_MS: 15 * 60 * 1000 },
+  ACCOUNT_DELETION_REQUEST: { MAX_ATTEMPTS: 3, WINDOW_MS: 60 * 60 * 1000 },
   // Every login attempt, by email and by IP (JEF-401). A ceiling, not the
   // captcha trigger: it stops a script from trying passwords forever once it
   // has learned to skip the widget (the mobile mutations never show one).
@@ -250,6 +242,22 @@ export const RATE_LIMIT = {
   },
   MCP_OAUTH_REVOCATION: {
     MAX_ATTEMPTS: 20,
+    WINDOW_MS: 5 * 60 * 1000,
+  },
+  // MCP `tools/call`, per credential (JEF-465). An agent stuck in a loop, or
+  // steered by injected instructions, would otherwise write without bound with
+  // a full-access token. Reads are cheap and an agent legitimately fans out
+  // (list, then get each row), so 300 in 5 minutes is one call a second. Writes
+  // change the user's data, so they get a fifth of that: 60 in 5 minutes is
+  // well above a person-paced session and still ends a runaway loop in a
+  // minute. The two budgets are separate, so a loop of reads never blocks a
+  // write.
+  MCP_TOOL_CALL_READ: {
+    MAX_ATTEMPTS: 300,
+    WINDOW_MS: 5 * 60 * 1000,
+  },
+  MCP_TOOL_CALL_WRITE: {
+    MAX_ATTEMPTS: 60,
     WINDOW_MS: 5 * 60 * 1000,
   },
   // Single-shot AI mutations (cover letter / JD parsing / resume match) — more

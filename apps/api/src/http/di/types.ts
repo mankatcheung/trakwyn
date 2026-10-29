@@ -103,6 +103,7 @@ import type { NoteResolver } from '#src/interface-adapters/resolvers/NoteResolve
 import type { DocumentResolver } from '#src/interface-adapters/resolvers/DocumentResolver.js';
 import type { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
 import type { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
+import type { AccountDeletionResolver } from '#src/interface-adapters/resolvers/AccountDeletionResolver.js';
 import type { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
 import type { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
 import type { MockInterviewQuestionResolver } from '#src/interface-adapters/resolvers/MockInterviewQuestionResolver.js';
@@ -201,6 +202,7 @@ import type { ImportUserDataUseCase } from '#src/use-cases/user/ImportUserDataUs
 import type { GetNotificationPreferencesUseCase } from '#src/use-cases/user/GetNotificationPreferencesUseCase.js';
 import type { UpdateNotificationPreferencesUseCase } from '#src/use-cases/user/UpdateNotificationPreferencesUseCase.js';
 import type { DismissOnboardingChecklistUseCase } from '#src/use-cases/user/DismissOnboardingChecklistUseCase.js';
+import type { CompleteOnboardingUseCase } from '#src/use-cases/user/CompleteOnboardingUseCase.js';
 import type { UpdateProfileUseCase } from '#src/use-cases/user/UpdateProfileUseCase.js';
 import type { GetUserUseCase } from '#src/use-cases/user/GetUserUseCase.js';
 import type { RequestAvatarUploadUrlUseCase } from '#src/use-cases/user/RequestAvatarUploadUrlUseCase.js';
@@ -447,6 +449,9 @@ export interface Cradle {
   mcpOAuthAuthorizationRateLimiter: IRateLimiter;
   mcpOAuthTokenRateLimiter: IRateLimiter;
   mcpOAuthRevocationRateLimiter: IRateLimiter;
+  mcpToolCallReadRateLimiter: IRateLimiter;
+  mcpToolCallWriteRateLimiter: IRateLimiter;
+  mcpToolCallRetryAfterS: number;
   totpProvider: ITotpProvider;
   oauthAccountRepository: DrizzleOAuthAccountRepository;
   googleOAuthProvider: IOAuthProvider;
@@ -490,6 +495,7 @@ export interface Cradle {
   documentResolver: DocumentResolver;
   documentDraftResolver: DocumentDraftResolver;
   userResolver: UserResolver;
+  accountDeletionResolver: AccountDeletionResolver;
   interviewRoundResolver: InterviewRoundResolver;
   interviewQuestionResolver: InterviewQuestionResolver;
   mockInterviewQuestionResolver: MockInterviewQuestionResolver;
@@ -603,6 +609,7 @@ export interface Cradle {
   getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: UpdateNotificationPreferencesUseCase;
   dismissOnboardingChecklistUseCase: DismissOnboardingChecklistUseCase;
+  completeOnboardingUseCase: CompleteOnboardingUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   getUserUseCase: GetUserUseCase;
   requestAvatarUploadUrlUseCase: RequestAvatarUploadUrlUseCase;

@@ -7,6 +7,7 @@ import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input, Select } from '@trakwyn/ui';
 import type { SectionId } from '../-sections';
 import { GenerateCoverLetterCard } from './GenerateCoverLetterCard';
+import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
 
 const GENERATE_RESUME_MUTATION = `
   mutation GenerateResume($applicationId: ID!) {
@@ -76,6 +77,8 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profileEmpty = useIsProfileEmpty();
+  const [askAboutProfile, setAskAboutProfile] = useState(false);
 
   const typeLabel = type === 'cover_letter' ? t('documents.cover_letter') : t('documents.resume');
 
@@ -151,6 +154,9 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
     }
   };
 
+  // An empty profile makes a generic resume, so ask first (JEF-460).
+  const startGenerate = () => (profileEmpty ? setAskAboutProfile(true) : void handleGenerate());
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -205,11 +211,19 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
               type="button"
               variant="secondary"
               className="mt-3"
-              onClick={() => void handleGenerate()}
+              onClick={startGenerate}
               disabled={loading}
             >
               {loading ? t('documentDraft.generating') : `✨ ${t('documentDraft.generateResume')}`}
             </Button>
+            {askAboutProfile && (
+              <EmptyProfilePrompt
+                onGenerateAnyway={() => {
+                  setAskAboutProfile(false);
+                  void handleGenerate();
+                }}
+              />
+            )}
           </div>
         )}
 

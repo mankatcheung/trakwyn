@@ -1,3 +1,4 @@
+import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
@@ -40,7 +41,11 @@ export class CreateInterviewRoundUseCase implements ICreateInterviewRoundUseCase
       applicationId: input.applicationId,
       actorId: input.userId,
       eventType: 'interview_added',
-      payload: JSON.stringify({ roundId: round.id, type: round.type }),
+      payload: JSON.stringify({
+        roundId: round.id,
+        type: round.type,
+        ...actorPayload(input.actor),
+      }),
     });
 
     return round;

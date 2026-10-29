@@ -15,8 +15,12 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { OnboardingChecklist } from '#/routes/_authenticated/-components/OnboardingChecklist';
+import {
+  OnboardingChecklist,
+  isRelevantToGoals,
+} from '#/routes/_authenticated/-components/OnboardingChecklist';
 import type { OnboardingChecklistData } from '#/routes/_authenticated/dashboard';
+import type { OnboardingGoal } from '#/lib/onboarding';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -95,6 +99,76 @@ describe('OnboardingChecklist', () => {
       'href',
       '/profile',
     );
+  });
+
+  describe('built from the welcome-flow goals (JEF-460)', () => {
+    const withGoals = (goals: OnboardingGoal[]): OnboardingChecklistData => ({
+      ...baseData,
+      me: { onboardingChecklistDismissedAt: null, onboardingGoals: goals },
+    });
+
+    it('keeps every item when no goals are stored', () => {
+      render(<OnboardingChecklist data={withGoals([])} hasApplications={false} />, {
+        wrapper: Wrapper,
+      });
+
+      expect(screen.getAllByRole('link')).toHaveLength(4);
+    });
+
+    it('shows only the application item for someone who only tracks applications', () => {
+      render(
+        <OnboardingChecklist data={withGoals(['TRACK_APPLICATIONS'])} hasApplications={false} />,
+        {
+          wrapper: Wrapper,
+        },
+      );
+
+      expect(screen.getByText('Create your first job application')).toBeInTheDocument();
+      expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
+    });
+
+    it('adds the AI key and experience items for an AI goal, and MCP only for the MCP goal', () => {
+      render(<OnboardingChecklist data={withGoals(['ASSISTANT'])} hasApplications={false} />, {
+        wrapper: Wrapper,
+      });
+
+      expect(screen.getByText('Add an AI provider API key')).toBeInTheDocument();
+      expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
+      expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
+    });
+
+    it('shows the MCP item, without the AI items, for the MCP goal alone', () => {
+      render(<OnboardingChecklist data={withGoals(['MCP'])} hasApplications={false} />, {
+        wrapper: Wrapper,
+      });
+
+      expect(screen.getByText('Connect MCP by generating an API token')).toBeInTheDocument();
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
+    });
+
+    it('hides once the items relevant to the goals are done, whatever the others say', () => {
+      render(<OnboardingChecklist data={withGoals(['TRACK_APPLICATIONS'])} hasApplications />, {
+        wrapper: Wrapper,
+      });
+
+      expect(screen.queryByText('Get started with Trakwyn')).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ['application', [], true],
+      ['application', ['MCP'], true],
+      ['mcp', ['AI_DOCUMENTS'], false],
+      ['mcp', ['MCP', 'ASSISTANT'], true],
+      ['aiKey', ['AI_DOCUMENTS'], true],
+      ['aiKey', ['TRACK_APPLICATIONS', 'MCP'], false],
+      ['experience', ['ASSISTANT'], true],
+      ['experience', ['MCP'], false],
+    ] as const)('isRelevantToGoals(%s, %j) is %s', (key, goals, expected) => {
+      expect(isRelevantToGoals(key, goals)).toBe(expected);
+    });
   });
 
   it('dismisses the checklist via the server mutation', async () => {

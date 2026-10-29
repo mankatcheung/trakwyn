@@ -35,6 +35,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications';
 import { Route as AuthenticatedOffersRouteImport } from './routes/_authenticated/offers';
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route';
+import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome';
 import { Route as FeaturesIndexRouteImport } from './routes/features/index';
 import { Route as FeaturesAiAssistantRouteImport } from './routes/features/ai-assistant';
 import { Route as FeaturesAnalyticsRouteImport } from './routes/features/analytics';
@@ -198,6 +199,11 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any);
+const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
 const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
   id: '/features/',
   path: '/features/',
@@ -399,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute;
   '/notifications': typeof AuthenticatedNotificationsRoute;
   '/offers': typeof AuthenticatedOffersRoute;
+  '/welcome': typeof AuthenticatedWelcomeRoute;
   '/features/ai-assistant': typeof FeaturesAiAssistantRoute;
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
@@ -455,6 +462,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute;
   '/notifications': typeof AuthenticatedNotificationsRoute;
   '/offers': typeof AuthenticatedOffersRoute;
+  '/welcome': typeof AuthenticatedWelcomeRoute;
   '/features/ai-assistant': typeof FeaturesAiAssistantRoute;
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
@@ -514,6 +522,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute;
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute;
   '/_authenticated/offers': typeof AuthenticatedOffersRoute;
+  '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute;
   '/features/ai-assistant': typeof FeaturesAiAssistantRoute;
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
@@ -573,6 +582,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/offers'
+    | '/welcome'
     | '/features/ai-assistant'
     | '/features/analytics'
     | '/features/resume-cover-letter'
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/notifications'
     | '/offers'
+    | '/welcome'
     | '/features/ai-assistant'
     | '/features/analytics'
     | '/features/resume-cover-letter'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/notifications'
     | '/_authenticated/offers'
+    | '/_authenticated/welcome'
     | '/features/ai-assistant'
     | '/features/analytics'
     | '/features/resume-cover-letter'
@@ -929,6 +941,13 @@ declare module '@tanstack/react-router' {
       path: '/settings';
       fullPath: '/settings';
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport;
+      parentRoute: typeof AuthenticatedRouteRoute;
+    };
+    '/_authenticated/welcome': {
+      id: '/_authenticated/welcome';
+      path: '/welcome';
+      fullPath: '/welcome';
+      preLoaderRoute: typeof AuthenticatedWelcomeRouteImport;
       parentRoute: typeof AuthenticatedRouteRoute;
     };
     '/features/': {
@@ -1186,6 +1205,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute;
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute;
   AuthenticatedOffersRoute: typeof AuthenticatedOffersRoute;
+  AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute;
   AuthenticatedApplicationsBoardRoute: typeof AuthenticatedApplicationsBoardRoute;
   AuthenticatedApplicationsNewRoute: typeof AuthenticatedApplicationsNewRoute;
   AuthenticatedApplicationsTrashRoute: typeof AuthenticatedApplicationsTrashRoute;
@@ -1210,6 +1230,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOffersRoute: AuthenticatedOffersRoute,
+  AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedApplicationsBoardRoute: AuthenticatedApplicationsBoardRoute,
   AuthenticatedApplicationsNewRoute: AuthenticatedApplicationsNewRoute,
   AuthenticatedApplicationsTrashRoute: AuthenticatedApplicationsTrashRoute,

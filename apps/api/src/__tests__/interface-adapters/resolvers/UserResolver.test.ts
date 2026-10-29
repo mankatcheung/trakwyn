@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
@@ -19,6 +20,7 @@ import type { IImportUserDataUseCase } from '#src/use-cases/user/IImportUserData
 import type { IGetNotificationPreferencesUseCase } from '#src/use-cases/user/IGetNotificationPreferencesUseCase.js';
 import type { IUpdateNotificationPreferencesUseCase } from '#src/use-cases/user/IUpdateNotificationPreferencesUseCase.js';
 import type { IDismissOnboardingChecklistUseCase } from '#src/use-cases/user/IDismissOnboardingChecklistUseCase.js';
+import type { ICompleteOnboardingUseCase } from '#src/use-cases/user/ICompleteOnboardingUseCase.js';
 import type { IUpdateProfileUseCase } from '#src/use-cases/user/IUpdateProfileUseCase.js';
 import type { IGetUserUseCase } from '#src/use-cases/user/IGetUserUseCase.js';
 import type { IRequestAvatarUploadUrlUseCase } from '#src/use-cases/user/IRequestAvatarUploadUrlUseCase.js';
@@ -47,11 +49,6 @@ const makeDeps = (overrides?: object) => ({
   updatePasswordUseCase: stub<IUpdatePasswordUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
-  requestAccountDeletionUseCase: { execute: vi.fn().mockResolvedValue(undefined) },
-  confirmAccountDeletionUseCase: {
-    execute: vi.fn().mockResolvedValue({ deletionScheduledAt: new Date('2026-11-12T00:00:00Z') }),
-  },
-  cancelAccountDeletionUseCase: { execute: vi.fn().mockResolvedValue(undefined) },
   exportUserDataUseCase: stub<IExportUserDataUseCase>({ execute: vi.fn() }),
   generateTotpSecretUseCase: stub<IGenerateTotpSecretUseCase>({ execute: vi.fn() }),
   confirmTotpSetupUseCase: stub<IConfirmTotpSetupUseCase>({
@@ -90,6 +87,9 @@ const makeDeps = (overrides?: object) => ({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   dismissOnboardingChecklistUseCase: stub<IDismissOnboardingChecklistUseCase>({
+    execute: vi.fn().mockResolvedValue(undefined),
+  }),
+  completeOnboardingUseCase: stub<ICompleteOnboardingUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   updateProfileUseCase: stub<IUpdateProfileUseCase>({
@@ -206,38 +206,6 @@ describe('UserResolver', () => {
         authTime: 1_700_000_000_000,
         ipAddress: '1.2.3.4',
         userAgent: 'Mozilla/5.0',
-      });
-    });
-  });
-
-  describe('account deletion (JEF-463)', () => {
-    it('passes a deletion request straight through', async () => {
-      const deps = makeDeps();
-      const input = { userId: 'user-1', authTime: 1_700_000_000_000, legacyPassword: 'secret' };
-
-      await new UserResolver(deps).requestAccountDeletion(input);
-
-      expect(deps.requestAccountDeletionUseCase.execute).toHaveBeenCalledWith(input);
-    });
-
-    it('returns the scheduled date from a confirmation', async () => {
-      const deps = makeDeps();
-
-      const date = await new UserResolver(deps).confirmAccountDeletion('raw-token');
-
-      expect(deps.confirmAccountDeletionUseCase.execute).toHaveBeenCalledWith({
-        token: 'raw-token',
-      });
-      expect(date).toEqual(new Date('2026-11-12T00:00:00Z'));
-    });
-
-    it('passes a cancellation straight through', async () => {
-      const deps = makeDeps();
-
-      await new UserResolver(deps).cancelAccountDeletion({ token: 'raw-token' });
-
-      expect(deps.cancelAccountDeletionUseCase.execute).toHaveBeenCalledWith({
-        token: 'raw-token',
       });
     });
   });
@@ -620,6 +588,31 @@ describe('UserResolver', () => {
     });
   });
 
+  describe('completeOnboarding', () => {
+    it('delegates the goals to completeOnboardingUseCase', async () => {
+      const deps = makeDeps();
+
+      await new UserResolver(deps).completeOnboarding('user-1', ['ai_documents', 'mcp']);
+
+      expect(deps.completeOnboardingUseCase.execute).toHaveBeenCalledWith('user-1', [
+        'ai_documents',
+        'mcp',
+      ]);
+    });
+
+    it('propagates a validation error from the use case', async () => {
+      const deps = makeDeps({
+        completeOnboardingUseCase: stub<ICompleteOnboardingUseCase>({
+          execute: vi.fn().mockRejectedValue(new ValidationError('Unknown onboarding goal: x')),
+        }),
+      });
+
+      await expect(
+        new UserResolver(deps).completeOnboarding('user-1', ['x']),
+      ).rejects.toMatchObject({ code: 'VALIDATION' });
+    });
+  });
+
   describe('updateProfile', () => {
     it('delegates to updateProfileUseCase with the correct arguments', async () => {
       const deps = makeDeps();
@@ -686,6 +679,23 @@ describe('UserResolver', () => {
 
       expect(deps.storageProvider.getSignedUrl).toHaveBeenCalledWith('users/user-1/avatar/key.png');
       expect(result?.avatarUrl).toBe('https://cdn.example.com/signed-url');
+    });
+
+    it('exposes the onboarding goals and completion time on me', async () => {
+      const completedAt = new Date('2026-10-01T00:00:00Z');
+      const user = makeUser({
+        id: 'user-1',
+        onboardingGoals: ['track_applications', 'assistant'],
+        onboardingCompletedAt: completedAt,
+      });
+      const deps = makeDeps({
+        getUserUseCase: stub<IGetUserUseCase>({ execute: vi.fn().mockResolvedValue(user) }),
+      });
+
+      const result = await new UserResolver(deps).getMe('user-1');
+
+      expect(result?.onboardingGoals).toEqual(['track_applications', 'assistant']);
+      expect(result?.onboardingCompletedAt).toEqual(completedAt);
     });
 
     it('returns null when the use case returns null', async () => {

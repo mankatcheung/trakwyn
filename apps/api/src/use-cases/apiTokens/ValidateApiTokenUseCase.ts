@@ -10,9 +10,13 @@ interface Deps {
 }
 
 export interface ValidateApiTokenResult {
+  /** The token's own id, which MCP keys its call budget on (JEF-465). */
+  tokenId: string;
   sub: string;
   email: string;
   scope: ApiTokenScope;
+  /** The token's name, so a write can be attributed to it (JEF-466). */
+  tokenName: string;
 }
 
 /** Where a token is being presented: the GraphQL API, or the MCP endpoint. */
@@ -44,6 +48,12 @@ export class ValidateApiTokenUseCase {
 
     await this.deps.apiTokenRepository.updateLastUsed(result.token.id);
 
-    return { sub: result.token.userId, email: result.userEmail, scope: result.token.scope };
+    return {
+      tokenId: result.token.id,
+      tokenName: result.token.name,
+      sub: result.token.userId,
+      email: result.userEmail,
+      scope: result.token.scope,
+    };
   }
 }

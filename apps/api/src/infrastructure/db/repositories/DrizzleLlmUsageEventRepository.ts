@@ -1,4 +1,4 @@
-import { and, eq, gte, sql, desc } from 'drizzle-orm';
+import { and, eq, gte, sql, desc, max } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { llmUsageEvent } from '../schema.js';
 import type { LlmUsageSummary } from '#src/domain/llmUsageEvent/LlmUsageEvent.js';
@@ -32,21 +32,28 @@ export class DrizzleLlmUsageEventRepository implements ILlmUsageEventRepository 
         completionTokens: sql<number>`coalesce(sum(${llmUsageEvent.completionTokens}), 0)`,
         cacheReadTokens: sql<number>`coalesce(sum(${llmUsageEvent.cacheReadTokens}), 0)`,
         cacheWriteTokens: sql<number>`coalesce(sum(${llmUsageEvent.cacheWriteTokens}), 0)`,
-        lastUsedAt: sql<number>`max(${llmUsageEvent.createdAt})`,
+        lastUsedAt: max(llmUsageEvent.createdAt),
       })
       .from(llmUsageEvent)
       .where(and(eq(llmUsageEvent.userId, userId), gte(llmUsageEvent.createdAt, since)))
       .groupBy(llmUsageEvent.provider)
-      .orderBy(desc(sql`max(${llmUsageEvent.createdAt})`));
+      .orderBy(desc(max(llmUsageEvent.createdAt)));
 
-    return rows.map((row) => ({
-      provider: row.provider,
-      requestCount: Number(row.requestCount),
-      promptTokens: Number(row.promptTokens),
-      completionTokens: Number(row.completionTokens),
-      cacheReadTokens: Number(row.cacheReadTokens),
-      cacheWriteTokens: Number(row.cacheWriteTokens),
-      lastUsedAt: new Date(Number(row.lastUsedAt)),
-    }));
+    // `max` over a non-empty group is never null: each row is a provider with events.
+    return rows.flatMap((row) =>
+      row.lastUsedAt === null
+        ? []
+        : [
+            {
+              provider: row.provider,
+              requestCount: Number(row.requestCount),
+              promptTokens: Number(row.promptTokens),
+              completionTokens: Number(row.completionTokens),
+              cacheReadTokens: Number(row.cacheReadTokens),
+              cacheWriteTokens: Number(row.cacheWriteTokens),
+              lastUsedAt: row.lastUsedAt,
+            },
+          ],
+    );
   }
 }
