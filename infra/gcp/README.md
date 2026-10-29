@@ -194,6 +194,8 @@ CI builds and tests on `node` and `postgres`. Pulling them anonymously from a pu
 
 **Who may pull (JEF-407):** CI pulls the mirrored `node` and `postgres` through the `./.github/actions/base-images` action, which logs in to Artifact Registry and exports `NODE_IMAGE` and `POSTGRES_IMAGE` from the pin file. Pull-request jobs (`api-image`, `e2e`) act as `github-ci-reader`, which holds `artifactregistry.reader` on `base-images` and no other role. The provider admits pull-request tokens (`refs/pull/*`) for this repository, but only `main` may impersonate `github-deployer`, so a pull request cannot push images or deploy. `deploy-api` builds on the same mirrored `node` image with its own deployer login. Fork pull requests get no OIDC token from GitHub and cannot log in; that is accepted for a single-contributor repo.
 
+**Egress (JEF-474):** every pull from the registry to a GitHub runner is billed as internet egress, and the repository's only Artifact Registry charge was that. The `e2e` job passes `preload: postgres` to the action, which keeps a `docker save` tarball in the Actions cache keyed on `infra/base-images.txt`; a run with an unchanged pin loads it and neither logs in nor pulls. The `node` image is only handed to buildx, which cannot see the runner's Docker images, so those jobs still log in and rely on the `type=gha,mode=max` layer cache. If the egress SKU stays high after this, that is where to look next.
+
 **Rolling out a change to these bindings:** a pull request's CI uses the workflow from the pull request, so apply Terraform and set `GCP_CI_READER_SA` before merging JEF-407, or its own `api-image` and `e2e` jobs cannot log in.
 
 **First fill:** after the first `terraform apply`, run the workflow once and check that both images are there:
