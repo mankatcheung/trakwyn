@@ -389,3 +389,10 @@ export const MCP_OAUTH_ROUTES = {
   TOKEN: '/oauth/token',
   REVOKE: '/oauth/revoke',
 } as const;
+
+/**
+ * The `code` Mercurius gives the error it throws when a document fails schema
+ * validation (JEF-472). Its own vendor string rather than one of ours, so it
+ * lives here with the transport and `formatError` maps it to `ERROR_CODES`.
+ */
+export const GRAPHQL_VALIDATION_ERROR_CODE = 'MER_ERR_GQL_VALIDATION';

@@ -28,6 +28,11 @@ import { mcpOAuthMetadataRoutes } from '#src/http/routes/mcpOAuth.routes.js';
 import { buildContainer } from '#src/http/container.js';
 import { schema } from '#src/http/schema/index.js';
 import { formatError } from '#src/http/errors/formatError.js';
+import {
+  formatValidationFailure,
+  isValidationFailure,
+} from '#src/http/errors/formatValidationFailure.js';
+import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
 import { setRootLogger } from '#src/infrastructure/observability/rootLogger.js';
@@ -275,13 +280,21 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   await fastify.register(mercurius, {
     schema,
     graphiql: process.env[ENV.NODE_ENV] !== NODE_ENV.PRODUCTION,
-    errorFormatter: (result) => {
+    errorFormatter: (result, ctx) => {
       // Not `result.errors?.map(formatError)` — formatError now takes a
       // second (logger) argument, and Array.prototype.map passes (value,
       // index, array) to its callback, so passed directly the array index
       // would land in that slot the same way `['1','2'].map(parseInt)`
       // famously misuses parseInt's radix parameter.
-      const errors = result.errors?.map((err) => formatError(err, logger));
+      //
+      // A document that failed validation arrives as one error wrapping the
+      // real list, so it is unwrapped here (JEF-472) rather than in
+      // `formatError`, which maps one error to one.
+      const errors = result.errors?.flatMap((err) =>
+        isValidationFailure(err)
+          ? formatValidationFailure(err, ctx.reply.request, logger, otelMetrics)
+          : [formatError(err, logger)],
+      );
       return { statusCode: 200, response: { ...result, errors } };
     },
     context: buildGraphQLContext,
