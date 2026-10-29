@@ -4,7 +4,14 @@ import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementServi
 import type { ValidateApiTokenUseCase } from '#src/use-cases/apiTokens/ValidateApiTokenUseCase.js';
 import type { ValidateMcpOAuthAccessTokenUseCase } from '#src/use-cases/mcpOAuth/ValidateMcpOAuthAccessTokenUseCase.js';
 
+const MCP_TOKEN_KIND = { API: 'api', OAUTH: 'oauth' } as const;
+
 export interface AuthenticateMcpRequestResult {
+  /**
+   * The credential's id, prefixed by its kind so an API token and an OAuth
+   * access token never share a rate-limit bucket (JEF-465).
+   */
+  tokenId: string;
   sub: string;
   /**
    * The token's scope, carried through so the caller can gate write tools
@@ -53,7 +60,13 @@ export class AuthenticateMcpRequestUseCase {
         // created API token is checked the same way inside
         // `ValidateApiTokenUseCase`.)
         const { features } = await this.deps.entitlementService.forUserId(result.sub);
-        return features.mcpAccess ? { sub: result.sub, scope: result.scope } : null;
+        return features.mcpAccess
+          ? {
+              tokenId: `${MCP_TOKEN_KIND.OAUTH}:${result.tokenId}`,
+              sub: result.sub,
+              scope: result.scope,
+            }
+          : null;
       } catch {
         return null;
       }
@@ -63,7 +76,13 @@ export class AuthenticateMcpRequestUseCase {
 
     try {
       const result = await this.deps.validateApiTokenUseCase.execute(rawToken, 'mcp');
-      return result ? { sub: result.sub, scope: result.scope } : null;
+      return result
+        ? {
+            tokenId: `${MCP_TOKEN_KIND.API}:${result.tokenId}`,
+            sub: result.sub,
+            scope: result.scope,
+          }
+        : null;
     } catch {
       return null;
     }

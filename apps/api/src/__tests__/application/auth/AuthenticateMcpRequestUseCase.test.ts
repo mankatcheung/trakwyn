@@ -28,7 +28,12 @@ function makeValidateMcpOAuthAccessTokenUseCase(
 describe('AuthenticateMcpRequestUseCase', () => {
   it('returns user id and scope for a valid FULL-scope API token', async () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(
-      vi.fn().mockResolvedValue({ sub: 'user-1', email: 'user@example.com', scope: 'full' }),
+      vi.fn().mockResolvedValue({
+        tokenId: 'tok-1',
+        sub: 'user-1',
+        email: 'user@example.com',
+        scope: 'full',
+      }),
     );
     const useCase = new AuthenticateMcpRequestUseCase({
       entitlementService: makeEntitlementService(),
@@ -39,13 +44,18 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
     // The scope is carried through, not discarded: McpController needs it to
     // refuse write tools for read-only tokens (JEF-176).
-    expect(result).toEqual({ sub: 'user-1', scope: 'full' });
+    expect(result).toEqual({ tokenId: 'api:tok-1', sub: 'user-1', scope: 'full' });
     expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123', 'mcp');
   });
 
   it('returns user id and scope for a READ-scope API token (MCP accepts any scope)', async () => {
     const validateApiTokenUseCase = makeValidateApiTokenUseCase(
-      vi.fn().mockResolvedValue({ sub: 'user-1', email: 'user@example.com', scope: 'read' }),
+      vi.fn().mockResolvedValue({
+        tokenId: 'tok-1',
+        sub: 'user-1',
+        email: 'user@example.com',
+        scope: 'read',
+      }),
     );
     const useCase = new AuthenticateMcpRequestUseCase({
       entitlementService: makeEntitlementService(),
@@ -54,7 +64,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
     const result = await useCase.execute('trakwyn_readonly');
 
-    expect(result).toEqual({ sub: 'user-1', scope: 'read' });
+    expect(result).toEqual({ tokenId: 'api:tok-1', sub: 'user-1', scope: 'read' });
   });
 
   it('returns null for a JWT (MCP only accepts API tokens)', async () => {
@@ -101,7 +111,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
     async (scope) => {
       const validateApiTokenUseCase = makeValidateApiTokenUseCase();
       const validateMcpOAuthAccessTokenUseCase = makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ sub: 'user-1', scope }),
+        vi.fn().mockResolvedValue({ tokenId: 'tok-3', sub: 'user-1', scope }),
       );
       const useCase = new AuthenticateMcpRequestUseCase({
         entitlementService: makeEntitlementService(),
@@ -112,6 +122,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
       // Dropping the scope here is what would silently turn a `read` consent
       // into full write access, since the tool gate has nothing else to go on.
       await expect(useCase.execute('trakwyn_mcp_access')).resolves.toEqual({
+        tokenId: 'oauth:tok-3',
         sub: 'user-1',
         scope,
       });
@@ -142,11 +153,12 @@ describe('AuthenticateMcpRequestUseCase', () => {
       entitlementService,
       validateApiTokenUseCase: makeValidateApiTokenUseCase(),
       validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ sub: 'user-1', scope: 'full' }),
+        vi.fn().mockResolvedValue({ tokenId: 'tok-2', sub: 'user-1', scope: 'full' }),
       ),
     });
 
     await expect(useCase.execute('trakwyn_mcp_access')).resolves.toEqual({
+      tokenId: 'oauth:tok-2',
       sub: 'user-1',
       scope: 'full',
     });
@@ -165,7 +177,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
       entitlementService,
       validateApiTokenUseCase: makeValidateApiTokenUseCase(),
       validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ sub: 'user-1', scope: 'full' }),
+        vi.fn().mockResolvedValue({ tokenId: 'tok-2', sub: 'user-1', scope: 'full' }),
       ),
     });
 

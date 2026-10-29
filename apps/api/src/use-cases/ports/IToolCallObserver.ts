@@ -11,9 +11,10 @@ export type ToolSurface = 'mcp' | 'chat';
  * - `internal_error`: anything else thrown, which is a bug or an outage.
  * - `refused`: the token's scope does not allow the tool.
  * - `invalid_params`: the arguments, or the tool name itself, were unusable.
+ * - `rate_limited`: the credential spent its `tools/call` budget (JEF-465).
  */
 export type ToolCallOutcome =
-  'ok' | 'domain_error' | 'internal_error' | 'refused' | 'invalid_params';
+  'ok' | 'domain_error' | 'internal_error' | 'refused' | 'invalid_params' | 'rate_limited';
 
 /** What the observer is told about a call before it runs. No arguments, ever. */
 export interface ToolCallMeta {
@@ -47,6 +48,8 @@ export interface ToolCallRecorder {
    * boundary, so it is also logged with the user and counted.
    */
   refused(userId: string): void;
+  /** The credential's call budget for this kind of tool is spent, so the tool did not run. */
+  rateLimited(): void;
 }
 
 /**
