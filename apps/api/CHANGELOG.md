@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.8.0...api-v0.9.0) (2026-10-29)
+
+
+### Features
+
+* add a first-run welcome flow and an empty-profile prompt (JEF-460) ([#1123](https://github.com/mankatcheung/trakwyn/issues/1123)) ([fb6fe9e](https://github.com/mankatcheung/trakwyn/commit/fb6fe9e90be8eb5aec4a682bae15faef357373eb))
+* **api:** add an on-demand eval runner for job parsing and resume match (JEF-114) ([#1114](https://github.com/mankatcheung/trakwyn/issues/1114)) ([a21ddaf](https://github.com/mankatcheung/trakwyn/commit/a21ddaf3c06dc060779c508f909bd2fab8fc738c))
+* **api:** fill MCP write-tool gaps and add tool annotations (JEF-468) ([#1125](https://github.com/mankatcheung/trakwyn/issues/1125)) ([4f48b4a](https://github.com/mankatcheung/trakwyn/commit/4f48b4a0d8cef4f0d7b04ade937c5ea3d986d938))
+* attribute MCP write-tool changes to the calling token (JEF-466) ([#1129](https://github.com/mankatcheung/trakwyn/issues/1129)) ([33e1483](https://github.com/mankatcheung/trakwyn/commit/33e14836e1416e3088105635c49c216adf1ddf84))
+* harden account deletion with step-up for every sign-in method, email confirmation and a 14-day grace period (JEF-463) ([#1133](https://github.com/mankatcheung/trakwyn/issues/1133)) ([16e6594](https://github.com/mankatcheung/trakwyn/commit/16e6594e3ce49bfcfad44c0ee2a98ef186f75b01))
+* let the chat assistant propose writes the user confirms (JEF-469) ([#1132](https://github.com/mankatcheung/trakwyn/issues/1132)) ([253c0bc](https://github.com/mankatcheung/trakwyn/commit/253c0bcd6521cfb522b58af9c71b94e5855d0099))
+* rate-limit MCP tools/call per token, reads and writes apart (JEF-465) ([#1128](https://github.com/mankatcheung/trakwyn/issues/1128)) ([53e9857](https://github.com/mankatcheung/trakwyn/commit/53e9857cbab9049437a4962693fd26bbec2b14cc))
+
+
+### Bug Fixes
+
+* **api:** answer and log invalid GraphQL documents as client errors (JEF-472) ([#1135](https://github.com/mankatcheung/trakwyn/issues/1135)) ([4df4c72](https://github.com/mankatcheung/trakwyn/commit/4df4c723899429921297c7b5084e428b972f3e16))
+* **api:** read LLM usage lastUsedAt as a Date, not a number ([#1116](https://github.com/mankatcheung/trakwyn/issues/1116)) ([9661301](https://github.com/mankatcheung/trakwyn/commit/96613014f4d882a2ce0e57d81f6ebb84c6f90f39))
+
 ## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.7.0...api-v0.8.0) (2026-10-28)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.8.0...web-v0.9.0) (2026-10-29)
+
+
+### Features
+
+* add a first-run welcome flow and an empty-profile prompt (JEF-460) ([#1123](https://github.com/mankatcheung/trakwyn/issues/1123)) ([fb6fe9e](https://github.com/mankatcheung/trakwyn/commit/fb6fe9e90be8eb5aec4a682bae15faef357373eb))
+* attribute MCP write-tool changes to the calling token (JEF-466) ([#1129](https://github.com/mankatcheung/trakwyn/issues/1129)) ([33e1483](https://github.com/mankatcheung/trakwyn/commit/33e14836e1416e3088105635c49c216adf1ddf84))
+* harden account deletion with step-up for every sign-in method, email confirmation and a 14-day grace period (JEF-463) ([#1133](https://github.com/mankatcheung/trakwyn/issues/1133)) ([16e6594](https://github.com/mankatcheung/trakwyn/commit/16e6594e3ce49bfcfad44c0ee2a98ef186f75b01))
+* let the chat assistant propose writes the user confirms (JEF-469) ([#1132](https://github.com/mankatcheung/trakwyn/issues/1132)) ([253c0bc](https://github.com/mankatcheung/trakwyn/commit/253c0bcd6521cfb522b58af9c71b94e5855d0099))
+
+
+### Bug Fixes
+
+* never load images or unsafe URLs from AI-rendered markdown (JEF-464) ([#1126](https://github.com/mankatcheung/trakwyn/issues/1126)) ([a205447](https://github.com/mankatcheung/trakwyn/commit/a205447e0116793dd88355f650bf19ec465f1420))
+
 ## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.7.0...web-v0.8.0) (2026-10-28)
 
 
