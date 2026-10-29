@@ -143,7 +143,7 @@ describe('account deletion', () => {
       t: tokenOf(confirmLinks[confirmLinks.length - 1]!),
     });
 
-    expect(reused.errors?.[0]?.extensions?.code).toBe(ERROR_CODES.UNAUTHORIZED);
+    expect(reused.errors?.[0]?.extensions?.code).toBe(ERROR_CODES.VALIDATION);
   });
 
   it('keeps the deprecated deleteAccount working, but it only mails the link', async () => {

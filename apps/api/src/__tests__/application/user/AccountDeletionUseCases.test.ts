@@ -231,7 +231,7 @@ describe('ConfirmAccountDeletionUseCase', () => {
     });
 
     await expect(useCase.execute({ token: 'raw-confirm' })).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'VALIDATION',
     });
     expect(deps.userRepository.update).not.toHaveBeenCalled();
   });
@@ -245,7 +245,7 @@ describe('ConfirmAccountDeletionUseCase', () => {
     });
 
     await expect(useCase.execute({ token: 'raw-confirm' })).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'VALIDATION',
     });
     expect(deps.userRepository.update).not.toHaveBeenCalled();
   });
@@ -358,7 +358,7 @@ describe('CancelAccountDeletionUseCase', () => {
     });
 
     await expect(useCase.execute({ token: 'raw-cancel' })).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      code: 'VALIDATION',
     });
   });
 });

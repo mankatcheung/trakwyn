@@ -1,4 +1,4 @@
-import { UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { User } from '#src/domain/user/User.js';
 import type { IBillingProvider } from '#src/use-cases/ports/IBillingProvider.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
@@ -75,7 +75,7 @@ export class CancelAccountDeletionUseCase {
       hashLinkToken(input.token),
     );
     if (!token || token.usedAt || token.expiresAt <= now) {
-      throw new UnauthorizedError('This link is invalid or has expired');
+      throw new ValidationError('This link is invalid or has expired');
     }
     return this.deps.userRepository.findById(token.userId);
   }

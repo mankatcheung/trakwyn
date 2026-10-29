@@ -1,4 +1,4 @@
-import { ServiceUnavailableError, UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
+import { ServiceUnavailableError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { User } from '#src/domain/user/User.js';
 import type { IApiTokenRepository } from '#src/use-cases/ports/IApiTokenRepository.js';
 import type { IBillingProvider } from '#src/use-cases/ports/IBillingProvider.js';
@@ -68,10 +68,10 @@ export class ConfirmAccountDeletionUseCase {
       hashLinkToken(input.token),
     );
     if (!token || token.usedAt || token.expiresAt <= now) {
-      throw new UnauthorizedError('This link is invalid or has expired');
+      throw new ValidationError('This link is invalid or has expired');
     }
     const user = await this.deps.userRepository.findById(token.userId);
-    if (!user) throw new UnauthorizedError('This link is invalid or has expired');
+    if (!user) throw new ValidationError('This link is invalid or has expired');
     if (user.deletionScheduledAt) {
       await this.deps.userActionTokenRepository.consume(token.id, now);
       return { deletionScheduledAt: user.deletionScheduledAt };
@@ -110,7 +110,7 @@ export class ConfirmAccountDeletionUseCase {
       });
       return true;
     });
-    if (!consumed) throw new UnauthorizedError('This link is invalid or has expired');
+    if (!consumed) throw new ValidationError('This link is invalid or has expired');
 
     await this.revokeMachineAccess(user.id, now);
     await this.notify(user, deletionScheduledAt, cancelLink.raw);
