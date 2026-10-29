@@ -7,6 +7,7 @@
  */
 
 import { vi } from 'vitest';
+import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
@@ -15,6 +16,20 @@ import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManag
 import type { IToolCallObserver, ToolCallMeta } from '#src/use-cases/ports/IToolCallObserver.js';
 
 /** Accepts every token unless overridden — the refusals are what tests assert on. */
+export const makeEmailService = (overrides?: Partial<IEmailService>): IEmailService => ({
+  sendFollowUpReminder: vi.fn().mockResolvedValue(undefined),
+  sendWeeklyDigest: vi.fn().mockResolvedValue(undefined),
+  sendPasswordReset: vi.fn().mockResolvedValue(undefined),
+  sendEmailVerification: vi.fn().mockResolvedValue(undefined),
+  sendBackupEmailVerification: vi.fn().mockResolvedValue(undefined),
+  sendStepUpCode: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionConfirmation: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionScheduled: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionCancelled: vi.fn().mockResolvedValue(undefined),
+  sendNewDeviceLoginAlert: vi.fn().mockResolvedValue(undefined),
+  ...overrides,
+});
+
 export const makeCaptchaVerifier = (overrides?: Partial<ICaptchaVerifier>): ICaptchaVerifier => ({
   verify: vi.fn().mockResolvedValue(true),
   ...overrides,

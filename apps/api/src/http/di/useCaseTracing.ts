@@ -18,7 +18,8 @@ import type { Cradle } from './types.js';
  * it is that every trace grows a step nobody asks a question about.
  *
  * `AssertEmailVerifiedUseCase` (JEF-438) is on the same path: it runs once per
- * root field of every authenticated GraphQL request.
+ * root field of every authenticated GraphQL request, and so is
+ * `AssertAccountActiveUseCase` (JEF-463) beside it.
  *
  * An entry here must name a real registration — `useCaseTracing.test.ts`
  * fails otherwise, so an exemption cannot outlive the use case it excused.
@@ -26,6 +27,7 @@ import type { Cradle } from './types.js';
 export const UNTRACED_USE_CASES = new Set<string>([
   'authenticateRequestUseCase',
   'assertEmailVerifiedUseCase',
+  'assertAccountActiveUseCase',
 ]);
 
 /**

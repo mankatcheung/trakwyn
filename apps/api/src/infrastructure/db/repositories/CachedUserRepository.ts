@@ -49,6 +49,11 @@ export class CachedUserRepository implements IUserRepository {
     return this.inner.findByBackupEmail(email);
   }
 
+  // Not cached: read once a day by the account purge job (JEF-463).
+  findScheduledForDeletionBefore(cutoff: Date): Promise<User[]> {
+    return this.inner.findScheduledForDeletionBefore(cutoff);
+  }
+
   // Not cached: read by the payment webhook only, and always for a write that follows.
   findByBillingCustomerId(customerId: string): Promise<User | null> {
     return this.inner.findByBillingCustomerId(customerId);

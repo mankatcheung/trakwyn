@@ -152,3 +152,32 @@ export const backupEmailVerificationToken = pgTable(
   },
   (table) => [index('BackupEmailVerificationToken_userId_idx').on(table.userId)],
 );
+
+/**
+ * Short-lived, single-use credentials for one action each (JEF-463): a step-up
+ * code, or a confirm/cancel link for account deletion. `purpose` says which.
+ *
+ * `tokenHash` is not unique on its own: a step-up code has only six digits, so
+ * two users can draw the same one. What is unique is one live token per user
+ * per purpose, which issuing a new one replaces.
+ */
+export const userActionToken = pgTable(
+  'UserActionToken',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    purpose: text('purpose').notNull(),
+    tokenHash: text('tokenHash').notNull(),
+    expiresAt: timestamp('expiresAt', TIMESTAMP).notNull(),
+    usedAt: timestamp('usedAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('UserActionToken_userId_purpose_key').on(table.userId, table.purpose),
+    index('UserActionToken_tokenHash_idx').on(table.tokenHash),
+  ],
+);

@@ -39,6 +39,10 @@ const OVERSIZED_BY_DESIGN: Record<string, string> = {
     "The infrastructure counterpart of use-cases/constants.ts: env names, vendor endpoints, cache internals and pool sizing, each documented with why it has its value. constantsPlacement.test.ts gives it the same one-place role for its layer. It crossed the limit when JEF-372 wrote down the reasoning behind DATABASE.POOL_MAX (Neon's pooler limit against Cloud Run's instance count), which the ticket asked to live beside the value.",
   'use-cases/constants.ts':
     'The application-policy table: one named, documented value per business decision (token lifetimes, quotas, prompt budgets, chat limits), most of the length being the doc comment that says why each number is what it is. It is one module on purpose — constantsPlacement.test.ts relies on there being exactly one place a policy value can live — so the alternative to length is shorter explanations, which is the wrong trade.',
+  'http/constants.ts':
+    'The HTTP layer counterpart of use-cases/constants.ts: cookies, routes, admin job names and rate-limit budgets, each with a comment saying why it has its value. constantsPlacement.test.ts gives it the one-place role for this layer, so the alternative to length is a second home for rate limits or routes. It crossed the limit when JEF-463 added the account-purge route and the two mail budgets beside their siblings.',
+  'infrastructure/observability/metrics.ts':
+    'Every metric the API emits: the label types, the IMetrics port implementation and the lazily created instruments, which must be created in one place because a meter obtained before startObservability() is a permanent no-op. The closed label sets (EmailTemplate and the like) are what keeps cardinality bounded, so they sit beside the instrument that uses them. It crossed the limit when JEF-463 added four mail templates.',
 };
 
 function sourceFiles(): string[] {

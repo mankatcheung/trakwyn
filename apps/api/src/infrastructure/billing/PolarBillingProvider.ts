@@ -97,6 +97,39 @@ export class PolarBillingProvider implements IBillingProvider {
     throw new Error(`Polar answered ${res.status} for DELETE ${path}${hint}`);
   }
 
+  /** `PATCH /subscriptions/{id}` with `cancel_at_period_end: true` (scope `subscriptions:write`). */
+  async scheduleCancellation(subscriptionId: string): Promise<void> {
+    await this.setCancelAtPeriodEnd(subscriptionId, true);
+  }
+
+  /** The same call with `false`, which Polar calls "uncancel". */
+  async resumeSubscription(subscriptionId: string): Promise<void> {
+    await this.setCancelAtPeriodEnd(subscriptionId, false);
+  }
+
+  private async setCancelAtPeriodEnd(subscriptionId: string, cancel: boolean): Promise<void> {
+    const path = `/subscriptions/${encodeURIComponent(subscriptionId)}`;
+    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: { ...this.authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cancel_at_period_end: cancel }),
+      signal: AbortSignal.timeout(POLAR.REQUEST_TIMEOUT_MS),
+    });
+    const { NOT_CHANGEABLE, NOT_FOUND, CONFLICT } = POLAR.UPDATE_STATUS;
+    if (res.ok || res.status === NOT_CHANGEABLE || res.status === NOT_FOUND) return;
+    if (
+      res.status === CONFLICT &&
+      !cancel &&
+      (await polarErrorName(res)) === POLAR.NOT_SCHEDULED_TO_CANCEL_ERROR
+    ) {
+      return;
+    }
+
+    const hint =
+      res.status === CONFLICT ? ': the subscription is pending an update, try again shortly' : '';
+    throw new Error(`Polar answered ${res.status} for PATCH ${path}${hint}`);
+  }
+
   parseWebhook(
     rawBody: Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -190,6 +223,13 @@ async function describeRefusal(res: Response, redact: readonly string[]): Promis
     return `${problem.loc.join('.')}: ${message}`;
   });
   return problems.length > 0 ? `: ${problems.join('; ')}` : '';
+}
+
+/** Polar's `error` field (the error class name, e.g. `SubscriptionLocked`), or null. */
+async function polarErrorName(res: Response): Promise<string | null> {
+  const body: unknown = await res.json().catch(() => null);
+  const parsed = z.object({ error: z.string() }).safeParse(body);
+  return parsed.success ? parsed.data.error : null;
 }
 
 /** A header that arrived exactly once, else undefined. */

@@ -57,6 +57,8 @@ export const ROUTES = {
   DOCUMENT_FILE: DOCUMENT_FILE_ROUTE.PATH,
   DIGEST_SEND: '/admin/digest/send',
   TRASH_PURGE: '/admin/trash/purge',
+  /** Deletes accounts whose deletion grace period has run out (JEF-463). */
+  ACCOUNT_PURGE: '/admin/accounts/purge',
   /** The payment provider's webhook (JEF-426). Authenticated by its signature, not a session. */
   BILLING_WEBHOOK: '/billing/webhook',
   REMINDERS_SEND: '/admin/reminders/send',
@@ -89,6 +91,7 @@ export const ROUTES = {
 export const ADMIN_JOBS = {
   DIGEST: 'digest',
   TRASH_PURGE: 'trash_purge',
+  ACCOUNT_PURGE: 'account_purge',
   REMINDERS: 'reminders',
   PUSH_NOTIFICATIONS: 'push_notifications',
 } as const;
@@ -159,6 +162,10 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
   },
+  // Mail a signed-in session can send its owner (JEF-463): step-up codes and "confirm deletion"
+  // links, per account. Guesses at a code are held by TOTP_VERIFICATION's per-account budget.
+  STEP_UP_CODE_SEND: { MAX_ATTEMPTS: 3, WINDOW_MS: 15 * 60 * 1000 },
+  ACCOUNT_DELETION_REQUEST: { MAX_ATTEMPTS: 3, WINDOW_MS: 60 * 60 * 1000 },
   // Every login attempt, by email and by IP (JEF-401). A ceiling, not the
   // captcha trigger: it stops a script from trying passwords forever once it
   // has learned to skip the widget (the mobile mutations never show one).

@@ -9,7 +9,7 @@ import { queryClient } from '#/lib/queryClient';
  * before any child route loads (those loaders would only fail), and that
  * page is the full-page reminder.
  */
-export const EMAIL_VERIFICATION_QUERY = `query EmailVerification { me { email emailVerified } }`;
+export const EMAIL_VERIFICATION_QUERY = `query EmailVerification { me { email emailVerified deletionScheduledAt } }`;
 
 export const RESEND_VERIFICATION_EMAIL = `mutation ResendVerificationEmail { resendVerificationEmail }`;
 
@@ -25,6 +25,12 @@ export const RESEND_COOLDOWN_SECONDS = 60;
 export interface EmailVerificationState {
   email: string;
   emailVerified: boolean;
+  /**
+   * When the account will be deleted (JEF-463), or null. Read by the same
+   * guard: a scheduled account may only cancel, so it is sent to
+   * `/account-deletion-scheduled` the way an unverified one is sent to the wall.
+   */
+  deletionScheduledAt: string | null;
 }
 
 async function fetchEmailVerification(): Promise<EmailVerificationState | null> {
@@ -41,7 +47,7 @@ const emailVerificationQueryOptions = {
   // per session. Unverified is rechecked soon: the user is expected to verify
   // in another tab or app and come back.
   staleTime: (query: { state: { data: EmailVerificationState | null | undefined } }) =>
-    query.state.data?.emailVerified ? Infinity : 10_000,
+    query.state.data?.emailVerified && !query.state.data.deletionScheduledAt ? Infinity : 10_000,
 };
 
 /**

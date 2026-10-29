@@ -73,7 +73,8 @@ export function useRemoveAvatar() {
 }
 
 export interface RequestEmailChangeInput {
-  currentPassword: string;
+  /** Null for an account with no password, which steps up instead (JEF-463). */
+  currentPassword: string | null;
   newEmail: string;
 }
 
@@ -85,7 +86,7 @@ export function useRequestEmailChange() {
 }
 
 export interface RequestAddBackupEmailInput {
-  currentPassword: string;
+  currentPassword: string | null;
   backupEmail: string;
 }
 
@@ -101,7 +102,7 @@ export function useRequestAddBackupEmail() {
 export function useRemoveBackupEmail() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (currentPassword: string) =>
+    mutationFn: (currentPassword: string | null) =>
       gqlRequest<{ removeBackupEmail: boolean }>(REMOVE_BACKUP_EMAIL_MUTATION, {
         currentPassword,
       }),

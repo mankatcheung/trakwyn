@@ -105,12 +105,20 @@ export function ProfileScreen() {
     removeAvatar.mutate(undefined, { onError: (err) => setAvatarError(getErrorMessage(err)) });
   };
 
+  // An account made through Google or GitHub has no password to type; it
+  // steps up instead when the API asks (JEF-463). Unknown while loading,
+  // which shows the field, as before.
+  const needsPassword = profile?.hasPassword !== false;
+
   const onUpdateEmail = async () => {
     setEmailError(null);
     setEmailSent(false);
     try {
       await withStepUp(() =>
-        requestEmailChange.mutateAsync({ currentPassword: emailPassword, newEmail }),
+        requestEmailChange.mutateAsync({
+          currentPassword: needsPassword ? emailPassword : null,
+          newEmail,
+        }),
       );
       setEmailPassword('');
       setNewEmail('');
@@ -127,7 +135,7 @@ export function ProfileScreen() {
     try {
       await withStepUp(() =>
         requestAddBackupEmail.mutateAsync({
-          currentPassword: backupEmailPassword,
+          currentPassword: needsPassword ? backupEmailPassword : null,
           backupEmail: backupEmailInput,
         }),
       );
@@ -143,7 +151,9 @@ export function ProfileScreen() {
   const onRemoveBackupEmail = async () => {
     setRemoveBackupError(null);
     try {
-      await withStepUp(() => removeBackupEmail.mutateAsync(removeBackupPassword));
+      await withStepUp(() =>
+        removeBackupEmail.mutateAsync(needsPassword ? removeBackupPassword : null),
+      );
       setRemoveBackupPassword('');
     } catch (err) {
       if (err instanceof StepUpCancelledError) return;
@@ -267,15 +277,17 @@ export function ProfileScreen() {
             <Text style={styles.link}>{t('profile.change')}</Text>
           </View>
 
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={styles.input}
-            value={emailPassword}
-            onChangeText={setEmailPassword}
-            placeholder={t('profile.currentPasswordPlaceholder')}
-            secureTextEntry
-            testID="profile-email-current-password-input"
-          />
+          {needsPassword ? (
+            <TextInput
+              placeholderTextColor={colors.textFaint}
+              style={styles.input}
+              value={emailPassword}
+              onChangeText={setEmailPassword}
+              placeholder={t('profile.currentPasswordPlaceholder')}
+              secureTextEntry
+              testID="profile-email-current-password-input"
+            />
+          ) : null}
           <TextInput
             placeholderTextColor={colors.textFaint}
             style={styles.input}
@@ -289,7 +301,9 @@ export function ProfileScreen() {
           <Pressable
             style={[styles.saveButton, requestEmailChange.isPending && styles.saveButtonDisabled]}
             onPress={() => void onUpdateEmail()}
-            disabled={requestEmailChange.isPending || !emailPassword || !newEmail}
+            disabled={
+              requestEmailChange.isPending || (needsPassword && !emailPassword) || !newEmail
+            }
             testID="profile-update-email-button"
           >
             <Text style={styles.saveButtonText}>
@@ -311,22 +325,24 @@ export function ProfileScreen() {
                   : t('profile.backupEmailPending')}
               </Text>
               {removeBackupError ? <Text style={styles.error}>{removeBackupError}</Text> : null}
-              <TextInput
-                placeholderTextColor={colors.textFaint}
-                style={styles.input}
-                value={removeBackupPassword}
-                onChangeText={setRemoveBackupPassword}
-                placeholder={t('profile.currentPasswordPlaceholder')}
-                secureTextEntry
-                testID="profile-remove-backup-email-password-input"
-              />
+              {needsPassword ? (
+                <TextInput
+                  placeholderTextColor={colors.textFaint}
+                  style={styles.input}
+                  value={removeBackupPassword}
+                  onChangeText={setRemoveBackupPassword}
+                  placeholder={t('profile.currentPasswordPlaceholder')}
+                  secureTextEntry
+                  testID="profile-remove-backup-email-password-input"
+                />
+              ) : null}
               <Pressable
                 style={[
                   styles.dangerButton,
                   removeBackupEmail.isPending && styles.saveButtonDisabled,
                 ]}
                 onPress={() => void onRemoveBackupEmail()}
-                disabled={removeBackupEmail.isPending || !removeBackupPassword}
+                disabled={removeBackupEmail.isPending || (needsPassword && !removeBackupPassword)}
                 testID="profile-remove-backup-email-button"
               >
                 <Text style={styles.dangerButtonText}>
@@ -352,15 +368,17 @@ export function ProfileScreen() {
                 keyboardType="email-address"
                 testID="profile-backup-email-input"
               />
-              <TextInput
-                placeholderTextColor={colors.textFaint}
-                style={styles.input}
-                value={backupEmailPassword}
-                onChangeText={setBackupEmailPassword}
-                placeholder={t('profile.currentPasswordPlaceholder')}
-                secureTextEntry
-                testID="profile-backup-email-password-input"
-              />
+              {needsPassword ? (
+                <TextInput
+                  placeholderTextColor={colors.textFaint}
+                  style={styles.input}
+                  value={backupEmailPassword}
+                  onChangeText={setBackupEmailPassword}
+                  placeholder={t('profile.currentPasswordPlaceholder')}
+                  secureTextEntry
+                  testID="profile-backup-email-password-input"
+                />
+              ) : null}
               <Pressable
                 style={[
                   styles.saveButton,
@@ -368,7 +386,9 @@ export function ProfileScreen() {
                 ]}
                 onPress={() => void onAddBackupEmail()}
                 disabled={
-                  requestAddBackupEmail.isPending || !backupEmailInput || !backupEmailPassword
+                  requestAddBackupEmail.isPending ||
+                  !backupEmailInput ||
+                  (needsPassword && !backupEmailPassword)
                 }
                 testID="profile-add-backup-email-button"
               >

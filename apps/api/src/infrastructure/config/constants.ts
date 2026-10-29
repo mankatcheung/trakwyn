@@ -200,6 +200,14 @@ export const POLAR = {
   REDACTED: '[redacted]',
   /** What `DELETE /subscriptions/{id}` answers (JEF-439). 403 and 404 mean there is nothing left to revoke. */
   REVOKE_STATUS: { ALREADY_REVOKED: 403, NOT_FOUND: 404, PENDING_UPDATE: 409 },
+  /**
+   * `PATCH /subscriptions/{id}` with `cancel_at_period_end` (JEF-463). 403 is "already canceled,
+   * set to end, or not active" and 404 "not found": nothing left to stop or resume either way.
+   * A 409 is either `SubscriptionLocked` (pending an update, retry) or, on a resume,
+   * `SubscriptionNotScheduledToCancel`, which also leaves nothing to do.
+   */
+  UPDATE_STATUS: { NOT_CHANGEABLE: 403, NOT_FOUND: 404, CONFLICT: 409 },
+  NOT_SCHEDULED_TO_CANCEL_ERROR: 'SubscriptionNotScheduledToCancel',
   WEBHOOK_HEADER: {
     ID: 'webhook-id',
     TIMESTAMP: 'webhook-timestamp',
@@ -247,6 +255,12 @@ export const OAUTH = {
   GITHUB_EMAILS_URL: 'https://api.github.com/user/emails',
   /** How long the signed `state` redirect param stays valid, in milliseconds. */
   STATE_TTL_MS: 5 * 60 * 1000, // 5 minutes
+  /**
+   * How long a step-up ticket stays valid (JEF-463). The client opens the
+   * start route with it straight after minting it, so this only has to cover
+   * the browser opening.
+   */
+  REAUTH_TICKET_TTL_MS: 2 * 60 * 1000, // 2 minutes
   /**
    * How long a mobile login's handoff code stays valid, in milliseconds
    * (JEF-275). It carries the finished session's tokens from the OAuth

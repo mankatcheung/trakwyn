@@ -28,6 +28,7 @@ import { DrizzleActivityLogRepository } from '#src/infrastructure/db/repositorie
 import { DrizzlePushSubscriptionRepository } from '#src/infrastructure/db/repositories/DrizzlePushSubscriptionRepository.js';
 import { DrizzleContactRepository } from '#src/infrastructure/db/repositories/DrizzleContactRepository.js';
 import { DrizzlePasswordResetTokenRepository } from '#src/infrastructure/db/repositories/DrizzlePasswordResetTokenRepository.js';
+import { DrizzleUserActionTokenRepository } from '#src/infrastructure/db/repositories/DrizzleUserActionTokenRepository.js';
 import { DrizzleLoginEventRepository } from '#src/infrastructure/db/repositories/DrizzleLoginEventRepository.js';
 import { DrizzleSecurityEventRepository } from '#src/infrastructure/db/repositories/DrizzleSecurityEventRepository.js';
 import { LoggingSecurityEventRepository } from '#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js';
@@ -157,6 +158,9 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   passwordResetTokenRepository: asClass(DrizzlePasswordResetTokenRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  userActionTokenRepository: asClass(DrizzleUserActionTokenRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   loginEventRepository: asClass(DrizzleLoginEventRepository, { lifetime: Lifetime.SINGLETON }),

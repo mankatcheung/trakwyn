@@ -33,6 +33,7 @@ export const makeOAuthAccount = (overrides?: Partial<OAuthAccount>): OAuthAccoun
 });
 
 export const makeOAuthProvider = (overrides?: Partial<IOAuthProvider>): IOAuthProvider => ({
+  supportsReauth: true,
   getAuthorizationUrl: vi.fn().mockReturnValue('https://provider.example.com/authorize'),
   exchangeCodeForProfile: vi.fn().mockResolvedValue({
     providerAccountId: 'google-sub-1',

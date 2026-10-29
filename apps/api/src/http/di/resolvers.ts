@@ -7,6 +7,7 @@ import { DocumentResolver } from '#src/interface-adapters/resolvers/DocumentReso
 import { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
 import { CompanyBriefingResolver } from '#src/interface-adapters/resolvers/CompanyBriefingResolver.js';
 import { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
+import { AccountDeletionResolver } from '#src/interface-adapters/resolvers/AccountDeletionResolver.js';
 import { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
 import { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
 import { MockInterviewQuestionResolver } from '#src/interface-adapters/resolvers/MockInterviewQuestionResolver.js';
@@ -39,6 +40,7 @@ export const resolvers = {
   companyBriefingResolver: asClass(CompanyBriefingResolver, { lifetime: Lifetime.SINGLETON }),
   documentDraftResolver: asClass(DocumentDraftResolver, { lifetime: Lifetime.SINGLETON }),
   userResolver: asClass(UserResolver, { lifetime: Lifetime.SINGLETON }),
+  accountDeletionResolver: asClass(AccountDeletionResolver, { lifetime: Lifetime.SINGLETON }),
   interviewRoundResolver: asClass(InterviewRoundResolver, { lifetime: Lifetime.SINGLETON }),
   interviewQuestionResolver: asClass(InterviewQuestionResolver, { lifetime: Lifetime.SINGLETON }),
   mockInterviewQuestionResolver: asClass(MockInterviewQuestionResolver, {

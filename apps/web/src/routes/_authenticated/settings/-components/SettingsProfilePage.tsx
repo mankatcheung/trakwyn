@@ -125,11 +125,34 @@ export function SettingsProfilePage() {
     }
   };
 
+  // An account made through Google or GitHub has no password to type; it
+  // steps up instead when the API asks (JEF-463). Unknown while loading,
+  // which shows the field, as before.
+  const needsPassword = me?.hasPassword !== false;
+  /** The password to send, or false (and a field error) when one is needed and missing. */
+  const passwordFor = (
+    currentPassword: string | undefined,
+    setMissing: () => void,
+  ): string | null | false => {
+    if (!needsPassword) return null;
+    if (!currentPassword) {
+      setMissing();
+      return false;
+    }
+    return currentPassword;
+  };
+
   // Email form
   const emailForm = useForm<EmailForm>({ resolver: zodResolver(emailSchema) });
   const onUpdateEmail = async (data: EmailForm) => {
+    const currentPassword = passwordFor(data.currentPassword, () =>
+      emailForm.setError('currentPassword', { message: 'Required' }),
+    );
+    if (currentPassword === false) return;
     try {
-      await withStepUp(() => gqlClient.request(REQUEST_EMAIL_CHANGE, data));
+      await withStepUp(() =>
+        gqlClient.request(REQUEST_EMAIL_CHANGE, { newEmail: data.newEmail, currentPassword }),
+      );
       emailForm.reset();
       emailForm.setError('root', { message: '' });
     } catch (err) {
@@ -150,8 +173,17 @@ export function SettingsProfilePage() {
     resolver: zodResolver(removeBackupEmailSchema),
   });
   const onAddBackupEmail = async (data: BackupEmailForm) => {
+    const currentPassword = passwordFor(data.currentPassword, () =>
+      backupEmailForm.setError('currentPassword', { message: 'Required' }),
+    );
+    if (currentPassword === false) return;
     try {
-      await withStepUp(() => gqlClient.request(REQUEST_ADD_BACKUP_EMAIL, data));
+      await withStepUp(() =>
+        gqlClient.request(REQUEST_ADD_BACKUP_EMAIL, {
+          backupEmail: data.backupEmail,
+          currentPassword,
+        }),
+      );
       backupEmailForm.reset();
       await qc.invalidateQueries({ queryKey: ['me'] });
     } catch (err) {
@@ -162,8 +194,12 @@ export function SettingsProfilePage() {
     }
   };
   const onRemoveBackupEmail = async (data: RemoveBackupEmailForm) => {
+    const currentPassword = passwordFor(data.currentPassword, () =>
+      removeBackupEmailForm.setError('currentPassword', { message: 'Required' }),
+    );
+    if (currentPassword === false) return;
     try {
-      await withStepUp(() => gqlClient.request(REMOVE_BACKUP_EMAIL, data));
+      await withStepUp(() => gqlClient.request(REMOVE_BACKUP_EMAIL, { currentPassword }));
       removeBackupEmailForm.reset();
       await qc.invalidateQueries({ queryKey: ['me'] });
     } catch (err) {
@@ -315,20 +351,22 @@ export function SettingsProfilePage() {
           )}
         </div>
         <form onSubmit={emailForm.handleSubmit(onUpdateEmail)} className="space-y-3">
-          <div>
-            <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-            <Input
-              type="password"
-              {...emailForm.register('currentPassword')}
-              invalid={!!emailForm.formState.errors.currentPassword}
-              placeholder="••••••••"
-            />
-            {emailForm.formState.errors.currentPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {emailForm.formState.errors.currentPassword.message}
-              </p>
-            )}
-          </div>
+          {needsPassword && (
+            <div>
+              <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
+              <Input
+                type="password"
+                {...emailForm.register('currentPassword')}
+                invalid={!!emailForm.formState.errors.currentPassword}
+                placeholder="••••••••"
+              />
+              {emailForm.formState.errors.currentPassword && (
+                <p className="mt-1 text-xs text-red-600">
+                  {emailForm.formState.errors.currentPassword.message}
+                </p>
+              )}
+            </div>
+          )}
           <div>
             <FormLabel>{t('security.newEmailLabel')}</FormLabel>
             <Input
@@ -379,20 +417,22 @@ export function SettingsProfilePage() {
               onSubmit={removeBackupEmailForm.handleSubmit(onRemoveBackupEmail)}
               className="space-y-3"
             >
-              <div>
-                <FormLabel>{t('security.currentPasswordToRemoveLabel')}</FormLabel>
-                <Input
-                  type="password"
-                  {...removeBackupEmailForm.register('currentPassword')}
-                  invalid={!!removeBackupEmailForm.formState.errors.currentPassword}
-                  placeholder="••••••••"
-                />
-                {removeBackupEmailForm.formState.errors.currentPassword && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {removeBackupEmailForm.formState.errors.currentPassword.message}
-                  </p>
-                )}
-              </div>
+              {needsPassword && (
+                <div>
+                  <FormLabel>{t('security.currentPasswordToRemoveLabel')}</FormLabel>
+                  <Input
+                    type="password"
+                    {...removeBackupEmailForm.register('currentPassword')}
+                    invalid={!!removeBackupEmailForm.formState.errors.currentPassword}
+                    placeholder="••••••••"
+                  />
+                  {removeBackupEmailForm.formState.errors.currentPassword && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {removeBackupEmailForm.formState.errors.currentPassword.message}
+                    </p>
+                  )}
+                </div>
+              )}
               {removeBackupEmailForm.formState.errors.root?.message && (
                 <Alert>{removeBackupEmailForm.formState.errors.root.message}</Alert>
               )}
@@ -423,20 +463,22 @@ export function SettingsProfilePage() {
                 </p>
               )}
             </div>
-            <div>
-              <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-              <Input
-                type="password"
-                {...backupEmailForm.register('currentPassword')}
-                invalid={!!backupEmailForm.formState.errors.currentPassword}
-                placeholder="••••••••"
-              />
-              {backupEmailForm.formState.errors.currentPassword && (
-                <p className="mt-1 text-xs text-red-600">
-                  {backupEmailForm.formState.errors.currentPassword.message}
-                </p>
-              )}
-            </div>
+            {needsPassword && (
+              <div>
+                <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
+                <Input
+                  type="password"
+                  {...backupEmailForm.register('currentPassword')}
+                  invalid={!!backupEmailForm.formState.errors.currentPassword}
+                  placeholder="••••••••"
+                />
+                {backupEmailForm.formState.errors.currentPassword && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {backupEmailForm.formState.errors.currentPassword.message}
+                  </p>
+                )}
+              </div>
+            )}
             {backupEmailForm.formState.errors.root?.message && (
               <Alert>{backupEmailForm.formState.errors.root.message}</Alert>
             )}

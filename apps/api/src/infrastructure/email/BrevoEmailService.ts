@@ -4,7 +4,14 @@ import { buildPasswordResetHtml } from './templates/passwordResetTemplate.js';
 import { buildEmailVerificationHtml } from './templates/emailVerificationTemplate.js';
 import { buildBackupEmailVerificationHtml } from './templates/backupEmailVerificationTemplate.js';
 import { buildNewDeviceLoginAlertHtml } from './templates/newDeviceLoginAlertTemplate.js';
+import {
+  buildAccountDeletionCancelledHtml,
+  buildAccountDeletionConfirmationHtml,
+  buildAccountDeletionScheduledHtml,
+  buildStepUpCodeHtml,
+} from './templates/accountDeletionTemplates.js';
 import { EMAIL, ENV } from '#src/infrastructure/config/constants.js';
+import { ACCOUNT_DELETION, STEP_UP_CODE } from '#src/use-cases/constants.js';
 import {
   otelMetrics,
   type EmailTemplate,
@@ -91,6 +98,50 @@ export class BrevoEmailService implements IEmailService {
     );
   }
 
+  async sendStepUpCode(to: string, code: string): Promise<void> {
+    const htmlContent = buildStepUpCodeHtml(code, minutes(STEP_UP_CODE.TTL_MS));
+    await this.send('step_up_code', to, 'Your Trakwyn verification code', htmlContent);
+  }
+
+  async sendAccountDeletionConfirmation(to: string, confirmUrl: string): Promise<void> {
+    const htmlContent = buildAccountDeletionConfirmationHtml(
+      confirmUrl,
+      minutes(ACCOUNT_DELETION.CONFIRM_TTL_MS),
+      ACCOUNT_DELETION.GRACE_PERIOD_DAYS,
+    );
+    await this.send(
+      'account_deletion_confirmation',
+      to,
+      'Confirm deleting your Trakwyn account',
+      htmlContent,
+    );
+  }
+
+  async sendAccountDeletionScheduled(
+    to: string,
+    deletionDate: Date,
+    cancelUrl: string,
+    hadSubscription: boolean,
+  ): Promise<void> {
+    const htmlContent = buildAccountDeletionScheduledHtml(deletionDate, cancelUrl, hadSubscription);
+    await this.send(
+      'account_deletion_scheduled',
+      to,
+      'Your Trakwyn account will be deleted',
+      htmlContent,
+    );
+  }
+
+  async sendAccountDeletionCancelled(to: string): Promise<void> {
+    const htmlContent = buildAccountDeletionCancelledHtml();
+    await this.send(
+      'account_deletion_cancelled',
+      to,
+      'Trakwyn account deletion cancelled',
+      htmlContent,
+    );
+  }
+
   async sendNewDeviceLoginAlert(
     to: string,
     deviceLabel: string,
@@ -146,6 +197,10 @@ export class BrevoEmailService implements IEmailService {
     }
     this.metrics.recordEmailSent(template, 'sent');
   }
+}
+
+function minutes(ms: number): number {
+  return Math.round(ms / 60_000);
 }
 
 async function readBrevoErrorCode(response: Response): Promise<string | null> {

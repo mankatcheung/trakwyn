@@ -14,6 +14,11 @@ import {
 import { API_ORIGIN, OAUTH_MOBILE_CALLBACK_URL, RESTORE_REFRESH_WAIT_MS } from '../constants';
 import { oauthErrorMessage } from '../screens/auth/oauthErrorMessage';
 import { createPkcePair } from './pkce';
+import {
+  reauthenticateWithProvider as reauthenticateViaProvider,
+  verifyStepUpCode as verifyStepUpCodeMobile,
+  type ReauthProvider,
+} from './stepUp';
 
 export type OAuthProviderName = 'google' | 'github';
 
@@ -106,6 +111,13 @@ interface AuthContextValue {
    * so unlike login this keeps the cache.
    */
   reauthenticate: (password: string, code?: string) => Promise<LoginOutcome>;
+  /**
+   * The step-ups for an account with no password (JEF-463): sign in again with
+   * Google (false if the user backed out), or a mailed code. Same session,
+   * fresh authTime, cache kept, like `reauthenticate`.
+   */
+  reauthenticateWithProvider: (provider: ReauthProvider) => Promise<boolean>;
+  verifyStepUpCode: (code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -301,6 +313,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  /** A step-up's refreshed tokens: stored, without the sign-in's cache reset. */
+  const adoptStepUpTokens = useCallback(async (tokens: TokenPair) => {
+    await setTokens(tokens);
+    setAccessToken(tokens.accessToken);
+  }, []);
+
+  const reauthenticateWithProvider = useCallback(
+    async (provider: ReauthProvider): Promise<boolean> => {
+      const tokens = await reauthenticateViaProvider(provider, t('errors.signInFailed'));
+      if (!tokens) return false;
+      await adoptStepUpTokens(tokens);
+      return true;
+    },
+    [adoptStepUpTokens, t],
+  );
+
+  const verifyStepUpCode = useCallback(
+    async (code: string): Promise<void> => {
+      await adoptStepUpTokens(await verifyStepUpCodeMobile(code));
+    },
+    [adoptStepUpTokens],
+  );
+
   const logout = useCallback(async (): Promise<void> => {
     await gqlRequest(LOGOUT_MUTATION).catch(() => {
       // Best-effort — an already-expired/missing session shouldn't block logout.
@@ -327,6 +362,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       reauthenticate,
+      reauthenticateWithProvider,
+      verifyStepUpCode,
     }),
     [
       isLoading,
@@ -338,6 +375,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       reauthenticate,
+      reauthenticateWithProvider,
+      verifyStepUpCode,
     ],
   );
 

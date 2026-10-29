@@ -4,7 +4,6 @@ import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
-import type { IDeleteAccountUseCase } from '#src/use-cases/user/IDeleteAccountUseCase.js';
 import type { IExportUserDataUseCase } from '#src/use-cases/user/IExportUserDataUseCase.js';
 import type { IGenerateTotpSecretUseCase } from '#src/use-cases/user/IGenerateTotpSecretUseCase.js';
 import type { IConfirmTotpSetupUseCase } from '#src/use-cases/user/IConfirmTotpSetupUseCase.js';
@@ -48,9 +47,6 @@ const makeDeps = (overrides?: object) => ({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   updatePasswordUseCase: stub<IUpdatePasswordUseCase>({
-    execute: vi.fn().mockResolvedValue(undefined),
-  }),
-  deleteAccountUseCase: stub<IDeleteAccountUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   exportUserDataUseCase: stub<IExportUserDataUseCase>({ execute: vi.fn() }),
@@ -210,21 +206,6 @@ describe('UserResolver', () => {
         authTime: 1_700_000_000_000,
         ipAddress: '1.2.3.4',
         userAgent: 'Mozilla/5.0',
-      });
-    });
-  });
-
-  describe('deleteAccount', () => {
-    it('delegates to deleteAccountUseCase with the correct arguments', async () => {
-      const deps = makeDeps();
-      const resolver = new UserResolver(deps);
-
-      await resolver.deleteAccount('user-1', 'secret', 1_700_000_000_000);
-
-      expect(deps.deleteAccountUseCase.execute).toHaveBeenCalledWith({
-        userId: 'user-1',
-        password: 'secret',
-        authTime: 1_700_000_000_000,
       });
     });
   });

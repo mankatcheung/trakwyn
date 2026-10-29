@@ -64,6 +64,17 @@ export class FakeBillingProvider implements IBillingProvider {
     this.revokedSubscriptions.push(subscriptionId);
   }
 
+  /** Subscriptions set to end at the period close and not resumed since (JEF-463). */
+  readonly cancellingSubscriptions = new Set<string>();
+
+  async scheduleCancellation(subscriptionId: string): Promise<void> {
+    this.cancellingSubscriptions.add(subscriptionId);
+  }
+
+  async resumeSubscription(subscriptionId: string): Promise<void> {
+    this.cancellingSubscriptions.delete(subscriptionId);
+  }
+
   parseWebhook(
     rawBody: Buffer,
     headers: Record<string, string | string[] | undefined>,

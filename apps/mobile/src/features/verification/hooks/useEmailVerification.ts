@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlRequest } from '../../../graphql/client';
 import {
+  CANCEL_ACCOUNT_DELETION_MUTATION,
   EMAIL_VERIFICATION_QUERY,
   RESEND_VERIFICATION_EMAIL_MUTATION,
 } from '../graphql/operations';
@@ -10,6 +11,8 @@ import {
 export interface EmailVerificationState {
   email: string;
   emailVerified: boolean;
+  /** When the account will be deleted (JEF-463), or null. While set the app shows only the cancel screen. */
+  deletionScheduledAt: string | null;
 }
 
 export const emailVerificationQueryKey = ['me', 'emailVerification'] as const;
@@ -44,6 +47,16 @@ export function useEmailVerification() {
   }, [unverified, refetch]);
 
   return query;
+}
+
+/** Cancels a scheduled deletion, then re-reads the account so the app opens again (JEF-463). */
+export function useCancelAccountDeletion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      gqlRequest<{ cancelAccountDeletion: boolean }>(CANCEL_ACCOUNT_DELETION_MUTATION),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: emailVerificationQueryKey }),
+  });
 }
 
 export function useResendVerificationEmail() {

@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route';
 import { Route as AccessibilityRouteImport } from './routes/accessibility';
+import { Route as AccountDeletionScheduledRouteImport } from './routes/account-deletion-scheduled';
 import { Route as AiMcpSetupRouteImport } from './routes/ai-mcp-setup';
+import { Route as CancelAccountDeletionRouteImport } from './routes/cancel-account-deletion';
+import { Route as ConfirmAccountDeletionRouteImport } from './routes/confirm-account-deletion';
 import { Route as ConfirmBackupEmailRouteImport } from './routes/confirm-backup-email';
 import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change';
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password';
@@ -78,9 +81,25 @@ const AccessibilityRoute = AccessibilityRouteImport.update({
   path: '/accessibility',
   getParentRoute: () => rootRouteImport,
 } as any);
+const AccountDeletionScheduledRoute =
+  AccountDeletionScheduledRouteImport.update({
+    id: '/account-deletion-scheduled',
+    path: '/account-deletion-scheduled',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const AiMcpSetupRoute = AiMcpSetupRouteImport.update({
   id: '/ai-mcp-setup',
   path: '/ai-mcp-setup',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const CancelAccountDeletionRoute = CancelAccountDeletionRouteImport.update({
+  id: '/cancel-account-deletion',
+  path: '/cancel-account-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ConfirmAccountDeletionRoute = ConfirmAccountDeletionRouteImport.update({
+  id: '/confirm-account-deletion',
+  path: '/confirm-account-deletion',
   getParentRoute: () => rootRouteImport,
 } as any);
 const ConfirmBackupEmailRoute = ConfirmBackupEmailRouteImport.update({
@@ -363,7 +382,10 @@ const AuthenticatedApplicationsApplicationIdResumesNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/accessibility': typeof AccessibilityRoute;
+  '/account-deletion-scheduled': typeof AccountDeletionScheduledRoute;
   '/ai-mcp-setup': typeof AiMcpSetupRoute;
+  '/cancel-account-deletion': typeof CancelAccountDeletionRoute;
+  '/confirm-account-deletion': typeof ConfirmAccountDeletionRoute;
   '/confirm-backup-email': typeof ConfirmBackupEmailRoute;
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
@@ -418,7 +440,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/accessibility': typeof AccessibilityRoute;
+  '/account-deletion-scheduled': typeof AccountDeletionScheduledRoute;
   '/ai-mcp-setup': typeof AiMcpSetupRoute;
+  '/cancel-account-deletion': typeof CancelAccountDeletionRoute;
+  '/confirm-account-deletion': typeof ConfirmAccountDeletionRoute;
   '/confirm-backup-email': typeof ConfirmBackupEmailRoute;
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
@@ -474,7 +499,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute;
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren;
   '/accessibility': typeof AccessibilityRoute;
+  '/account-deletion-scheduled': typeof AccountDeletionScheduledRoute;
   '/ai-mcp-setup': typeof AiMcpSetupRoute;
+  '/cancel-account-deletion': typeof CancelAccountDeletionRoute;
+  '/confirm-account-deletion': typeof ConfirmAccountDeletionRoute;
   '/confirm-backup-email': typeof ConfirmBackupEmailRoute;
   '/confirm-email-change': typeof ConfirmEmailChangeRoute;
   '/forgot-password': typeof ForgotPasswordRoute;
@@ -531,7 +559,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accessibility'
+    | '/account-deletion-scheduled'
     | '/ai-mcp-setup'
+    | '/cancel-account-deletion'
+    | '/confirm-account-deletion'
     | '/confirm-backup-email'
     | '/confirm-email-change'
     | '/forgot-password'
@@ -586,7 +617,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accessibility'
+    | '/account-deletion-scheduled'
     | '/ai-mcp-setup'
+    | '/cancel-account-deletion'
+    | '/confirm-account-deletion'
     | '/confirm-backup-email'
     | '/confirm-email-change'
     | '/forgot-password'
@@ -641,7 +675,10 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/accessibility'
+    | '/account-deletion-scheduled'
     | '/ai-mcp-setup'
+    | '/cancel-account-deletion'
+    | '/confirm-account-deletion'
     | '/confirm-backup-email'
     | '/confirm-email-change'
     | '/forgot-password'
@@ -698,7 +735,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren;
   AccessibilityRoute: typeof AccessibilityRoute;
+  AccountDeletionScheduledRoute: typeof AccountDeletionScheduledRoute;
   AiMcpSetupRoute: typeof AiMcpSetupRoute;
+  CancelAccountDeletionRoute: typeof CancelAccountDeletionRoute;
+  ConfirmAccountDeletionRoute: typeof ConfirmAccountDeletionRoute;
   ConfirmBackupEmailRoute: typeof ConfirmBackupEmailRoute;
   ConfirmEmailChangeRoute: typeof ConfirmEmailChangeRoute;
   ForgotPasswordRoute: typeof ForgotPasswordRoute;
@@ -742,11 +782,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccessibilityRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/account-deletion-scheduled': {
+      id: '/account-deletion-scheduled';
+      path: '/account-deletion-scheduled';
+      fullPath: '/account-deletion-scheduled';
+      preLoaderRoute: typeof AccountDeletionScheduledRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/ai-mcp-setup': {
       id: '/ai-mcp-setup';
       path: '/ai-mcp-setup';
       fullPath: '/ai-mcp-setup';
       preLoaderRoute: typeof AiMcpSetupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/cancel-account-deletion': {
+      id: '/cancel-account-deletion';
+      path: '/cancel-account-deletion';
+      fullPath: '/cancel-account-deletion';
+      preLoaderRoute: typeof CancelAccountDeletionRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/confirm-account-deletion': {
+      id: '/confirm-account-deletion';
+      path: '/confirm-account-deletion';
+      fullPath: '/confirm-account-deletion';
+      preLoaderRoute: typeof ConfirmAccountDeletionRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/confirm-backup-email': {
@@ -1200,7 +1261,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AccessibilityRoute: AccessibilityRoute,
+  AccountDeletionScheduledRoute: AccountDeletionScheduledRoute,
   AiMcpSetupRoute: AiMcpSetupRoute,
+  CancelAccountDeletionRoute: CancelAccountDeletionRoute,
+  ConfirmAccountDeletionRoute: ConfirmAccountDeletionRoute,
   ConfirmBackupEmailRoute: ConfirmBackupEmailRoute,
   ConfirmEmailChangeRoute: ConfirmEmailChangeRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

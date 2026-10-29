@@ -13,6 +13,7 @@ export const PROFILE_QUERY = `
       avatarUrl
       backupEmail
       backupEmailVerifiedAt
+      hasPassword
     }
   }
 `;
@@ -59,19 +60,19 @@ export const REMOVE_AVATAR_MUTATION = `
 `;
 
 export const REQUEST_EMAIL_CHANGE_MUTATION = `
-  mutation RequestEmailChange($currentPassword: String!, $newEmail: String!) {
+  mutation RequestEmailChange($currentPassword: String, $newEmail: String!) {
     requestEmailChange(currentPassword: $currentPassword, newEmail: $newEmail)
   }
 `;
 
 export const REQUEST_ADD_BACKUP_EMAIL_MUTATION = `
-  mutation RequestAddBackupEmail($currentPassword: String!, $backupEmail: String!) {
+  mutation RequestAddBackupEmail($currentPassword: String, $backupEmail: String!) {
     requestAddBackupEmail(currentPassword: $currentPassword, backupEmail: $backupEmail)
   }
 `;
 
 export const REMOVE_BACKUP_EMAIL_MUTATION = `
-  mutation RemoveBackupEmail($currentPassword: String!) {
+  mutation RemoveBackupEmail($currentPassword: String) {
     removeBackupEmail(currentPassword: $currentPassword)
   }
 `;
@@ -232,19 +233,10 @@ export const IMPORT_USER_DATA_MUTATION = `
   }
 `;
 
-export const DELETE_ACCOUNT_MUTATION = `
-  mutation DeleteAccount($password: String!) {
-    deleteAccount(password: $password)
-  }
-`;
-
-export const REAUTHENTICATE_MUTATION = `
-  mutation Reauthenticate($password: String!, $code: String) {
-    reauthenticate(password: $password, code: $code) {
-      success
-      totpRequired
-      accessToken
-    }
+/** Mails the link that schedules the account's deletion (JEF-463). */
+export const REQUEST_ACCOUNT_DELETION_MUTATION = `
+  mutation RequestAccountDeletion {
+    requestAccountDeletion
   }
 `;
 

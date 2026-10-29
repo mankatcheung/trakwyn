@@ -24,6 +24,11 @@ export const OAUTH_ERROR = {
   EMAIL_NOT_VERIFIED: 'email_not_verified',
   /** Signing in: the link exists but its user does not. */
   ACCOUNT_NOT_FOUND: 'account_not_found',
+  /**
+   * Step-up (JEF-463): the provider did not prove a fresh sign-in to the
+   * account linked to this user, or the session ended meanwhile.
+   */
+  REAUTH_FAILED: 'reauth_failed',
   /** Anything else. The real error is logged, never shown. */
   FAILED: 'failed',
 } as const;
@@ -55,6 +60,12 @@ export function loginErrorSlug(error: unknown): OAuthErrorSlug {
     default:
       return OAUTH_ERROR.FAILED;
   }
+}
+
+export function reauthErrorSlug(error: unknown): OAuthErrorSlug {
+  return codeOf(error) === ERROR_CODES.UNAUTHORIZED
+    ? OAUTH_ERROR.REAUTH_FAILED
+    : OAUTH_ERROR.FAILED;
 }
 
 export function linkErrorSlug(error: unknown): OAuthErrorSlug {

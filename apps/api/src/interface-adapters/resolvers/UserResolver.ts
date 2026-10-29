@@ -2,7 +2,6 @@ import type { DeviceInfo } from '#src/interface-adapters/resolvers/AuthResolver.
 import type { IRequestEmailChangeUseCase } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 import type { IConfirmEmailChangeUseCase } from '#src/use-cases/user/IConfirmEmailChangeUseCase.js';
 import type { IUpdatePasswordUseCase } from '#src/use-cases/user/IUpdatePasswordUseCase.js';
-import type { IDeleteAccountUseCase } from '#src/use-cases/user/IDeleteAccountUseCase.js';
 import type {
   IExportUserDataUseCase,
   ExportUserDataOutput,
@@ -72,7 +71,6 @@ interface Deps {
   requestEmailChangeUseCase: IRequestEmailChangeUseCase;
   confirmEmailChangeUseCase: IConfirmEmailChangeUseCase;
   updatePasswordUseCase: IUpdatePasswordUseCase;
-  deleteAccountUseCase: IDeleteAccountUseCase;
   exportUserDataUseCase: IExportUserDataUseCase;
   generateTotpSecretUseCase: IGenerateTotpSecretUseCase;
   confirmTotpSetupUseCase: IConfirmTotpSetupUseCase;
@@ -111,7 +109,7 @@ export class UserResolver {
 
   async requestEmailChange(
     userId: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     newEmail: string,
     authTime: number | null | undefined,
   ): Promise<void> {
@@ -146,14 +144,6 @@ export class UserResolver {
       ipAddress: device.ipAddress,
       userAgent: device.userAgent,
     });
-  }
-
-  async deleteAccount(
-    userId: string,
-    password: string,
-    authTime: number | null | undefined,
-  ): Promise<void> {
-    await this.deps.deleteAccountUseCase.execute({ userId, password, authTime });
   }
 
   async exportUserData(userId: string): Promise<ExportUserDataOutput> {
@@ -359,7 +349,7 @@ export class UserResolver {
   async requestAddBackupEmail(
     userId: string,
     backupEmail: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     authTime: number | null | undefined,
   ): Promise<void> {
     await this.deps.requestAddBackupEmailUseCase.execute({
@@ -376,7 +366,7 @@ export class UserResolver {
 
   async removeBackupEmail(
     userId: string,
-    currentPassword: string,
+    currentPassword: string | null | undefined,
     authTime: number | null | undefined,
   ): Promise<void> {
     await this.deps.removeBackupEmailUseCase.execute({

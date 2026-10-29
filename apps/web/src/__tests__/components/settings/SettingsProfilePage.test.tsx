@@ -358,6 +358,8 @@ describe('SettingsProfilePage', () => {
       await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
 
       mockGqlRequest.mockRejectedValueOnce(stepUpRequiredError);
+      // The dialog asks how this user can step up before it opens (JEF-463).
+      mockGqlRequest.mockResolvedValueOnce({ me: { stepUpMethods: ['password'] } });
       mockGqlRequest.mockResolvedValueOnce({
         reauthenticate: { success: true, totpRequired: false, accessToken: 'new-access-token' },
       });
@@ -424,6 +426,30 @@ describe('SettingsProfilePage', () => {
         expect(screen.queryByText("Confirm it's you")).not.toBeInTheDocument();
       });
       expect(screen.queryByText('Failed to update email.')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('an account without a password (JEF-463)', () => {
+    it('hides the password fields and sends no password when changing the email', async () => {
+      mockGqlRequest.mockResolvedValue({ me: { ...defaultResponse.me, hasPassword: false } });
+      render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+      const updateEmailBtn = await screen.findByRole('button', { name: /update email/i });
+      const form = updateEmailBtn.closest('form')!;
+      await waitFor(() => expect(form.querySelector('input[type="password"]')).toBeNull());
+
+      mockGqlRequest.mockResolvedValueOnce({ requestEmailChange: true });
+      fireEvent.change(form.querySelector('input[type="email"]')!, {
+        target: { value: 'new@example.com' },
+      });
+      fireEvent.click(updateEmailBtn);
+
+      await waitFor(() =>
+        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestEmailChange'), {
+          newEmail: 'new@example.com',
+          currentPassword: null,
+        }),
+      );
     });
   });
 });

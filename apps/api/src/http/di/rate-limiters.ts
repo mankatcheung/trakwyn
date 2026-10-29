@@ -93,6 +93,11 @@ export const rateLimiters = {
     RATE_LIMIT.EMAIL_VERIFICATION_GLOBAL,
   ),
   totpRateLimiter: limiter('totpRateLimiter', RATE_LIMIT.TOTP_VERIFICATION),
+  stepUpCodeRateLimiter: limiter('stepUpCodeRateLimiter', RATE_LIMIT.STEP_UP_CODE_SEND),
+  accountDeletionRateLimiter: limiter(
+    'accountDeletionRateLimiter',
+    RATE_LIMIT.ACCOUNT_DELETION_REQUEST,
+  ),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
   generateCoverLetterRateLimiter: limiter(

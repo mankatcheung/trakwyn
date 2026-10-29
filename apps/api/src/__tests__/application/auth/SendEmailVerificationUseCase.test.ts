@@ -12,6 +12,10 @@ const makeEmailService = (overrides?: Partial<IEmailService>): IEmailService => 
   sendBackupEmailVerification: vi.fn().mockResolvedValue(undefined),
   sendPasswordReset: vi.fn().mockResolvedValue(undefined),
   sendNewDeviceLoginAlert: vi.fn().mockResolvedValue(undefined),
+  sendStepUpCode: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionConfirmation: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionScheduled: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionCancelled: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 

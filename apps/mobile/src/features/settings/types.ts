@@ -7,6 +7,8 @@ export interface Profile {
   avatarUrl: string | null;
   backupEmail: string | null;
   backupEmailVerifiedAt: string | null;
+  /** False for an account made through Google or GitHub that never set one (JEF-463). */
+  hasPassword: boolean;
 }
 
 export interface RequestAvatarUploadUrlResult {
@@ -86,12 +88,6 @@ export interface StorageUsage {
   usedBytes: number;
   limitBytes: number;
 }
-
-export type ReauthenticateResult = {
-  success: boolean;
-  totpRequired: boolean;
-  accessToken: string | null;
-};
 
 /** Mirrors the API's `ApiTokenScope` enum. */
 export type ApiTokenScope = 'read' | 'full';

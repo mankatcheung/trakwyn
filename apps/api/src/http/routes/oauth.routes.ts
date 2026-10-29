@@ -2,7 +2,7 @@ import type { IHttpRequest } from '#src/http/ports/IHttpRequest.js';
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import type { Cradle } from '#src/http/container.js';
 import { setAuthCookies } from '#src/http/schema/types/AuthPayloadType.js';
-import { ENV, NODE_ENV, OAUTH } from '#src/infrastructure/config/constants.js';
+import { ENV, OAUTH } from '#src/infrastructure/config/constants.js';
 import {
   COOKIES,
   COOKIE_PATH,
@@ -12,13 +12,20 @@ import {
   ROUTES,
 } from '#src/http/constants.js';
 import {
-  type OAuthPlatform,
   handoffRedirectBase,
   parsePlatform,
   requestOrigin,
 } from '#src/http/routes/oauthPlatform.js';
+import {
+  STATE_COOKIE_OPTIONS,
+  decodeRedirectCookie,
+  encodeRedirectCookie,
+  stateMatchesBrowser,
+} from '#src/http/routes/oauthRedirectCookie.js';
 import type { OAuthProviderName } from '#src/domain/oauthAccount/OAuthAccount.js';
 import { createPkcePair, isWellFormedPkceValue } from '#src/infrastructure/auth/pkce.js';
+import type { OAuthMode } from '#src/infrastructure/auth/OAuthStateService.js';
+import { completeOAuthReauth, readReauthTicket } from '#src/http/routes/oauthReauth.js';
 import {
   OAUTH_ERROR,
   type OAuthErrorSlug,
@@ -37,84 +44,6 @@ function callbackUrl(request: IHttpRequest, provider: string): string {
   return `${requestOrigin(request)}${OAUTH.callbackPath(provider)}`;
 }
 
-/**
- * Options for the cookie that ties a redirect to the browser that began it.
- *
- * `SameSite=Lax`, deliberately not the `none` the auth cookies use: the
- * callback arrives as a top-level GET navigation, which Lax permits, and
- * anything looser would weaken the very thing this cookie exists to prove.
- * Host-only (no `domain`) because only this API ever reads it, and scoped to
- * the same window as the state it guards.
- */
-const STATE_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env[ENV.NODE_ENV] === NODE_ENV.PRODUCTION,
-  sameSite: 'lax',
-  path: COOKIE_PATH,
-  maxAge: Math.floor(OAUTH.STATE_TTL_MS / 1000),
-} as const;
-
-/**
- * The redirect cookie carries five things the callback needs and the
- * browser must not be able to tamper with: the state's nonce (JEF-198), the
- * provider-facing PKCE verifier (JEF-200), which client started the flow
- * (JEF-275, read even by branches that never verify `state`), the client's
- * own PKCE code_challenge for the handoff code (mobile, JEF-275, and
- * extension, JEF-383), and, extension only, which extension to hand back to.
- * The last two are empty for web, which has no handoff code to bind.
- *
- * One cookie rather than several: created, read and cleared together, so it
- * cannot arrive with some parts but not others. Every part is base64url,
- * hex, empty, a fixed OAUTH_PLATFORM value or an `[a-p]` extension ID, so
- * none can contain the separator.
- */
-const COOKIE_SEPARATOR = '.';
-
-function encodeRedirectCookie(
-  nonce: string,
-  codeVerifier: string,
-  platform: OAuthPlatform,
-  handoffCodeChallenge: string,
-  extensionId: string,
-): string {
-  return [nonce, codeVerifier, platform, handoffCodeChallenge, extensionId].join(COOKIE_SEPARATOR);
-}
-
-function decodeRedirectCookie(request: IHttpRequest): {
-  nonce: string;
-  codeVerifier: string;
-  platform: OAuthPlatform;
-  handoffCodeChallenge: string;
-  extensionId: string;
-} | null {
-  const raw = request.cookies[COOKIES.OAUTH_STATE];
-  if (typeof raw !== 'string') return null;
-  const [nonce, codeVerifier, platform, handoffCodeChallenge, extensionId] =
-    raw.split(COOKIE_SEPARATOR);
-  if (!nonce || !codeVerifier) return null;
-  return {
-    nonce,
-    codeVerifier,
-    platform: parsePlatform(platform),
-    handoffCodeChallenge: handoffCodeChallenge ?? '',
-    extensionId: extensionId ?? '',
-  };
-}
-
-/**
- * The signature proves we minted a state; it does not prove we minted it for
- * the browser presenting it. Without this check an attacker can run the flow
- * themselves, keep their own valid code and state, and hand the victim the
- * callback URL — logging the victim into the attacker's account (JEF-198).
- *
- * A missing or half-formed cookie is a hard failure, never a fall-through:
- * treating it as "no cookie, carry on" would leave the hole open while looking
- * closed, and would silently drop PKCE with it.
- */
-function stateMatchesBrowser(nonce: string, cookieNonce: string): boolean {
-  return cookieNonce.length > 0 && cookieNonce === nonce;
-}
-
 export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
   return [
     {
@@ -127,10 +56,10 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
           return;
         }
 
-        const mode = req.query.mode === 'link' ? 'link' : 'login';
-        // Only meaningful for mode 'login' — linking only ever starts from the
-        // web settings page — but read unconditionally so it's always in the
-        // cookie the callback reads back.
+        const mode = parseMode(req.query.mode);
+        // Only meaningful for modes 'login' and 'reauth' — linking only ever
+        // starts from the web settings page — but read unconditionally so it's
+        // always in the cookie the callback reads back.
         const platform = parsePlatform(req.query.platform);
 
         // The client's own PKCE, over the handoff code — distinct from the
@@ -158,8 +87,16 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
         }
 
         let userId: string | undefined;
+        let sessionId: string | undefined;
         const { tokenService } = getCradle();
-        if (mode === 'link') {
+        if (mode === 'reauth') {
+          const reauth = readReauthTicket(getCradle(), req.query.ticket, platform);
+          if ('error' in reauth) {
+            res.status(reauth.status).send({ error: reauth.error });
+            return;
+          }
+          ({ userId, sessionId } = reauth);
+        } else if (mode === 'link') {
           const cookieToken = req.cookies[COOKIES.ACCESS_TOKEN];
           if (!cookieToken) {
             res.status(401).send({ error: 'Must be logged in to link a provider' });
@@ -185,15 +122,23 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
           return;
         }
 
-        const returnTo = mode === 'login' ? safeReturnTo(req.query.returnTo) : undefined;
-        const { state, nonce } = oauthStateService.issue(provider, mode, userId, returnTo);
+        const returnTo = mode !== 'link' ? safeReturnTo(req.query.returnTo) : undefined;
+        const { state, nonce } = oauthStateService.issue(
+          provider,
+          mode,
+          userId,
+          returnTo,
+          sessionId,
+        );
         // Only the challenge — the hash — goes to the provider. The verifier
         // stays here, in the cookie, so capturing the redirect URL reveals
         // nothing that could redeem the code.
         const { verifier, challenge } = createPkcePair();
         const authorizationUrl = oauthProviderRegistry
           .get(provider)
-          .getAuthorizationUrl(state, callbackUrl(req, provider), challenge);
+          .getAuthorizationUrl(state, callbackUrl(req, provider), challenge, {
+            forceReauth: mode === 'reauth',
+          });
 
         // Set on the same response as the redirect, so the browser carries it
         // through the provider and back — see the cookie note above.
@@ -270,6 +215,20 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
         }
 
         const redirectUri = callbackUrl(req, provider);
+
+        if (parsedState.mode === 'reauth') {
+          await completeOAuthReauth(getCradle(), res, {
+            provider,
+            code,
+            redirectUri,
+            codeVerifier: redirectCookie.codeVerifier,
+            state: parsedState,
+            handoff: handoffBase
+              ? { base: handoffBase, codeChallenge: redirectCookie.handoffCodeChallenge }
+              : undefined,
+          });
+          return;
+        }
 
         if (parsedState.mode === 'link') {
           // The linked-accounts UI lives at /settings/security, not
@@ -364,6 +323,10 @@ export function oauthRoutes(getCradle: () => Cradle): RouteDefinition[] {
       },
     },
   ];
+}
+
+function parseMode(value: string | string[] | undefined): OAuthMode {
+  return value === 'link' || value === 'reauth' ? value : 'login';
 }
 
 function safeReturnTo(value: string | string[] | undefined): string | undefined {

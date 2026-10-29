@@ -3,7 +3,10 @@ import { asClass, Lifetime, type NameAndRegistrationPair } from 'awilix';
 import { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import { ConfirmEmailChangeUseCase } from '#src/use-cases/user/ConfirmEmailChangeUseCase.js';
 import { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
-import { DeleteAccountUseCase } from '#src/use-cases/user/DeleteAccountUseCase.js';
+import { RequestAccountDeletionUseCase } from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
+import { ConfirmAccountDeletionUseCase } from '#src/use-cases/user/ConfirmAccountDeletionUseCase.js';
+import { CancelAccountDeletionUseCase } from '#src/use-cases/user/CancelAccountDeletionUseCase.js';
+import { PurgeScheduledAccountsUseCase } from '#src/use-cases/user/PurgeScheduledAccountsUseCase.js';
 import { ExportUserDataUseCase } from '#src/use-cases/user/ExportUserDataUseCase.js';
 import { ImportUserDataUseCase } from '#src/use-cases/user/ImportUserDataUseCase.js';
 import { GenerateTotpSecretUseCase } from '#src/use-cases/user/GenerateTotpSecretUseCase.js';
@@ -42,7 +45,18 @@ export const user = {
     lifetime: Lifetime.TRANSIENT,
   }),
   updatePasswordUseCase: asClass(UpdatePasswordUseCase, { lifetime: Lifetime.TRANSIENT }),
-  deleteAccountUseCase: asClass(DeleteAccountUseCase, { lifetime: Lifetime.TRANSIENT }),
+  requestAccountDeletionUseCase: asClass(RequestAccountDeletionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  confirmAccountDeletionUseCase: asClass(ConfirmAccountDeletionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  cancelAccountDeletionUseCase: asClass(CancelAccountDeletionUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  purgeScheduledAccountsUseCase: asClass(PurgeScheduledAccountsUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
   exportUserDataUseCase: asClass(ExportUserDataUseCase, { lifetime: Lifetime.TRANSIENT }),
   generateTotpSecretUseCase: asClass(GenerateTotpSecretUseCase, {
     lifetime: Lifetime.TRANSIENT,

@@ -8,6 +8,8 @@ export interface IUserRepository {
   findByBackupEmail(email: string): Promise<User | null>;
   findByBillingCustomerId(customerId: string): Promise<User | null>;
   findAll(): Promise<User[]>;
+  /** Accounts whose scheduled deletion date is at or before `cutoff` (JEF-463), oldest first. */
+  findScheduledForDeletionBefore(cutoff: Date): Promise<User[]>;
   create(data: {
     id: string;
     email: string;
@@ -46,6 +48,7 @@ export interface IUserRepository {
       planSource?: PlanSource | null;
       billingCustomerId?: string | null;
       billingSubscriptionId?: string | null;
+      deletionScheduledAt?: Date | null;
     },
   ): Promise<User>;
   delete(id: string): Promise<void>;

@@ -93,6 +93,8 @@ const baseDeps = () => ({
   requestBackupEmailRecoveryUseCase: stub<IRequestBackupEmailRecoveryUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
+  requestStepUpCodeUseCase: { execute: vi.fn().mockResolvedValue(undefined) },
+  verifyStepUpCodeUseCase: { execute: vi.fn().mockResolvedValue(makeUser()) },
 });
 
 describe('AuthResolver', () => {

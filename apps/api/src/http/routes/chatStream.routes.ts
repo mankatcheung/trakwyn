@@ -1,6 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { DomainError, EmailNotVerifiedError } from '#src/use-cases/errors/DomainError.js';
+import {
+  AccountDeletionScheduledError,
+  DomainError,
+  EmailNotVerifiedError,
+} from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { CHAT } from '#src/use-cases/constants.js';
 import { diScopeOf } from '#src/http/adapters/fastify/diScope.js';
@@ -56,8 +60,9 @@ export async function handleChatStream(
   // client gets a plain 403 it can read instead of an SSE error frame.
   try {
     await diScopeOf(request).cradle.assertEmailVerifiedUseCase.execute(user.sub);
+    await diScopeOf(request).cradle.assertAccountActiveUseCase.execute(user.sub);
   } catch (err) {
-    if (err instanceof EmailNotVerifiedError) {
+    if (err instanceof EmailNotVerifiedError || err instanceof AccountDeletionScheduledError) {
       reply.code(403).send({ error: err.message, code: err.code });
       return;
     }

@@ -20,7 +20,7 @@ locals {
   # the `job` name `runScheduledJob` logs them under (ADMIN_JOBS in
   # apps/api/src/http/constants.ts). push_notifications is not scheduled, so a
   # quiet day for it means nothing.
-  nightly_jobs = ["digest", "reminders", "trash_purge"]
+  nightly_jobs = ["digest", "reminders", "trash_purge", "account_purge"]
 
   # A daily job, plus two hours of slack for a slow or late run.
   job_absence_window_minutes = 26 * 60
@@ -162,6 +162,19 @@ resource "axiom_monitor" "job_failed" {
   # No range_minutes/interval_minutes: a match monitor fires per matching
   # event, and Axiom stores both as 1 whatever is sent, which the provider
   # then reports as an inconsistent result after apply.
+  notifier_ids = [axiom_notifier.email.id]
+}
+
+resource "axiom_monitor" "account_purge_overdue" {
+  name        = "Account deletion overdue"
+  description = "An account scheduled for deletion is still there 3 days after its date: the purge keeps failing for it (often the payment provider refusing to revoke the subscription). The owner was promised a date. PurgeScheduledAccountsUseCase logs account_purge.overdue (ACCOUNT_DELETION.OVERDUE_EVENT); the per-account error is in the same run's logs."
+  type        = "MatchEvent"
+  apl_query   = <<-APL
+    ['${var.logs_dataset}']
+    | extend event = ${local.log_event}
+    | where event == "account_purge.overdue"
+  APL
+
   notifier_ids = [axiom_notifier.email.id]
 }
 

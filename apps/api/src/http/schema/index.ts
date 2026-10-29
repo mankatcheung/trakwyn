@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import { enforceEmailVerification } from '#src/http/emailVerificationGate.js';
+import { enforceAccountActive } from '#src/http/accountActiveGate.js';
 
 // Types must be imported before queries/mutations to register with builder
 import './types/enums/ApplicationStatusEnum.js';
@@ -8,6 +9,7 @@ import './types/enums/ActivityEventTypeEnum.js';
 import './types/enums/ApiTokenScopeEnum.js';
 import './types/enums/DigestFrequencyEnum.js';
 import './types/enums/OAuthProviderEnum.js';
+import './types/enums/StepUpMethodEnum.js';
 import './types/enums/PlanEnums.js';
 import './types/UserType.js';
 import './types/LinkedOAuthAccountType.js';
@@ -112,6 +114,7 @@ import './mutations/resumeMatchMutations.js';
 import './mutations/resumeAtsMutations.js';
 import './mutations/sessionMutations.js';
 import './mutations/oauthMutations.js';
+import './mutations/stepUpMutations.js';
 import './mutations/chatMutations.js';
 import './mutations/pushMutations.js';
 import './mutations/notificationMutations.js';
@@ -124,4 +127,4 @@ import './mutations/shareLinkMutations.js';
 import './mutations/billingMutations.js';
 import './mutations/cookieConsentMutations.js';
 
-export const schema = enforceEmailVerification(builder.toSchema());
+export const schema = enforceAccountActive(enforceEmailVerification(builder.toSchema()));

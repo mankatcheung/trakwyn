@@ -1,6 +1,10 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fastifyMultipart from '@fastify/multipart';
-import { DomainError, EmailNotVerifiedError } from '#src/use-cases/errors/DomainError.js';
+import {
+  AccountDeletionScheduledError,
+  DomainError,
+  EmailNotVerifiedError,
+} from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { CV_IMPORT } from '#src/use-cases/constants.js';
 import { CV_TOO_LARGE_MESSAGE } from '#src/use-cases/profile/cvImportValidation.js';
@@ -99,11 +103,13 @@ export async function handleCvImport(request: FastifyRequest, reply: FastifyRepl
     return;
   }
 
-  const { assertEmailVerifiedUseCase, parseCvUseCase } = diScopeOf(request).cradle;
+  const { assertEmailVerifiedUseCase, assertAccountActiveUseCase, parseCvUseCase } =
+    diScopeOf(request).cradle;
   try {
     await assertEmailVerifiedUseCase.execute(user.sub);
+    await assertAccountActiveUseCase.execute(user.sub);
   } catch (err) {
-    if (err instanceof EmailNotVerifiedError) {
+    if (err instanceof EmailNotVerifiedError || err instanceof AccountDeletionScheduledError) {
       refuse(reply, 403, err.message, err.code);
       return;
     }

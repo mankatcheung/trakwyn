@@ -9,16 +9,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
-import { DeleteAccountUseCase } from '#src/use-cases/user/DeleteAccountUseCase.js';
+import { RequestAccountDeletionUseCase } from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
 import {
   makeEmailVerificationTokenRepository,
   makeSecurityEventRepository,
+  makeUserActionTokenRepository,
 } from '#src/__tests__/helpers/mocks/auth.js';
-import {
-  makeDocumentRepository,
-  makeStorageProvider,
-} from '#src/__tests__/helpers/mocks/documents.js';
-import { makeBillingProvider } from '#src/__tests__/helpers/mocks/billing.js';
 import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
@@ -40,6 +36,10 @@ const emailService: IEmailService = {
   sendEmailVerification: vi.fn().mockResolvedValue(undefined),
   sendBackupEmailVerification: vi.fn().mockResolvedValue(undefined),
   sendNewDeviceLoginAlert: vi.fn().mockResolvedValue(undefined),
+  sendStepUpCode: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionConfirmation: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionScheduled: vi.fn().mockResolvedValue(undefined),
+  sendAccountDeletionCancelled: vi.fn().mockResolvedValue(undefined),
 };
 
 const emailVerificationTokenRepository = makeEmailVerificationTokenRepository();
@@ -70,10 +70,12 @@ const makeDeleteAccountDeps = (overrides?: {
   userRepository: ReturnType<typeof makeUserRepository>;
 }) => ({
   userRepository: makeUserRepository(),
-  documentRepository: makeDocumentRepository({ findAllByUserId: vi.fn().mockResolvedValue([]) }),
-  storageProvider: makeStorageProvider(),
-  billingProvider: makeBillingProvider(),
+  userActionTokenRepository: makeUserActionTokenRepository(),
+  emailService,
+  accountDeletionRateLimiter: makeRateLimiter(),
   logger: makeLogger(),
+  generateId: () => 'token-1',
+  webAppOrigin: 'https://app.example',
   ...overrides,
 });
 
@@ -103,11 +105,11 @@ describe('Authorization guards', () => {
       expect((err as { code: string }).code).toBe('NOT_FOUND');
     });
 
-    it('DeleteAccountUseCase', async () => {
-      const err = await new DeleteAccountUseCase(
+    it('RequestAccountDeletionUseCase', async () => {
+      const err = await new RequestAccountDeletionUseCase(
         makeDeleteAccountDeps({ userRepository: notFound }),
       )
-        .execute({ userId: 'x', password: 'p' })
+        .execute({ userId: 'x', authTime: Date.now(), legacyPassword: 'p' })
         .catch((e) => e);
       expect((err as { code: string }).code).toBe('NOT_FOUND');
     });
@@ -140,13 +142,15 @@ describe('Authorization guards', () => {
       expect(repo.update).not.toHaveBeenCalled();
     });
 
-    it('DeleteAccountUseCase does not delete on wrong password', async () => {
-      const err = await new DeleteAccountUseCase(makeDeleteAccountDeps({ userRepository: repo }))
-        .execute({ userId: 'user-1', password: 'wrong' })
+    it('RequestAccountDeletionUseCase sends no link on wrong password', async () => {
+      const err = await new RequestAccountDeletionUseCase(
+        makeDeleteAccountDeps({ userRepository: repo }),
+      )
+        .execute({ userId: 'user-1', authTime: Date.now(), legacyPassword: 'wrong' })
         .catch((e) => e);
 
       expect((err as { code: string }).code).toBe('UNAUTHORIZED');
-      expect(repo.delete).not.toHaveBeenCalled();
+      expect(emailService.sendAccountDeletionConfirmation).not.toHaveBeenCalled();
     });
   });
 
@@ -172,21 +176,23 @@ describe('Authorization guards', () => {
       );
     });
 
-    it('DeleteAccountUseCase calls delete on correct password', async () => {
+    it('RequestAccountDeletionUseCase mails a link, and deletes nothing, on correct password', async () => {
       const user = makeUser();
-      const repo = makeUserRepository({
-        findById: vi.fn().mockResolvedValue(user),
-        delete: vi.fn().mockResolvedValue(undefined),
-      });
+      const repo = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
       vi.mocked(bcrypt.compare).mockResolvedValue(RIGHT_PW);
 
       await expect(
-        new DeleteAccountUseCase(makeDeleteAccountDeps({ userRepository: repo })).execute({
+        new RequestAccountDeletionUseCase(makeDeleteAccountDeps({ userRepository: repo })).execute({
           userId: 'user-1',
-          password: 'correct',
+          authTime: Date.now(),
+          legacyPassword: 'correct',
         }),
       ).resolves.toBeUndefined();
-      expect(repo.delete).toHaveBeenCalledWith('user-1');
+      expect(emailService.sendAccountDeletionConfirmation).toHaveBeenCalledWith(
+        user.email,
+        expect.stringContaining('/confirm-account-deletion?token='),
+      );
+      expect(repo.delete).not.toHaveBeenCalled();
     });
   });
 });

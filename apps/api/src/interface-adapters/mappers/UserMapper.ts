@@ -25,6 +25,9 @@ export interface UserDTO {
   onboardingCompletedAt: Date | null;
   storageUsedBytes: number;
   storageLimitBytes: number;
+  hasPassword: boolean;
+  /** When the account will be deleted (JEF-463); null unless scheduled. */
+  deletionScheduledAt: Date | null;
 }
 
 export class UserMapper {
@@ -62,6 +65,8 @@ export class UserMapper {
       onboardingCompletedAt: user.onboardingCompletedAt,
       storageUsedBytes: user.documentBytes,
       storageLimitBytes: this.entitlementService.forUser(user).limits.documentBytes,
+      hasPassword: user.passwordHash !== null,
+      deletionScheduledAt: user.deletionScheduledAt,
     };
   }
 }

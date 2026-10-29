@@ -19,6 +19,19 @@ export interface IEmailService {
   sendPasswordReset(to: string, resetUrl: string): Promise<void>;
   sendEmailVerification(to: string, verifyUrl: string): Promise<void>;
   sendBackupEmailVerification(to: string, verifyUrl: string): Promise<void>;
+  /** The 6-digit code an account without a password re-authenticates with (JEF-463). */
+  sendStepUpCode(to: string, code: string): Promise<void>;
+  /** The link that turns a deletion request into a scheduled deletion (JEF-463). */
+  sendAccountDeletionConfirmation(to: string, confirmUrl: string): Promise<void>;
+  /** Deletion is scheduled for `deletionDate`; `cancelUrl` stops it without signing in (JEF-463). */
+  sendAccountDeletionScheduled(
+    to: string,
+    deletionDate: Date,
+    cancelUrl: string,
+    hadSubscription: boolean,
+  ): Promise<void>;
+  /** A scheduled deletion was cancelled, so the owner hears of it if they did not do it (JEF-463). */
+  sendAccountDeletionCancelled(to: string): Promise<void>;
   sendNewDeviceLoginAlert(
     to: string,
     deviceLabel: string,

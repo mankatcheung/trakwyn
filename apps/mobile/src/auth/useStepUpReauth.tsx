@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
+import { fetchStepUpMethods, type ReauthProvider, type StepUpMethod } from './stepUp';
+import { StepUpWithoutPasswordPrompt } from './StepUpWithoutPasswordPrompt';
 import { ERROR_CODES } from '../constants';
 import { getErrorCode, getErrorMessage } from '../lib/errors';
 import { useTheme } from '../theme/ThemeContext';
@@ -24,15 +26,18 @@ export class StepUpCancelledError extends Error {
 }
 
 interface PendingStepUp {
+  methods: StepUpMethod[];
   retry: () => void;
   cancel: () => void;
 }
 
 /**
- * Wraps a mutation call so a STEP_UP_REQUIRED error — thrown when a
- * TOTP-enabled account's session is stale (JEF-44) — opens a "confirm it's
- * you" prompt and retries the original call once reauthentication succeeds,
- * instead of surfacing the raw error. Ported from apps/web's useStepUpReauth.
+ * Wraps a mutation call so a STEP_UP_REQUIRED error — a stale session asking
+ * for a sensitive change (JEF-44; every account for deletion, JEF-463) — opens
+ * a "confirm it's you" prompt and retries the original call once the user has
+ * stepped up, instead of surfacing the raw error. Ported from apps/web's
+ * useStepUpReauth. The prompt offers what `me.stepUpMethods` says: the
+ * password, or for an account without one, Google and a mailed code.
  */
 export function useStepUpReauth(): {
   withStepUp: <T>(fn: () => Promise<T>) => Promise<T>;
@@ -41,10 +46,13 @@ export function useStepUpReauth(): {
   const [pending, setPending] = useState<PendingStepUp | null>(null);
 
   function withStepUp<T>(fn: () => Promise<T>): Promise<T> {
-    return fn().catch((err: unknown) => {
+    return fn().catch(async (err: unknown) => {
       if (getErrorCode(err) !== ERROR_CODES.STEP_UP_REQUIRED) throw err;
+      // Asked before the prompt opens, so it shows the right form at once (JEF-463).
+      const methods = await fetchStepUpMethods();
       return new Promise<T>((resolve, reject) => {
         setPending({
+          methods,
           retry: () => {
             setPending(null);
             fn().then(resolve, reject);
@@ -59,7 +67,15 @@ export function useStepUpReauth(): {
   }
 
   const dialog = pending ? (
-    <StepUpReauthPrompt onSuccess={pending.retry} onCancel={pending.cancel} />
+    pending.methods.includes('password') ? (
+      <StepUpReauthPrompt onSuccess={pending.retry} onCancel={pending.cancel} />
+    ) : (
+      <StepUpWithoutPasswordPrompt
+        providers={pending.methods.filter((m): m is ReauthProvider => m === 'google')}
+        onSuccess={pending.retry}
+        onCancel={pending.cancel}
+      />
+    )
   ) : null;
 
   return { withStepUp, dialog };

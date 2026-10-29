@@ -9,36 +9,43 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../auth/AuthContext';
 import { getErrorMessage } from '../../../lib/errors';
-import { useDeleteAccount } from '../hooks/useDeleteAccount';
-import { STEP_UP_CANCELLED, useStepUpReauth } from '../hooks/useStepUpReauth';
+import { StepUpCancelledError, useStepUpReauth } from '../../../auth/useStepUpReauth';
+import { useEmailVerification } from '../../verification/hooks/useEmailVerification';
+import { useRequestAccountDeletion } from '../hooks/useRequestAccountDeletion';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
 /**
  * Account deletion, on its own screen rather than bundled with Export/Import
- * (JEF-204's reasoning, ported from apps/web) — irreversible and
- * password-gated, so it shouldn't be reachable by accident.
+ * (JEF-204's reasoning, ported from apps/web), so it isn't reachable by
+ * accident.
+ *
+ * Since JEF-463 this only starts it, the same as the web: type the account's
+ * email, step up if the session is stale (password, Google or a mailed code),
+ * and the API mails a link. The link schedules the deletion two weeks out.
  */
 export function DangerZoneScreen() {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { logout } = useAuth();
-  const deleteAccount = useDeleteAccount();
+  const requestDeletion = useRequestAccountDeletion();
   const { withStepUp, dialog } = useStepUpReauth();
+  const { data: account } = useEmailVerification();
+  const email = account?.email ?? '';
 
-  const [password, setPassword] = useState('');
+  const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const matches = email.length > 0 && typed.trim().toLowerCase() === email.toLowerCase();
 
-  const onDeleteAccount = async () => {
+  const onRequest = async () => {
     setError(null);
     try {
-      await withStepUp(() => deleteAccount.mutateAsync(password));
-      await logout();
+      await withStepUp(() => requestDeletion.mutateAsync());
+      setSent(true);
     } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
+      if (err instanceof StepUpCancelledError) return;
       setError(getErrorMessage(err));
     }
   };
@@ -49,31 +56,44 @@ export function DangerZoneScreen() {
         <Text style={styles.title}>{t('danger.title')}</Text>
         <Text style={styles.description}>{t('danger.description')}</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {sent ? (
+          <Text style={styles.success} testID="delete-account-request-sent">
+            {t('danger.requestSent', { email })}
+          </Text>
+        ) : (
+          <>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Text style={styles.fieldLabel}>{t('danger.confirmPasswordPlaceholder')}</Text>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          placeholder={t('danger.confirmPasswordPlaceholder')}
-          testID="delete-account-password-input"
-        />
+            <Text style={styles.fieldLabel}>{t('danger.confirmEmailLabel', { email })}</Text>
+            <TextInput
+              placeholderTextColor={colors.textFaint}
+              style={styles.input}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              value={typed}
+              onChangeText={setTyped}
+              placeholder={email}
+              testID="delete-account-email-input"
+            />
 
-        <Pressable
-          style={[styles.deleteButton, deleteAccount.isPending && styles.deleteButtonDisabled]}
-          onPress={onDeleteAccount}
-          disabled={deleteAccount.isPending || !password}
-          testID="delete-account-button"
-        >
-          {deleteAccount.isPending ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <Text style={styles.deleteButtonText}>{t('danger.deleteMyAccount')}</Text>
-          )}
-        </Pressable>
+            <Pressable
+              style={[
+                styles.deleteButton,
+                (!matches || requestDeletion.isPending) && styles.deleteButtonDisabled,
+              ]}
+              onPress={() => void onRequest()}
+              disabled={!matches || requestDeletion.isPending}
+              testID="delete-account-button"
+            >
+              {requestDeletion.isPending ? (
+                <ActivityIndicator color={colors.surface} />
+              ) : (
+                <Text style={styles.deleteButtonText}>{t('danger.deleteMyAccount')}</Text>
+              )}
+            </Pressable>
+          </>
+        )}
       </View>
 
       {dialog}
@@ -111,6 +131,13 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 8,
       padding: 10,
       fontSize: 13,
+    },
+    success: {
+      color: colors.text,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
     },
     deleteButton: {
       minHeight: 44,

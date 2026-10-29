@@ -9,6 +9,7 @@
 
 import './user/emailMutations.js';
 import './user/accountMutations.js';
+import './user/accountDeletionMutations.js';
 import './user/totpMutations.js';
 import './user/llmApiKeyMutations.js';
 import './user/profileMutations.js';

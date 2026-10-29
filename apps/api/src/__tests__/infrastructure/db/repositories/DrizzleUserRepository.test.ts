@@ -280,6 +280,32 @@ describe('DrizzleUserRepository', () => {
     });
   });
 
+  describe('findScheduledForDeletionBefore', () => {
+    it('returns accounts whose date has come, oldest first, and no others', async () => {
+      const cutoff = new Date('2026-11-15T00:00:00.000Z');
+      await repo.create({ id: 'due-late', email: 'a@b.com' });
+      await repo.create({ id: 'due-early', email: 'c@d.com' });
+      await repo.create({ id: 'later', email: 'e@f.com' });
+      await repo.create({ id: 'never', email: 'g@h.com' });
+      await repo.update('due-late', { deletionScheduledAt: cutoff });
+      await repo.update('due-early', { deletionScheduledAt: new Date('2026-11-01T00:00:00.000Z') });
+      await repo.update('later', { deletionScheduledAt: new Date('2026-11-16T00:00:00.000Z') });
+
+      const due = await repo.findScheduledForDeletionBefore(cutoff);
+
+      expect(due.map((u) => u.id)).toEqual(['due-early', 'due-late']);
+      expect(due[0]?.deletionScheduledAt).toEqual(new Date('2026-11-01T00:00:00.000Z'));
+    });
+
+    it('stops returning an account once its deletion is cancelled', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com' });
+      await repo.update('u1', { deletionScheduledAt: new Date('2026-11-01T00:00:00.000Z') });
+      await repo.update('u1', { deletionScheduledAt: null });
+
+      expect(await repo.findScheduledForDeletionBefore(new Date('2027-01-01'))).toEqual([]);
+    });
+  });
+
   describe('delete', () => {
     it('removes the user from the database', async () => {
       await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });

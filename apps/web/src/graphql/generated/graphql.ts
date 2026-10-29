@@ -166,6 +166,15 @@ export type CalendarEventType =
   | 'followUp'
   | 'interview';
 
+export type ChatActionProposal = {
+  __typename?: 'ChatActionProposal';
+  error?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
+  summary?: Maybe<Scalars['String']['output']>;
+  toolName?: Maybe<Scalars['String']['output']>;
+};
+
 /** What can be bought. The server picks the price, including any founder price. */
 export type CheckoutPlan =
   | 'monthly'
@@ -600,6 +609,7 @@ export type Message = {
   content?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  proposals?: Maybe<Array<ChatActionProposal>>;
   role?: Maybe<Scalars['String']['output']>;
 };
 
@@ -642,13 +652,18 @@ export type Mutation = {
   bulkDeleteApplications?: Maybe<Scalars['Boolean']['output']>;
   bulkRestoreApplications?: Maybe<BulkRestoreResult>;
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
+  /** Cancels the signed-in account’s scheduled deletion. Without a session, pass the token from the mailed link instead. */
+  cancelAccountDeletion?: Maybe<Scalars['Boolean']['output']>;
   compareOffers?: Maybe<Array<OfferComparison>>;
   /** Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals. */
   completeOnboarding?: Maybe<Scalars['Boolean']['output']>;
   computeResumeAtsScore?: Maybe<AtsScore>;
   computeResumeMatchScore?: Maybe<ResumeMatch>;
+  /** The mailed link: schedules the deletion and returns its date (ISO 8601). Needs no session; ends every session, so the cookies are cleared. */
+  confirmAccountDeletion?: Maybe<Scalars['String']['output']>;
   confirmAvatar?: Maybe<Scalars['String']['output']>;
   confirmBackupEmail?: Maybe<Scalars['Boolean']['output']>;
+  confirmChatAction?: Maybe<ChatActionProposal>;
   confirmDocument?: Maybe<Document>;
   confirmEmailChange?: Maybe<Scalars['Boolean']['output']>;
   confirmTotpSetup?: Maybe<ConfirmTotpSetupResult>;
@@ -670,6 +685,7 @@ export type Mutation = {
   createShareLink?: Maybe<CreateShareLinkPayload>;
   createSkill?: Maybe<Skill>;
   createWorkExperience?: Maybe<WorkExperience>;
+  /** @deprecated Use requestAccountDeletion. Kept for shipped app versions (JEF-417): it now mails the confirmation link and deletes nothing itself. */
   deleteAccount?: Maybe<Scalars['Boolean']['output']>;
   deleteApiToken?: Maybe<Scalars['Boolean']['output']>;
   deleteApplication?: Maybe<Scalars['Boolean']['output']>;
@@ -688,6 +704,7 @@ export type Mutation = {
   deleteSkill?: Maybe<Scalars['Boolean']['output']>;
   deleteWorkExperience?: Maybe<Scalars['Boolean']['output']>;
   disableTotp?: Maybe<Scalars['Boolean']['output']>;
+  dismissChatAction?: Maybe<ChatActionProposal>;
   dismissOnboardingChecklist?: Maybe<Scalars['Boolean']['output']>;
   emptyTrash?: Maybe<EmptyTrashResult>;
   exchangeMobileOAuthCode?: Maybe<MobileAuthPayload>;
@@ -725,12 +742,16 @@ export type Mutation = {
   renameDocumentDraft?: Maybe<DocumentDraft>;
   reorderInterviewQuestions?: Maybe<Array<InterviewQuestion>>;
   reorderMockInterviewQuestions?: Maybe<Array<MockInterviewQuestion>>;
+  /** Mails a link that schedules this account for deletion. Needs a fresh session (STEP_UP_REQUIRED otherwise). */
+  requestAccountDeletion?: Maybe<Scalars['Boolean']['output']>;
   requestAddBackupEmail?: Maybe<Scalars['Boolean']['output']>;
   requestAvatarUploadUrl?: Maybe<UploadUrlPayload>;
   requestBackupEmailRecovery?: Maybe<Scalars['Boolean']['output']>;
   requestEmailChange?: Maybe<Scalars['Boolean']['output']>;
   requestPasswordReset?: Maybe<Scalars['Boolean']['output']>;
   requestPasswordResetMobile?: Maybe<Scalars['Boolean']['output']>;
+  /** Mails a 6-digit code to an account with no password, for `verifyStepUpCode`. */
+  requestStepUpCode?: Maybe<Scalars['Boolean']['output']>;
   requestUploadUrl?: Maybe<UploadUrlPayload>;
   resendVerificationEmail?: Maybe<Scalars['Boolean']['output']>;
   resetPassword?: Maybe<Scalars['Boolean']['output']>;
@@ -741,6 +762,8 @@ export type Mutation = {
   saveLlmApiKey?: Maybe<Scalars['Boolean']['output']>;
   setDefaultLlmProvider?: Maybe<Scalars['Boolean']['output']>;
   setLlmApiKeyMonthlyLimit?: Maybe<Scalars['Boolean']['output']>;
+  /** A short-lived ticket for `/auth/oauth/:provider/start?mode=reauth&ticket=…`, which refreshes this session once the provider signs the user in again. */
+  startOAuthReauth?: Maybe<Scalars['String']['output']>;
   testLlmApiKey?: Maybe<TestLlmApiKeyResult>;
   unlinkOAuthAccount?: Maybe<Scalars['Boolean']['output']>;
   unregisterPushSubscription?: Maybe<Scalars['Boolean']['output']>;
@@ -759,6 +782,10 @@ export type Mutation = {
   updateSkill?: Maybe<Skill>;
   updateWorkExperience?: Maybe<WorkExperience>;
   verifyEmail?: Maybe<Scalars['Boolean']['output']>;
+  /** Checks a mailed step-up code and refreshes the session cookies. */
+  verifyStepUpCode?: Maybe<Scalars['Boolean']['output']>;
+  /** `verifyStepUpCode` for clients with no cookie jar: the tokens come in the body. */
+  verifyStepUpCodeMobile?: Maybe<MobileAuthPayload>;
 };
 
 
@@ -790,6 +817,11 @@ export type MutationBulkUpdateApplicationsArgs = {
 };
 
 
+export type MutationCancelAccountDeletionArgs = {
+  token?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type MutationCompareOffersArgs = {
   offerIds: Array<Scalars['String']['input']>;
 };
@@ -813,6 +845,11 @@ export type MutationComputeResumeMatchScoreArgs = {
 };
 
 
+export type MutationConfirmAccountDeletionArgs = {
+  token: Scalars['String']['input'];
+};
+
+
 export type MutationConfirmAvatarArgs = {
   mimeType: Scalars['String']['input'];
   sizeBytes: Scalars['Int']['input'];
@@ -822,6 +859,11 @@ export type MutationConfirmAvatarArgs = {
 
 export type MutationConfirmBackupEmailArgs = {
   token: Scalars['String']['input'];
+};
+
+
+export type MutationConfirmChatActionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1014,6 +1056,11 @@ export type MutationDisableTotpArgs = {
 };
 
 
+export type MutationDismissChatActionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationExchangeMobileOAuthCodeArgs = {
   code: Scalars['String']['input'];
   codeVerifier: Scalars['String']['input'];
@@ -1173,7 +1220,7 @@ export type MutationRegisterPushSubscriptionArgs = {
 
 
 export type MutationRemoveBackupEmailArgs = {
-  currentPassword: Scalars['String']['input'];
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1197,7 +1244,7 @@ export type MutationReorderMockInterviewQuestionsArgs = {
 
 export type MutationRequestAddBackupEmailArgs = {
   backupEmail: Scalars['String']['input'];
-  currentPassword: Scalars['String']['input'];
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1213,7 +1260,7 @@ export type MutationRequestBackupEmailRecoveryArgs = {
 
 
 export type MutationRequestEmailChangeArgs = {
-  currentPassword: Scalars['String']['input'];
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
   newEmail: Scalars['String']['input'];
 };
 
@@ -1271,6 +1318,11 @@ export type MutationSetDefaultLlmProviderArgs = {
 export type MutationSetLlmApiKeyMonthlyLimitArgs = {
   monthlyTokenLimit?: InputMaybe<Scalars['Int']['input']>;
   provider: Scalars['String']['input'];
+};
+
+
+export type MutationStartOAuthReauthArgs = {
+  provider: OAuthProvider;
 };
 
 
@@ -1388,6 +1440,16 @@ export type MutationUpdateWorkExperienceArgs = {
 
 export type MutationVerifyEmailArgs = {
   token: Scalars['String']['input'];
+};
+
+
+export type MutationVerifyStepUpCodeArgs = {
+  code: Scalars['String']['input'];
+};
+
+
+export type MutationVerifyStepUpCodeMobileArgs = {
+  code: Scalars['String']['input'];
 };
 
 export type Note = {
@@ -1812,6 +1874,12 @@ export type StatusCount = {
   status?: Maybe<ApplicationStatus>;
 };
 
+export type StepUpMethod =
+  | 'email_code'
+  | 'github'
+  | 'google'
+  | 'password';
+
 export type TestLlmApiKeyResult = {
   __typename?: 'TestLlmApiKeyResult';
   error?: Maybe<Scalars['String']['output']>;
@@ -1922,14 +1990,20 @@ export type User = {
   backupEmailVerifiedAt?: Maybe<Scalars['String']['output']>;
   customAiPrompt?: Maybe<Scalars['String']['output']>;
   defaultLlmProvider?: Maybe<Scalars['String']['output']>;
+  /** When the account will be deleted; null unless a deletion is scheduled (JEF-463). While set, only cancelling it is allowed. */
+  deletionScheduledAt?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   emailVerified?: Maybe<Scalars['Boolean']['output']>;
+  /** False for an account created through Google or GitHub that never set one. */
+  hasPassword?: Maybe<Scalars['Boolean']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
   onboardingCompletedAt?: Maybe<Scalars['String']['output']>;
   onboardingGoals?: Maybe<Array<OnboardingGoal>>;
+  /** How this user confirms it is them before a sensitive change, in the order to offer them (JEF-463). */
+  stepUpMethods?: Maybe<Array<StepUpMethod>>;
   storageLimitBytes?: Maybe<Scalars['Float']['output']>;
   storageUsedBytes?: Maybe<Scalars['Float']['output']>;
   targetRole?: Maybe<Scalars['String']['output']>;

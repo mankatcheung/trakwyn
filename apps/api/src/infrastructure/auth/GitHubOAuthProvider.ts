@@ -19,6 +19,11 @@ interface GitHubEmail {
 }
 
 export class GitHubOAuthProvider implements IOAuthProvider {
+  /**
+   * GitHub has no `auth_time` and no way to force a fresh sign-in, so a live
+   * GitHub session would pass any "re-authenticate" redirect (JEF-463).
+   */
+  readonly supportsReauth = false;
   private readonly clientId: string;
   private readonly clientSecret: string;
 

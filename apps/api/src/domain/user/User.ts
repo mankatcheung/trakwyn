@@ -50,6 +50,11 @@ export interface User {
   onboardingGoals: OnboardingGoal[];
   /** When the user finished or skipped the welcome flow (JEF-460); null until then, which sends them to it. */
   onboardingCompletedAt: Date | null;
+  /**
+   * When the account will be purged (JEF-463); null unless the user confirmed a
+   * deletion and has not cancelled it. While set, the account may only cancel.
+   */
+  deletionScheduledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GoogleOAuthProvider } from '#src/infrastructure/auth/GoogleOAuthProvider.js';
+import { createOidcTestKeys } from '#src/__tests__/helpers/oidcTokens.js';
 
 describe('GoogleOAuthProvider', () => {
   beforeEach(() => {
@@ -109,5 +110,104 @@ describe('GoogleOAuthProvider', () => {
 
     const body = mockFetch.mock.calls[0][1].body as URLSearchParams;
     expect(body.get('code_verifier')).toBe('my-verifier');
+  });
+
+  describe('step-up (JEF-463)', () => {
+    const SUB = '1234567890';
+
+    const stubGoogle = (idToken: string | undefined, sub = SUB) =>
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ access_token: 'tok', id_token: idToken }),
+          })
+          .mockResolvedValueOnce({ ok: true, json: async () => ({ sub, email: 'a@b.c' }) }),
+      );
+
+    it('asks Google to authenticate again with max_age=0 only when told to', () => {
+      const provider = new GoogleOAuthProvider();
+      const plain = new URL(provider.getAuthorizationUrl('s', 'https://api/cb', 'c'));
+      const reauth = new URL(
+        provider.getAuthorizationUrl('s', 'https://api/cb', 'c', { forceReauth: true }),
+      );
+
+      expect(plain.searchParams.has('max_age')).toBe(false);
+      expect(reauth.searchParams.get('max_age')).toBe('0');
+      expect(provider.supportsReauth).toBe(true);
+    });
+
+    it('reads auth_time from a verified ID token when asked', async () => {
+      const oidc = await createOidcTestKeys();
+      const authTimeS = Math.floor(Date.now() / 1000) - 30;
+      stubGoogle(await oidc.sign('a@b.c', 'client-id', { claims: { auth_time: authTimeS } }));
+
+      const profile = await new GoogleOAuthProvider({ keys: oidc.keys }).exchangeCodeForProfile(
+        'code',
+        'https://api/cb',
+        'verifier',
+        { requireAuthTime: true },
+      );
+
+      expect(profile.authTime).toEqual(new Date(authTimeS * 1000));
+    });
+
+    it('does not read the ID token for a plain sign-in', async () => {
+      const oidc = await createOidcTestKeys();
+      stubGoogle('not-even-a-jwt');
+
+      const profile = await new GoogleOAuthProvider({ keys: oidc.keys }).exchangeCodeForProfile(
+        'code',
+        'https://api/cb',
+        'verifier',
+      );
+
+      expect(profile.authTime).toBeUndefined();
+    });
+
+    it('rejects an ID token issued for another client', async () => {
+      const oidc = await createOidcTestKeys();
+      stubGoogle(
+        await oidc.sign('a@b.c', 'someone-else', {
+          claims: { auth_time: 1 },
+          audience: 'someone-else',
+        }),
+      );
+
+      await expect(
+        new GoogleOAuthProvider({ keys: oidc.keys }).exchangeCodeForProfile(
+          'code',
+          'https://api/cb',
+          'verifier',
+          { requireAuthTime: true },
+        ),
+      ).rejects.toThrow();
+    });
+
+    it('rejects an ID token for a different person than userinfo described', async () => {
+      const oidc = await createOidcTestKeys();
+      stubGoogle(await oidc.sign('a@b.c', 'client-id', { claims: { auth_time: 1 } }), 'other-sub');
+
+      await expect(
+        new GoogleOAuthProvider({ keys: oidc.keys }).exchangeCodeForProfile(
+          'code',
+          'https://api/cb',
+          'verifier',
+          { requireAuthTime: true },
+        ),
+      ).rejects.toThrow('different account');
+    });
+
+    it('reports no auth_time when Google sent no ID token', async () => {
+      stubGoogle(undefined);
+
+      const profile = await new GoogleOAuthProvider({
+        keys: (await createOidcTestKeys()).keys,
+      }).exchangeCodeForProfile('code', 'https://api/cb', 'verifier', { requireAuthTime: true });
+
+      expect(profile.authTime).toBeNull();
+    });
   });
 });

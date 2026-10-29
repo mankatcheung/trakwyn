@@ -66,6 +66,13 @@ export class EmailNotVerifiedError extends DomainError {
   }
 }
 
+/** The account is scheduled for deletion and may only cancel it (JEF-463). */
+export class AccountDeletionScheduledError extends DomainError {
+  constructor(message = 'This account is scheduled for deletion') {
+    super(message, ERROR_CODES.ACCOUNT_DELETION_SCHEDULED);
+  }
+}
+
 /** The caller is not authenticated, or their credential no longer stands. */
 export class UnauthorizedError extends DomainError {
   constructor(message = 'Unauthorized') {

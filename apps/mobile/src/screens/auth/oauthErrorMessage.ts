@@ -17,6 +17,7 @@ const SLUG_KEYS: Record<string, string> = {
   email_in_use: 'errors.oauthEmailInUse',
   email_not_verified: 'errors.oauthEmailNotVerified',
   account_not_found: 'errors.oauthAccountNotFound',
+  reauth_failed: 'errors.oauthReauthFailed',
   failed: 'errors.signInFailed',
 };
 

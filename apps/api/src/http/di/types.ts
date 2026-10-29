@@ -30,6 +30,7 @@ import type { DrizzleActivityLogRepository } from '#src/infrastructure/db/reposi
 import type { DrizzlePushSubscriptionRepository } from '#src/infrastructure/db/repositories/DrizzlePushSubscriptionRepository.js';
 import type { DrizzleContactRepository } from '#src/infrastructure/db/repositories/DrizzleContactRepository.js';
 import type { DrizzlePasswordResetTokenRepository } from '#src/infrastructure/db/repositories/DrizzlePasswordResetTokenRepository.js';
+import type { DrizzleUserActionTokenRepository } from '#src/infrastructure/db/repositories/DrizzleUserActionTokenRepository.js';
 import type { DrizzleLoginEventRepository } from '#src/infrastructure/db/repositories/DrizzleLoginEventRepository.js';
 import type { DrizzleSecurityEventRepository } from '#src/infrastructure/db/repositories/DrizzleSecurityEventRepository.js';
 import type { LoggingSecurityEventRepository } from '#src/infrastructure/db/repositories/LoggingSecurityEventRepository.js';
@@ -106,6 +107,7 @@ import type { NoteResolver } from '#src/interface-adapters/resolvers/NoteResolve
 import type { DocumentResolver } from '#src/interface-adapters/resolvers/DocumentResolver.js';
 import type { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
 import type { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
+import type { AccountDeletionResolver } from '#src/interface-adapters/resolvers/AccountDeletionResolver.js';
 import type { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
 import type { InterviewQuestionResolver } from '#src/interface-adapters/resolvers/InterviewQuestionResolver.js';
 import type { MockInterviewQuestionResolver } from '#src/interface-adapters/resolvers/MockInterviewQuestionResolver.js';
@@ -139,6 +141,10 @@ import type { RegisterUseCase } from '#src/use-cases/auth/RegisterUseCase.js';
 import type { LoginUseCase } from '#src/use-cases/auth/LoginUseCase.js';
 import type { LoginWithTotpUseCase } from '#src/use-cases/auth/LoginWithTotpUseCase.js';
 import type { ReauthenticateUseCase } from '#src/use-cases/auth/ReauthenticateUseCase.js';
+import type { RequestStepUpCodeUseCase } from '#src/use-cases/auth/RequestStepUpCodeUseCase.js';
+import type { VerifyStepUpCodeUseCase } from '#src/use-cases/auth/VerifyStepUpCodeUseCase.js';
+import type { GetStepUpMethodsUseCase } from '#src/use-cases/auth/GetStepUpMethodsUseCase.js';
+import type { ReauthenticateWithOAuthUseCase } from '#src/use-cases/oauth/ReauthenticateWithOAuthUseCase.js';
 import type { RequestPasswordResetUseCase } from '#src/use-cases/auth/RequestPasswordResetUseCase.js';
 import type { ResetPasswordUseCase } from '#src/use-cases/auth/ResetPasswordUseCase.js';
 import type { SendEmailVerificationUseCase } from '#src/use-cases/auth/SendEmailVerificationUseCase.js';
@@ -178,7 +184,11 @@ import type { ExportDocumentDraftToPdfUseCase } from '#src/use-cases/documents/E
 import type { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import type { ConfirmEmailChangeUseCase } from '#src/use-cases/user/ConfirmEmailChangeUseCase.js';
 import type { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
-import type { DeleteAccountUseCase } from '#src/use-cases/user/DeleteAccountUseCase.js';
+import type { RequestAccountDeletionUseCase } from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
+import type { ConfirmAccountDeletionUseCase } from '#src/use-cases/user/ConfirmAccountDeletionUseCase.js';
+import type { CancelAccountDeletionUseCase } from '#src/use-cases/user/CancelAccountDeletionUseCase.js';
+import type { PurgeScheduledAccountsUseCase } from '#src/use-cases/user/PurgeScheduledAccountsUseCase.js';
+import type { AssertAccountActiveUseCase } from '#src/use-cases/auth/AssertAccountActiveUseCase.js';
 import type { ExportUserDataUseCase } from '#src/use-cases/user/ExportUserDataUseCase.js';
 import type { GenerateTotpSecretUseCase } from '#src/use-cases/user/GenerateTotpSecretUseCase.js';
 import type { ConfirmTotpSetupUseCase } from '#src/use-cases/user/ConfirmTotpSetupUseCase.js';
@@ -404,6 +414,7 @@ export interface Cradle {
   notificationRepository: CachedNotificationRepository;
   contactRepository: CachedContactRepository;
   passwordResetTokenRepository: DrizzlePasswordResetTokenRepository;
+  userActionTokenRepository: DrizzleUserActionTokenRepository;
   loginEventRepository: DrizzleLoginEventRepository;
   drizzleSecurityEventRepository: DrizzleSecurityEventRepository;
   securityEventRepository: LoggingSecurityEventRepository;
@@ -421,6 +432,8 @@ export interface Cradle {
   emailVerificationUserRateLimiter: IRateLimiter;
   emailVerificationGlobalRateLimiter: IRateLimiter;
   totpRateLimiter: IRateLimiter;
+  stepUpCodeRateLimiter: IRateLimiter;
+  accountDeletionRateLimiter: IRateLimiter;
   chatRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;
   parseJobDescriptionRateLimiter: IRateLimiter;
@@ -487,6 +500,7 @@ export interface Cradle {
   documentResolver: DocumentResolver;
   documentDraftResolver: DocumentDraftResolver;
   userResolver: UserResolver;
+  accountDeletionResolver: AccountDeletionResolver;
   interviewRoundResolver: InterviewRoundResolver;
   interviewQuestionResolver: InterviewQuestionResolver;
   mockInterviewQuestionResolver: MockInterviewQuestionResolver;
@@ -530,6 +544,10 @@ export interface Cradle {
   loginUseCase: LoginUseCase;
   loginWithTotpUseCase: LoginWithTotpUseCase;
   reauthenticateUseCase: ReauthenticateUseCase;
+  requestStepUpCodeUseCase: RequestStepUpCodeUseCase;
+  verifyStepUpCodeUseCase: VerifyStepUpCodeUseCase;
+  getStepUpMethodsUseCase: GetStepUpMethodsUseCase;
+  reauthenticateWithOAuthUseCase: ReauthenticateWithOAuthUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
   sendEmailVerificationUseCase: SendEmailVerificationUseCase;
@@ -574,7 +592,11 @@ export interface Cradle {
   requestEmailChangeUseCase: RequestEmailChangeUseCase;
   confirmEmailChangeUseCase: ConfirmEmailChangeUseCase;
   updatePasswordUseCase: UpdatePasswordUseCase;
-  deleteAccountUseCase: DeleteAccountUseCase;
+  requestAccountDeletionUseCase: RequestAccountDeletionUseCase;
+  confirmAccountDeletionUseCase: ConfirmAccountDeletionUseCase;
+  cancelAccountDeletionUseCase: CancelAccountDeletionUseCase;
+  purgeScheduledAccountsUseCase: PurgeScheduledAccountsUseCase;
+  assertAccountActiveUseCase: AssertAccountActiveUseCase;
   exportUserDataUseCase: ExportUserDataUseCase;
   generateTotpSecretUseCase: GenerateTotpSecretUseCase;
   confirmTotpSetupUseCase: ConfirmTotpSetupUseCase;

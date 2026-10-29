@@ -8,7 +8,6 @@
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { GraphQLError } from 'graphql';
 import { builder } from '#src/http/schema/builder.js';
-import { clearAuthCookies } from '#src/http/schema/types/AuthPayloadType.js';
 import { deviceInfoFrom } from '#src/http/schema/requestDeviceInfo.js';
 import { fromCodedError } from '#src/http/errors/AppError.js';
 import { sessionAuthTime } from '#src/http/schema/mutations/user/sessionAuthTime.js';
@@ -31,26 +30,6 @@ builder.mutationField('updatePassword', (t) =>
           sessionAuthTime(ctx.user),
           deviceInfoFrom(ctx.request),
         );
-        return true;
-      } catch (err) {
-        throw fromCodedError(err);
-      }
-    },
-  }),
-);
-
-builder.mutationField('deleteAccount', (t) =>
-  t.boolean({
-    args: {
-      password: t.arg.string({ required: true }),
-    },
-    resolve: async (_root, args, ctx) => {
-      if (!ctx.user)
-        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
-      const { userResolver } = ctx.diScope.cradle;
-      try {
-        await userResolver.deleteAccount(ctx.user.sub, args.password, sessionAuthTime(ctx.user));
-        clearAuthCookies(ctx.reply);
         return true;
       } catch (err) {
         throw fromCodedError(err);

@@ -15,7 +15,7 @@ import { sessionAuthTime } from '#src/http/schema/mutations/user/sessionAuthTime
 builder.mutationField('requestEmailChange', (t) =>
   t.boolean({
     args: {
-      currentPassword: t.arg.string({ required: true }),
+      currentPassword: t.arg.string(),
       newEmail: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
@@ -57,7 +57,7 @@ builder.mutationField('confirmEmailChange', (t) =>
 builder.mutationField('requestAddBackupEmail', (t) =>
   t.boolean({
     args: {
-      currentPassword: t.arg.string({ required: true }),
+      currentPassword: t.arg.string(),
       backupEmail: t.arg.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
@@ -99,7 +99,7 @@ builder.mutationField('confirmBackupEmail', (t) =>
 builder.mutationField('removeBackupEmail', (t) =>
   t.boolean({
     args: {
-      currentPassword: t.arg.string({ required: true }),
+      currentPassword: t.arg.string(),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.user)

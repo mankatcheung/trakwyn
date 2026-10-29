@@ -3,9 +3,11 @@ import { registerAndLogin, uniqueEmail } from './helpers/auth';
 
 test.describe('Account settings', () => {
   const password = 'SecurePass123';
+  let email: string;
 
   test.beforeEach(async ({ page }) => {
-    await registerAndLogin(page, { email: uniqueEmail('account-test'), password });
+    email = uniqueEmail('account-test');
+    await registerAndLogin(page, { email, password });
     await page.goto('/settings/security');
   });
 
@@ -79,59 +81,43 @@ test.describe('Account settings', () => {
     await expect(passwordSection.getByText('Passwords do not match')).toBeVisible();
   });
 
-  test('shows an error and keeps the account when deleting with the wrong password', async ({
+  // Deleting only starts here (JEF-463): the API mails a link, and the link schedules the
+  // deletion two weeks out. E2E has no inbox, so confirm, the grace period and the purge are
+  // covered end to end by apps/api's accountDeletion.integration.test.ts.
+  test('keeps delete off until the account email is typed, and asks for no password', async ({
     page,
   }) => {
     await page.goto('/settings/danger-zone');
-    const dangerSection = page.locator('div.rounded-xl').filter({ hasText: 'Danger zone' });
-    await dangerSection.getByPlaceholder('••••••••').fill('wrongpassword');
-    await dangerSection.getByRole('button', { name: /delete my account/i }).click();
+    const confirmEmail = page.getByLabel(`Type ${email} to confirm`);
+    const deleteButton = page.getByRole('button', { name: /delete my account/i });
 
-    await expect(dangerSection.locator('p.text-red-600')).toBeVisible();
-    // Never left the page, and the account still works.
-    await expect(page).toHaveURL(/danger-zone/);
-    await page.reload();
-    await expect(page).toHaveURL(/danger-zone/);
+    await expect(page.getByPlaceholder('••••••••')).toHaveCount(0);
+    await confirmEmail.fill('someone-else@example.com');
+    await expect(deleteButton).toBeDisabled();
+    await confirmEmail.fill(email);
+    await expect(deleteButton).toBeEnabled();
   });
 
-  test('deletes account, clears session, and redirects to /login', async ({ page }) => {
+  test('requesting deletion mails a link and leaves the account working', async ({ page }) => {
     await page.goto('/settings/danger-zone');
-    const dangerSection = page.locator('div.rounded-xl').filter({ hasText: 'Danger zone' });
-    await dangerSection.getByPlaceholder('••••••••').fill(password);
-    await dangerSection.getByRole('button', { name: /delete my account/i }).click();
+    await page.getByLabel(`Type ${email} to confirm`).fill(email);
+    await page.getByRole('button', { name: /delete my account/i }).click();
 
-    await expect(page).toHaveURL(/login/);
-
-    // Verify session is gone — trying to access dashboard redirects to login
+    await expect(page.getByText(`Check ${email}`)).toBeVisible();
+    // Nothing is deleted until the link is used: still signed in, app still open.
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/login/);
+    await expect(page).toHaveURL(/dashboard/);
   });
 
-  test('a deleted account can no longer log in with its old credentials', async ({ page }) => {
-    const email = uniqueEmail('to-be-deleted');
-    // Independent of the shared beforeEach's account — this test deletes its
-    // own throwaway account and then proves it, rather than reusing one
-    // another test in this file also tears down. /register redirects an
-    // already-authenticated visitor away, so sign out of beforeEach's
-    // account first.
-    await page.getByRole('button', { name: /sign out/i }).click();
-    await expect(page).toHaveURL(/login/);
-    // Wait for /login to actually settle before navigating away again — an
-    // immediate goto('/register') can race the logout redirect and abort.
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-    await registerAndLogin(page, { email, password });
-
-    await page.goto('/settings/danger-zone');
-    const dangerSection = page.locator('div.rounded-xl').filter({ hasText: 'Danger zone' });
-    await dangerSection.getByPlaceholder('••••••••').fill(password);
-    await dangerSection.getByRole('button', { name: /delete my account/i }).click();
-    await expect(page).toHaveURL(/login/);
-
-    await page.getByPlaceholder('you@example.com').fill(email);
-    await page.getByPlaceholder('••••••••').fill(password);
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    await expect(page.locator('p.text-red-600')).toBeVisible();
-    await expect(page).toHaveURL(/login/);
+  test('a confirmation link that is not real is refused and changes nothing', async ({ page }) => {
+    await page.goto('/confirm-account-deletion?token=not-a-real-token');
+    // The page is server-rendered, so a click before hydration never reaches the handler.
+    // Retry it rather than guessing a delay (see cookie-consent.spec.ts).
+    await expect(async () => {
+      await page.getByRole('button', { name: /delete my account/i }).click();
+      await expect(page.getByText(/invalid or has expired/i)).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/dashboard/);
   });
 });

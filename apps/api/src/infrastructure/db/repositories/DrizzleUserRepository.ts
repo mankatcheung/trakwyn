@@ -1,4 +1,4 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, lte } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { user } from '../schema.js';
 import type { User } from '#src/domain/user/User.js';
@@ -47,6 +47,15 @@ export class DrizzleUserRepository implements IUserRepository {
     return rows.map((r) => this.toEntity(r));
   }
 
+  async findScheduledForDeletionBefore(cutoff: Date): Promise<User[]> {
+    const rows = await this.db
+      .select()
+      .from(user)
+      .where(lte(user.deletionScheduledAt, cutoff))
+      .orderBy(asc(user.deletionScheduledAt));
+    return rows.map((r) => this.toEntity(r));
+  }
+
   async create(data: {
     id: string;
     email: string;
@@ -89,6 +98,7 @@ export class DrizzleUserRepository implements IUserRepository {
       planSource?: PlanSource | null;
       billingCustomerId?: string | null;
       billingSubscriptionId?: string | null;
+      deletionScheduledAt?: Date | null;
     },
   ): Promise<User> {
     const [row] = await this.db
@@ -141,6 +151,7 @@ export class DrizzleUserRepository implements IUserRepository {
       onboardingChecklistDismissedAt: row.onboardingChecklistDismissedAt,
       onboardingGoals: row.onboardingGoals as OnboardingGoal[],
       onboardingCompletedAt: row.onboardingCompletedAt,
+      deletionScheduledAt: row.deletionScheduledAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
