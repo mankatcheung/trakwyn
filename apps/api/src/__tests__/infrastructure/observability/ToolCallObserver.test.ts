@@ -234,4 +234,28 @@ describe('ToolCallObserver', () => {
       expect(metrics.toolCalls.map((call) => call.outcome)).toEqual(['ok', 'refused']);
     });
   });
+
+  describe('token id on write calls (JEF-466)', () => {
+    it('records the calling token id on a write tool', async () => {
+      const { observer } = makeObserver();
+
+      await observer.observe(
+        { surface: 'mcp', name: 'create_note', tokenScope: 'full', tokenId: 'tok-1' },
+        async () => 'reply',
+      );
+
+      expect(onlySpan().attributes[TRACING.MCP_TOKEN_ID_ATTRIBUTE]).toBe('tok-1');
+    });
+
+    it('leaves it off a read tool, which changes nothing worth tracing back', async () => {
+      const { observer } = makeObserver();
+
+      await observer.observe(
+        { surface: 'mcp', name: 'get_application', tokenScope: 'full', tokenId: 'tok-1' },
+        async () => 'reply',
+      );
+
+      expect(onlySpan().attributes).not.toHaveProperty(TRACING.MCP_TOKEN_ID_ATTRIBUTE);
+    });
+  });
 });

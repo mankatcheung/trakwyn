@@ -13,6 +13,8 @@ export interface ValidateApiTokenResult {
   sub: string;
   email: string;
   scope: ApiTokenScope;
+  tokenId: string;
+  tokenName: string;
 }
 
 /** Where a token is being presented: the GraphQL API, or the MCP endpoint. */
@@ -44,6 +46,12 @@ export class ValidateApiTokenUseCase {
 
     await this.deps.apiTokenRepository.updateLastUsed(result.token.id);
 
-    return { sub: result.token.userId, email: result.userEmail, scope: result.token.scope };
+    return {
+      sub: result.token.userId,
+      email: result.userEmail,
+      scope: result.token.scope,
+      tokenId: result.token.id,
+      tokenName: result.token.name,
+    };
   }
 }

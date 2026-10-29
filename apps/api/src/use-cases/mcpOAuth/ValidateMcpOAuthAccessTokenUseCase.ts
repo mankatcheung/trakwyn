@@ -1,16 +1,22 @@
 import { createHash } from 'node:crypto';
 import { MCP_OAUTH } from '#src/use-cases/constants.js';
 import type { McpOAuthScope } from '#src/domain/mcpOAuth/McpOAuthAccessToken.js';
+import type { IMcpOAuthClientRepository } from '#src/use-cases/ports/IMcpOAuthClientRepository.js';
 import type { IMcpOAuthTokenRepository } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
 
 interface Deps {
   mcpOAuthTokenRepository: IMcpOAuthTokenRepository;
+  mcpOAuthClientRepository: IMcpOAuthClientRepository;
   now: () => Date;
 }
 
 export interface ValidateMcpOAuthAccessTokenResult {
   sub: string;
   scope: McpOAuthScope;
+  /** The grant id: what the user revokes in Settings, not the short-lived access token. */
+  grantId: string;
+  /** The name the client registered itself under. */
+  clientName: string;
 }
 
 export class ValidateMcpOAuthAccessTokenUseCase {
@@ -27,6 +33,12 @@ export class ValidateMcpOAuthAccessTokenUseCase {
     if (token.expiresAt.getTime() <= this.deps.now().getTime()) return null;
 
     await this.deps.mcpOAuthTokenRepository.updateLastUsed(token.id);
-    return { sub: token.userId, scope: token.scope };
+    const client = await this.deps.mcpOAuthClientRepository.findById(token.clientId);
+    return {
+      sub: token.userId,
+      scope: token.scope,
+      grantId: token.familyId,
+      clientName: client?.name ?? MCP_OAUTH.FALLBACK_CLIENT_NAME,
+    };
   }
 }

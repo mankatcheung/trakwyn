@@ -1,4 +1,5 @@
 import { API_TOKEN, MCP_OAUTH } from '#src/use-cases/constants.js';
+import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { ValidateApiTokenUseCase } from '#src/use-cases/apiTokens/ValidateApiTokenUseCase.js';
@@ -19,6 +20,8 @@ export interface AuthenticateMcpRequestResult {
    * this stops building rather than silently widening what a grant permits.
    */
   scope: ApiTokenScope;
+  /** Which credential this was, for attributing its writes (JEF-466). */
+  actor: McpActor;
 }
 
 interface Deps {
@@ -53,7 +56,13 @@ export class AuthenticateMcpRequestUseCase {
         // created API token is checked the same way inside
         // `ValidateApiTokenUseCase`.)
         const { features } = await this.deps.entitlementService.forUserId(result.sub);
-        return features.mcpAccess ? { sub: result.sub, scope: result.scope } : null;
+        return features.mcpAccess
+          ? {
+              sub: result.sub,
+              scope: result.scope,
+              actor: { source: 'mcp', apiTokenId: result.grantId, apiTokenName: result.clientName },
+            }
+          : null;
       } catch {
         return null;
       }
@@ -63,7 +72,13 @@ export class AuthenticateMcpRequestUseCase {
 
     try {
       const result = await this.deps.validateApiTokenUseCase.execute(rawToken, 'mcp');
-      return result ? { sub: result.sub, scope: result.scope } : null;
+      return result
+        ? {
+            sub: result.sub,
+            scope: result.scope,
+            actor: { source: 'mcp', apiTokenId: result.tokenId, apiTokenName: result.tokenName },
+          }
+        : null;
     } catch {
       return null;
     }

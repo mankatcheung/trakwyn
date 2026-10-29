@@ -22,6 +22,7 @@ import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { API_TOKEN_SCOPE } from '#src/use-cases/constants.js';
 import { projectApplicationSummary } from '#src/use-cases/chat/chatToolProjection.js';
 import { JSON_RPC_ERROR, MCP, MCP_METHOD } from '#src/interface-adapters/mcp/constants.js';
+import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type {
   IToolCallObserver,
@@ -106,7 +107,12 @@ interface Deps extends WriteToolDeps {
 export class McpController {
   constructor(private readonly deps: Deps) {}
 
-  async handle(rawBody: unknown, userId: string, scope: ApiTokenScope): Promise<McpResult> {
+  async handle(
+    rawBody: unknown,
+    userId: string,
+    scope: ApiTokenScope,
+    actor?: McpActor,
+  ): Promise<McpResult> {
     const body = rawBody as McpRequest | null | undefined;
 
     if (!body || body.jsonrpc !== MCP.JSONRPC_VERSION || !body.method) {
@@ -149,7 +155,7 @@ export class McpController {
     }
 
     if (method === MCP_METHOD.TOOLS_CALL) {
-      return { body: await this.callTool(id, params, userId, scope) };
+      return { body: await this.callTool(id, params, userId, scope, actor) };
     }
 
     return { body: this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Method not found: ${method}`) };
@@ -160,14 +166,15 @@ export class McpController {
     params: McpRequest['params'],
     userId: string,
     scope: ApiTokenScope,
+    actor?: McpActor,
   ): Promise<unknown> {
     const requested = (params as { name?: unknown } | undefined)?.name;
     const toolName = typeof requested === 'string' ? requested : undefined;
     // Wraps the whole call, refusal and argument checks included, so every
     // tools/call is one span and one count however it ends (JEF-365).
     return this.deps.toolCallObserver.observe(
-      { surface: 'mcp', name: toolName ?? '', tokenScope: scope },
-      (observed) => this.runTool(id, toolName, params, userId, scope, observed),
+      { surface: 'mcp', name: toolName ?? '', tokenScope: scope, tokenId: actor?.apiTokenId },
+      (observed) => this.runTool(id, toolName, params, userId, scope, observed, actor),
     );
   }
 
@@ -178,6 +185,7 @@ export class McpController {
     userId: string,
     scope: ApiTokenScope,
     observed: ToolCallRecorder,
+    actor?: McpActor,
   ): Promise<unknown> {
     // The security boundary. tools/list already hides write tools from a
     // read-only token, but a client can call anything it likes regardless,
@@ -347,7 +355,7 @@ export class McpController {
             observed.invalidParams();
             return this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Unknown tool: ${toolName}`);
           }
-          const outcome = await handler(args, userId, this.deps);
+          const outcome = await handler(args, userId, this.deps, actor);
           if ('invalid' in outcome) return this.invalid(observed, id, outcome.invalid);
           result = outcome.result;
         }

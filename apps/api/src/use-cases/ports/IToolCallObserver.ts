@@ -26,6 +26,8 @@ export interface ToolCallMeta {
   name: string;
   /** MCP only. Chat is session-authenticated and has no token. */
   tokenScope?: ApiTokenScope;
+  /** MCP only: the calling credential's id. Recorded on write calls (JEF-466), so a bad write names the token to revoke. */
+  tokenId?: string;
 }
 
 /**

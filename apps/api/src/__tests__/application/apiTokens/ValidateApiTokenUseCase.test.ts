@@ -24,7 +24,7 @@ describe('ValidateApiTokenUseCase', () => {
   it('returns user identity and updates lastUsedAt when token is valid', async () => {
     const rawToken = 'trakwyn_abc123';
     const expectedHash = createHash('sha256').update(rawToken).digest('hex');
-    const token = makeApiToken({ id: 'token-1', userId: 'user-1' });
+    const token = makeApiToken({ id: 'token-1', userId: 'user-1', name: 'Claude' });
     const repo = makeApiTokenRepository({
       findByTokenHash: vi
         .fn()
@@ -40,7 +40,13 @@ describe('ValidateApiTokenUseCase', () => {
 
     const result = await useCase.execute(rawToken, 'graphql');
 
-    expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+    expect(result).toEqual({
+      sub: 'user-1',
+      email: 'user@example.com',
+      scope: 'full',
+      tokenId: 'token-1',
+      tokenName: 'Claude',
+    });
     expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
   });
 
@@ -74,7 +80,7 @@ describe('ValidateApiTokenUseCase', () => {
 
       const result = await useCase.execute('trakwyn_abc123', 'mcp');
 
-      expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+      expect(result).toMatchObject({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
       expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
     });
   });

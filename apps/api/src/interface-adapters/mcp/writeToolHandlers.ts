@@ -17,6 +17,7 @@ import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEd
 import type { IUpdateEducationUseCase } from '#src/use-cases/education/IUpdateEducationUseCase.js';
 import type { ICreateWorkExperienceUseCase } from '#src/use-cases/workExperience/ICreateWorkExperienceUseCase.js';
 import type { IUpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/IUpdateWorkExperienceUseCase.js';
+import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import {
   INTERVIEW_ROUND_OUTCOMES,
   INTERVIEW_ROUND_TYPES,
@@ -60,6 +61,7 @@ type WriteToolHandler = (
   args: ToolArgs,
   userId: string,
   deps: WriteToolDeps,
+  actor?: McpActor,
 ) => Promise<WriteToolOutcome>;
 
 const invalid = (message: string): WriteToolOutcome => ({ invalid: message });
@@ -95,13 +97,14 @@ export const WRITE_TOOL_HANDLERS: Record<WriteToolName, WriteToolHandler> = {
     };
   },
 
-  async update_application(args, userId, deps) {
+  async update_application(args, userId, deps, actor) {
     const applicationId = toStr(args.applicationId);
     if (!applicationId) return invalid('applicationId is required');
     return {
       result: await deps.updateApplicationUseCase.execute({
         userId,
         applicationId,
+        actor,
         company: toStr(args.company),
         role: toStr(args.role),
         status: toStr(args.status) as ApplicationStatus | undefined,
@@ -124,11 +127,13 @@ export const WRITE_TOOL_HANDLERS: Record<WriteToolName, WriteToolHandler> = {
     return { result: { applicationId, trashed: true } };
   },
 
-  async create_note(args, userId, deps) {
+  async create_note(args, userId, deps, actor) {
     const applicationId = toStr(args.applicationId);
     const content = toStr(args.content);
     if (!applicationId || !content) return invalid('applicationId and content are required');
-    return { result: await deps.createNoteUseCase.execute({ userId, applicationId, content }) };
+    return {
+      result: await deps.createNoteUseCase.execute({ userId, applicationId, content, actor }),
+    };
   },
 
   async update_note(args, userId, deps) {
@@ -173,13 +178,14 @@ export const WRITE_TOOL_HANDLERS: Record<WriteToolName, WriteToolHandler> = {
     };
   },
 
-  async create_interview_round(args, userId, deps) {
+  async create_interview_round(args, userId, deps, actor) {
     const applicationId = toStr(args.applicationId);
     if (!applicationId) return invalid('applicationId is required');
     return {
       result: await deps.createInterviewRoundUseCase.execute({
         userId,
         applicationId,
+        actor,
         type: toOneOf(args.type, INTERVIEW_ROUND_TYPES),
         scheduledAt: toDate(args.scheduledAt),
         interviewerName: toStr(args.interviewerName),

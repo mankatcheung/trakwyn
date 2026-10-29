@@ -359,6 +359,8 @@ export const TRACING = {
   TOOL_OUTCOME_ATTRIBUTE: 'app.tool.outcome',
   TOOL_RESULT_BYTES_ATTRIBUTE: 'app.tool.result_bytes',
   MCP_TOKEN_SCOPE_ATTRIBUTE: 'app.mcp.token_scope',
+  /** The calling credential's id, on write calls only (JEF-466): the one to revoke. */
+  MCP_TOKEN_ID_ATTRIBUTE: 'app.mcp.token_id',
   /** Stands in for a tool name that is not in the catalogue, so a client cannot mint span names or metric labels. */
   UNKNOWN_TOOL: 'unknown',
 } as const;
