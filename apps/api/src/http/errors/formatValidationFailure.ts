@@ -1,6 +1,14 @@
 import { GraphQLError } from 'graphql';
-import { EXTENSION_ORIGIN_SCHEMES, GRAPHQL_VALIDATION_ERROR_CODE } from '#src/http/constants.js';
+import {
+  CLIENT_HEADER,
+  EXTENSION_ORIGIN_SCHEMES,
+  GRAPHQL_VALIDATION_ERROR_CODE,
+} from '#src/http/constants.js';
 import { parseTrakwynClientUserAgent } from '#src/infrastructure/device/trakwynClientUserAgent.js';
+import {
+  parseTrakwynClipperHeader,
+  plausibleVersion,
+} from '#src/infrastructure/device/trakwynClipperHeader.js';
 import type { GraphqlClientKind, IMetrics } from '#src/infrastructure/observability/metrics.js';
 import { recordValidationFailure } from '#src/infrastructure/observability/recordValidationFailure.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
@@ -9,7 +17,7 @@ import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 /** What of the request the log line needs; the body is never read past `operationName`. */
 export interface ValidationFailureRequest {
   body?: unknown;
-  headers: { 'user-agent'?: string; origin?: string };
+  headers: { 'user-agent'?: string; origin?: string; [CLIENT_HEADER]?: string | string[] };
 }
 
 const MAX_LOGGED_MESSAGES = 10;
@@ -42,7 +50,12 @@ function clientOf(request: ValidationFailureRequest): {
   version?: string;
 } {
   const mobile = parseTrakwynClientUserAgent(request.headers['user-agent']);
-  if (mobile) return { client: 'mobile', version: mobile.version };
+  if (mobile) return { client: 'mobile', version: plausibleVersion(mobile.version) };
+
+  // The header says which Clipper build; an older build, which sends none, is
+  // still known to be the Clipper by the scheme of its origin.
+  const clipperVersion = parseTrakwynClipperHeader(request.headers[CLIENT_HEADER]);
+  if (clipperVersion) return { client: 'extension', version: clipperVersion };
 
   const origin = request.headers.origin;
   if (origin && EXTENSION_ORIGIN_SCHEMES.some((scheme) => origin.startsWith(scheme))) {
