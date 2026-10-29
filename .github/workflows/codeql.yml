@@ -1,0 +1,43 @@
+# CodeQL code scanning for the JavaScript/TypeScript in every app and package
+# (JEF-477). It is its own workflow because it uploads to the Security tab
+# (`security-events: write`), which ci.yml's deploy-credential jobs must never
+# hold. Results are alerts, not a ci-ok gate; they appear under Security > Code
+# scanning.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/codeql.yml'
+  schedule:
+    # Weekly, so a query pack update can flag code nobody has touched.
+    - cron: '23 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: github/codeql-action/init@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
+        with:
+          category: /language:javascript-typescript

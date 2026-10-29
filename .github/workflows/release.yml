@@ -78,7 +78,7 @@ jobs:
       clipper_released: ${{ steps.release.outputs['apps/extension--release_created'] }}
       clipper_tag: ${{ steps.release.outputs['apps/extension--tag_name'] }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         id: release
         with:
           config-file: release-please-config.json
@@ -115,7 +115,7 @@ jobs:
             echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
           }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.TAG }}
 
@@ -222,7 +222,7 @@ jobs:
             echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
           }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.TAG }}
 

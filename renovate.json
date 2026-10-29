@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "enabledManagers": ["custom.regex"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["custom.regex", "github-actions"],
   "customManagers": [
     {
       "customType": "regex",
@@ -13,5 +13,13 @@
       "datasourceTemplate": "docker"
     }
   ],
-  "labels": ["Improvement"]
+  "labels": ["Improvement"],
+  "packageRules": [
+    {
+      "description": "One weekly PR for every GitHub Action bump (JEF-477)",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "schedule": ["before 6am on monday"]
+    }
+  ]
 }
