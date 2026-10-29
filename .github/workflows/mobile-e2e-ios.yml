@@ -21,9 +21,10 @@ on:
     # 03:00 UTC, after the day's merges have settled.
     - cron: '0 3 * * *'
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, labeled]
+  # No pull_request trigger while the mobile app is unreleased: the job only
+  # ever showed as skipped (or action_required on release-please PRs). Restore
+  # `pull_request` (branches: [main], types: [opened, synchronize, reopened,
+  # labeled]) to bring back the `run-ios-e2e` label.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -32,11 +33,6 @@ concurrency:
 jobs:
   mobile-e2e-ios:
     name: Mobile E2E (iOS simulator)
-    # On a pull request this runs only when asked for by name; on a schedule or
-    # a manual dispatch it always runs.
-    if: >-
-      github.event_name != 'pull_request' ||
-      contains(github.event.pull_request.labels.*.name, 'run-ios-e2e')
     # Pinned, not macos-latest: every run regenerates the native project from
     # scratch, so the Xcode version is part of this job's contract (R-4).
     # macos-15 tops out at Xcode 16.x, which cannot resolve Expo SDK 57's
