@@ -4,7 +4,7 @@ import {
   formatValidationFailure,
   isValidationFailure,
 } from '#src/http/errors/formatValidationFailure.js';
-import { GRAPHQL_VALIDATION_ERROR_CODE } from '#src/http/constants.js';
+import { CLIENT_HEADER, GRAPHQL_VALIDATION_ERROR_CODE } from '#src/http/constants.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
@@ -194,6 +194,88 @@ describe('formatValidationFailure', () => {
         ]);
       },
     );
+
+    it('counts the Clipper with its version from the client header (JEF-473)', () => {
+      const metrics = makeFakeMetrics();
+      const logger = makeLogger();
+
+      formatValidationFailure(
+        validationFailure('x'),
+        {
+          body: {},
+          headers: {
+            [CLIENT_HEADER]: 'TrakwynClipper/1.3.1',
+            origin: 'chrome-extension://abcdef',
+          },
+        },
+        logger,
+        metrics,
+      );
+
+      expect(metrics.graphqlValidationFailures).toEqual([
+        { client: 'extension', clientVersion: '1.3.1' },
+      ]);
+      expect(vi.mocked(logger.warn).mock.calls[0]?.[2]).toMatchObject({
+        client: 'extension',
+        clientVersion: '1.3.1',
+      });
+    });
+
+    it('trusts the header for the version only, not for who is calling', () => {
+      const metrics = makeFakeMetrics();
+
+      formatValidationFailure(
+        validationFailure('x'),
+        { body: {}, headers: { [CLIENT_HEADER]: 'TrakwynClipper/9.9.9' } },
+        makeLogger(),
+        metrics,
+      );
+
+      // Anyone can send the header; it labels a count, it grants nothing.
+      expect(metrics.graphqlValidationFailures).toEqual([
+        { client: 'extension', clientVersion: '9.9.9' },
+      ]);
+    });
+
+    it('keeps a Clipper build that predates the header as extension with no version', () => {
+      const metrics = makeFakeMetrics();
+
+      formatValidationFailure(
+        validationFailure('x'),
+        { body: {}, headers: { origin: 'safari-web-extension://abcdef' } },
+        makeLogger(),
+        metrics,
+      );
+
+      expect(metrics.graphqlValidationFailures).toEqual([
+        { client: 'extension', clientVersion: undefined },
+      ]);
+    });
+
+    it('drops a version that is not shaped like one, whoever sent it', () => {
+      const metrics = makeFakeMetrics();
+
+      formatValidationFailure(
+        validationFailure('x'),
+        {
+          body: {},
+          headers: { 'user-agent': 'TrakwynMobile/not-a-version (iPhone15,2; iOS 17.4)' },
+        },
+        makeLogger(),
+        metrics,
+      );
+      formatValidationFailure(
+        validationFailure('x'),
+        { body: {}, headers: { [CLIENT_HEADER]: 'TrakwynClipper/not-a-version' } },
+        makeLogger(),
+        metrics,
+      );
+
+      expect(metrics.graphqlValidationFailures).toEqual([
+        { client: 'mobile', clientVersion: undefined },
+        { client: 'other', clientVersion: undefined },
+      ]);
+    });
 
     it('counts anything else as other, whatever its user agent claims', () => {
       const metrics = makeFakeMetrics();
