@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ApiError, getPopupBootstrap, isUnauthorizedError, parseJobDescription } from './api';
 import { getAuth } from './storage';
-import { DEFAULT_API_URL } from '../constants';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
+import type { Browser } from 'wxt/browser';
+import { CLIENT_HEADER, DEFAULT_API_URL } from '../constants';
 
 vi.mock('./storage', () => ({
   getAuth: vi.fn(),
@@ -92,6 +94,32 @@ describe('getPopupBootstrap', () => {
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).message).toBe('Boom');
     expect(isUnauthorizedError(err)).toBe(false);
+  });
+});
+
+describe('client header (JEF-473)', () => {
+  it('names the Clipper and its manifest version on every request', async () => {
+    vi.spyOn(fakeBrowser.runtime, 'getManifest').mockReturnValue({
+      version: '1.3.1',
+    } as Browser.runtime.Manifest);
+    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
+
+    await getPopupBootstrap();
+
+    const [, init] = (globalThis.fetch as Mock).mock.calls[0];
+    expect(init.headers[CLIENT_HEADER.NAME]).toBe('TrakwynClipper/1.3.1');
+  });
+
+  it('sends no header, and still makes the request, when the version cannot be read', async () => {
+    vi.spyOn(fakeBrowser.runtime, 'getManifest').mockImplementation(() => {
+      throw new Error('no manifest');
+    });
+    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
+
+    await expect(getPopupBootstrap()).resolves.toBeDefined();
+
+    const [, init] = (globalThis.fetch as Mock).mock.calls[0];
+    expect(init.headers).not.toHaveProperty(CLIENT_HEADER.NAME);
   });
 });
 

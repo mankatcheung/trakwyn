@@ -397,9 +397,8 @@ export const MCP_OAUTH_ROUTES = {
   REVOKE: '/oauth/revoke',
 } as const;
 
-/**
- * The `code` Mercurius gives the error it throws when a document fails schema
- * validation (JEF-472). Its own vendor string rather than one of ours, so it
- * lives here with the transport and `formatError` maps it to `ERROR_CODES`.
- */
+/** The Clipper's version header, lowercased as Node has it (JEF-473); `fetch` cannot set `User-Agent`. */
+export const CLIENT_HEADER = 'x-trakwyn-client';
+
+/** The `code` Mercurius gives the error it throws for a document that fails validation (JEF-472). */
 export const GRAPHQL_VALIDATION_ERROR_CODE = 'MER_ERR_GQL_VALIDATION';

@@ -11,12 +11,19 @@ import {
   tabOAuthDoneUrl,
 } from './oauth';
 import { runTabOAuth } from './tabOAuth';
-import { captureEvent, captureException, markReported, wasReported } from './observability/report';
+import {
+  captureEvent,
+  captureException,
+  markReported,
+  release,
+  wasReported,
+} from './observability/report';
 import { newTraceContext, rememberTraceId } from './observability/traceContext';
 import { operationName, transportFailureProperties } from './observability/transportFailure';
 import {
   API_ERROR_CODES,
   AUTH_HEADER,
+  CLIENT_HEADER,
   DEFAULT_API_URL,
   HTTP_SERVER_ERROR_MIN,
   OAUTH,
@@ -79,6 +86,8 @@ async function gql<T>(
   const { traceId, traceparent } = newTraceContext();
   rememberTraceId(traceId);
   const headers: Record<string, string> = { 'Content-Type': 'application/json', traceparent };
+  const version = release();
+  if (version) headers[CLIENT_HEADER.NAME] = `${CLIENT_HEADER.PREFIX}${version}`;
   if (token) headers['Authorization'] = `${AUTH_HEADER.BEARER_PREFIX}${token}`;
 
   /** Reports an unreachable API or a 5xx, and marks `err` so no caller reports it again. */

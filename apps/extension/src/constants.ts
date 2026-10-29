@@ -116,6 +116,16 @@ export const AUTH_HEADER = {
   BEARER_PREFIX: 'Bearer ',
 } as const;
 
+/**
+ * Names the Clipper and its version on every API request (JEF-473). A custom
+ * header because `fetch` cannot set `User-Agent`; the API's
+ * `CLIENT_HEADER` and `parseTrakwynClipperHeader` read it.
+ */
+export const CLIENT_HEADER = {
+  NAME: 'X-Trakwyn-Client',
+  PREFIX: 'TrakwynClipper/',
+} as const;
+
 /** GraphQL `extensions.code` values the extension reacts to. */
 export const API_ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',

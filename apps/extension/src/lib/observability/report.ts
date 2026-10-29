@@ -61,7 +61,7 @@ function captureConfig(): CaptureConfig | null {
 }
 
 /** The manifest version, which WXT takes from package.json. */
-function release(): string | undefined {
+export function release(): string | undefined {
   try {
     return browser.runtime.getManifest().version;
   } catch {
