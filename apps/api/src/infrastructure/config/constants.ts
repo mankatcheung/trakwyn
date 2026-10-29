@@ -362,6 +362,8 @@ export const TRACING = {
   ERROR_CODE_ATTRIBUTE: 'app.error.code',
   PROCESS_UPTIME_ATTRIBUTE: 'app.process_uptime_ms',
   STARTUP_PROBE_PATH: '/health',
+  /** Called by CI against a revision with no traffic (JEF-476); like the startup probe, nobody waits on it. */
+  READINESS_PATH: '/ready',
   /**
    * One span per MCP or chat tool call (JEF-365), named `<surface>.tool <name>`.
    * The shape of the call only: never its arguments or its result.

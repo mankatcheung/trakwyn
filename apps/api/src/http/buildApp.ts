@@ -17,6 +17,7 @@ import { registerBillingWebhookRoute } from '#src/http/routes/billing.routes.js'
 import { trashPurgeRoutes } from '#src/http/routes/trashPurge.routes.js';
 import { accountPurgeRoutes } from '#src/http/routes/accountPurge.routes.js';
 import { healthRoutes } from '#src/http/routes/health.routes.js';
+import { readyRoutes } from '#src/http/routes/ready.routes.js';
 import { mcpRoutes } from '#src/http/routes/mcp.routes.js';
 import { handleChatStream } from '#src/http/routes/chatStream.routes.js';
 import { registerCvImportRoute } from '#src/http/routes/cvImport.routes.js';
@@ -199,6 +200,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
 
   registerRoutes(fastify, [
     ...healthRoutes(),
+    ...readyRoutes(() => container.cradle),
     ...remindersRoutes(() => container.cradle),
     ...pushNotificationsRoutes(() => container.cradle),
     ...digestRoutes(() => container.cradle),

@@ -10,11 +10,22 @@ name: CI & Deploy
 #   - Eliminated boilerplate (setup-project, vercel-deploy-production)
 #   - Hard guarantee: deploy never starts before tests pass (needs:)
 #
-# Path filtering on push keeps unrelated changes from triggering a full
-# workflow run (e.g. docs-only PRs skip CI). On push, both deploy jobs
-# fire when their relevant paths change. If only api files changed, the
-# web deploy still runs — that's a minor waste, but Vercel's cache makes
-# it fast, and the simplicity gain is worth it.
+# What runs (JEF-476):
+#   - A pull request runs only the jobs its files can affect (`changes`), and
+#     `ci-ok` is the one check branch protection requires. A job skipped on
+#     purpose passes it; a failed or cancelled one does not.
+#   - A push to main runs every job, whatever its files are. Runs on main are
+#     queued one at a time (see `concurrency` below), and a queued run is
+#     replaced by a newer one, so a diff-based skip could drop the changes of
+#     the run that was replaced. Running everything makes the newest run
+#     deploy all that is on main.
+#   - The jobs that build and test do not wait for each other, only deploys
+#     wait for all of them. The push `paths` filter below still keeps
+#     docs-only pushes from starting a run.
+#   - deploy-api sends no traffic to a new revision until it has answered
+#     /ready and a GraphQL query, and deploy-web restores the previous
+#     production deployment when the site does not answer. notify-deploy
+#     reports a failed run as well as a successful one.
 #
 # One-time setup required before this workflow can deploy:
 #   1. apps/api: follow infra/gcp/README.md (bootstrap, secrets, terraform
@@ -35,8 +46,14 @@ name: CI & Deploy
 #      PRODUCTION_DATABASE_URL — the production Neon Postgres *direct*
 #        (non-pooled) connection string, with ?sslmode=require. Its host
 #        is infra/neon's `host` output (JEF-379).
-#      NTFY_TOPIC — ntfy.sh topic that receives a push notification once
-#        both apps finish deploying to production
+#      NTFY_TOPIC — ntfy.sh topic that receives a push notification when
+#        a run on main finishes, whether the deploys succeeded or not
+#   5. Add the repository *variable* WEB_URL, the production site's public
+#      URL (https://www.trakwyn.com). deploy-web smoke tests it and rolls the
+#      deploy back when it does not answer; without it the check is skipped
+#      with a warning.
+#   6. In Settings > Branches, require the `ci-ok` check on main and drop the
+#      per-job checks it replaces.
 
 on:
   push:
@@ -66,14 +83,85 @@ on:
   pull_request:
     branches: [main]
 
+# A pull request cancels its own older run. Runs on main are queued instead,
+# one at a time and never cancelled once started, so two quick merges cannot
+# deploy at the same moment and an older commit cannot finish after a newer
+# one. A run still waiting when a newer push arrives is replaced by it
+# (GitHub keeps one pending run per group); the newer run has everything the
+# replaced one had. The ref alone is not the key: see the note on migrate-db.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Read-only unless a job asks for more.
+permissions:
+  contents: read
 
 jobs:
+  # Which parts of the repository a pull request touches, so the jobs that
+  # cannot be affected are skipped (JEF-476). On a push to main every output
+  # is true: see the header for why main never skips.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # dorny/paths-filter lists a pull request's files through the API.
+      pull-requests: read
+    outputs:
+      code: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.code }}
+      api: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.api }}
+      mobile: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.mobile }}
+      infra: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.infra }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            code:
+              - 'apps/**'
+              - 'packages/**'
+              - 'infra/base-images.txt'
+              - '.github/actions/**'
+              - '.github/scripts/**'
+              - '.github/workflows/ci.yml'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '*.json'
+              - '*.js'
+              - '*.mjs'
+              - '*.ts'
+              - '.nvmrc'
+              - '.npmrc'
+            api:
+              - 'apps/api/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'infra/base-images.txt'
+              - '.github/actions/**'
+              - '.github/scripts/**'
+              - '.github/workflows/ci.yml'
+            mobile:
+              - 'apps/mobile/**'
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/ci.yml'
+            infra:
+              - 'infra/**'
+              - '.github/workflows/ci.yml'
+
+  # Always runs: it is the quickest job, and Prettier checks documentation
+  # too, so a docs-only pull request still needs it.
   quality:
     name: Lint, format & typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -92,7 +180,10 @@ jobs:
 
   build-test:
     name: Build & test
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -124,11 +215,17 @@ jobs:
       # project, globalSetup) — it is what validates apps/mobile's 96
       # hand-written GraphQL documents against the real schema, so a renamed
       # resolver field fails here instead of on a phone (JEF-300, G-3/G-5).
-      - run: pnpm --filter @trakwyn/mobile test:integration
+      # Skipped on a pull request that touches neither the app nor the API.
+      - name: Mobile integration tests
+        if: needs.changes.outputs.mobile == 'true'
+        run: pnpm --filter @trakwyn/mobile test:integration
 
   terraform:
     name: Terraform fmt & validate (${{ matrix.root }})
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         root:
@@ -161,8 +258,10 @@ jobs:
 
   api-image:
     name: API image builds
-    if: github.event_name == 'pull_request'
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       # google-github-actions/auth exchanges the GitHub OIDC token for the
@@ -170,36 +269,20 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect API changes
-        id: changes
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          if git diff --quiet "origin/${BASE_REF}...HEAD" -- apps/api package.json pnpm-lock.yaml pnpm-workspace.yaml; then
-            echo "api=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "api=true" >> "$GITHUB_OUTPUT"
-          fi
 
       # The base image comes from our own Artifact Registry, not a public
       # registry that rate-limits shared runner IPs (JEF-406, JEF-407).
       - uses: ./.github/actions/base-images
-        if: steps.changes.outputs.api == 'true'
         with:
           project-id: ${{ vars.GCP_PROJECT_ID }}
           workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
           service-account: ${{ vars.GCP_CI_READER_SA }}
 
       - uses: docker/setup-buildx-action@v3
-        if: steps.changes.outputs.api == 'true'
 
       # Build only, so a Dockerfile or dependency change that breaks the image
       # fails on the PR rather than in deploy-api after merge.
       - uses: docker/build-push-action@v6
-        if: steps.changes.outputs.api == 'true'
         with:
           context: .
           file: apps/api/Dockerfile
@@ -208,10 +291,15 @@ jobs:
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
+  # Starts at once, without waiting for quality or build-test: it installs and
+  # builds its own stack and uses nothing they produce. The deploy jobs still
+  # wait for all three.
   e2e:
     name: Playwright E2E
-    needs: [quality, build-test]
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       id-token: write
@@ -300,6 +388,26 @@ jobs:
             apps/web/test-results/
           if-no-files-found: ignore
 
+  # The one check branch protection requires (JEF-476). A job skipped on
+  # purpose by `changes` passes; a failed or cancelled one does not, and a
+  # failed `changes` fails it too.
+  ci-ok:
+    name: ci-ok
+    needs: [changes, quality, build-test, terraform, api-image, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the jobs it waited for
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<<"$NEEDS"
+          if jq -e 'any(.[]; .result == "failure" or .result == "cancelled")' <<<"$NEEDS" >/dev/null; then
+            echo "::error::A required job failed or was cancelled"
+            exit 1
+          fi
+
   migrate-db:
     name: Run database migrations
     needs: [quality, build-test, e2e]
@@ -311,6 +419,7 @@ jobs:
     # three jobs below repeat the same condition.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -327,6 +436,7 @@ jobs:
     needs: [quality, build-test, migrate-db, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       # Lets google-github-actions/auth request the GitHub OIDC token it
@@ -336,6 +446,9 @@ jobs:
       REGION: europe-west1
       REGISTRY: europe-west1-docker.pkg.dev
       IMAGE: europe-west1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/trakwyn/api:${{ github.sha }}
+      SERVICE: trakwyn-api
+      # Names the new revision's test URL (https://<tag>---<service>-…run.app).
+      REVISION_TAG: ci-${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -375,19 +488,57 @@ jobs:
 
       # Changes the image only; every other setting stays as infra/gcp
       # declares it. skip_default_labels keeps the action's labels off the
-      # service, which Terraform would otherwise report as drift.
-      - uses: google-github-actions/deploy-cloudrun@v2
+      # service, which Terraform would otherwise report as drift. The revision
+      # gets a tag and no traffic: it is tested below, and only then promoted.
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: trakwyn-api
+          service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.IMAGE }}
           skip_default_labels: true
+          no_traffic: true
+          tag: ${{ env.REVISION_TAG }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Calls the revision on its own tag URL while the old one still serves
+      # everyone. A failure stops here, so a revision that cannot reach its
+      # database or build its schema never receives traffic (JEF-476).
+      - name: Smoke test the new revision
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+        run: |
+          service_url="$(gcloud run services describe "$SERVICE" \
+            --project "$PROJECT" --region "$REGION" --format 'value(status.url)')"
+          .github/scripts/smoke-test.sh api "https://${REVISION_TAG}---${service_url#https://}"
+
+      # --no-traffic left the service pinned to the previous revision;
+      # --to-latest makes it follow the newest one again.
+      - name: Send traffic to the new revision
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+        run: |
+          gcloud run services update-traffic "$SERVICE" \
+            --project "$PROJECT" --region "$REGION" --to-latest
+
+      # Terraform does not declare the tag, so a tag left on the service would
+      # show as drift in the next `terraform plan`. Best effort: a tag that
+      # stays is untidy, not a failed deploy.
+      - name: Remove the test tag
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+        run: |
+          gcloud run services update-traffic "$SERVICE" \
+            --project "$PROJECT" --region "$REGION" --remove-tags "$REVISION_TAG" ||
+            echo "::warning::Could not remove the revision tag $REVISION_TAG"
 
   deploy-web:
     name: Deploy web to Vercel
     needs: [quality, build-test, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -398,24 +549,44 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          smoke-url: ${{ vars.WEB_URL }}
 
+  # Reports how the run ended, success or failure. `!cancelled()` rather than
+  # `always()`: it runs after a failed job but not when someone cancels the
+  # run. Not gated on the deploys passing, or a failed deploy would be silent.
   notify-deploy:
     name: Notify production deploy via ntfy
-    needs: [deploy-api, deploy-web]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality, build-test, e2e, migrate-db, deploy-api, deploy-web]
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Notify via ntfy
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NEEDS: ${{ toJSON(needs) }}
           COMMIT_SHA: ${{ github.sha }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           COMMIT_URL: ${{ github.event.head_commit.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           SHORT_SHA="${COMMIT_SHA:0:7}"
-          BODY=$(printf '%s\n%s' "$COMMIT_MESSAGE" "$COMMIT_URL")
-          curl -sS \
-            -H "Title: Production updated (${SHORT_SHA})" \
-            -H "X-Click: ${COMMIT_URL}" \
-            -d "$BODY" \
-            "https://ntfy.sh/${NTFY_TOPIC}"
+          FAILED="$(jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")' <<<"$NEEDS")"
+          if [ -n "$FAILED" ]; then
+            TITLE="Production deploy FAILED (${SHORT_SHA})"
+            BODY=$(printf 'Failed: %s\n%s\n%s' "$FAILED" "$COMMIT_MESSAGE" "$RUN_URL")
+            curl -sS \
+              -H "Title: ${TITLE}" \
+              -H "Priority: high" \
+              -H "Tags: rotating_light" \
+              -H "X-Click: ${RUN_URL}" \
+              -d "$BODY" \
+              "https://ntfy.sh/${NTFY_TOPIC}"
+          else
+            BODY=$(printf '%s\n%s' "$COMMIT_MESSAGE" "$COMMIT_URL")
+            curl -sS \
+              -H "Title: Production updated (${SHORT_SHA})" \
+              -H "X-Click: ${COMMIT_URL}" \
+              -d "$BODY" \
+              "https://ntfy.sh/${NTFY_TOPIC}"
+          fi

@@ -1,5 +1,5 @@
 name: Deploy Vercel production
-description: Pull environment, build, and deploy to Vercel production
+description: Pull environment, build, and deploy to Vercel production, then smoke test it and roll back if it does not answer
 
 inputs:
   vercel-token:
@@ -11,13 +11,24 @@ inputs:
   vercel-project-id:
     description: Vercel project ID
     required: true
+  smoke-url:
+    description: >
+      The public production URL (vars.WEB_URL, e.g. https://www.trakwyn.com).
+      After the deploy it must answer an HTML page, or the previous production
+      deployment is restored (JEF-476). The deployment's own URL is not used:
+      Vercel's deployment protection answers 401 there. Leave empty to skip the
+      check, which logs a warning.
+    default: ''
 
 runs:
   using: composite
   steps:
+    # Pinned, so a Vercel CLI release cannot change what production deploys do
+    # (JEF-476). Bump it on purpose; Renovate will not see an npm install
+    # inside a script.
     - name: Install Vercel CLI
       shell: bash
-      run: npm install -g vercel@latest
+      run: npm install -g vercel@64.1.0
 
     - name: Pull Vercel environment settings
       shell: bash
@@ -39,6 +50,24 @@ runs:
         VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
 
+    # `vercel rollback` needs the deployment to go back to, so note which one is
+    # live before this deploy replaces it. A lookup that fails leaves the id
+    # empty and the deploy goes ahead; the rollback step then says so.
+    - name: Note the current production deployment
+      id: previous
+      shell: bash
+      run: |
+        query="projectId=${VERCEL_PROJECT_ID}&target=production&state=READY&limit=1"
+        if [[ "$VERCEL_ORG_ID" == team_* ]]; then query="${query}&teamId=${VERCEL_ORG_ID}"; fi
+        id="$(curl -sS --max-time 30 -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+          "https://api.vercel.com/v6/deployments?${query}" | jq -r '.deployments[0].uid // empty' || true)"
+        echo "id=${id}" >> "$GITHUB_OUTPUT"
+        if [[ -z "$id" ]]; then echo "::warning::Could not read the current production deployment, so this deploy cannot be rolled back automatically"; fi
+      env:
+        VERCEL_TOKEN: ${{ inputs.vercel-token }}
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
     - name: Deploy
       shell: bash
       run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
@@ -46,3 +75,42 @@ runs:
         VERCEL_TOKEN: ${{ inputs.vercel-token }}
         VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
+    # `--prod` points the production domain at the new deployment straight
+    # away, so a broken build is live until the rollback below. continue-on-error
+    # lets that rollback run, and the last step fails the job afterwards.
+    - name: Smoke test
+      id: smoke
+      if: inputs.smoke-url != ''
+      continue-on-error: true
+      shell: bash
+      run: .github/scripts/smoke-test.sh web "$SMOKE_URL"
+      env:
+        SMOKE_URL: ${{ inputs.smoke-url }}
+
+    - name: Smoke test skipped
+      if: inputs.smoke-url == ''
+      shell: bash
+      run: echo "::warning::WEB_URL is not set, so the production deploy was not smoke tested or rolled back on failure"
+
+    - name: Roll back to the previous production deployment
+      if: steps.smoke.outcome == 'failure'
+      shell: bash
+      run: |
+        if [[ -z "$PREVIOUS" ]]; then
+          echo "::error::No previous production deployment was recorded; roll back by hand in the Vercel dashboard"
+          exit 0
+        fi
+        vercel rollback "$PREVIOUS" --yes --token="$VERCEL_TOKEN"
+      env:
+        PREVIOUS: ${{ steps.previous.outputs.id }}
+        VERCEL_TOKEN: ${{ inputs.vercel-token }}
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
+    - name: Fail the deploy
+      if: steps.smoke.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "::error::The new production deployment failed its smoke test and the previous one was restored"
+        exit 1

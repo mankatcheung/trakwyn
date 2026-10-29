@@ -54,6 +54,14 @@ describe('coldStart', () => {
       });
     });
 
+    it("leaves CI's readiness check unmarked and the flag for the first real request", () => {
+      expect(coldStartSpanAttributes({ url: '/ready' }, uptime)).toEqual({});
+
+      expect(coldStartSpanAttributes({ url: '/graphql' }, uptime)).toMatchObject({
+        'faas.coldstart': true,
+      });
+    });
+
     it('leaves later probes unmarked too', () => {
       coldStartSpanAttributes({ url: '/graphql' }, uptime);
 
