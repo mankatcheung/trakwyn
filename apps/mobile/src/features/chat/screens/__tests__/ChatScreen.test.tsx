@@ -71,6 +71,40 @@ describe('ChatScreen', () => {
     await waitFor(() => expect(getByText('Hello!')).toBeTruthy());
   });
 
+  it('shows a proposal card under the assistant reply, live while pending (JEF-469)', async () => {
+    mockedUseChatHistory.mockReturnValue({
+      data: [
+        {
+          ...message,
+          proposals: [
+            {
+              id: 'p1',
+              toolName: 'update_application',
+              summary: 'Move Acme to interviewing',
+              status: 'pending',
+              error: null,
+            },
+            {
+              id: 'p2',
+              toolName: 'create_note',
+              summary: 'Add a note on Acme',
+              status: 'confirmed',
+              error: null,
+            },
+          ],
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    const { getByText, getByTestId, queryByTestId } = await renderScreen('conv-1');
+
+    await waitFor(() => expect(getByText('Move Acme to interviewing')).toBeTruthy());
+    expect(getByTestId('chat-proposal-confirm-p1')).toBeTruthy();
+    expect(getByText('Done')).toBeTruthy();
+    expect(queryByTestId('chat-proposal-confirm-p2')).toBeNull();
+  });
+
   it('sends a message and streams the reply', async () => {
     mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
     mockedStreamChatMessage.mockResolvedValueOnce(undefined);

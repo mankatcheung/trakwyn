@@ -28,6 +28,8 @@ export interface StreamChatMessageParams {
   onDelta: (text: string) => void;
   /** The key this turn would have used was paused at its monthly limit and the user's opt-in fallback picked another. Arrives before any text. */
   onFallback?: (fallback: { from: string; to: string }) => void;
+  /** The assistant proposed a write (JEF-469). Nothing has changed; the card comes from the refetched history. */
+  onProposal?: (proposal: { id: string; toolName: string; summary: string }) => void;
   signal?: AbortSignal;
 }
 
@@ -92,6 +94,7 @@ export async function streamChatMessage({
   message,
   onDelta,
   onFallback,
+  onProposal,
   signal,
 }: StreamChatMessageParams): Promise<void> {
   const body = JSON.stringify({ conversationId, message });
@@ -176,6 +179,15 @@ export async function streamChatMessage({
           onDelta(text);
         } else if (frame.event === 'fallback') {
           onFallback?.(JSON.parse(frame.data) as { from: string; to: string });
+        } else if (frame.event === 'proposal') {
+          const proposal = JSON.parse(frame.data) as {
+            id: string;
+            toolName: string;
+            summary: string;
+          };
+          // The tool name only: the summary names the user's own records.
+          captureEvent(ANALYTICS_EVENTS.ASSISTANT_CHANGE_PROPOSED, { tool: proposal.toolName });
+          onProposal?.(proposal);
         } else if (frame.event === 'error') {
           const err = JSON.parse(frame.data) as { code: string; message: string };
           // The code only: the message can quote the user's own provider.

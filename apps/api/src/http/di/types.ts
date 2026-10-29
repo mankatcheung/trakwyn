@@ -40,6 +40,10 @@ import type { ISessionBlocklist } from '#src/use-cases/ports/ISessionBlocklist.j
 import type { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import type { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import type { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import type { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
+import type { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.js';
+import type { ConfirmChatActionUseCase } from '#src/use-cases/chat/ConfirmChatActionUseCase.js';
+import type { DismissChatActionUseCase } from '#src/use-cases/chat/DismissChatActionUseCase.js';
 import type { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
 import type { DrizzleConversationRepository } from '#src/infrastructure/db/repositories/DrizzleConversationRepository.js';
 import type { DrizzleEmailVerificationTokenRepository } from '#src/infrastructure/db/repositories/DrizzleEmailVerificationTokenRepository.js';
@@ -404,6 +408,7 @@ export interface Cradle {
   securityEventRepository: LoggingSecurityEventRepository;
   cookieConsentRepository: DrizzleCookieConsentRepository;
   messageRepository: DrizzleMessageRepository;
+  chatActionProposalRepository: DrizzleChatActionProposalRepository;
   conversationRepository: DrizzleConversationRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;
   llmUsageEventRepository: ILlmUsageEventRepository;
@@ -664,6 +669,9 @@ export interface Cradle {
   companyBriefingResolver: CompanyBriefingResolver;
   computeHealthScoreUseCase: ComputeHealthScoreUseCase;
   chatTools: LLMToolDefinition[];
+  chatWriteTools: ChatWriteTools;
+  confirmChatActionUseCase: ConfirmChatActionUseCase;
+  dismissChatActionUseCase: DismissChatActionUseCase;
   streamChatWithAssistantUseCase: StreamChatWithAssistantUseCase;
   computeResumeMatchScoreUseCase: ComputeResumeMatchScoreUseCase;
   computeResumeAtsScoreUseCase: ComputeResumeAtsScoreUseCase;

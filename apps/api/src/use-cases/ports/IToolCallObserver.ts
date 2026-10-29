@@ -11,9 +11,10 @@ export type ToolSurface = 'mcp' | 'chat';
  * - `internal_error`: anything else thrown, which is a bug or an outage.
  * - `refused`: the token's scope does not allow the tool.
  * - `invalid_params`: the arguments, or the tool name itself, were unusable.
+ * - `proposed`: chat saved a write for the user to confirm and changed nothing (JEF-469).
  */
 export type ToolCallOutcome =
-  'ok' | 'domain_error' | 'internal_error' | 'refused' | 'invalid_params';
+  'ok' | 'domain_error' | 'internal_error' | 'refused' | 'invalid_params' | 'proposed';
 
 /** What the observer is told about a call before it runs. No arguments, ever. */
 export interface ToolCallMeta {
@@ -42,6 +43,8 @@ export interface ToolCallRecorder {
   /** A failure the surface caught and turned into a reply, so the observer never sees it thrown. */
   failed(error: unknown): void;
   invalidParams(): void;
+  /** Chat stored the call as a proposal instead of running it; nothing was written. */
+  proposed(result: unknown): void;
   /**
    * The token's scope does not cover the tool. This is the MCP security
    * boundary, so it is also logged with the user and counted.

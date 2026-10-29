@@ -2,6 +2,16 @@
   "emptyPrompt": "Ask about your applications, next steps, or anything else.",
   "inputPlaceholder": "Message the assistant",
   "send": "Send",
+  "proposal": {
+    "heading": "Proposed change",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "confirmed": "Done",
+    "dismissed": "Dismissed",
+    "expired": "Expired — ask the assistant again",
+    "failed": "Could not be applied",
+    "error": "Something went wrong. Try again."
+  },
   "conversations": {
     "empty": "No conversations yet.",
     "newButtonLabel": "New conversation",

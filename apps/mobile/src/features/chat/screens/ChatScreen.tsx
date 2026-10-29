@@ -21,6 +21,7 @@ import {
 import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import { SendIcon } from '../components/SendIcon';
+import { ChatProposalCard } from '../components/ChatProposalCard';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
@@ -125,19 +126,28 @@ export function ChatScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={<Text style={styles.emptyText}>{t('emptyPrompt')}</Text>}
           renderItem={({ item }) => (
-            <View style={[styles.bubbleRow, item.role === 'user' && styles.bubbleRowUser]}>
-              <View
-                style={[
-                  styles.bubble,
-                  item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
-                ]}
-              >
-                {item.role === 'assistant' ? (
-                  <Markdown content={item.content} />
-                ) : (
-                  <Text style={styles.bubbleTextUser}>{item.content}</Text>
-                )}
+            <View>
+              <View style={[styles.bubbleRow, item.role === 'user' && styles.bubbleRowUser]}>
+                <View
+                  style={[
+                    styles.bubble,
+                    item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
+                  ]}
+                >
+                  {item.role === 'assistant' ? (
+                    <Markdown content={item.content} />
+                  ) : (
+                    <Text style={styles.bubbleTextUser}>{item.content}</Text>
+                  )}
+                </View>
               </View>
+              {item.proposals?.map((proposal) => (
+                <ChatProposalCard
+                  key={proposal.id}
+                  proposal={proposal}
+                  conversationId={conversationId}
+                />
+              ))}
             </View>
           )}
         />

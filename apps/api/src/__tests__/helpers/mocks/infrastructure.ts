@@ -87,6 +87,10 @@ export const makeToolCallObserver = (): FakeToolCallObserver => {
           invalidParams: () => {
             call.reports.push('invalid_params');
           },
+          proposed: (result) => {
+            call.reports.push('proposed');
+            call.result = result;
+          },
           refused: (userId) => {
             call.reports.push('refused');
             call.refusedUserId = userId;

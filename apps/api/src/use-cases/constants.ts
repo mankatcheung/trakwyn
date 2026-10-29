@@ -331,6 +331,12 @@ export const AI_PROMPT_INPUT = {
 
 /** In-app AI chat assistant settings. */
 export const CHAT = {
+  /**
+   * How long a proposed write can be confirmed (JEF-469). Short on purpose:
+   * the saved arguments were chosen by the model against the data of that
+   * moment, and an old card should not be able to apply them later.
+   */
+  PROPOSAL_TTL_MS: 15 * 60 * 1000,
   /** Hard cap on LLM<->tool round-trips within a single chat turn, to bound cost/latency. */
   MAX_TOOL_ITERATIONS: 5,
   /**

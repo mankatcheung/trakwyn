@@ -195,6 +195,22 @@ describe('ToolCallObserver', () => {
     expect(span.attributes[TRACING.TOOL_OUTCOME_ATTRIBUTE]).toBe('refused');
   });
 
+  it('counts a chat write that was only proposed as proposed, not ok (JEF-469)', async () => {
+    const { observer, metrics } = makeObserver();
+
+    await observer.observe({ surface: 'chat', name: 'create_note' }, async (call) =>
+      call.proposed({ status: 'proposed', proposalId: 'p1', summary: 'Add a note' }),
+    );
+
+    expect(metrics.toolCalls).toEqual([
+      { surface: 'chat', tool: 'create_note', outcome: 'proposed' },
+    ]);
+    const span = onlySpan();
+    expect(span.name).toBe('chat.tool create_note');
+    expect(span.attributes[TRACING.TOOL_OUTCOME_ATTRIBUTE]).toBe('proposed');
+    expect(span.attributes[TRACING.TOOL_RESULT_BYTES_ATTRIBUTE]).toBeGreaterThan(0);
+  });
+
   it('records a tool name outside the catalogue as unknown, so a client cannot mint names', async () => {
     const { observer, metrics } = makeObserver();
 

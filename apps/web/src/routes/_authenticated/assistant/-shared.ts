@@ -56,6 +56,38 @@ export const CHAT_HISTORY_QUERY = `
       role
       content
       createdAt
+      proposals {
+        id
+        toolName
+        summary
+        status
+        error
+      }
+    }
+  }
+`;
+
+/** Applies a write the assistant proposed (JEF-469). The server runs the saved arguments, never the client's. */
+export const CONFIRM_CHAT_ACTION = `
+  mutation ConfirmChatAction($id: ID!) {
+    confirmChatAction(id: $id) {
+      id
+      toolName
+      summary
+      status
+      error
+    }
+  }
+`;
+
+export const DISMISS_CHAT_ACTION = `
+  mutation DismissChatAction($id: ID!) {
+    dismissChatAction(id: $id) {
+      id
+      toolName
+      summary
+      status
+      error
     }
   }
 `;
@@ -83,6 +115,17 @@ export const DELETE_CONVERSATION = `
 
 export type ChatRole = 'user' | 'assistant';
 
+export type ChatProposalStatus = 'pending' | 'confirmed' | 'dismissed' | 'expired' | 'failed';
+
+/** A write the assistant proposed, at its current status (JEF-469). */
+export interface ChatProposal {
+  id: string;
+  toolName: string;
+  summary: string;
+  status: ChatProposalStatus;
+  error: string | null;
+}
+
 export interface ChatMessage {
   // Server-persisted messages carry their real id/createdAt; optimistic
   // messages appended client-side before the round-trip completes get a
@@ -92,6 +135,8 @@ export interface ChatMessage {
   role: ChatRole;
   content: string;
   createdAt: string;
+  /** Absent on optimistic messages, which have no reply to propose anything yet. */
+  proposals?: ChatProposal[];
 }
 
 export interface ChatHistoryResult {

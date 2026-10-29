@@ -32,8 +32,12 @@ describe('tool catalogue (JEF-177)', () => {
   it('gives each surface its own selection rather than one shared list', () => {
     // MCP exposes everything and gates writes per request by token scope.
     expect(MCP_TOOLS).toEqual(TOOL_CATALOGUE);
-    // Chat is session-authenticated with no scope to gate on, so reads only.
-    expect(CHAT_TOOLS.every((t) => t.access === 'read')).toBe(true);
+    // Chat is session-authenticated with no scope to gate on, so its writes
+    // are proposals the user confirms (JEF-469) and it gets no delete.
+    expect(CHAT_TOOLS.filter((t) => t.access === 'read')).toEqual(
+      TOOL_CATALOGUE.filter((t) => t.access === 'read'),
+    );
+    expect(CHAT_TOOLS.some((t) => 'destructive' in t && t.destructive)).toBe(false);
     expect(CHAT_TOOLS.length).toBeLessThan(MCP_TOOLS.length);
   });
 

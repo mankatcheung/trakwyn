@@ -22,6 +22,11 @@ export interface StreamChatMessageParams {
    * user's opt-in fallback picked another (JEF-258). Arrives before any text.
    */
   onFallback?: (fallback: { from: string; to: string }) => void;
+  /**
+   * The assistant proposed a write (JEF-469). Nothing has changed: the card
+   * itself comes from the refetched history once the reply is stored.
+   */
+  onProposal?: (proposal: { id: string; toolName: string; summary: string }) => void;
   signal?: AbortSignal;
 }
 
@@ -75,6 +80,7 @@ export async function streamChatMessage({
   message,
   onDelta,
   onFallback,
+  onProposal,
   signal,
 }: StreamChatMessageParams): Promise<void> {
   // Counted at the send, not at a successful reply: the question of
@@ -118,6 +124,15 @@ export async function streamChatMessage({
           onDelta(text);
         } else if (frame.event === 'fallback') {
           onFallback?.(JSON.parse(frame.data) as { from: string; to: string });
+        } else if (frame.event === 'proposal') {
+          const proposal = JSON.parse(frame.data) as {
+            id: string;
+            toolName: string;
+            summary: string;
+          };
+          // Only the tool name is sent to analytics; the summary names the user's records.
+          captureEvent(ANALYTICS_EVENTS.ASSISTANT_CHANGE_PROPOSED, { tool: proposal.toolName });
+          onProposal?.(proposal);
         } else if (frame.event === 'error') {
           const err = JSON.parse(frame.data) as { code: string; message: string };
           throw new ChatStreamError(err.message, err.code);
