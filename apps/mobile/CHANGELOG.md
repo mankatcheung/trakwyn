@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.3.1...mobile-v0.4.0) (2026-10-29)
+
+
+### Features
+
+* harden account deletion with step-up for every sign-in method, email confirmation and a 14-day grace period (JEF-463) ([#1133](https://github.com/mankatcheung/trakwyn/issues/1133)) ([16e6594](https://github.com/mankatcheung/trakwyn/commit/16e6594e3ce49bfcfad44c0ee2a98ef186f75b01))
+* let the chat assistant propose writes the user confirms (JEF-469) ([#1132](https://github.com/mankatcheung/trakwyn/issues/1132)) ([253c0bc](https://github.com/mankatcheung/trakwyn/commit/253c0bcd6521cfb522b58af9c71b94e5855d0099))
+
+
+### Bug Fixes
+
+* never load images or unsafe URLs from AI-rendered markdown (JEF-464) ([#1126](https://github.com/mankatcheung/trakwyn/issues/1126)) ([a205447](https://github.com/mankatcheung/trakwyn/commit/a205447e0116793dd88355f650bf19ec465f1420))
+
 ## [0.3.1](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.3.0...mobile-v0.3.1) (2026-10-27)
 
 
