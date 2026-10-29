@@ -39,6 +39,13 @@ jest.mock('../../../src/features/verification/screens/VerifyEmailRequiredScreen'
   },
 }));
 
+jest.mock('../../../src/features/verification/screens/AccountDeletionScheduledScreen', () => ({
+  AccountDeletionScheduledScreen: ({ deletionScheduledAt }: { deletionScheduledAt: string }) => {
+    const { Text } = require('react-native');
+    return <Text testID="account-deletion-scheduled">{deletionScheduledAt}</Text>;
+  },
+}));
+
 import { useTheme } from '../../../src/theme/ThemeContext';
 import { darkColors, lightColors } from '../../../src/theme/colors';
 import { useEmailVerification } from '../../../src/features/verification/hooks/useEmailVerification';
@@ -47,8 +54,12 @@ import AppLayout from '../_layout';
 const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseEmailVerification = jest.mocked(useEmailVerification);
 
-const verification = (data: { email: string; emailVerified: boolean } | null | undefined) =>
-  mockedUseEmailVerification.mockReturnValue({ data } as never);
+const verification = (
+  data:
+    | { email: string; emailVerified: boolean; deletionScheduledAt?: string | null }
+    | null
+    | undefined,
+) => mockedUseEmailVerification.mockReturnValue({ data } as never);
 
 describe('AppLayout', () => {
   beforeEach(() => {
@@ -83,6 +94,19 @@ describe('AppLayout', () => {
       expect(getByTestId('app-stack-root')).toBeTruthy();
       expect(queryByTestId('verify-email-required')).toBeNull();
     });
+  });
+
+  it('shows only the cancel screen for an account scheduled for deletion (JEF-463)', async () => {
+    verification({
+      email: 'a@b.c',
+      emailVerified: true,
+      deletionScheduledAt: '2026-11-12T00:00:00.000Z',
+    });
+
+    const { getByTestId, queryByTestId } = await render(<AppLayout />);
+
+    expect(getByTestId('account-deletion-scheduled')).toHaveTextContent('2026-11-12T00:00:00.000Z');
+    expect(queryByTestId('app-stack-root')).toBeNull();
   });
 
   it('wraps the tab navigator and presents notifications as a modal outside any tab', async () => {

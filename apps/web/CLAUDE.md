@@ -35,6 +35,13 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 - The page offers resend (a 60 s cooldown, a "wait a few minutes" message on `RATE_LIMITED`, a spam-folder hint), "I've verified", a different email (the `requestEmailChange` mutation, which needs the password) and sign out. Registering signs the user in, so the register confirmation links to `/dashboard`, not `/login` (which would only bounce them there).
 - The queries are inline strings in `lib/emailVerification.ts`, like Plans, so no `.graphql` file.
 
+## Account deletion and step-up (JEF-463)
+
+- **Step-up dialog** (`settings/-components/useStepUpReauth.tsx`): on `STEP_UP_REQUIRED` it reads `me.stepUpMethods` first, then shows `StepUpPasswordForm` (password + TOTP) or `StepUpWithoutPassword` (Continue with Google, emailed code). Google is a full-page redirect to the API's `/auth/oauth/google/start?mode=reauth&ticket=…&returnTo=<this page>`; the call that asked cannot resume, so on return the hook reads `?stepUp=1`/`?stepUpError=…`, clears it and says whether to try again.
+- **Danger Zone** asks for the account's email (not a password) and sends `requestAccountDeletion`; nothing is deleted until the mailed link is used.
+- **Pages:** `/confirm-account-deletion` and `/cancel-account-deletion` take the mailed `token` and act only when the button is pressed (mail scanners open links). `/account-deletion-scheduled` is the full page a scheduled account is sent to by `/_authenticated`'s guard, which reads `deletionScheduledAt` from the same cached query as the verification wall (`lib/emailVerification.ts`).
+- Email and backup-email changes hide the password field when `me.hasPassword` is false and send `currentPassword: null`; the API then wants a fresh session instead.
+
 ## Plans (JEF-344)
 
 - **`PLAN_REQUIRED` is an upgrade prompt, not a failure.** `ErrorState` and `AiErrorMessage` branch on it, and the forms that can hit it (new application at the cap, share link) render `UpgradePrompt`. The text is the API's own message, which names the feature; the link goes to **Settings → Plan**.

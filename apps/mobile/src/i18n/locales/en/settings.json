@@ -63,9 +63,10 @@
   },
   "danger": {
     "title": "Danger zone",
-    "description": "Deleting your account is permanent. All your applications, notes, and documents will be removed.",
-    "confirmPasswordPlaceholder": "Confirm your password",
-    "deleteMyAccount": "Delete my account"
+    "description": "Delete your account and all of its data. We'll email you a link to confirm, and you'll then have 14 days to change your mind before everything is permanently deleted.",
+    "deleteMyAccount": "Delete my account",
+    "confirmEmailLabel": "Type {{email}} to confirm",
+    "requestSent": "Check {{email}}. We sent a link to confirm the deletion; it expires in 30 minutes. Nothing is deleted until you open it."
   },
   "data": {
     "exportTitle": "Export your data",
@@ -214,15 +215,5 @@
     "newPasswordPlaceholder": "New password",
     "saving": "Saving...",
     "updatePassword": "Update password"
-  },
-  "stepUp": {
-    "title": "Confirm it's you",
-    "subtitle": "Re-enter your password to continue.",
-    "passwordPlaceholder": "Password",
-    "codePlaceholder": "6-digit code",
-    "cancel": "Cancel",
-    "verifying": "Verifying…",
-    "verifyCode": "Verify code",
-    "confirm": "Confirm"
   }
 }

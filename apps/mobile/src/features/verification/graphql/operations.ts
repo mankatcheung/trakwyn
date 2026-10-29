@@ -3,7 +3,15 @@ export const EMAIL_VERIFICATION_QUERY = `
     me {
       email
       emailVerified
+      deletionScheduledAt
     }
+  }
+`;
+
+/** Cancels the signed-in account's scheduled deletion (JEF-463). */
+export const CANCEL_ACCOUNT_DELETION_MUTATION = `
+  mutation CancelAccountDeletion {
+    cancelAccountDeletion
   }
 `;
 

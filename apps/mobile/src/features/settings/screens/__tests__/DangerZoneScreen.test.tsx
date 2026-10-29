@@ -2,72 +2,87 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
-jest.mock('../../../../auth/AuthContext', () => ({ useAuth: jest.fn() }));
-jest.mock('../../hooks/useDeleteAccount', () => ({ useDeleteAccount: jest.fn() }));
-
+jest.mock('../../hooks/useRequestAccountDeletion', () => ({
+  useRequestAccountDeletion: jest.fn(),
+}));
+jest.mock('../../../verification/hooks/useEmailVerification', () => ({
+  useEmailVerification: jest.fn(),
+}));
+jest.mock('../../../../auth/useStepUpReauth', () => ({
+  StepUpCancelledError: class StepUpCancelledError extends Error {},
+  // Runs the call as is: the step-up hook has its own tests.
+  useStepUpReauth: () => ({ withStepUp: (fn: () => Promise<unknown>) => fn(), dialog: null }),
+}));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-import { useAuth } from '../../../../auth/AuthContext';
-import { useDeleteAccount } from '../../hooks/useDeleteAccount';
+
+import { useRequestAccountDeletion } from '../../hooks/useRequestAccountDeletion';
+import { useEmailVerification } from '../../../verification/hooks/useEmailVerification';
 import { DangerZoneScreen } from '../DangerZoneScreen';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
-const mockedUseAuth = jest.mocked(useAuth);
-const mockedUseDeleteAccount = jest.mocked(useDeleteAccount);
-const mockedUseTheme = jest.mocked(useTheme);
+const EMAIL = 'jeff@example.com';
+const mockedUseRequestAccountDeletion = jest.mocked(useRequestAccountDeletion);
 
-describe('DangerZoneScreen', () => {
+describe('DangerZoneScreen (JEF-463)', () => {
   beforeEach(() => {
-    mockedUseTheme.mockReturnValue({
+    jest.clearAllMocks();
+    jest.mocked(useTheme).mockReturnValue({
       mode: 'light',
       resolvedScheme: 'light',
       colors: lightColors,
       setMode: jest.fn(),
     } as never);
+    jest.mocked(useEmailVerification).mockReturnValue({
+      data: { email: EMAIL, emailVerified: true, deletionScheduledAt: null },
+    } as never);
   });
 
-  beforeEach(() => jest.clearAllMocks());
+  it('keeps the button off until the account email is typed, and asks for no password', async () => {
+    mockedUseRequestAccountDeletion.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
 
-  it('deletes the account and logs out on success', async () => {
-    const mutateAsync = jest.fn().mockResolvedValue({ deleteAccount: true });
-    const logout = jest.fn();
-    mockedUseDeleteAccount.mockReturnValue({ mutateAsync, isPending: false } as never);
-    mockedUseAuth.mockReturnValue({ logout } as never);
+    const { getByTestId, queryByTestId } = await render(<DangerZoneScreen />);
 
-    const { getByTestId } = await render(<DangerZoneScreen />);
+    expect(queryByTestId('delete-account-password-input')).toBeNull();
+    expect(getByTestId('delete-account-button')).toBeDisabled();
+    await fireEvent.changeText(getByTestId('delete-account-email-input'), 'someone@else.com');
+    expect(getByTestId('delete-account-button')).toBeDisabled();
+    await fireEvent.changeText(getByTestId('delete-account-email-input'), ' JEFF@example.com ');
+    expect(getByTestId('delete-account-button')).toBeEnabled();
+  });
 
-    await fireEvent.changeText(getByTestId('delete-account-password-input'), 'password123');
+  it('requests the deletion and says to check the inbox', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ requestAccountDeletion: true });
+    mockedUseRequestAccountDeletion.mockReturnValue({ mutateAsync, isPending: false } as never);
+
+    const { getByTestId, findByTestId } = await render(<DangerZoneScreen />);
+
+    await fireEvent.changeText(getByTestId('delete-account-email-input'), EMAIL);
     await fireEvent.press(getByTestId('delete-account-button'));
 
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith('password123'));
-    await waitFor(() => expect(logout).toHaveBeenCalled());
+    expect(await findByTestId('delete-account-request-sent')).toHaveTextContent(
+      new RegExp(`Check ${EMAIL}`),
+    );
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
   });
 
-  it('shows an error message and does not log out when deletion fails', async () => {
+  it("shows the API's message when the request is refused", async () => {
     const mutateAsync = jest.fn().mockRejectedValue(
       Object.assign(new Error('fail'), {
-        response: { errors: [{ message: 'Incorrect password' }] },
+        response: { errors: [{ message: 'We could not send the confirmation email.' }] },
       }),
     );
-    const logout = jest.fn();
-    mockedUseDeleteAccount.mockReturnValue({ mutateAsync, isPending: false } as never);
-    mockedUseAuth.mockReturnValue({ logout } as never);
+    mockedUseRequestAccountDeletion.mockReturnValue({ mutateAsync, isPending: false } as never);
 
-    const { getByTestId, findByText } = await render(<DangerZoneScreen />);
+    const { getByTestId, findByText, queryByTestId } = await render(<DangerZoneScreen />);
 
-    await fireEvent.changeText(getByTestId('delete-account-password-input'), 'wrong');
+    await fireEvent.changeText(getByTestId('delete-account-email-input'), EMAIL);
     await fireEvent.press(getByTestId('delete-account-button'));
 
-    await findByText('Incorrect password');
-    expect(logout).not.toHaveBeenCalled();
-  });
-
-  it('disables the delete button until a password is entered', async () => {
-    mockedUseDeleteAccount.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
-    mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
-
-    const { getByTestId } = await render(<DangerZoneScreen />);
-
-    expect(getByTestId('delete-account-button').props.accessibilityState?.disabled).toBe(true);
+    await findByText('We could not send the confirmation email.');
+    await waitFor(() => expect(queryByTestId('delete-account-request-sent')).toBeNull());
   });
 });

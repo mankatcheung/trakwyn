@@ -62,9 +62,10 @@
   },
   "danger": {
     "title": "危險區域",
-    "description": "刪除帳戶後將無法復原，你所有的求職申請、筆記及文件都會被移除。",
-    "confirmPasswordPlaceholder": "確認你的密碼",
-    "deleteMyAccount": "刪除我的帳戶"
+    "description": "刪除你的帳戶及其所有資料。我們會傳送一封確認電子郵件給你；確認後，你有 14 天時間改變主意，之後所有資料將被永久刪除。",
+    "deleteMyAccount": "刪除我的帳戶",
+    "confirmEmailLabel": "輸入 {{email}} 以確認",
+    "requestSent": "請查看 {{email}}。我們已傳送確認刪除的連結，30 分鐘內有效。在你開啟連結之前，不會刪除任何內容。"
   },
   "data": {
     "exportTitle": "匯出你的資料",
@@ -211,15 +212,5 @@
     "newPasswordPlaceholder": "新密碼",
     "saving": "儲存中…",
     "updatePassword": "更新密碼"
-  },
-  "stepUp": {
-    "title": "請確認是你本人",
-    "subtitle": "請重新輸入密碼以繼續。",
-    "passwordPlaceholder": "密碼",
-    "codePlaceholder": "6 位數代碼",
-    "cancel": "取消",
-    "verifying": "驗證中…",
-    "verifyCode": "驗證代碼",
-    "confirm": "確認"
   }
 }

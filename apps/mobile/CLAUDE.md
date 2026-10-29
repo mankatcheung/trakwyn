@@ -19,13 +19,13 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
   - A refresh that can't reach the server keeps the tokens. Only a rejected refresh token ends the session, and ending it (like sign-out) clears the React Query cache.
 - **Non-GraphQL callers** (the chat SSE stream) use `getValidAccessToken()` and `recoverFromUnauthorized()`.
 - **User-Agent:** `TrakwynMobile/<version> (<model>; <os>)`, which the API turns into the session label and records on its request spans as `app.client.version`, `device.model.name`, `os.name` and `os.version`. Change the format only together with `apps/api/src/infrastructure/device/trakwynClientUserAgent.ts`.
-- **Step-up:** `STEP_UP_REQUIRED` is handled by `src/auth/useStepUpReauth.tsx`.
+- **Step-up:** `STEP_UP_REQUIRED` is handled by `src/auth/useStepUpReauth.tsx` (the one hook; the settings-level copy is gone). Before the prompt opens it reads `me.stepUpMethods` (`src/auth/stepUp.ts`): a password account gets the password prompt (`reauthenticateMobile`), one without a password gets `StepUpWithoutPasswordPrompt` (JEF-463): Google through the in-app browser (`startOAuthReauth` ticket, then `/start?mode=reauth&platform=mobile`, then the usual handoff code) and/or a mailed code (`verifyStepUpCodeMobile`). Both go through `AuthContext`'s `reauthenticateWithProvider`/`verifyStepUpCode`, which store the session's refreshed tokens **without** the sign-in's cache reset.
 - **`PLAN_REQUIRED` (JEF-344):** `getErrorMessage` keeps the API's message, which names the Pro feature, and adds "Manage your plan on the web." There is no in-app purchase, so every screen that shows an error gets that state with no per-screen code.
 - **`expo start --web` is a dev preview only.** It keeps tokens in `localStorage`; shipping it would first require switching to the cookie mutations.
 
 ## Email verification wall (JEF-438)
 
-`app/(app)/_layout.tsx` renders `VerifyEmailRequiredScreen` (`src/features/verification/`) instead of the tabs while `me.emailVerified` is false. Same rules as web: the app shows while the check is in flight or fails (the API enforces the wall), resend has a 60 s cooldown, and "Use a different email" reuses `useRequestEmailChange`. There is no window focus on a phone, so the check reruns when the app returns to the foreground.
+`app/(app)/_layout.tsx` renders `VerifyEmailRequiredScreen` (`src/features/verification/`) instead of the tabs while `me.emailVerified` is false, and `AccountDeletionScheduledScreen` (cancel or sign out) while `me.deletionScheduledAt` is set (JEF-463); the API refuses everything else for such an account. Danger Zone only _requests_ deletion (type the email, step up, a link is mailed); the confirm and cancel links open the web app. Same rules as web: the app shows while the check is in flight or fails (the API enforces the wall), resend has a 60 s cooldown, and "Use a different email" reuses `useRequestEmailChange`. There is no window focus on a phone, so the check reruns when the app returns to the foreground.
 
 ## Error reporting (JEF-349)
 

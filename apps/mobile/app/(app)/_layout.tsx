@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { themedStackScreenOptions } from '../../src/components/navigation/themedStackScreenOptions';
 import { useEmailVerification } from '../../src/features/verification/hooks/useEmailVerification';
 import { VerifyEmailRequiredScreen } from '../../src/features/verification/screens/VerifyEmailRequiredScreen';
+import { AccountDeletionScheduledScreen } from '../../src/features/verification/screens/AccountDeletionScheduledScreen';
 import { useTheme } from '../../src/theme/ThemeContext';
 
 export default function AppLayout() {
@@ -16,6 +17,13 @@ export default function AppLayout() {
   // requests itself.
   if (verification && !verification.emailVerified) {
     return <VerifyEmailRequiredScreen email={verification.email} />;
+  }
+  // Scheduled for deletion (JEF-463): the API refuses everything but cancel,
+  // so the same full-screen treatment.
+  if (verification?.deletionScheduledAt) {
+    return (
+      <AccountDeletionScheduledScreen deletionScheduledAt={verification.deletionScheduledAt} />
+    );
   }
 
   return (

@@ -56,6 +56,7 @@ const profile: Profile = {
   avatarUrl: null,
   backupEmail: null,
   backupEmailVerifiedAt: null,
+  hasPassword: true,
 };
 
 describe('ProfileScreen', () => {

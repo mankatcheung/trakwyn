@@ -32,6 +32,7 @@ const profile: Profile = {
   avatarUrl: null,
   backupEmail: null,
   backupEmailVerifiedAt: null,
+  hasPassword: true,
 };
 
 function wrapper({ children }: { children: React.ReactNode }) {

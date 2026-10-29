@@ -48,6 +48,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId } = await renderScreen();
@@ -71,6 +73,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -95,6 +99,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     // By testID rather than by its label: .maestro/01-register-and-create-application.yml
@@ -120,6 +126,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByTestId } = await renderScreen();
@@ -149,6 +157,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -171,6 +181,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -193,6 +205,8 @@ describe('LoginScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();

@@ -44,6 +44,8 @@ function authState(overrides: Partial<AuthState> = {}): AuthState {
     register: jest.fn(),
     logout: jest.fn(),
     reauthenticate: jest.fn(),
+    reauthenticateWithProvider: jest.fn(),
+    verifyStepUpCode: jest.fn(),
     ...overrides,
   };
 }

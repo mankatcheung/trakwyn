@@ -48,6 +48,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId } = await renderScreen();
@@ -72,6 +74,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -97,6 +101,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -122,6 +128,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     // By testID rather than by its label: the Maestro flows in .maestro/ tap
@@ -145,6 +153,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();
@@ -167,6 +177,8 @@ describe('RegisterScreen', () => {
       isAuthenticated: false,
       sessionExpired: false,
       reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
     });
 
     const { getByTestId, findByText } = await renderScreen();

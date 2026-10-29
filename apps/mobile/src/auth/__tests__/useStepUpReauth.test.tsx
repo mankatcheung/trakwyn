@@ -4,9 +4,14 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../i18n';
 
 jest.mock('../AuthContext', () => ({ useAuth: jest.fn() }));
+jest.mock('../stepUp', () => ({
+  fetchStepUpMethods: jest.fn(),
+  requestStepUpCode: jest.fn(),
+}));
 
 jest.mock('../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useAuth } from '../AuthContext';
+import { fetchStepUpMethods, requestStepUpCode } from '../stepUp';
 import { StepUpCancelledError, useStepUpReauth } from '../useStepUpReauth';
 import { useTheme } from '../../theme/ThemeContext';
 import { lightColors } from '../../theme/colors';
@@ -59,6 +64,7 @@ describe('useStepUpReauth', () => {
     } as never);
     jest.clearAllMocks();
     mockedUseAuth.mockReturnValue({ reauthenticate } as never);
+    jest.mocked(fetchStepUpMethods).mockResolvedValue(['password']);
   });
 
   it('passes an ordinary result straight through without prompting', async () => {
@@ -153,5 +159,73 @@ describe('useStepUpReauth', () => {
     );
     expect(queryByTestId('step-up-reauth')).toBeNull();
     expect(action).toHaveBeenCalledTimes(1);
+  });
+
+  describe('accounts without a password (JEF-463)', () => {
+    const reauthenticateWithProvider = jest.fn();
+    const verifyStepUpCode = jest.fn();
+
+    beforeEach(() => {
+      mockedUseAuth.mockReturnValue({
+        reauthenticate,
+        reauthenticateWithProvider,
+        verifyStepUpCode,
+      } as never);
+    });
+
+    it('offers Google, and retries the call once Google has confirmed it is them', async () => {
+      jest.mocked(fetchStepUpMethods).mockResolvedValue(['google', 'email_code']);
+      reauthenticateWithProvider.mockResolvedValue(true);
+      const action = jest
+        .fn()
+        .mockRejectedValueOnce(stepUpRequired())
+        .mockResolvedValueOnce('done');
+      const { getByTestId, queryByTestId } = await render(<Harness action={action} />);
+
+      await fireEvent.press(getByTestId('run'));
+      await waitFor(() => expect(getByTestId('step-up-google-button')).toBeTruthy());
+      expect(queryByTestId('step-up-password-input')).toBeNull();
+      await fireEvent.press(getByTestId('step-up-google-button'));
+
+      await waitFor(() => expect(getByTestId('result')).toHaveTextContent('done'));
+      expect(reauthenticateWithProvider).toHaveBeenCalledWith('google');
+    });
+
+    it('keeps the prompt open when the user backs out of the browser', async () => {
+      jest.mocked(fetchStepUpMethods).mockResolvedValue(['google', 'email_code']);
+      reauthenticateWithProvider.mockResolvedValue(false);
+      const action = jest.fn().mockRejectedValueOnce(stepUpRequired());
+      const { getByTestId } = await render(<Harness action={action} />);
+
+      await fireEvent.press(getByTestId('run'));
+      await waitFor(() => expect(getByTestId('step-up-google-button')).toBeTruthy());
+      await fireEvent.press(getByTestId('step-up-google-button'));
+
+      await waitFor(() => expect(reauthenticateWithProvider).toHaveBeenCalled());
+      expect(getByTestId('step-up-reauth')).toBeTruthy();
+      expect(action).toHaveBeenCalledTimes(1);
+    });
+
+    it('mails a code to a GitHub-only account, checks it, then retries', async () => {
+      jest.mocked(fetchStepUpMethods).mockResolvedValue(['email_code']);
+      jest.mocked(requestStepUpCode).mockResolvedValue(undefined);
+      verifyStepUpCode.mockResolvedValue(undefined);
+      const action = jest
+        .fn()
+        .mockRejectedValueOnce(stepUpRequired())
+        .mockResolvedValueOnce('done');
+      const { getByTestId, queryByTestId } = await render(<Harness action={action} />);
+
+      await fireEvent.press(getByTestId('run'));
+      await waitFor(() => expect(getByTestId('step-up-send-code-button')).toBeTruthy());
+      expect(queryByTestId('step-up-google-button')).toBeNull();
+      await fireEvent.press(getByTestId('step-up-send-code-button'));
+      await waitFor(() => expect(getByTestId('step-up-email-code-input')).toBeTruthy());
+      await fireEvent.changeText(getByTestId('step-up-email-code-input'), '123456');
+      await fireEvent.press(getByTestId('step-up-verify-code-button'));
+
+      await waitFor(() => expect(getByTestId('result')).toHaveTextContent('done'));
+      expect(verifyStepUpCode).toHaveBeenCalledWith('123456');
+    });
   });
 });

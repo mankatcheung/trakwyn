@@ -62,9 +62,10 @@
   },
   "danger": {
     "title": "危险区域",
-    "description": "删除账户是永久性的操作，你的所有求职申请、备注和文件都将被移除。",
-    "confirmPasswordPlaceholder": "确认你的密码",
-    "deleteMyAccount": "删除我的账户"
+    "description": "删除你的账户及其所有数据。我们会向你发送一封确认邮件；确认后，你有 14 天时间改变主意，之后所有数据将被永久删除。",
+    "deleteMyAccount": "删除我的账户",
+    "confirmEmailLabel": "输入 {{email}} 以确认",
+    "requestSent": "请查看 {{email}}。我们已发送确认删除的链接，30 分钟内有效。在你打开链接之前，不会删除任何内容。"
   },
   "data": {
     "exportTitle": "导出你的数据",
@@ -211,15 +212,5 @@
     "newPasswordPlaceholder": "新密码",
     "saving": "正在保存…",
     "updatePassword": "更新密码"
-  },
-  "stepUp": {
-    "title": "确认是你本人",
-    "subtitle": "请重新输入密码以继续。",
-    "passwordPlaceholder": "密码",
-    "codePlaceholder": "6 位验证码",
-    "cancel": "取消",
-    "verifying": "正在验证…",
-    "verifyCode": "验证代码",
-    "confirm": "确认"
   }
 }
