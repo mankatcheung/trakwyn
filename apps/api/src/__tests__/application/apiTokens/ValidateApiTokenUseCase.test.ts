@@ -40,7 +40,12 @@ describe('ValidateApiTokenUseCase', () => {
 
     const result = await useCase.execute(rawToken, 'graphql');
 
-    expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+    expect(result).toEqual({
+      tokenId: 'token-1',
+      sub: 'user-1',
+      email: 'user@example.com',
+      scope: 'full',
+    });
     expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
   });
 
@@ -74,7 +79,12 @@ describe('ValidateApiTokenUseCase', () => {
 
       const result = await useCase.execute('trakwyn_abc123', 'mcp');
 
-      expect(result).toEqual({ sub: 'user-1', email: 'user@example.com', scope: 'full' });
+      expect(result).toEqual({
+        tokenId: 'token-1',
+        sub: 'user-1',
+        email: 'user@example.com',
+        scope: 'full',
+      });
       expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
     });
   });

@@ -112,6 +112,9 @@ export class ToolCallObserver implements IToolCallObserver {
       invalidParams: () => {
         settlement.outcome = 'invalid_params';
       },
+      rateLimited: () => {
+        settlement.outcome = 'rate_limited';
+      },
       refused: (userId) => {
         settlement.outcome = 'refused';
         // No `err`: nothing was thrown, the scope check refused on purpose.

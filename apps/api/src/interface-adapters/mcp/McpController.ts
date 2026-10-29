@@ -18,6 +18,7 @@ import type { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAna
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { API_TOKEN_SCOPE } from '#src/use-cases/constants.js';
 import { projectApplicationSummary } from '#src/use-cases/chat/chatToolProjection.js';
@@ -96,6 +97,11 @@ interface Deps extends WriteToolDeps {
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
   toolCallObserver: IToolCallObserver;
+  /** `tools/call` budgets (JEF-465): reads and writes are counted apart. */
+  mcpToolCallReadRateLimiter: IRateLimiter;
+  mcpToolCallWriteRateLimiter: IRateLimiter;
+  /** What `retryAfterSeconds` says when a budget is spent. */
+  mcpToolCallRetryAfterS: number;
 }
 
 /**
@@ -106,7 +112,16 @@ interface Deps extends WriteToolDeps {
 export class McpController {
   constructor(private readonly deps: Deps) {}
 
-  async handle(rawBody: unknown, userId: string, scope: ApiTokenScope): Promise<McpResult> {
+  /**
+   * `tokenId` names the credential whose call budget a `tools/call` spends;
+   * without one the budget is the user's.
+   */
+  async handle(
+    rawBody: unknown,
+    userId: string,
+    scope: ApiTokenScope,
+    tokenId?: string,
+  ): Promise<McpResult> {
     const body = rawBody as McpRequest | null | undefined;
 
     if (!body || body.jsonrpc !== MCP.JSONRPC_VERSION || !body.method) {
@@ -149,7 +164,7 @@ export class McpController {
     }
 
     if (method === MCP_METHOD.TOOLS_CALL) {
-      return { body: await this.callTool(id, params, userId, scope) };
+      return { body: await this.callTool(id, params, userId, scope, tokenId ?? `user:${userId}`) };
     }
 
     return { body: this.error(id, JSON_RPC_ERROR.METHOD_NOT_FOUND, `Method not found: ${method}`) };
@@ -160,6 +175,7 @@ export class McpController {
     params: McpRequest['params'],
     userId: string,
     scope: ApiTokenScope,
+    budgetKey: string,
   ): Promise<unknown> {
     const requested = (params as { name?: unknown } | undefined)?.name;
     const toolName = typeof requested === 'string' ? requested : undefined;
@@ -167,7 +183,7 @@ export class McpController {
     // tools/call is one span and one count however it ends (JEF-365).
     return this.deps.toolCallObserver.observe(
       { surface: 'mcp', name: toolName ?? '', tokenScope: scope },
-      (observed) => this.runTool(id, toolName, params, userId, scope, observed),
+      (observed) => this.runTool(id, toolName, params, userId, scope, budgetKey, observed),
     );
   }
 
@@ -177,6 +193,7 @@ export class McpController {
     params: McpRequest['params'],
     userId: string,
     scope: ApiTokenScope,
+    budgetKey: string,
     observed: ToolCallRecorder,
   ): Promise<unknown> {
     // The security boundary. tools/list already hides write tools from a
@@ -190,6 +207,18 @@ export class McpController {
         id,
         JSON_RPC_ERROR.INVALID_PARAMS,
         `Tool "${toolName}" requires a full-access API token; this token is read-only`,
+      );
+    }
+
+    // After the scope check, so a refused call spends nothing, and before any
+    // dispatch. An unknown tool name runs nothing, so it is not counted (JEF-465).
+    if (tool && !(await this.withinBudget(tool.access, budgetKey))) {
+      observed.rateLimited();
+      return this.error(
+        id,
+        JSON_RPC_ERROR.RATE_LIMITED,
+        `Too many ${tool.access} tool calls. Wait before calling "${toolName}" again.`,
+        { code: ERROR_CODES.RATE_LIMITED, retryAfterSeconds: this.deps.mcpToolCallRetryAfterS },
       );
     }
 
@@ -370,6 +399,19 @@ export class McpController {
     }
   }
 
+  /**
+   * Spends one call from the credential's read or write budget. The prefix
+   * keeps the two apart: the Redis limiter keys on the string alone, so the
+   * same token id in both would be one bucket.
+   */
+  private withinBudget(access: 'read' | 'write', budgetKey: string): Promise<boolean> {
+    const limiter =
+      access === 'write'
+        ? this.deps.mcpToolCallWriteRateLimiter
+        : this.deps.mcpToolCallReadRateLimiter;
+    return limiter.consume(`mcp-tool-call-${access}:${budgetKey}`);
+  }
+
   private text(text: string) {
     return { content: [{ type: 'text', text }] };
   }
@@ -380,7 +422,12 @@ export class McpController {
     return this.error(id, JSON_RPC_ERROR.INVALID_PARAMS, message);
   }
 
-  private error(id: McpRequest['id'], code: number, message: string, data?: { code: string }) {
+  private error(
+    id: McpRequest['id'],
+    code: number,
+    message: string,
+    data?: { code: string; retryAfterSeconds?: number },
+  ) {
     return {
       jsonrpc: MCP.JSONRPC_VERSION,
       id,

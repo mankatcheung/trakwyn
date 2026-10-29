@@ -9,6 +9,8 @@ interface Deps {
 }
 
 export interface ValidateMcpOAuthAccessTokenResult {
+  /** The access token's own id, which MCP keys its call budget on (JEF-465). */
+  tokenId: string;
   sub: string;
   scope: McpOAuthScope;
 }
@@ -27,6 +29,6 @@ export class ValidateMcpOAuthAccessTokenUseCase {
     if (token.expiresAt.getTime() <= this.deps.now().getTime()) return null;
 
     await this.deps.mcpOAuthTokenRepository.updateLastUsed(token.id);
-    return { sub: token.userId, scope: token.scope };
+    return { tokenId: token.id, sub: token.userId, scope: token.scope };
   }
 }
