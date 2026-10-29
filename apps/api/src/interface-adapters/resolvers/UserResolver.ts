@@ -49,6 +49,7 @@ import type {
 } from '#src/use-cases/user/IGetNotificationPreferencesUseCase.js';
 import type { IUpdateNotificationPreferencesUseCase } from '#src/use-cases/user/IUpdateNotificationPreferencesUseCase.js';
 import type { IDismissOnboardingChecklistUseCase } from '#src/use-cases/user/IDismissOnboardingChecklistUseCase.js';
+import type { ICompleteOnboardingUseCase } from '#src/use-cases/user/ICompleteOnboardingUseCase.js';
 import type { IUpdateProfileUseCase } from '#src/use-cases/user/IUpdateProfileUseCase.js';
 import type { IGetUserUseCase } from '#src/use-cases/user/IGetUserUseCase.js';
 import type {
@@ -91,6 +92,7 @@ interface Deps {
   getNotificationPreferencesUseCase: IGetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: IUpdateNotificationPreferencesUseCase;
   dismissOnboardingChecklistUseCase: IDismissOnboardingChecklistUseCase;
+  completeOnboardingUseCase: ICompleteOnboardingUseCase;
   updateProfileUseCase: IUpdateProfileUseCase;
   getUserUseCase: IGetUserUseCase;
   requestAvatarUploadUrlUseCase: IRequestAvatarUploadUrlUseCase;
@@ -297,6 +299,10 @@ export class UserResolver {
 
   async dismissOnboardingChecklist(userId: string): Promise<void> {
     await this.deps.dismissOnboardingChecklistUseCase.execute(userId);
+  }
+
+  async completeOnboarding(userId: string, goals: readonly string[]): Promise<void> {
+    await this.deps.completeOnboardingUseCase.execute(userId, goals);
   }
 
   async updateProfile(

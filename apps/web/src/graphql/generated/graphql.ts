@@ -417,6 +417,43 @@ export type HealthScoreCriterion = {
   points?: Maybe<Scalars['Int']['output']>;
 };
 
+export type ImportCvEducationInput = {
+  degree?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  field?: InputMaybe<Scalars['String']['input']>;
+  institution: Scalars['String']['input'];
+  startDate: Scalars['String']['input'];
+};
+
+export type ImportCvProfileInput = {
+  educations: Array<ImportCvEducationInput>;
+  skills: Array<ImportCvSkillInput>;
+  workExperiences: Array<ImportCvWorkExperienceInput>;
+};
+
+export type ImportCvProfileResult = {
+  __typename?: 'ImportCvProfileResult';
+  educations?: Maybe<Scalars['Int']['output']>;
+  skills?: Maybe<Scalars['Int']['output']>;
+  workExperiences?: Maybe<Scalars['Int']['output']>;
+};
+
+export type ImportCvSkillInput = {
+  category?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ImportCvWorkExperienceInput = {
+  company: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  startDate: Scalars['String']['input'];
+  title: Scalars['String']['input'];
+};
+
 export type ImportSummary = {
   __typename?: 'ImportSummary';
   applicationsImported?: Maybe<Scalars['Int']['output']>;
@@ -606,6 +643,8 @@ export type Mutation = {
   bulkRestoreApplications?: Maybe<BulkRestoreResult>;
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
   compareOffers?: Maybe<Array<OfferComparison>>;
+  /** Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals. */
+  completeOnboarding?: Maybe<Scalars['Boolean']['output']>;
   computeResumeAtsScore?: Maybe<AtsScore>;
   computeResumeMatchScore?: Maybe<ResumeMatch>;
   confirmAvatar?: Maybe<Scalars['String']['output']>;
@@ -659,6 +698,7 @@ export type Mutation = {
   generateMockInterviewAnswer?: Maybe<GeneratedMockAnswer>;
   generateMockInterviewQuestions?: Maybe<GeneratedMockQuestions>;
   generateResume?: Maybe<DocumentDraft>;
+  importCvProfile?: Maybe<ImportCvProfileResult>;
   importUserData?: Maybe<ImportSummary>;
   login?: Maybe<LoginResult>;
   loginMobile?: Maybe<MobileLoginResult>;
@@ -752,6 +792,11 @@ export type MutationBulkUpdateApplicationsArgs = {
 
 export type MutationCompareOffersArgs = {
   offerIds: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationCompleteOnboardingArgs = {
+  goals: Array<OnboardingGoal>;
 };
 
 
@@ -1013,6 +1058,11 @@ export type MutationGenerateMockInterviewQuestionsArgs = {
 
 export type MutationGenerateResumeArgs = {
   applicationId: Scalars['ID']['input'];
+};
+
+
+export type MutationImportCvProfileArgs = {
+  input: ImportCvProfileInput;
 };
 
 
@@ -1428,6 +1478,12 @@ export type OfferWithApplication = {
   offer?: Maybe<Offer>;
   role?: Maybe<Scalars['String']['output']>;
 };
+
+export type OnboardingGoal =
+  | 'AI_DOCUMENTS'
+  | 'ASSISTANT'
+  | 'MCP'
+  | 'TRACK_APPLICATIONS';
 
 export type ParsedJobDescription = {
   __typename?: 'ParsedJobDescription';
@@ -1872,6 +1928,8 @@ export type User = {
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
+  onboardingCompletedAt?: Maybe<Scalars['String']['output']>;
+  onboardingGoals?: Maybe<Array<OnboardingGoal>>;
   storageLimitBytes?: Maybe<Scalars['Float']['output']>;
   storageUsedBytes?: Maybe<Scalars['Float']['output']>;
   targetRole?: Maybe<Scalars['String']['output']>;

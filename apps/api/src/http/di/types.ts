@@ -192,6 +192,7 @@ import type { ImportUserDataUseCase } from '#src/use-cases/user/ImportUserDataUs
 import type { GetNotificationPreferencesUseCase } from '#src/use-cases/user/GetNotificationPreferencesUseCase.js';
 import type { UpdateNotificationPreferencesUseCase } from '#src/use-cases/user/UpdateNotificationPreferencesUseCase.js';
 import type { DismissOnboardingChecklistUseCase } from '#src/use-cases/user/DismissOnboardingChecklistUseCase.js';
+import type { CompleteOnboardingUseCase } from '#src/use-cases/user/CompleteOnboardingUseCase.js';
 import type { UpdateProfileUseCase } from '#src/use-cases/user/UpdateProfileUseCase.js';
 import type { GetUserUseCase } from '#src/use-cases/user/GetUserUseCase.js';
 import type { RequestAvatarUploadUrlUseCase } from '#src/use-cases/user/RequestAvatarUploadUrlUseCase.js';
@@ -586,6 +587,7 @@ export interface Cradle {
   getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase;
   updateNotificationPreferencesUseCase: UpdateNotificationPreferencesUseCase;
   dismissOnboardingChecklistUseCase: DismissOnboardingChecklistUseCase;
+  completeOnboardingUseCase: CompleteOnboardingUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   getUserUseCase: GetUserUseCase;
   requestAvatarUploadUrlUseCase: RequestAvatarUploadUrlUseCase;

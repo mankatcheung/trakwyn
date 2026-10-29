@@ -1,12 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockHasSessionCookie, mockCheckEmailVerification } = vi.hoisted(() => ({
-  mockHasSessionCookie: vi.fn().mockReturnValue(false),
-  mockCheckEmailVerification: vi.fn(),
-}));
+const { mockHasSessionCookie, mockCheckEmailVerification, mockCheckOnboarding } = vi.hoisted(
+  () => ({
+    mockHasSessionCookie: vi.fn().mockReturnValue(false),
+    mockCheckEmailVerification: vi.fn(),
+    mockCheckOnboarding: vi.fn(),
+  }),
+);
 
 vi.mock('#/lib/emailVerification', () => ({
   checkEmailVerification: mockCheckEmailVerification,
+}));
+
+// Only the network read is replaced; which paths are exempt is the real rule.
+vi.mock('#/lib/onboarding', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/onboarding')>()),
+  checkOnboarding: mockCheckOnboarding,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -36,7 +45,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 });
 
 interface BeforeLoadOpts {
-  location: { href: string };
+  location: { href: string; pathname?: string };
 }
 
 async function loadGuard(): Promise<(opts: BeforeLoadOpts) => unknown> {
@@ -54,6 +63,10 @@ describe('_authenticated route guard', () => {
     vi.clearAllMocks();
     mockHasSessionCookie.mockReturnValue(false);
     mockCheckEmailVerification.mockResolvedValue({ email: 'a@b.c', emailVerified: true });
+    mockCheckOnboarding.mockResolvedValue({
+      onboardingCompletedAt: '2026-10-01T00:00:00.000Z',
+      onboardingGoals: [],
+    });
   });
 
   it('redirects unauthenticated visitors to /login carrying where they were headed', async () => {
@@ -114,6 +127,66 @@ describe('_authenticated route guard', () => {
       }
 
       expect(mockCheckEmailVerification).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('first-run welcome flow (JEF-460)', () => {
+    const notOnboarded = { onboardingCompletedAt: null, onboardingGoals: [] };
+
+    const attempt = async (pathname: string) => {
+      const guard = await loadGuard();
+      return Promise.resolve(guard({ location: { href: pathname, pathname } })).catch(
+        (err: RedirectError) => err,
+      );
+    };
+
+    beforeEach(() => {
+      mockHasSessionCookie.mockReturnValue(true);
+    });
+
+    it('sends a user who has never finished or skipped it to /welcome', async () => {
+      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+
+      const caught = await attempt('/dashboard');
+
+      expect((caught as RedirectError).redirectOpts).toEqual({ to: '/welcome' });
+    });
+
+    it('lets a user who has finished or skipped it through', async () => {
+      await expect(attempt('/dashboard')).resolves.toBeUndefined();
+    });
+
+    it.each(['/welcome', '/settings', '/settings/ai', '/profile', '/oauth/consent'])(
+      'leaves %s alone, so the flow and the pages it links to load',
+      async (pathname) => {
+        mockCheckOnboarding.mockResolvedValue(notOnboarded);
+
+        await expect(attempt(pathname)).resolves.toBeUndefined();
+      },
+    );
+
+    it('does not treat a path that only starts with an exempt word as exempt', async () => {
+      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+
+      const caught = await attempt('/settingsfoo');
+
+      expect((caught as RedirectError).redirectOpts).toEqual({ to: '/welcome' });
+    });
+
+    it('lets the user through when the check could not be made', async () => {
+      mockCheckOnboarding.mockResolvedValue(null);
+
+      await expect(attempt('/dashboard')).resolves.toBeUndefined();
+    });
+
+    it('asks only once the email wall is passed, so an unverified user goes to the wall', async () => {
+      mockCheckEmailVerification.mockResolvedValue({ email: 'a@b.c', emailVerified: false });
+      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+
+      const caught = await attempt('/dashboard');
+
+      expect((caught as RedirectError).redirectOpts).toEqual({ to: '/verify-email-required' });
+      expect(mockCheckOnboarding).not.toHaveBeenCalled();
     });
   });
 });

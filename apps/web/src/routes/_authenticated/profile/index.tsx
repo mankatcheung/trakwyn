@@ -1,8 +1,16 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { BriefcaseIcon, GraduationCapIcon, UploadIcon, WrenchIcon } from 'lucide-react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import {
+  ArrowLeftIcon,
+  BriefcaseIcon,
+  GraduationCapIcon,
+  UploadIcon,
+  WrenchIcon,
+} from 'lucide-react';
+import { z } from 'zod';
 import { Button, Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { sameOriginPath } from '#/lib/returnTo';
 import { CvImportDialog } from './-components/CvImportDialog';
 import {
   WORK_EXPERIENCE_SECTION_ID,
@@ -14,7 +22,17 @@ import { CompletenessMeter } from './-components/CompletenessMeter';
 import { profileCompleteness } from './-components/profileCompleteness';
 import { useProfileData } from './-components/useProfileData';
 
+const searchSchema = z.object({
+  /**
+   * Where to go back to once the profile is filled in, e.g. the cover-letter
+   * form that sent the user here (JEF-460). Checked again with
+   * `sameOriginPath` before it is used, so an off-site value shows no link.
+   */
+  returnTo: z.string().optional(),
+});
+
 export const Route = createFileRoute('/_authenticated/profile/')({
+  validateSearch: searchSchema,
   component: ProfilePage,
 });
 
@@ -32,9 +50,18 @@ function ProfilePage() {
   const { t } = useLocale();
   const profile = useProfileData();
   const [importOpen, setImportOpen] = useState(false);
+  const navigate = useNavigate();
+  const returnTo = sameOriginPath(Route.useSearch().returnTo);
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-8">
+      {returnTo && (
+        <Button variant="link" className="mb-4" onClick={() => void navigate({ href: returnTo })}>
+          <span className="flex items-center gap-1.5">
+            <ArrowLeftIcon size={14} /> {t('profile.returnToBack')}
+          </span>
+        </Button>
+      )}
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">

@@ -54,6 +54,8 @@ export const makeUser = (overrides?: Partial<User>): User => ({
   backupEmail: null,
   backupEmailVerifiedAt: null,
   onboardingChecklistDismissedAt: null,
+  onboardingGoals: [],
+  onboardingCompletedAt: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   ...overrides,
