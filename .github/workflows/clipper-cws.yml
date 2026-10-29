@@ -1,0 +1,79 @@
+name: Clipper on the Chrome Web Store
+
+# Submits a Clipper release to the Chrome Web Store (JEF-419, JEF-429).
+# release.yml's clipper-chrome-zip job builds the package from the release tag,
+# checks the manifest and that no permission or content-script host was added
+# since the previous release, attaches the zip to the GitHub Release and starts
+# this workflow with that tag. Run it by hand (Actions > Clipper on the Chrome
+# Web Store > Run workflow) to submit a tag again.
+#
+# It submits with no manual step, like the AMO job: the package is uploaded to
+# the existing listing and submitted for review, and a version that passes review is
+# published to everyone (--chrome-publish-type DEFAULT_PUBLISH), with no staged
+# rollout. The checks in clipper-chrome-zip are what stand before that review,
+# so do not run this for a tag whose zip did not come from it.
+#
+# The job runs in the `chrome` environment so the Web Store secrets are
+# readable by this job alone, from the default branch only. Keep the
+# environment.
+#
+# One-time setup (apps/extension/CLAUDE.md, "Chrome Web Store"): the
+# CHROME_EXTENSION_ID, CHROME_PUBLISHER_ID, CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL
+# and CHROME_SERVICE_ACCOUNT_PRIVATE_KEY secrets, as secrets of the `chrome`
+# environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Clipper release tag to submit, e.g. clipper-v1.2.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  clipper-cws:
+    name: Submit to the Chrome Web Store
+    runs-on: ubuntu-latest
+    environment: chrome
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Check the tag
+        run: |
+          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
+          }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: ./.github/actions/setup-project
+
+      # The zip release.yml checked, not a rebuild: what was checked is what
+      # the store gets.
+      - name: Download the zip from the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --pattern '*-chrome.zip' --dir cws
+          echo "ZIP=$(ls "$GITHUB_WORKSPACE"/cws/*-chrome.zip)" >> "$GITHUB_ENV"
+
+      # Submitted for review and, once it passes review, published with no further step.
+      - name: Upload to the Chrome Web Store and submit for review
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+        run: |
+          pnpm --filter @trakwyn/extension exec wxt submit \
+            --chrome-api-version v2 \
+            --chrome-zip "$ZIP" \
+            --chrome-publish-type DEFAULT_PUBLISH

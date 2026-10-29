@@ -181,9 +181,9 @@ describe('release versioning', () => {
     expect(triggersDeploy('apps/web/package.json', pushPaths)).toBe(true);
   });
 
-  describe('release.yml Clipper store job (JEF-419)', () => {
+  describe('release.yml Clipper Chrome zip job (JEF-419, JEF-480)', () => {
     const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
-    const job = jobBlock(workflow, 'clipper-store');
+    const job = jobBlock(workflow, 'clipper-chrome-zip');
 
     it('runs only when release-please reports a Clipper release, or for a tag named by hand', () => {
       expect(job).toContain('needs: release-please');
@@ -224,29 +224,61 @@ describe('release versioning', () => {
       expect(job).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
     });
 
-    it('checks the manifest before uploading', () => {
+    it('checks the manifest before the zip leaves the job', () => {
       expect(job.indexOf('host_permissions')).toBeGreaterThan(-1);
-      expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('wxt submit'));
+      expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('gh release upload'));
     });
 
     // JEF-429: with no person looking at the package before it goes to review,
     // a grown permission list or content-script host (which disables the
     // extension until every user re-approves it) has to stop the job instead.
-    it('submits for review only after checking nothing was added since the previous release', () => {
-      expect(job).not.toContain('--chrome-skip-submit-review');
-      // Approval publishes the release; say so rather than lean on the default.
-      expect(job).toContain('--chrome-publish-type DEFAULT_PUBLISH');
+    it('hands the zip on only after checking nothing was added since the previous release', () => {
       const guard = job.indexOf('Check nothing was added since the previous release');
       expect(guard).toBeGreaterThan(-1);
-      expect(guard).toBeLessThan(job.indexOf('wxt submit'));
+      expect(guard).toBeLessThan(job.indexOf('gh release upload'));
+      expect(guard).toBeLessThan(job.indexOf('gh workflow run clipper-cws.yml'));
       expect(job).toContain('.permissions');
       expect(job).toContain('.content_scripts[]?.matches[]?');
     });
 
+    it('hands the submission to its own workflow, which can be run again by hand for a tag', () => {
+      expect(job).toContain('gh workflow run clipper-cws.yml');
+      expect(job).toContain('actions: write');
+      expect(workflow).not.toContain('environment: chrome');
+      expect(job).not.toContain('wxt submit');
+      expect(job).not.toContain('CHROME_SERVICE_ACCOUNT');
+    });
+  });
+
+  describe('Clipper on the Chrome Web Store (JEF-480)', () => {
+    const cwsWorkflow = readFileSync(join(REPO_ROOT, '.github/workflows/clipper-cws.yml'), 'utf8');
+    const submit = jobBlock(cwsWorkflow, 'clipper-cws');
+
+    // The environment's secrets are readable only by a job that names it, and
+    // only from the branches it allows. It has no required reviewer: the checks
+    // in clipper-chrome-zip stand in for one.
+    it('submits from the chrome environment, which keeps the Web Store secrets to that one job', () => {
+      expect(cwsWorkflow).toContain('workflow_dispatch:');
+      expect(submit).toContain('environment: chrome');
+      expect(submit).toContain(CLIPPER_TAG_PATTERN);
+      expect(submit).toContain('ref: ${{ env.TAG }}');
+      expect(cwsWorkflow).not.toMatch(/approv/i);
+    });
+
+    it('submits the zip attached to the GitHub Release, not a rebuild', () => {
+      expect(submit).toContain('gh release download "$TAG" --pattern \'*-chrome.zip\'');
+      expect(submit).not.toContain('pnpm --filter @trakwyn/extension zip');
+    });
+
+    it('submits for review and publishes on approval, saying so rather than leaning on the default', () => {
+      expect(submit).not.toContain('--chrome-skip-submit-review');
+      expect(submit).toContain('--chrome-publish-type DEFAULT_PUBLISH');
+    });
+
     it('authenticates to the Web Store API v2 with a service account, not a refresh token', () => {
-      expect(job).toContain('--chrome-api-version v2');
-      expect(job).toContain('secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY');
-      expect(job).not.toContain('CHROME_REFRESH_TOKEN');
+      expect(submit).toContain('--chrome-api-version v2');
+      expect(submit).toContain('secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY');
+      expect(submit).not.toContain('CHROME_REFRESH_TOKEN');
     });
   });
 
