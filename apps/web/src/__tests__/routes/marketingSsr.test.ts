@@ -54,6 +54,9 @@ const EXCEPTIONS: Record<string, string> = {
   'verify-email-required.tsx': 'signed-in reminder, ssr: false',
   'confirm-email-change.tsx': 'token query param',
   'confirm-backup-email.tsx': 'token query param',
+  'confirm-account-deletion.tsx': 'token query param (JEF-463)',
+  'cancel-account-deletion.tsx': 'token query param (JEF-463)',
+  'account-deletion-scheduled.tsx': 'signed-in page for a scheduled account, ssr: false (JEF-463)',
   'share.tsx': 'per-token shared summary',
 };
 

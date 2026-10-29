@@ -1,40 +1,52 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, type FormEvent } from 'react';
 import { gqlClient } from '#/graphql/client';
-import { queryClient } from '#/lib/queryClient';
 import { useBillingStatus } from '#/lib/billingStatus';
+import { useEmailVerification } from '#/lib/emailVerification';
 import { useLocale } from '#/lib/i18n';
+import { REQUEST_ACCOUNT_DELETION } from '#/lib/accountDeletion';
 import { Alert, Button, Card, FormLabel, Input } from '@trakwyn/ui';
-import { DELETE_ACCOUNT, deleteSchema, type DeleteForm, extractGqlError } from './shared';
+import { extractGqlError } from './shared';
 import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
 
 /**
  * Account deletion, on its own page rather than sitting under Export and
- * Import (JEF-204). It is irreversible and password-gated, and burying the
- * one destructive action in the same page as two routine ones made it easy to
- * reach by accident and hard to find on purpose.
+ * Import (JEF-204), so the one destructive action is hard to reach by
+ * accident and easy to find on purpose.
+ *
+ * Since JEF-463 this only starts it: typing the account's email unlocks the
+ * button, a fresh session is asked for (any sign-in method), and the API
+ * mails a link. Following the link schedules the deletion two weeks out,
+ * with time to cancel.
  */
 export function SettingsDangerZonePage() {
   const { t } = useLocale();
-  const navigate = useNavigate();
   const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
+  const { data: account } = useEmailVerification();
+  const email = account?.email ?? '';
   // Only a subscription keeps charging after the account is gone (JEF-439); a pass is one-off.
   const billing = useBillingStatus();
   const hasSubscription = billing?.plan === 'pro' && billing.planSource === 'subscription';
 
-  // Delete form
-  const deleteForm = useForm<DeleteForm>({ resolver: zodResolver(deleteSchema) });
-  const onDeleteAccount = async (data: DeleteForm) => {
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const matches = email.length > 0 && typed.trim().toLowerCase() === email.toLowerCase();
+
+  const onRequest = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!matches) return;
+    setBusy(true);
+    setError(null);
     try {
-      await withStepUp(() => gqlClient.request(DELETE_ACCOUNT, data));
-      queryClient.clear();
-      await navigate({ to: '/login' });
+      await withStepUp(() => gqlClient.request(REQUEST_ACCOUNT_DELETION));
+      setSent(true);
     } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      deleteForm.setError('root', {
-        message: extractGqlError(err) ?? t('data.deleteAccountFailed'),
-      });
+      if (!(err instanceof Error && err.message === STEP_UP_CANCELLED)) {
+        setError(extractGqlError(err) ?? t('data.deleteAccountFailed'));
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -53,28 +65,29 @@ export function SettingsDangerZonePage() {
             </p>
           )}
         </div>
-        <form onSubmit={deleteForm.handleSubmit(onDeleteAccount)} className="space-y-3">
-          <div className="max-w-sm">
-            <FormLabel>{t('data.confirmPasswordLabel')}</FormLabel>
-            <Input
-              type="password"
-              {...deleteForm.register('password')}
-              invalid={!!deleteForm.formState.errors.password}
-              placeholder="••••••••"
-            />
-            {deleteForm.formState.errors.password && (
-              <p className="mt-1 text-xs text-red-600">
-                {deleteForm.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-          {deleteForm.formState.errors.root && (
-            <Alert>{deleteForm.formState.errors.root.message}</Alert>
-          )}
-          <Button type="submit" variant="destructive" disabled={deleteForm.formState.isSubmitting}>
-            {deleteForm.formState.isSubmitting ? t('data.deleting') : t('data.deleteMyAccount')}
-          </Button>
-        </form>
+        {sent ? (
+          <Alert tone="success">{t('data.deleteRequestSent', { email })}</Alert>
+        ) : (
+          <form onSubmit={onRequest} className="space-y-3">
+            <div className="max-w-sm">
+              <FormLabel htmlFor="delete-confirm-email">
+                {t('data.deleteConfirmEmailLabel', { email })}
+              </FormLabel>
+              <Input
+                id="delete-confirm-email"
+                type="email"
+                autoComplete="off"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder={email}
+              />
+            </div>
+            {error && <Alert>{error}</Alert>}
+            <Button type="submit" variant="destructive" disabled={!matches || busy}>
+              {busy ? t('data.deleting') : t('data.deleteMyAccount')}
+            </Button>
+          </form>
+        )}
       </Card>
       {stepUpDialog}
     </div>

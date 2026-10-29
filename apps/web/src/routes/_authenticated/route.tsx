@@ -26,4 +26,7 @@ export const Route = createFileRoute('/_authenticated')({
 async function requireVerifiedEmail(): Promise<void> {
   const state = await checkEmailVerification();
   if (state && !state.emailVerified) throw redirect({ to: '/verify-email-required' });
+  // Scheduled for deletion (JEF-463): the API refuses everything but cancel,
+  // so the same full-page treatment as the verification wall.
+  if (state?.deletionScheduledAt) throw redirect({ to: '/account-deletion-scheduled' });
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useEffect } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
@@ -147,6 +147,81 @@ describe('useStepUpReauth', () => {
     });
     expect(onResolve).not.toHaveBeenCalled();
     expect(screen.queryByText("Confirm it's you")).not.toBeInTheDocument();
+  });
+
+  describe('accounts without a password (JEF-463)', () => {
+    // clearAllMocks keeps implementations; these tests set one per operation.
+    afterEach(() => mockGqlRequest.mockReset());
+
+    /** Answers by operation, so the order the hook asks in does not matter. */
+    function serve(handlers: Record<string, () => Promise<unknown>>) {
+      mockGqlRequest.mockImplementation((query: string) => {
+        const name = Object.keys(handlers).find((key) => query.includes(key));
+        return name ? handlers[name]!() : Promise.reject(new Error(`unexpected: ${query}`));
+      });
+    }
+
+    it('sends the browser to Google with a step-up ticket and the page to return to', async () => {
+      const assign = vi.fn();
+      vi.stubGlobal('location', {
+        ...window.location,
+        assign,
+        pathname: '/settings/danger-zone',
+        search: '',
+      });
+      serve({
+        StepUpMethods: () => Promise.resolve({ me: { stepUpMethods: ['google', 'email_code'] } }),
+        StartOAuthReauth: () => Promise.resolve({ startOAuthReauth: 'ticket-1' }),
+      });
+      const fn = vi.fn().mockRejectedValueOnce(stepUpRequiredError);
+      render(<Harness fn={fn} onResolve={vi.fn()} onReject={vi.fn()} />);
+
+      fireEvent.click(await screen.findByRole('button', { name: /continue with google/i }));
+
+      await waitFor(() => expect(assign).toHaveBeenCalled());
+      const url = new URL(assign.mock.calls[0]![0] as string, 'https://api.example');
+      expect(url.pathname).toBe('/auth/oauth/google/start');
+      expect(url.searchParams.get('mode')).toBe('reauth');
+      expect(url.searchParams.get('ticket')).toBe('ticket-1');
+      expect(url.searchParams.get('returnTo')).toBe('/settings/danger-zone');
+      vi.unstubAllGlobals();
+    });
+
+    it('mails a code, checks it, then retries the original call', async () => {
+      serve({
+        StepUpMethods: () => Promise.resolve({ me: { stepUpMethods: ['email_code'] } }),
+        RequestStepUpCode: () => Promise.resolve({ requestStepUpCode: true }),
+        VerifyStepUpCode: () => Promise.resolve({ verifyStepUpCode: true }),
+      });
+      const fn = vi
+        .fn()
+        .mockRejectedValueOnce(stepUpRequiredError)
+        .mockResolvedValueOnce('retried');
+      const onResolve = vi.fn();
+      render(<Harness fn={fn} onResolve={onResolve} onReject={vi.fn()} />);
+
+      expect(screen.queryByRole('button', { name: /continue with google/i })).toBeNull();
+      fireEvent.click(await screen.findByRole('button', { name: /email me a code/i }));
+      fireEvent.change(await screen.findByLabelText('Code from the email'), {
+        target: { value: ' 123456 ' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
+
+      await waitFor(() => expect(onResolve).toHaveBeenCalledWith('retried'));
+      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('VerifyStepUpCode'), {
+        code: '123456',
+      });
+    });
+
+    it('says, on returning from Google, that it worked, and clears the marker', async () => {
+      window.history.replaceState(null, '', '/settings/danger-zone?stepUp=1');
+      render(
+        <Harness fn={vi.fn().mockResolvedValue('ok')} onResolve={vi.fn()} onReject={vi.fn()} />,
+      );
+
+      expect(await screen.findByText(/that's confirmed/i)).toBeInTheDocument();
+      expect(window.location.search).toBe('');
+    });
   });
 
   it('shows an inline error and keeps the dialog open when reauth itself fails', async () => {

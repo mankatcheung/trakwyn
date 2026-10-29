@@ -13,6 +13,7 @@ export const ME_QUERY = `
       avatarUrl
       backupEmail
       backupEmailVerifiedAt
+      hasPassword
     }
   }
 `;
@@ -59,19 +60,19 @@ export const UPDATE_PROFILE = `
 `;
 
 export const REQUEST_EMAIL_CHANGE = `
-  mutation RequestEmailChange($currentPassword: String!, $newEmail: String!) {
+  mutation RequestEmailChange($currentPassword: String, $newEmail: String!) {
     requestEmailChange(currentPassword: $currentPassword, newEmail: $newEmail)
   }
 `;
 
 export const REQUEST_ADD_BACKUP_EMAIL = `
-  mutation RequestAddBackupEmail($currentPassword: String!, $backupEmail: String!) {
+  mutation RequestAddBackupEmail($currentPassword: String, $backupEmail: String!) {
     requestAddBackupEmail(currentPassword: $currentPassword, backupEmail: $backupEmail)
   }
 `;
 
 export const REMOVE_BACKUP_EMAIL = `
-  mutation RemoveBackupEmail($currentPassword: String!) {
+  mutation RemoveBackupEmail($currentPassword: String) {
     removeBackupEmail(currentPassword: $currentPassword)
   }
 `;
@@ -79,12 +80,6 @@ export const REMOVE_BACKUP_EMAIL = `
 export const UPDATE_PASSWORD = `
   mutation UpdatePassword($currentPassword: String!, $newPassword: String!) {
     updatePassword(currentPassword: $currentPassword, newPassword: $newPassword)
-  }
-`;
-
-export const DELETE_ACCOUNT = `
-  mutation DeleteAccount($password: String!) {
-    deleteAccount(password: $password)
   }
 `;
 
@@ -391,17 +386,19 @@ export const customAiPromptSchema = z.object({
 });
 
 export const emailSchema = z.object({
-  currentPassword: z.string().min(1, 'Required'),
+  // Optional: an account with no password steps up instead (JEF-463). The
+  // page requires it when `me.hasPassword`, and so does the API.
+  currentPassword: z.string().optional(),
   newEmail: z.string().email('Invalid email'),
 });
 
 export const backupEmailSchema = z.object({
-  currentPassword: z.string().min(1, 'Required'),
+  currentPassword: z.string().optional(),
   backupEmail: z.string().email('Invalid email'),
 });
 
 export const removeBackupEmailSchema = z.object({
-  currentPassword: z.string().min(1, 'Required'),
+  currentPassword: z.string().optional(),
 });
 
 export const passwordSchema = z
@@ -414,10 +411,6 @@ export const passwordSchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });
-
-export const deleteSchema = z.object({
-  password: z.string().min(1, 'Required'),
-});
 
 export const reauthSchema = z.object({
   password: z.string().min(1, 'Required'),
@@ -496,7 +489,6 @@ export type EmailForm = z.infer<typeof emailSchema>;
 export type BackupEmailForm = z.infer<typeof backupEmailSchema>;
 export type RemoveBackupEmailForm = z.infer<typeof removeBackupEmailSchema>;
 export type PasswordForm = z.infer<typeof passwordSchema>;
-export type DeleteForm = z.infer<typeof deleteSchema>;
 export type ReauthForm = z.infer<typeof reauthSchema>;
 export type TotpBeginForm = z.infer<typeof totpBeginSchema>;
 export type TotpConfirmForm = z.infer<typeof totpConfirmSchema>;
@@ -651,6 +643,8 @@ export type Me = {
   avatarUrl: string | null;
   backupEmail: string | null;
   backupEmailVerifiedAt: string | null;
+  /** False for an account made through Google or GitHub that never set one (JEF-463). */
+  hasPassword: boolean;
 };
 
 export type NotificationPreferences = {
