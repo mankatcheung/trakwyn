@@ -388,12 +388,46 @@ jobs:
             apps/web/test-results/
           if-no-files-found: ignore
 
+  # Supply-chain and secret checks on a pull request (JEF-477). They read the
+  # PR's own changes, so a push to main skips them (`ci-ok` counts a skip as a
+  # pass); CodeQL has its own workflow (codeql.yml).
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  secret-scan:
+    name: Secret scan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # gitleaks-action lists the pull request's commits through the API.
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Reads .gitleaks.toml at the repository root.
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # The one check branch protection requires (JEF-476). A job skipped on
   # purpose by `changes` passes; a failed or cancelled one does not, and a
   # failed `changes` fails it too.
   ci-ok:
     name: ci-ok
-    needs: [changes, quality, build-test, terraform, api-image, e2e]
+    needs: [changes, quality, build-test, terraform, api-image, e2e, dependency-review, secret-scan]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
