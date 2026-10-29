@@ -255,6 +255,30 @@ describe('ci.yml base images (JEF-407)', () => {
   });
 });
 
+describe('base image cache (JEF-474)', () => {
+  const action = read('.github/actions/base-images/action.yml');
+  const ci = read('.github/workflows/ci.yml');
+
+  it('keys the preloaded tarball on the pin file, so a bump pulls and nothing else does', () => {
+    expect(action).toMatch(/key: .*hashFiles\('infra\/base-images\.txt'\)/);
+  });
+
+  it('skips the registry login when the cache hit covers a preloading job', () => {
+    expect(action).toContain("if: inputs.preload == '' || steps.cache.outputs.cache-hit != 'true'");
+  });
+
+  it('runs the preloaded image under its local name, because a digest reference saves nameless', () => {
+    expect(action).toContain('trakwyn-ci/$name:cached');
+    expect(action).toContain('echo "${name^^}_IMAGE=$local_ref" >> "$GITHUB_ENV"');
+  });
+
+  it('preloads Postgres in e2e, the one job that runs a base image with docker run', () => {
+    const start = ci.indexOf('\n  e2e:');
+    const e2e = ci.slice(start, ci.indexOf('\n  deploy-api:', start));
+    expect(e2e).toMatch(/preload: postgres/);
+  });
+});
+
 describe('base-image-ref script', () => {
   const ref = (name: string) =>
     execFileSync(
