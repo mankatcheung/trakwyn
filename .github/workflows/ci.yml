@@ -223,6 +223,7 @@ jobs:
           project-id: ${{ vars.GCP_PROJECT_ID }}
           workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
           service-account: ${{ vars.GCP_CI_READER_SA }}
+          preload: postgres
 
       # A real Postgres rather than PGlite, so the API under test talks to the
       # database through the same `pg` pool production uses (unit and
