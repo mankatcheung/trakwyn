@@ -10,6 +10,7 @@ import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Button, Input, Skeleton, Spinner } from '@trakwyn/ui';
 import { Markdown } from '#/components/Markdown';
+import { ChatProposalCard } from '#/routes/_authenticated/assistant/-components/ChatProposalCard';
 import {
   CREATE_CONVERSATION,
   chatHistoryQueryOptions,
@@ -227,19 +228,24 @@ export function ChatConversationView({
             )}
 
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
-                    m.role === 'user'
-                      ? 'bg-blue-600 wrap-break-word whitespace-pre-wrap text-white'
-                      : 'border border-gray-200 bg-white text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
-                  }`}
-                >
-                  {m.role === 'assistant' ? <Markdown content={m.content} /> : m.content}
+              <div key={m.id} className="space-y-2">
+                <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
+                      m.role === 'user'
+                        ? 'bg-blue-600 wrap-break-word whitespace-pre-wrap text-white'
+                        : 'border border-gray-200 bg-white text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {m.role === 'assistant' ? <Markdown content={m.content} /> : m.content}
+                  </div>
                 </div>
+                {conversationId &&
+                  m.proposals?.map((p) => (
+                    <div key={p.id} className="flex justify-start">
+                      <ChatProposalCard proposal={p} conversationId={conversationId} />
+                    </div>
+                  ))}
               </div>
             ))}
           </>

@@ -20,6 +20,11 @@ import { DrizzleMcpOAuthTokenRepository } from '#src/infrastructure/db/repositor
 import { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
+import { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
+import { conversation } from '#src/infrastructure/db/schema.js';
+import { ConfirmChatActionUseCase } from '#src/use-cases/chat/ConfirmChatActionUseCase.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { ImportCvProfileUseCase } from '#src/use-cases/profile/ImportCvProfileUseCase.js';
 import { ResetPasswordUseCase } from '#src/use-cases/auth/ResetPasswordUseCase.js';
 import { ConfirmEmailChangeUseCase } from '#src/use-cases/user/ConfirmEmailChangeUseCase.js';
@@ -543,6 +548,102 @@ describe('repository transaction participation (JEF-427)', () => {
       expect(await workExperienceRepository.findAllByUserId(userId)).toHaveLength(1);
       expect(await educationRepository.findAllByUserId(userId)).toHaveLength(1);
       expect(await skills.findAllByUserId(userId)).toHaveLength(1);
+    });
+  });
+});
+
+describe('ConfirmChatActionUseCase (JEF-469)', () => {
+  let testDb: TestDb;
+
+  beforeAll(async () => {
+    testDb = await createTestDb();
+  });
+
+  afterAll(async () => {
+    await testDb.cleanup();
+  });
+
+  async function seed() {
+    const { db } = testDb;
+    const userId = nanoid();
+    const conversationId = nanoid();
+    await new DrizzleUserRepository({ db }).create({
+      id: userId,
+      email: `${userId}@example.com`,
+      passwordHash: 'h',
+    });
+    await db.insert(conversation).values({ id: conversationId, userId });
+    const proposals = new DrizzleChatActionProposalRepository({ db });
+    const proposal = await proposals.create({
+      id: nanoid(),
+      userId,
+      conversationId,
+      toolName: 'create_skill',
+      args: { name: 'Rust' },
+      summary: 'Add skill Rust',
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    return { userId, proposals, proposal };
+  }
+
+  /** Applies by really writing a skill, then (optionally) failing afterwards. */
+  function build(
+    proposals: DrizzleChatActionProposalRepository,
+    skills: DrizzleSkillRepository,
+    failAfterWrite: boolean,
+  ) {
+    const { db } = testDb;
+    return new ConfirmChatActionUseCase({
+      chatActionProposalRepository: proposals,
+      chatWriteTools: {
+        has: () => true,
+        prepare: boom,
+        apply: async (_tool, args, userId) => {
+          await skills.create({
+            id: nanoid(),
+            userId,
+            name: String(args.name),
+            category: null,
+            proficiency: null,
+          });
+          if (failAfterWrite) throw new ValidationError('rejected after writing');
+          return {};
+        },
+      },
+      messageRepository: new DrizzleMessageRepository({ db }),
+      transactionManager: new DrizzleTransactionManager({ db }),
+      generateId: () => nanoid(),
+    });
+  }
+
+  it('rolls the claim and the write back together, then records the failure', async () => {
+    const { userId, proposals, proposal } = await seed();
+    const skills = new DrizzleSkillRepository({ db: testDb.db });
+
+    await expect(
+      build(proposals, skills, true).execute({ userId, proposalId: proposal.id }),
+    ).rejects.toThrow('rejected after writing');
+
+    expect(await skills.findAllByUserId(userId)).toEqual([]);
+    expect(await proposals.findByIdForUser(proposal.id, userId)).toMatchObject({
+      status: 'failed',
+      error: 'rejected after writing',
+    });
+  });
+
+  it('commits the claim and the write together, and a second confirm applies nothing', async () => {
+    const { userId, proposals, proposal } = await seed();
+    const skills = new DrizzleSkillRepository({ db: testDb.db });
+    const useCase = build(proposals, skills, false);
+
+    await useCase.execute({ userId, proposalId: proposal.id });
+    await expect(useCase.execute({ userId, proposalId: proposal.id })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+
+    expect(await skills.findAllByUserId(userId)).toHaveLength(1);
+    expect(await proposals.findByIdForUser(proposal.id, userId)).toMatchObject({
+      status: 'confirmed',
     });
   });
 });

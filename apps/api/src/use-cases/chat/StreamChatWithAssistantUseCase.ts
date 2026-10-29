@@ -18,6 +18,7 @@ import {
   deriveChatTitle,
   executeChatTool,
   formatToolResultForModel,
+  isProposedWriteResult,
   summarizeToolResult,
   trimHistoryToBudget,
 } from '#src/use-cases/chat/chatAssembly.js';
@@ -41,7 +42,8 @@ export interface ChatWithAssistantDeps extends ChatToolDeps {
    * The tools this surface offers the model, injected rather than imported:
    * the catalogue is an adapter-layer contract, and which subset chat gets
    * is a composition decision (see `http/di`) — chat is session-authenticated
-   * with no token scope, so it receives read tools only (JEF-177).
+   * with no token scope, so its writes are proposals the user confirms
+   * (JEF-469) and it is never offered a delete.
    */
   chatTools: LLMToolDefinition[];
   llmProviderFactory: ILLMProviderFactory;
@@ -68,6 +70,11 @@ export type ChatStreamEvent =
    * any text, so the client can say which key answered.
    */
   | { type: 'fallback'; from: string; to: string }
+  /**
+   * The model asked for a write (JEF-469). It is saved and nothing has
+   * changed; the client shows a card and the user confirms or dismisses it.
+   */
+  | { type: 'proposal'; id: string; toolName: string; summary: string }
   | { type: 'done' };
 
 /**
@@ -141,6 +148,7 @@ export class StreamChatWithAssistantUseCase {
     let finalReply =
       'That took more steps than I could complete — try asking something more specific.';
     const toolTrace: string[] = [];
+    const proposalIds: string[] = [];
 
     for (let i = 0; i < CHAT.MAX_TOOL_ITERATIONS; i++) {
       let content = '';
@@ -168,8 +176,22 @@ export class StreamChatWithAssistantUseCase {
 
       messages.push({ role: 'assistant', content, toolCalls });
       const toolResults = await Promise.all(
-        toolCalls.map((call) => executeChatTool(call, input.userId, this.deps)),
+        toolCalls.map((call) =>
+          executeChatTool(call, input.userId, input.conversationId, this.deps),
+        ),
       );
+      for (const [idx, call] of toolCalls.entries()) {
+        const result = toolResults[idx];
+        if (isProposedWriteResult(result)) {
+          proposalIds.push(result.proposalId);
+          yield {
+            type: 'proposal',
+            id: result.proposalId,
+            toolName: call.name,
+            summary: result.summary,
+          };
+        }
+      }
       toolCalls.forEach((call, idx) => {
         toolTrace.push(summarizeToolResult(call, toolResults[idx]));
         messages.push({
@@ -194,13 +216,14 @@ export class StreamChatWithAssistantUseCase {
       role: 'user',
       content: input.message,
     });
-    await this.deps.messageRepository.create({
+    const assistantMessage = await this.deps.messageRepository.create({
       id: this.deps.generateId(),
       conversationId: input.conversationId,
       role: 'assistant',
       content: finalReply,
       toolTrace: toolTrace.length ? toolTrace.join('; ') : null,
     });
+    await this.deps.chatActionProposalRepository.attachToMessage(proposalIds, assistantMessage.id);
 
     if (history.length === 0) {
       await this.deps.conversationRepository.updateTitle(

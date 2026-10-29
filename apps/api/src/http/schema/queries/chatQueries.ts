@@ -56,7 +56,7 @@ builder.queryField('chatHistory', (t) =>
         userId: ctx.user.sub,
         conversationId: String(args.conversationId),
       });
-      return messages.map((m) => messageMapper.toDTO(m));
+      return messages.map(({ proposals, ...m }) => messageMapper.toDTO(m, proposals));
     },
   }),
 );

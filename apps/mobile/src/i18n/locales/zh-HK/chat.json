@@ -2,6 +2,16 @@
   "emptyPrompt": "查詢你的求職申請、下一步行動，或其他任何問題。",
   "inputPlaceholder": "向助理發送訊息",
   "send": "發送",
+  "proposal": {
+    "heading": "建議嘅更改",
+    "confirm": "確認",
+    "dismiss": "忽略",
+    "confirmed": "已完成",
+    "dismissed": "已忽略",
+    "expired": "已過期——請再問助理一次",
+    "failed": "未能套用",
+    "error": "出咗問題，請再試一次。"
+  },
   "conversations": {
     "empty": "還沒有對話。",
     "newButtonLabel": "新增對話",

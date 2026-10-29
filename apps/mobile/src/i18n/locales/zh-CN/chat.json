@@ -2,6 +2,16 @@
   "emptyPrompt": "询问关于你的求职申请、下一步行动或其他任何问题。",
   "inputPlaceholder": "给助手发消息",
   "send": "发送",
+  "proposal": {
+    "heading": "建议的更改",
+    "confirm": "确认",
+    "dismiss": "忽略",
+    "confirmed": "已完成",
+    "dismissed": "已忽略",
+    "expired": "已过期——请再次询问助手",
+    "failed": "无法应用",
+    "error": "出错了，请重试。"
+  },
   "conversations": {
     "empty": "还没有对话记录。",
     "newButtonLabel": "新建对话",

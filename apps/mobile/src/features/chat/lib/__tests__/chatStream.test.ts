@@ -13,7 +13,10 @@ jest.mock('../../../../graphql/client', () => ({
 // every send (JEF-349); stubbed here so these tests stay about the SSE
 // protocol.
 jest.mock('../../../../lib/analytics', () => ({
-  ANALYTICS_EVENTS: { ASSISTANT_USED: 'assistant_used' },
+  ANALYTICS_EVENTS: {
+    ASSISTANT_USED: 'assistant_used',
+    ASSISTANT_CHANGE_PROPOSED: 'assistant_change_proposed',
+  },
   captureEvent: jest.fn(),
   addBreadcrumb: jest.fn(),
 }));
@@ -28,7 +31,7 @@ import {
   traceHeaders,
 } from '../../../../graphql/client';
 import expoFetch from '../expoFetch';
-import { addBreadcrumb } from '../../../../lib/analytics';
+import { addBreadcrumb, captureEvent } from '../../../../lib/analytics';
 
 // Cast away expo/fetch's real (large, internal) FetchResponse type — these
 // tests only need the ok/status/body.getReader() shape streamChatMessage
@@ -135,6 +138,27 @@ describe('streamChatMessage', () => {
     });
 
     expect(onFallback).toHaveBeenCalledWith({ from: 'openai', to: 'anthropic' });
+  });
+
+  it('calls onProposal for a proposal frame and reports only the tool to analytics (JEF-469)', async () => {
+    const proposal = { id: 'p1', toolName: 'create_note', summary: 'Add a note on Acme' };
+    mockFetch.mockResolvedValueOnce(
+      encodedStreamResponse([
+        `event: proposal\ndata: ${JSON.stringify(proposal)}\n\n`,
+        'event: done\ndata: {}\n\n',
+      ]),
+    );
+
+    const onProposal = jest.fn();
+    await streamChatMessage({
+      conversationId: 'conv-1',
+      message: 'hi',
+      onDelta: () => {},
+      onProposal,
+    });
+
+    expect(onProposal).toHaveBeenCalledWith(proposal);
+    expect(captureEvent).toHaveBeenCalledWith('assistant_change_proposed', { tool: 'create_note' });
   });
 
   it('rejects with a ChatStreamError carrying the server error code', async () => {

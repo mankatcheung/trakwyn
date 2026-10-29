@@ -48,6 +48,50 @@ describe('ChatConversationView', () => {
     vi.clearAllMocks();
   });
 
+  it('shows proposal cards under the assistant reply: live while pending, resolved otherwise (JEF-469)', async () => {
+    const proposal = (id: string, status: string, summary: string) => ({
+      id,
+      toolName: 'update_application',
+      summary,
+      status,
+      error: null,
+    });
+    mockGqlRequest.mockImplementation((arg: unknown) => {
+      if (documentOf(arg).includes('ChatHistory'))
+        return Promise.resolve({
+          chatHistory: [
+            { id: 'm1', role: 'user', content: 'move them', createdAt: '', proposals: [] },
+            {
+              id: 'm2',
+              role: 'assistant',
+              content: 'I have proposed two changes.',
+              createdAt: '',
+              proposals: [
+                proposal('p1', 'pending', 'Move Acme to interviewing'),
+                proposal('p2', 'confirmed', 'Move Globex to applied'),
+              ],
+            },
+          ],
+        });
+      return Promise.resolve({});
+    });
+
+    render(
+      <ChatConversationView
+        conversationId="c1"
+        provider={null}
+        model=""
+        onConversationCreated={vi.fn()}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    await waitFor(() => expect(screen.getByText('Move Acme to interviewing')).toBeInTheDocument());
+    expect(screen.getAllByTestId('chat-proposal')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Confirm' })).toHaveLength(1);
+    expect(screen.getByText('Done')).toBeInTheDocument();
+  });
+
   it('shows the empty state and no suggested questions when none are given', async () => {
     render(
       <ChatConversationView

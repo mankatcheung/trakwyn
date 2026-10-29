@@ -34,6 +34,9 @@ export const ANALYTICS_EVENTS = {
   APPLICATION_CREATED: 'application_created',
   PDF_EXPORTED: 'pdf_exported',
   ASSISTANT_USED: 'assistant_used',
+  ASSISTANT_CHANGE_PROPOSED: 'assistant_change_proposed',
+  ASSISTANT_CHANGE_CONFIRMED: 'assistant_change_confirmed',
+  ASSISTANT_CHANGE_DISMISSED: 'assistant_change_dismissed',
   DOCUMENT_UPLOADED: 'document_uploaded',
 } as const;
 
