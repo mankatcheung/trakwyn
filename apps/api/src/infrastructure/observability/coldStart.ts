@@ -39,13 +39,15 @@ function pathOf(url: string | undefined): string | undefined {
  *
  * Cloud Run's startup probe is always a new instance's first request, and no
  * user waits on it, so it gets no attribute and leaves the flag for the
- * first request that someone did wait on.
+ * first request that someone did wait on. CI's readiness check (JEF-476) is
+ * the same kind of request.
  */
 export function coldStartSpanAttributes(
   request: Pick<IncomingMessage, 'url'>,
   uptimeSeconds: () => number = process.uptime,
 ): Attributes {
-  if (pathOf(request.url) === TRACING.STARTUP_PROBE_PATH) return {};
+  const path = pathOf(request.url);
+  if (path === TRACING.STARTUP_PROBE_PATH || path === TRACING.READINESS_PATH) return {};
 
   if (!takeColdStart()) return { [ATTR_FAAS_COLDSTART]: false };
 

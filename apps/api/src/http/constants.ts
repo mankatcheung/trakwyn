@@ -36,6 +36,8 @@ export const ROUTES = {
   GRAPHQL: '/graphql',
   /** Also Cloud Run's startup probe, which is why the path is declared there. */
   HEALTH: TRACING.STARTUP_PROBE_PATH,
+  /** CI's post-deploy smoke test (JEF-476): `HEALTH` plus a database round trip. */
+  READY: TRACING.READINESS_PATH,
   MCP: '/mcp',
   /**
    * Streams the assistant's chat reply (JEF-239) — not GraphQL, since
