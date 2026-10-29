@@ -24,7 +24,7 @@ describe('ValidateApiTokenUseCase', () => {
   it('returns user identity and updates lastUsedAt when token is valid', async () => {
     const rawToken = 'trakwyn_abc123';
     const expectedHash = createHash('sha256').update(rawToken).digest('hex');
-    const token = makeApiToken({ id: 'token-1', userId: 'user-1' });
+    const token = makeApiToken({ id: 'token-1', userId: 'user-1', name: 'Claude' });
     const repo = makeApiTokenRepository({
       findByTokenHash: vi
         .fn()
@@ -45,6 +45,7 @@ describe('ValidateApiTokenUseCase', () => {
       sub: 'user-1',
       email: 'user@example.com',
       scope: 'full',
+      tokenName: 'Claude',
     });
     expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
   });
@@ -84,6 +85,7 @@ describe('ValidateApiTokenUseCase', () => {
         sub: 'user-1',
         email: 'user@example.com',
         scope: 'full',
+        tokenName: 'My CLI token',
       });
       expect(repo.updateLastUsed).toHaveBeenCalledWith('token-1');
     });

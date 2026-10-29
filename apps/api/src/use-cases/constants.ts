@@ -614,6 +614,8 @@ export const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
  * validate against), not a route the server registers.
  */
 export const MCP_OAUTH = {
+  /** Names a grant in the activity log when its client row is gone (JEF-466). */
+  FALLBACK_CLIENT_NAME: 'MCP client',
   RESOURCE: '/mcp',
   CLIENT_ID_PREFIX: 'trakwyn_mcp_client_',
   CLIENT_ID_RANDOM_BYTES: 16,

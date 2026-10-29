@@ -1416,4 +1416,33 @@ describe('McpController', () => {
       });
     });
   });
+
+  describe('attribution (JEF-466)', () => {
+    const actor = { source: 'mcp' as const, apiTokenId: 'tok-1', apiTokenName: 'Claude Desktop' };
+    const callAs = (name: string, args: Record<string, unknown>) =>
+      controller.handle(
+        rpc('tools/call', { name, arguments: args }),
+        USER_ID,
+        'full',
+        undefined,
+        actor,
+      );
+
+    it.each([
+      ['update_application', 'updateApplicationUseCase', { applicationId: 'a1', role: 'Lead' }],
+      ['create_note', 'createNoteUseCase', { applicationId: 'a1', content: 'hi' }],
+      ['create_interview_round', 'createInterviewRoundUseCase', { applicationId: 'a1' }],
+    ] as const)('passes the token context to %s', async (tool, dep, args) => {
+      await callAs(tool, args);
+
+      const execute = (deps[dep] as { execute: ReturnType<typeof vi.fn> }).execute;
+      expect(execute).toHaveBeenCalledWith(expect.objectContaining({ actor }));
+    });
+
+    it('hands the observer the token id so write spans carry it', async () => {
+      await callAs('create_note', { applicationId: 'a1', content: 'hi' });
+
+      expect(deps.toolCallObserver.calls[0]?.meta.tokenId).toBe('tok-1');
+    });
+  });
 });

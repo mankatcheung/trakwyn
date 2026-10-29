@@ -15,6 +15,8 @@ export interface ValidateApiTokenResult {
   sub: string;
   email: string;
   scope: ApiTokenScope;
+  /** The token's name, so a write can be attributed to it (JEF-466). */
+  tokenName: string;
 }
 
 /** Where a token is being presented: the GraphQL API, or the MCP endpoint. */
@@ -48,6 +50,7 @@ export class ValidateApiTokenUseCase {
 
     return {
       tokenId: result.token.id,
+      tokenName: result.token.name,
       sub: result.token.userId,
       email: result.userEmail,
       scope: result.token.scope,

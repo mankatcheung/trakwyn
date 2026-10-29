@@ -1,3 +1,4 @@
+import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import type { Application } from '#src/domain/application/Application.js';
 import type { ApplicationStatus } from '#src/domain/application/ApplicationStatus.js';
 
@@ -15,6 +16,8 @@ export interface UpdateApplicationInput {
   source?: string | null;
   followUpAt?: Date | null;
   tags?: string[];
+  /** Set when an MCP client made the change; recorded in the activity log. */
+  actor?: McpActor;
 }
 
 export type UpdateApplicationOutput = Application;

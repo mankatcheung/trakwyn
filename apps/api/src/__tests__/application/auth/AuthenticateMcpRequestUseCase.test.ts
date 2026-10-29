@@ -33,6 +33,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
         sub: 'user-1',
         email: 'user@example.com',
         scope: 'full',
+        tokenName: 'Claude',
       }),
     );
     const useCase = new AuthenticateMcpRequestUseCase({
@@ -44,7 +45,12 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
     // The scope is carried through, not discarded: McpController needs it to
     // refuse write tools for read-only tokens (JEF-176).
-    expect(result).toEqual({ tokenId: 'api:tok-1', sub: 'user-1', scope: 'full' });
+    expect(result).toEqual({
+      tokenId: 'api:tok-1',
+      sub: 'user-1',
+      scope: 'full',
+      actor: { source: 'mcp', apiTokenId: 'tok-1', apiTokenName: 'Claude' },
+    });
     expect(validateApiTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_abc123', 'mcp');
   });
 
@@ -55,6 +61,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
         sub: 'user-1',
         email: 'user@example.com',
         scope: 'read',
+        tokenName: 'Claude',
       }),
     );
     const useCase = new AuthenticateMcpRequestUseCase({
@@ -64,7 +71,12 @@ describe('AuthenticateMcpRequestUseCase', () => {
 
     const result = await useCase.execute('trakwyn_readonly');
 
-    expect(result).toEqual({ tokenId: 'api:tok-1', sub: 'user-1', scope: 'read' });
+    expect(result).toEqual({
+      tokenId: 'api:tok-1',
+      sub: 'user-1',
+      scope: 'read',
+      actor: { source: 'mcp', apiTokenId: 'tok-1', apiTokenName: 'Claude' },
+    });
   });
 
   it('returns null for a JWT (MCP only accepts API tokens)', async () => {
@@ -111,7 +123,13 @@ describe('AuthenticateMcpRequestUseCase', () => {
     async (scope) => {
       const validateApiTokenUseCase = makeValidateApiTokenUseCase();
       const validateMcpOAuthAccessTokenUseCase = makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ tokenId: 'tok-3', sub: 'user-1', scope }),
+        vi.fn().mockResolvedValue({
+          tokenId: 'tok-3',
+          sub: 'user-1',
+          scope,
+          grantId: 'grant-1',
+          clientName: 'Claude Desktop',
+        }),
       );
       const useCase = new AuthenticateMcpRequestUseCase({
         entitlementService: makeEntitlementService(),
@@ -125,6 +143,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
         tokenId: 'oauth:tok-3',
         sub: 'user-1',
         scope,
+        actor: { source: 'mcp', apiTokenId: 'grant-1', apiTokenName: 'Claude Desktop' },
       });
       expect(validateApiTokenUseCase.execute).not.toHaveBeenCalled();
       expect(validateMcpOAuthAccessTokenUseCase.execute).toHaveBeenCalledWith('trakwyn_mcp_access');
@@ -153,7 +172,13 @@ describe('AuthenticateMcpRequestUseCase', () => {
       entitlementService,
       validateApiTokenUseCase: makeValidateApiTokenUseCase(),
       validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ tokenId: 'tok-2', sub: 'user-1', scope: 'full' }),
+        vi.fn().mockResolvedValue({
+          tokenId: 'tok-2',
+          sub: 'user-1',
+          scope: 'full',
+          grantId: 'grant-1',
+          clientName: 'Claude Desktop',
+        }),
       ),
     });
 
@@ -161,6 +186,7 @@ describe('AuthenticateMcpRequestUseCase', () => {
       tokenId: 'oauth:tok-2',
       sub: 'user-1',
       scope: 'full',
+      actor: { source: 'mcp', apiTokenId: 'grant-1', apiTokenName: 'Claude Desktop' },
     });
     expect(entitlementService.forUserId).toHaveBeenCalledWith('user-1');
   });
@@ -177,7 +203,13 @@ describe('AuthenticateMcpRequestUseCase', () => {
       entitlementService,
       validateApiTokenUseCase: makeValidateApiTokenUseCase(),
       validateMcpOAuthAccessTokenUseCase: makeValidateMcpOAuthAccessTokenUseCase(
-        vi.fn().mockResolvedValue({ tokenId: 'tok-2', sub: 'user-1', scope: 'full' }),
+        vi.fn().mockResolvedValue({
+          tokenId: 'tok-2',
+          sub: 'user-1',
+          scope: 'full',
+          grantId: 'grant-1',
+          clientName: 'Claude Desktop',
+        }),
       ),
     });
 
