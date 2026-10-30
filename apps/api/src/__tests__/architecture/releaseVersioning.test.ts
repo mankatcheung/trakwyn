@@ -468,10 +468,10 @@ describe('release versioning', () => {
       expect(jobBlock(ci, name)).toContain('environment: production');
     });
 
-    it('keeps the jobs that pull requests run out of it', () => {
-      for (const name of ['quality', 'build-test', 'e2e', 'api-image', 'notify-deploy']) {
-        expect(jobBlock(ci, name)).not.toContain('environment:');
-      }
+    // Only the deploy jobs: a pull request job in an environment would read
+    // its secrets, and notify-deploy must report a deploy that never reached it.
+    it('keeps every other job out of it', () => {
+      expect(ci.match(/^ {4}environment:/gm)).toHaveLength(3);
     });
   });
 });
