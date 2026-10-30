@@ -63,8 +63,22 @@ describe('ci.yml gates', () => {
 
   it('makes every deploy step wait for lint, build and test, and the browser tests', () => {
     for (const name of deploys) {
-      expect(needsOf(name), name).toEqual(expect.arrayContaining(['quality', 'build-test', 'e2e']));
+      expect(needsOf(name), name).toEqual(
+        expect.arrayContaining(['quality', 'build', 'test', 'mobile-integration', 'e2e']),
+      );
     }
+  });
+
+  it('runs build, test and mobile-integration in parallel, not one after another (JEF-478)', () => {
+    expect(ci).not.toContain('build-test');
+    for (const name of ['build', 'test', 'mobile-integration']) {
+      expect(needsOf(name), name).toEqual(['changes']);
+    }
+  });
+
+  it('keeps the extension .env, which only the build needs, out of the test job', () => {
+    expect(job('build')).toContain('apps/extension/.env');
+    expect(job('test')).not.toContain('apps/extension/.env');
   });
 
   it('only deploys from a push to main, not from a pull request that merged', () => {
@@ -137,7 +151,9 @@ describe('notify-deploy', () => {
     expect(needsOf('notify-deploy')).toEqual(
       expect.arrayContaining([
         'quality',
-        'build-test',
+        'build',
+        'test',
+        'mobile-integration',
         'e2e',
         'migrate-db',
         'deploy-api',
