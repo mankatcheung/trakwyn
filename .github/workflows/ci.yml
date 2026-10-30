@@ -1,9 +1,9 @@
 name: CI & Deploy
 
 # Consolidated workflow: CI runs for every PR and push to main. On push to
-# main, deploy-api and deploy-web run only after quality, build-test, and
-# e2e all pass. apps/api deploys to Google Cloud Run (infra/gcp/, JEF-335);
-# apps/web deploys to Vercel.
+# main, deploy-api and deploy-web run only after quality, build, test,
+# mobile-integration and e2e all pass. apps/api deploys to Google Cloud Run
+# (infra/gcp/, JEF-335); apps/web deploys to Vercel.
 #
 # Why three files became one:
 #   - Removed duplicate test gates (CI tests once, deploy reuses result)
@@ -178,8 +178,12 @@ jobs:
       - run: pnpm format:check
       - run: pnpm typecheck
 
-  build-test:
-    name: Build & test
+  # build, test and mobile-integration do not wait for each other (JEF-478).
+  # `pnpm test` has no `dependsOn: build` in turbo.json, @trakwyn/ui is
+  # consumed from src, and the integration tier boots the API with tsx, so none
+  # of them needs what `build` produces.
+  build:
+    name: Build
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -193,32 +197,58 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: turbo-build-test-${{ runner.os }}-${{ github.sha }}
-          restore-keys: turbo-build-test-${{ runner.os }}-
+          key: turbo-build-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-build-${{ runner.os }}-
 
       # The Clipper's build refuses to run without an API URL (wxt.config.ts).
       # Nothing here talks to it, so a placeholder in its own .env keeps the
-      # variable out of the web build's environment. It is removed before the
-      # tests, which expect the dev default (localhost) that a set variable
-      # would override.
+      # variable out of the web build's environment. The `test` job never
+      # creates it: the extension's tests expect the dev default (localhost)
+      # that a set variable would override.
       - run: printf 'VITE_API_URL=https://api.example.test/graphql\nVITE_WEB_URL=https://www.example.test\n' > apps/extension/.env
       - run: pnpm build
       # `pnpm build` builds the Clipper for Chrome; build the Safari bundle
       # too (JEF-386). Wrapping it in the Xcode app needs macOS, so that part
       # stays local (apps/extension/scripts/package-safari.sh).
       - run: pnpm --filter @trakwyn/extension build:safari
-      - run: rm apps/extension/.env
+
+  test:
+    name: Unit & component tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-test-${{ runner.os }}-
+
       - run: pnpm test
 
-      # The unit and component tiers run above, inside `pnpm test`. This one is
-      # separate because it boots apps/api itself (jest.config.js's integration
-      # project, globalSetup) — it is what validates apps/mobile's 96
-      # hand-written GraphQL documents against the real schema, so a renamed
-      # resolver field fails here instead of on a phone (JEF-300, G-3/G-5).
-      # Skipped on a pull request that touches neither the app nor the API.
-      - name: Mobile integration tests
-        if: needs.changes.outputs.mobile == 'true'
-        run: pnpm --filter @trakwyn/mobile test:integration
+  # Separate from `test` because it boots apps/api itself (jest.config.js's
+  # integration project, globalSetup) — it is what validates apps/mobile's 96
+  # hand-written GraphQL documents against the real schema, so a renamed
+  # resolver field fails here instead of on a phone (JEF-300, G-3/G-5).
+  # Skipped on a pull request that touches neither the app nor the API.
+  mobile-integration:
+    name: Mobile integration tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-project
+
+      - run: pnpm --filter @trakwyn/mobile test:integration
 
   terraform:
     name: Terraform fmt & validate (${{ matrix.root }})
@@ -291,7 +321,7 @@ jobs:
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
-  # Starts at once, without waiting for quality or build-test: it installs and
+  # Starts at once, without waiting for quality, build or test: it installs and
   # builds its own stack and uses nothing they produce. The deploy jobs still
   # wait for all three.
   e2e:
@@ -427,7 +457,19 @@ jobs:
   # failed `changes` fails it too.
   ci-ok:
     name: ci-ok
-    needs: [changes, quality, build-test, terraform, api-image, e2e, dependency-review, secret-scan]
+    needs:
+      [
+        changes,
+        quality,
+        build,
+        test,
+        mobile-integration,
+        terraform,
+        api-image,
+        e2e,
+        dependency-review,
+        secret-scan,
+      ]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -444,7 +486,7 @@ jobs:
 
   migrate-db:
     name: Run database migrations
-    needs: [quality, build-test, e2e]
+    needs: [quality, build, test, mobile-integration, e2e]
     # A push to main, and nothing else. The ref alone is not enough: for a
     # pull request that has already been merged, GitHub reports the base
     # branch as github.ref, so a pull_request run that starts just after its
@@ -467,7 +509,7 @@ jobs:
 
   deploy-api:
     name: Deploy api to Cloud Run
-    needs: [quality, build-test, migrate-db, e2e]
+    needs: [quality, build, test, mobile-integration, migrate-db, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -569,7 +611,7 @@ jobs:
 
   deploy-web:
     name: Deploy web to Vercel
-    needs: [quality, build-test, e2e]
+    needs: [quality, build, test, mobile-integration, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -590,7 +632,7 @@ jobs:
   # run. Not gated on the deploys passing, or a failed deploy would be silent.
   notify-deploy:
     name: Notify production deploy via ntfy
-    needs: [quality, build-test, e2e, migrate-db, deploy-api, deploy-web]
+    needs: [quality, build, test, mobile-integration, e2e, migrate-db, deploy-api, deploy-web]
     if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
