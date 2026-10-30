@@ -40,10 +40,14 @@ name: Release
 # "Allow GitHub Actions to create and approve pull requests". Without it the
 # job fails when it tries to open the release PR.
 #
-# PRs opened with GITHUB_TOKEN do not start other workflows, so ci.yml does
-# not run on a release PR. That is acceptable while it only edits a version
-# and a changelog; pass a GitHub App or fine-grained token as `token` if CI
-# should run on them.
+# PRs opened with GITHUB_TOKEN do not start other workflows, so ci.yml cannot
+# run on a release PR (JEF-479). The `release-pr-ci` job below posts the
+# `ci-ok` status on it instead, by a documented rule: it passes only when the
+# PR edits nothing but the files release-please writes (version.txt,
+# package.json, CHANGELOG.md and the manifest), none of which ci.yml deploys
+# on. Branch protection can therefore require `ci-ok` without a release PR
+# being stuck. Pass a GitHub App token as `token` instead, and delete that
+# job, if CI should really run on release PRs.
 
 on:
   push:
@@ -77,12 +81,57 @@ jobs:
     outputs:
       clipper_released: ${{ steps.release.outputs['apps/extension--release_created'] }}
       clipper_tag: ${{ steps.release.outputs['apps/extension--tag_name'] }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      prs: ${{ steps.release.outputs.prs }}
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Gives each release PR the `ci-ok` check that branch protection requires
+  # (JEF-479); see the note at the top of this file for why ci.yml cannot.
+  # A commit status is matched by name like a check run, so it satisfies the
+  # requirement. The rule is on the PR's files, not its branch name: anything
+  # outside what release-please writes gets a failing `ci-ok`, so a release PR
+  # someone has pushed code to still needs a person and a real CI run.
+  release-pr-ci:
+    name: ci-ok for release PRs
+    needs: release-please
+    if: needs.release-please.outputs.prs_created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PRS: ${{ needs.release-please.outputs.prs }}
+      # What a release PR may edit: each versioned app's version file and
+      # changelog, and the manifest. The server pair has no package.json
+      # entry, because that file would deploy. None of these runs ci.yml on a
+      # push (releaseVersioning.test.ts).
+      ALLOWED: '^(apps/(api|web)/(version\.txt|CHANGELOG\.md)|apps/(cli|extension|mobile)/(package\.json|CHANGELOG\.md)|\.release-please-manifest\.json)$'
+    steps:
+      - name: Post ci-ok
+        run: |
+          for number in $(jq -r '.[].number' <<<"$PRS"); do
+            sha=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" -q .head.sha)
+            other=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number/files" --paginate -q '.[].filename' \
+              | grep -Ev "$ALLOWED" || true)
+            if [ -z "$other" ]; then
+              state=success
+              description="Release PR: edits only release-managed files, so CI has nothing to run"
+            else
+              state=failure
+              description="Release PR edits files CI must check; run CI by hand"
+              echo "::error::PR #$number edits files outside the release set: $other"
+            fi
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$sha" \
+              -f state="$state" -f context=ci-ok -f description="$description"
+          done
 
   # Runs only when this push released the Clipper, so an API, web, mobile or CLI
   # release skips it. Builds from the tag release-please just created, never
@@ -109,12 +158,6 @@ jobs:
     env:
       TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}
     steps:
-      - name: Check the tag
-        run: |
-          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
-          }
-
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
@@ -136,58 +179,27 @@ jobs:
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip
 
-      - name: Check the manifest
-        run: |
-          zip=$(ls apps/extension/.output/*-chrome.zip)
-          manifest=$(unzip -p "$zip" manifest.json)
-          version=$(jq -r .version <<<"$manifest")
-          if [ "clipper-v$version" != "$TAG" ]; then
-            echo "::error::Manifest version $version does not match tag $TAG"; exit 1
-          fi
-          if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
-            echo "::error::Manifest has host_permissions"; exit 1
-          fi
-          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
-            echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
-          }
-          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_WEB_URL }}" || {
-            echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
-          }
-          echo "ZIP=$zip" >> "$GITHUB_ENV"
-
-      # A permission or content-script host added in an update disables the
-      # extension for every user until they re-approve it, and it is submitted
-      # for review below without a person looking at the package. So compare
-      # with the previous release's zip and stop if either grew.
-      - name: Check nothing was added since the previous release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          prev=$(gh release list --limit 100 --json tagName -q '.[].tagName' \
-            | grep '^clipper-v' | { cat; echo "$TAG"; } | sort -uV \
-            | grep -B1 -x "$TAG" | head -n1)
-          if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
-            echo "::error::No earlier Clipper release to compare with; release this one by hand (apps/extension/CLAUDE.md)"; exit 1
-          fi
-          mkdir -p "$RUNNER_TEMP/prev"
-          gh release download "$prev" --pattern '*-chrome.zip' --dir "$RUNNER_TEMP/prev" || {
-            echo "::error::$prev has no chrome zip to compare with; release this one by hand (apps/extension/CLAUDE.md)"; exit 1
-          }
-          old=$(unzip -p "$RUNNER_TEMP"/prev/*-chrome.zip manifest.json)
-          new=$(unzip -p "$ZIP" manifest.json)
-          added=$(jq -n --argjson old "$old" --argjson new "$new" '
-            def hosts: [.content_scripts[]?.matches[]?];
-            { permissions: (($new.permissions // []) - ($old.permissions // [])),
-              content_script_matches: (($new | hosts) - ($old | hosts)) }
-            | with_entries(select(.value | length > 0))')
-          if [ "$added" != "{}" ]; then
-            echo "::error::Added since $prev: $added. Submit this one by hand, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
-          fi
+      # The tag, the manifest, the bundle's URLs and the nothing-added-since-the-
+      # previous-release comparison are shared with the Firefox job
+      # (.github/actions/clipper-release-guard, JEF-479). A permission or
+      # content-script host added in an update disables the extension for
+      # every user until they re-approve it, and it is submitted for review
+      # below without a person looking at the package.
+      - name: Check the Chrome zip
+        id: guard
+        uses: ./.github/actions/clipper-release-guard
+        with:
+          tag: ${{ env.TAG }}
+          zip-glob: '*-chrome.zip'
+          store: Chrome
+          api-url: ${{ vars.CLIPPER_API_URL }}
+          web-url: ${{ vars.CLIPPER_WEB_URL }}
+          manual-hint: release this one by hand
 
       - name: Attach the zip to the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" "$ZIP" --clobber
+        run: gh release upload "$TAG" "${{ steps.guard.outputs.zip }}" --clobber
 
       - name: Start the Web Store submission
         env:
@@ -216,12 +228,6 @@ jobs:
     env:
       TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}
     steps:
-      - name: Check the tag
-        run: |
-          [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
-            echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
-          }
-
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
@@ -243,18 +249,24 @@ jobs:
           rm -f apps/extension/.env
           pnpm --filter @trakwyn/extension zip:firefox
 
+      - name: Check the Firefox zip
+        id: guard
+        uses: ./.github/actions/clipper-release-guard
+        with:
+          tag: ${{ env.TAG }}
+          zip-glob: '*-firefox.zip'
+          store: Firefox
+          api-url: ${{ vars.CLIPPER_API_URL }}
+          web-url: ${{ vars.CLIPPER_WEB_URL }}
+          manual-hint: submit this one to AMO by hand
+
+      # What only the Firefox manifest has to satisfy.
       - name: Check the Firefox manifest
+        env:
+          ZIP: ${{ steps.guard.outputs.zip }}
         run: |
-          zip=$(ls apps/extension/.output/*-firefox.zip)
           sources=$(ls apps/extension/.output/*-sources.zip)
-          manifest=$(unzip -p "$zip" manifest.json)
-          version=$(jq -r .version <<<"$manifest")
-          if [ "clipper-v$version" != "$TAG" ]; then
-            echo "::error::Manifest version $version does not match tag $TAG"; exit 1
-          fi
-          if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
-            echo "::error::Manifest has host_permissions"; exit 1
-          fi
+          manifest=$(unzip -p "$ZIP" manifest.json)
           # The Chrome key belongs to the Web Store listing only.
           if jq -e 'has("key")' <<<"$manifest" >/dev/null; then
             echo "::error::Firefox manifest has the Chrome key"; exit 1
@@ -267,49 +279,12 @@ jobs:
           jq -e '.browser_specific_settings.gecko.id == "clipper@trakwyn.com"' <<<"$manifest" >/dev/null || {
             echo "::error::Gecko ID is not clipper@trakwyn.com"; exit 1
           }
-          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_API_URL }}" || {
-            echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
-          }
-          unzip -p "$zip" '*.js' | grep -qF "${{ vars.CLIPPER_WEB_URL }}" || {
-            echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
-          }
-          echo "ZIP=$zip" >> "$GITHUB_ENV"
           echo "SOURCES_ZIP=$sources" >> "$GITHUB_ENV"
-
-      # As in clipper-chrome-zip: a permission or content-script host added in an
-      # update holds it for every user until they re-approve it, and nobody
-      # looks at the package before AMO's review (JEF-458). So compare with the
-      # previous release's Firefox zip (not its Chrome one, which asks for other
-      # permissions) and stop before anything is attached or submitted.
-      - name: Check nothing was added since the previous release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          prev=$(gh release list --limit 100 --json tagName -q '.[].tagName' \
-            | grep '^clipper-v' | { cat; echo "$TAG"; } | sort -uV \
-            | grep -B1 -x "$TAG" | head -n1)
-          if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
-            echo "::error::No earlier Clipper release to compare with; submit this one to AMO by hand (apps/extension/CLAUDE.md)"; exit 1
-          fi
-          mkdir -p "$RUNNER_TEMP/prev"
-          gh release download "$prev" --pattern '*-firefox.zip' --dir "$RUNNER_TEMP/prev" || {
-            echo "::error::$prev has no firefox zip to compare with; submit this one to AMO by hand (apps/extension/CLAUDE.md)"; exit 1
-          }
-          old=$(unzip -p "$RUNNER_TEMP"/prev/*-firefox.zip manifest.json)
-          new=$(unzip -p "$ZIP" manifest.json)
-          added=$(jq -n --argjson old "$old" --argjson new "$new" '
-            def hosts: [.content_scripts[]?.matches[]?];
-            { permissions: (($new.permissions // []) - ($old.permissions // [])),
-              content_script_matches: (($new | hosts) - ($old | hosts)) }
-            | with_entries(select(.value | length > 0))')
-          if [ "$added" != "{}" ]; then
-            echo "::error::Added since $prev: $added. Submit this one to AMO by hand, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
-          fi
 
       - name: Attach the zips to the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" "$ZIP" "$SOURCES_ZIP" --clobber
+        run: gh release upload "$TAG" "${{ steps.guard.outputs.zip }}" "$SOURCES_ZIP" --clobber
 
       - name: Start the AMO submission
         env:

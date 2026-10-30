@@ -35,21 +35,37 @@ name: CI & Deploy
 #      GCP_DEPLOYER_SA (deployer_service_account). No GCP key is stored:
 #      deploy-api authenticates through Workload Identity Federation, which
 #      only accepts workflows running on this repository's main branch.
+#      GCP_PROJECT_ID and GCP_WIF_PROVIDER stay repository-wide, because the
+#      pull-request jobs (api-image, e2e) read them too; GCP_DEPLOYER_SA goes
+#      in the `production` environment (step 4), which no pull request can
+#      reach.
 #   2. apps/web: the Vercel project's settings, domains and production env
 #      vars are Terraform (infra/vercel/, after infra/posthog/, JEF-363);
 #      follow infra/vercel/README.md. It stays disconnected from this repo
 #      on purpose, so only deploy-web deploys it.
-#   3. Add repo secrets for deploy-web: VERCEL_TOKEN (a Vercel access
-#      token), VERCEL_ORG_ID and VERCEL_WEB_PROJECT_ID (the team_id and
-#      project_id in infra/vercel's terraform.tfvars).
-#   4. Add repository secrets (in GitHub Settings > Secrets > Actions):
+#   3. Create the `production` environment (Settings > Environments). The
+#      deploy jobs (migrate-db, deploy-api, deploy-web) run in it, so each
+#      deploy shows under the repository's Deployments, and the secrets and
+#      variables below live there rather than repository-wide (JEF-479). It
+#      needs no approval rule or branch restriction to work; add a required
+#      reviewer later to gate deploys. The environment claim does not affect
+#      GCP: infra/gcp/wif.tf trusts the `ref` claim, which stays
+#      refs/heads/main.
+#   4. Add secrets to the `production` environment:
 #      PRODUCTION_DATABASE_URL — the production Neon Postgres *direct*
 #        (non-pooled) connection string, with ?sslmode=require. Its host
 #        is infra/neon's `host` output (JEF-379).
-#      NTFY_TOPIC — ntfy.sh topic that receives a push notification when
-#        a run on main finishes, whether the deploys succeeded or not
-#   5. Add the repository *variable* WEB_URL, the production site's public
-#      URL (https://www.trakwyn.com). deploy-web smoke tests it and rolls the
+#      VERCEL_TOKEN (a Vercel access token), VERCEL_ORG_ID and
+#        VERCEL_WEB_PROJECT_ID (the team_id and project_id in infra/vercel's
+#        terraform.tfvars) for deploy-web.
+#      and the *variable* GCP_DEPLOYER_SA (step 1). Then delete the
+#      repository-level copies of all of these.
+#   5. Add the repository *secret* NTFY_TOPIC — the ntfy.sh topic that
+#      receives a push notification when a run on main finishes, whether the
+#      deploys succeeded or not. It stays repository-wide: notify-deploy has
+#      to report a deploy that never got as far as the environment. Also add
+#      the repository *variable* WEB_URL, the production site's public URL
+#      (https://www.trakwyn.com). deploy-web smoke tests it and rolls the
 #      deploy back when it does not answer; without it the check is skipped
 #      with a warning.
 #   6. In Settings > Branches, require the `ci-ok` check on main and drop the
@@ -454,6 +470,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Holds PRODUCTION_DATABASE_URL, and puts the run under Deployments.
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -471,6 +489,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Holds GCP_DEPLOYER_SA, and puts the run under Deployments.
+    environment: production
     permissions:
       contents: read
       # Lets google-github-actions/auth request the GitHub OIDC token it
@@ -573,6 +593,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Holds the VERCEL_* secrets, and puts the run under Deployments.
+    environment: production
     steps:
       - uses: actions/checkout@v4
 

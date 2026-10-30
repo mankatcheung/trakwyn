@@ -1,0 +1,114 @@
+name: Clipper release guard
+# Run actions/checkout@v4 BEFORE this action — local composite actions cannot be
+# resolved without the repo checked out first.
+#
+# The checks both Clipper store jobs in release.yml (clipper-chrome-zip and
+# clipper-firefox-zip) run on a zip they have just built, before anything is
+# attached to the GitHub Release or submitted (JEF-479). Nobody reads the
+# package before the store's review, so these are the only checks on what
+# grew. A change to a check is made here and applies to both stores.
+#
+# What differs per store is passed in: the zip's name, and which earlier
+# release's zip to compare with. Checks only one store needs (the Firefox
+# manifest's permission list and add-on ID) stay in that job.
+description: Check a built Clipper zip against its tag and the previous release
+
+inputs:
+  tag:
+    description: The release tag the zip was built from, e.g. clipper-v1.2.0
+    required: true
+  zip-glob:
+    description: Glob, relative to apps/extension/.output, that matches the built zip, e.g. '*-chrome.zip'
+    required: true
+  store:
+    description: Store name for error messages, e.g. Chrome
+    required: true
+  api-url:
+    description: CLIPPER_API_URL, which the bundle must contain
+    required: true
+  web-url:
+    description: CLIPPER_WEB_URL, which the bundle must contain
+    required: true
+  manual-hint:
+    description: What to do when the check cannot decide, e.g. "release this one by hand"
+    required: true
+
+outputs:
+  zip:
+    description: Path of the zip that was checked
+    value: ${{ steps.manifest.outputs.zip }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check the tag
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+      run: |
+        [[ "$TAG" =~ ^clipper-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+          echo "::error::$TAG is not a clipper-v<major>.<minor>.<patch> tag"; exit 1
+        }
+
+    - name: Check the ${{ inputs.store }} manifest
+      id: manifest
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        ZIP_GLOB: ${{ inputs.zip-glob }}
+        API_URL: ${{ inputs.api-url }}
+        WEB_URL: ${{ inputs.web-url }}
+      run: |
+        # shellcheck disable=SC2086 # the glob is meant to expand
+        zip=$(ls apps/extension/.output/$ZIP_GLOB)
+        manifest=$(unzip -p "$zip" manifest.json)
+        version=$(jq -r .version <<<"$manifest")
+        if [ "clipper-v$version" != "$TAG" ]; then
+          echo "::error::Manifest version $version does not match tag $TAG"; exit 1
+        fi
+        if jq -e 'has("host_permissions")' <<<"$manifest" >/dev/null; then
+          echo "::error::Manifest has host_permissions"; exit 1
+        fi
+        unzip -p "$zip" '*.js' | grep -qF "$API_URL" || {
+          echo "::error::Bundle does not contain CLIPPER_API_URL"; exit 1
+        }
+        unzip -p "$zip" '*.js' | grep -qF "$WEB_URL" || {
+          echo "::error::Bundle does not contain CLIPPER_WEB_URL"; exit 1
+        }
+        echo "zip=$zip" >> "$GITHUB_OUTPUT"
+
+    # A permission or content-script host added in an update holds it for
+    # every user until they re-approve it, and the package goes to review
+    # without a person looking at it. So compare with the previous release's
+    # zip for this store (the stores ask for different permissions) and stop
+    # if either grew.
+    - name: Check nothing was added since the previous release
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ inputs.tag }}
+        ZIP: ${{ steps.manifest.outputs.zip }}
+        ZIP_GLOB: ${{ inputs.zip-glob }}
+        STORE: ${{ inputs.store }}
+        HINT: ${{ inputs.manual-hint }}
+      run: |
+        prev=$(gh release list --limit 100 --json tagName -q '.[].tagName' \
+          | grep '^clipper-v' | { cat; echo "$TAG"; } | sort -uV \
+          | grep -B1 -x "$TAG" | head -n1)
+        if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
+          echo "::error::No earlier Clipper release to compare with; $HINT (apps/extension/CLAUDE.md)"; exit 1
+        fi
+        mkdir -p "$RUNNER_TEMP/prev"
+        gh release download "$prev" --pattern "$ZIP_GLOB" --dir "$RUNNER_TEMP/prev" || {
+          echo "::error::$prev has no $STORE zip to compare with; $HINT (apps/extension/CLAUDE.md)"; exit 1
+        }
+        old=$(unzip -p "$RUNNER_TEMP"/prev/$ZIP_GLOB manifest.json)
+        new=$(unzip -p "$ZIP" manifest.json)
+        added=$(jq -n --argjson old "$old" --argjson new "$new" '
+          def hosts: [.content_scripts[]?.matches[]?];
+          { permissions: (($new.permissions // []) - ($old.permissions // [])),
+            content_script_matches: (($new | hosts) - ($old | hosts)) }
+          | with_entries(select(.value | length > 0))')
+        if [ "$added" != "{}" ]; then
+          echo "::error::Added since $prev: $added. $HINT, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
+        fi

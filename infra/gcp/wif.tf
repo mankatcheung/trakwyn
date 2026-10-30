@@ -31,6 +31,8 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 # The deployer is main-only: the pool now also admits pull-request tokens, so
 # the binding is on the ref, not just the repository. The provider condition
 # already limits every token to this repository, so the ref alone is enough.
+# deploy-api runs in the `production` environment, which changes the token's
+# `sub` claim but not `ref`, so this binding is unaffected (JEF-479).
 resource "google_service_account_iam_member" "github_impersonates_deployer" {
   service_account_id = google_service_account.github_deployer.name
   role               = "roles/iam.workloadIdentityUser"
