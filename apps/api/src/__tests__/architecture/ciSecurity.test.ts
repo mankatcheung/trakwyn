@@ -15,7 +15,8 @@ describe('security checks in CI', () => {
   const ci = readFileSync(join(REPO, '.github/workflows/ci.yml'), 'utf8');
 
   it('requires dependency review and the secret scan through ci-ok', () => {
-    const needs = /^ {4}needs: \[([^\]]*)\]/m.exec(ci.slice(ci.indexOf('\n  ci-ok:')));
+    // Prettier wraps a long list onto several lines, so `\s*` spans the break.
+    const needs = /^ {4}needs:\s*\[([^\]]*)\]/m.exec(ci.slice(ci.indexOf('\n  ci-ok:')));
     expect(needs?.[1].split(',').map((n) => n.trim())).toEqual(
       expect.arrayContaining(['dependency-review', 'secret-scan']),
     );
