@@ -190,7 +190,7 @@ Also check `/mcp` with an API token. Cookie login and chat can't be checked here
 
 ### Base images (JEF-406)
 
-CI builds and tests on `node` and `postgres`. Pulling them anonymously from a public registry fails with `429` when other runners on the same IP have used up its limit, so they are copied once into this project's own `base-images` repository and pulled from there. `terraform apply` creates the repository and grants the deployer service account write access to it; nothing else is needed on the GitHub side, because the `GCP_*` variables above are the ones the mirror uses.
+CI builds and tests on `node` and `postgres`, and `infra/base-images.txt` also pins `buildkit` (JEF-409), the image `docker/setup-buildx-action` would otherwise pull anonymously from Docker Hub. The mirror workflow itself starts no BuildKit container: `docker buildx imagetools` runs on the runner's default builder. Pulling them anonymously from a public registry fails with `429` when other runners on the same IP have used up its limit, so they are copied once into this project's own `base-images` repository and pulled from there. `terraform apply` creates the repository and grants the deployer service account write access to it; nothing else is needed on the GitHub side, because the `GCP_*` variables above are the ones the mirror uses.
 
 `infra/base-images.txt` pins each image by tag and digest. The `Mirror base images` workflow copies exactly those digests into the repository and fails if a copy does not keep its digest. It runs when the file changes on `main`, on demand (Actions → Mirror base images → Run workflow) and weekly. It runs on `main` only, because it writes with the deployer account and Workload Identity Federation only lets `main` act as that.
 
