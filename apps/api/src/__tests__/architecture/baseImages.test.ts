@@ -264,7 +264,23 @@ describe('base image cache (JEF-474)', () => {
   });
 
   it('skips the registry login when the cache hit covers a preloading job', () => {
-    expect(action).toContain("if: inputs.preload == '' || steps.cache.outputs.cache-hit != 'true'");
+    expect(action).toContain("steps.cache.outputs.cache-hit != 'true'");
+    expect(action).toMatch(
+      /id: auth\n\s+if: inputs\.login == 'true' && \(inputs\.preload == '' && inputs\.oci == ''/,
+    );
+  });
+
+  it('puts both lists in the cache key, so changing what a job asks for cannot reuse a stale entry', () => {
+    expect(action).toMatch(/key: .*inputs\.preload.*inputs\.oci.*hashFiles/);
+  });
+
+  it('hands buildx the node image as an OCI layout named like the Dockerfile FROM, not as a pull', () => {
+    expect(action).toContain('"${name^^}_IMAGE=$name-base"');
+    expect(action).toContain('"${name^^}_BUILD_CONTEXT=$name-base=oci-layout://$layout:latest"');
+    expect(action).toContain('skopeo copy');
+    // skopeo rejects a reference carrying both tag and digest (PR #1157's first run).
+    expect(action).toContain('ref="${repo%:*}@${ref#*@}"');
+    expect(read('apps/api/Dockerfile').match(/^FROM \$\{NODE_IMAGE\}/gm)).toHaveLength(2);
   });
 
   it('runs the preloaded image under its local name, because a digest reference saves nameless', () => {
@@ -276,6 +292,25 @@ describe('base image cache (JEF-474)', () => {
     const start = ci.indexOf('\n  e2e:');
     const e2e = ci.slice(start, ci.indexOf('\n  deploy-api:', start));
     expect(e2e).toMatch(/preload: postgres/);
+  });
+
+  const job = (name: string): string => {
+    const start = ci.indexOf(`\n  ${name}:`);
+    expect(start, name).toBeGreaterThanOrEqual(0);
+    const next = ci.slice(start + 1).search(/\n {2}[a-z0-9-]+:\n/);
+    return ci.slice(start, next < 0 ? undefined : start + 1 + next);
+  };
+
+  it.each(['api-image', 'deploy-api'])('%s builds on the cached node layout', (name) => {
+    expect(job(name)).toMatch(/oci: node/);
+    expect(job(name)).toContain('build-contexts: ${{ env.NODE_BUILD_CONTEXT }}');
+  });
+
+  it('deploy-api keeps its own login, which it needs to push, and the action does not repeat it', () => {
+    const deploy = job('deploy-api');
+    expect(deploy).toContain('docker/login-action');
+    expect(deploy).toContain("login: 'false'");
+    expect(deploy).toContain('vars.GCP_DEPLOYER_SA');
   });
 });
 

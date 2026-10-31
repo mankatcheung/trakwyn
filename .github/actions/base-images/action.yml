@@ -24,9 +24,22 @@ inputs:
       `docker run`. They are kept in the Actions cache as a `docker save`
       tarball keyed on infra/base-images.txt, so only a changed pin pulls from
       Artifact Registry (JEF-474), and the matching *_IMAGE variable points at
-      the local copy. Leave empty for jobs that only hand the reference to
-      buildx, which cannot see the daemon's images.
+      the local copy.
     default: ''
+  oci:
+    description: >
+      Space-separated pin names (e.g. `node`) the job hands to buildx as a
+      base image. buildx cannot see the daemon's images, so each is kept in
+      the Actions cache as an OCI layout directory instead, and the action
+      exports `<NAME>_IMAGE=<name>-base` (what the Dockerfile's FROM names) and
+      `<NAME>_BUILD_CONTEXT`, which goes to build-push-action's
+      `build-contexts` (JEF-474). A hit neither logs in nor pulls.
+    default: ''
+  login:
+    description: >
+      Set to `false` when the job has already logged in to the registry (the
+      deploy job needs that to push), so a cache miss does not log in twice.
+    default: 'true'
 
 runs:
   using: composite
@@ -42,16 +55,16 @@ runs:
         } >> "$GITHUB_ENV"
 
     - id: cache
-      if: inputs.preload != ''
+      if: inputs.preload != '' || inputs.oci != ''
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/base-images-cache
-        key: base-images-${{ runner.os }}-${{ inputs.preload }}-${{ hashFiles('infra/base-images.txt') }}
+        key: base-images-${{ runner.os }}-${{ inputs.preload }}-${{ inputs.oci }}-${{ hashFiles('infra/base-images.txt') }}
 
     # Nothing below talks to the registry when the cache already holds every
-    # preloaded image and the job does not hand a reference to buildx.
+    # image the job asked for.
     - id: auth
-      if: inputs.preload == '' || steps.cache.outputs.cache-hit != 'true'
+      if: inputs.login == 'true' && (inputs.preload == '' && inputs.oci == '' || steps.cache.outputs.cache-hit != 'true')
       uses: google-github-actions/auth@v2
       with:
         workload_identity_provider: ${{ inputs.workload-identity-provider }}
@@ -89,4 +102,36 @@ runs:
             docker save --output "$tarball" "$local_ref"
           fi
           echo "${name^^}_IMAGE=$local_ref" >> "$GITHUB_ENV"
+        done
+
+    - name: Load or fetch the images for buildx
+      if: inputs.oci != ''
+      shell: bash
+      env:
+        DEST: ${{ inputs.registry }}/${{ inputs.project-id }}/base-images
+        HIT: ${{ steps.cache.outputs.cache-hit }}
+        OCI: ${{ inputs.oci }}
+        CACHE_DIR: ${{ runner.temp }}/base-images-cache
+      run: |
+        if [[ "$HIT" != "true" ]] && ! command -v skopeo >/dev/null; then
+          sudo apt-get install --yes --no-install-recommends skopeo
+        fi
+        for name in $OCI; do
+          layout="$CACHE_DIR/oci/$name"
+          if [[ "$HIT" != "true" ]]; then
+            # skopeo copies by the pinned digest and reuses the login above.
+            # It rejects a reference with both tag and digest, so drop the tag.
+            ref="$(.github/scripts/base-image-ref.sh "$name" "$DEST")"
+            repo="${ref%%@*}"
+            ref="${repo%:*}@${ref#*@}"
+            mkdir -p "$CACHE_DIR/oci"
+            skopeo copy --authfile "$HOME/.docker/config.json" "docker://$ref" "oci:$layout:latest"
+          fi
+          # The Dockerfile says `FROM ${NODE_IMAGE}`; a build context of the
+          # same name replaces that pull with the layout. A name that fails to
+          # match makes buildx pull a nonexistent image, so it fails loudly.
+          {
+            echo "${name^^}_IMAGE=$name-base"
+            echo "${name^^}_BUILD_CONTEXT=$name-base=oci-layout://$layout:latest"
+          } >> "$GITHUB_ENV"
         done

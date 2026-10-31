@@ -323,6 +323,7 @@ jobs:
           project-id: ${{ vars.GCP_PROJECT_ID }}
           workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
           service-account: ${{ vars.GCP_CI_READER_SA }}
+          oci: node
 
       - uses: docker/setup-buildx-action@v3
 
@@ -334,6 +335,7 @@ jobs:
           file: apps/api/Dockerfile
           push: false
           build-args: NODE_IMAGE=${{ env.NODE_IMAGE }}
+          build-contexts: ${{ env.NODE_BUILD_CONTEXT }}
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
@@ -562,11 +564,15 @@ jobs:
           password: ${{ steps.auth.outputs.access_token }}
 
       # The deployer account can read the base-images repo, so the build uses
-      # the same mirrored, digest-pinned node image as the PR check (JEF-407).
-      - name: Resolve the mirrored node image
-        env:
-          DEST: ${{ env.REGISTRY }}/${{ vars.GCP_PROJECT_ID }}/base-images
-        run: echo "NODE_IMAGE=$(.github/scripts/base-image-ref.sh node "$DEST")" >> "$GITHUB_ENV"
+      # the same mirrored, digest-pinned node image as the PR check, from the
+      # same cache (JEF-407, JEF-474). The login above already covers a miss.
+      - uses: ./.github/actions/base-images
+        with:
+          project-id: ${{ vars.GCP_PROJECT_ID }}
+          workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service-account: ${{ vars.GCP_DEPLOYER_SA }}
+          oci: node
+          login: 'false'
 
       - uses: docker/setup-buildx-action@v3
 
@@ -579,6 +585,7 @@ jobs:
           build-args: |
             NODE_IMAGE=${{ env.NODE_IMAGE }}
             APP_RELEASE=${{ github.sha }}
+          build-contexts: ${{ env.NODE_BUILD_CONTEXT }}
           cache-from: type=gha,scope=api-image
           cache-to: type=gha,mode=max,scope=api-image
 
