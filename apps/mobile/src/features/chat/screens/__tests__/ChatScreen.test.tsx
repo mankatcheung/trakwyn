@@ -1,5 +1,7 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { CHAT_INPUT_MAX_LINES } from '../../../../constants';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '../../../../i18n';
 
@@ -120,6 +122,27 @@ describe('ChatScreen', () => {
           conversationId: 'conv-1',
           message: 'What should I ask in my interview?',
         }),
+      ),
+    );
+  });
+
+  it('sends a multi-line message intact and caps the composer at ten lines (JEF-481)', async () => {
+    mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
+    mockedStreamChatMessage.mockResolvedValueOnce(undefined);
+
+    const { getByTestId } = await renderScreen('conv-1');
+    const input = getByTestId('chat-input');
+
+    expect(input.props.multiline).toBe(true);
+    const { maxHeight, lineHeight, paddingVertical } = StyleSheet.flatten(input.props.style);
+    expect(maxHeight).toBe(lineHeight * CHAT_INPUT_MAX_LINES + paddingVertical * 2);
+
+    await fireEvent.changeText(input, 'First line\nSecond line');
+    await fireEvent.press(getByTestId('chat-send-button'));
+
+    await waitFor(() =>
+      expect(mockedStreamChatMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'First line\nSecond line' }),
       ),
     );
   });

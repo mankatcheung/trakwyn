@@ -29,6 +29,9 @@ export const OAUTH_MOBILE_CALLBACK_URL = 'trakwyn://oauth-callback';
  */
 export const CHAT_MESSAGE_MAX_CHARS = 8000;
 
+/** The chat composer grows with its content up to this many lines, then scrolls (JEF-481). */
+export const CHAT_INPUT_MAX_LINES = 10;
+
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   VALIDATION: 'VALIDATION',
