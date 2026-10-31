@@ -248,6 +248,36 @@ describe('DrizzleMockInterviewQuestionRepository', () => {
     });
   });
 
+  describe('update (talking points)', () => {
+    const seed = () =>
+      repo.create({
+        mockQuestionsPerRoundLimit: CONTENT_LIMITS.MOCK_QUESTIONS_PER_ROUND,
+        id: 'q1',
+        interviewRoundId: 'r1',
+        question: 'One',
+      });
+
+    it('stores the points with the time they were generated', async () => {
+      await seed();
+
+      const updated = await repo.update('q1', { talkingPoints: '- Mention Acme (Engineer)' });
+
+      expect(updated.talkingPoints).toBe('- Mention Acme (Engineer)');
+      expect(updated.talkingPointsGeneratedAt).toBeInstanceOf(Date);
+    });
+
+    it('clears both fields when set to null, and leaves them alone when omitted', async () => {
+      await seed();
+      await repo.update('q1', { talkingPoints: '- Mention Acme (Engineer)' });
+
+      const untouched = await repo.update('q1', { answer: 'A' });
+      expect(untouched.talkingPoints).toBe('- Mention Acme (Engineer)');
+
+      const cleared = await repo.update('q1', { talkingPoints: null });
+      expect(cleared).toMatchObject({ talkingPoints: null, talkingPointsGeneratedAt: null });
+    });
+  });
+
   describe('update (answer source)', () => {
     it('keeps `ai` when only the answer text changes and sets it when asked', async () => {
       await repo.create({

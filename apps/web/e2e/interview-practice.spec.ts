@@ -72,7 +72,8 @@ for (const viewport of VIEWPORTS) {
       await page.getByLabel(/what should the questions focus on/i).fill('system design');
       await page.getByRole('button', { name: 'Generate', exact: true }).click();
       await expect(page.getByText(/Tell me about a system you designed/)).toBeVisible();
-      await expect(page.getByRole('checkbox')).toHaveCount(3);
+      // The profile switch is a checkbox too; the suggestions are the ones in the list.
+      await expect(page.getByRole('list').getByRole('checkbox')).toHaveCount(3);
       await shot(page, `${viewport.name}-2-suggestions`);
 
       await page
@@ -110,6 +111,36 @@ for (const viewport of VIEWPORTS) {
       await page.getByRole('button', { name: 'Generate', exact: true }).click();
 
       await expect(page.getByRole('alert')).toContainText(/AI API key/i);
+    });
+
+    test('says so, rather than inventing experience, when the profile has nothing relevant (JEF-394)', async ({
+      page,
+    }) => {
+      await openInterviewsAt(page, viewport, { withAiKey: true });
+      await addRoundAndOpenPractice(page);
+
+      // The profile is off until the user switches it on, and the dialog says where it goes.
+      await page.getByRole('button', { name: 'Generate questions' }).click();
+      const useProfile = page.getByRole('checkbox', { name: /use my profile/i });
+      await expect(useProfile).not.toBeChecked();
+      await expect(page.getByText(/sent to your AI provider/i)).toBeVisible();
+      await useProfile.check();
+      await page.getByRole('button', { name: 'Generate', exact: true }).click();
+      await expect(page.getByText(/had nothing to work from/i)).toBeVisible();
+      await shot(page, `${viewport.name}-5-tailored-empty-profile`);
+      await page.getByRole('button', { name: 'Discard' }).click();
+
+      // Talking points need a source: with an empty profile there is nothing to cite.
+      await page.getByRole('button', { name: 'Add practice question' }).click();
+      await page.getByLabel('Question', { exact: true }).fill('Tell me about a migration you led');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+      await page.getByRole('button', { name: 'Talking points', exact: true }).click();
+      await expect(page.getByRole('checkbox', { name: /use my profile/i })).toBeChecked();
+      await page.getByRole('button', { name: 'Generate talking points' }).click();
+
+      await expect(page.getByText(/nothing in your profile or resume is relevant/i)).toBeVisible();
+      await expect(page.getByText('AI generated', { exact: true })).toHaveCount(0);
+      await shot(page, `${viewport.name}-6-talking-points-nothing-relevant`);
     });
 
     test('adds a practice question by hand, with no AI label', async ({ page }) => {

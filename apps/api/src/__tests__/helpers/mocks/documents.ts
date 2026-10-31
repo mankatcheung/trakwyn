@@ -20,6 +20,14 @@ import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextE
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
 import type { IStorageProvider, StoredObject } from '#src/use-cases/ports/IStorageProvider.js';
 import type { IDocumentFileLinks } from '#src/use-cases/ports/IDocumentFileLinks.js';
+import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
+
+export const makeExtractDocumentTextUseCase = (
+  overrides?: Partial<IExtractDocumentTextUseCase>,
+): IExtractDocumentTextUseCase => ({
+  execute: vi.fn().mockResolvedValue({ text: '' }),
+  ...overrides,
+});
 
 export const makeDocumentRepository = (
   overrides?: Partial<IDocumentRepository>,

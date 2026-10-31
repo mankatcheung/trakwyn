@@ -7,6 +7,7 @@ import { DeleteMockInterviewQuestionUseCase } from '#src/use-cases/mockInterview
 import { ReorderMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/ReorderMockInterviewQuestionsUseCase.js';
 import { GenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockQuestionsUseCase.js';
 import { GenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockAnswerUseCase.js';
+import { GenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateTalkingPointsUseCase.js';
 
 import type { Cradle } from '../types.js';
 
@@ -30,6 +31,9 @@ export const mockInterviews = {
     lifetime: Lifetime.TRANSIENT,
   }),
   generateMockAnswerUseCase: asClass(GenerateMockAnswerUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  generateTalkingPointsUseCase: asClass(GenerateTalkingPointsUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
 } satisfies NameAndRegistrationPair<Cradle>;

@@ -80,5 +80,16 @@
   "practiceLimitTitle": "已达练习上限",
   "practiceLimitReached": "本轮面试的练习问题已达上限 {{max}} 个。",
   "deletePracticeTitle": "删除练习问题",
-  "couldNotGenerateTitle": "无法生成"
+  "couldNotGenerateTitle": "无法生成",
+  "backgroundLegend": "AI 可以使用的个人信息",
+  "useMyProfile": "使用我的个人资料（工作经历、教育背景、技能）",
+  "useResume": "使用已上传的简历",
+  "noResume": "不使用简历",
+  "backgroundPrivacy": "这些内容会发送给你的 AI 服务商。AI 被要求只使用其中的内容。",
+  "noBackgroundNote": "你的个人资料和简历中没有可参考的内容，因此这些问题不是针对你定制的。",
+  "talkingPoints": "要点提示",
+  "regenerateTalkingPoints": "重新生成要点提示",
+  "generateTalkingPoints": "生成要点提示",
+  "talkingPointsGeneratedOn": "生成于 {{date}}",
+  "talkingPointsNothingRelevant": "你的个人资料或简历中没有与这个问题相关的内容，因此没有生成要点提示。"
 }

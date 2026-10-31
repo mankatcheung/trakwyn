@@ -80,5 +80,16 @@
   "practiceLimitTitle": "已達練習上限",
   "practiceLimitReached": "本輪面試的練習問題已達上限 {{max}} 個。",
   "deletePracticeTitle": "刪除練習問題",
-  "couldNotGenerateTitle": "無法產生"
+  "couldNotGenerateTitle": "無法產生",
+  "backgroundLegend": "AI 可以使用的個人資訊",
+  "useMyProfile": "使用我的個人檔案（工作經歷、學歷、技能）",
+  "useResume": "使用已上傳的履歷",
+  "noResume": "不使用履歷",
+  "backgroundPrivacy": "這些內容會傳送給你的 AI 服務供應商。AI 被要求只使用其中的內容。",
+  "noBackgroundNote": "你的個人檔案和履歷中沒有可參考的內容，因此這些問題不是為你量身打造的。",
+  "talkingPoints": "談話要點",
+  "regenerateTalkingPoints": "重新產生談話要點",
+  "generateTalkingPoints": "產生談話要點",
+  "talkingPointsGeneratedOn": "產生於 {{date}}",
+  "talkingPointsNothingRelevant": "你的個人檔案或履歷中沒有與這個問題相關的內容，因此沒有產生談話要點。"
 }

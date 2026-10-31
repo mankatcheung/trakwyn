@@ -78,6 +78,8 @@ export const makeMockInterviewQuestion = (
   question: 'Walk me through a system you designed',
   answer: null,
   answerSource: 'user',
+  talkingPoints: null,
+  talkingPointsGeneratedAt: null,
   position: 0,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

@@ -40,6 +40,7 @@ import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { AiGeneratedBadge } from '../components/AiGeneratedBadge';
 import { AnswerDraftModal } from '../components/AnswerDraftModal';
 import { GenerateQuestionsModal } from '../components/GenerateQuestionsModal';
+import { TalkingPointsSection } from '../components/TalkingPointsSection';
 
 const EMPTY_FORM: InterviewQuestionFormData = { question: '', answer: '' };
 
@@ -323,6 +324,11 @@ export function MockInterviewQuestionsScreen() {
                   </View>
                 </View>
               )}
+              <TalkingPointsSection
+                applicationId={applicationId}
+                roundId={roundId}
+                question={question}
+              />
               <View style={styles.cardActions}>
                 <IconButton
                   icon={ChevronUpIcon}

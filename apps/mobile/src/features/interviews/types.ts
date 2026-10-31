@@ -74,6 +74,9 @@ export interface MockInterviewQuestion {
   question: string;
   answer: string | null;
   answerSource: AnswerSource;
+  /** AI generated bullets, one per line, each citing the experience it came from (JEF-394). */
+  talkingPoints: string | null;
+  talkingPointsGeneratedAt: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -83,10 +86,22 @@ export interface GeneratedMockQuestions {
   suggestions: string[];
   usedJobDescription: boolean;
   usedBriefing: boolean;
+  usedProfile: boolean;
+  usedDocument: boolean;
 }
 
 export interface GeneratedMockAnswer {
   answer: string;
   usedJobDescription: boolean;
   usedBriefing: boolean;
+  usedProfile: boolean;
+  usedDocument: boolean;
+}
+
+export interface GeneratedMockTalkingPoints {
+  question: MockInterviewQuestion;
+  /** The background held nothing relevant; nothing was saved. */
+  nothingRelevant: boolean;
+  usedProfile: boolean;
+  usedDocument: boolean;
 }

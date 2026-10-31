@@ -113,6 +113,15 @@ Reads an uploaded CV into work experience, education and skills for the user to 
 - **Imports are not de-duplicated by the API.** `ParseCvUseCase` flags `alreadyInProfile` (company + title + start month, institution + degree, skill name, all case-insensitive) so the review step starts those unticked, and the web dialog guards a double submit; calling `importCvProfile` twice with the same rows adds them twice.
 - The fake LLM route answers the CV prompt with a canned profile, found by `CV_IMPORT_PROMPT_TASK` in the system prompt, so e2e needs no key (`e2e/cv-import.spec.ts`).
 
+## Practice questions tailored to the candidate (JEF-394)
+
+The JEF-393 generators can draw on the user's own background, and a third action writes talking points.
+
+- **Opt-in, because it goes to the user's own AI provider.** `GenerateMockQuestionsUseCase` and `GenerateMockAnswerUseCase` take `useProfile` (default `false`) and an optional `documentId`; `buildCandidateBackground` (`use-cases/mockInterviewQuestions/`) loads the profile through `loadUserProfile`/`formatUserProfile` and the document through `ExtractDocumentTextUseCase`, whose ownership check is the only one (a foreign id is `FORBIDDEN`/`NOT_FOUND` before the model is called). Each is capped (`AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS`, `..._RESUME_MAX_CHARS`) and fenced with `wrapUntrustedContent`. Both outputs report `usedProfile`/`usedDocument` so a client can say when the background was empty.
+- **Talking points are saved on the question** (`MockInterviewQuestion.talkingPoints` plus `talkingPointsGeneratedAt`, stamped by the repository on write, cleared by `null`). `GenerateTalkingPointsUseCase` uses the profile by default, calls no model when there is no background, and asks for `{point, source}` pairs. **A point with no cited source is dropped,** and an empty result is `nothingRelevant: true` with nothing saved. The saved text is one `- point (source)` line each.
+- **Chat and MCP:** `generate_mock_talking_points` is a `read` tool like the other generators because chat and MCP call it with `save: false`: it returns the points and writes nothing (a read-scoped token must not write), and only the GraphQL mutation saves. The other two take `useProfile`, default false; talking points default true. Their descriptions say the data goes to the user's own provider.
+- The fake LLM route answers the talking points prompt (`MOCK_INTERVIEW_PROMPT_TASK.TALKING_POINTS`) with cited points, so e2e needs no key.
+
 ## Plans and entitlements (JEF-344)
 
 Free and Pro. This is the tiering half; taking payment is JEF-426 (see Billing below), which sets the same user fields from a provider's webhook.

@@ -159,6 +159,16 @@ export const TOOL_CATALOGUE = [
         interviewRoundId: { type: 'string', description: 'The interview round ID' },
         prompt: { type: 'string', description: 'What the questions should focus on (optional)' },
         count: { type: 'number', description: 'How many to suggest, 1 to 10 (default 5)' },
+        useProfile: {
+          type: 'boolean',
+          description:
+            "Set true to ground the result in the user's profile (work experience, education, skills). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
+        },
+        documentId: {
+          type: 'string',
+          description:
+            "The ID of one of the user's own uploaded documents (from list_documents) whose text should be used as their resume (optional)",
+        },
       },
       required: ['interviewRoundId'],
     },
@@ -176,6 +186,41 @@ export const TOOL_CATALOGUE = [
           description: 'The practice question ID (from list_mock_interview_questions)',
         },
         prompt: { type: 'string', description: 'How the answer should be shaped (optional)' },
+        useProfile: {
+          type: 'boolean',
+          description:
+            "Set true to ground the result in the user's profile (work experience, education, skills). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
+        },
+        documentId: {
+          type: 'string',
+          description:
+            "The ID of one of the user's own uploaded documents (from list_documents) whose text should be used as their resume (optional)",
+        },
+      },
+      required: ['mockInterviewQuestionId'],
+    },
+  },
+  {
+    access: 'read',
+    name: 'generate_mock_talking_points',
+    description:
+      "Suggest short talking points for one practice question, each tied to an entry of the user's own experience. Returns them only and saves nothing; show them to the user. Uses the user's profile by default (it is sent to their own AI provider); pass useProfile false and a documentId to use only an uploaded resume. Says so, and saves nothing, when nothing in their background is relevant.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mockInterviewQuestionId: {
+          type: 'string',
+          description: 'The practice question ID (from list_mock_interview_questions)',
+        },
+        useProfile: {
+          type: 'boolean',
+          description: "Use the user's profile as the source (default true)",
+        },
+        documentId: {
+          type: 'string',
+          description:
+            "The ID of one of the user's own uploaded documents (from list_documents) to use as their resume, alongside or instead of the profile (optional)",
+        },
       },
       required: ['mockInterviewQuestionId'],
     },

@@ -233,6 +233,7 @@ import type { DeleteMockInterviewQuestionUseCase } from '#src/use-cases/mockInte
 import type { ReorderMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/ReorderMockInterviewQuestionsUseCase.js';
 import type { GenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockQuestionsUseCase.js';
 import type { GenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockAnswerUseCase.js';
+import type { GenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateTalkingPointsUseCase.js';
 import type { GetActivityLogsUseCase } from '#src/use-cases/activityLogs/GetActivityLogsUseCase.js';
 import type { GetLoginHistoryUseCase } from '#src/use-cases/loginEvents/GetLoginHistoryUseCase.js';
 import type { GetSecurityActivityUseCase } from '#src/use-cases/securityEvents/GetSecurityActivityUseCase.js';
@@ -443,6 +444,7 @@ export interface Cradle {
   generateCompanyBriefingRateLimiter: IRateLimiter;
   generateMockQuestionsRateLimiter: IRateLimiter;
   generateMockAnswerRateLimiter: IRateLimiter;
+  generateMockTalkingPointsRateLimiter: IRateLimiter;
   testLlmApiKeyRateLimiter: IRateLimiter;
   updatePasswordRateLimiter: IRateLimiter;
   requestEmailChangeRateLimiter: IRateLimiter;
@@ -641,6 +643,7 @@ export interface Cradle {
   reorderMockInterviewQuestionsUseCase: ReorderMockInterviewQuestionsUseCase;
   generateMockQuestionsUseCase: GenerateMockQuestionsUseCase;
   generateMockAnswerUseCase: GenerateMockAnswerUseCase;
+  generateTalkingPointsUseCase: GenerateTalkingPointsUseCase;
   getActivityLogsUseCase: GetActivityLogsUseCase;
   getLoginHistoryUseCase: GetLoginHistoryUseCase;
   getSecurityActivityUseCase: GetSecurityActivityUseCase;

@@ -14,8 +14,10 @@ jest.mock('../../hooks/useMockInterviewQuestionMutations', () => ({
   useReorderMockInterviewQuestions: jest.fn(),
   useGenerateMockInterviewAnswer: jest.fn(),
   useGenerateMockInterviewQuestions: jest.fn(),
+  useGenerateMockTalkingPoints: jest.fn(),
   useAddMockInterviewQuestions: jest.fn(),
 }));
+jest.mock('../../../documents/hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
   Stack: { Screen: () => null },
@@ -31,9 +33,11 @@ import {
   useDeleteMockInterviewQuestion,
   useGenerateMockInterviewAnswer,
   useGenerateMockInterviewQuestions,
+  useGenerateMockTalkingPoints,
   useReorderMockInterviewQuestions,
   useUpdateMockInterviewQuestion,
 } from '../../hooks/useMockInterviewQuestionMutations';
+import { useDocuments } from '../../../documents/hooks/useDocumentQueries';
 import { MockInterviewQuestionsScreen } from '../MockInterviewQuestionsScreen';
 import type {
   GeneratedMockAnswer,
@@ -53,6 +57,8 @@ const mockedUseReorder = jest.mocked(useReorderMockInterviewQuestions);
 const mockedUseGenerateAnswer = jest.mocked(useGenerateMockInterviewAnswer);
 const mockedUseGenerateQuestions = jest.mocked(useGenerateMockInterviewQuestions);
 const mockedUseAdd = jest.mocked(useAddMockInterviewQuestions);
+const mockedUseTalkingPoints = jest.mocked(useGenerateMockTalkingPoints);
+const mockedUseDocuments = jest.mocked(useDocuments);
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockedUseTheme = jest.mocked(useTheme);
 
@@ -78,6 +84,8 @@ const makeQuestion = (overrides: Partial<MockInterviewQuestion> = {}): MockInter
   question: 'Describe a hard bug.',
   answer: 'A race in the cache layer.',
   answerSource: 'user',
+  talkingPoints: null,
+  talkingPointsGeneratedAt: null,
   position: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -100,6 +108,8 @@ const GENERATED: GeneratedMockQuestions = {
   suggestions: ['Suggested one?', 'Suggested two?', 'Suggested three?'],
   usedJobDescription: true,
   usedBriefing: true,
+  usedProfile: false,
+  usedDocument: false,
 };
 
 const createMutate = jest.fn();
@@ -109,6 +119,7 @@ const reorderMutate = jest.fn();
 const generateAnswerMutate = jest.fn();
 const generateQuestionsMutate = jest.fn();
 const addMutate = jest.fn();
+const talkingPointsMutate = jest.fn();
 
 function givenQuestions(questions: MockInterviewQuestion[], round: InterviewRound = makeRound()) {
   mockedUseRounds.mockReturnValue({ data: [round] } as never);
@@ -123,7 +134,7 @@ function givenQuestions(questions: MockInterviewQuestion[], round: InterviewRoun
 /** The next generate call succeeds with this result, as the mutation's own callback would. */
 function givenGeneratedQuestions(result: GeneratedMockQuestions = GENERATED) {
   generateQuestionsMutate.mockImplementation(
-    (_prompt: string, options?: { onSuccess?: (r: GeneratedMockQuestions) => void }) =>
+    (_args: unknown, options?: { onSuccess?: (r: GeneratedMockQuestions) => void }) =>
       options?.onSuccess?.(result),
   );
 }
@@ -161,6 +172,28 @@ describe('MockInterviewQuestionsScreen', () => {
     } as never);
     mockedUseGenerateQuestions.mockReturnValue({
       mutate: generateQuestionsMutate,
+      isPending: false,
+      isError: false,
+      error: null,
+      reset: jest.fn(),
+    } as never);
+    mockedUseDocuments.mockReturnValue({
+      data: [
+        {
+          id: 'doc-1',
+          applicationId: 'app-1',
+          name: 'My CV.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 1,
+          url: 'http://x',
+          documentType: 'resume',
+          version: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    } as never);
+    mockedUseTalkingPoints.mockReturnValue({
+      mutate: talkingPointsMutate,
       isPending: false,
       isError: false,
       error: null,
@@ -271,7 +304,10 @@ describe('MockInterviewQuestionsScreen', () => {
       await fireEvent.changeText(getByTestId('generate-prompt-input'), 'system design');
       await fireEvent.press(getByTestId('generate-submit-button'));
 
-      expect(generateQuestionsMutate).toHaveBeenCalledWith('system design', expect.any(Object));
+      expect(generateQuestionsMutate).toHaveBeenCalledWith(
+        { prompt: 'system design', useProfile: false, documentId: null },
+        expect.any(Object),
+      );
       for (const index of [0, 1, 2]) {
         expect(getByTestId(`suggestion-${index}`).props.accessibilityState.checked).toBe(true);
       }
@@ -383,6 +419,8 @@ describe('MockInterviewQuestionsScreen', () => {
         answer: 'A drafted answer.',
         usedJobDescription: true,
         usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
       });
       const { getByTestId } = await renderScreen();
 
@@ -399,6 +437,8 @@ describe('MockInterviewQuestionsScreen', () => {
         answer: 'A drafted answer.',
         usedJobDescription: true,
         usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
       });
       const { getByTestId } = await renderScreen();
       await fireEvent.press(getByTestId('generate-answer-q3'));
@@ -421,6 +461,8 @@ describe('MockInterviewQuestionsScreen', () => {
         answer: 'A drafted answer.',
         usedJobDescription: true,
         usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
       });
       const { getByTestId, queryByTestId } = await renderScreen();
       await fireEvent.press(getByTestId('generate-answer-q3'));
@@ -436,6 +478,8 @@ describe('MockInterviewQuestionsScreen', () => {
         answer: 'First attempt.',
         usedJobDescription: true,
         usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
       });
       const { getByTestId } = await renderScreen();
       await fireEvent.press(getByTestId('generate-answer-q3'));
@@ -443,6 +487,8 @@ describe('MockInterviewQuestionsScreen', () => {
         answer: 'Second attempt.',
         usedJobDescription: true,
         usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
       });
 
       await fireEvent.press(getByTestId('answer-draft-regenerate-button'));
@@ -486,6 +532,91 @@ describe('MockInterviewQuestionsScreen', () => {
 
       expect(reorderMutate).toHaveBeenCalledWith(['q2', 'q1', 'q3'], expect.any(Object));
       expect(getByTestId('move-practice-down-q3').props.accessibilityState?.disabled).toBeTruthy();
+    });
+  });
+
+  describe('tailoring to the user’s background (JEF-394)', () => {
+    it('keeps the profile off until it is switched on, then sends it with the chosen resume', async () => {
+      givenGeneratedQuestions();
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('generate-questions-button'));
+      expect(getByTestId('background-profile-switch').props.value).toBe(false);
+
+      await fireEvent(getByTestId('background-profile-switch'), 'valueChange', true);
+      await fireEvent.press(getByTestId('background-resume-doc-1'));
+      await fireEvent.press(getByTestId('generate-submit-button'));
+
+      expect(generateQuestionsMutate).toHaveBeenCalledWith(
+        { prompt: '', useProfile: true, documentId: 'doc-1' },
+        expect.any(Object),
+      );
+    });
+
+    it('says when the profile and resume gave the AI nothing to work from', async () => {
+      givenGeneratedQuestions();
+      const { getByTestId, getByText } = await renderScreen();
+      await fireEvent.press(getByTestId('generate-questions-button'));
+      await fireEvent(getByTestId('background-profile-switch'), 'valueChange', true);
+
+      await fireEvent.press(getByTestId('generate-submit-button'));
+
+      expect(getByText(/had nothing to work from/i)).toBeTruthy();
+    });
+
+    it('shows saved talking points with the AI label', async () => {
+      givenQuestions([
+        makeQuestion({
+          id: 'q3',
+          question: 'Third question',
+          answer: null,
+          talkingPoints:
+            '- Mention the migration (Engineer at Acme)\n- Talk about mentoring (Lead at Globex)',
+          talkingPointsGeneratedAt: '2026-06-01T00:00:00.000Z',
+        }),
+      ]);
+
+      const { getByTestId, getByText } = await renderScreen();
+
+      expect(getByText('• Mention the migration (Engineer at Acme)')).toBeTruthy();
+      expect(getByText('• Talk about mentoring (Lead at Globex)')).toBeTruthy();
+      expect(getByTestId('talking-points-badge-q3')).toBeTruthy();
+      expect(getByText('Regenerate talking points')).toBeTruthy();
+    });
+
+    it('generates talking points from the profile by default', async () => {
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('talking-points-button-q3'));
+
+      expect(getByTestId('background-profile-switch').props.value).toBe(true);
+      await fireEvent.press(getByTestId('talking-points-submit-button'));
+
+      expect(talkingPointsMutate).toHaveBeenCalledWith(
+        { questionId: 'q3', useProfile: true, documentId: null },
+        expect.any(Object),
+      );
+    });
+
+    it('needs a source: generating is off when neither profile nor resume is chosen', async () => {
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('talking-points-button-q3'));
+
+      await fireEvent(getByTestId('background-profile-switch'), 'valueChange', false);
+      await fireEvent.press(getByTestId('talking-points-submit-button'));
+
+      expect(talkingPointsMutate).not.toHaveBeenCalled();
+    });
+
+    it('says nothing was relevant instead of showing made-up bullets', async () => {
+      talkingPointsMutate.mockImplementation(
+        (_args: unknown, options?: { onSuccess?: (r: unknown) => void }) =>
+          options?.onSuccess?.({ nothingRelevant: true, usedProfile: true, usedDocument: false }),
+      );
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('talking-points-button-q3'));
+
+      await fireEvent.press(getByTestId('talking-points-submit-button'));
+
+      expect(getByTestId('talking-points-nothing-relevant')).toBeTruthy();
     });
   });
 });

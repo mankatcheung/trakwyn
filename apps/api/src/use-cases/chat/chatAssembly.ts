@@ -8,6 +8,7 @@ import type { IGetContactsUseCase } from '#src/use-cases/contacts/IGetContactsUs
 import type { IGetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/IGetInterviewRoundsUseCase.js';
 import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
 import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateTalkingPointsUseCase.js';
 import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
@@ -63,6 +64,7 @@ export interface ChatToolDeps {
   getMockInterviewQuestionsUseCase: IGetMockInterviewQuestionsUseCase;
   generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
   generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
+  generateTalkingPointsUseCase: IGenerateTalkingPointsUseCase;
   getDocumentsUseCase: IGetDocumentsUseCase;
   getOffersUseCase: IGetOffersUseCase;
   getActivityLogsUseCase: IGetActivityLogsUseCase;
@@ -205,12 +207,24 @@ async function dispatchChatTool(
         roundId: String(args.interviewRoundId ?? ''),
         prompt: typeof args.prompt === 'string' ? args.prompt : undefined,
         count: toPositiveInt(args.count),
+        useProfile: args.useProfile === true,
+        documentId: typeof args.documentId === 'string' ? args.documentId : undefined,
       });
     case 'generate_mock_interview_answer':
       return await deps.generateMockAnswerUseCase.execute({
         userId,
         questionId: String(args.mockInterviewQuestionId ?? ''),
         prompt: typeof args.prompt === 'string' ? args.prompt : undefined,
+        useProfile: args.useProfile === true,
+        documentId: typeof args.documentId === 'string' ? args.documentId : undefined,
+      });
+    case 'generate_mock_talking_points':
+      return await deps.generateTalkingPointsUseCase.execute({
+        userId,
+        questionId: String(args.mockInterviewQuestionId ?? ''),
+        useProfile: args.useProfile !== false,
+        documentId: typeof args.documentId === 'string' ? args.documentId : undefined,
+        save: false,
       });
     case 'list_work_experiences':
       return await deps.workExperienceRepository.findAllByUserId(userId);

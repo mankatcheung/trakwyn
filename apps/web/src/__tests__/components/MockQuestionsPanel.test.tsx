@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
@@ -43,6 +43,8 @@ const makeQuestion = (overrides: Record<string, unknown> = {}) => ({
   question: 'Describe a hard bug.',
   answer: 'A race in the cache layer.',
   answerSource: 'user',
+  talkingPoints: null,
+  talkingPointsGeneratedAt: null,
   position: 0,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -65,6 +67,20 @@ const GENERATED = {
   suggestions: ['Suggested one?', 'Suggested two?', 'Suggested three?'],
   usedJobDescription: true,
   usedBriefing: true,
+  usedProfile: false,
+  usedDocument: false,
+};
+
+const RESUME_DOCUMENT = {
+  id: 'doc-1',
+  applicationId: 'app-1',
+  name: 'My CV.pdf',
+  mimeType: 'application/pdf',
+  sizeBytes: 100,
+  url: 'http://x',
+  documentType: 'resume',
+  version: null,
+  createdAt: '2024-01-01T00:00:00.000Z',
 };
 
 function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
@@ -86,8 +102,26 @@ function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
     if (query.includes('DeleteMockInterviewQuestion')) {
       return Promise.resolve({ deleteMockInterviewQuestion: true });
     }
+    if (query.includes('query Documents')) {
+      return Promise.resolve({ documents: [RESUME_DOCUMENT] });
+    }
     if (query.includes('GenerateMockInterviewQuestions')) {
       return Promise.resolve({ generateMockInterviewQuestions: GENERATED });
+    }
+    if (query.includes('GenerateMockTalkingPoints')) {
+      return Promise.resolve({
+        generateMockTalkingPoints: {
+          nothingRelevant: false,
+          usedProfile: true,
+          usedDocument: false,
+          question: makeQuestion({
+            id: 'q3',
+            answer: null,
+            talkingPoints: '- Mention the migration (Engineer at Acme)',
+            talkingPointsGeneratedAt: '2024-06-01T00:00:00.000Z',
+          }),
+        },
+      });
     }
     if (query.includes('GenerateMockInterviewAnswer')) {
       return Promise.resolve({
@@ -95,6 +129,8 @@ function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
           answer: 'A drafted answer.',
           usedJobDescription: true,
           usedBriefing: true,
+          usedProfile: false,
+          usedDocument: false,
         },
       });
     }
@@ -116,6 +152,7 @@ async function openPanel(overrides: Partial<typeof props> = {}) {
 describe('MockQuestionsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     mockApi();
   });
 
@@ -229,6 +266,9 @@ describe('MockQuestionsPanel', () => {
   });
 
   describe('generating questions', () => {
+    // The profile switch is a checkbox too; the suggestions are the ones in the list.
+    const suggestionBoxes = () =>
+      within(screen.getByRole('list')).getAllByRole('checkbox') as HTMLInputElement[];
     const openGenerator = async () => {
       await openPanel();
       fireEvent.click(screen.getByRole('button', { name: 'Generate questions' }));
@@ -247,9 +287,11 @@ describe('MockQuestionsPanel', () => {
         interviewRoundId: 'round-1',
         prompt: 'system design',
         count: 5,
+        useProfile: false,
+        documentId: null,
       });
-      expect(screen.getAllByRole('checkbox')).toHaveLength(3);
-      screen.getAllByRole('checkbox').forEach((box) => expect(box).toBeChecked());
+      expect(suggestionBoxes()).toHaveLength(3);
+      suggestionBoxes().forEach((box) => expect(box).toBeChecked());
       expect(screen.getByText(/3 selected/)).toBeInTheDocument();
       expect(callsTo('CreateMockInterviewQuestion')).toHaveLength(0);
     });
@@ -285,7 +327,7 @@ describe('MockQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
       await screen.findByText('Suggested one?');
 
-      screen.getAllByRole('checkbox').forEach((box) => fireEvent.click(box));
+      suggestionBoxes().forEach((box) => fireEvent.click(box));
 
       expect(screen.getByRole('button', { name: 'Add 0 to Practice' })).toBeDisabled();
     });
@@ -373,6 +415,174 @@ describe('MockQuestionsPanel', () => {
     });
   });
 
+  describe('tailoring to the user’s background (JEF-394)', () => {
+    const openGenerator = async () => {
+      await openPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Generate questions' }));
+    };
+
+    it('keeps the profile off until the user switches it on, and says where it goes', async () => {
+      await openGenerator();
+
+      const toggle = screen.getByRole('checkbox', { name: /use my profile/i });
+      expect(toggle).not.toBeChecked();
+      expect(screen.getByText(/sent to your AI provider/i)).toBeInTheDocument();
+    });
+
+    it('sends the profile and the chosen resume when asked', async () => {
+      await openGenerator();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /use my profile/i }));
+      fireEvent.change(await screen.findByLabelText(/use an uploaded resume/i), {
+        target: { value: 'doc-1' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+      await screen.findByText('Suggested one?');
+
+      expect(callsTo('GenerateMockInterviewQuestions')[0][1]).toMatchObject({
+        useProfile: true,
+        documentId: 'doc-1',
+      });
+    });
+
+    it('remembers the profile choice and uses it when drafting an answer', async () => {
+      await openGenerator();
+      fireEvent.click(screen.getByRole('checkbox', { name: /use my profile/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Generate answer with AI' }));
+
+      await screen.findByDisplayValue('A drafted answer.');
+
+      expect(callsTo('GenerateMockInterviewAnswer')[0][1]).toMatchObject({ useProfile: true });
+    });
+
+    it('says when the profile and resume gave the AI nothing to work from', async () => {
+      await openGenerator();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /use my profile/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+      expect(await screen.findByText(/had nothing to work from/i)).toBeInTheDocument();
+    });
+
+    describe('talking points', () => {
+      const openTalkingPoints = async () => {
+        await openPanel();
+        const card = screen.getByText('Third question').closest('article')!;
+        fireEvent.click(within(card).getByRole('button', { name: 'Talking points' }));
+        return card;
+      };
+
+      it('uses the profile by default, since talking points need a source', async () => {
+        await openTalkingPoints();
+
+        expect(screen.getByRole('checkbox', { name: /use my profile/i })).toBeChecked();
+      });
+
+      it('generates, shows the bullets labelled AI generated, and refreshes the list', async () => {
+        const card = await openTalkingPoints();
+
+        fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
+
+        await waitFor(() => expect(callsTo('GenerateMockTalkingPoints')).toHaveLength(1));
+        expect(callsTo('GenerateMockTalkingPoints')[0][1]).toEqual({
+          mockInterviewQuestionId: 'q3',
+          useProfile: true,
+          documentId: null,
+        });
+        await waitFor(() =>
+          expect(callsTo('query MockInterviewQuestions').length).toBeGreaterThan(1),
+        );
+      });
+
+      it('shows saved talking points with the AI label and when they were made', async () => {
+        mockApi([
+          ...QUESTIONS.slice(0, 2),
+          makeQuestion({
+            id: 'q3',
+            question: 'Third question',
+            answer: null,
+            position: 2,
+            talkingPoints:
+              '- Mention the migration (Engineer at Acme)\n- Talk about mentoring (Lead at Globex)',
+            talkingPointsGeneratedAt: '2024-06-01T00:00:00.000Z',
+          }),
+        ]);
+        await openPanel();
+
+        const card = screen.getByText('Third question').closest('article')!;
+        expect(
+          within(card)
+            .getAllByRole('listitem')
+            .map((li) => li.textContent),
+        ).toEqual([
+          'Mention the migration (Engineer at Acme)',
+          'Talk about mentoring (Lead at Globex)',
+        ]);
+        expect(card).toHaveTextContent('AI generated');
+        expect(card).toHaveTextContent(/generated/i);
+        expect(
+          within(card).getByRole('button', { name: 'Regenerate talking points' }),
+        ).toBeInTheDocument();
+      });
+
+      it('says nothing was relevant instead of showing made-up bullets', async () => {
+        mockApi(QUESTIONS, (query) =>
+          query.includes('GenerateMockTalkingPoints')
+            ? Promise.resolve({
+                generateMockTalkingPoints: {
+                  nothingRelevant: true,
+                  usedProfile: true,
+                  usedDocument: false,
+                  question: makeQuestion({ id: 'q3', answer: null }),
+                },
+              })
+            : undefined,
+        );
+        const card = await openTalkingPoints();
+
+        fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
+
+        expect(
+          await screen.findByText(/nothing in your profile or resume is relevant/i),
+        ).toBeInTheDocument();
+        expect(within(card).queryAllByRole('listitem')).toHaveLength(0);
+      });
+
+      it('needs a source: generating is off when neither profile nor resume is chosen', async () => {
+        const card = await openTalkingPoints();
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /use my profile/i }));
+
+        expect(
+          within(card).getByRole('button', { name: 'Generate talking points' }),
+        ).toBeDisabled();
+      });
+
+      it('shows the API’s message, such as a missing AI key', async () => {
+        mockApi(QUESTIONS, (query) =>
+          query.includes('GenerateMockTalkingPoints')
+            ? Promise.reject({
+                response: {
+                  errors: [
+                    {
+                      message: 'Add your AI API key in Settings to use this feature',
+                      extensions: { code: 'AI_NOT_CONFIGURED' },
+                    },
+                  ],
+                },
+              })
+            : undefined,
+        );
+        const card = await openTalkingPoints();
+
+        fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
+
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('generating an answer', () => {
     const startDraft = async () => {
       await openPanel();
@@ -386,6 +596,7 @@ describe('MockQuestionsPanel', () => {
       expect(screen.getByText('AI generated draft')).toBeInTheDocument();
       expect(callsTo('GenerateMockInterviewAnswer')[0][1]).toEqual({
         mockInterviewQuestionId: 'q3',
+        useProfile: false,
       });
       expect(callsTo('UpdateMockInterviewQuestion')).toHaveLength(0);
     });

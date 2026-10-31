@@ -83,5 +83,16 @@
   "practiceLimitTitle": "Practice limit reached",
   "practiceLimitReached": "This round already has the maximum of {{max}} practice questions.",
   "deletePracticeTitle": "Delete practice question",
-  "couldNotGenerateTitle": "Could not generate"
+  "couldNotGenerateTitle": "Could not generate",
+  "backgroundLegend": "What the AI may use about you",
+  "useMyProfile": "Use my profile (work experience, education, skills)",
+  "useResume": "Use an uploaded resume",
+  "noResume": "No resume",
+  "backgroundPrivacy": "This is sent to your AI provider. The AI is told to use only what is in it.",
+  "noBackgroundNote": "Your profile and resume had nothing to work from, so these are not tailored to you.",
+  "talkingPoints": "Talking points",
+  "regenerateTalkingPoints": "Regenerate talking points",
+  "generateTalkingPoints": "Generate talking points",
+  "talkingPointsGeneratedOn": "Generated {{date}}",
+  "talkingPointsNothingRelevant": "Nothing in your profile or resume is relevant to this question, so no talking points were made."
 }

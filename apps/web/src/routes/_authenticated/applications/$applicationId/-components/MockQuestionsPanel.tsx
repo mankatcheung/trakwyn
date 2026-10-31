@@ -18,6 +18,8 @@ import { showUndoToast } from '#/lib/undoToast';
 import { AiGeneratedBadge } from './AiGeneratedBadge';
 import { MockAnswerDraft } from './MockAnswerDraft';
 import { MockQuestionGenerator } from './MockQuestionGenerator';
+import { MockTalkingPoints } from './MockTalkingPoints';
+import { readRememberedUseProfile } from './mockBackgroundChoice';
 import { INTERVIEW_QUESTION_LIMITS, MOCK_QUESTION_LIMITS } from './interviewQuestionLimits';
 import {
   CREATE_MOCK_QUESTION,
@@ -129,7 +131,9 @@ export function MockQuestionsPanel({
   const [adding, setAdding] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ id: string; text: string } | null>(null);
+  const [draft, setDraft] = useState<{ id: string; text: string; usedProfile: boolean } | null>(
+    null,
+  );
   // As for the real questions: a delete is only sent once its undo window
   // closes, so the ids are held here rather than edited out of the cache.
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
@@ -192,8 +196,14 @@ export function MockQuestionsPanel({
     mutationFn: (id: string) =>
       gqlClient.request<{ generateMockInterviewAnswer: GeneratedAnswer }>(GENERATE_MOCK_ANSWER, {
         mockInterviewQuestionId: id,
+        useProfile: readRememberedUseProfile(false),
       }),
-    onSuccess: (result, id) => setDraft({ id, text: result.generateMockInterviewAnswer.answer }),
+    onSuccess: (result, id) =>
+      setDraft({
+        id,
+        text: result.generateMockInterviewAnswer.answer,
+        usedProfile: result.generateMockInterviewAnswer.usedProfile,
+      }),
   });
 
   const reorder = useMutation({
@@ -376,6 +386,12 @@ export function MockQuestionsPanel({
                         </div>
                       )
                     )}
+                    <MockTalkingPoints
+                      key={q.talkingPoints ?? 'none'}
+                      applicationId={applicationId}
+                      question={q}
+                      onSaved={refresh}
+                    />
                   </div>
                   <div className="flex shrink-0 items-center justify-end gap-1 border-t border-gray-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-gray-700">
                     <IconButton
@@ -419,6 +435,7 @@ export function MockQuestionsPanel({
                     key={draft.text}
                     questionId={q.id}
                     initialDraft={draft.text}
+                    initialUsedProfile={draft.usedProfile}
                     saving={saveDraft.isPending}
                     saveError={saveDraft.isError ? getErrorMessage(saveDraft.error) : null}
                     onSave={(answer) => saveDraft.mutate({ id: q.id, answer })}
@@ -431,6 +448,7 @@ export function MockQuestionsPanel({
 
           {generating ? (
             <MockQuestionGenerator
+              applicationId={applicationId}
               roundId={roundId}
               slotsLeft={slotsLeft}
               onSaved={refresh}

@@ -88,6 +88,12 @@ export class DrizzleMockInterviewQuestionRepository implements IMockInterviewQue
         ...(data.question !== undefined ? { question: data.question } : {}),
         ...(data.answer !== undefined ? { answer: data.answer } : {}),
         ...(data.answerSource !== undefined ? { answerSource: data.answerSource } : {}),
+        ...(data.talkingPoints !== undefined
+          ? {
+              talkingPoints: data.talkingPoints,
+              talkingPointsGeneratedAt: data.talkingPoints === null ? null : new Date(),
+            }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(mockInterviewQuestion.id, id))
@@ -143,6 +149,8 @@ export class DrizzleMockInterviewQuestionRepository implements IMockInterviewQue
       question: row.question,
       answer: row.answer,
       answerSource: row.answerSource === 'ai' ? 'ai' : 'user',
+      talkingPoints: row.talkingPoints,
+      talkingPointsGeneratedAt: row.talkingPointsGeneratedAt,
       position: row.position,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

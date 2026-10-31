@@ -370,6 +370,59 @@ describe('practice (mock) interview questions integration', () => {
     expect(answer.errors?.[0]?.extensions?.code).toBe('AI_NOT_CONFIGURED');
   });
 
+  it('asks for an API key before generating talking points, and exposes the new fields (JEF-394)', async () => {
+    const token = await register();
+    const { roundId } = await createRound(token);
+    const created = await addQuestion(token, roundId, 'Why us?');
+    const id = created.data!.createMockInterviewQuestion.id;
+
+    const fields = await gql<{
+      mockInterviewQuestions: {
+        talkingPoints: string | null;
+        talkingPointsGeneratedAt: string | null;
+      }[];
+    }>(
+      token,
+      `query($id: ID!) {
+        mockInterviewQuestions(interviewRoundId: $id) { talkingPoints talkingPointsGeneratedAt }
+      }`,
+      { id: roundId },
+    );
+    const generated = await gql(
+      token,
+      `mutation($id: ID!) {
+        generateMockTalkingPoints(mockInterviewQuestionId: $id) {
+          nothingRelevant
+          question { id talkingPoints }
+        }
+      }`,
+      { id },
+    );
+
+    expect(fields.data!.mockInterviewQuestions[0]).toEqual({
+      talkingPoints: null,
+      talkingPointsGeneratedAt: null,
+    });
+    expect(generated.errors?.[0]?.extensions?.code).toBe('AI_NOT_CONFIGURED');
+  });
+
+  it("will not generate talking points for another user's question (JEF-394)", async () => {
+    const owner = await register();
+    const intruder = await register();
+    const { roundId } = await createRound(owner);
+    const created = await addQuestion(owner, roundId, 'Why us?');
+
+    const res = await gql(
+      intruder,
+      `mutation($id: ID!) {
+        generateMockTalkingPoints(mockInterviewQuestionId: $id) { nothingRelevant }
+      }`,
+      { id: created.data!.createMockInterviewQuestion.id },
+    );
+
+    expect(res.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
+  });
+
   it("will not generate for another user's round", async () => {
     const owner = await register();
     const intruder = await register();

@@ -17,6 +17,22 @@ describe('MockInterviewQuestionMapper', () => {
     expect(dto.updatedAt).toBe('2024-05-02T00:00:00.000Z');
   });
 
+  it('exposes the talking points and when they were generated', () => {
+    const dto = mapper.toDTO(
+      makeMockInterviewQuestion({
+        talkingPoints: '- Mention Acme (Engineer at Acme)',
+        talkingPointsGeneratedAt: new Date('2024-05-03T00:00:00.000Z'),
+      }),
+    );
+
+    expect(dto.talkingPoints).toBe('- Mention Acme (Engineer at Acme)');
+    expect(dto.talkingPointsGeneratedAt).toBe('2024-05-03T00:00:00.000Z');
+    expect(mapper.toDTO(makeMockInterviewQuestion())).toMatchObject({
+      talkingPoints: null,
+      talkingPointsGeneratedAt: null,
+    });
+  });
+
   it('exposes the answer source', () => {
     expect(mapper.toDTO(makeMockInterviewQuestion({ answerSource: 'ai' })).answerSource).toBe('ai');
     expect(mapper.toDTO(makeMockInterviewQuestion()).answerSource).toBe('user');

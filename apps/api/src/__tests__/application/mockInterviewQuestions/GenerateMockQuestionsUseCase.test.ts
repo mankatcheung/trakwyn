@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
 import { GenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/GenerateMockQuestionsUseCase.js';
 import { AI_PROMPT_INPUT, INTERVIEW_QUESTION_LIMITS } from '#src/use-cases/constants.js';
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
@@ -13,6 +14,13 @@ import {
   makeLLMProviderFactory,
 } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import {
+  makeEducationRepository,
+  makeSkillRepository,
+  makeWorkExperience,
+  makeWorkExperienceRepository,
+} from '#src/__tests__/helpers/mocks/profile.js';
+import { makeExtractDocumentTextUseCase } from '#src/__tests__/helpers/mocks/documents.js';
 
 const reply = (questions: string[]): string => JSON.stringify({ questions });
 
@@ -26,6 +34,8 @@ interface Options {
   allowed?: boolean;
   customAiPrompt?: string | null;
   truncated?: boolean;
+  workExperiences?: ReturnType<typeof makeWorkExperience>[];
+  extractDocument?: IExtractDocumentTextUseCase['execute'];
 }
 
 function makeUseCase(options: Options = {}) {
@@ -72,6 +82,14 @@ function makeUseCase(options: Options = {}) {
             }
           : null,
       ),
+    }),
+    workExperienceRepository: makeWorkExperienceRepository({
+      findAllByUserId: vi.fn().mockResolvedValue(options.workExperiences ?? []),
+    }),
+    educationRepository: makeEducationRepository(),
+    skillRepository: makeSkillRepository(),
+    extractDocumentTextUseCase: makeExtractDocumentTextUseCase({
+      execute: options.extractDocument ?? vi.fn().mockResolvedValue({ text: '' }),
     }),
     generateMockQuestionsRateLimiter: rateLimiter,
   });

@@ -306,6 +306,10 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 30,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  GENERATE_MOCK_TALKING_POINTS: {
+    MAX_ATTEMPTS: 30,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   // Tighter than the other BYOK actions above (JEF-247): a "Test" click is a
   // single cheap ping, not a natural conversational/generation flow, and
   // this is the one BYOK mutation that can be driven with an arbitrary,

@@ -5,6 +5,8 @@ mutation CreateMockInterviewQuestion($input: CreateMockInterviewQuestionInput!) 
     question
     answer
     answerSource
+    talkingPoints
+    talkingPointsGeneratedAt
     position
     createdAt
     updatedAt
@@ -18,6 +20,8 @@ mutation UpdateMockInterviewQuestion($id: ID!, $input: UpdateMockInterviewQuesti
     question
     answer
     answerSource
+    talkingPoints
+    talkingPointsGeneratedAt
     position
     createdAt
     updatedAt
@@ -35,28 +39,80 @@ mutation ReorderMockInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!
     question
     answer
     answerSource
+    talkingPoints
+    talkingPointsGeneratedAt
     position
     createdAt
     updatedAt
   }
 }
 
-mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int) {
+mutation GenerateMockInterviewQuestions(
+  $interviewRoundId: ID!
+  $prompt: String
+  $count: Int
+  $useProfile: Boolean
+  $documentId: ID
+) {
   generateMockInterviewQuestions(
     interviewRoundId: $interviewRoundId
     prompt: $prompt
     count: $count
+    useProfile: $useProfile
+    documentId: $documentId
   ) {
     suggestions
     usedJobDescription
     usedBriefing
+    usedProfile
+    usedDocument
   }
 }
 
-mutation GenerateMockInterviewAnswer($mockInterviewQuestionId: ID!, $prompt: String) {
-  generateMockInterviewAnswer(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt) {
+mutation GenerateMockInterviewAnswer(
+  $mockInterviewQuestionId: ID!
+  $prompt: String
+  $useProfile: Boolean
+  $documentId: ID
+) {
+  generateMockInterviewAnswer(
+    mockInterviewQuestionId: $mockInterviewQuestionId
+    prompt: $prompt
+    useProfile: $useProfile
+    documentId: $documentId
+  ) {
     answer
     usedJobDescription
     usedBriefing
+    usedProfile
+    usedDocument
+  }
+}
+
+mutation GenerateMockTalkingPoints(
+  $mockInterviewQuestionId: ID!
+  $useProfile: Boolean
+  $documentId: ID
+) {
+  generateMockTalkingPoints(
+    mockInterviewQuestionId: $mockInterviewQuestionId
+    useProfile: $useProfile
+    documentId: $documentId
+  ) {
+    nothingRelevant
+    usedProfile
+    usedDocument
+    question {
+      id
+      interviewRoundId
+      question
+      answer
+      answerSource
+      talkingPoints
+      talkingPointsGeneratedAt
+      position
+      createdAt
+      updatedAt
+    }
   }
 }

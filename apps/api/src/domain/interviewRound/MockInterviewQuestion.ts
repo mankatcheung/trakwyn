@@ -13,6 +13,12 @@ export interface MockInterviewQuestion {
   answer: string | null;
   /** `ai` stays once set, even if the user edits the text; clearing the answer resets it. */
   answerSource: AnswerSource;
+  /**
+   * AI generated bullet points, one per line, each tied to an entry of the user's
+   * own experience (JEF-394). Replaced when regenerated.
+   */
+  talkingPoints: string | null;
+  talkingPointsGeneratedAt: Date | null;
   /** Zero-based order within the round. */
   position: number;
   createdAt: Date;

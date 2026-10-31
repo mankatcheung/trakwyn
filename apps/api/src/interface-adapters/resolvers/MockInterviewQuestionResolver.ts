@@ -17,8 +17,10 @@ import type {
   IGenerateMockAnswerUseCase,
   GenerateMockAnswerOutput,
 } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
+import type { IGenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateTalkingPointsUseCase.js';
 
 interface Deps {
+  generateTalkingPointsUseCase: IGenerateTalkingPointsUseCase;
   generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
   generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
   createMockInterviewQuestionUseCase: ICreateMockInterviewQuestionUseCase;
@@ -27,6 +29,13 @@ interface Deps {
   deleteMockInterviewQuestionUseCase: IDeleteMockInterviewQuestionUseCase;
   reorderMockInterviewQuestionsUseCase: IReorderMockInterviewQuestionsUseCase;
   mockInterviewQuestionMapper: MockInterviewQuestionMapper;
+}
+
+export interface GeneratedTalkingPointsDTO {
+  question: MockInterviewQuestionDTO;
+  nothingRelevant: boolean;
+  usedProfile: boolean;
+  usedDocument: boolean;
 }
 
 interface CreateInput {
@@ -97,15 +106,34 @@ export class MockInterviewQuestionResolver {
 
   generateMockQuestions(
     userId: string,
-    input: { roundId: string; prompt?: string; count?: number },
+    input: {
+      roundId: string;
+      prompt?: string;
+      count?: number;
+      useProfile?: boolean;
+      documentId?: string;
+    },
   ): Promise<GenerateMockQuestionsOutput> {
     return this.deps.generateMockQuestionsUseCase.execute({ userId, ...input });
   }
 
   generateMockAnswer(
     userId: string,
-    input: { questionId: string; prompt?: string },
+    input: { questionId: string; prompt?: string; useProfile?: boolean; documentId?: string },
   ): Promise<GenerateMockAnswerOutput> {
     return this.deps.generateMockAnswerUseCase.execute({ userId, ...input });
+  }
+
+  async generateMockTalkingPoints(
+    userId: string,
+    input: { questionId: string; useProfile?: boolean; documentId?: string },
+  ): Promise<GeneratedTalkingPointsDTO> {
+    const result = await this.deps.generateTalkingPointsUseCase.execute({ userId, ...input });
+    return {
+      question: this.deps.mockInterviewQuestionMapper.toDTO(result.question),
+      nothingRelevant: result.nothingRelevant,
+      usedProfile: result.usedProfile,
+      usedDocument: result.usedDocument,
+    };
   }
 }

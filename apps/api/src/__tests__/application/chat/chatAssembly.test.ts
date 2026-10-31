@@ -35,6 +35,7 @@ function makeToolDeps() {
     getMockInterviewQuestionsUseCase: stub(),
     generateMockQuestionsUseCase: stub({ suggestions: [] }),
     generateMockAnswerUseCase: stub({ answer: '' }),
+    generateTalkingPointsUseCase: stub({ nothingRelevant: true }),
     getDocumentsUseCase: stub(),
     getOffersUseCase: stub(),
     getActivityLogsUseCase: stub(),
@@ -109,6 +110,7 @@ describe('executeChatTool observation (JEF-365)', () => {
       count: 3,
     });
     await run('generate_mock_interview_answer', { mockInterviewQuestionId: 'q1', prompt: 'short' });
+    await run('generate_mock_talking_points', { mockInterviewQuestionId: 'q1' });
 
     expect(deps.getMockInterviewQuestionsUseCase.execute).toHaveBeenCalledWith({
       userId: 'user-1',
@@ -119,11 +121,22 @@ describe('executeChatTool observation (JEF-365)', () => {
       roundId: 'r1',
       prompt: 'system design',
       count: 3,
+      useProfile: false,
+      documentId: undefined,
     });
     expect(deps.generateMockAnswerUseCase.execute).toHaveBeenCalledWith({
       userId: 'user-1',
       questionId: 'q1',
       prompt: 'short',
+      useProfile: false,
+      documentId: undefined,
+    });
+    expect(deps.generateTalkingPointsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      questionId: 'q1',
+      useProfile: true,
+      documentId: undefined,
+      save: false,
     });
   });
 
