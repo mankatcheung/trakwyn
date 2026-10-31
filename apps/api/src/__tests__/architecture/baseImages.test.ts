@@ -278,6 +278,8 @@ describe('base image cache (JEF-474)', () => {
     expect(action).toContain('"${name^^}_IMAGE=$name-base"');
     expect(action).toContain('"${name^^}_BUILD_CONTEXT=$name-base=oci-layout://$layout:latest"');
     expect(action).toContain('skopeo copy');
+    // skopeo rejects a reference carrying both tag and digest (PR #1157's first run).
+    expect(action).toContain('ref="${repo%:*}@${ref#*@}"');
     expect(read('apps/api/Dockerfile').match(/^FROM \$\{NODE_IMAGE\}/gm)).toHaveLength(2);
   });
 

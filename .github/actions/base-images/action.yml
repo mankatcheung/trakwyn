@@ -120,10 +120,12 @@ runs:
           layout="$CACHE_DIR/oci/$name"
           if [[ "$HIT" != "true" ]]; then
             # skopeo copies by the pinned digest and reuses the login above.
+            # It rejects a reference with both tag and digest, so drop the tag.
+            ref="$(.github/scripts/base-image-ref.sh "$name" "$DEST")"
+            repo="${ref%%@*}"
+            ref="${repo%:*}@${ref#*@}"
             mkdir -p "$CACHE_DIR/oci"
-            skopeo copy --authfile "$HOME/.docker/config.json" \
-              "docker://$(.github/scripts/base-image-ref.sh "$name" "$DEST")" \
-              "oci:$layout:latest"
+            skopeo copy --authfile "$HOME/.docker/config.json" "docker://$ref" "oci:$layout:latest"
           fi
           # The Dockerfile says `FROM ${NODE_IMAGE}`; a build context of the
           # same name replaces that pull with the layout. A name that fails to
