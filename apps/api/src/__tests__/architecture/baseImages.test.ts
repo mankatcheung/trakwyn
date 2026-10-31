@@ -170,6 +170,18 @@ describe('mirror workflow', () => {
   it('is the one place that mirrors from the pin file', () => {
     expect(workflow).toContain('.github/scripts/mirror-base-images.sh infra/base-images.txt');
   });
+
+  it('starts no BuildKit container, which would pull moby/buildkit from Docker Hub (JEF-409)', () => {
+    expect(workflow).not.toMatch(/uses:\s*docker\/setup-buildx-action/);
+  });
+});
+
+describe('buildkit pin (JEF-409)', () => {
+  it('pins BuildKit by a release tag, not a moving one, so the mirror can serve it', () => {
+    const pin = pinLines().find((line) => /\/buildkit:/.test(line));
+    expect(pin, 'no buildkit pin').toBeTruthy();
+    expect(pin).toMatch(/^mirror\.gcr\.io\/moby\/buildkit:v\d+\.\d+\.\d+@sha256:[a-f0-9]{64}$/);
+  });
 });
 
 describe('workload identity (JEF-407)', () => {
