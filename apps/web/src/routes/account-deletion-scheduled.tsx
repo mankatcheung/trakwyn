@@ -10,7 +10,10 @@ import { AccountDeletionScheduledPage } from './-components/AccountDeletionSched
  */
 function AccountDeletionScheduledRoute() {
   const { data } = useEmailVerification();
-  return <AccountDeletionScheduledPage deletionScheduledAt={data?.deletionScheduledAt ?? ''} />;
+  // Cancelling refetches this state with no date before the page navigates
+  // away; rendering with an empty date would throw "Invalid time value".
+  if (!data?.deletionScheduledAt) return null;
+  return <AccountDeletionScheduledPage deletionScheduledAt={data.deletionScheduledAt} />;
 }
 
 export const Route = createFileRoute('/account-deletion-scheduled')({
