@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.10.0...web-v0.11.0) (2026-10-31)
+
+
+### Features
+
+* multi-line assistant chat input capped at 10 lines (JEF-481) ([#1159](https://github.com/mankatcheung/trakwyn/issues/1159)) ([c586b13](https://github.com/mankatcheung/trakwyn/commit/c586b13c9a3b3d1388406981d5cf031da2f48099))
+
+
+### Bug Fixes
+
+* don't format an empty date on the deletion-scheduled page after cancelling ([#1155](https://github.com/mankatcheung/trakwyn/issues/1155)) ([8d66180](https://github.com/mankatcheung/trakwyn/commit/8d661806420c3af8108d5e60222c833c6731aaec))
+
 ## [0.10.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.9.0...web-v0.10.0) (2026-10-29)
 
 
