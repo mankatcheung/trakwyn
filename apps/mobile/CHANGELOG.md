@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.4.0...mobile-v0.5.0) (2026-10-31)
+
+
+### Features
+
+* multi-line assistant chat input capped at 10 lines (JEF-481) ([#1159](https://github.com/mankatcheung/trakwyn/issues/1159)) ([c586b13](https://github.com/mankatcheung/trakwyn/commit/c586b13c9a3b3d1388406981d5cf031da2f48099))
+
 ## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.3.1...mobile-v0.4.0) (2026-10-29)
 
 
