@@ -8,8 +8,9 @@ import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { Button, Input, Skeleton, Spinner } from '@trakwyn/ui';
+import { Button, Skeleton, Spinner } from '@trakwyn/ui';
 import { Markdown } from '#/components/Markdown';
+import { ChatComposerInput } from '#/routes/_authenticated/assistant/-components/ChatComposerInput';
 import { ChatProposalCard } from '#/routes/_authenticated/assistant/-components/ChatProposalCard';
 import {
   CREATE_CONVERSATION,
@@ -298,15 +299,14 @@ export function ChatConversationView({
 
       <form
         onSubmit={onSubmit}
-        className={`flex shrink-0 gap-2 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900 ${compact ? 'p-2' : 'py-3'}`}
+        className={`flex shrink-0 items-end gap-2 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900 ${compact ? 'p-2' : 'py-3'}`}
       >
-        <Input
-          type="text"
+        <ChatComposerInput
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={setInput}
+          onSubmit={() => void handleSend(input)}
           placeholder={t('chat.inputPlaceholder')}
           maxLength={CHAT_MESSAGE_MAX_CHARS}
-          className="flex-1"
         />
         {send.isPending ? (
           <Button type="button" variant="secondary" onClick={handleCancel}>

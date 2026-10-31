@@ -25,7 +25,10 @@ import { ChatProposalCard } from '../components/ChatProposalCard';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
-import { CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
+import { CHAT_INPUT_MAX_LINES, CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
+
+const INPUT_LINE_HEIGHT = 20;
+const INPUT_VERTICAL_PADDING = 11;
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
@@ -233,11 +236,12 @@ function createStyles(colors: ThemeColors) {
     input: {
       flex: 1,
       minHeight: 44,
-      maxHeight: 100,
+      maxHeight: INPUT_LINE_HEIGHT * CHAT_INPUT_MAX_LINES + INPUT_VERTICAL_PADDING * 2,
       borderRadius: 22,
       paddingHorizontal: 16,
-      paddingVertical: 11,
+      paddingVertical: INPUT_VERTICAL_PADDING,
       fontSize: 15,
+      lineHeight: INPUT_LINE_HEIGHT,
       backgroundColor: colors.surfaceAlt,
     },
     sendButton: {

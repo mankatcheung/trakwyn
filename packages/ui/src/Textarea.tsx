@@ -1,6 +1,7 @@
-import type { TextareaHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 
-export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+/** Takes `ref` like any React 19 prop, so callers can measure the element (the chat composer's auto-grow). */
+export interface TextareaProps extends ComponentProps<'textarea'> {
   invalid?: boolean;
 }
 
