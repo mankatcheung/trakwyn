@@ -78,6 +78,16 @@ const CLIPPER_JOB_TAG =
   'TAG: ${{ inputs.clipper_tag || needs.release-please.outputs.clipper_tag }}';
 const CLIPPER_TAG_PATTERN = '^clipper-v[0-9]+\\.[0-9]+\\.[0-9]+$';
 
+/**
+ * The checks both Clipper store jobs share (JEF-479): the tag, the manifest,
+ * the bundle's URLs and the nothing-added-since-the-previous-release guard.
+ */
+const GUARD_ACTION = readFileSync(
+  join(REPO_ROOT, '.github/actions/clipper-release-guard/action.yml'),
+  'utf8',
+);
+const GUARD_USES = 'uses: ./.github/actions/clipper-release-guard';
+
 function hasJq(): boolean {
   try {
     execFileSync('jq', ['--version']);
@@ -189,7 +199,7 @@ describe('release versioning', () => {
       expect(job).toContain('needs: release-please');
       expect(job).toContain(CLIPPER_JOB_IF);
       expect(job).toContain(CLIPPER_JOB_TAG);
-      expect(job).toContain(CLIPPER_TAG_PATTERN);
+      expect(GUARD_ACTION).toContain(CLIPPER_TAG_PATTERN);
       expect(workflow).toContain("outputs['apps/extension--release_created']");
     });
 
@@ -199,10 +209,10 @@ describe('release versioning', () => {
     it.skipIf(!hasJq())('runs a guard program that compiles and reports what was added', () => {
       const previous = guardManifest(['storage'], ['https://a.example/*']);
 
-      expect(runAddedSinceGuard(job, previous, previous)).toEqual({});
+      expect(runAddedSinceGuard(GUARD_ACTION, previous, previous)).toEqual({});
       expect(
         runAddedSinceGuard(
-          job,
+          GUARD_ACTION,
           previous,
           guardManifest(['storage', 'tabs'], ['https://a.example/*', 'https://b.example/*']),
         ),
@@ -215,7 +225,7 @@ describe('release versioning', () => {
     it('parenthesises each object value in the guard, so jq 1.7 can parse it', () => {
       // A local jq 1.8 parses the unparenthesised form, so the test above alone
       // would pass on a laptop and still fail on the runner.
-      expect(job).toContain('content_script_matches: (($new | hosts) - ($old | hosts))');
+      expect(GUARD_ACTION).toContain('content_script_matches: (($new | hosts) - ($old | hosts))');
     });
 
     it('builds from the tag with the PostHog key and the API URL from repository variables', () => {
@@ -224,21 +234,25 @@ describe('release versioning', () => {
       expect(job).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
     });
 
-    it('checks the manifest before the zip leaves the job', () => {
-      expect(job.indexOf('host_permissions')).toBeGreaterThan(-1);
-      expect(job.indexOf('host_permissions')).toBeLessThan(job.indexOf('gh release upload'));
+    // JEF-479: the checks are one action both stores use, so a fix to one
+    // cannot be missed in the other.
+    it('checks the manifest, with the shared guard, before the zip leaves the job', () => {
+      expect(GUARD_ACTION).toContain('host_permissions');
+      expect(job).toContain(GUARD_USES);
+      expect(job).toContain("zip-glob: '*-chrome.zip'");
+      expect(job.indexOf(GUARD_USES)).toBeLessThan(job.indexOf('gh release upload'));
     });
 
     // JEF-429: with no person looking at the package before it goes to review,
     // a grown permission list or content-script host (which disables the
     // extension until every user re-approves it) has to stop the job instead.
     it('hands the zip on only after checking nothing was added since the previous release', () => {
-      const guard = job.indexOf('Check nothing was added since the previous release');
-      expect(guard).toBeGreaterThan(-1);
-      expect(guard).toBeLessThan(job.indexOf('gh release upload'));
-      expect(guard).toBeLessThan(job.indexOf('gh workflow run clipper-cws.yml'));
-      expect(job).toContain('.permissions');
-      expect(job).toContain('.content_scripts[]?.matches[]?');
+      expect(GUARD_ACTION).toContain('Check nothing was added since the previous release');
+      expect(GUARD_ACTION).toContain('.permissions');
+      expect(GUARD_ACTION).toContain('.content_scripts[]?.matches[]?');
+      expect(job.indexOf(GUARD_USES)).toBeGreaterThan(-1);
+      expect(job.indexOf(GUARD_USES)).toBeLessThan(job.indexOf('gh release upload'));
+      expect(job.indexOf(GUARD_USES)).toBeLessThan(job.indexOf('gh workflow run clipper-cws.yml'));
     });
 
     it('hands the submission to its own workflow, which can be run again by hand for a tag', () => {
@@ -292,7 +306,7 @@ describe('release versioning', () => {
       expect(build).toContain('needs: release-please');
       expect(build).toContain(CLIPPER_JOB_IF);
       expect(build).toContain(CLIPPER_JOB_TAG);
-      expect(build).toContain(CLIPPER_TAG_PATTERN);
+      expect(GUARD_ACTION).toContain(CLIPPER_TAG_PATTERN);
       expect(build).toContain('ref: ${{ env.TAG }}');
       expect(build).toContain('vars.CLIPPER_POSTHOG_KEY');
       expect(build).toContain('VITE_API_URL: ${{ vars.CLIPPER_API_URL }}');
@@ -305,13 +319,16 @@ describe('release versioning', () => {
     it('builds with the web app URL and checks the bundle links to it, as the Chrome job does', () => {
       expect(build).toContain('VITE_WEB_URL: ${{ vars.CLIPPER_WEB_URL }}');
       expect(build).toContain('Repository variable CLIPPER_WEB_URL is not set');
-      const bundleCheck = build.indexOf('grep -qF "${{ vars.CLIPPER_WEB_URL }}"');
-      expect(bundleCheck).toBeGreaterThan(-1);
-      expect(bundleCheck).toBeLessThan(build.indexOf('gh release upload'));
+      expect(build).toContain('web-url: ${{ vars.CLIPPER_WEB_URL }}');
+      expect(GUARD_ACTION).toContain('grep -qF "$WEB_URL"');
+      expect(build.indexOf(GUARD_USES)).toBeLessThan(build.indexOf('gh release upload'));
     });
 
     it('checks the Firefox manifest before the zips leave the job', () => {
-      for (const check of ['host_permissions', 'has("key")', '"tabs"', 'clipper@trakwyn.com']) {
+      expect(GUARD_ACTION).toContain('host_permissions');
+      expect(build).toContain(GUARD_USES);
+      expect(build).toContain("zip-glob: '*-firefox.zip'");
+      for (const check of ['has("key")', '"tabs"', 'clipper@trakwyn.com']) {
         expect(build).toContain(check);
         expect(build.indexOf(check)).toBeLessThan(build.indexOf('gh release upload'));
       }
@@ -323,14 +340,16 @@ describe('release versioning', () => {
     // (which holds the update until every user re-approves it) stops the job
     // before anything is attached or submitted.
     it('checks nothing was added since the previous Firefox release before the zips leave the job', () => {
-      const guard = build.indexOf('Check nothing was added since the previous release');
+      const guard = build.indexOf(GUARD_USES);
       expect(guard).toBeGreaterThan(-1);
       expect(guard).toBeLessThan(build.indexOf('gh release upload'));
       expect(guard).toBeLessThan(build.indexOf('gh workflow run clipper-amo.yml'));
       // Against the previous release's Firefox zip, not its Chrome one: the two
-      // ask for different permissions.
-      expect(build).toContain("--pattern '*-firefox.zip'");
-      expect(build).toContain('has no firefox zip to compare with');
+      // ask for different permissions. The action downloads the zip its
+      // `zip-glob` input names.
+      expect(build).toContain("zip-glob: '*-firefox.zip'");
+      expect(GUARD_ACTION).toContain('--pattern "$ZIP_GLOB"');
+      expect(GUARD_ACTION).toContain('has no $STORE zip to compare with');
     });
 
     it.skipIf(!hasJq())(
@@ -338,10 +357,10 @@ describe('release versioning', () => {
       () => {
         const previous = guardManifest(['storage', 'activeTab', 'tabs'], ['https://a.example/*']);
 
-        expect(runAddedSinceGuard(build, previous, previous)).toEqual({});
+        expect(runAddedSinceGuard(GUARD_ACTION, previous, previous)).toEqual({});
         expect(
           runAddedSinceGuard(
-            build,
+            GUARD_ACTION,
             previous,
             guardManifest(
               ['storage', 'activeTab', 'tabs'],
@@ -392,6 +411,67 @@ describe('release versioning', () => {
 
     it('does not run release-please on a manual run', () => {
       expect(jobBlock(workflow, 'release-please')).toContain("if: github.event_name == 'push'");
+    });
+  });
+
+  // JEF-479: GITHUB_TOKEN cannot start ci.yml on a release PR, so release.yml
+  // posts the `ci-ok` status itself, for a PR that edits only release files.
+  describe('ci-ok on release PRs (JEF-479)', () => {
+    const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/release.yml'), 'utf8');
+    const job = jobBlock(workflow, 'release-pr-ci');
+
+    it('posts ci-ok for the PRs release-please created or updated', () => {
+      expect(job).toContain("if: needs.release-please.outputs.prs_created == 'true'");
+      expect(job).toContain('statuses: write');
+      expect(job).toContain('context=ci-ok');
+    });
+
+    it('passes only a PR whose files are all ones release-please writes', () => {
+      const allowed = /ALLOWED: '(.+)'/.exec(job)?.[1];
+      if (!allowed) throw new Error('release-pr-ci has no ALLOWED pattern');
+      const pattern = new RegExp(allowed);
+
+      const releaseFiles = [
+        ...VERSIONED_PACKAGES.flatMap((path) => [
+          join(path, versionFile(path)),
+          join(path, 'CHANGELOG.md'),
+        ]),
+        ...RELEASE_FILES.filter((file) => file.startsWith('.')),
+      ];
+      expect(releaseFiles.filter((file) => !pattern.test(file))).toEqual([]);
+      expect(pattern.test('apps/api/src/index.ts')).toBe(false);
+      expect(pattern.test('.github/workflows/ci.yml')).toBe(false);
+      expect(pattern.test('apps/mobile/src/App.tsx')).toBe(false);
+    });
+
+    // The rule is only safe because none of those files deploys.
+    it('allows only files that do not run ci.yml on a push', () => {
+      const allowed = /ALLOWED: '(.+)'/.exec(job)?.[1] ?? '';
+      expect(allowed).not.toBe('');
+      const pushPaths = ciPushPaths();
+      const deploying = VERSIONED_PACKAGES.flatMap((path) =>
+        ['version.txt', 'CHANGELOG.md', 'package.json']
+          .map((file) => join(path, file))
+          .filter((file) => new RegExp(allowed).test(file) && triggersDeploy(file, pushPaths)),
+      );
+      expect(deploying).toEqual([]);
+    });
+  });
+
+  // JEF-479: the deploy jobs hold production credentials, so they run in the
+  // `production` environment: Deployments history, and a place to add an
+  // approval later.
+  describe('ci.yml production environment (JEF-479)', () => {
+    const ci = readFileSync(join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
+
+    it.each(['migrate-db', 'deploy-api', 'deploy-web'])('runs %s in production', (name) => {
+      expect(jobBlock(ci, name)).toContain('environment: production');
+    });
+
+    // Only the deploy jobs: a pull request job in an environment would read
+    // its secrets, and notify-deploy must report a deploy that never reached it.
+    it('keeps every other job out of it', () => {
+      expect(ci.match(/^ {4}environment:/gm)).toHaveLength(3);
     });
   });
 });

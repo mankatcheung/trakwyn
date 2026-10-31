@@ -150,16 +150,18 @@ terraform output
 
 ### 6. Connect CI
 
-In GitHub → Settings → Secrets and variables → Actions → **Variables** (not secrets; none of these is sensitive):
+In GitHub → Settings → Secrets and variables → Actions → **Variables** (not secrets; none of these is sensitive). Where each lives matters (JEF-479):
 
-| Variable           | Value                                              |
-| ------------------ | -------------------------------------------------- |
-| `GCP_PROJECT_ID`   | `$PROJECT_ID`                                      |
-| `GCP_WIF_PROVIDER` | `terraform output -raw workload_identity_provider` |
-| `GCP_DEPLOYER_SA`  | `terraform output -raw deployer_service_account`   |
-| `GCP_CI_READER_SA` | `terraform output -raw ci_reader_service_account`  |
+| Variable           | Value                                              | Where                                                                                    |
+| ------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GCP_PROJECT_ID`   | `$PROJECT_ID`                                      | repository (the pull-request jobs `api-image` and `e2e` read it too)                     |
+| `GCP_WIF_PROVIDER` | `terraform output -raw workload_identity_provider` | repository (same)                                                                        |
+| `GCP_CI_READER_SA` | `terraform output -raw ci_reader_service_account`  | repository (same)                                                                        |
+| `GCP_DEPLOYER_SA`  | `terraform output -raw deployer_service_account`   | the `production` environment (Settings → Environments), which only the deploy jobs reach |
 
-The Vercel API project's secrets (`VERCEL_API_PROJECT_ID`) can be deleted; `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_WEB_PROJECT_ID` are still used by `deploy-web`.
+`migrate-db`, `deploy-api` and `deploy-web` run in the `production` environment, so each deploy shows under the repository's Deployments. It also holds `PRODUCTION_DATABASE_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_WEB_PROJECT_ID`; `NTFY_TOPIC` and `WEB_URL` stay repository-wide. Adding the environment does not change GCP authentication: `wif.tf` trusts the `ref` claim, not `sub`, and `ref` stays `refs/heads/main`. To gate deploys on a person, add a required reviewer to the environment.
+
+The Vercel API project's secrets (`VERCEL_API_PROJECT_ID`) can be deleted.
 
 ### 7. Smoke-test on the run.app URL
 
