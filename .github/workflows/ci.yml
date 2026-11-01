@@ -342,12 +342,23 @@ jobs:
   # Starts at once, without waiting for quality, build or test: it installs and
   # builds its own stack and uses nothing they produce. The deploy jobs still
   # wait for all three.
+  #
+  # Sharded (JEF-486): the specs share one API and one database, which is why
+  # playwright.config.ts runs a single worker, so the suite is split across
+  # runners instead. Each shard has its own Postgres, API and web server, and
+  # runs a fixed slice of the spec files. `needs.e2e.result` is the combined
+  # result of every shard, so ci-ok and the deploy jobs wait on `e2e` as before.
   e2e:
-    name: Playwright E2E
+    name: Playwright E2E (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      # A failing shard must not hide the others' results.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     permissions:
       contents: read
       id-token: write
@@ -424,13 +435,13 @@ jobs:
         run: pnpm --filter @trakwyn/api db:migrate:apply
 
       - name: Run Playwright tests
-        run: pnpm --filter @trakwyn/web test:e2e
+        run: pnpm --filter @trakwyn/web test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
       - name: Upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
