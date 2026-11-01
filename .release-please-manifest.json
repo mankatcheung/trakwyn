@@ -3,5 +3,5 @@
   "apps/web": "0.10.0",
   "apps/extension": "1.4.0",
   "apps/mobile": "0.4.0",
-  "apps/cli": "0.0.2"
+  "apps/cli": "0.0.3"
 }
