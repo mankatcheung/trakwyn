@@ -428,7 +428,12 @@ describe('tracing', () => {
         { spanProcessors: unknown[]; traceExporter?: unknown },
       ];
       expect(sdkConfig.traceExporter).toBeUndefined();
-      expect(sdkConfig.spanProcessors).toHaveLength(1);
+      // The filter comes first so it edits a span before the batch queues it.
+      expect(sdkConfig.spanProcessors).toHaveLength(2);
+      expect(sdkConfig.spanProcessors[0]).toBeInstanceOf(
+        (await import('#src/infrastructure/observability/ClientErrorSpanFilter.js'))
+          .ClientErrorSpanFilter,
+      );
       const [processor] = batchSpanProcessorInstances;
       expect(processor.exporter).toBeInstanceOf(
         (await import('@opentelemetry/exporter-trace-otlp-proto')).OTLPTraceExporter,

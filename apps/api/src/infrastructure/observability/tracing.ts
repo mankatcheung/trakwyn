@@ -1,5 +1,6 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace';
+import { ClientErrorSpanFilter } from '#src/infrastructure/observability/ClientErrorSpanFilter.js';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
@@ -184,7 +185,7 @@ export function startObservability(): void {
       [ATTR_SERVICE_VERSION]: process.env[ENV.APP_RELEASE] || AXIOM.DEFAULT_RELEASE,
       [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: NODE_ENV.PRODUCTION,
     }),
-    spanProcessors: [spanProcessor],
+    spanProcessors: [new ClientErrorSpanFilter(), spanProcessor],
     logRecordProcessors: logProcessor ? [logProcessor] : [],
     metricReaders: metricReader ? [metricReader] : [],
     instrumentations: [
