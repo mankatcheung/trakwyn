@@ -1,4 +1,5 @@
 import type { JobData } from './types';
+import { htmlToPlainText } from './htmlToPlainText';
 
 export function parseGeneric(): JobData | null {
   // Try JSON-LD job posting schema
@@ -12,9 +13,7 @@ export function parseGeneric(): JobData | null {
           company: schema.hiringOrganization?.name || schema.employer?.name || undefined,
           role: schema.title || document.title,
           location: schema.jobLocation?.address?.addressLocality || undefined,
-          description: (schema.description as string | undefined)
-            ?.replace(/<[^>]+>/g, '')
-            .slice(0, 2000),
+          description: htmlToPlainText(schema.description as string | undefined)?.slice(0, 2000),
           jobUrl: window.location.href,
           source: new URL(window.location.href).hostname,
         };
