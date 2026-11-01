@@ -16,10 +16,15 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
-  // Every spec shares one API server + one local SQLite file — running
-  // spec files in parallel overloads that single server (tests pass in
-  // isolation but fail/timeout en masse when several files run at once).
-  workers: 1,
+  // Locally one worker, so a failure is easy to read and the shared dev
+  // server is not overloaded. CI runs two per shard (JEF-488): every test
+  // registers its own account (`uniqueEmail`, and the fake OAuth provider
+  // mints a fresh identity per sign-in) so no spec reads another's rows, and
+  // the per-IP abuse limits that every test trips from localhost are lifted
+  // outside production (RATE_LIMIT_RELAXED_MAX_ATTEMPTS). What stays shared is
+  // the one API process and database per shard, so a new spec must not assert
+  // on global state (totals over all users, a fixed email, a shared setting).
+  workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI
     ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
     : 'list',
