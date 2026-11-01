@@ -38,7 +38,10 @@ const config = defineConfig(({ command }) => ({
     // Restricted to `build`: nitro also resolves 'vercel' to its 'vercel-dev'
     // alias for `vite dev`, emulating the Vercel runtime locally — skipped
     // here so `pnpm dev` runs as a plain local dev server instead.
-    ...(command === 'build'
+    // Also skipped when E2E_PLAIN_BUILD is set (CI e2e, JEF-487): `vite
+    // preview` can only serve the plain build (dist/server/server.js), not the
+    // Vercel Build Output, and the e2e job never deploys what it builds.
+    ...(command === 'build' && !process.env.E2E_PLAIN_BUILD
       ? [
           nitro({
             preset: 'vercel',

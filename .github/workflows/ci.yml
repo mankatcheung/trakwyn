@@ -434,6 +434,17 @@ jobs:
       - name: Run database migrations
         run: pnpm --filter @trakwyn/api db:migrate:apply
 
+      # The specs run against built output, not the dev servers (JEF-487).
+      # E2E_PLAIN_BUILD skips the Vercel nitro output, which `vite preview`
+      # cannot serve. The build is repeated here rather than reused from the
+      # `build` job so e2e still starts at once without waiting for it.
+      - name: Build API and web
+        run: |
+          pnpm --filter @trakwyn/api build
+          pnpm --filter @trakwyn/web build
+        env:
+          E2E_PLAIN_BUILD: '1'
+
       - name: Run Playwright tests
         run: pnpm --filter @trakwyn/web test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
