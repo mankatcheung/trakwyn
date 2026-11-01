@@ -399,13 +399,6 @@ jobs:
           docker run -d --name postgres \
             -e POSTGRES_USER=trakwyn -e POSTGRES_PASSWORD=trakwyn -e POSTGRES_DB=trakwyn_e2e \
             -p 5432:5432 "$POSTGRES_IMAGE"
-          for _ in $(seq 1 30); do
-            docker exec postgres pg_isready -U trakwyn -d trakwyn_e2e && exit 0
-            sleep 2
-          done
-          docker logs postgres
-          echo "::error::Postgres did not become ready"
-          exit 1
 
       - uses: ./.github/actions/setup-project
 
@@ -446,6 +439,18 @@ jobs:
           cat > apps/web/.env <<'EOF'
           VITE_API_URL=/graphql
           EOF
+
+      # The container was started before the install so its boot overlapped it
+      # (JEF-491); by now this normally returns on the first probe.
+      - name: Wait for Postgres
+        run: |
+          for _ in $(seq 1 30); do
+            docker exec postgres pg_isready -U trakwyn -d trakwyn_e2e && exit 0
+            sleep 2
+          done
+          docker logs postgres
+          echo "::error::Postgres did not become ready"
+          exit 1
 
       - name: Run database migrations
         run: pnpm --filter @trakwyn/api db:migrate:apply
