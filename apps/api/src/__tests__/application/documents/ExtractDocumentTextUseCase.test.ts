@@ -27,12 +27,7 @@ function makeUseCase(overrides?: {
   };
   return {
     deps,
-    useCase: new ExtractDocumentTextUseCase(
-      deps.documentRepository,
-      deps.applicationRepository,
-      deps.documentTextExtractor,
-      deps.storageProvider,
-    ),
+    useCase: new ExtractDocumentTextUseCase(deps),
   };
 }
 
