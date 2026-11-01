@@ -51,8 +51,22 @@ RUN pnpm --filter @trakwyn/api build
 # inject-workspace-packages mode `pnpm deploy` otherwise requires buys nothing.
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm --filter @trakwyn/api deploy --prod --legacy /out \
- && rm -rf /out/src /out/drizzle /out/scripts /out/Dockerfile* /out/*.config.* \
+ && rm -rf /out/src /out/drizzle /out/scripts /out/docker /out/Dockerfile* /out/*.config.* \
           /out/tsconfig*.json
+
+# Drop what the server never loads:
+#  - declaration files and their maps: tsc emits them for the workspace, and
+#    nothing imports types at runtime. The .js.map files stay, for
+#    --enable-source-maps.
+#  - dist/evals and dist/__tests__: the manual AI eval runner and test helpers.
+#  - drizzle-orm's unused optional peers (Prisma, PGlite, libSQL, TypeScript,
+#    ...), which pnpm links in and which pull ~400 MB of packages the API never
+#    imports. PGlite is a devDependency used only for `pglite:` URLs outside
+#    production (see createDb.ts). The script fails the build if a package it
+#    keeps is left with a broken link.
+RUN find /out/dist \( -name '*.d.ts' -o -name '*.d.ts.map' \) -delete \
+ && rm -rf /out/dist/evals /out/dist/__tests__ \
+ && node apps/api/docker/prune-store.mjs /out
 
 FROM ${NODE_IMAGE} AS runtime
 # The commit SHA this image was built from (JEF-362), reported as the OTel
