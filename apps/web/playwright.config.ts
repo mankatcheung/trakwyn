@@ -15,13 +15,20 @@ const webCommand = process.env.CI
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
-  retries: process.env.CI ? 2 : 0,
+  // One retry, not two (JEF-489): a test that needs a second one is hiding a
+  // real fault. A retried pass is reported in the job summary (the `json`
+  // reporter below feeds .github/scripts/flaky-summary.sh), not silently kept.
+  retries: process.env.CI ? 1 : 0,
   // Every spec shares one API server + one local SQLite file — running
   // spec files in parallel overloads that single server (tests pass in
   // isolation but fail/timeout en masse when several files run at once).
   workers: 1,
   reporter: process.env.CI
-    ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    ? [
+        ['github'],
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+      ]
     : 'list',
   use: {
     baseURL: 'http://localhost:3000',
