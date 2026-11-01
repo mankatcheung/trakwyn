@@ -93,6 +93,20 @@ describe('ci.yml gates', () => {
     expect(needsOf('e2e')).toEqual(['changes']);
   });
 
+  // JEF-486: the suite is split across runners. A shard list that drifts from
+  // the `--shard` count would run some specs twice or not at all.
+  it('shards e2e, with every shard running its own slice and keeping its own report', () => {
+    const e2e = job('e2e');
+    const shards = /^ {8}shard: \[([\d,\s]+)\]/m.exec(e2e);
+    expect(shards, 'e2e needs a shard matrix').not.toBeNull();
+    const numbers = shards![1].split(',').map((n) => Number(n.trim()));
+    expect(numbers).toEqual(Array.from({ length: numbers.length }, (_, i) => i + 1));
+    expect(numbers.length).toBeGreaterThan(1);
+    expect(e2e).toMatch(/fail-fast: false/);
+    expect(e2e).toContain('test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}');
+    expect(e2e).toContain('name: playwright-report-${{ matrix.shard }}');
+  });
+
   it('never skips a job on a push to main, whatever files it touched', () => {
     const outputs = job('changes').slice(
       job('changes').indexOf('outputs:'),
