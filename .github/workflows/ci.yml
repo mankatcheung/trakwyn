@@ -130,6 +130,7 @@ jobs:
       api: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.api }}
       mobile: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.mobile }}
       infra: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.infra }}
+      e2e: ${{ github.event_name != 'pull_request' && 'true' || steps.filter.outputs.e2e }}
     steps:
       - uses: dorny/paths-filter@v3
         id: filter
@@ -160,6 +161,22 @@ jobs:
               - '.github/actions/**'
               - '.github/scripts/**'
               - '.github/workflows/ci.yml'
+            e2e:
+              - 'apps/web/**'
+              - 'apps/api/**'
+              - 'packages/**'
+              - 'infra/base-images.txt'
+              - '.github/actions/**'
+              - '.github/scripts/**'
+              - '.github/workflows/ci.yml'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '*.json'
+              - '*.js'
+              - '*.mjs'
+              - '*.ts'
+              - '.nvmrc'
+              - '.npmrc'
             mobile:
               - 'apps/mobile/**'
               - 'apps/api/**'
@@ -350,7 +367,7 @@ jobs:
   e2e:
     name: Playwright E2E (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
