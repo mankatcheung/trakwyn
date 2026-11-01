@@ -206,6 +206,19 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 100,
     WINDOW_MS: 24 * 60 * 60 * 1000, // 1 day
   },
+  // Per client IP on the raw routes that sit outside the use-case limiters
+  // (JEF-483). Sign-in redirects: a person starts a handful, a script that hammers
+  // them is spending the provider's quota and the OAuth state signer.
+  OAUTH_REDIRECT: {
+    MAX_ATTEMPTS: 60,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
+  // A document view fetches the file once per iframe/img, and a shared office IP
+  // opens many, so this is generous; it ends a loop, not a busy reader.
+  DOCUMENT_FILE: {
+    MAX_ATTEMPTS: 300,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   CHAT_MESSAGE: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

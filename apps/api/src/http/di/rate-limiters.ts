@@ -98,6 +98,13 @@ export const rateLimiters = {
     'accountDeletionRateLimiter',
     RATE_LIMIT.ACCOUNT_DELETION_REQUEST,
   ),
+  // Per-IP and shared by everyone behind an address, so production only like
+  // the sign-up limits (JEF-400): e2e drives the OAuth redirects dozens of times.
+  oauthRateLimiter: productionOnlyLimiter('oauthRateLimiter', RATE_LIMIT.OAUTH_REDIRECT),
+  documentFileRateLimiter: productionOnlyLimiter(
+    'documentFileRateLimiter',
+    RATE_LIMIT.DOCUMENT_FILE,
+  ),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
   generateCoverLetterRateLimiter: limiter(

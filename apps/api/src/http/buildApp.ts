@@ -9,6 +9,7 @@ import { registerRoutes } from '#src/http/adapters/fastify/registerRoutes.js';
 import { toHttpRequest } from '#src/http/adapters/fastify/toHttpRequest.js';
 import { toHttpResponse } from '#src/http/adapters/fastify/toHttpResponse.js';
 import { buildGraphQLContext } from '#src/http/adapters/fastify/buildGraphQLContext.js';
+import { ipRateLimit } from '#src/http/adapters/fastify/ipRateLimit.js';
 import { diScopeOf } from '#src/http/adapters/fastify/diScope.js';
 import { remindersRoutes } from '#src/http/routes/reminders.routes.js';
 import { pushNotificationsRoutes } from '#src/http/routes/pushNotifications.routes.js';
@@ -248,11 +249,13 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'GET',
     url: ROUTES.DOCUMENT_FILE,
+    preHandler: ipRateLimit('documentFileRateLimiter', 'document-file'),
     handler: handleDocumentFile,
   });
   fastify.route({
     method: 'GET',
     url: ROUTES.OAUTH_START,
+    preHandler: ipRateLimit('oauthRateLimiter', 'oauth'),
     handler: async (request, reply) => {
       const route = oauthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.OAUTH_START,
@@ -263,6 +266,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'GET',
     url: ROUTES.OAUTH_CALLBACK,
+    preHandler: ipRateLimit('oauthRateLimiter', 'oauth'),
     handler: async (request, reply) => {
       const route = oauthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.OAUTH_CALLBACK,
@@ -273,6 +277,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'GET',
     url: ROUTES.EXTENSION_OAUTH_DONE,
+    preHandler: ipRateLimit('oauthRateLimiter', 'oauth'),
     handler: async (request, reply) => {
       const route = oauthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.EXTENSION_OAUTH_DONE,
