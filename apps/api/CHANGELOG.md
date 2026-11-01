@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.10.0...api-v0.11.0) (2026-11-01)
+
+
+### Features
+
+* rate-limit the OAuth redirects and the document file route by IP (JEF-483) ([#1170](https://github.com/mankatcheung/trakwyn/issues/1170)) ([615e004](https://github.com/mankatcheung/trakwyn/commit/615e004431f8782effe430c126551bc7f5e057a3))
+* tailor practice questions and talking points to the user's profile and resume (JEF-394) ([#1161](https://github.com/mankatcheung/trakwyn/issues/1161)) ([3d6f0aa](https://github.com/mankatcheung/trakwyn/commit/3d6f0aaff0fb4c2f7d3d2c37c23011be45fd2282))
+
+
+### Bug Fixes
+
+* harden HTML-to-text in the job posting resolver and the Clipper (JEF-482) ([#1169](https://github.com/mankatcheung/trakwyn/issues/1169)) ([6acf8e3](https://github.com/mankatcheung/trakwyn/commit/6acf8e34e342a6788b2141e1d5f8c5379cc835bb))
+
+
+### Performance Improvements
+
+* shrink the API image from 1.11 GB to 611 MB ([#1173](https://github.com/mankatcheung/trakwyn/issues/1173)) ([6131133](https://github.com/mankatcheung/trakwyn/commit/61311339a61b6526eaed5779c0d4c5c988e04ff7))
+
 ## [0.10.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.9.0...api-v0.10.0) (2026-10-29)
 
 
