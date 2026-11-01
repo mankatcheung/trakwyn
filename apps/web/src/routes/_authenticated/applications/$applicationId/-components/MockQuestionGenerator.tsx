@@ -11,17 +11,21 @@ import {
   type GeneratedQuestions,
 } from './mockQuestionApi';
 import { MOCK_QUESTION_LIMITS } from './interviewQuestionLimits';
+import { MockBackgroundPicker, type MockBackground } from './MockBackgroundPicker';
+import { readRememberedUseProfile } from './mockBackgroundChoice';
 
 /**
  * Asks the AI for practice questions and lets the user choose which to keep.
  * Nothing is saved until "Add to Practice": the suggestions live only here.
  */
 export function MockQuestionGenerator({
+  applicationId,
   roundId,
   slotsLeft,
   onSaved,
   onClose,
 }: {
+  applicationId: string;
   roundId: string;
   slotsLeft: number;
   onSaved: () => void;
@@ -29,6 +33,11 @@ export function MockQuestionGenerator({
 }) {
   const { t } = useLocale();
   const [prompt, setPrompt] = useState('');
+  // Off until the user switches it on: the profile goes to their AI provider.
+  const [background, setBackground] = useState<MockBackground>(() => ({
+    useProfile: readRememberedUseProfile(false),
+    documentId: null,
+  }));
   const [result, setResult] = useState<GeneratedQuestions | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
   const promptId = `generate-prompt-${useId()}`;
@@ -41,6 +50,8 @@ export function MockQuestionGenerator({
           interviewRoundId: roundId,
           prompt: prompt.trim() || null,
           count: MOCK_QUESTION_LIMITS.GENERATE_COUNT,
+          useProfile: background.useProfile,
+          documentId: background.documentId,
         },
       ),
     onSuccess: (data) => {
@@ -75,14 +86,17 @@ export function MockQuestionGenerator({
       return next;
     });
 
+  const askedForBackground = background.useProfile || background.documentId !== null;
   const contextNote = result
-    ? !result.usedJobDescription && !result.usedBriefing
-      ? t('interviews.noContextNote')
-      : !result.usedBriefing
-        ? t('interviews.noBriefingNote')
-        : !result.usedJobDescription
-          ? t('interviews.noDescriptionNote')
-          : null
+    ? askedForBackground && !result.usedProfile && !result.usedDocument
+      ? t('interviews.noBackgroundNote')
+      : !result.usedJobDescription && !result.usedBriefing
+        ? t('interviews.noContextNote')
+        : !result.usedBriefing
+          ? t('interviews.noBriefingNote')
+          : !result.usedJobDescription
+            ? t('interviews.noDescriptionNote')
+            : null
     : null;
 
   return (
@@ -105,6 +119,11 @@ export function MockQuestionGenerator({
           placeholder={t('interviews.generatePromptPlaceholder')}
         />
       </div>
+      <MockBackgroundPicker
+        applicationId={applicationId}
+        value={background}
+        onChange={setBackground}
+      />
       {generate.isError && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {getErrorMessage(generate.error)}

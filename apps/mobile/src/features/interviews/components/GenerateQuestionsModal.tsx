@@ -17,6 +17,8 @@ import {
   useGenerateMockInterviewQuestions,
 } from '../hooks/useMockInterviewQuestionMutations';
 import { MOCK_QUESTION_LIMITS, type GeneratedMockQuestions } from '../types';
+import { BackgroundChooser, type MockBackground } from './BackgroundChooser';
+import { getRememberedUseProfile } from '../lib/mockBackgroundChoice';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -47,6 +49,11 @@ export function GenerateQuestionsModal({
   const addQuestions = useAddMockInterviewQuestions(applicationId, roundId);
 
   const [prompt, setPrompt] = useState('');
+  // Off until the user switches it on: the profile goes to their AI provider.
+  const [background, setBackground] = useState<MockBackground>(() => ({
+    useProfile: getRememberedUseProfile(),
+    documentId: null,
+  }));
   const [result, setResult] = useState<GeneratedMockQuestions | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
 
@@ -60,23 +67,29 @@ export function GenerateQuestionsModal({
       ? getErrorMessage(addQuestions.error)
       : null;
 
+  const askedForBackground = background.useProfile || background.documentId !== null;
   const contextNote = result
-    ? !result.usedJobDescription && !result.usedBriefing
-      ? t('noContextNote')
-      : !result.usedBriefing
-        ? t('noBriefingNote')
-        : !result.usedJobDescription
-          ? t('noDescriptionNote')
-          : null
+    ? askedForBackground && !result.usedProfile && !result.usedDocument
+      ? t('noBackgroundNote')
+      : !result.usedJobDescription && !result.usedBriefing
+        ? t('noContextNote')
+        : !result.usedBriefing
+          ? t('noBriefingNote')
+          : !result.usedJobDescription
+            ? t('noDescriptionNote')
+            : null
     : null;
 
   const runGenerate = () =>
-    generate.mutate(prompt, {
-      onSuccess: (data) => {
-        setResult(data);
-        setSelected(new Set(data.suggestions.map((_, i) => i)));
+    generate.mutate(
+      { prompt, useProfile: background.useProfile, documentId: background.documentId },
+      {
+        onSuccess: (data) => {
+          setResult(data);
+          setSelected(new Set(data.suggestions.map((_, i) => i)));
+        },
       },
-    });
+    );
 
   const toggle = (index: number) =>
     setSelected((prev) => {
@@ -121,6 +134,11 @@ export function GenerateQuestionsModal({
             maxLength={MOCK_QUESTION_LIMITS.PROMPT_MAX_CHARS}
             multiline
             testID="generate-prompt-input"
+          />
+          <BackgroundChooser
+            applicationId={applicationId}
+            value={background}
+            onChange={setBackground}
           />
           <Pressable
             style={[styles.generateButton, busy && styles.buttonDisabled]}

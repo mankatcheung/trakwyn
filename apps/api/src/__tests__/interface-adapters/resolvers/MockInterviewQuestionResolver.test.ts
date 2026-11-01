@@ -29,9 +29,12 @@ const makeDeps = (overrides?: object) => ({
   }),
   generateMockQuestionsUseCase: stub<IGenerateMockQuestionsUseCase>({ execute: vi.fn() }),
   generateMockAnswerUseCase: stub<IGenerateMockAnswerUseCase>({ execute: vi.fn() }),
+  generateTalkingPointsUseCase: stub<IGenerateTalkingPointsUseCase>({ execute: vi.fn() }),
   mockInterviewQuestionMapper: new MockInterviewQuestionMapper(),
   ...overrides,
 });
+
+import type { IGenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateTalkingPointsUseCase.js';
 
 describe('MockInterviewQuestionResolver', () => {
   it('getMockInterviewQuestions: delegates and maps each question to a DTO', async () => {
@@ -175,7 +178,13 @@ describe('MockInterviewQuestionResolver', () => {
   });
 
   it('generateMockAnswer: passes the user and input through and returns the draft', async () => {
-    const output = { answer: 'I would…', usedJobDescription: false, usedBriefing: false };
+    const output = {
+      answer: 'I would…',
+      usedJobDescription: false,
+      usedBriefing: false,
+      usedProfile: false,
+      usedDocument: false,
+    };
     const deps = makeDeps({
       generateMockAnswerUseCase: stub<IGenerateMockAnswerUseCase>({
         execute: vi.fn().mockResolvedValue(output),
@@ -191,5 +200,34 @@ describe('MockInterviewQuestionResolver', () => {
       questionId: 'q1',
     });
     expect(result).toBe(output);
+  });
+
+  it('generateMockTalkingPoints: passes the user and sources through and maps the question', async () => {
+    const deps = makeDeps({
+      generateTalkingPointsUseCase: stub<IGenerateTalkingPointsUseCase>({
+        execute: vi.fn().mockResolvedValue({
+          question: makeMockInterviewQuestion({ id: 'q1', talkingPoints: '- Mention Acme' }),
+          nothingRelevant: false,
+          usedProfile: true,
+          usedDocument: false,
+        }),
+      }),
+    });
+
+    const result = await new MockInterviewQuestionResolver(deps).generateMockTalkingPoints(
+      'user-1',
+      { questionId: 'q1', documentId: 'doc-1' },
+    );
+
+    expect(deps.generateTalkingPointsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      questionId: 'q1',
+      documentId: 'doc-1',
+    });
+    expect(result).toMatchObject({
+      question: { id: 'q1', talkingPoints: '- Mention Acme' },
+      nothingRelevant: false,
+      usedProfile: true,
+    });
   });
 });

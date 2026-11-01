@@ -11,6 +11,12 @@ const FAKE_MOCK_QUESTIONS = {
     'Describe a time you disagreed with a teammate and how you resolved it.',
   ],
 };
+const FAKE_TALKING_POINTS = {
+  points: [
+    { point: 'Mention the distributed systems you built', source: 'Senior Engineer at Acme Corp' },
+    { point: 'Describe shipping the billing platform', source: 'Software Engineer at Globex' },
+  ],
+};
 const FAKE_MOCK_ANSWER =
   'I would start by clarifying the goal, then walk through the trade-offs I weighed and what I learned.';
 
@@ -113,6 +119,14 @@ export function fakeLlmCompletionsRoutes(): RouteDefinition[] {
           res.send({
             choices: [
               { message: { content: JSON.stringify(FAKE_MOCK_QUESTIONS), tool_calls: [] } },
+            ],
+          });
+          return;
+        }
+        if (system.includes(MOCK_INTERVIEW_PROMPT_TASK.TALKING_POINTS)) {
+          res.send({
+            choices: [
+              { message: { content: JSON.stringify(FAKE_TALKING_POINTS), tool_calls: [] } },
             ],
           });
           return;

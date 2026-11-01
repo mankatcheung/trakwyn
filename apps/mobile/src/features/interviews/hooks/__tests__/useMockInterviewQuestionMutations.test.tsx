@@ -11,9 +11,11 @@ import {
   useDeleteMockInterviewQuestion,
   useGenerateMockInterviewAnswer,
   useGenerateMockInterviewQuestions,
+  useGenerateMockTalkingPoints,
   useReorderMockInterviewQuestions,
   useUpdateMockInterviewQuestion,
 } from '../useMockInterviewQuestionMutations';
+import { rememberUseProfile } from '../../lib/mockBackgroundChoice';
 import { mockInterviewQuestionsQueryKey } from '../useMockInterviewQuestionQueries';
 import { interviewRoundsQueryKey } from '../useInterviewQueries';
 import type { MockInterviewQuestion } from '../../types';
@@ -26,6 +28,8 @@ const question = (id: string): MockInterviewQuestion => ({
   question: `Question ${id}`,
   answer: null,
   answerSource: 'user',
+  talkingPoints: null,
+  talkingPointsGeneratedAt: null,
   position: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -261,7 +265,13 @@ describe('useMockInterviewQuestionMutations', () => {
 
   describe('useGenerateMockInterviewQuestions', () => {
     it('sends the prompt and a count, and returns suggestions without touching the cache', async () => {
-      const generated = { suggestions: ['One?'], usedJobDescription: true, usedBriefing: false };
+      const generated = {
+        suggestions: ['One?'],
+        usedJobDescription: true,
+        usedBriefing: false,
+        usedProfile: false,
+        usedDocument: false,
+      };
       mockedGqlRequest.mockResolvedValueOnce({ generateMockInterviewQuestions: generated });
       const { wrapper, invalidate } = setup();
       const { result } = await renderHook(() => useGenerateMockInterviewQuestions('round-1'), {
@@ -270,7 +280,11 @@ describe('useMockInterviewQuestionMutations', () => {
 
       let value: unknown;
       await act(async () => {
-        value = await result.current.mutateAsync(' system design ');
+        value = await result.current.mutateAsync({
+          prompt: ' system design ',
+          useProfile: false,
+          documentId: null,
+        });
       });
 
       expect(value).toEqual(generated);
@@ -278,8 +292,29 @@ describe('useMockInterviewQuestionMutations', () => {
         interviewRoundId: 'round-1',
         prompt: 'system design',
         count: 5,
+        useProfile: false,
+        documentId: null,
       });
       expect(invalidate).not.toHaveBeenCalled();
+    });
+
+    it('sends the profile and the chosen resume when asked', async () => {
+      mockedGqlRequest.mockResolvedValueOnce({
+        generateMockInterviewQuestions: { suggestions: [] },
+      });
+      const { wrapper } = setup();
+      const { result } = await renderHook(() => useGenerateMockInterviewQuestions('round-1'), {
+        wrapper,
+      });
+
+      await act(async () => {
+        await result.current.mutateAsync({ prompt: '', useProfile: true, documentId: 'doc-1' });
+      });
+
+      expect(mockedGqlRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ useProfile: true, documentId: 'doc-1' }),
+      );
     });
 
     it('sends no prompt when it is blank', async () => {
@@ -296,7 +331,7 @@ describe('useMockInterviewQuestionMutations', () => {
       });
 
       await act(async () => {
-        await result.current.mutateAsync('   ');
+        await result.current.mutateAsync({ prompt: '   ', useProfile: false, documentId: null });
       });
 
       expect(mockedGqlRequest).toHaveBeenCalledWith(
@@ -308,7 +343,13 @@ describe('useMockInterviewQuestionMutations', () => {
 
   describe('useGenerateMockInterviewAnswer', () => {
     it('returns a draft for the question and saves nothing', async () => {
-      const generated = { answer: 'A draft.', usedJobDescription: true, usedBriefing: true };
+      const generated = {
+        answer: 'A draft.',
+        usedJobDescription: true,
+        usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
+      };
       mockedGqlRequest.mockResolvedValueOnce({ generateMockInterviewAnswer: generated });
       const { wrapper, invalidate } = setup();
       const { result } = await renderHook(() => useGenerateMockInterviewAnswer(), { wrapper });
@@ -321,8 +362,58 @@ describe('useMockInterviewQuestionMutations', () => {
       expect(value).toEqual(generated);
       expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), {
         mockInterviewQuestionId: 'q1',
+        useProfile: false,
       });
       expect(invalidate).not.toHaveBeenCalled();
+    });
+
+    it('sends the profile only once the user has switched it on', async () => {
+      mockedGqlRequest.mockResolvedValueOnce({ generateMockInterviewAnswer: { answer: 'A' } });
+      rememberUseProfile(true);
+      const { wrapper } = setup();
+      const { result } = await renderHook(() => useGenerateMockInterviewAnswer(), { wrapper });
+
+      await act(async () => {
+        await result.current.mutateAsync('q1');
+      });
+      rememberUseProfile(false);
+
+      expect(mockedGqlRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ useProfile: true }),
+      );
+    });
+  });
+
+  describe('useGenerateMockTalkingPoints', () => {
+    it('sends the question and sources, then refreshes the list but not the count', async () => {
+      mockedGqlRequest.mockResolvedValueOnce({
+        generateMockTalkingPoints: {
+          nothingRelevant: false,
+          usedProfile: true,
+          usedDocument: false,
+          question: question('q1'),
+        },
+      });
+      const { wrapper, invalidate } = setup();
+      const { result } = await renderHook(() => useGenerateMockTalkingPoints('app-1', 'round-1'), {
+        wrapper,
+      });
+
+      await act(async () => {
+        await result.current.mutateAsync({
+          questionId: 'q1',
+          useProfile: true,
+          documentId: 'doc-1',
+        });
+      });
+
+      expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), {
+        mockInterviewQuestionId: 'q1',
+        useProfile: true,
+        documentId: 'doc-1',
+      });
+      expect(invalidatedKeys(invalidate)).toEqual([mockInterviewQuestionsQueryKey('round-1')]);
     });
   });
 });

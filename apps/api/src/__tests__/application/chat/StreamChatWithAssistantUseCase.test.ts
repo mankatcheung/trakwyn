@@ -40,6 +40,7 @@ function makeDeps(overrides?: Record<string, unknown>) {
     getMockInterviewQuestionsUseCase: stubUseCase([]),
     generateMockQuestionsUseCase: stubUseCase({ suggestions: [] }),
     generateMockAnswerUseCase: stubUseCase({ answer: '' }),
+    generateTalkingPointsUseCase: stubUseCase({ nothingRelevant: true }),
     getDocumentsUseCase: stubUseCase([]),
     getOffersUseCase: stubUseCase([]),
     getActivityLogsUseCase: stubUseCase([]),

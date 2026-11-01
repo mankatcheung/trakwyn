@@ -100,6 +100,8 @@ const MOCK_INTERVIEW_QUESTION_FIELDS = `
   question
   answer
   answerSource
+  talkingPoints
+  talkingPointsGeneratedAt
   position
   createdAt
   updatedAt
@@ -144,21 +146,38 @@ export const REORDER_MOCK_INTERVIEW_QUESTIONS_MUTATION = `
 `;
 
 export const GENERATE_MOCK_INTERVIEW_QUESTIONS_MUTATION = `
-  mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int) {
-    generateMockInterviewQuestions(interviewRoundId: $interviewRoundId, prompt: $prompt, count: $count) {
+  mutation GenerateMockInterviewQuestions($interviewRoundId: ID!, $prompt: String, $count: Int, $useProfile: Boolean, $documentId: ID) {
+    generateMockInterviewQuestions(interviewRoundId: $interviewRoundId, prompt: $prompt, count: $count, useProfile: $useProfile, documentId: $documentId) {
       suggestions
       usedJobDescription
       usedBriefing
+      usedProfile
+      usedDocument
     }
   }
 `;
 
 export const GENERATE_MOCK_INTERVIEW_ANSWER_MUTATION = `
-  mutation GenerateMockInterviewAnswer($mockInterviewQuestionId: ID!, $prompt: String) {
-    generateMockInterviewAnswer(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt) {
+  mutation GenerateMockInterviewAnswer($mockInterviewQuestionId: ID!, $prompt: String, $useProfile: Boolean, $documentId: ID) {
+    generateMockInterviewAnswer(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt, useProfile: $useProfile, documentId: $documentId) {
       answer
       usedJobDescription
       usedBriefing
+      usedProfile
+      usedDocument
+    }
+  }
+`;
+
+export const GENERATE_MOCK_TALKING_POINTS_MUTATION = `
+  mutation GenerateMockTalkingPoints($mockInterviewQuestionId: ID!, $useProfile: Boolean, $documentId: ID) {
+    generateMockTalkingPoints(mockInterviewQuestionId: $mockInterviewQuestionId, useProfile: $useProfile, documentId: $documentId) {
+      nothingRelevant
+      usedProfile
+      usedDocument
+      question {
+        ${MOCK_INTERVIEW_QUESTION_FIELDS}
+      }
     }
   }
 `;

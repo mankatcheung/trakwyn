@@ -98,6 +98,30 @@ describe('fake LLM completions route — LLM_PROVIDER_MODE=fake', () => {
     expect(() => JSON.parse(content)).toThrow();
   });
 
+  it('replies with cited talking points for the talking points prompt (JEF-394)', async () => {
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: '/llm-test/fake/chat/completions',
+      payload: {
+        model: 'fake-model',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a coach. ${MOCK_INTERVIEW_PROMPT_TASK.TALKING_POINTS}.`,
+          },
+          { role: 'user', content: 'Interview question: why us?' },
+        ],
+      },
+    });
+
+    const content = JSON.parse(res.json().choices[0].message.content);
+    expect(content.points.length).toBeGreaterThan(0);
+    for (const entry of content.points) {
+      expect(entry.point).toBeTruthy();
+      expect(entry.source).toBeTruthy();
+    }
+  });
+
   it('replies with the canned resume JSON when the request carries no tools (complete)', async () => {
     const res = await testApp.app.inject({
       method: 'POST',

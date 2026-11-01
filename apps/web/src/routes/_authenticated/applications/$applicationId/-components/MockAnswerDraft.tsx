@@ -7,6 +7,7 @@ import { useLocale } from '#/lib/i18n';
 import { AiGeneratedBadge } from './AiGeneratedBadge';
 import { GENERATE_MOCK_ANSWER, type GeneratedAnswer } from './mockQuestionApi';
 import { INTERVIEW_QUESTION_LIMITS } from './interviewQuestionLimits';
+import { readRememberedUseProfile } from './mockBackgroundChoice';
 
 /**
  * An AI-drafted answer for one practice question, held open for review. The
@@ -16,6 +17,7 @@ import { INTERVIEW_QUESTION_LIMITS } from './interviewQuestionLimits';
 export function MockAnswerDraft({
   questionId,
   initialDraft,
+  initialUsedProfile,
   saving,
   saveError,
   onSave,
@@ -23,6 +25,7 @@ export function MockAnswerDraft({
 }: {
   questionId: string;
   initialDraft: string;
+  initialUsedProfile: boolean;
   saving: boolean;
   saveError: string | null;
   onSave: (answer: string) => void;
@@ -30,14 +33,19 @@ export function MockAnswerDraft({
 }) {
   const { t } = useLocale();
   const [draft, setDraft] = useState(initialDraft);
+  const [usedProfile, setUsedProfile] = useState(initialUsedProfile);
   const draftId = `answer-draft-${useId()}`;
 
   const regenerate = useMutation({
     mutationFn: () =>
       gqlClient.request<{ generateMockInterviewAnswer: GeneratedAnswer }>(GENERATE_MOCK_ANSWER, {
         mockInterviewQuestionId: questionId,
+        useProfile: readRememberedUseProfile(false),
       }),
-    onSuccess: (data) => setDraft(data.generateMockInterviewAnswer.answer),
+    onSuccess: (data) => {
+      setDraft(data.generateMockInterviewAnswer.answer);
+      setUsedProfile(data.generateMockInterviewAnswer.usedProfile);
+    },
   });
 
   const error = saveError ?? (regenerate.isError ? getErrorMessage(regenerate.error) : null);
@@ -59,6 +67,11 @@ export function MockAnswerDraft({
         className="h-40"
       />
       <p className="text-xs text-gray-500 dark:text-gray-400">{t('interviews.aiDraftReview')}</p>
+      {usedProfile && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {t('interviews.draftUsedProfile')}
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}

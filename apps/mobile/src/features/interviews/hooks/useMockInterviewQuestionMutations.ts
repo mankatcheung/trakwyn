@@ -5,15 +5,18 @@ import {
   DELETE_MOCK_INTERVIEW_QUESTION_MUTATION,
   GENERATE_MOCK_INTERVIEW_ANSWER_MUTATION,
   GENERATE_MOCK_INTERVIEW_QUESTIONS_MUTATION,
+  GENERATE_MOCK_TALKING_POINTS_MUTATION,
   REORDER_MOCK_INTERVIEW_QUESTIONS_MUTATION,
   UPDATE_MOCK_INTERVIEW_QUESTION_MUTATION,
 } from '../graphql/operations';
+import { getRememberedUseProfile } from '../lib/mockBackgroundChoice';
 import { interviewRoundsQueryKey } from './useInterviewQueries';
 import { mockInterviewQuestionsQueryKey } from './useMockInterviewQuestionQueries';
 import {
   MOCK_QUESTION_LIMITS,
   type GeneratedMockAnswer,
   type GeneratedMockQuestions,
+  type GeneratedMockTalkingPoints,
   type InterviewQuestionFormData,
   type MockInterviewQuestion,
 } from '../types';
@@ -147,25 +150,59 @@ export function useReorderMockInterviewQuestions(applicationId: string, roundId:
 /** Asks the AI for suggestions. Nothing is saved: the screen decides what to keep. */
 export function useGenerateMockInterviewQuestions(roundId: string) {
   return useMutation({
-    mutationFn: (prompt: string) =>
+    mutationFn: ({
+      prompt,
+      useProfile,
+      documentId,
+    }: {
+      prompt: string;
+      useProfile: boolean;
+      documentId: string | null;
+    }) =>
       gqlRequest<{ generateMockInterviewQuestions: GeneratedMockQuestions }>(
         GENERATE_MOCK_INTERVIEW_QUESTIONS_MUTATION,
         {
           interviewRoundId: roundId,
           prompt: prompt.trim() || null,
           count: MOCK_QUESTION_LIMITS.GENERATE_COUNT,
+          useProfile,
+          documentId,
         },
       ).then((data) => data.generateMockInterviewQuestions),
   });
 }
 
-/** Drafts an answer to one practice question. A draft only: saving is a separate step. */
+/**
+ * Drafts an answer to one practice question. A draft only: saving is a separate
+ * step. It sends the profile only if the user switched that on in a dialog.
+ */
 export function useGenerateMockInterviewAnswer() {
   return useMutation({
     mutationFn: (questionId: string) =>
       gqlRequest<{ generateMockInterviewAnswer: GeneratedMockAnswer }>(
         GENERATE_MOCK_INTERVIEW_ANSWER_MUTATION,
-        { mockInterviewQuestionId: questionId },
+        { mockInterviewQuestionId: questionId, useProfile: getRememberedUseProfile() },
       ).then((data) => data.generateMockInterviewAnswer),
+  });
+}
+
+/** Generates and saves talking points on one question, then refreshes the list. */
+export function useGenerateMockTalkingPoints(applicationId: string, roundId: string) {
+  const { refreshQuestions } = useRefreshers(applicationId, roundId);
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      useProfile,
+      documentId,
+    }: {
+      questionId: string;
+      useProfile: boolean;
+      documentId: string | null;
+    }) =>
+      gqlRequest<{ generateMockTalkingPoints: GeneratedMockTalkingPoints }>(
+        GENERATE_MOCK_TALKING_POINTS_MUTATION,
+        { mockInterviewQuestionId: questionId, useProfile, documentId },
+      ).then((data) => data.generateMockTalkingPoints),
+    onSuccess: refreshQuestions,
   });
 }

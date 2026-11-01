@@ -129,6 +129,10 @@ export const rateLimiters = {
     'generateMockAnswerRateLimiter',
     RATE_LIMIT.GENERATE_MOCK_ANSWER,
   ),
+  generateMockTalkingPointsRateLimiter: limiter(
+    'generateMockTalkingPointsRateLimiter',
+    RATE_LIMIT.GENERATE_MOCK_TALKING_POINTS,
+  ),
   testLlmApiKeyRateLimiter: limiter('testLlmApiKeyRateLimiter', RATE_LIMIT.TEST_LLM_API_KEY),
   updatePasswordRateLimiter: limiter('updatePasswordRateLimiter', RATE_LIMIT.UPDATE_PASSWORD),
   requestEmailChangeRateLimiter: limiter(

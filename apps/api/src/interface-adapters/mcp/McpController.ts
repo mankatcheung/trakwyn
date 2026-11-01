@@ -7,6 +7,7 @@ import type { IGetInterviewRoundsUseCase } from '#src/use-cases/interviewRounds/
 import type { IGetDocumentsUseCase } from '#src/use-cases/documents/IGetDocumentsUseCase.js';
 import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
 import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateTalkingPointsUseCase.js';
 import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
 import type { IGetOffersUseCase } from '#src/use-cases/offers/IGetOffersUseCase.js';
 import type { IGetActivityLogsUseCase } from '#src/use-cases/activityLogs/IGetActivityLogsUseCase.js';
@@ -94,6 +95,7 @@ interface Deps extends WriteToolDeps {
   getMockInterviewQuestionsUseCase: IGetMockInterviewQuestionsUseCase;
   generateMockQuestionsUseCase: IGenerateMockQuestionsUseCase;
   generateMockAnswerUseCase: IGenerateMockAnswerUseCase;
+  generateTalkingPointsUseCase: IGenerateTalkingPointsUseCase;
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
@@ -308,6 +310,8 @@ export class McpController {
             roundId: interviewRoundId,
             prompt: toStr(args.prompt),
             count: toPositiveInt(args.count),
+            useProfile: args.useProfile === true,
+            documentId: toStr(args.documentId),
           });
           break;
         }
@@ -320,6 +324,22 @@ export class McpController {
             userId,
             questionId: mockInterviewQuestionId,
             prompt: toStr(args.prompt),
+            useProfile: args.useProfile === true,
+            documentId: toStr(args.documentId),
+          });
+          break;
+        }
+        case 'generate_mock_talking_points': {
+          const mockInterviewQuestionId = toStr(args.mockInterviewQuestionId);
+          if (!mockInterviewQuestionId) {
+            return this.invalid(observed, id, 'mockInterviewQuestionId is required');
+          }
+          result = await this.deps.generateTalkingPointsUseCase.execute({
+            userId,
+            questionId: mockInterviewQuestionId,
+            useProfile: args.useProfile !== false,
+            documentId: toStr(args.documentId),
+            save: false,
           });
           break;
         }

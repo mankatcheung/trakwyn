@@ -17,6 +17,8 @@ MockInterviewQuestionRef.implement({
     question: t.exposeString('question'),
     answer: t.exposeString('answer', { nullable: true }),
     answerSource: t.field({ type: AnswerSourceEnum, resolve: (q) => q.answerSource }),
+    talkingPoints: t.exposeString('talkingPoints', { nullable: true }),
+    talkingPointsGeneratedAt: t.exposeString('talkingPointsGeneratedAt', { nullable: true }),
     position: t.exposeInt('position'),
     createdAt: t.exposeString('createdAt'),
     updatedAt: t.exposeString('updatedAt'),

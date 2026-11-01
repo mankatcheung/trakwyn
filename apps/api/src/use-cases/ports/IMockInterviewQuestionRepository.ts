@@ -18,6 +18,8 @@ export interface UpdateMockInterviewQuestionData {
   question?: string;
   answer?: string | null;
   answerSource?: AnswerSource;
+  /** Stamps `talkingPointsGeneratedAt` with the time of the write; `null` clears both. */
+  talkingPoints?: string | null;
 }
 
 export interface IMockInterviewQuestionRepository {

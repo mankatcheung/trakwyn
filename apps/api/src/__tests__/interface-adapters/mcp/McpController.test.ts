@@ -21,6 +21,7 @@ import type { ICreateNoteUseCase } from '#src/use-cases/notes/ICreateNoteUseCase
 import type { ICreateInterviewRoundUseCase } from '#src/use-cases/interviewRounds/ICreateInterviewRoundUseCase.js';
 import type { IGetMockInterviewQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGetMockInterviewQuestionsUseCase.js';
 import type { IGenerateMockQuestionsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockQuestionsUseCase.js';
+import type { IGenerateTalkingPointsUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateTalkingPointsUseCase.js';
 import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQuestions/IGenerateMockAnswerUseCase.js';
 import type { ICreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/ICreateMockInterviewQuestionUseCase.js';
 import type { ICreateSkillUseCase } from '#src/use-cases/skill/ICreateSkillUseCase.js';
@@ -89,6 +90,7 @@ const makeDeps = () => ({
   getMockInterviewQuestionsUseCase: { execute: vi.fn() } as IGetMockInterviewQuestionsUseCase,
   generateMockQuestionsUseCase: { execute: vi.fn() } as IGenerateMockQuestionsUseCase,
   generateMockAnswerUseCase: { execute: vi.fn() } as IGenerateMockAnswerUseCase,
+  generateTalkingPointsUseCase: { execute: vi.fn() } as IGenerateTalkingPointsUseCase,
   createMockInterviewQuestionUseCase: { execute: vi.fn() } as ICreateMockInterviewQuestionUseCase,
   createSkillUseCase: { execute: vi.fn() } as ICreateSkillUseCase,
   updateSkillUseCase: { execute: vi.fn() } as IUpdateSkillUseCase,
@@ -802,6 +804,8 @@ describe('McpController', () => {
           suggestions: ['Q?'],
           usedJobDescription: true,
           usedBriefing: false,
+          usedProfile: false,
+          usedDocument: false,
         });
 
         const { body } = await call(
@@ -815,8 +819,24 @@ describe('McpController', () => {
           roundId: 'r1',
           prompt: 'system design',
           count: 3,
+          useProfile: false,
+          documentId: undefined,
         });
         expect(body).not.toHaveProperty('error');
+      });
+
+      it('generate_mock_interview_questions sends the profile only when useProfile is true', async () => {
+        vi.mocked(deps.generateMockQuestionsUseCase.execute).mockResolvedValue({} as never);
+
+        await call(
+          'generate_mock_interview_questions',
+          { interviewRoundId: 'r1', useProfile: true, documentId: 'doc-1' },
+          'read',
+        );
+
+        expect(deps.generateMockQuestionsUseCase.execute).toHaveBeenCalledWith(
+          expect.objectContaining({ useProfile: true, documentId: 'doc-1' }),
+        );
       });
 
       it('generate_mock_interview_answer passes the question id and prompt', async () => {
@@ -824,6 +844,8 @@ describe('McpController', () => {
           answer: 'A',
           usedJobDescription: false,
           usedBriefing: false,
+          usedProfile: false,
+          usedDocument: false,
         });
 
         await call('generate_mock_interview_answer', {
@@ -835,6 +857,45 @@ describe('McpController', () => {
           userId: USER_ID,
           questionId: 'q1',
           prompt: 'short',
+          useProfile: false,
+          documentId: undefined,
+        });
+      });
+
+      it('generate_mock_talking_points uses the profile by default and works with a read token', async () => {
+        vi.mocked(deps.generateTalkingPointsUseCase.execute).mockResolvedValue({} as never);
+
+        const { body } = await call(
+          'generate_mock_talking_points',
+          { mockInterviewQuestionId: 'q1' },
+          'read',
+        );
+
+        expect(deps.generateTalkingPointsUseCase.execute).toHaveBeenCalledWith({
+          userId: USER_ID,
+          questionId: 'q1',
+          useProfile: true,
+          documentId: undefined,
+          save: false,
+        });
+        expect(body).not.toHaveProperty('error');
+      });
+
+      it('generate_mock_talking_points passes useProfile false and a document through', async () => {
+        vi.mocked(deps.generateTalkingPointsUseCase.execute).mockResolvedValue({} as never);
+
+        await call('generate_mock_talking_points', {
+          mockInterviewQuestionId: 'q1',
+          useProfile: false,
+          documentId: 'doc-1',
+        });
+
+        expect(deps.generateTalkingPointsUseCase.execute).toHaveBeenCalledWith({
+          userId: USER_ID,
+          questionId: 'q1',
+          useProfile: false,
+          documentId: 'doc-1',
+          save: false,
         });
       });
 
@@ -842,6 +903,7 @@ describe('McpController', () => {
         ['list_mock_interview_questions', {}],
         ['generate_mock_interview_questions', {}],
         ['generate_mock_interview_answer', {}],
+        ['generate_mock_talking_points', {}],
         ['create_mock_interview_question', { interviewRoundId: 'r1' }],
       ])('%s rejects missing arguments', async (name, args) => {
         const { body } = await call(name, args);

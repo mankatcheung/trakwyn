@@ -9,6 +9,8 @@ export interface MockInterviewQuestionDTO {
   question: string;
   answer: string | null;
   answerSource: AnswerSource;
+  talkingPoints: string | null;
+  talkingPointsGeneratedAt: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +24,8 @@ export class MockInterviewQuestionMapper {
       question: question.question,
       answer: question.answer,
       answerSource: question.answerSource,
+      talkingPoints: question.talkingPoints,
+      talkingPointsGeneratedAt: question.talkingPointsGeneratedAt?.toISOString() ?? null,
       position: question.position,
       createdAt: question.createdAt.toISOString(),
       updatedAt: question.updatedAt.toISOString(),

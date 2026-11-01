@@ -357,6 +357,10 @@ export const AI_PROMPT_INPUT = {
   MOCK_INTERVIEW_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** Practice question and answer generation — the stored company briefing (JEF-393). */
   MOCK_INTERVIEW_BRIEFING_MAX_CHARS: 2000,
+  /** Practice question, answer and talking point generation — the user's profile as prose (JEF-394). */
+  MOCK_INTERVIEW_PROFILE_MAX_CHARS: 4000,
+  /** Practice question, answer and talking point generation — the text of one chosen resume document (JEF-394). */
+  MOCK_INTERVIEW_RESUME_MAX_CHARS: 8000,
   /** ParseCvUseCase — the text read from an uploaded CV (JEF-461). Longer than a posting: a CV is the whole document. */
   CV_IMPORT_MAX_CHARS: 24000,
 } as const;
@@ -501,6 +505,8 @@ export const PLAN_TRIAL = {
 export const MOCK_INTERVIEW_PROMPT_TASK = {
   QUESTIONS: 'write realistic questions the candidate could be asked in that round',
   ANSWER: 'draft a strong answer the candidate can adapt',
+  TALKING_POINTS:
+    'suggest short talking points the candidate can say, each tied to their own experience',
 } as const;
 
 /**
@@ -518,12 +524,19 @@ export const MOCK_QUESTION_GENERATION = {
   QUESTIONS_MAX_TOKENS: 1024,
   /** Output budget for one drafted answer; sized for INTERVIEW_QUESTION_LIMITS.ANSWER_MAX_CHARS. */
   ANSWER_MAX_TOKENS: 1024,
+  /** Output budget for the talking points of one question (JEF-394). */
+  TALKING_POINTS_MAX_TOKENS: 1024,
+  /** Most talking points kept from one generation (JEF-394). */
+  TALKING_POINTS_MAX_COUNT: 6,
 } as const;
 
 /** Length limits for the question and answer a user records against an interview round. */
 export const INTERVIEW_QUESTION_LIMITS = {
   QUESTION_MAX_CHARS: 500,
   ANSWER_MAX_CHARS: 4000,
+  /** One talking point, and the experience entry it cites (JEF-394). */
+  TALKING_POINT_MAX_CHARS: 300,
+  TALKING_POINT_SOURCE_MAX_CHARS: 120,
 } as const;
 
 /** Named MIME type constants, for referencing specific types instead of repeating string literals. */

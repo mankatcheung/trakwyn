@@ -167,6 +167,9 @@ export const mockInterviewQuestion = pgTable(
     answer: text('answer'),
     /** `user` or `ai`; `ai` marks an answer that began as an AI draft. */
     answerSource: text('answerSource').notNull().default('user'),
+    /** AI generated talking points, one per line (JEF-394). */
+    talkingPoints: text('talkingPoints'),
+    talkingPointsGeneratedAt: timestamp('talkingPointsGeneratedAt', TIMESTAMP),
     position: integer('position').notNull().default(0),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()

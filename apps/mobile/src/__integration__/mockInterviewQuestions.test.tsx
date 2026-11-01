@@ -14,6 +14,7 @@ import {
   useDeleteMockInterviewQuestion,
   useGenerateMockInterviewAnswer,
   useGenerateMockInterviewQuestions,
+  useGenerateMockTalkingPoints,
   useUpdateMockInterviewQuestion,
 } from '../features/interviews/hooks/useMockInterviewQuestionMutations';
 
@@ -137,6 +138,7 @@ describe('practice interview questions against a real API', () => {
       () => ({
         questions: useGenerateMockInterviewQuestions(roundId),
         answer: useGenerateMockInterviewAnswer(),
+        talkingPoints: useGenerateMockTalkingPoints(applicationId, roundId),
         practice: useMockInterviewQuestions(roundId),
       }),
       { wrapper },
@@ -144,11 +146,23 @@ describe('practice interview questions against a real API', () => {
     await waitFor(() => expect(result.current.practice.data).toBeDefined());
 
     const questionsError = await act(async () =>
-      result.current.questions.mutateAsync('system design').catch((error: unknown) => error),
+      result.current.questions
+        .mutateAsync({ prompt: 'system design', useProfile: false, documentId: null })
+        .catch((error: unknown) => error),
     );
     const answerError = await act(async () =>
       result.current.answer
         .mutateAsync(result.current.practice.data![0].id)
+        .catch((error: unknown) => error),
+    );
+
+    const talkingPointsError = await act(async () =>
+      result.current.talkingPoints
+        .mutateAsync({
+          questionId: result.current.practice.data![0].id,
+          useProfile: true,
+          documentId: null,
+        })
         .catch((error: unknown) => error),
     );
 
@@ -157,5 +171,6 @@ describe('practice interview questions against a real API', () => {
         ?.errors?.[0]?.extensions?.code;
     expect(code(questionsError)).toBe('AI_NOT_CONFIGURED');
     expect(code(answerError)).toBe('AI_NOT_CONFIGURED');
+    expect(code(talkingPointsError)).toBe('AI_NOT_CONFIGURED');
   });
 });
