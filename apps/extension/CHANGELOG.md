@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.4.0...clipper-v1.4.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* harden HTML-to-text in the job posting resolver and the Clipper (JEF-482) ([#1169](https://github.com/mankatcheung/trakwyn/issues/1169)) ([6acf8e3](https://github.com/mankatcheung/trakwyn/commit/6acf8e34e342a6788b2141e1d5f8c5379cc835bb))
+
 ## [1.4.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.3.1...clipper-v1.4.0) (2026-10-29)
 
 
