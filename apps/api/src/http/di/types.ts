@@ -435,6 +435,8 @@ export interface Cradle {
   totpRateLimiter: IRateLimiter;
   stepUpCodeRateLimiter: IRateLimiter;
   accountDeletionRateLimiter: IRateLimiter;
+  oauthRateLimiter: IRateLimiter;
+  documentFileRateLimiter: IRateLimiter;
   chatRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;
   parseJobDescriptionRateLimiter: IRateLimiter;

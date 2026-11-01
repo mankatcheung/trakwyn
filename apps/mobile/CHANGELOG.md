@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.4.0...mobile-v0.5.0) (2026-11-01)
+
+
+### Features
+
+* multi-line assistant chat input capped at 10 lines (JEF-481) ([#1159](https://github.com/mankatcheung/trakwyn/issues/1159)) ([c586b13](https://github.com/mankatcheung/trakwyn/commit/c586b13c9a3b3d1388406981d5cf031da2f48099))
+* tailor practice questions and talking points to the user's profile and resume (JEF-394) ([#1161](https://github.com/mankatcheung/trakwyn/issues/1161)) ([3d6f0aa](https://github.com/mankatcheung/trakwyn/commit/3d6f0aaff0fb4c2f7d3d2c37c23011be45fd2282))
+
 ## [0.4.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.3.1...mobile-v0.4.0) (2026-10-29)
 
 
