@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.0...api-v0.11.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* resolve ExtractDocumentTextUseCase through the container (JEF-492) ([#1189](https://github.com/mankatcheung/trakwyn/issues/1189)) ([0f98536](https://github.com/mankatcheung/trakwyn/commit/0f98536fa25f1fdeecbdddaf4878824c20d36b37))
+
 ## [0.11.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.10.0...api-v0.11.0) (2026-11-01)
 
 
