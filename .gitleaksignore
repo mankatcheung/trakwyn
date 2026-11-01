@@ -1,0 +1,2 @@
+# JEF-484: placeholder key in the first revision of maskApiKey.test.ts; replaced by a low-entropy one in the next commit.
+145e08a64ac0fd00e821849ba84f3bf5a893498d:apps/cli/src/__tests__/lib/maskApiKey.test.ts:generic-api-key:6
