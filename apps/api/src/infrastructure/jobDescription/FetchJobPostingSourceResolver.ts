@@ -5,6 +5,7 @@ import type {
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import { ServiceUnavailableError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { JOB_POSTING_FETCH } from '#src/infrastructure/config/constants.js';
+import { htmlToText } from './htmlToText.js';
 import { readBounded } from '#src/infrastructure/net/readBounded.js';
 
 interface Deps {
@@ -88,29 +89,15 @@ export class FetchJobPostingSourceResolver implements IJobPostingSourceResolver 
    */
   private stripHtml(html: string): string {
     const scoped = this.contentRegion(html) ?? html;
-    return this.toText(scoped);
+    return htmlToText(scoped);
   }
 
   private contentRegion(html: string): string | null {
     const blocks = [...html.matchAll(/<(main|article)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => m[0]);
     const best = blocks
-      .map((block) => ({ block, text: this.toText(block) }))
+      .map((block) => ({ block, text: htmlToText(block) }))
       .filter(({ text }) => text.length >= JOB_POSTING_FETCH.MIN_CONTENT_REGION_CHARS)
       .sort((a, b) => b.text.length - a.text.length)[0];
     return best?.block ?? null;
-  }
-
-  private toText(html: string): string {
-    return html
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
   }
 }
