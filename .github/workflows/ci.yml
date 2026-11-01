@@ -343,10 +343,9 @@ jobs:
   # builds its own stack and uses nothing they produce. The deploy jobs still
   # wait for all three.
   #
-  # Sharded (JEF-486): the specs share one API and one database, which is why
-  # playwright.config.ts runs a single worker, so the suite is split across
-  # runners instead. Each shard has its own Postgres, API and web server, and
-  # runs a fixed slice of the spec files. `needs.e2e.result` is the combined
+  # Sharded (JEF-486): the suite is split across runners. Each shard has its
+  # own Postgres, API and web server, and runs a fixed slice of the spec files
+  # with two Playwright workers (JEF-488). `needs.e2e.result` is the combined
   # result of every shard, so ci-ok and the deploy jobs wait on `e2e` as before.
   e2e:
     name: Playwright E2E (${{ matrix.shard }}/${{ strategy.job-total }})
