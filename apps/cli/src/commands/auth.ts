@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { gql, AuthError, ApiError } from '../lib/api.js';
 import { getApiKey, saveApiKey, clearApiKey, getApiUrl } from '../lib/config.js';
 import { API_TOKEN_PREFIX } from '../constants.js';
+import { maskApiKey } from '../lib/maskApiKey.js';
 
 async function promptSecret(question: string): Promise<string> {
   process.stdout.write(question);
@@ -55,7 +56,7 @@ export function registerAuthCommands(program: Command): void {
         await gql<unknown>(`query { apiTokens { id } }`, {});
 
         saveApiKey(trimmed);
-        const preview = `${trimmed.slice(0, 10)}…`;
+        const preview = maskApiKey(trimmed);
         console.log(chalk.green('✓') + ` API key saved (${chalk.bold(preview)})`);
         console.log(chalk.gray(`  API: ${getApiUrl()}`));
       } catch (err) {
@@ -88,7 +89,7 @@ export function registerAuthCommands(program: Command): void {
         return;
       }
 
-      const preview = `${apiKey.slice(0, 10)}…`;
+      const preview = maskApiKey(apiKey);
       console.log(`Key:  ${chalk.bold(preview)}`);
       console.log(`API:  ${chalk.gray(getApiUrl())}`);
 
