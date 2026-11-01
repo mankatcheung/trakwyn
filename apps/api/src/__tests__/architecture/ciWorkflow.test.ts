@@ -107,6 +107,21 @@ describe('ci.yml gates', () => {
     expect(e2e).toContain('name: playwright-report-${{ matrix.shard }}');
   });
 
+  // JEF-490: e2e drives apps/web against apps/api, so a pull request that
+  // touches only mobile, the extension or the CLI cannot affect it.
+  it('gates e2e on its own filter, which leaves out mobile, the extension and the CLI', () => {
+    expect(job('e2e')).toContain("if: needs.changes.outputs.e2e == 'true'");
+    const filters = job('changes');
+    const block = filters.slice(
+      filters.indexOf('            e2e:'),
+      filters.indexOf('            mobile:'),
+    );
+    expect(block).toContain("'apps/web/**'");
+    expect(block).toContain("'apps/api/**'");
+    expect(block).toContain("'packages/**'");
+    expect(block).not.toMatch(/apps\/(mobile|extension|cli)/);
+  });
+
   it('never skips a job on a push to main, whatever files it touched', () => {
     const outputs = job('changes').slice(
       job('changes').indexOf('outputs:'),
