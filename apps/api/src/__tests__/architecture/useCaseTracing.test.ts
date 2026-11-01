@@ -168,6 +168,26 @@ describe('use-case tracing', () => {
     }
   });
 
+  /**
+   * The container injects its cradle as the single constructor argument
+   * (PROXY mode). A positional constructor receives the cradle as its first
+   * parameter, and the first property read off it (`findById`, ...) throws
+   * `AwilixResolutionError` at the first call, not at registration. Unit
+   * tests that call `new UseCase(a, b)` cannot see that, so it is pinned here
+   * (JEF-492).
+   */
+  it('gives every registered use case a constructor that takes one deps object', () => {
+    const positional = useCaseEntries
+      .map(([name, resolver]) => {
+        const instance = resolveWithStubCradle(resolver as Resolver<object>);
+        return { name, parameters: instance.constructor.length };
+      })
+      .filter(({ parameters }) => parameters > 1)
+      .map(({ name, parameters }) => `${name} (${parameters} parameters)`);
+
+    expect(positional).toEqual([]);
+  });
+
   it('keeps each registration TRANSIENT', () => {
     const wrong = useCaseEntries
       .filter(([name]) => tracedByName[name].lifetime !== Lifetime.TRANSIENT)

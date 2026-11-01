@@ -66,6 +66,31 @@ describe('buildContainer', () => {
     expect(container.resolve('testLlmApiKeyUseCase')).toBeDefined();
   });
 
+  it('hands ExtractDocumentTextUseCase its named dependencies, not the cradle (JEF-492)', async () => {
+    const { buildContainer } = await import('#src/http/container.js');
+    const { NotFoundError } = await import('#src/use-cases/errors/DomainError.js');
+    const { makeDocumentRepository } = await import('#src/__tests__/helpers/mocks/documents.js');
+    const { asValue } = await import('awilix');
+    const { vi } = await import('vitest');
+
+    const container = buildContainer();
+    // The class used to take four positional arguments, so PROXY injection
+    // gave it the cradle as `documentRepository` and the first call threw
+    // `AwilixResolutionError: Could not resolve 'findById'`. A stub repository
+    // keeps this off the database while still going through real resolution.
+    const findById = vi.fn().mockResolvedValue(null);
+    container.register({
+      documentRepository: asValue(makeDocumentRepository({ findById })),
+    });
+
+    const useCase = container.resolve('extractDocumentTextUseCase');
+
+    await expect(useCase.execute({ userId: 'u1', documentId: 'missing' })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    expect(findById).toHaveBeenCalledWith('missing');
+  });
+
   it('resolves the OIDC token verifier the admin cron routes use (JEF-336)', async () => {
     const { buildContainer } = await import('#src/http/container.js');
     const { GoogleOidcTokenVerifier } =

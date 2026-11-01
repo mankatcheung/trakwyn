@@ -18,31 +18,33 @@ export interface IExtractDocumentTextUseCase {
   execute(query: ExtractDocumentTextQuery): Promise<ExtractDocumentTextResult>;
 }
 
+interface Deps {
+  documentRepository: IDocumentRepository;
+  applicationRepository: IApplicationRepository;
+  documentTextExtractor: IDocumentTextExtractor;
+  storageProvider: IStorageProvider;
+}
+
 export class ExtractDocumentTextUseCase implements IExtractDocumentTextUseCase {
-  constructor(
-    private readonly documentRepository: IDocumentRepository,
-    private readonly applicationRepository: IApplicationRepository,
-    private readonly documentTextExtractor: IDocumentTextExtractor,
-    private readonly storageProvider: IStorageProvider,
-  ) {}
+  constructor(private readonly deps: Deps) {}
 
   async execute(query: ExtractDocumentTextQuery): Promise<ExtractDocumentTextResult> {
-    const doc = await this.documentRepository.findById(query.documentId);
+    const doc = await this.deps.documentRepository.findById(query.documentId);
     if (!doc) {
       throw new NotFoundError('Document not found');
     }
 
-    const app = await this.applicationRepository.findById(doc.applicationId);
+    const app = await this.deps.applicationRepository.findById(doc.applicationId);
     if (!app || app.userId !== query.userId) {
       throw new ForbiddenError('Not authorized');
     }
 
-    const object = await this.storageProvider.getObject(doc.storageKey);
+    const object = await this.deps.storageProvider.getObject(doc.storageKey);
     if (!object) {
       throw new Error('Failed to read the document file');
     }
     const buffer = await readStoredObject(object);
-    const text = await this.documentTextExtractor.extract(buffer, doc.mimeType);
+    const text = await this.deps.documentTextExtractor.extract(buffer, doc.mimeType);
 
     return { text };
   }
