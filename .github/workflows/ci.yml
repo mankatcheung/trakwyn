@@ -447,6 +447,12 @@ jobs:
       - name: Run Playwright tests
         run: pnpm --filter @trakwyn/web test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
+      # A test that failed and passed on its retry keeps the run green, so list
+      # it where someone will see it (JEF-489). Reports only; it never fails.
+      - name: List flaky tests
+        if: always()
+        run: .github/scripts/flaky-summary.sh apps/web/test-results/results.json "shard ${{ matrix.shard }}/${{ strategy.job-total }}" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v4

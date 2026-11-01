@@ -15,7 +15,10 @@ const webCommand = process.env.CI
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
-  retries: process.env.CI ? 2 : 0,
+  // One retry, not two (JEF-489): a test that needs a second one is hiding a
+  // real fault. A retried pass is reported in the job summary (the `json`
+  // reporter below feeds .github/scripts/flaky-summary.sh), not silently kept.
+  retries: process.env.CI ? 1 : 0,
   // Locally one worker, so a failure is easy to read and the shared dev
   // server is not overloaded. CI runs two per shard (JEF-488): every test
   // registers its own account (`uniqueEmail`, and the fake OAuth provider
@@ -26,7 +29,11 @@ export default defineConfig({
   // on global state (totals over all users, a fixed email, a shared setting).
   workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI
-    ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    ? [
+        ['github'],
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+      ]
     : 'list',
   use: {
     baseURL: 'http://localhost:3000',
