@@ -1,10 +1,22 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Locally the specs run against the dev servers (reusing ones already up). CI
+// serves the built output instead (JEF-487): no first-request compilation, and
+// closer to what production runs. The e2e job builds both first (`pnpm
+// --filter @trakwyn/api build`, and the web build with E2E_PLAIN_BUILD=1, which
+// skips the Vercel-only nitro output that `vite preview` cannot serve).
+const apiCommand = process.env.CI
+  ? 'pnpm --filter @trakwyn/api start'
+  : 'pnpm --filter @trakwyn/api dev';
+const webCommand = process.env.CI
+  ? 'pnpm --filter @trakwyn/web preview --port 3000 --strictPort'
+  : 'pnpm --filter @trakwyn/web dev';
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
-  // Every spec shares one dev API server + one local SQLite file — running
+  // Every spec shares one API server + one local SQLite file — running
   // spec files in parallel overloads that single server (tests pass in
   // isolation but fail/timeout en masse when several files run at once).
   workers: 1,
@@ -24,14 +36,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm --filter @trakwyn/api dev',
+      command: apiCommand,
       url: 'http://localhost:3001/graphql',
       reuseExistingServer: !process.env.CI,
       env: process.env.CI ? { ...process.env, STORAGE_PROVIDER: 'local' } : undefined,
       timeout: 30_000,
     },
     {
-      command: 'pnpm --filter @trakwyn/web dev',
+      command: webCommand,
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
