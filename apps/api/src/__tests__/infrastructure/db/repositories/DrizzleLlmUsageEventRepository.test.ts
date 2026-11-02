@@ -44,6 +44,48 @@ describe('DrizzleLlmUsageEventRepository', () => {
       ]);
     });
 
+    it('stores cost, feature and source, and leaves them null or byok when omitted (JEF-444)', async () => {
+      await repo.record({
+        id: 'evt-full',
+        userId: 'u1',
+        provider: 'anthropic',
+        model: 'claude-haiku-4-5',
+        promptTokens: 10,
+        completionTokens: 2,
+        costMicros: 20,
+        feature: 'coverLetter',
+        source: 'byok',
+      });
+      await repo.record({
+        id: 'evt-bare',
+        userId: 'u1',
+        provider: 'openai',
+        model: null,
+        promptTokens: 1,
+        completionTokens: 1,
+      });
+      await repo.record({
+        id: 'evt-unpriced',
+        userId: 'u1',
+        provider: 'xai',
+        model: 'grok-x',
+        promptTokens: 1,
+        completionTokens: 1,
+        costMicros: null,
+        feature: 'chat',
+      });
+
+      const rows = await db.db.select().from(llmUsageEvent);
+      const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+      expect(byId['evt-full']).toMatchObject({
+        costMicros: 20,
+        feature: 'coverLetter',
+        source: 'byok',
+      });
+      expect(byId['evt-bare']).toMatchObject({ costMicros: null, feature: null, source: 'byok' });
+      expect(byId['evt-unpriced']).toMatchObject({ costMicros: null, feature: 'chat' });
+    });
+
     it('persists the estimated flag, defaulting to exact (F3)', async () => {
       await repo.record({
         id: 'evt-exact',

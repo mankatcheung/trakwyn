@@ -11,7 +11,7 @@ import type { IMessageRepository } from '#src/use-cases/ports/IMessageRepository
 import type { IConversationRepository } from '#src/use-cases/ports/IConversationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { LLMToolCall, LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
-import { CHAT } from '#src/use-cases/constants.js';
+import { AI_FEATURE, CHAT } from '#src/use-cases/constants.js';
 import {
   type ChatToolDeps,
   buildChatMessages,
@@ -125,11 +125,11 @@ export class StreamChatWithAssistantUseCase {
     const messages = buildChatMessages(historyForPrompt, input.message, user);
 
     const providerName = conversation.llmProvider ?? user?.defaultLlmProvider ?? null;
-    const resolution = await this.deps.llmProviderFactory.resolveForUser(
-      input.userId,
-      providerName ?? undefined,
-      conversation.llmModel,
-    );
+    const resolution = await this.deps.llmProviderFactory.resolveForUser(input.userId, {
+      feature: AI_FEATURE.CHAT,
+      provider: providerName ?? undefined,
+      model: conversation.llmModel,
+    });
     const llmProvider = resolution?.provider ?? null;
     if (resolution?.fellBackFrom) {
       yield { type: 'fallback', from: resolution.fellBackFrom, to: resolution.providerId };

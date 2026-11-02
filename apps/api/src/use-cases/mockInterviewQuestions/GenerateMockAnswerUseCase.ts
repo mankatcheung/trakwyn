@@ -24,6 +24,7 @@ import {
   INTERVIEW_QUESTION_LIMITS,
   MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
+  AI_FEATURE,
 } from '#src/use-cases/constants.js';
 import {
   buildMockInterviewContext,
@@ -74,7 +75,9 @@ export class GenerateMockAnswerUseCase implements IGenerateMockAnswerUseCase {
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.MOCK_ANSWER,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }

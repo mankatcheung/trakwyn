@@ -8,7 +8,7 @@ import {
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
-import { LLM, LLM_PROVIDER } from '#src/use-cases/constants.js';
+import { AI_FEATURE, LLM, LLM_PROVIDER } from '#src/use-cases/constants.js';
 import {
   assertValidLlmApiKeyShape,
   assertValidLlmProvider,
@@ -114,12 +114,11 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
     assertValidLlmProvider(providerId);
     // trackUsage: false — this is a connectivity check, not real usage; see
     // ILLMProviderFactory.forUser's doc comment (JEF-250).
-    const provider = await this.deps.llmProviderFactory.forUser(
-      userId,
-      providerId,
-      undefined,
-      false,
-    );
+    const provider = await this.deps.llmProviderFactory.forUser(userId, {
+      feature: AI_FEATURE.KEY_TEST,
+      provider: providerId,
+      trackUsage: false,
+    });
     if (!provider) {
       throw new AiNotConfiguredError('No API key saved for this provider yet');
     }

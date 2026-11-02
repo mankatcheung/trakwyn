@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CHAT_TOOLS, toLlmToolDefinitions } from '#src/interface-adapters/llm/toolCatalogue.js';
 import { StreamChatWithAssistantUseCase } from '#src/use-cases/chat/StreamChatWithAssistantUseCase.js';
-import { CHAT } from '#src/use-cases/constants.js';
+import { CHAT, AI_FEATURE } from '#src/use-cases/constants.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import {
   makeConversation,
@@ -152,8 +152,12 @@ describe('StreamChatWithAssistantUseCase write proposals (JEF-469)', () => {
 
   it('tells the model on its second round that the change was only proposed', async () => {
     const deps = proposingDeps();
-    const provider = (await deps.llmProviderFactory.resolveForUser('user-1', undefined, null))
-      ?.provider;
+    const provider = (
+      await deps.llmProviderFactory.resolveForUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        model: null,
+      })
+    )?.provider;
 
     await collect(new StreamChatWithAssistantUseCase(deps as never), {
       ...baseInput,

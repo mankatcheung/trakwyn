@@ -1,6 +1,7 @@
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
 import type { User } from '#src/domain/user/User.js';
+import type { AiFeature } from '#src/use-cases/constants.js';
 
 /**
  * Resolves the LLM provider to use for a given user's own API key —
@@ -48,6 +49,23 @@ export interface LLMProviderResolveHints {
   key?: LlmApiKey | null;
 }
 
+/**
+ * What a caller says when it asks for a provider (JEF-444). `feature` is
+ * required so no call site can spend tokens without saying what for; the
+ * rest are optional as before.
+ *
+ * `trackUsage` (default `true`) gates the `UsageTrackingLLMProvider` wrap
+ * (JEF-250) — every real AI feature leaves it at the default; the one
+ * caller that passes `false` is `TestLlmApiKeyUseCase`'s "test a saved
+ * key" path, which resolves through here too but isn't real usage.
+ */
+export interface LLMProviderRequest {
+  feature: AiFeature;
+  provider?: string;
+  model?: string | null;
+  trackUsage?: boolean;
+}
+
 export interface ILLMProviderFactory {
   /**
    * `forUser`, plus which key was used. Throws the same limit error when no
@@ -55,23 +73,10 @@ export interface ILLMProviderFactory {
    */
   resolveForUser(
     userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage?: boolean,
+    request: LLMProviderRequest,
     hints?: LLMProviderResolveHints,
   ): Promise<LLMProviderResolution | null>;
-  /**
-   * `trackUsage` (default `true`) gates the `UsageTrackingLLMProvider` wrap
-   * (JEF-250) — every real AI feature leaves it at the default; the one
-   * caller that passes `false` is `TestLlmApiKeyUseCase`'s "test a saved
-   * key" path, which resolves through here too but isn't real usage.
-   */
-  forUser(
-    userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage?: boolean,
-  ): Promise<ILLMProvider | null>;
+  forUser(userId: string, request: LLMProviderRequest): Promise<ILLMProvider | null>;
   /**
    * Builds a provider directly from raw, not-yet-persisted credentials —
    * `TestLlmApiKeyUseCase`'s "test before you save" path (JEF-247), which

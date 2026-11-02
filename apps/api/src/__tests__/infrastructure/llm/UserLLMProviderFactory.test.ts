@@ -3,7 +3,7 @@ import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderF
 import { OpenAICompatibleLLMProvider } from '#src/infrastructure/llm/OpenAICompatibleLLMProvider.js';
 import { AnthropicLLMProvider } from '#src/infrastructure/llm/AnthropicLLMProvider.js';
 import { GoogleAILLMProvider } from '#src/infrastructure/llm/GoogleAILLMProvider.js';
-import { LLM_PROVIDER } from '#src/use-cases/constants.js';
+import { LLM_PROVIDER, AI_FEATURE } from '#src/use-cases/constants.js';
 import {
   makeLlmApiKey,
   makeLlmApiKeyCipher,
@@ -29,7 +29,7 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('user-1')).toBeNull();
+    expect(await factory.forUser('user-1', { feature: AI_FEATURE.CHAT })).toBeNull();
   });
 
   it('returns null when the user does not exist and no provider is given', async () => {
@@ -44,7 +44,7 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('missing')).toBeNull();
+    expect(await factory.forUser('missing', { feature: AI_FEATURE.CHAT })).toBeNull();
   });
 
   it('returns null when no LlmApiKey row exists for the resolved provider', async () => {
@@ -64,7 +64,7 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('user-1')).toBeNull();
+    expect(await factory.forUser('user-1', { feature: AI_FEATURE.CHAT })).toBeNull();
   });
 
   it('returns null when the stored provider is not in the registry', async () => {
@@ -83,7 +83,12 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('user-1', 'not-a-real-provider')).toBeNull();
+    expect(
+      await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: 'not-a-real-provider',
+      }),
+    ).toBeNull();
   });
 
   it('resolves the default provider when none is passed explicitly', async () => {
@@ -105,7 +110,10 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    const provider = await factory.forUser('user-1', undefined, undefined, false);
+    const provider = await factory.forUser('user-1', {
+      feature: AI_FEATURE.CHAT,
+      trackUsage: false,
+    });
 
     expect(llmApiKeyRepository.findByUserIdAndProvider).toHaveBeenCalledWith(
       'user-1',
@@ -134,7 +142,11 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
+    const provider = await factory.forUser('user-1', {
+      feature: AI_FEATURE.CHAT,
+      provider: LLM_PROVIDER.OPENAI,
+      trackUsage: false,
+    });
 
     expect(userRepository.findById).not.toHaveBeenCalled();
     expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
@@ -158,7 +170,11 @@ describe('UserLLMProviderFactory', () => {
     });
 
     expect(
-      await factory.forUser('user-1', LLM_PROVIDER.OPENROUTER, undefined, false),
+      await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENROUTER,
+        trackUsage: false,
+      }),
     ).toBeInstanceOf(OpenAICompatibleLLMProvider);
   });
 
@@ -178,9 +194,13 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('user-1', LLM_PROVIDER.GOOGLEAI, undefined, false)).toBeInstanceOf(
-      GoogleAILLMProvider,
-    );
+    expect(
+      await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.GOOGLEAI,
+        trackUsage: false,
+      }),
+    ).toBeInstanceOf(GoogleAILLMProvider);
   });
 
   it('builds an OpenAICompatibleLLMProvider from the stored baseUrl/model for the custom provider', async () => {
@@ -203,9 +223,13 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    expect(await factory.forUser('user-1', LLM_PROVIDER.CUSTOM, undefined, false)).toBeInstanceOf(
-      OpenAICompatibleLLMProvider,
-    );
+    expect(
+      await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.CUSTOM,
+        trackUsage: false,
+      }),
+    ).toBeInstanceOf(OpenAICompatibleLLMProvider);
   });
 
   it('overrides the stored model when an explicit model is passed', async () => {
@@ -224,7 +248,12 @@ describe('UserLLMProviderFactory', () => {
       generateId: () => 'evt-id',
     });
 
-    const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, 'gpt-4o-mini', false);
+    const provider = await factory.forUser('user-1', {
+      feature: AI_FEATURE.CHAT,
+      provider: LLM_PROVIDER.OPENAI,
+      model: 'gpt-4o-mini',
+      trackUsage: false,
+    });
 
     expect((provider as unknown as { model: string }).model).toBe('gpt-4o-mini');
   });
@@ -247,7 +276,10 @@ describe('UserLLMProviderFactory', () => {
         logger: makeLogger(),
       });
 
-      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI);
+      const provider = await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENAI,
+      });
       expect(provider).not.toBeInstanceOf(OpenAICompatibleLLMProvider);
     });
 
@@ -267,7 +299,11 @@ describe('UserLLMProviderFactory', () => {
         generateId: () => 'evt-id',
       });
 
-      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
+      const provider = await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENAI,
+        trackUsage: false,
+      });
       expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
     });
   });
@@ -307,7 +343,10 @@ describe('UserLLMProviderFactory', () => {
     it('measures every tracked call when tracing is on', async () => {
       const { factory, metrics } = makeFactory(true);
 
-      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI);
+      const provider = await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENAI,
+      });
       await provider!.complete([{ role: 'user', content: 'hi' }]);
 
       expect(metrics.llmCalls).toEqual([
@@ -318,7 +357,10 @@ describe('UserLLMProviderFactory', () => {
     it('measures nothing when tracing is off, as in dev and test', async () => {
       const { factory, metrics } = makeFactory();
 
-      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI);
+      const provider = await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENAI,
+      });
       await provider!.complete([{ role: 'user', content: 'hi' }]);
 
       expect(metrics.llmCalls).toEqual([]);
@@ -327,7 +369,11 @@ describe('UserLLMProviderFactory', () => {
     it('leaves a key test untraced even when tracing is on', async () => {
       const { factory, metrics } = makeFactory(true);
 
-      const provider = await factory.forUser('user-1', LLM_PROVIDER.OPENAI, undefined, false);
+      const provider = await factory.forUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: LLM_PROVIDER.OPENAI,
+        trackUsage: false,
+      });
       await provider!.complete([{ role: 'user', content: 'hi' }]);
 
       expect(provider).toBeInstanceOf(OpenAICompatibleLLMProvider);
@@ -350,10 +396,14 @@ describe('UserLLMProviderFactory', () => {
       });
       const hintedKey = makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI, apiKey: 'encrypted:k' });
 
-      const resolution = await factory.resolveForUser('user-1', undefined, null, true, {
-        user: makeUser({ defaultLlmProvider: LLM_PROVIDER.OPENAI }),
-        key: hintedKey,
-      });
+      const resolution = await factory.resolveForUser(
+        'user-1',
+        { feature: AI_FEATURE.CHAT, model: null },
+        {
+          user: makeUser({ defaultLlmProvider: LLM_PROVIDER.OPENAI }),
+          key: hintedKey,
+        },
+      );
 
       expect(resolution?.providerId).toBe(LLM_PROVIDER.OPENAI);
       expect(userRepository.findById).not.toHaveBeenCalled();
@@ -378,9 +428,7 @@ describe('UserLLMProviderFactory', () => {
 
       const resolution = await factory.resolveForUser(
         'user-1',
-        LLM_PROVIDER.ANTHROPIC,
-        null,
-        true,
+        { feature: AI_FEATURE.CHAT, provider: LLM_PROVIDER.ANTHROPIC, model: null },
         {
           key: makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI }),
         },
