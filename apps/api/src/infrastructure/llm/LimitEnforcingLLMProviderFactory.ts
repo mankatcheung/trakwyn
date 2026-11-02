@@ -1,3 +1,5 @@
+import { AI_SOURCE } from '#src/use-cases/constants.js';
+import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import { LlmLimitReachedError } from '#src/use-cases/errors/DomainError.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
@@ -18,6 +20,8 @@ interface Deps {
   llmApiKeyRepository: ILlmApiKeyRepository;
   llmUsageEventRepository: ILlmUsageEventRepository;
   now: () => Date;
+  /** Optional (JEF-446): a user on Trakwyn AI has no key to be limited. */
+  platformLlmProviderFactory?: IPlatformLLMProviderFactory;
 }
 
 /**
@@ -65,7 +69,15 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
 
     // Loaded once here and handed down as hints (F9): the inner factory
     // used to fetch the same user and key again on every call.
-    const user = provider ? undefined : await this.deps.userRepository.findById(userId);
+    const platformOn = !!this.deps.platformLlmProviderFactory?.isEnabled();
+    const user =
+      provider && !platformOn ? undefined : await this.deps.userRepository.findById(userId);
+
+    // On Trakwyn AI there is no key of the user's to refuse; the inner
+    // factory resolves the platform path.
+    if (platformOn && user?.aiSource === AI_SOURCE.TRAKWYN) {
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, request, { user });
+    }
 
     const requested = provider ?? user?.defaultLlmProvider ?? undefined;
     // No provider and no key are the inner factory's cases to report: it

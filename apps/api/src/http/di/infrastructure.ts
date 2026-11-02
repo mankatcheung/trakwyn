@@ -42,6 +42,7 @@ import { ExpoPushService } from '#src/infrastructure/push/ExpoPushService.js';
 import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransactionManager.js';
 import { LlmApiKeyCipher } from '#src/infrastructure/llm/LlmApiKeyCipher.js';
 import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
+import { PlatformLLMProviderFactory } from '#src/infrastructure/llm/PlatformLLMProviderFactory.js';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
 import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
 import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
@@ -180,6 +181,11 @@ export const infrastructure = {
     { lifetime: Lifetime.SINGLETON },
   ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
+  // asFunction so a missing platform key fails on first use, not at boot
+  // (JEF-446); it reads its env on every call.
+  platformLlmProviderFactory: asFunction(() => new PlatformLLMProviderFactory(), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   // asFunction for the same options-object reason as outboundUrlPolicy: the
   // factory's optional `traceLlmCalls`/`metrics` (JEF-113) are not
   // registrations, and proxy injection would try to resolve them.
@@ -192,6 +198,7 @@ export const infrastructure = {
       outboundUrlPolicy,
       generateId,
       logger,
+      platformLlmProviderFactory,
     }: Cradle) =>
       new UserLLMProviderFactory({
         userRepository,
@@ -203,6 +210,7 @@ export const infrastructure = {
         logger,
         traceLlmCalls: isObservabilityEnabled,
         metrics: otelMetrics,
+        platformLlmProviderFactory,
       }),
     { lifetime: Lifetime.SINGLETON },
   ),

@@ -200,6 +200,7 @@ import type { SaveLlmApiKeyUseCase } from '#src/use-cases/user/SaveLlmApiKeyUseC
 import type { ListLlmApiKeysUseCase } from '#src/use-cases/user/ListLlmApiKeysUseCase.js';
 import type { DeleteLlmApiKeyUseCase } from '#src/use-cases/user/DeleteLlmApiKeyUseCase.js';
 import type { SetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/SetLlmApiKeyMonthlyLimitUseCase.js';
+import type { SetAiSourceUseCase } from '#src/use-cases/user/SetAiSourceUseCase.js';
 import type { SetDefaultLlmProviderUseCase } from '#src/use-cases/user/SetDefaultLlmProviderUseCase.js';
 import type { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.js';
 import type { GetLlmUsageSummaryUseCase } from '#src/use-cases/user/GetLlmUsageSummaryUseCase.js';
@@ -331,6 +332,7 @@ import type { GetOffersUseCase } from '#src/use-cases/offers/GetOffersUseCase.js
 import type { GetAllOffersUseCase } from '#src/use-cases/offers/GetAllOffersUseCase.js';
 import type { CompareOffersUseCase } from '#src/use-cases/offers/CompareOffersUseCase.js';
 
+import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
@@ -614,6 +616,7 @@ export interface Cradle {
   saveLlmApiKeyUseCase: SaveLlmApiKeyUseCase;
   listLlmApiKeysUseCase: ListLlmApiKeysUseCase;
   deleteLlmApiKeyUseCase: DeleteLlmApiKeyUseCase;
+  setAiSourceUseCase: SetAiSourceUseCase;
   setDefaultLlmProviderUseCase: SetDefaultLlmProviderUseCase;
   setLlmApiKeyMonthlyLimitUseCase: SetLlmApiKeyMonthlyLimitUseCase;
   testLlmApiKeyUseCase: TestLlmApiKeyUseCase;
@@ -691,6 +694,7 @@ export interface Cradle {
   toolCallObserver: IToolCallObserver;
   oidcTokenVerifier: IOidcTokenVerifier;
   llmApiKeyCipher: ILlmApiKeyCipher;
+  platformLlmProviderFactory: IPlatformLLMProviderFactory;
   userLlmProviderFactory: ILLMProviderFactory;
   llmProviderFactory: ILLMProviderFactory;
   documentTextExtractor: IDocumentTextExtractor;

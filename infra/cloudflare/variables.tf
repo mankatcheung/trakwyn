@@ -55,3 +55,21 @@ variable "email_routing_rule_import_ids" {
     error_message = "Every key in email_routing_rule_import_ids must be a key of email_routing_rules."
   }
 }
+
+variable "ai_gateway_id" {
+  description = "Name of the AI Gateway hosted AI sends the platform's LLM calls through (ai_gateway.tf). It becomes part of the gateway URL."
+  type        = string
+  default     = "trakwyn"
+}
+
+variable "ai_gateway_rate_limit" {
+  description = "Requests the gateway allows per ai_gateway_rate_limit_interval_s. A backstop against a runaway caller, not the per-user limit (the API enforces that)."
+  type        = number
+  default     = 600
+}
+
+variable "ai_gateway_rate_limit_interval_s" {
+  description = "Window, in seconds, for ai_gateway_rate_limit."
+  type        = number
+  default     = 60
+}

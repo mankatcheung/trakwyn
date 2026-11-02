@@ -105,6 +105,9 @@ Secret IDs are the env var names in lower-kebab-case:
 | `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; `terraform output -raw turnstile_secret_key` in `infra/cloudflare`)              |
 | `polar-access-token`            | Polar organization access token for the environment `POLAR_SERVER` names. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`) |
 | `polar-webhook-secret`          | the `whsec_…` secret of that environment's Polar webhook endpoint. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`)        |
+| `platform-googleai-api-key`     | hosted AI only (`hosted_ai = true`): the platform's Google AI Studio key, from a **paid-tier** project. Added by hand (see "Hosted AI")     |
+| `platform-openai-api-key`       | hosted AI only: the platform's OpenAI key, from a project with a monthly spend limit. Added by hand                                         |
+| `platform-llm-gateway-token`    | hosted AI only: the Cloudflare AI Gateway authentication token (`infra/cloudflare/README.md`). Added by hand                                |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                                   |
 | `digest-admin-secret`           | a new random value                                                                                                                          |
 | `google-oauth-client-secret`    | Google OAuth client secret                                                                                                                  |
@@ -239,6 +242,24 @@ gcloud iam service-accounts keys create /dev/stdout --iam-account="$SA" \
 gcloud iam service-accounts keys list --iam-account="$SA"   # then delete the old one:
 gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 ```
+
+**Hosted AI (JEF-446):** Trakwyn AI answers for a user with no key of their own (or who picked it), on keys the platform owns, through the Cloudflare AI Gateway. Off by default; with `hosted_ai` false nothing about the API changes and `AI_NOT_CONFIGURED` is still returned. To switch it on:
+
+1. **Google AI Studio:** create a project with **billing enabled (paid tier)** and an API key restricted to the Generative Language API. The free tier trains on prompts and is rate limited far below real use, so it must not back this. Set a budget alert on the project.
+2. **OpenAI:** create a dedicated project, set its **monthly spend limit** (Settings → Limits) to the most you would accept losing in a month, and create a key for it.
+3. **Gateway:** apply `infra/cloudflare` and create the gateway token (`infra/cloudflare/README.md`, "Hosted AI gateway").
+4. **Secrets:** create the containers on their own first, because Cloud Run refuses to start a revision that references a secret with no version: set `hosted_ai = true`, then `terraform apply -target='google_secret_manager_secret.api'` (add `-target='google_secret_manager_secret_iam_member.api_runtime'` to grant access in the same run). Then add a version to each by hand, so none enters Terraform state or a CI log:
+
+   ```bash
+   printf '%s' "<key>"   | gcloud secrets versions add platform-googleai-api-key --data-file=-
+   printf '%s' "<key>"   | gcloud secrets versions add platform-openai-api-key --data-file=-
+   printf '%s' "<token>" | gcloud secrets versions add platform-llm-gateway-token --data-file=-
+   ```
+
+5. **Apply** (in full) with `hosted_ai = true` and `PLATFORM_LLM_GATEWAY_BASE_URL` in `plain_env` (from `terraform -chdir=../cloudflare output -raw ai_gateway_base_url`). Leave `PLATFORM_LLM_PRIMARY` (`googleai`) and `PLATFORM_LLM_FALLBACK` (`openai`) unset unless you are swapping the pair; model ids are code (`PLATFORM_LLM` in `apps/api/src/infrastructure/config/constants.ts`).
+6. **Verify:** a user with no key and `aiSource` `auto` gets an AI reply, and `LlmUsageEvent.source` is `platform` for it. A missing key does not stop the API starting: it fails the first Trakwyn AI call with `AI_NOT_CONFIGURED`.
+
+**Kill switch:** `hosted_ai = false` and apply. It is a new revision, so allow a minute. Users on Trakwyn AI get `AI_NOT_CONFIGURED`; own-key users are untouched. The gateway's rate limit and token (`infra/cloudflare/README.md`) cut the spend faster than a deploy if you need it at once. A provider outage needs neither: the API retries once on the second provider before any output.
 
 **Roll back:** send traffic to the previous revision. The next deploy moves traffic back to the newest revision.
 

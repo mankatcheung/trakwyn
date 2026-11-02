@@ -35,6 +35,11 @@ plain_env = {
   # POLAR_PRODUCT_PASS_3M         = "<uuid>"
   # POLAR_PRODUCT_PASS_6M         = "<uuid>"
 
+  # Hosted AI (JEF-446), used with `hosted_ai = true` below. Optional: unset,
+  # the API calls Gemini and OpenAI directly instead of through the gateway.
+  # `terraform -chdir=../cloudflare output -raw ai_gateway_base_url`
+  # PLATFORM_LLM_GATEWAY_BASE_URL = "https://gateway.ai.cloudflare.com/v1/<account>/trakwyn"
+
   # Temporary diagnostic (JEF-353): one warn line per request carrying the
   # inbound traceparent and its sampled flag. Uncomment, apply, collect over a
   # representative window, then comment out again — an env change here makes a
@@ -42,3 +47,8 @@ plain_env = {
   # CI deploy.
   # LOG_INBOUND_TRACEPARENT = "true"
 }
+
+# Hosted AI (JEF-446). Add a version to each of platform-googleai-api-key,
+# platform-openai-api-key and platform-llm-gateway-token first (README.md,
+# "Hosted AI"), then set true. Setting it back to false is the kill switch.
+# hosted_ai = true

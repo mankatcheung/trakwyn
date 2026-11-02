@@ -18,6 +18,7 @@ export interface UserDTO {
   customAiPrompt: string | null;
   useCrossApplicationContext: boolean;
   llmFallbackWhenLimited: boolean;
+  aiSource: string;
   backupEmail: string | null;
   backupEmailVerifiedAt: Date | null;
   onboardingChecklistDismissedAt: Date | null;
@@ -58,6 +59,7 @@ export class UserMapper {
       customAiPrompt: user.customAiPrompt,
       useCrossApplicationContext: user.useCrossApplicationContext,
       llmFallbackWhenLimited: user.llmFallbackWhenLimited,
+      aiSource: user.aiSource,
       backupEmail: user.backupEmail,
       backupEmailVerifiedAt: user.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: user.onboardingChecklistDismissedAt,

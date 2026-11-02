@@ -9,7 +9,12 @@
  * Split out of the former root-level `src/constants.ts` (JEF-253).
  */
 
-import { DOCUMENT_FILE_ROUTE, FAKE_OAUTH, TRACING } from '#src/infrastructure/config/constants.js';
+import {
+  DOCUMENT_FILE_ROUTE,
+  FAKE_OAUTH,
+  PLATFORM_LLM,
+  TRACING,
+} from '#src/infrastructure/config/constants.js';
 import { TOKEN_LIFETIME_S } from '#src/use-cases/constants.js';
 
 /** Auth cookie names. */
@@ -79,7 +84,7 @@ export const ROUTES = {
    * base URL at this path, the same real, already-supported mechanism
    * self-hosted/OpenAI-compatible endpoints already use.
    */
-  LLM_FAKE_COMPLETIONS: '/llm-test/fake/chat/completions',
+  LLM_FAKE_COMPLETIONS: PLATFORM_LLM.FAKE_COMPLETIONS_PATH,
 } as const;
 
 /**

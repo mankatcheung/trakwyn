@@ -1,5 +1,6 @@
 import type { User } from '#src/domain/user/User.js';
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 
 export interface IUserRepository {
@@ -38,6 +39,7 @@ export interface IUserRepository {
       customAiPrompt?: string | null;
       useCrossApplicationContext?: boolean;
       llmFallbackWhenLimited?: boolean;
+      aiSource?: AiSource;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;

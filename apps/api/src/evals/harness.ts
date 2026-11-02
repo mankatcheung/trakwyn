@@ -25,7 +25,12 @@ const unlimited: IRateLimiter = {
 function factoryFor(provider: ILLMProvider): ILLMProviderFactory {
   return {
     forUser: async () => provider,
-    resolveForUser: async () => ({ provider, providerId: 'eval', fellBackFrom: null }),
+    resolveForUser: async () => ({
+      provider,
+      providerId: 'eval',
+      fellBackFrom: null,
+      source: 'byok',
+    }),
     fromCredentials: () => provider,
   };
 }

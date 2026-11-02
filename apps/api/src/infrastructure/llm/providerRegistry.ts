@@ -12,6 +12,15 @@ export interface LLMProviderCreateParams {
   baseUrl: string | null;
   /** Consulted only by the entry whose endpoint the user chose (`custom`). */
   outboundUrlPolicy?: IOutboundUrlPolicy;
+  /**
+   * Replaces the provider's endpoint — the platform path's gateway (JEF-446).
+   * Honoured only by `openai` (a full `/chat/completions` URL) and `googleai`
+   * (the `…/models` prefix); config, never user input, so it skips the policy.
+   * `custom` keeps using the user's `baseUrl`.
+   */
+  endpointOverride?: string;
+  /** Sent on every request, e.g. the gateway's `cf-aig-authorization`. */
+  extraHeaders?: Record<string, string>;
 }
 
 export interface LLMProviderRegistryEntry {
@@ -29,11 +38,13 @@ export interface LLMProviderRegistryEntry {
 export const PROVIDER_REGISTRY: Record<string, LLMProviderRegistryEntry> = {
   [LLM_PROVIDER.OPENAI]: {
     label: 'OpenAI',
-    create: ({ apiKey, model }) =>
+    create: ({ apiKey, model, endpointOverride, extraHeaders }) =>
       new OpenAICompatibleLLMProvider(
         apiKey,
-        LLM.OPENAI_API_URL,
+        endpointOverride ?? LLM.OPENAI_API_URL,
         model ?? LLM.OPENAI_DEFAULT_MODEL,
+        undefined,
+        extraHeaders,
       ),
   },
   [LLM_PROVIDER.ANTHROPIC]: {
@@ -42,7 +53,8 @@ export const PROVIDER_REGISTRY: Record<string, LLMProviderRegistryEntry> = {
   },
   [LLM_PROVIDER.GOOGLEAI]: {
     label: 'Google AI',
-    create: ({ apiKey, model }) => new GoogleAILLMProvider(apiKey, model ?? undefined),
+    create: ({ apiKey, model, endpointOverride, extraHeaders }) =>
+      new GoogleAILLMProvider(apiKey, model ?? undefined, endpointOverride, extraHeaders),
   },
   [LLM_PROVIDER.OPENROUTER]: {
     label: 'OpenRouter',

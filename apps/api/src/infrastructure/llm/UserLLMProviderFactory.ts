@@ -1,7 +1,15 @@
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
-import { LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
+import {
+  AI_SOURCE,
+  LLM_USAGE_SOURCE,
+  type AiFeature,
+  type LlmUsageSource,
+} from '#src/use-cases/constants.js';
+import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
+import type { User } from '#src/domain/user/User.js';
 import { llmApiKeyCipherContext } from '#src/use-cases/user/llmApiKeyCipherContext.js';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
+import { FailoverLLMProvider } from '#src/infrastructure/llm/FailoverLLMProvider.js';
 import { TracingLLMProvider } from '#src/infrastructure/llm/TracingLLMProvider.js';
 import { noopMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
@@ -10,6 +18,7 @@ import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js'
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
   ILLMProviderFactory,
@@ -33,6 +42,8 @@ interface Deps {
    */
   traceLlmCalls?: boolean;
   metrics?: IMetrics;
+  /** The platform-owned path (JEF-446). Absent or disabled, every call is the user's own key. */
+  platformLlmProviderFactory?: IPlatformLLMProviderFactory;
 }
 
 export class UserLLMProviderFactory implements ILLMProviderFactory {
@@ -53,12 +64,71 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
     request: LLMProviderRequest,
     hints: LLMProviderResolveHints = {},
   ): Promise<LLMProviderResolution | null> {
+    const { feature, provider, trackUsage = true } = request;
+    const platform = this.deps.platformLlmProviderFactory;
+    // Key tests (`trackUsage: false`) are always about the user's own key.
+    const platformOn = !!platform?.isEnabled() && trackUsage;
+
+    const user =
+      hints.user !== undefined
+        ? hints.user
+        : provider && !platformOn
+          ? undefined
+          : await this.deps.userRepository.findById(userId);
+    if (platformOn && user?.aiSource === AI_SOURCE.TRAKWYN) {
+      return this.resolvePlatform(userId, feature);
+    }
+
+    // `auto` falls to the platform only when the caller named no provider: an
+    // explicit one (a chat locked to a key) is a request for that key.
+    const own = await this.resolveOwn(userId, request, hints, user);
+    if (own || !platformOn || user?.aiSource !== AI_SOURCE.AUTO || provider) return own;
+    return this.resolvePlatform(userId, feature);
+  }
+
+  /** The platform's providers, each with its own tracking, failing over from the first to the second. */
+  private resolvePlatform(userId: string, feature: AiFeature): LLMProviderResolution {
+    const legs = this.deps.platformLlmProviderFactory!.legs().map((leg) => ({
+      providerId: leg.providerId,
+      provider: this.track(leg.provider, {
+        userId,
+        feature,
+        provider: leg.providerId,
+        model: leg.model,
+        source: LLM_USAGE_SOURCE.PLATFORM,
+      }),
+    }));
+    const [primary, fallback] = legs;
+    if (!primary) throw new AiNotConfiguredError('Hosted AI is not configured');
+    const provider = fallback
+      ? new FailoverLLMProvider(primary.provider, fallback.provider, (err) =>
+          this.deps.logger.warn('llm.platform.failover', undefined, {
+            from: primary.providerId,
+            to: fallback.providerId,
+            kind: err.kind,
+            status: err.status,
+          }),
+        )
+      : primary.provider;
+    return {
+      provider,
+      providerId: primary.providerId,
+      fellBackFrom: null,
+      source: LLM_USAGE_SOURCE.PLATFORM,
+    };
+  }
+
+  private async resolveOwn(
+    userId: string,
+    request: LLMProviderRequest,
+    hints: LLMProviderResolveHints,
+    user: User | null | undefined,
+  ): Promise<LLMProviderResolution | null> {
     const { feature, provider, model, trackUsage = true } = request;
     let resolvedProvider = provider;
     if (!resolvedProvider) {
-      const user =
-        hints.user !== undefined ? hints.user : await this.deps.userRepository.findById(userId);
-      resolvedProvider = user?.defaultLlmProvider ?? undefined;
+      const loaded = user !== undefined ? user : await this.deps.userRepository.findById(userId);
+      resolvedProvider = loaded?.defaultLlmProvider ?? undefined;
     }
     if (!resolvedProvider) return null;
 
@@ -84,32 +154,59 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       outboundUrlPolicy: this.deps.outboundUrlPolicy,
     });
     if (!trackUsage) {
-      return { provider: rawProvider, providerId: resolvedProvider, fellBackFrom: null };
+      return {
+        provider: rawProvider,
+        providerId: resolvedProvider,
+        fellBackFrom: null,
+        source: LLM_USAGE_SOURCE.BYOK,
+      };
     }
 
-    // Tracing sits beneath usage tracking, so the span times the provider
-    // rather than the ledger insert that follows it.
+    const tracked = this.track(rawProvider, {
+      userId,
+      feature,
+      provider: resolvedProvider,
+      model: resolvedModel,
+      source: LLM_USAGE_SOURCE.BYOK,
+    });
+    return {
+      provider: tracked,
+      providerId: resolvedProvider,
+      fellBackFrom: null,
+      source: LLM_USAGE_SOURCE.BYOK,
+    };
+  }
+
+  /**
+   * Tracing sits beneath usage tracking, so the span times the provider
+   * rather than the ledger insert that follows it.
+   */
+  private track(
+    raw: ILLMProvider,
+    ctx: {
+      userId: string;
+      feature: AiFeature;
+      provider: string;
+      model: string | null;
+      source: LlmUsageSource;
+    },
+  ): ILLMProvider {
     const measured = this.deps.traceLlmCalls
       ? new TracingLLMProvider({
-          inner: rawProvider,
+          inner: raw,
           metrics: this.deps.metrics ?? noopMetrics,
-          provider: resolvedProvider,
-          model: resolvedModel,
+          provider: ctx.provider,
+          model: ctx.model,
         })
-      : rawProvider;
-    const tracked = new UsageTrackingLLMProvider({
+      : raw;
+    return new UsageTrackingLLMProvider({
       inner: measured,
       usageEventRepository: this.deps.llmUsageEventRepository,
       generateId: this.deps.generateId,
       logger: this.deps.logger,
-      userId,
-      provider: resolvedProvider,
-      model: resolvedModel,
-      feature,
-      source: LLM_USAGE_SOURCE.BYOK,
       metrics: this.deps.metrics ?? noopMetrics,
+      ...ctx,
     });
-    return { provider: tracked, providerId: resolvedProvider, fellBackFrom: null };
   }
 
   fromCredentials(credentials: LLMProviderCredentials): ILLMProvider | null {

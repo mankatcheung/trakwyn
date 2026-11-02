@@ -8,3 +8,8 @@ output "turnstile_secret_key" {
   value       = cloudflare_turnstile_widget.web.secret
   sensitive   = true
 }
+
+output "ai_gateway_base_url" {
+  description = "Base URL of the hosted-AI gateway (not secret). Goes into infra/gcp's plain_env as PLATFORM_LLM_GATEWAY_BASE_URL."
+  value       = "https://gateway.ai.cloudflare.com/v1/${var.account_id}/${cloudflare_ai_gateway.hosted_ai.id}"
+}

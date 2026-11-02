@@ -1,7 +1,7 @@
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
 import type { User } from '#src/domain/user/User.js';
-import type { AiFeature } from '#src/use-cases/constants.js';
+import type { AiFeature, LlmUsageSource } from '#src/use-cases/constants.js';
 
 /**
  * Resolves the LLM provider to use for a given user's own API key —
@@ -36,6 +36,8 @@ export interface LLMProviderResolution {
   providerId: string;
   /** The paused provider this fell back from, or null on the normal path. */
   fellBackFrom: string | null;
+  /** Whose key answers: the user's (`byok`) or Trakwyn's (`platform`, JEF-446). */
+  source: LlmUsageSource;
 }
 
 /**

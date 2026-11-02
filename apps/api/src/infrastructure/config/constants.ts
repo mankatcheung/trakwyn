@@ -65,6 +65,17 @@ export const ENV = {
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
+  /** `'true'` turns on the platform-owned LLM path (Hosted AI, JEF-446). Unset, nothing changes. */
+  HOSTED_AI_ENABLED: 'HOSTED_AI_ENABLED',
+  /** Platform provider ids: primary (`googleai`) and failover (`openai`). */
+  PLATFORM_LLM_PRIMARY: 'PLATFORM_LLM_PRIMARY',
+  PLATFORM_LLM_FALLBACK: 'PLATFORM_LLM_FALLBACK',
+  PLATFORM_GOOGLEAI_API_KEY: 'PLATFORM_GOOGLEAI_API_KEY',
+  PLATFORM_OPENAI_API_KEY: 'PLATFORM_OPENAI_API_KEY',
+  /** Cloudflare AI Gateway base, `https://gateway.ai.cloudflare.com/v1/<account>/<gateway>`. Optional: unset calls the providers directly. */
+  PLATFORM_LLM_GATEWAY_BASE_URL: 'PLATFORM_LLM_GATEWAY_BASE_URL',
+  /** Sent as `cf-aig-authorization` to an authenticated gateway. */
+  PLATFORM_LLM_GATEWAY_TOKEN: 'PLATFORM_LLM_GATEWAY_TOKEN',
   /**
    * `'true'` makes the Free and Pro plans bite (JEF-344): Pro features are refused
    * to Free users and the Free AI allowance applies. Unset or anything else, every
@@ -412,6 +423,26 @@ export const OAUTH_PROVIDER_MODE = {
 export const LLM_PROVIDER_MODE = {
   REAL: 'real',
   FAKE: 'fake',
+} as const;
+
+/**
+ * The platform-owned LLM path (Hosted AI, JEF-446).
+ *
+ * `MODELS` are the `lite`/`mid` tier ids per provider; routing between tiers is
+ * Hosted AI 5, so until then every call uses `mid`. OpenAI has one tier for now.
+ */
+export const PLATFORM_LLM = {
+  DEFAULT_PRIMARY: 'googleai',
+  DEFAULT_FALLBACK: 'openai',
+  MODELS: {
+    googleai: { lite: 'gemini-2.5-flash-lite', mid: 'gemini-2.5-flash-lite' },
+    openai: { lite: 'gpt-5.6-luna', mid: 'gpt-5.6-luna' },
+  },
+  /** Path segment of each provider under the gateway base URL. */
+  GATEWAY_PATH: { googleai: 'google-ai-studio', openai: 'openai' },
+  GATEWAY_AUTH_HEADER: 'cf-aig-authorization',
+  /** Where the fake provider's `/chat/completions` lives; `ROUTES.LLM_FAKE_COMPLETIONS` is this. */
+  FAKE_COMPLETIONS_PATH: '/llm-test/fake/chat/completions',
 } as const;
 
 /**

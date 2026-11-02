@@ -17,6 +17,7 @@ import { GetTotpStatusUseCase } from '#src/use-cases/user/GetTotpStatusUseCase.j
 import { SaveLlmApiKeyUseCase } from '#src/use-cases/user/SaveLlmApiKeyUseCase.js';
 import { ListLlmApiKeysUseCase } from '#src/use-cases/user/ListLlmApiKeysUseCase.js';
 import { DeleteLlmApiKeyUseCase } from '#src/use-cases/user/DeleteLlmApiKeyUseCase.js';
+import { SetAiSourceUseCase } from '#src/use-cases/user/SetAiSourceUseCase.js';
 import { SetDefaultLlmProviderUseCase } from '#src/use-cases/user/SetDefaultLlmProviderUseCase.js';
 import { SetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/SetLlmApiKeyMonthlyLimitUseCase.js';
 import { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.js';
@@ -70,6 +71,7 @@ export const user = {
   saveLlmApiKeyUseCase: asClass(SaveLlmApiKeyUseCase, { lifetime: Lifetime.TRANSIENT }),
   listLlmApiKeysUseCase: asClass(ListLlmApiKeysUseCase, { lifetime: Lifetime.TRANSIENT }),
   deleteLlmApiKeyUseCase: asClass(DeleteLlmApiKeyUseCase, { lifetime: Lifetime.TRANSIENT }),
+  setAiSourceUseCase: asClass(SetAiSourceUseCase, { lifetime: Lifetime.TRANSIENT }),
   setDefaultLlmProviderUseCase: asClass(SetDefaultLlmProviderUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
