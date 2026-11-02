@@ -554,6 +554,33 @@ export const DOCUMENT_FILE_ROUTE = {
   TOKEN_PARAM: 'token',
 } as const;
 
+/**
+ * Which models take a reasoning switch, and what "off" and "low" mean for
+ * each (JEF-445). A pattern list, because providers do not say reliably.
+ * A model matching nothing here never gets the parameter: an unknown field
+ * can come back as a 400.
+ */
+export const REASONING_CONTROL = {
+  /**
+   * OpenAI `reasoning_effort`, sent only to OpenAI's own endpoint. `gpt-5*`
+   * accepts `minimal` as its lowest setting; the `o` series has no `minimal`,
+   * so `low` is the floor there.
+   */
+  OPENAI_MODELS: [
+    { pattern: /^gpt-5/i, off: 'minimal', low: 'low' },
+    { pattern: /^o\d/i, off: 'low', low: 'low' },
+  ],
+  /**
+   * Gemini `thinkingConfig.thinkingBudget` (tokens). 2.5 Flash and Flash-Lite
+   * can disable thinking (0); 2.5 Pro cannot, so it gets its minimum (128).
+   * Listed most specific first.
+   */
+  GOOGLE_MODELS: [
+    { pattern: /^gemini-2\.5-pro/i, off: 128, low: 1024 },
+    { pattern: /^gemini-2\.5-flash/i, off: 0, low: 1024 },
+  ],
+} as const;
+
 /** What one million tokens of a model cost, in micro-USD (1 USD = 1 000 000), per kind of token (JEF-444). */
 export interface LlmPrice {
   input: number;

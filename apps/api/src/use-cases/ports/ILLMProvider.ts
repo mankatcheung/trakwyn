@@ -51,6 +51,13 @@ export interface LLMUsage {
    */
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
+  /**
+   * Of `completionTokens`, the hidden thinking/reasoning tokens the provider
+   * billed at the output price (JEF-445) — Gemini's `thoughtsTokenCount`,
+   * OpenAI's `completion_tokens_details.reasoning_tokens`. Absent when the
+   * provider does not report it.
+   */
+  reasoningTokens?: number;
 }
 
 export interface LLMCompleteResult {
@@ -109,8 +116,22 @@ export type LLMStreamEvent =
  * parse the reply get fewer fenced or chatty answers. Providers without a
  * matching switch ignore it; the prompt still says "return only JSON".
  */
-export interface LLMCompleteOptions {
+export interface LLMCompleteOptions extends LLMStreamOptions {
   json?: boolean;
+}
+
+/**
+ * How much hidden thinking a call may spend (JEF-445). `off` is the
+ * provider's lowest setting (some models cannot go fully off), `low` a small
+ * budget, `default` leaves the provider's own behaviour untouched. A provider
+ * or model without a matching switch ignores it rather than sending a
+ * parameter that could be refused.
+ */
+export type LLMReasoning = 'off' | 'low' | 'default';
+
+/** Per-call switches shared by `complete()` and `completeWithToolsStream()`. */
+export interface LLMStreamOptions {
+  reasoning?: LLMReasoning;
 }
 
 export interface ILLMProvider {
@@ -125,5 +146,6 @@ export interface ILLMProvider {
     tools: LLMToolDefinition[],
     maxTokens?: number,
     signal?: AbortSignal,
+    options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent>;
 }

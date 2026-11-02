@@ -19,7 +19,7 @@ import { formatApplicationContext } from '#src/use-cases/shared/applicationConte
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
-import { AI_PROMPT_INPUT, AI_FEATURE } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCoverLetterInput {
   applicationId: string;
@@ -111,7 +111,11 @@ export class GenerateCoverLetterUseCase {
     }
     messages.push({ role: 'user', content: userPrompt });
 
-    return (await llmProvider.complete(messages, 1024)).content;
+    return (
+      await llmProvider.complete(messages, 1024, undefined, {
+        reasoning: AI_REASONING_DEFAULTS.COVER_LETTER,
+      })
+    ).content;
   }
 
   private buildPrompt(

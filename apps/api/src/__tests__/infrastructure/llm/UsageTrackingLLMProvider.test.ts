@@ -64,12 +64,58 @@ describe('UsageTrackingLLMProvider', () => {
         completionTokens: 5,
         cacheReadTokens: null,
         cacheWriteTokens: null,
+        reasoningTokens: null,
         estimated: false,
         // (10 × 150 000 + 5 × 600 000) / 1 000 000 = 4.5, rounded.
         costMicros: 5,
         feature: 'chat',
         source: 'byok',
       });
+    });
+
+    it('records reasoningTokens and forwards the per-call options (JEF-445)', async () => {
+      const inner = makeInner({
+        complete: vi.fn().mockResolvedValue({
+          content: 'ok',
+          usage: { promptTokens: 10, completionTokens: 50, reasoningTokens: 40 },
+        }),
+      });
+      const usageEventRepository = makeRepo();
+      const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
+        inner,
+        usageEventRepository,
+        logger: makeLogger(),
+        generateId: () => 'evt-1',
+        userId: 'user-1',
+        provider: 'googleai',
+        model: null,
+      });
+
+      await provider.complete([{ role: 'user', content: 'hi' }], 256, undefined, {
+        reasoning: 'off',
+      });
+      await drain(
+        provider.completeWithToolsStream([{ role: 'user', content: 'hi' }], [], 256, undefined, {
+          reasoning: 'off',
+        }),
+      );
+
+      expect(usageEventRepository.record).toHaveBeenCalledWith(
+        expect.objectContaining({ reasoningTokens: 40 }),
+      );
+      expect(inner.complete).toHaveBeenCalledWith(expect.anything(), 256, undefined, {
+        reasoning: 'off',
+      });
+      expect(inner.completeWithToolsStream).toHaveBeenCalledWith(
+        expect.anything(),
+        [],
+        256,
+        undefined,
+        { reasoning: 'off' },
+      );
     });
 
     it('counts the cost in the metric, and records null with one warning for an unpriced model (JEF-444)', async () => {
@@ -215,6 +261,7 @@ describe('UsageTrackingLLMProvider', () => {
         completionTokens: 8,
         cacheReadTokens: null,
         cacheWriteTokens: null,
+        reasoningTokens: null,
         estimated: false,
         // No model on the key: priced as Anthropic's default, Haiku 4.5.
         costMicros: 60,

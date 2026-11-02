@@ -12,7 +12,7 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
-import { AI_PROMPT_INPUT, AI_FEATURE } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCompanyBriefingInput {
   applicationId: string;
@@ -76,7 +76,9 @@ export class GenerateCompanyBriefingUseCase {
     }
     messages.push({ role: 'user', content: userPrompt });
 
-    const { content } = await llmProvider.complete(messages, 768);
+    const { content } = await llmProvider.complete(messages, 768, undefined, {
+      reasoning: AI_REASONING_DEFAULTS.COMPANY_BRIEFING,
+    });
 
     // Persisted rather than returned and forgotten (JEF-195). Upsert, not
     // insert: one briefing per application, and regenerating replaces it.

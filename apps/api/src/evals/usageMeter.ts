@@ -39,8 +39,8 @@ export function meterProvider(inner: ILLMProvider): {
         };
       }
     },
-    completeWithToolsStream: (messages, tools, maxTokens, signal) =>
-      inner.completeWithToolsStream(messages, tools, maxTokens, signal),
+    completeWithToolsStream: (messages, tools, maxTokens, signal, streamOptions) =>
+      inner.completeWithToolsStream(messages, tools, maxTokens, signal, streamOptions),
   };
 
   return { provider, totals: () => totals };

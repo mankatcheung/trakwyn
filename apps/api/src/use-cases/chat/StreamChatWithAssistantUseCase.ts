@@ -11,7 +11,7 @@ import type { IMessageRepository } from '#src/use-cases/ports/IMessageRepository
 import type { IConversationRepository } from '#src/use-cases/ports/IConversationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { LLMToolCall, LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
-import { AI_FEATURE, CHAT } from '#src/use-cases/constants.js';
+import { AI_FEATURE, CHAT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import {
   type ChatToolDeps,
   buildChatMessages,
@@ -159,6 +159,7 @@ export class StreamChatWithAssistantUseCase {
         this.deps.chatTools,
         undefined,
         input.signal,
+        { reasoning: AI_REASONING_DEFAULTS.CHAT },
       )) {
         if (event.type === 'text_delta') {
           yield { type: 'delta', text: event.text };

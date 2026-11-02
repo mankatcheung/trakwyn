@@ -24,6 +24,7 @@ import {
   MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
   AI_FEATURE,
+  AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import {
   buildMockInterviewContext,
@@ -113,6 +114,8 @@ export class GenerateMockQuestionsUseCase implements IGenerateMockQuestionsUseCa
     const result = await llmProvider.complete(
       messages,
       MOCK_QUESTION_GENERATION.QUESTIONS_MAX_TOKENS,
+      undefined,
+      { reasoning: AI_REASONING_DEFAULTS.MOCK_QUESTIONS },
     );
     assertNotTruncated(result);
     const parsed = parseAiJson(result.content, questionsSchema);

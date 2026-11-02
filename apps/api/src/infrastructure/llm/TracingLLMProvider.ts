@@ -17,6 +17,7 @@ import { LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 import type {
   ILLMProvider,
   LLMCompleteOptions,
+  LLMStreamOptions,
   LLMCompleteResult,
   LLMMessage,
   LLMStreamEvent,
@@ -43,6 +44,7 @@ export const LLM_SPAN = {
   OUTPUT_TOKENS: 'gen_ai.usage.output_tokens',
   CACHE_READ_TOKENS: 'app.llm.cache_read_tokens',
   CACHE_WRITE_TOKENS: 'app.llm.cache_write_tokens',
+  REASONING_TOKENS: 'app.llm.reasoning_tokens',
   ESTIMATED: 'app.llm.estimated',
   TIME_TO_FIRST_TOKEN_MS: 'app.llm.time_to_first_token_ms',
   OUTCOME: 'app.llm.outcome',
@@ -129,10 +131,11 @@ export class TracingLLMProvider implements ILLMProvider {
     tools: LLMToolDefinition[],
     maxTokens?: number,
     signal?: AbortSignal,
+    options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
     const call = this.startCall('stream');
     const stream = context.with(call.context, () =>
-      this.deps.inner.completeWithToolsStream(messages, tools, maxTokens, signal),
+      this.deps.inner.completeWithToolsStream(messages, tools, maxTokens, signal, options),
     );
     let promptTokens: number | null = null;
     let started = false;
@@ -242,6 +245,9 @@ class LlmCall {
         : {}),
       ...(usage.cacheWriteTokens !== undefined
         ? { [LLM_SPAN.CACHE_WRITE_TOKENS]: usage.cacheWriteTokens }
+        : {}),
+      ...(usage.reasoningTokens !== undefined
+        ? { [LLM_SPAN.REASONING_TOKENS]: usage.reasoningTokens }
         : {}),
     });
   }

@@ -72,6 +72,11 @@ export const llmUsageEvent = pgTable(
     cacheReadTokens: integer('cacheReadTokens'),
     cacheWriteTokens: integer('cacheWriteTokens'),
     /**
+     * Of `completionTokens`, the hidden reasoning tokens the provider billed
+     * as output (JEF-445). Null when the provider does not report them.
+     */
+    reasoningTokens: integer('reasoningTokens'),
+    /**
      * The counts above were not reported by the provider but estimated from
      * the request (F3) — a stream that was aborted before a provider that
      * only reports usage at the end ever got to. Counted toward the monthly

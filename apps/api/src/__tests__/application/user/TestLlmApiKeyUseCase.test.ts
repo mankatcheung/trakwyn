@@ -117,6 +117,8 @@ describe('TestLlmApiKeyUseCase', () => {
     expect(provider.complete).toHaveBeenCalledWith(
       [{ role: 'user', content: expect.any(String) }],
       LLM.TEST_API_KEY_MAX_TOKENS,
+      undefined,
+      { reasoning: 'off' },
     );
     expect(result).toEqual({ ok: true });
   });

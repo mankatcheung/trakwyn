@@ -11,6 +11,8 @@ export interface RecordLlmUsageEventData {
   /** See `LLMUsage` — null when the provider reported no split. */
   cacheReadTokens?: number | null;
   cacheWriteTokens?: number | null;
+  /** Hidden thinking tokens, part of `completionTokens` (JEF-445); null when not reported. */
+  reasoningTokens?: number | null;
   /** True when the counts are an estimate (F3); defaults to false. */
   estimated?: boolean;
   /** Micro-USD; null when the model has no listed price (JEF-444). */

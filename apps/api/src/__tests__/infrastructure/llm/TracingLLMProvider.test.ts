@@ -261,7 +261,12 @@ describe('TracingLLMProvider', () => {
             type: 'done',
             content: SECRET_REPLY,
             toolCalls: [],
-            usage: { promptTokens: 200, completionTokens: 40, cacheWriteTokens: 150 },
+            usage: {
+              promptTokens: 200,
+              completionTokens: 40,
+              cacheWriteTokens: 150,
+              reasoningTokens: 12,
+            },
           };
         }),
       });
@@ -276,6 +281,7 @@ describe('TracingLLMProvider', () => {
         [LLM_SPAN.INPUT_TOKENS]: 200,
         [LLM_SPAN.OUTPUT_TOKENS]: 40,
         [LLM_SPAN.CACHE_WRITE_TOKENS]: 150,
+        [LLM_SPAN.REASONING_TOKENS]: 12,
         [LLM_SPAN.ESTIMATED]: false,
         [LLM_SPAN.OUTCOME]: 'success',
         // Clock reads: start 10, first text 20, done 30.

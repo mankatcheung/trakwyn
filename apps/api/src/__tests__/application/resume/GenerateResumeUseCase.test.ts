@@ -103,6 +103,17 @@ describe('GenerateResumeUseCase', () => {
     expect(resume.skills.flatMap((s) => s.items)).toContain('TypeScript');
   });
 
+  it('asks for JSON with reasoning off, so thinking cannot truncate the resume (JEF-445)', async () => {
+    const ctx = makeUseCase();
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(vi.mocked(ctx.llmProvider.complete).mock.calls[0]![3]).toEqual({
+      json: true,
+      reasoning: 'off',
+    });
+  });
+
   it('sends education and skills to the model, not only work experience', async () => {
     const ctx = makeUseCase();
 

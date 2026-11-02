@@ -6,9 +6,12 @@ import type {
   LLMCompleteResult,
   LLMToolCall,
   LLMStreamEvent,
+  LLMStreamOptions,
+  LLMReasoning,
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
 import { LLM } from '#src/use-cases/constants.js';
+import { REASONING_CONTROL } from '#src/infrastructure/config/constants.js';
 import {
   fetchWithRetry,
   createIdleAbortController,
@@ -27,6 +30,8 @@ interface GoogleAIWireUsage {
   candidatesTokenCount: number;
   /** Prompt tokens served from Gemini's implicit or explicit cache; part of promptTokenCount. */
   cachedContentTokenCount?: number;
+  /** Hidden thinking tokens, billed as output and not part of candidatesTokenCount. */
+  thoughtsTokenCount?: number;
 }
 
 interface GoogleAIWireResponse {
@@ -42,7 +47,25 @@ function toLLMUsage(usage: GoogleAIWireUsage | undefined): LLMUsage | null {
     ...(typeof usage.cachedContentTokenCount === 'number'
       ? { cacheReadTokens: usage.cachedContentTokenCount }
       : {}),
+    ...(typeof usage.thoughtsTokenCount === 'number'
+      ? { reasoningTokens: usage.thoughtsTokenCount }
+      : {}),
   };
+}
+
+/**
+ * The `thinkingConfig` for a model and reasoning level (JEF-445), or nothing
+ * when the level is `default`/unset or the model is not one whose budget can
+ * be set (an unknown field may be refused).
+ */
+function thinkingConfigFor(
+  model: string,
+  reasoning: LLMReasoning | undefined,
+): { thinkingConfig: { thinkingBudget: number } } | Record<string, never> {
+  if (!reasoning || reasoning === 'default') return {};
+  const rule = REASONING_CONTROL.GOOGLE_MODELS.find((r) => r.pattern.test(model));
+  if (!rule) return {};
+  return { thinkingConfig: { thinkingBudget: reasoning === 'off' ? rule.off : rule.low } };
 }
 
 /**
@@ -104,6 +127,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
           maxOutputTokens: Math.min(maxTokens, LLM.MAX_OUTPUT_TOKENS_CAP),
           // Gemini's JSON mode (F6): the reply is a bare JSON document, never fenced.
           ...(options?.json ? { responseMimeType: 'application/json' } : {}),
+          ...thinkingConfigFor(this.model, options?.reasoning),
         },
       },
       signal,
@@ -129,6 +153,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
     tools: LLMToolDefinition[],
     maxTokens: number = LLM.DEFAULT_MAX_TOKENS,
     signal?: AbortSignal,
+    options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
     if (!this.apiKey) throw new Error('Google AI API key is not set');
 
@@ -160,7 +185,10 @@ export class GoogleAILLMProvider implements ILLMProvider {
             })),
           },
         ],
-        generationConfig: { maxOutputTokens: Math.min(maxTokens, LLM.MAX_OUTPUT_TOKENS_CAP) },
+        generationConfig: {
+          maxOutputTokens: Math.min(maxTokens, LLM.MAX_OUTPUT_TOKENS_CAP),
+          ...thinkingConfigFor(this.model, options?.reasoning),
+        },
       },
       signal,
     );

@@ -1,0 +1,1 @@
+ALTER TABLE "LlmUsageEvent" ADD COLUMN "reasoningTokens" integer;

@@ -4,6 +4,7 @@ import type {
   LLMToolDefinition,
   LLMStreamEvent,
   LLMCompleteOptions,
+  LLMStreamOptions,
   LLMCompleteResult,
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
@@ -73,6 +74,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     tools: LLMToolDefinition[],
     maxTokens?: number,
     signal?: AbortSignal,
+    options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
     let promptTokens: number | null = null;
     let recorded = false;
@@ -85,6 +87,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         tools,
         maxTokens,
         signal,
+        options,
       )) {
         started = true;
         if (event.type === 'prompt_usage') promptTokens = event.promptTokens;
@@ -130,6 +133,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         completionTokens: usage.completionTokens,
         cacheReadTokens: usage.cacheReadTokens ?? null,
         cacheWriteTokens: usage.cacheWriteTokens ?? null,
+        reasoningTokens: usage.reasoningTokens ?? null,
         estimated,
         costMicros,
         feature,

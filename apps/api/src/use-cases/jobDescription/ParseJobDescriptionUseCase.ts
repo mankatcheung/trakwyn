@@ -9,7 +9,7 @@ import type { IJobPostingSourceResolver } from '#src/use-cases/ports/IJobPosting
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT, AI_FEATURE } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface ParseJobDescriptionInput {
   userId: string;
@@ -95,7 +95,7 @@ export class ParseJobDescriptionUseCase {
       ],
       undefined,
       undefined,
-      { json: true },
+      { json: true, reasoning: AI_REASONING_DEFAULTS.JOB_DESCRIPTION },
     );
     assertNotTruncated(result);
 
