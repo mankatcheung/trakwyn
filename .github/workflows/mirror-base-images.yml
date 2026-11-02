@@ -31,6 +31,9 @@ jobs:
     # workflow_dispatch can be started from any branch; the credentials would
     # not be issued off main anyway, so fail early with a clear reason.
     if: github.ref == 'refs/heads/main'
+    # Holds GCP_DEPLOYER_SA (JEF-479); without it the auth step has no
+    # service account to impersonate.
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read

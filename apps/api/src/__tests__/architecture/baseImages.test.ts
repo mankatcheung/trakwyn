@@ -167,6 +167,11 @@ describe('mirror workflow', () => {
     expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
   });
 
+  it('runs in the production environment, which holds GCP_DEPLOYER_SA (JEF-479)', () => {
+    expect(workflow).toContain('environment: production');
+    expect(workflow).toContain('service_account: ${{ vars.GCP_DEPLOYER_SA }}');
+  });
+
   it('is the one place that mirrors from the pin file', () => {
     expect(workflow).toContain('.github/scripts/mirror-base-images.sh infra/base-images.txt');
   });
