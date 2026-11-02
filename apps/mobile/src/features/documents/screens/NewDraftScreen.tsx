@@ -19,6 +19,8 @@ import { useGenerateCoverLetter } from '../../applications/hooks/useCoverLetterM
 import { documentCategory } from '../lib/documentCategory';
 import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
 import { getErrorMessage } from '../../../lib/errors';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import type { DocumentDraftType } from '../types';
@@ -58,6 +60,9 @@ function NewDraftScreen({ type }: NewDraftScreenProps) {
     extractText.isPending ||
     generateResume.isPending ||
     generateCoverLetter.isPending;
+  // Every draft on the application counts towards the cap, whatever its type.
+  const draftsFull = useQuotaFull('documentDrafts', drafts?.length ?? 0);
+  const blocked = busy || draftsFull;
   const resumeFiles = (documents ?? []).filter(
     (d) => documentCategory(d.documentType) === 'resume',
   );
@@ -200,9 +205,9 @@ function NewDraftScreen({ type }: NewDraftScreenProps) {
             })}
           </View>
           <Pressable
-            style={[styles.generateButton, busy && styles.disabled]}
+            style={[styles.generateButton, blocked && styles.disabled]}
             onPress={() => void handleGenerateCoverLetter()}
-            disabled={busy}
+            disabled={blocked}
             testID="generate-cover-letter-button"
           >
             <Text style={styles.generateButtonText}>
@@ -219,9 +224,9 @@ function NewDraftScreen({ type }: NewDraftScreenProps) {
           <Text style={styles.generateTitle}>{t('generateResumeTitle')}</Text>
           <Text style={styles.generateHelp}>{t('generateResumeHelp')}</Text>
           <Pressable
-            style={[styles.generateButton, busy && styles.disabled]}
+            style={[styles.generateButton, blocked && styles.disabled]}
             onPress={() => void handleGenerate()}
-            disabled={busy}
+            disabled={blocked}
             testID="generate-resume-button"
           >
             <Text style={styles.generateButtonText}>
@@ -231,6 +236,7 @@ function NewDraftScreen({ type }: NewDraftScreenProps) {
         </View>
       )}
 
+      <QuotaHint resource="documentDrafts" used={drafts?.length ?? 0} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.actionsRow}>
@@ -238,9 +244,9 @@ function NewDraftScreen({ type }: NewDraftScreenProps) {
           <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
         </Pressable>
         <Pressable
-          style={[styles.createButton, (busy || !title.trim()) && styles.disabled]}
+          style={[styles.createButton, (blocked || !title.trim()) && styles.disabled]}
           onPress={() => void handleCreate()}
-          disabled={busy || !title.trim()}
+          disabled={blocked || !title.trim()}
           testID="create-draft-button"
         >
           {createDraft.isPending || extractText.isPending ? (

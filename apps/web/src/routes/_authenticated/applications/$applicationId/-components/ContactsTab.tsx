@@ -4,6 +4,9 @@ import { CheckIcon, EditIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
+import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { Button, Card, EmptyState, FormLabel, Input, Skeleton, Textarea } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
 const CONTACTS_QUERY = `
@@ -162,6 +165,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
   });
 
   const contacts = data?.contacts ?? [];
+  const contactsFull = useQuotaState('contacts', contacts.length)?.level === 'full';
 
   const ContactForm = ({
     onSubmit,
@@ -251,29 +255,40 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
   return (
     <div className="space-y-4">
       {!showForm && !editingContact && (
-        <Button
-          size="sm"
-          onClick={() => {
-            setShowForm(true);
-            setForm(emptyContactForm());
-          }}
-          aria-label={t('contacts.addContact')}
-        >
-          <span className="flex items-center gap-1.5">
-            <PlusIcon size={14} />{' '}
-            <span className="hidden sm:inline">{t('contacts.addContact')}</span>
-          </span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            disabled={contactsFull}
+            onClick={() => {
+              setShowForm(true);
+              setForm(emptyContactForm());
+            }}
+            aria-label={t('contacts.addContact')}
+          >
+            <span className="flex items-center gap-1.5">
+              <PlusIcon size={14} />{' '}
+              <span className="hidden sm:inline">{t('contacts.addContact')}</span>
+            </span>
+          </Button>
+          <QuotaHint resource="contacts" used={contacts.length} />
+        </div>
       )}
 
       {showForm && (
-        <ContactForm
-          onSubmit={() => {
-            if (form.name.trim()) createContact.mutate(form);
-          }}
-          onCancel={() => setShowForm(false)}
-          submitting={createContact.isPending}
-        />
+        <>
+          <ContactForm
+            onSubmit={() => {
+              if (form.name.trim()) createContact.mutate(form);
+            }}
+            onCancel={() => setShowForm(false)}
+            submitting={createContact.isPending}
+          />
+          {createContact.isError && (
+            <p role="alert" className="text-xs text-red-600">
+              {getErrorMessage(createContact.error)}
+            </p>
+          )}
+        </>
       )}
 
       {isLoading ? (

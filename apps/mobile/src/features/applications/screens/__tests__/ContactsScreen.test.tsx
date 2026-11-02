@@ -3,6 +3,12 @@ import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
+// The quota hint is covered by QuotaHint.test.tsx; here it would need a query client of its own.
+jest.mock('../../../quota/hooks/useQuotaState', () => ({
+  useQuotaState: () => null,
+  useQuotaFull: () => false,
+}));
+
 jest.mock('../../hooks/useContactQueries', () => ({ useContacts: jest.fn() }));
 jest.mock('../../hooks/useContactMutations', () => ({
   useCreateContact: jest.fn(),

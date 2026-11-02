@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
+import { contentQuotaQueryKey } from '#/lib/contentQuota';
 import { toast } from 'sonner';
 
 // ── GraphQL queries & mutations ────────────────────────────────────────────
@@ -227,6 +228,8 @@ export function deleteConversationWithUndo(
     onSettled: () => {
       qc.removeQueries({ queryKey: chatHistoryQueryOptions(id).queryKey });
       qc.invalidateQueries({ queryKey: conversationsQueryOptions.queryKey });
+      // The conversation cap is counted by the API, so a delete frees a slot (JEF-494).
+      qc.invalidateQueries({ queryKey: contentQuotaQueryKey });
     },
   });
 }

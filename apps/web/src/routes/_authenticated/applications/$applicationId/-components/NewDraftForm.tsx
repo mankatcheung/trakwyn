@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
+import { documentDraftsQueryOptions } from '../-documentQueries';
 import { proseToTiptapDoc } from '#/lib/proseToTiptapDoc';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -79,6 +83,9 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
   const [error, setError] = useState<string | null>(null);
   const profileEmpty = useIsProfileEmpty();
   const [askAboutProfile, setAskAboutProfile] = useState(false);
+  const { data: draftsData } = useQuery(documentDraftsQueryOptions(applicationId));
+  const draftCount = draftsData?.documentDrafts?.length ?? 0;
+  const draftsFull = useQuotaState('documentDrafts', draftCount)?.level === 'full';
 
   const typeLabel = type === 'cover_letter' ? t('documents.cover_letter') : t('documents.resume');
 
@@ -130,7 +137,8 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
         },
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('documentDraft.createFailed'));
+      // The API's own message, so a quota failure names the limit.
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -212,7 +220,7 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
               variant="secondary"
               className="mt-3"
               onClick={startGenerate}
-              disabled={loading}
+              disabled={loading || draftsFull}
             >
               {loading ? t('documentDraft.generating') : `✨ ${t('documentDraft.generateResume')}`}
             </Button>
@@ -226,6 +234,8 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
             )}
           </div>
         )}
+
+        <QuotaHint resource="documentDrafts" used={draftCount} />
 
         {error && <Alert>{error}</Alert>}
 
@@ -243,7 +253,7 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
           >
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={loading || !title.trim()}>
+          <Button type="submit" disabled={loading || !title.trim() || draftsFull}>
             {loading ? t('documentDraft.creating') : t('documentDraft.createDraft')}
           </Button>
         </div>

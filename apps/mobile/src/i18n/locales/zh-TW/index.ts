@@ -15,6 +15,7 @@ import interviews from './interviews.json';
 import notifications from './notifications.json';
 import offers from './offers.json';
 import push from './push.json';
+import quota from './quota.json';
 import settings from './settings.json';
 
 export default {
@@ -35,5 +36,6 @@ export default {
   notifications,
   offers,
   push,
+  quota,
   settings,
 };

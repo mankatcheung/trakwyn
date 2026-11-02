@@ -1,0 +1,18 @@
+{
+  "usage": "{{used}} of {{limit}} {{noun}}",
+  "full": "Limit reached: {{limit}} {{noun}}. Delete one to add another.",
+  "noun": {
+    "notes": "notes",
+    "contacts": "contacts",
+    "interviewRounds": "interview rounds",
+    "offers": "offers",
+    "tags": "tags",
+    "documentDrafts": "document drafts",
+    "conversations": "conversations",
+    "workExperiences": "work experiences",
+    "educations": "education entries",
+    "skills": "skills",
+    "shareLinks": "share links",
+    "apiTokens": "API tokens"
+  }
+}

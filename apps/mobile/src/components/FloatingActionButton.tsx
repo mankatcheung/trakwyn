@@ -8,20 +8,25 @@ interface FloatingActionButtonProps {
   onPress: () => void;
   testID?: string;
   accessibilityLabel?: string;
+  /** Dimmed and inert, e.g. when the resource it adds is at its cap (JEF-494). */
+  disabled?: boolean;
 }
 
 export function FloatingActionButton({
   onPress,
   testID,
   accessibilityLabel,
+  disabled = false,
 }: FloatingActionButtonProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <Pressable
-      style={styles.fab}
+      style={[styles.fab, disabled && styles.disabled]}
       onPress={onPress}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
     >
@@ -48,5 +53,6 @@ function createStyles(colors: ThemeColors) {
       shadowOffset: { width: 0, height: 3 },
       elevation: 4,
     },
+    disabled: { opacity: 0.4 },
   });
 }

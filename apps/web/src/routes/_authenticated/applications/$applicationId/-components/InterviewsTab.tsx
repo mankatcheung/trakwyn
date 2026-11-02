@@ -4,6 +4,9 @@ import { CalendarIcon, CheckIcon, EditIcon, PlusIcon, Trash2Icon } from 'lucide-
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
+import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import {
   Button,
   Card,
@@ -251,6 +254,7 @@ export function InterviewsTab({
   });
 
   const rounds = data?.interviewRounds ?? [];
+  const roundsFull = useQuotaState('interviewRounds', rounds.length)?.level === 'full';
 
   const openEdit = (r: InterviewRound) => {
     setEditingRound(r);
@@ -337,9 +341,10 @@ export function InterviewsTab({
   return (
     <div className="space-y-4">
       {!showForm && !editingRound && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             size="sm"
+            disabled={roundsFull}
             onClick={() => {
               setShowForm(true);
               setForm(emptyForm());
@@ -349,6 +354,7 @@ export function InterviewsTab({
               <PlusIcon size={14} /> {t('interviews.addInterviewRound')}
             </span>
           </Button>
+          <QuotaHint resource="interviewRounds" used={rounds.length} />
           {rounds.some((r) => r.scheduledAt) && (
             <Button
               variant="secondary"
@@ -364,11 +370,18 @@ export function InterviewsTab({
       )}
 
       {showForm && (
-        <RoundForm
-          onSubmit={() => createRound.mutate(form)}
-          onCancel={() => setShowForm(false)}
-          submitting={createRound.isPending}
-        />
+        <>
+          <RoundForm
+            onSubmit={() => createRound.mutate(form)}
+            onCancel={() => setShowForm(false)}
+            submitting={createRound.isPending}
+          />
+          {createRound.isError && (
+            <p role="alert" className="text-xs text-red-600">
+              {getErrorMessage(createRound.error)}
+            </p>
+          )}
+        </>
       )}
 
       {isLoading ? (

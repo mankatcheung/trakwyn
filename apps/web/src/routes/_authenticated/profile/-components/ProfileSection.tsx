@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button, Card } from '@trakwyn/ui';
+import { Alert, Button, Card } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState, type QuotaResource } from '#/lib/contentQuota';
 
 interface ProfileSectionProps {
   id: string;
@@ -9,6 +12,10 @@ interface ProfileSectionProps {
   title: string;
   description: string;
   onAdd: () => void;
+  /** Which cap the Add button is subject to, and how many the user holds (JEF-494). */
+  quota?: { resource: QuotaResource; used: number };
+  /** The create mutation's error, shown with the API's own message (a cap reached by a race names its limit). */
+  createError?: unknown;
   children: ReactNode;
 }
 
@@ -19,9 +26,13 @@ export function ProfileSection({
   title,
   description,
   onAdd,
+  quota,
+  createError,
   children,
 }: ProfileSectionProps) {
   const { t } = useLocale();
+  const state = useQuotaState(quota?.resource ?? 'skills', quota?.used);
+  const full = !!quota && state?.level === 'full';
   return (
     // scroll-mt clears the fixed mobile header when the in-page nav jumps here.
     <Card id={id} className="scroll-mt-20 space-y-4 p-5 sm:p-6 lg:scroll-mt-8">
@@ -36,12 +47,14 @@ export function ProfileSection({
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
           </div>
-          <Button variant="link" size="sm" onClick={onAdd}>
+          <Button variant="link" size="sm" onClick={onAdd} disabled={full}>
             <span className="flex items-center gap-1.5">
               <PlusIcon size={14} /> <span className="hidden sm:inline">{t('common.add')}</span>
             </span>
           </Button>
         </div>
+        {quota && <QuotaHint resource={quota.resource} used={quota.used} />}
+        {createError != null && <Alert role="alert">{getErrorMessage(createError)}</Alert>}
         {children}
       </section>
     </Card>

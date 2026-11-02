@@ -1,0 +1,18 @@
+{
+  "usage": "{{noun}}:已用 {{used}} / {{limit}}",
+  "full": "已達上限:{{noun}}最多 {{limit}} 個。刪除一個後才能再新增。",
+  "noun": {
+    "notes": "筆記",
+    "contacts": "聯絡人",
+    "interviewRounds": "面試輪次",
+    "offers": "Offer",
+    "tags": "標籤",
+    "documentDrafts": "文件草稿",
+    "conversations": "對話",
+    "workExperiences": "工作經歷",
+    "educations": "教育經歷",
+    "skills": "技能",
+    "shareLinks": "分享連結",
+    "apiTokens": "API 權杖"
+  }
+}

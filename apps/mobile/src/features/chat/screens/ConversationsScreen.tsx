@@ -24,6 +24,8 @@ import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 
 export function ConversationsScreen() {
   const { t } = useTranslation('chat');
@@ -34,6 +36,7 @@ export function ConversationsScreen() {
   const deleteConversation = useDeleteConversation();
   const createConversation = useCreateConversation();
   const { data: llmApiKeys } = useLlmApiKeys();
+  const conversationsFull = useQuotaFull('conversations', conversations?.length);
 
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -106,6 +109,7 @@ export function ConversationsScreen() {
   return (
     <View style={styles.container}>
       {startError ? <Text style={styles.error}>{startError}</Text> : null}
+      <QuotaHint resource="conversations" used={conversations?.length} />
 
       <FlatList
         data={conversations ?? []}
@@ -139,6 +143,7 @@ export function ConversationsScreen() {
 
       <FloatingActionButton
         onPress={onFabPress}
+        disabled={conversationsFull}
         accessibilityLabel={t('conversations.newButtonLabel')}
         testID="new-conversation-button"
       />

@@ -23,6 +23,8 @@ import type { ThemeColors } from '../../../theme/colors';
 import { PencilIcon, TrashIcon } from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 
 function NoteRow({
   note,
@@ -145,6 +147,7 @@ export function NotesScreen() {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  const notesFull = useQuotaFull('notes', notes?.length ?? 0);
   const isModalVisible = isAdding || editingNote !== null;
   const isSaving = createNote.isPending || updateNote.isPending;
 
@@ -193,6 +196,7 @@ export function NotesScreen() {
 
   return (
     <View style={styles.container}>
+      <QuotaHint resource="notes" used={notes?.length ?? 0} />
       <FlatList
         data={notes ?? []}
         keyExtractor={(item) => item.id}
@@ -215,6 +219,7 @@ export function NotesScreen() {
 
       <FloatingActionButton
         onPress={() => setIsAdding(true)}
+        disabled={notesFull}
         testID="add-note-button"
         accessibilityLabel={t('add')}
       />

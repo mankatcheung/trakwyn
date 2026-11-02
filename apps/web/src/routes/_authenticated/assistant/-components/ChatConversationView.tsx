@@ -7,6 +7,8 @@ import { Link } from '@tanstack/react-router';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
 import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { contentQuotaQueryKey, useQuotaState } from '#/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import { Button, Skeleton, Spinner } from '@trakwyn/ui';
 import { Markdown } from '#/components/Markdown';
@@ -142,18 +144,32 @@ export function ChatConversationView({
     );
   };
 
+  // Starting a conversation is what the cap blocks; writing in one that exists is not.
+  const conversationsFull = useQuotaState('conversations')?.level === 'full';
+  const newConversationBlocked = !conversationId && conversationsFull;
+
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || send.isPending) return;
+    if (!trimmed || send.isPending || newConversationBlocked) return;
     setInput('');
     setWasCancelled(false);
 
     let targetConversationId = conversationId;
     if (!targetConversationId) {
-      const created = await createConversation.mutateAsync({
-        provider,
-        model: model.trim() || undefined,
-      });
+      let created: { createConversation: Conversation };
+      try {
+        created = await createConversation.mutateAsync({
+          provider,
+          model: model.trim() || undefined,
+        });
+      } catch {
+        // Shown below with the API's message (a cap reached by a race names its
+        // limit); the text goes back into the composer so nothing is lost.
+        setInput(trimmed);
+        void qc.invalidateQueries({ queryKey: contentQuotaQueryKey });
+        return;
+      }
+      void qc.invalidateQueries({ queryKey: contentQuotaQueryKey });
       targetConversationId = created.createConversation.id;
       qc.setQueryData<ConversationsResult>(conversationsQueryOptions.queryKey, (prev) => ({
         conversations: [created.createConversation, ...(prev?.conversations ?? [])],
@@ -294,9 +310,15 @@ export function ChatConversationView({
             />
           </p>
         )}
+        {createConversation.isError && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            {getErrorMessage(createConversation.error)}
+          </p>
+        )}
         <div ref={bottomRef} />
       </div>
 
+      {!conversationId && <QuotaHint resource="conversations" className="px-2 pb-1" />}
       <form
         onSubmit={onSubmit}
         className={`flex shrink-0 items-end gap-2 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900 ${compact ? 'p-2' : 'py-3'}`}
@@ -313,7 +335,7 @@ export function ChatConversationView({
             {t('chat.cancel')}
           </Button>
         ) : (
-          <Button type="submit" disabled={!input.trim()}>
+          <Button type="submit" disabled={!input.trim() || newConversationBlocked}>
             {t('chat.send')}
           </Button>
         )}

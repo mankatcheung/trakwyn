@@ -27,6 +27,10 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 
 `app/(app)/_layout.tsx` renders `VerifyEmailRequiredScreen` (`src/features/verification/`) instead of the tabs while `me.emailVerified` is false, and `AccountDeletionScheduledScreen` (cancel or sign out) while `me.deletionScheduledAt` is set (JEF-463); the API refuses everything else for such an account. Danger Zone only _requests_ deletion (type the email, step up, a link is mailed); the confirm and cancel links open the web app. Same rules as web: the app shows while the check is in flight or fails (the API enforces the wall), resend has a 60 s cooldown, and "Use a different email" reuses `useRequestEmailChange`. There is no window focus on a phone, so the check reruns when the app returns to the foreground.
 
+## Content quotas (JEF-494)
+
+Same behaviour as web (`apps/web/CLAUDE.md`): `features/quota/` has the hand-written `ContentQuota` document, `useQuotaState`/`useQuotaFull` and `QuotaHint`, which stays silent below 80%. Each capped screen passes the length of the list it already holds, and `FloatingActionButton` takes `disabled` at the cap. The create errors already go through `getErrorMessage`, so a lost race shows the API's message. Call `useQuotaFull` above any early return (`rules-of-hooks`), and stub `features/quota/hooks/useQuotaState` in a screen test that has no query client. The `ContentQuota` document is checked by `graphqlDocuments.test.ts`.
+
 ## Error reporting (JEF-349)
 
 The same rules as web (`apps/web/CLAUDE.md`), with these differences:

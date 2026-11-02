@@ -7,6 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
 import { Alert, Button, Checkbox, FormLabel, Input, Select, Skeleton, Textarea } from '@trakwyn/ui';
@@ -68,6 +70,7 @@ export function EditApplicationPage() {
   const navigate = useNavigate();
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const tagsFull = useQuotaState('tags', tags.length)?.level === 'full';
 
   const { data } = useQuery(applicationQueryOptions(applicationId));
 
@@ -234,12 +237,14 @@ export function EditApplicationPage() {
                 if (e.key === 'Enter' || e.key === ',') {
                   e.preventDefault();
                   const val = tagInput.trim().toLowerCase();
-                  if (val && !tags.includes(val)) setTags((prev) => [...prev, val]);
+                  if (val && !tagsFull && !tags.includes(val)) setTags((prev) => [...prev, val]);
                   setTagInput('');
                 }
               }}
+              disabled={tagsFull}
               placeholder={t('applicationForm.tagPlaceholder')}
             />
+            <QuotaHint resource="tags" used={tags.length} />
           </div>
         </Field>
 

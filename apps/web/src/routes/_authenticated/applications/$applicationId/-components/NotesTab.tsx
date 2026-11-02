@@ -6,6 +6,8 @@ import { showUndoToast } from '#/lib/undoToast';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Card, Textarea } from '@trakwyn/ui';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { invalidateSectionCounts } from '../-sectionCounts';
 
 const NOTES_QUERY = `
@@ -57,6 +59,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
     enabled,
   });
   const notes = data?.notes ?? [];
+  const notesFull = useQuotaState('notes', notes.length)?.level === 'full';
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['notes', applicationId] });
@@ -116,12 +119,20 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
           className="h-24"
           placeholder={t('applicationDetail.addNotePlaceholder')}
         />
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <QuotaHint resource="notes" used={notes.length} />
+            {createNote.isError && (
+              <p role="alert" className="text-xs text-red-600">
+                {getErrorMessage(createNote.error)}
+              </p>
+            )}
+          </div>
           <button
             onClick={() => {
               if (noteContent.trim()) createNote.mutate(noteContent.trim());
             }}
-            disabled={!noteContent.trim() || createNote.isPending}
+            disabled={!noteContent.trim() || createNote.isPending || notesFull}
             aria-label={t('applicationDetail.addNote')}
             className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >

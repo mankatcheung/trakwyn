@@ -57,6 +57,16 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 - **`useBillingStatus()`** (`lib/billingStatus.ts`) is the one reader of `billingStatus`. Settings → Plan shows the plan, usage against each limit and a Free/Pro comparison built from the API's `catalogue`, so no limit is copied into the web app. Buying Pro arrives with billing (JEF-426).
 - The web app uses inline query strings for this, like the storage card, so there is no `.graphql` file or codegen change.
 
+## Content quotas (JEF-494)
+
+The API's per-resource ceilings (`contentQuota`, `apps/api/CLAUDE.md`) show at each create control.
+
+- **One reader, one component.** `lib/contentQuota.ts` holds the inline `ContentQuota` query and `useQuotaState(resource, used?)`; `components/QuotaHint.tsx` renders it. Per-application resources pass `used` (the tab already holds the list), per-user ones omit it and read the API's count. The limits are never copied into the app.
+- **Silent below 80%,** "9 of 10 notes" from 80%, and at the cap an alert that names the limit. The create control is disabled at the cap (`useQuotaState(...)?.level === 'full'`), and it stays enabled while the limit is unknown, so a slow query never blocks a create.
+- **A create that loses the race** shows the API's own message (`getErrorMessage` passes `QUOTA_EXCEEDED` through) next to the control. Do not swallow a create error with `console.error`.
+- **A component that renders a `QuotaHint` needs a `QueryClientProvider`,** and its request shares the test's `gqlClient` mock; suites about something else stub `#/lib/contentQuota` (see `NewApplicationPage.test.tsx`).
+- Where the application cap is hit, the new-application form adds a note that Trash still counts until it is purged.
+
 ## Error reporting and analytics (JEF-349)
 
 PostHog EU Cloud replaces `@vercel/analytics`; the API reports to Axiom only. It is **off by default**: without `VITE_POSTHOG_KEY` the SDK never loads, which is the intended state in dev and CI. These points are load-bearing:

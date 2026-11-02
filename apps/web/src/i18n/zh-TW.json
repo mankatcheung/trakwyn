@@ -1516,5 +1516,21 @@
   "accountDeletion.pendingTitle": "你的帳戶已安排刪除",
   "accountDeletion.pendingBody": "它將於 {{date}} 被永久刪除。取消刪除即可繼續使用 Trakwyn，或者登出。",
   "security.event.account_deletion_scheduled": "已安排刪除帳戶",
-  "security.event.account_deletion_cancelled": "已取消刪除帳戶"
+  "security.event.account_deletion_cancelled": "已取消刪除帳戶",
+  "quota.usage": "{{noun}}:已用 {{used}} / {{limit}}",
+  "quota.full": "已達上限:{{noun}}最多 {{limit}} 個。刪除一個後才能再新增。",
+  "quota.noun.notes": "筆記",
+  "quota.noun.contacts": "聯絡人",
+  "quota.noun.interviewRounds": "面試輪次",
+  "quota.noun.offers": "Offer",
+  "quota.noun.tags": "標籤",
+  "quota.noun.documentDrafts": "文件草稿",
+  "quota.noun.conversations": "對話",
+  "quota.noun.workExperiences": "工作經歷",
+  "quota.noun.educations": "教育經歷",
+  "quota.noun.skills": "技能",
+  "quota.noun.shareLinks": "分享連結",
+  "quota.noun.apiTokens": "API 權杖",
+  "quota.noun.pushSubscriptions": "推送裝置",
+  "quota.trashNote": "垃圾桶中的申請在永久刪除之前仍計入你的上限。"
 }

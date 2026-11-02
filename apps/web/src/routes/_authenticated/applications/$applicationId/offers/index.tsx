@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { OfferForm } from '../-components/OfferForm';
 import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
 import { EmptyState } from '@trakwyn/ui';
@@ -74,6 +77,8 @@ function OffersPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const offersFull = useQuotaState('offers', offers.length)?.level === 'full';
 
   useEffect(() => {
     gqlClient
@@ -94,6 +99,7 @@ function OffersPage() {
     notes: string;
   }) => {
     setSaving(true);
+    setCreateError(null);
     try {
       await gqlClient.request(CREATE_OFFER_MUTATION, {
         input: { applicationId, ...data },
@@ -102,7 +108,8 @@ function OffersPage() {
       setOffers(res.offers);
       setShowForm(false);
     } catch (err) {
-      console.error('Failed to create offer:', err);
+      // The API's own message, so a race past the cap names the limit (JEF-494).
+      setCreateError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -169,16 +176,21 @@ function OffersPage() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('offers.title')}</h1>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setEditingOffer(null);
-          }}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <PlusIcon className="size-4" />
-          {t('offers.addOffer')}
-        </button>
+        <div className="flex items-center gap-3">
+          <QuotaHint resource="offers" used={offers.length} />
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setEditingOffer(null);
+              setCreateError(null);
+            }}
+            disabled={offersFull}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <PlusIcon className="size-4" />
+            {t('offers.addOffer')}
+          </button>
+        </div>
       </div>
 
       {(showForm || editingOffer) && (
@@ -195,6 +207,11 @@ function OffersPage() {
             }}
             loading={saving}
           />
+          {createError && !editingOffer && (
+            <p role="alert" className="mt-2 text-sm text-red-600">
+              {createError}
+            </p>
+          )}
         </div>
       )}
 
