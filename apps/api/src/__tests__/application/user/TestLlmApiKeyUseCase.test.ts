@@ -108,7 +108,11 @@ describe('TestLlmApiKeyUseCase', () => {
 
     // trackUsage: false — testing a saved key is a connectivity check, not
     // real usage (JEF-250).
-    expect(llmProviderFactory.forUser).toHaveBeenCalledWith('user-1', 'openai', undefined, false);
+    expect(llmProviderFactory.forUser).toHaveBeenCalledWith('user-1', {
+      feature: 'keyTest',
+      provider: 'openai',
+      trackUsage: false,
+    });
     expect(llmProviderFactory.fromCredentials).not.toHaveBeenCalled();
     expect(provider.complete).toHaveBeenCalledWith(
       [{ role: 'user', content: expect.any(String) }],

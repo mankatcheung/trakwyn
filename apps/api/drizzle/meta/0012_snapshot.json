@@ -1,5 +1,5 @@
 {
-  "id": "3e54dd83-2503-432d-b07b-3d171c70d17e",
+  "id": "8954b182-74f7-4cce-bac0-17e7063243a7",
   "prevId": "c3fe2934-fcc3-460b-b848-760ce25b38cf",
   "version": "7",
   "dialect": "postgresql",
@@ -1288,18 +1288,31 @@
           "primaryKey": false,
           "notNull": false
         },
-        "reasoningTokens": {
-          "name": "reasoningTokens",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "estimated": {
           "name": "estimated",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "costMicros": {
+          "name": "costMicros",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feature": {
+          "name": "feature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'byok'"
         },
         "createdAt": {
           "name": "createdAt",
@@ -1335,6 +1348,33 @@
             },
             {
               "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "LlmUsageEvent_userId_source_createdAt_idx": {
+          "name": "LlmUsageEvent_userId_source_createdAt_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

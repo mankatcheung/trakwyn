@@ -20,6 +20,7 @@ import {
   INTERVIEW_QUESTION_LIMITS,
   MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
+  AI_FEATURE,
   AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import { buildMockInterviewContext } from '#src/use-cases/mockInterviewQuestions/mockInterviewContext.js';
@@ -78,7 +79,9 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.TALKING_POINTS,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }

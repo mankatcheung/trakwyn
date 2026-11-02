@@ -5,6 +5,7 @@ import type {
   FailOpenReason,
   IMetrics,
   LlmCallMetric,
+  LlmCostMetric,
   LlmTokenDirection,
   MetricComponent,
   OutboundUrlRefusalReason,
@@ -83,6 +84,7 @@ export interface FakeMetrics extends IMetrics {
   graphqlValidationFailures: GraphqlValidationFailureEvent[];
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
+  llmCosts: LlmCostMetric[];
 }
 
 /**
@@ -107,6 +109,7 @@ export function makeFakeMetrics(): FakeMetrics {
     graphqlValidationFailures: [],
     llmCalls: [],
     llmTokens: [],
+    llmCosts: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -154,6 +157,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordLlmTokens: (provider, direction, count) => {
       fake.llmTokens.push({ provider, direction, count });
+    },
+    recordLlmCost: (cost) => {
+      fake.llmCosts.push(cost);
     },
   };
   return fake;

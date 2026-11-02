@@ -2,7 +2,26 @@ import { LegalPageLayout } from '#/components/LegalPageLayout';
 import { CONTACT_EMAIL } from '#/constants';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'October 29, 2026';
+const LAST_UPDATED = 'November 2, 2026';
+
+/** AI sub-processors behind Trakwyn AI (JEF-452). Names are not translated. */
+const AI_SUBPROCESSORS = [
+  {
+    name: 'Google (Gemini API)',
+    purposeKey: 'legal.privacy.aiGeminiPurpose',
+    href: 'https://ai.google.dev/gemini-api/terms',
+  },
+  {
+    name: 'OpenAI',
+    purposeKey: 'legal.privacy.aiOpenAiPurpose',
+    href: 'https://openai.com/policies/business-terms/',
+  },
+  {
+    name: 'Cloudflare (AI Gateway)',
+    purposeKey: 'legal.privacy.aiCloudflarePurpose',
+    href: 'https://www.cloudflare.com/website-terms/',
+  },
+] as const;
 
 /**
  * Drafted from what the app actually collects and does, per JEF-202 — not
@@ -31,6 +50,37 @@ export function PrivacyPage() {
 
       <h3>{t('legal.privacy.aiTitle')}</h3>
       <p>{t('legal.privacy.aiBody')}</p>
+
+      <h3>{t('legal.privacy.aiHostedTitle')}</h3>
+      <p>{t('legal.privacy.aiHostedBody')}</p>
+      <p>{t('legal.privacy.aiHostedSentBody')}</p>
+      <p>{t('legal.privacy.aiHostedNoTrainingBody')}</p>
+      <p>{t('legal.privacy.aiHostedRetentionBody')}</p>
+      <table>
+        <caption className="sr-only">{t('legal.privacy.aiTableCaption')}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t('legal.privacy.aiColVendor')}</th>
+            <th scope="col">{t('legal.privacy.aiColPurpose')}</th>
+            <th scope="col">{t('legal.privacy.aiColRegion')}</th>
+            <th scope="col">{t('legal.privacy.aiColTerms')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {AI_SUBPROCESSORS.map((vendor) => (
+            <tr key={vendor.name}>
+              <th scope="row">{vendor.name}</th>
+              <td>{t(vendor.purposeKey)}</td>
+              <td>{t('legal.privacy.aiRegion')}</td>
+              <td>
+                <a href={vendor.href} target="_blank" rel="noopener noreferrer">
+                  {t('legal.privacy.aiTermsLink')}
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <h3>{t('legal.privacy.clipperTitle')}</h3>
       <p>{t('legal.privacy.clipperBody')}</p>

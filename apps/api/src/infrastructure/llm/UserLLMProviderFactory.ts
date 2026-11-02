@@ -1,4 +1,5 @@
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
+import { LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
 import { llmApiKeyCipherContext } from '#src/use-cases/user/llmApiKeyCipherContext.js';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
 import { TracingLLMProvider } from '#src/infrastructure/llm/TracingLLMProvider.js';
@@ -13,6 +14,7 @@ import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
   ILLMProviderFactory,
   LLMProviderCredentials,
+  LLMProviderRequest,
   LLMProviderResolution,
   LLMProviderResolveHints,
 } from '#src/use-cases/ports/ILLMProviderFactory.js';
@@ -36,13 +38,8 @@ interface Deps {
 export class UserLLMProviderFactory implements ILLMProviderFactory {
   constructor(private readonly deps: Deps) {}
 
-  async forUser(
-    userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage = true,
-  ): Promise<ILLMProvider | null> {
-    const resolution = await this.resolveForUser(userId, provider, model, trackUsage);
+  async forUser(userId: string, request: LLMProviderRequest): Promise<ILLMProvider | null> {
+    const resolution = await this.resolveForUser(userId, request);
     return resolution?.provider ?? null;
   }
 
@@ -53,11 +50,10 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
    */
   async resolveForUser(
     userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage = true,
+    request: LLMProviderRequest,
     hints: LLMProviderResolveHints = {},
   ): Promise<LLMProviderResolution | null> {
+    const { feature, provider, model, trackUsage = true } = request;
     let resolvedProvider = provider;
     if (!resolvedProvider) {
       const user =
@@ -109,6 +105,9 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       userId,
       provider: resolvedProvider,
       model: resolvedModel,
+      feature,
+      source: LLM_USAGE_SOURCE.BYOK,
+      metrics: this.deps.metrics ?? noopMetrics,
     });
     return { provider: tracked, providerId: resolvedProvider, fellBackFrom: null };
   }

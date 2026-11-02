@@ -6,6 +6,7 @@ import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
   ILLMProviderFactory,
   LLMProviderCredentials,
+  LLMProviderRequest,
   LLMProviderResolution,
 } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
@@ -48,24 +49,18 @@ interface Deps {
 export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
   constructor(private readonly deps: Deps) {}
 
-  async forUser(
-    userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage = true,
-  ): Promise<ILLMProvider | null> {
-    const resolution = await this.resolveForUser(userId, provider, model, trackUsage);
+  async forUser(userId: string, request: LLMProviderRequest): Promise<ILLMProvider | null> {
+    const resolution = await this.resolveForUser(userId, request);
     return resolution?.provider ?? null;
   }
 
   async resolveForUser(
     userId: string,
-    provider?: string,
-    model?: string | null,
-    trackUsage = true,
+    request: LLMProviderRequest,
   ): Promise<LLMProviderResolution | null> {
+    const { provider, trackUsage = true } = request;
     if (!trackUsage) {
-      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage);
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, request);
     }
 
     // Loaded once here and handed down as hints (F9): the inner factory
@@ -76,7 +71,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     // No provider and no key are the inner factory's cases to report: it
     // returns null and the caller raises AI_NOT_CONFIGURED.
     if (!requested) {
-      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage, {
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, request, {
         user,
       });
     }
@@ -88,7 +83,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     const requestedKey = keys.find((key) => key.provider === requested) ?? null;
 
     if (!requestedKey || !this.isPaused(requestedKey, usedByProvider)) {
-      return this.deps.userLlmProviderFactory.resolveForUser(userId, provider, model, trackUsage, {
+      return this.deps.userLlmProviderFactory.resolveForUser(userId, request, {
         user,
         key: requestedKey,
       });
@@ -115,9 +110,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     // model it does not have.
     const resolution = await this.deps.userLlmProviderFactory.resolveForUser(
       userId,
-      substitute.provider,
-      null,
-      trackUsage,
+      { ...request, provider: substitute.provider, model: null },
       { user: fallbackUser, key: substitute },
     );
     // A key that cannot be built (an unknown provider id, say) is the same as

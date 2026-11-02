@@ -580,3 +580,58 @@ export const REASONING_CONTROL = {
     { pattern: /^gemini-2\.5-flash/i, off: 0, low: 1024 },
   ],
 } as const;
+
+/** What one million tokens of a model cost, in micro-USD (1 USD = 1 000 000), per kind of token (JEF-444). */
+export interface LlmPrice {
+  input: number;
+  /** Input served from the provider's prompt cache. Absent: billed as `input`. */
+  cachedInput?: number;
+  /** Input written to the prompt cache (Anthropic). Absent: billed as `input`. */
+  cacheWrite?: number;
+  output: number;
+}
+
+/**
+ * List prices by provider id, then model id. In code rather than the DB:
+ * they change a few times a year and a deploy is fine (JEF-444). A model that
+ * is missing costs `null` and logs `llm.price_unknown` once; it is never
+ * guessed. Prices are USD per million tokens × 1e6, from each vendor's
+ * pricing page; re-check them when adding a model.
+ */
+export const LLM_PRICES: Readonly<Record<string, Readonly<Record<string, LlmPrice>>>> = {
+  openai: {
+    'gpt-4o-mini': { input: 150_000, cachedInput: 75_000, output: 600_000 },
+  },
+  anthropic: {
+    'claude-haiku-4-5': {
+      input: 1_000_000,
+      cachedInput: 100_000,
+      cacheWrite: 1_250_000,
+      output: 5_000_000,
+    },
+    'claude-sonnet-4-5': {
+      input: 3_000_000,
+      cachedInput: 300_000,
+      cacheWrite: 3_750_000,
+      output: 15_000_000,
+    },
+    'claude-opus-4-5': {
+      input: 5_000_000,
+      cachedInput: 500_000,
+      cacheWrite: 6_250_000,
+      output: 25_000_000,
+    },
+  },
+  googleai: {
+    'gemini-2.5-flash': { input: 300_000, cachedInput: 30_000, output: 2_500_000 },
+  },
+  openrouter: {
+    'openai/gpt-4o-mini': { input: 150_000, cachedInput: 75_000, output: 600_000 },
+  },
+  groq: {
+    'llama-3.3-70b-versatile': { input: 590_000, output: 790_000 },
+  },
+  deepseek: {
+    'deepseek-chat': { input: 280_000, cachedInput: 28_000, output: 420_000 },
+  },
+};

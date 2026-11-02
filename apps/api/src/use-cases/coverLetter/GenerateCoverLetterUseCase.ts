@@ -19,7 +19,7 @@ import { formatApplicationContext } from '#src/use-cases/shared/applicationConte
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
-import { AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCoverLetterInput {
   applicationId: string;
@@ -60,7 +60,9 @@ export class GenerateCoverLetterUseCase {
       throw new ForbiddenError('Forbidden');
     }
 
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.COVER_LETTER,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }

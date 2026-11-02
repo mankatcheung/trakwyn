@@ -12,7 +12,7 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
-import { AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCompanyBriefingInput {
   applicationId: string;
@@ -60,7 +60,9 @@ export class GenerateCompanyBriefingUseCase {
       throw new ForbiddenError('Forbidden');
     }
 
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.COMPANY_BRIEFING,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }

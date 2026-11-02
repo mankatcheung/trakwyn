@@ -10,6 +10,12 @@ import type {
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { AiFeature, LlmUsageSource } from '#src/use-cases/constants.js';
+import {
+  estimateCostMicros,
+  warnPriceUnknownOnce,
+} from '#src/infrastructure/llm/estimateCostMicros.js';
+import type { IMetrics } from '#src/infrastructure/observability/metrics.js';
 import { estimatePromptTokens } from '#src/use-cases/shared/tokenEstimate.js';
 
 interface Deps {
@@ -20,6 +26,9 @@ interface Deps {
   userId: string;
   provider: string;
   model: string | null;
+  feature: AiFeature;
+  source: LlmUsageSource;
+  metrics: IMetrics;
 }
 
 /**
@@ -28,6 +37,9 @@ interface Deps {
  * (the single choke point every real AI feature resolves its provider
  * through), never by `fromCredentials` (the "test before you save" /
  * "test a saved key" path has no usage worth counting).
+ *
+ * Each event also carries the call's `feature`, its `source` and its cost
+ * (JEF-444); a model with no listed price records `null`, not a guess.
  *
  * A response with no usage field (see `LLMUsage`'s doc comment) simply
  * records nothing rather than a fabricated zero. Recording itself fails
@@ -104,6 +116,13 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     { estimated = false }: { estimated?: boolean } = {},
   ): Promise<void> {
     if (!usage) return;
+    const { provider, model, feature, source } = this.deps;
+    const costMicros = estimateCostMicros(usage, provider, model);
+    if (costMicros === null) {
+      warnPriceUnknownOnce(this.deps.logger, provider, model);
+    } else {
+      this.deps.metrics.recordLlmCost({ provider, model, feature, source, costMicros });
+    }
     try {
       await this.deps.usageEventRepository.record({
         id: this.deps.generateId(),
@@ -116,6 +135,9 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         cacheWriteTokens: usage.cacheWriteTokens ?? null,
         reasoningTokens: usage.reasoningTokens ?? null,
         estimated,
+        costMicros,
+        feature,
+        source,
       });
     } catch (err) {
       this.deps.logger.error('[llm-usage] failed to record usage event — continuing', err);

@@ -11,6 +11,7 @@ import {
   CV_IMPORT,
   CV_IMPORT_PROMPT_TASK,
   RESUME_TEXT_EXTRACTION,
+  AI_FEATURE,
   AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
@@ -151,7 +152,9 @@ export class ParseCvUseCase implements IParseCvUseCase {
     }
 
     // Before reading the file: no key means no point spending the parse.
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.PARSE_CV,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }

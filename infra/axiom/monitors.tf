@@ -257,3 +257,60 @@ resource "axiom_monitor" "outbound_url_refused" {
   # then reports as an inconsistent result after apply.
   notifier_ids = [axiom_notifier.email.id]
 }
+
+# --- LLM spend (metrics dataset, MPL; JEF-444) -------------------------------
+#
+# Not a monitor: nothing here should page anyone. The cost counter is the
+# baseline the hosted-AI credits and the Pro cost ceiling are sized from, so
+# this is a chart to read. Same `increase` rule as above: the counter restarts
+# at zero whenever Cloud Run scales an instance in.
+#
+# The chart document is Axiom's v2 dashboard JSON, which the provider takes as
+# an opaque string, so `terraform validate` cannot check it. Open the
+# dashboard after the first apply and fix the chart in the UI if Axiom rejects
+# a field (then copy the exported JSON back here).
+resource "axiom_dashboard" "llm_cost" {
+  uid = "trakwyn-llm-cost"
+  dashboard = jsonencode({
+    name                       = "Trakwyn LLM cost"
+    description                = "Estimated LLM spend in micro-USD (METRICS.LLM_COST_MICROS), from the price table in apps/api. 1 000 000 = 1 USD."
+    owner                      = "X-AXIOM-EVERYONE"
+    schemaVersion              = 2
+    refreshTime                = 300
+    timeWindowStart            = "qr-now-14d"
+    timeWindowEnd              = "qr-now"
+    overrideDashboardTimeRange = false
+    charts = [
+      {
+        id   = "cost-per-feature-per-day"
+        name = "Cost per feature per day (micro-USD)"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.llm.cost_micros`
+            | map increase
+            | align to 1d using sum
+            | group by feature using sum
+          MPL
+        }
+      },
+      {
+        id   = "cost-per-source-per-day"
+        name = "Cost per source per day (micro-USD)"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.llm.cost_micros`
+            | map increase
+            | align to 1d using sum
+            | group by source using sum
+          MPL
+        }
+      },
+    ]
+    layout = [
+      { i = "cost-per-feature-per-day", x = 0, y = 0, w = 12, h = 8, minW = 4, minH = 4, moved = false, static = false },
+      { i = "cost-per-source-per-day", x = 0, y = 8, w = 12, h = 6, minW = 4, minH = 4, moved = false, static = false },
+    ]
+  })
+}

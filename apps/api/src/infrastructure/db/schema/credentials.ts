@@ -84,6 +84,16 @@ export const llmUsageEvent = pgTable(
      * meter can say how much of it is exact.
      */
     estimated: boolean('estimated').notNull().default(false),
+    /**
+     * What the call cost in micro-USD (1 USD = 1 000 000), from the price table
+     * (JEF-444). Null when the model has no listed price, and for events
+     * recorded before the column existed. A `bigint` so no float rounding.
+     */
+    costMicros: bigint('costMicros', { mode: 'number' }),
+    /** The `AiFeature` that made the call; null for events recorded before JEF-444. */
+    feature: text('feature'),
+    /** Who paid: `byok` is the user's own key. See `LLM_USAGE_SOURCE`. */
+    source: text('source').notNull().default('byok'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),
@@ -91,6 +101,11 @@ export const llmUsageEvent = pgTable(
   (table) => [
     index('LlmUsageEvent_userId_idx').on(table.userId),
     index('LlmUsageEvent_userId_provider_idx').on(table.userId, table.provider),
+    index('LlmUsageEvent_userId_source_createdAt_idx').on(
+      table.userId,
+      table.source,
+      table.createdAt,
+    ),
   ],
 );
 

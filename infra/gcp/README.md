@@ -215,6 +215,19 @@ gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-ima
 
 **If the mirror is unavailable:** there is no fallback to a public registry, so CI results stay reproducible. Re-run **Mirror base images**; copies are idempotent and keep their progress between attempts.
 
+### Hosted AI vendor settings (JEF-452)
+
+The privacy policy (`PrivacyPage.tsx`) tells users that Trakwyn AI sends their content to Google (Gemini API) and OpenAI through Cloudflare's AI Gateway, on paid API accounts, with gateway logging off, and that content is not used for training. Those statements are only true once every box below is ticked, so finish this **before rollout stage 2 (Hosted AI 10)**. Record the date and who did it next to each item; the console steps cannot be done from Terraform.
+
+- [ ] **Google Cloud data processing terms accepted** for the platform project (Cloud Console, IAM & Admin, Settings, or the organisation's Cloud Data Processing Addendum). Date:
+- [ ] **Gemini API is on the paid tier.** In Google AI Studio, the project that owns the production key shows a linked Cloud Billing account. The free tier may use prompts to improve Google's products, which would make the "not used for training" line false. Date:
+- [ ] **OpenAI data processing addendum accepted** for the platform organisation (platform.openai.com, Settings, Organisation, Data controls). The account is on a paid plan, and the data-sharing (training) option is off. Date:
+- [ ] **Cloudflare AI Gateway logging is off** for the gateway (Dashboard, AI, AI Gateway, the gateway, Settings, Collect logs). Cloudflare's own DPA is accepted for the account. Date:
+- [ ] **Retention figures confirmed.** Read each vendor's current API data-retention page and copy the real figures here. The policy deliberately gives no number; add one (in all five locale files) only if you want it stated. Gemini API: ____ days. OpenAI API: ____ days. Cloudflare: none (logging off).
+- [ ] **Cross-checked against the UK compliance checklist (JEF-132):** the sub-processor list, international transfers (standard contractual clauses) and the policy's "Last updated" date.
+
+If a vendor is added or swapped, change `AI_SUBPROCESSORS` in `PrivacyPage.tsx` and its locale strings in the same PR, and bump `LAST_UPDATED`. Zero-data-retention agreements are out of scope at launch (OpenAI's needs approval); revisit if enterprise users appear.
+
 ## Day two
 
 **Rotate the Web Store key (JEF-419):** the Clipper release job authenticates to the Chrome Web Store as `chrome-web-store-publisher`, the one account here with a JSON key, because that API cannot use Workload Identity Federation. The key is not in Terraform, so it is not in state. After the first apply, add `terraform output -raw chrome_web_store_service_account` as a user in the Web Store dashboard (Account) and set the secrets of the `chrome` environment as `apps/extension/CLAUDE.md` describes. To rotate:

@@ -26,7 +26,7 @@ import {
   type UserProfile,
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
-import { AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateResumeInput {
   applicationId: string;
@@ -121,7 +121,9 @@ export class GenerateResumeUseCase {
       );
     }
 
-    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId);
+    const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
+      feature: AI_FEATURE.RESUME,
+    });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }
