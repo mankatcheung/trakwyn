@@ -11,6 +11,7 @@ import {
   CV_IMPORT,
   CV_IMPORT_PROMPT_TASK,
   RESUME_TEXT_EXTRACTION,
+  AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
@@ -169,7 +170,7 @@ export class ParseCvUseCase implements IParseCvUseCase {
       ],
       CV_IMPORT.MAX_OUTPUT_TOKENS,
       undefined,
-      { json: true },
+      { json: true, reasoning: AI_REASONING_DEFAULTS.CV_IMPORT },
     );
     assertNotTruncated(result);
     const reply = parseAiJson(result.content, parsedCvSchema);

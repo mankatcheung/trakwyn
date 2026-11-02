@@ -3,13 +3,15 @@ import type {
   LLMMessage,
   LLMToolDefinition,
   LLMStreamEvent,
+  LLMStreamOptions,
+  LLMReasoning,
   LLMCompleteOptions,
   LLMCompleteResult,
   LLMUsage,
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import { LLM } from '#src/use-cases/constants.js';
-import { AUTH_HEADER } from '#src/infrastructure/config/constants.js';
+import { AUTH_HEADER, REASONING_CONTROL } from '#src/infrastructure/config/constants.js';
 import {
   fetchWithRetry,
   createIdleAbortController,
@@ -33,6 +35,8 @@ interface OpenAIWireUsage {
   completion_tokens: number;
   /** OpenAI reports automatic prefix-cache hits here; most compatible backends omit it. */
   prompt_tokens_details?: { cached_tokens?: number } | null;
+  /** OpenAI's hidden reasoning tokens; already counted in completion_tokens. */
+  completion_tokens_details?: { reasoning_tokens?: number } | null;
 }
 
 interface OpenAIWireResponse {
@@ -49,10 +53,12 @@ interface OpenAIWireResponse {
 function toLLMUsage(usage: OpenAIWireUsage | null | undefined): LLMUsage | null {
   if (!usage) return null;
   const cached = usage.prompt_tokens_details?.cached_tokens;
+  const reasoning = usage.completion_tokens_details?.reasoning_tokens;
   return {
     promptTokens: usage.prompt_tokens,
     completionTokens: usage.completion_tokens,
     ...(typeof cached === 'number' ? { cacheReadTokens: cached } : {}),
+    ...(typeof reasoning === 'number' ? { reasoningTokens: reasoning } : {}),
   };
 }
 
@@ -136,6 +142,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
         // which every caller that asks for it already has. Compatible
         // backends that do not know the field ignore it.
         ...(options?.json ? { response_format: { type: 'json_object' } } : {}),
+        ...this.reasoningParams(options?.reasoning),
       },
       signal,
     );
@@ -152,6 +159,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     tools: LLMToolDefinition[],
     maxTokens: number = LLM.DEFAULT_MAX_TOKENS,
     signal?: AbortSignal,
+    options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
     if (!this.apiKey) throw new Error('API key is not set');
     await this.outboundUrlPolicy?.assertAllowed(this.baseUrl, 'llm-provider');
@@ -163,6 +171,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
         max_tokens: Math.min(maxTokens, LLM.MAX_OUTPUT_TOKENS_CAP),
         stream: true,
         stream_options: { include_usage: true },
+        ...this.reasoningParams(options?.reasoning),
         tools: tools.map((t) => ({
           type: 'function',
           function: { name: t.name, description: t.description, parameters: t.parameters },
@@ -215,6 +224,19 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
       })),
       usage,
     };
+  }
+
+  /**
+   * `reasoning_effort` (JEF-445), only for OpenAI's own endpoint and a model
+   * family known to take it. Every other backend (Groq, Mistral, DeepSeek,
+   * NVIDIA, a custom URL, ...) never gets the field: an unknown parameter can
+   * be answered with a 400.
+   */
+  private reasoningParams(reasoning: LLMReasoning | undefined): { reasoning_effort?: string } {
+    if (!reasoning || reasoning === 'default' || this.baseUrl !== LLM.OPENAI_API_URL) return {};
+    const rule = REASONING_CONTROL.OPENAI_MODELS.find((r) => r.pattern.test(this.model));
+    if (!rule) return {};
+    return { reasoning_effort: reasoning === 'off' ? rule.off : rule.low };
   }
 
   private toWireMessages(messages: LLMMessage[]): OpenAIWireMessage[] {

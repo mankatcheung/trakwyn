@@ -57,8 +57,51 @@ describe('UsageTrackingLLMProvider', () => {
         completionTokens: 5,
         cacheReadTokens: null,
         cacheWriteTokens: null,
+        reasoningTokens: null,
         estimated: false,
       });
+    });
+
+    it('records reasoningTokens and forwards the per-call options (JEF-445)', async () => {
+      const inner = makeInner({
+        complete: vi.fn().mockResolvedValue({
+          content: 'ok',
+          usage: { promptTokens: 10, completionTokens: 50, reasoningTokens: 40 },
+        }),
+      });
+      const usageEventRepository = makeRepo();
+      const provider = new UsageTrackingLLMProvider({
+        inner,
+        usageEventRepository,
+        logger: makeLogger(),
+        generateId: () => 'evt-1',
+        userId: 'user-1',
+        provider: 'googleai',
+        model: null,
+      });
+
+      await provider.complete([{ role: 'user', content: 'hi' }], 256, undefined, {
+        reasoning: 'off',
+      });
+      await drain(
+        provider.completeWithToolsStream([{ role: 'user', content: 'hi' }], [], 256, undefined, {
+          reasoning: 'off',
+        }),
+      );
+
+      expect(usageEventRepository.record).toHaveBeenCalledWith(
+        expect.objectContaining({ reasoningTokens: 40 }),
+      );
+      expect(inner.complete).toHaveBeenCalledWith(expect.anything(), 256, undefined, {
+        reasoning: 'off',
+      });
+      expect(inner.completeWithToolsStream).toHaveBeenCalledWith(
+        expect.anything(),
+        [],
+        256,
+        undefined,
+        { reasoning: 'off' },
+      );
     });
 
     it('records nothing when the inner provider reports no usage', async () => {
@@ -154,6 +197,7 @@ describe('UsageTrackingLLMProvider', () => {
         completionTokens: 8,
         cacheReadTokens: null,
         cacheWriteTokens: null,
+        reasoningTokens: null,
         estimated: false,
       });
     });

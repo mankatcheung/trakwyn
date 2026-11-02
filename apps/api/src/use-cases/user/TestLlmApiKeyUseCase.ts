@@ -8,7 +8,7 @@ import {
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
-import { LLM, LLM_PROVIDER } from '#src/use-cases/constants.js';
+import { LLM, LLM_PROVIDER, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import {
   assertValidLlmApiKeyShape,
   assertValidLlmProvider,
@@ -71,6 +71,8 @@ export class TestLlmApiKeyUseCase implements ITestLlmApiKeyUseCase {
       await provider.complete(
         [{ role: 'user', content: TEST_MESSAGE }],
         LLM.TEST_API_KEY_MAX_TOKENS,
+        undefined,
+        { reasoning: AI_REASONING_DEFAULTS.TEST_API_KEY },
       );
       return { ok: true };
     } catch (err) {

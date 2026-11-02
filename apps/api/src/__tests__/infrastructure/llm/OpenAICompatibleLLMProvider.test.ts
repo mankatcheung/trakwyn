@@ -451,4 +451,89 @@ describe('OpenAICompatibleLLMProvider', () => {
       );
     });
   });
+
+  describe('reasoning (JEF-445)', () => {
+    const okResponse = () => jsonResponse({ choices: [{ message: { content: 'ok' } }] }) as never;
+    const body = () =>
+      JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string);
+    const msgs: LLMMessage[] = [{ role: 'user', content: 'hi' }];
+
+    it.each([
+      ['gpt-5.6-luna', 'off', 'minimal'],
+      ['gpt-5-mini', 'low', 'low'],
+      ['o4-mini', 'off', 'low'],
+      ['o3', 'low', 'low'],
+    ] as const)('sends reasoning_effort for OpenAI %s at %s', async (model, reasoning, effort) => {
+      vi.mocked(fetch).mockResolvedValue(okResponse());
+      await new OpenAICompatibleLLMProvider('k', LLM.OPENAI_API_URL, model).complete(
+        msgs,
+        undefined,
+        undefined,
+        { reasoning },
+      );
+      expect(body().reasoning_effort).toBe(effort);
+    });
+
+    it('sends reasoning_effort on the streaming path too', async () => {
+      vi.mocked(fetch).mockResolvedValue(streamResponse('data: [DONE]\n\n') as never);
+      await collectStream(
+        new OpenAICompatibleLLMProvider('k', LLM.OPENAI_API_URL, 'gpt-5-mini'),
+        msgs,
+        [],
+        undefined,
+        undefined,
+        { reasoning: 'off' },
+      );
+      expect(body().reasoning_effort).toBe('minimal');
+    });
+
+    it('sends nothing for default, unset, a non-reasoning OpenAI model, or another backend', async () => {
+      vi.mocked(fetch).mockResolvedValue(okResponse());
+      const openai5 = new OpenAICompatibleLLMProvider('k', LLM.OPENAI_API_URL, 'gpt-5-mini');
+      await openai5.complete(msgs, undefined, undefined, { reasoning: 'default' });
+      await openai5.complete(msgs);
+      await new OpenAICompatibleLLMProvider('k', LLM.OPENAI_API_URL, 'gpt-4o-mini').complete(
+        msgs,
+        undefined,
+        undefined,
+        { reasoning: 'off' },
+      );
+      await new OpenAICompatibleLLMProvider('k', LLM.GROQ_API_URL, 'gpt-5-mini').complete(
+        msgs,
+        undefined,
+        undefined,
+        { reasoning: 'off' },
+      );
+      await new OpenAICompatibleLLMProvider('k', BASE_URL, 'gpt-5-mini').complete(
+        msgs,
+        undefined,
+        undefined,
+        { reasoning: 'off' },
+      );
+      for (const [, init] of vi.mocked(fetch).mock.calls) {
+        expect(JSON.parse((init as RequestInit).body as string)).not.toHaveProperty(
+          'reasoning_effort',
+        );
+      }
+    });
+
+    it('reads completion_tokens_details.reasoning_tokens into reasoningTokens', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          choices: [{ message: { content: 'ok' } }],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 400,
+            completion_tokens_details: { reasoning_tokens: 350 },
+          },
+        }) as never,
+      );
+      const result = await new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL).complete(msgs);
+      expect(result.usage).toEqual({
+        promptTokens: 10,
+        completionTokens: 400,
+        reasoningTokens: 350,
+      });
+    });
+  });
 });

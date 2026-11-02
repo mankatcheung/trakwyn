@@ -84,7 +84,7 @@ describe('ParseJobDescriptionUseCase', () => {
 
     await useCase.execute({ userId: 'user-1', text: 'some text' });
 
-    expect(vi.mocked(provider.complete).mock.calls[0][3]).toEqual({ json: true });
+    expect(vi.mocked(provider.complete).mock.calls[0][3]).toEqual({ json: true, reasoning: 'off' });
   });
 
   it('throws AI_RESPONSE_INVALID when the LLM returns invalid JSON', async () => {

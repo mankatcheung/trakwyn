@@ -74,7 +74,7 @@ export function cachingProvider(inner: ILLMProvider, options: CachingOptions): I
       writeFileSync(file, JSON.stringify(result));
       return result;
     },
-    completeWithToolsStream: (messages, tools, maxTokens, signal) =>
-      inner.completeWithToolsStream(messages, tools, maxTokens, signal),
+    completeWithToolsStream: (messages, tools, maxTokens, signal, streamOptions) =>
+      inner.completeWithToolsStream(messages, tools, maxTokens, signal, streamOptions),
   };
 }

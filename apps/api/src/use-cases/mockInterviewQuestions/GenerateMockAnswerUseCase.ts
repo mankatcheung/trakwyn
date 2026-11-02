@@ -24,6 +24,7 @@ import {
   INTERVIEW_QUESTION_LIMITS,
   MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
+  AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import {
   buildMockInterviewContext,
@@ -104,7 +105,12 @@ export class GenerateMockAnswerUseCase implements IGenerateMockAnswerUseCase {
       ].join('\n'),
     });
 
-    const result = await llmProvider.complete(messages, MOCK_QUESTION_GENERATION.ANSWER_MAX_TOKENS);
+    const result = await llmProvider.complete(
+      messages,
+      MOCK_QUESTION_GENERATION.ANSWER_MAX_TOKENS,
+      undefined,
+      { reasoning: AI_REASONING_DEFAULTS.MOCK_ANSWER },
+    );
     assertNotTruncated(result);
 
     const answer = result.content

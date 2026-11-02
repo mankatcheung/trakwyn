@@ -18,7 +18,7 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { loadDocumentText } from '#src/use-cases/shared/loadDocumentText.js';
 
 export interface ComputeResumeMatchScoreInput {
@@ -131,7 +131,7 @@ export class ComputeResumeMatchScoreUseCase {
       ],
       undefined,
       undefined,
-      { json: true },
+      { json: true, reasoning: AI_REASONING_DEFAULTS.RESUME_MATCH },
     );
     assertNotTruncated(result);
 

@@ -773,3 +773,23 @@ export const ONBOARDING_GOALS = [
   'assistant',
   'mcp',
 ] as const satisfies readonly OnboardingGoal[];
+
+/**
+ * Hidden reasoning allowed per AI feature (JEF-445). Reasoning tokens bill as
+ * output and count against `LLM.MAX_OUTPUT_TOKENS_CAP`, so every feature
+ * starts `off`; raising one is a quality decision to make with the JEF-114
+ * evals. Applies to own-key users too.
+ */
+export const AI_REASONING_DEFAULTS = {
+  CHAT: 'off',
+  RESUME: 'off',
+  COVER_LETTER: 'off',
+  CV_IMPORT: 'off',
+  JOB_DESCRIPTION: 'off',
+  RESUME_MATCH: 'off',
+  COMPANY_BRIEFING: 'off',
+  MOCK_QUESTIONS: 'off',
+  MOCK_ANSWER: 'off',
+  TALKING_POINTS: 'off',
+  TEST_API_KEY: 'off',
+} as const satisfies Record<string, 'off' | 'low' | 'default'>;

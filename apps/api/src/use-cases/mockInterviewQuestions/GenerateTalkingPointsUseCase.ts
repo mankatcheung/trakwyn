@@ -20,6 +20,7 @@ import {
   INTERVIEW_QUESTION_LIMITS,
   MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
+  AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
 import { buildMockInterviewContext } from '#src/use-cases/mockInterviewQuestions/mockInterviewContext.js';
 import {
@@ -114,6 +115,8 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
     const result = await llmProvider.complete(
       messages,
       MOCK_QUESTION_GENERATION.TALKING_POINTS_MAX_TOKENS,
+      undefined,
+      { reasoning: AI_REASONING_DEFAULTS.TALKING_POINTS },
     );
     assertNotTruncated(result);
     const parsed = parseAiJson(result.content, pointsSchema);

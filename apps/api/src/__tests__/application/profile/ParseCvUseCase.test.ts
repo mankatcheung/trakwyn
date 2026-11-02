@@ -111,7 +111,7 @@ describe('ParseCvUseCase', () => {
   it('asks the model for JSON and fences the CV as untrusted data', async () => {
     await run(ctx.useCase);
     const [messages, , , options] = vi.mocked(ctx.provider.complete).mock.calls[0]!;
-    expect(options).toEqual({ json: true });
+    expect(options).toEqual({ json: true, reasoning: 'off' });
     const user = messages.find((m) => m.role === 'user')!.content;
     expect(user).toContain('Jane Doe — CV text');
     expect(user).toMatch(/untrusted/i);

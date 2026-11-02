@@ -166,6 +166,21 @@ describe('StreamChatWithAssistantUseCase write proposals (JEF-469)', () => {
     expect(toolMessage?.content).toContain('NOT applied');
   });
 
+  it('turns hidden reasoning off for every round (JEF-445)', async () => {
+    const deps = proposingDeps();
+    const provider = (await deps.llmProviderFactory.resolveForUser('user-1', undefined, null))
+      ?.provider;
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'move Acme to interviewing',
+    });
+
+    const calls = vi.mocked(provider!.completeWithToolsStream).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) expect(call[4]).toEqual({ reasoning: 'off' });
+  });
+
   it('attaches the proposal to the stored assistant reply for history', async () => {
     const deps = proposingDeps();
 

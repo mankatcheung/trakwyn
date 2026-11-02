@@ -26,7 +26,7 @@ import {
   type UserProfile,
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
-import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
+import { AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateResumeInput {
   applicationId: string;
@@ -162,7 +162,10 @@ export class GenerateResumeUseCase {
       content: this.buildPrompt(app, profile, context, crossApplicationContext),
     });
 
-    const result = await llmProvider.complete(messages, 2048, undefined, { json: true });
+    const result = await llmProvider.complete(messages, 2048, undefined, {
+      json: true,
+      reasoning: AI_REASONING_DEFAULTS.RESUME,
+    });
     assertNotTruncated(result);
     const resume = parseAiJson<ResumeContent>(result.content, resumeSchema);
     assertGrounded(resume, profile);

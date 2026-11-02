@@ -44,6 +44,30 @@ describe('DrizzleLlmUsageEventRepository', () => {
       ]);
     });
 
+    it('persists reasoningTokens, null when the provider reports none (JEF-445)', async () => {
+      await repo.record({
+        id: 'evt-r',
+        userId: 'u1',
+        provider: 'googleai',
+        model: null,
+        promptTokens: 10,
+        completionTokens: 8,
+        reasoningTokens: 0,
+      });
+      await repo.record({
+        id: 'evt-n',
+        userId: 'u1',
+        provider: 'googleai',
+        model: null,
+        promptTokens: 10,
+        completionTokens: 8,
+      });
+
+      const rows = await db.db.select().from(llmUsageEvent);
+      const byId = Object.fromEntries(rows.map((r) => [r.id, r.reasoningTokens]));
+      expect(byId).toEqual({ 'evt-r': 0, 'evt-n': null });
+    });
+
     it('persists the estimated flag, defaulting to exact (F3)', async () => {
       await repo.record({
         id: 'evt-exact',

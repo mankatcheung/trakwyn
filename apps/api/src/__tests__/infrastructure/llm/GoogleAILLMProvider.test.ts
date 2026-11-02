@@ -551,4 +551,92 @@ describe('GoogleAILLMProvider', () => {
       expect(options.signal!.aborted).toBe(true);
     });
   });
+
+  describe('reasoning (JEF-445)', () => {
+    const okResponse = () =>
+      jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never;
+    const generationConfig = () =>
+      JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
+        .generationConfig;
+    const msgs: LLMMessage[] = [{ role: 'user', content: 'hi' }];
+
+    it.each([
+      ['gemini-2.5-flash', 'off', 0],
+      ['gemini-2.5-flash-lite', 'off', 0],
+      ['gemini-2.5-pro', 'off', 128],
+      ['gemini-2.5-flash', 'low', 1024],
+    ] as const)('sends the %s thinking budget for %s', async (model, reasoning, budget) => {
+      vi.mocked(fetch).mockResolvedValue(okResponse());
+      await new GoogleAILLMProvider('k', model).complete(msgs, undefined, undefined, {
+        reasoning,
+      });
+      expect(generationConfig()).toEqual({
+        maxOutputTokens: LLM.DEFAULT_MAX_TOKENS,
+        thinkingConfig: { thinkingBudget: budget },
+      });
+    });
+
+    it('sends no thinkingConfig for default, unset, or a model it cannot configure', async () => {
+      vi.mocked(fetch).mockResolvedValue(okResponse());
+      const flash = new GoogleAILLMProvider('k', 'gemini-2.5-flash');
+      await flash.complete(msgs, undefined, undefined, { reasoning: 'default' });
+      await flash.complete(msgs);
+      await new GoogleAILLMProvider('k', 'gemini-2.0-flash').complete(msgs, undefined, undefined, {
+        reasoning: 'off',
+      });
+      for (const [, init] of vi.mocked(fetch).mock.calls) {
+        expect(JSON.parse((init as RequestInit).body as string).generationConfig).toEqual({
+          maxOutputTokens: LLM.DEFAULT_MAX_TOKENS,
+        });
+      }
+    });
+
+    it('sends the budget on the streaming path too', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        sseResponse({ candidates: [{ content: { parts: [{ text: 'hi' }] } }] }) as never,
+      );
+      await collectStream(
+        new GoogleAILLMProvider('k', 'gemini-2.5-flash'),
+        msgs,
+        [],
+        undefined,
+        undefined,
+        {
+          reasoning: 'off',
+        },
+      );
+      expect(generationConfig().thinkingConfig).toEqual({ thinkingBudget: 0 });
+    });
+
+    it('reads thoughtsTokenCount into reasoningTokens', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5, thoughtsTokenCount: 300 },
+        }) as never,
+      );
+      const result = await new GoogleAILLMProvider('k').complete(msgs);
+      expect(result.usage).toEqual({ promptTokens: 10, completionTokens: 5, reasoningTokens: 300 });
+    });
+
+    it('does not report a truncated resume when thinking is off (regression)', async () => {
+      // With thinking on, Flash spent the whole budget on thoughts and stopped
+      // with MAX_TOKENS before any text; with it off the reply arrives whole.
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          candidates: [{ content: { parts: [{ text: '{"ok":true}' }] }, finishReason: 'STOP' }],
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 6, thoughtsTokenCount: 0 },
+        }) as never,
+      );
+      const result = await new GoogleAILLMProvider('k', 'gemini-2.5-flash').complete(
+        msgs,
+        2048,
+        undefined,
+        { json: true, reasoning: 'off' },
+      );
+      expect(generationConfig().thinkingConfig).toEqual({ thinkingBudget: 0 });
+      expect(result.truncated).toBe(false);
+      expect(result.usage?.reasoningTokens).toBe(0);
+    });
+  });
 });
