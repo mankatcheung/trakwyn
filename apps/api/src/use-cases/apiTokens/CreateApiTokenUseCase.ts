@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'crypto';
 import type { IApiTokenRepository } from '#src/use-cases/ports/IApiTokenRepository.js';
 import type { ApiToken, ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
-import { API_TOKEN, DEFAULTS } from '#src/use-cases/constants.js';
+import { API_TOKEN, CONTENT_LIMITS, DEFAULTS } from '#src/use-cases/constants.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
 
 interface Deps {
   apiTokenRepository: IApiTokenRepository;
@@ -28,6 +29,8 @@ export class CreateApiTokenUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: CreateApiTokenInput): Promise<CreateApiTokenOutput> {
+    const existing = await this.deps.apiTokenRepository.findAllByUserId(input.userId);
+    assertUnderLimit(existing.length, CONTENT_LIMITS.API_TOKENS_PER_USER, 'API tokens');
     const rawToken = `${API_TOKEN.PREFIX}${randomBytes(API_TOKEN.RANDOM_BYTES).toString('hex')}`;
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
 

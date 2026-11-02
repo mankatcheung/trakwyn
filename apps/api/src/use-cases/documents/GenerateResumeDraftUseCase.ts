@@ -4,6 +4,7 @@ import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDra
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { resumeToTiptapDoc } from '#src/use-cases/shared/resumeToTiptapDoc.js';
+import { assertDraftCapacity } from '#src/use-cases/documents/assertDraftCapacity.js';
 
 interface GenerateResume {
   execute(input: { userId: string; applicationId: string }): Promise<ResumeContent>;
@@ -44,6 +45,8 @@ export class GenerateResumeDraftUseCase implements IGenerateResumeDraftUseCase {
     const app = await this.deps.applicationRepository.findById(command.applicationId);
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== command.userId) throw new ForbiddenError('Forbidden');
+
+    await assertDraftCapacity(this.deps.documentDraftRepository, command.applicationId);
 
     const resume = await this.deps.generateResumeUseCase.execute({
       userId: command.userId,

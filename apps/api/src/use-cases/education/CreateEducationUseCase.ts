@@ -1,4 +1,6 @@
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type {
   ICreateEducationUseCase,
   CreateEducationInput,
@@ -14,6 +16,9 @@ export class CreateEducationUseCase implements ICreateEducationUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: CreateEducationInput): Promise<CreateEducationOutput> {
+    const existing = await this.deps.educationRepository.findAllByUserId(input.userId);
+    assertUnderLimit(existing.length, CONTENT_LIMITS.EDUCATIONS_PER_USER, 'education entries');
+
     return this.deps.educationRepository.create({
       id: this.deps.generateId(),
       userId: input.userId,

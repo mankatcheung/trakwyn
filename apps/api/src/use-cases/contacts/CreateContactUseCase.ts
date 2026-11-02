@@ -1,4 +1,6 @@
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IContactRepository } from '#src/use-cases/ports/IContactRepository.js';
 import type {
@@ -20,6 +22,12 @@ export class CreateContactUseCase implements ICreateContactUseCase {
     const app = await this.deps.applicationRepository.findById(input.applicationId);
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
+
+    assertUnderLimit(
+      await this.deps.contactRepository.countByApplicationId(input.applicationId),
+      CONTENT_LIMITS.CONTACTS_PER_APPLICATION,
+      'contacts on this application',
+    );
 
     return this.deps.contactRepository.create({
       id: this.deps.generateId(),

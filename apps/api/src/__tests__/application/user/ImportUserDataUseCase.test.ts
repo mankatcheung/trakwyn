@@ -7,7 +7,7 @@ import {
   makeEntitlementService,
   makeFreeEntitlements,
 } from '#src/__tests__/helpers/mocks/plans.js';
-import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
 
 describe('ImportUserDataUseCase', () => {
   beforeEach(() => {
@@ -258,6 +258,50 @@ describe('ImportUserDataUseCase', () => {
       applicationId: 'app-1',
       content: 'Great interview',
     });
+    expect(summary.notesImported).toBe(1);
+  });
+
+  it('imports no more notes per application than a user could add by hand (JEF-339)', async () => {
+    const createNote = vi.fn().mockResolvedValue({});
+    const deps = makeDeps({
+      applicationRepository: makeApplicationRepository({
+        create: vi.fn().mockResolvedValue(makeApplication({ id: 'app-1' })),
+      }),
+      noteRepository: makeNoteRepository({ create: createNote }),
+    });
+    const notes = Array.from({ length: CONTENT_LIMITS.NOTES_PER_APPLICATION + 25 }, (_, i) => ({
+      content: `note ${i}`,
+    }));
+
+    const summary = await new ImportUserDataUseCase(deps).execute(
+      'user-1',
+      JSON.stringify({ applications: [{ company: 'Acme', role: 'Engineer', notes }] }),
+    );
+
+    expect(createNote).toHaveBeenCalledTimes(CONTENT_LIMITS.NOTES_PER_APPLICATION);
+    expect(summary.notesImported).toBe(CONTENT_LIMITS.NOTES_PER_APPLICATION);
+    expect(summary.applicationsImported).toBe(1);
+  });
+
+  it('leaves out a note that is too long to save by hand, and keeps the rest (JEF-339)', async () => {
+    const createNote = vi.fn().mockResolvedValue({});
+    const deps = makeDeps({
+      applicationRepository: makeApplicationRepository({
+        create: vi.fn().mockResolvedValue(makeApplication({ id: 'app-1' })),
+      }),
+      noteRepository: makeNoteRepository({ create: createNote }),
+    });
+    const notes = [
+      { content: 'x'.repeat(FIELD_LENGTH_LIMITS.NOTE_CONTENT + 1) },
+      { content: 'short and fine' },
+    ];
+
+    const summary = await new ImportUserDataUseCase(deps).execute(
+      'user-1',
+      JSON.stringify({ applications: [{ company: 'Acme', role: 'Engineer', notes }] }),
+    );
+
+    expect(createNote).toHaveBeenCalledTimes(1);
     expect(summary.notesImported).toBe(1);
   });
 

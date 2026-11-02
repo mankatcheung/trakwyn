@@ -1,5 +1,6 @@
 import { ValidationError } from '#src/use-cases/errors/DomainError.js';
-import { CV_IMPORT } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, CV_IMPORT } from '#src/use-cases/constants.js';
+import { assertRoomFor } from '#src/use-cases/shared/assertUnderLimit.js';
 import type {
   CreateEducationData,
   IEducationRepository,
@@ -57,6 +58,26 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
     if (workExperiences.length + educations.length + skills.length === 0) {
       throw new ValidationError('Select at least one item to import');
     }
+
+    // Checked before the first write so a CV that does not fit is refused whole.
+    const [haveWork, haveEducation, haveSkills] = await Promise.all([
+      this.deps.workExperienceRepository.findAllByUserId(input.userId),
+      this.deps.educationRepository.findAllByUserId(input.userId),
+      this.deps.skillRepository.findAllByUserId(input.userId),
+    ]);
+    assertRoomFor(
+      haveWork.length,
+      workExperiences.length,
+      CONTENT_LIMITS.WORK_EXPERIENCES_PER_USER,
+      'work experiences',
+    );
+    assertRoomFor(
+      haveEducation.length,
+      educations.length,
+      CONTENT_LIMITS.EDUCATIONS_PER_USER,
+      'education entries',
+    );
+    assertRoomFor(haveSkills.length, skills.length, CONTENT_LIMITS.SKILLS_PER_USER, 'skills');
 
     await runInTransaction(this.deps.transactionManager, async () => {
       for (const data of workExperiences) await this.deps.workExperienceRepository.create(data);

@@ -1,4 +1,5 @@
 import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
+import { assertValidTags } from '#src/use-cases/shared/assertValidTags.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
@@ -38,6 +39,7 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
     // bulk action, the MCP tools.
     const changesColumn = input.status !== undefined && input.status !== app.status;
 
+    if (input.tags !== undefined) assertValidTags(input.tags);
     const tags =
       input.tags === undefined
         ? undefined

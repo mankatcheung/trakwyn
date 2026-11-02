@@ -5,6 +5,7 @@ import type {
 } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import { assertDraftCapacity } from '#src/use-cases/documents/assertDraftCapacity.js';
 
 export interface CreateDocumentDraftCommand {
   userId: string;
@@ -34,6 +35,8 @@ export class CreateDocumentDraftUseCase implements ICreateDocumentDraftUseCase {
     if (!app || app.userId !== command.userId) {
       throw new NotFoundError('Application not found');
     }
+
+    await assertDraftCapacity(this.deps.documentDraftRepository, command.applicationId);
 
     const id = this.deps.generateId();
     const data: CreateDocumentDraftData = {

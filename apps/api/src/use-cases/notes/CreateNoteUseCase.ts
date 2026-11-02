@@ -1,4 +1,6 @@
 import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
+import { assertMaxLength, assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
+import { CONTENT_LIMITS, FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { INoteRepository } from '#src/use-cases/ports/INoteRepository.js';
@@ -27,6 +29,13 @@ export class CreateNoteUseCase implements ICreateNoteUseCase {
     if (app.userId !== input.userId) {
       throw new ForbiddenError('Forbidden');
     }
+
+    assertMaxLength(input.content, FIELD_LENGTH_LIMITS.NOTE_CONTENT, 'A note');
+    assertUnderLimit(
+      await this.deps.noteRepository.countByApplicationId(input.applicationId),
+      CONTENT_LIMITS.NOTES_PER_APPLICATION,
+      'notes on this application',
+    );
 
     const note = await this.deps.noteRepository.create({
       id: this.deps.generateId(),

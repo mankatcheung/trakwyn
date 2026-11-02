@@ -2,7 +2,8 @@ import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementServi
 import { createHash, randomBytes } from 'crypto';
 import type { IShareLinkRepository } from '#src/use-cases/ports/IShareLinkRepository.js';
 import type { ShareLink } from '#src/domain/shareLink/ShareLink.js';
-import { SHARE_LINK } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, SHARE_LINK } from '#src/use-cases/constants.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
 
 interface Deps {
   entitlementService: IEntitlementService;
@@ -25,6 +26,8 @@ export class CreateShareLinkUseCase {
 
   async execute(input: CreateShareLinkInput): Promise<CreateShareLinkOutput> {
     await this.deps.entitlementService.assertFeature(input.userId, 'shareLinks');
+    const existing = await this.deps.shareLinkRepository.findAllByUserId(input.userId);
+    assertUnderLimit(existing.length, CONTENT_LIMITS.SHARE_LINKS_PER_USER, 'share links');
     const rawToken = `${SHARE_LINK.PREFIX}${randomBytes(SHARE_LINK.RANDOM_BYTES).toString('hex')}`;
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
 

@@ -9,6 +9,7 @@ import {
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
 import { proseToTiptapDoc } from '#src/use-cases/shared/proseToTiptapDoc.js';
+import { assertDraftCapacity } from '#src/use-cases/documents/assertDraftCapacity.js';
 
 interface GenerateCoverLetter {
   execute(input: {
@@ -70,6 +71,8 @@ export class GenerateCoverLetterDraftUseCase implements IGenerateCoverLetterDraf
     if (app.userId !== command.userId) {
       throw new ForbiddenError('Forbidden');
     }
+
+    await assertDraftCapacity(this.deps.documentDraftRepository, command.applicationId);
 
     const resumeText = await this.resolveResumeText(command);
 

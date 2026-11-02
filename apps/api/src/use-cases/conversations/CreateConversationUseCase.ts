@@ -1,4 +1,6 @@
 import { ValidationError } from '#src/use-cases/errors/DomainError.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import type { IConversationRepository } from '#src/use-cases/ports/IConversationRepository.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
 import type { Conversation } from '#src/domain/conversation/Conversation.js';
@@ -30,6 +32,13 @@ export class CreateConversationUseCase implements ICreateConversationUseCase {
         throw new ValidationError('Add an API key for this provider first');
       }
     }
+
+    // Asking for at most the cap is enough to know whether the list is full.
+    const existing = await this.deps.conversationRepository.findAllByUserId(
+      input.userId,
+      CONTENT_LIMITS.CONVERSATIONS_PER_USER,
+    );
+    assertUnderLimit(existing.length, CONTENT_LIMITS.CONVERSATIONS_PER_USER, 'conversations');
 
     return this.deps.conversationRepository.create({
       id: this.deps.generateId(),

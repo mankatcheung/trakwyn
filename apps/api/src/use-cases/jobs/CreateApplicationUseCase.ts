@@ -1,6 +1,7 @@
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import { DEFAULTS } from '#src/use-cases/constants.js';
+import { assertValidTags } from '#src/use-cases/shared/assertValidTags.js';
 import type {
   ICreateApplicationUseCase,
   CreateApplicationInput,
@@ -17,6 +18,7 @@ export class CreateApplicationUseCase implements ICreateApplicationUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationOutput> {
+    assertValidTags(input.tags ?? []);
     const { limits } = await this.deps.entitlementService.forUserId(input.userId);
     const tags = (input.tags ?? []).map((name) => ({ id: this.deps.generateId(), name }));
 
