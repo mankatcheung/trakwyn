@@ -8,6 +8,7 @@ import {
 } from './shared';
 import { usePushNotifications } from '#/hooks/usePushNotifications';
 import { useLocale } from '#/lib/i18n';
+import { QuotaHint } from '#/components/QuotaHint';
 import { Card, Checkbox, Select, Skeleton } from '@trakwyn/ui';
 
 export function SettingsNotificationsPage() {
@@ -159,6 +160,12 @@ export function SettingsNotificationsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {t('notifications.pushDescription')}
         </p>
+        <QuotaHint resource="pushSubscriptions" className="mt-1" />
+        {push.error && (
+          <p role="alert" className="mt-2 text-xs text-red-600">
+            {push.error}
+          </p>
+        )}
         {push.isSupported ? (
           <div className="mt-4 flex items-center justify-between gap-6">
             <label

@@ -62,6 +62,7 @@ export function SkillsSection() {
     setFormOpen(false);
     setEditing(null);
     form.reset();
+    create.reset();
   };
   const invalidate = () => qc.invalidateQueries({ queryKey: skillsQueryOptions.queryKey });
 
@@ -93,6 +94,8 @@ export function SkillsSection() {
       icon={<WrenchIcon size={18} />}
       title={t('experience.skillsTitle')}
       description={t('experience.skillsDescription')}
+      quota={{ resource: 'skills', used: skills.length }}
+      createError={create.error}
       onAdd={() => {
         setEditing(null);
         setFormOpen(true);

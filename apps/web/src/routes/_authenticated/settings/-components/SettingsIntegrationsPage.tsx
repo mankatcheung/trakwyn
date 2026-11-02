@@ -7,6 +7,8 @@ import { useLocale } from '#/lib/i18n';
 import { useBillingStatus } from '#/lib/billingStatus';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select, Skeleton } from '@trakwyn/ui';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import {
   API_TOKENS_QUERY,
@@ -44,6 +46,7 @@ export function SettingsIntegrationsPage() {
     queryFn: () => gqlClient.request<{ apiTokens: ApiToken[] }>(API_TOKENS_QUERY),
   });
   const apiTokens = apiTokensData?.apiTokens ?? [];
+  const apiTokensFull = useQuotaState('apiTokens', apiTokens.length)?.level === 'full';
   const [apiTokenFormOverride, setApiTokenFormOverride] = useState<boolean | null>(null);
   const apiTokenFormOpen = apiTokenFormOverride ?? apiTokens.length === 0;
   const [newApiToken, setNewApiToken] = useState<CreateApiTokenPayload | null>(null);
@@ -123,6 +126,7 @@ export function SettingsIntegrationsPage() {
     queryFn: () => gqlClient.request<{ shareLinks: ShareLink[] }>(SHARE_LINKS_QUERY),
   });
   const shareLinks = shareLinksData?.shareLinks ?? [];
+  const shareLinksFull = useQuotaState('shareLinks', shareLinks.length)?.level === 'full';
   const [shareLinkFormOverride, setShareLinkFormOverride] = useState<boolean | null>(null);
   const shareLinkFormOpen = shareLinkFormOverride ?? shareLinks.length === 0;
   const [newShareLink, setNewShareLink] = useState<CreateShareLinkPayload | null>(null);
@@ -215,6 +219,7 @@ export function SettingsIntegrationsPage() {
                 {t('integrations.tokenFreePlanNote')}
               </p>
             )}
+            <QuotaHint resource="apiTokens" used={apiTokens.length} className="mt-1" />
           </div>
           {!apiTokenFormOpen && !newApiToken && (
             <Button
@@ -222,6 +227,7 @@ export function SettingsIntegrationsPage() {
               variant="secondary"
               size="sm"
               onClick={() => setApiTokenFormOverride(true)}
+              disabled={apiTokensFull}
               className="shrink-0"
             >
               <span className="flex items-center gap-1.5">
@@ -287,7 +293,7 @@ export function SettingsIntegrationsPage() {
               </div>
               <Button
                 onClick={onCreateApiToken}
-                disabled={creatingApiToken || !apiTokenName.trim()}
+                disabled={creatingApiToken || !apiTokenName.trim() || apiTokensFull}
               >
                 {creatingApiToken ? t('integrations.creating') : t('integrations.createToken')}
               </Button>
@@ -424,6 +430,7 @@ export function SettingsIntegrationsPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('integrations.shareLinksDescription')}
             </p>
+            <QuotaHint resource="shareLinks" used={shareLinks.length} className="mt-1" />
           </div>
           {!shareLinkFormOpen && !newShareLink && (
             <Button
@@ -431,6 +438,7 @@ export function SettingsIntegrationsPage() {
               variant="secondary"
               size="sm"
               onClick={() => setShareLinkFormOverride(true)}
+              disabled={shareLinksFull}
               className="shrink-0"
             >
               <span className="flex items-center gap-1.5">
@@ -487,7 +495,7 @@ export function SettingsIntegrationsPage() {
               </div>
               <Button
                 onClick={onCreateShareLink}
-                disabled={creatingShareLink || !shareLinkName.trim()}
+                disabled={creatingShareLink || !shareLinkName.trim() || shareLinksFull}
               >
                 {creatingShareLink ? t('integrations.creating') : t('integrations.createLink')}
               </Button>

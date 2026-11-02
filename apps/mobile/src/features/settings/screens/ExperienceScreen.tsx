@@ -26,6 +26,8 @@ import {
   useWorkExperiences,
 } from '../hooks/useExperience';
 import { getErrorMessage } from '../../../lib/errors';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 import type { Education, Skill, WorkExperience } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -162,6 +164,7 @@ function WorkExperienceSection() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: items = [], isLoading } = useWorkExperiences();
+  const workFull = useQuotaFull('workExperiences', items.length);
   const create = useCreateWorkExperience();
   const update = useUpdateWorkExperience();
   const remove = useDeleteWorkExperience();
@@ -203,10 +206,12 @@ function WorkExperienceSection() {
         <IconButton
           icon={PlusIcon}
           onPress={() => setIsAdding(true)}
+          disabled={workFull}
           testID="add-work-experience-button"
           accessibilityLabel={t('experience.add')}
         />
       </View>
+      <QuotaHint resource="workExperiences" used={items.length} />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -364,6 +369,7 @@ function EducationSection() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: items = [], isLoading } = useEducations();
+  const educationFull = useQuotaFull('educations', items.length);
   const create = useCreateEducation();
   const update = useUpdateEducation();
   const remove = useDeleteEducation();
@@ -405,10 +411,12 @@ function EducationSection() {
         <IconButton
           icon={PlusIcon}
           onPress={() => setIsAdding(true)}
+          disabled={educationFull}
           testID="add-education-button"
           accessibilityLabel={t('experience.add')}
         />
       </View>
+      <QuotaHint resource="educations" used={items.length} />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -516,6 +524,7 @@ function SkillsSection() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: skills = [], isLoading } = useSkills();
+  const skillsFull = useQuotaFull('skills', skills.length);
   const create = useCreateSkill();
   const remove = useDeleteSkill();
 
@@ -540,10 +549,12 @@ function SkillsSection() {
         <IconButton
           icon={PlusIcon}
           onPress={() => setIsAdding(true)}
+          disabled={skillsFull}
           testID="add-skill-button"
           accessibilityLabel={t('experience.add')}
         />
       </View>
+      <QuotaHint resource="skills" used={skills.length} />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 

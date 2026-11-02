@@ -21,6 +21,8 @@ import {
   useShareLinks,
 } from '../hooks/useIntegrations';
 import { getErrorMessage } from '../../../lib/errors';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 import type { ApiTokenScope, CreateApiTokenPayload, CreateShareLinkPayload } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -61,6 +63,7 @@ function ApiTokensSection() {
   const { data: tokens = [] } = useApiTokens();
   const createToken = useCreateApiToken();
   const deleteToken = useDeleteApiToken();
+  const tokensFull = useQuotaFull('apiTokens', tokens.length);
 
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
@@ -93,6 +96,7 @@ function ApiTokensSection() {
           <Pressable
             style={styles.addButton}
             onPress={() => setFormOpen(true)}
+            disabled={tokensFull}
             testID="new-api-token-button"
             accessibilityLabel={t('integrations.new')}
           >
@@ -100,6 +104,8 @@ function ApiTokensSection() {
           </Pressable>
         )}
       </View>
+
+      <QuotaHint resource="apiTokens" used={tokens.length} />
 
       {created && (
         <View style={styles.tokenBox}>
@@ -231,6 +237,7 @@ function ShareLinksSection() {
   const { data: links = [] } = useShareLinks();
   const createLink = useCreateShareLink();
   const deleteLink = useDeleteShareLink();
+  const linksFull = useQuotaFull('shareLinks', links.length);
 
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
@@ -261,6 +268,7 @@ function ShareLinksSection() {
           <Pressable
             style={styles.addButton}
             onPress={() => setFormOpen(true)}
+            disabled={linksFull}
             testID="new-share-link-button"
             accessibilityLabel={t('integrations.new')}
           >
@@ -268,6 +276,8 @@ function ShareLinksSection() {
           </Pressable>
         )}
       </View>
+
+      <QuotaHint resource="shareLinks" used={links.length} />
 
       {created && (
         <View style={styles.tokenBox}>

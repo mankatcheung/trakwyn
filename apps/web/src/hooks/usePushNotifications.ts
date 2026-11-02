@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { gqlClient } from '#/graphql/client';
+import { getErrorMessage } from '#/lib/errors';
 
 const REGISTER_PUSH = `
   mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {
@@ -24,6 +25,8 @@ interface PushState {
   subscription: PushSubscription | null;
   /** Whether we're in the middle of enabling/disabling. */
   isBusy: boolean;
+  /** Why the last attempt to enable failed, when the API said (e.g. the device cap). */
+  error: string | null;
 }
 
 /**
@@ -40,6 +43,7 @@ export function usePushNotifications(): PushState & {
     isPermissionDenied: 'Notification' in window && Notification.permission === 'denied',
     subscription: null,
     isBusy: false,
+    error: null,
   });
 
   // On mount, check for existing subscription
@@ -61,7 +65,7 @@ export function usePushNotifications(): PushState & {
   const enable = useCallback(async (): Promise<boolean> => {
     if (!state.isSupported || state.isBusy) return false;
 
-    setState((prev) => ({ ...prev, isBusy: true }));
+    setState((prev) => ({ ...prev, isBusy: true, error: null }));
 
     try {
       // Request permission
@@ -120,8 +124,9 @@ export function usePushNotifications(): PushState & {
         isBusy: false,
       }));
       return true;
-    } catch {
-      setState((prev) => ({ ...prev, isBusy: false }));
+    } catch (err) {
+      // The API's own message, so a device cap names its limit (JEF-494).
+      setState((prev) => ({ ...prev, isBusy: false, error: getErrorMessage(err) }));
       return false;
     }
   }, [state.isSupported, state.isBusy]);

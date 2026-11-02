@@ -76,6 +76,7 @@ export function WorkExperienceSection() {
     setFormOpen(false);
     setEditing(null);
     form.reset();
+    create.reset();
   };
   const invalidate = () => qc.invalidateQueries({ queryKey: workExperiencesQueryOptions.queryKey });
 
@@ -108,6 +109,8 @@ export function WorkExperienceSection() {
       icon={<BriefcaseIcon size={18} />}
       title={t('experience.workExperienceTitle')}
       description={t('experience.workExperienceDescription')}
+      quota={{ resource: 'workExperiences', used: workExperiences.length }}
+      createError={create.error}
       onAdd={() => {
         setEditing(null);
         setFormOpen(true);

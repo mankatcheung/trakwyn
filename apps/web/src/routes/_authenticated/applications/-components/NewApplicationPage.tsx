@@ -8,6 +8,8 @@ import { queryClient } from '#/lib/queryClient';
 import { ERROR_CODES } from '#/constants';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';
+import { QuotaHint } from '#/components/QuotaHint';
+import { useQuotaState } from '#/lib/contentQuota';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
@@ -57,6 +59,7 @@ export function NewApplicationPage() {
   const navigate = useNavigate();
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const tagsFull = useQuotaState('tags', tags.length)?.level === 'full';
   const {
     register,
     handleSubmit,
@@ -200,12 +203,14 @@ export function NewApplicationPage() {
                 if (e.key === 'Enter' || e.key === ',') {
                   e.preventDefault();
                   const val = tagInput.trim().toLowerCase();
-                  if (val && !tags.includes(val)) setTags((prev) => [...prev, val]);
+                  if (val && !tagsFull && !tags.includes(val)) setTags((prev) => [...prev, val]);
                   setTagInput('');
                 }
               }}
+              disabled={tagsFull}
               placeholder={t('applicationForm.tagPlaceholder')}
             />
+            <QuotaHint resource="tags" used={tags.length} />
           </div>
         </Field>
 
@@ -223,7 +228,14 @@ export function NewApplicationPage() {
         {errors.root &&
           (errors.root.type === ERROR_CODES.QUOTA_EXCEEDED ||
           errors.root.type === ERROR_CODES.PLAN_REQUIRED ? (
-            <UpgradePrompt message={errors.root.message ?? ''} />
+            <div className="space-y-2">
+              <UpgradePrompt message={errors.root.message ?? ''} />
+              {/* Trashed applications are not freed until they are purged, which is the
+                  dead end users hit with a full list and an apparently empty board (JEF-494). */}
+              {errors.root.type === ERROR_CODES.QUOTA_EXCEEDED && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('quota.trashNote')}</p>
+              )}
+            </div>
           ) : (
             <Alert>{errors.root.message}</Alert>
           ))}

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useDeleteOffer, useOffers } from '../hooks/useOfferQueries';
 import { PencilIcon, TrashIcon } from '../components/OfferIcons';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 import { formatSalary } from '../lib/formatSalary';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -22,9 +24,11 @@ export function OffersScreen() {
   const deleteOffer = useDeleteOffer(applicationId);
 
   const items = offers ?? [];
+  const offersFull = useQuotaFull('offers', items.length);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <QuotaHint resource="offers" used={items.length} />
       {isLoading ? (
         <ActivityIndicator style={styles.loading} size="large" color={colors.primary} />
       ) : isError ? (
@@ -88,6 +92,7 @@ export function OffersScreen() {
 
       <FloatingActionButton
         onPress={() => router.push(`/applications/${applicationId}/offers/new`)}
+        disabled={offersFull}
         accessibilityLabel={t('addOffer')}
         testID="add-offer-button"
       />

@@ -22,6 +22,8 @@ import type { ThemeColors } from '../../../theme/colors';
 import { PencilIcon, TrashIcon } from '../components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 import type { Contact, ContactInput } from '../types';
 
 function emptyForm(): ContactInput {
@@ -170,6 +172,7 @@ export function ContactsScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
+  const contactsFull = useQuotaFull('contacts', contacts?.length ?? 0);
   const isModalVisible = isAdding || editingContact !== null;
   const saving = createContact.isPending || updateContact.isPending;
 
@@ -230,6 +233,7 @@ export function ContactsScreen() {
 
   return (
     <View style={styles.container}>
+      <QuotaHint resource="contacts" used={items.length} />
       <ScrollView contentContainerStyle={styles.content}>
         {items.length === 0 ? (
           <Text style={styles.emptyText}>{t('contacts.noContactsYet')}</Text>
@@ -273,6 +277,7 @@ export function ContactsScreen() {
 
       <FloatingActionButton
         onPress={() => setIsAdding(true)}
+        disabled={contactsFull}
         testID="add-contact-button"
         accessibilityLabel={t('contacts.addContact')}
       />

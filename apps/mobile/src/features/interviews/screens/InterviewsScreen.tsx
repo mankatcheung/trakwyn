@@ -34,6 +34,8 @@ import {
 } from '../../applications/components/ApplicationIcons';
 import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { QuotaHint } from '../../quota/components/QuotaHint';
+import { useQuotaFull } from '../../quota/hooks/useQuotaState';
 
 function emptyForm(): InterviewRoundFormData {
   return {
@@ -181,6 +183,7 @@ export function InterviewsScreen() {
   const createRound = useCreateInterviewRound(applicationId);
   const updateRound = useUpdateInterviewRound(applicationId);
   const deleteRound = useDeleteInterviewRound(applicationId);
+  const roundsFull = useQuotaFull('interviewRounds', rounds?.length ?? 0);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -233,6 +236,7 @@ export function InterviewsScreen() {
 
   return (
     <View style={styles.container}>
+      <QuotaHint resource="interviewRounds" used={rows.length} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {isLoading ? (
           <ActivityIndicator style={styles.loading} size="large" color={colors.primary} />
@@ -353,6 +357,7 @@ export function InterviewsScreen() {
 
       <FloatingActionButton
         onPress={openCreate}
+        disabled={roundsFull}
         testID="add-round-button"
         accessibilityLabel={t('addInterviewRound')}
       />

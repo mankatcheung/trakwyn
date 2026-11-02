@@ -1538,5 +1538,21 @@
   "accountDeletion.pendingTitle": "Your account is scheduled for deletion",
   "accountDeletion.pendingBody": "It will be permanently deleted on {{date}}. Cancel the deletion to use Trakwyn again, or sign out.",
   "security.event.account_deletion_scheduled": "Account deletion was scheduled",
-  "security.event.account_deletion_cancelled": "Account deletion was cancelled"
+  "security.event.account_deletion_cancelled": "Account deletion was cancelled",
+  "quota.usage": "{{used}} of {{limit}} {{noun}}",
+  "quota.full": "Limit reached: {{limit}} {{noun}}. Delete one to add another.",
+  "quota.noun.notes": "notes",
+  "quota.noun.contacts": "contacts",
+  "quota.noun.interviewRounds": "interview rounds",
+  "quota.noun.offers": "offers",
+  "quota.noun.tags": "tags",
+  "quota.noun.documentDrafts": "document drafts",
+  "quota.noun.conversations": "conversations",
+  "quota.noun.workExperiences": "work experiences",
+  "quota.noun.educations": "education entries",
+  "quota.noun.skills": "skills",
+  "quota.noun.shareLinks": "share links",
+  "quota.noun.apiTokens": "API tokens",
+  "quota.noun.pushSubscriptions": "push devices",
+  "quota.trashNote": "Applications in Trash still count towards your limit until they are deleted for good."
 }

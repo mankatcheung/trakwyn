@@ -77,6 +77,7 @@ export function EducationSection() {
     setFormOpen(false);
     setEditing(null);
     form.reset();
+    create.reset();
   };
   const invalidate = () => qc.invalidateQueries({ queryKey: educationsQueryOptions.queryKey });
 
@@ -109,6 +110,8 @@ export function EducationSection() {
       icon={<GraduationCapIcon size={18} />}
       title={t('experience.educationTitle')}
       description={t('experience.educationDescription')}
+      quota={{ resource: 'educations', used: educations.length }}
+      createError={create.error}
       onAdd={() => {
         setEditing(null);
         setFormOpen(true);
