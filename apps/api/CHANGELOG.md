@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.1...api-v0.11.2) (2026-11-02)
+
+
+### Bug Fixes
+
+* **ci:** run the base-image mirror in the production environment ([#1196](https://github.com/mankatcheung/trakwyn/issues/1196)) ([4d19f62](https://github.com/mankatcheung/trakwyn/commit/4d19f623cfdf859a136598b4486bac09beec6bbe))
+
 ## [0.11.1](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.0...api-v0.11.1) (2026-11-01)
 
 
