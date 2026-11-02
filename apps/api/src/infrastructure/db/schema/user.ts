@@ -55,6 +55,8 @@ export const user = pgTable('User', {
    * task is the surprising behaviour, so it is opted into rather than out of.
    */
   llmFallbackWhenLimited: boolean('llmFallbackWhenLimited').notNull().default(false),
+  /** `auto` | `trakwyn` | `own` (JEF-446): which key AI calls run on. See `AI_SOURCE`. */
+  aiSource: text('aiSource').notNull().default('auto'),
   /** Secondary email for account recovery when primary inbox is inaccessible. */
   backupEmail: text('backupEmail'),
   /** When the backup email was verified; null until verification completes. */

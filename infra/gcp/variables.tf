@@ -61,6 +61,12 @@ variable "plain_env" {
   default     = {}
 }
 
+variable "hosted_ai" {
+  description = "Turn on hosted AI (Trakwyn AI, JEF-446): sets HOSTED_AI_ENABLED and serves the platform's provider keys and gateway token from Secret Manager. Each of the three secrets needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Hosted AI'). Off by default; set false again as the kill switch."
+  type        = bool
+  default     = false
+}
+
 variable "secret_env_vars" {
   description = "Environment variables served from Secret Manager. Each needs a secret version before the service can start; drop a name to leave that feature unconfigured."
   type        = set(string)

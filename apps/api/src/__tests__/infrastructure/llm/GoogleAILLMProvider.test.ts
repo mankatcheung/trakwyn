@@ -45,6 +45,29 @@ describe('GoogleAILLMProvider', () => {
   });
 
   describe('constructor', () => {
+    it('uses a given base URL and extra headers instead of the default endpoint (JEF-446)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,
+      );
+
+      const provider = new GoogleAILLMProvider(
+        'test-key',
+        'gemini-custom',
+        'https://gateway.example/google-ai-studio/v1beta/models',
+        { 'cf-aig-authorization': 'Bearer t' },
+      );
+      await provider.complete([{ role: 'user', content: 'hi' }]);
+
+      const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(
+        'https://gateway.example/google-ai-studio/v1beta/models/gemini-custom:generateContent',
+      );
+      expect(init.headers).toMatchObject({
+        'cf-aig-authorization': 'Bearer t',
+        'x-goog-api-key': 'test-key',
+      });
+    });
+
     it('falls back to the default model when none is given', async () => {
       vi.mocked(fetch).mockResolvedValue(
         jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) as never,

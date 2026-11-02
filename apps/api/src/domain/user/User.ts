@@ -1,4 +1,5 @@
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 
 export interface User {
@@ -38,6 +39,8 @@ export interface User {
   customAiPrompt: string | null;
   /** Opt-in (JEF-249): feed a small, recent slice of the user's other applications' notes/cover letters into cover letter generation. */
   useCrossApplicationContext: boolean;
+  /** Which key AI calls run on: the user's own, Trakwyn AI, or whichever is set (JEF-446). */
+  aiSource: AiSource;
   /** Fall through to another key when one hits its monthly limit (JEF-258). */
   llmFallbackWhenLimited: boolean;
   /** Secondary email for account recovery when primary inbox is inaccessible. */

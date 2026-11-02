@@ -52,6 +52,7 @@ export const makeUser = (overrides?: Partial<User>): User => ({
   customAiPrompt: null,
   useCrossApplicationContext: false,
   llmFallbackWhenLimited: false,
+  aiSource: 'auto',
   backupEmail: null,
   backupEmailVerifiedAt: null,
   onboardingChecklistDismissedAt: null,

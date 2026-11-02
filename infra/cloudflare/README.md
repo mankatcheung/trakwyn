@@ -9,6 +9,7 @@ The DNS records, zone settings and email forwarding rules for `trakwyn.com`, as 
 | `dns.tf`           | Every record except Email Routing's: the apex and `www` (Vercel), `api` (Cloud Run), Brevo's DKIM CNAMEs and DMARC, and the Brevo and Google verification TXTs. |
 | `zone_settings.tf` | SSL mode Full (strict), Always Use HTTPS, minimum TLS 1.2. Imported unconditionally.                                                                            |
 | `turnstile.tf`     | The Turnstile widget for the sign-up, password-reset and repeated-failure sign-in captcha (JEF-401). Account-level, unlike the rest of this root.               |
+| `ai_gateway.tf`    | The AI Gateway hosted AI sends its Gemini and OpenAI calls through (JEF-446): authenticated, logging off, cache off, a rate limit as a backstop. Account-level. |
 | `email_routing.tf` | Email Routing forwarding rules (`address@trakwyn.com` → a verified inbox), defined in `terraform.tfvars` as `email_routing_rules`.                              |
 
 Things worth knowing:
@@ -18,6 +19,7 @@ Things worth knowing:
 - **Values are literals, not read from other roots.** The `api` target, `ghs.googlehosted.com`, is the same for every Cloud Run domain mapping, and `infra/gcp`'s `domain_dns_records` output is empty until the mapping is provisioned. The `www` target is specific to the Vercel project and comes from its domain settings page; `infra/vercel` does not output it. Reading either across roots would couple apply order for a value that does not change.
 - **A record removed from `dns.tf` is deleted from the zone** on the next apply. A record added in the dashboard is invisible to Terraform and never reported; add it to `local.records` to manage it. The same goes for a rule removed from, or never added to, `email_routing_rules`.
 - **The Turnstile widget is account-level, and its secret ends up in this root's state.** The provider returns the widget's `secret` as a computed attribute, so it is stored in the GCS state bucket, readable by anyone who can read that state. Terraform does not copy it anywhere. After the first apply, `terraform output -raw turnstile_site_key` goes into `infra/vercel`'s `turnstile_site_key`, and the secret into Secret Manager (below).
+- **The AI gateway is account-level and holds no secret (JEF-446).** `ai_gateway.tf` creates an authenticated gateway with `collect_logs = false` and `cache_ttl = 0`: prompts and replies hold resumes and notes, and the gateway's cache key is not user-scoped, so neither is kept. Its rate limit (`ai_gateway_rate_limit` per `ai_gateway_rate_limit_interval_s`) is a backstop. The gateway's auth token is created by hand and never enters Terraform (see "Hosted AI gateway" below).
 - **Forwarding rules live in `terraform.tfvars`, not in a `.tf` file,** because each one names a personal inbox. The file is gitignored, so it is the one piece of this root's configuration that exists only on the machine that applies it. Keep a copy somewhere you would find it again.
 
 ## What it does not own
@@ -38,7 +40,7 @@ You need Terraform ≥ 1.9, access to the `<project-id>-tfstate` bucket (see `in
 
 Create the token under **My Profile → API Tokens → Create Token → Custom token**, with:
 
-- **Permissions:** Zone · Zone · Read, Zone · DNS · Edit, Zone · Zone Settings · Edit, Zone · Email Routing Rules · Edit, and Account · Turnstile · Edit (for the widget)
+- **Permissions:** Zone · Zone · Read, Zone · DNS · Edit, Zone · Zone Settings · Edit, Zone · Email Routing Rules · Edit, Account · Turnstile · Edit (for the widget), and Account · AI Gateway · Edit (for the hosted-AI gateway)
 - **Zone Resources:** Include · Specific zone · `trakwyn.com`
 - **Account Resources:** Include · the account that owns the zone (for the widget)
 - a TTL (expiry)
@@ -123,3 +125,17 @@ Once the plan shows only changes you mean, `apply`, then empty `record_import_id
 Edit `local.records` and apply. Don't edit a managed record in the dashboard: the next `plan` shows it as drift and `apply` puts it back.
 
 When the Cloud Run domain mapping is recreated (`infra/gcp/README.md`, "Cut over"), check `terraform output domain_dns_records` there against the `api` entry here. It should still be `ghs.googlehosted.com`; if Google ever answers differently, change it here.
+
+## Hosted AI gateway (JEF-446)
+
+Hosted AI sends the platform's own Gemini and OpenAI calls through this gateway for analytics, an edge rate limit and a kill switch. The API picks the path per provider (`…/google-ai-studio`, `…/openai`) and sends `cf-aig-authorization`. Logging and caching stay off (`ai_gateway.tf`).
+
+1. **Apply** this root (the token needs Account · AI Gateway · Edit). `terraform output -raw ai_gateway_base_url` is the gateway's base URL; it is not secret.
+2. **Create the gateway token** in the dashboard: **AI → AI Gateway → trakwyn → Settings → Authenticated Gateway → Create authentication token**. Add it to Secret Manager by hand, so it is never in Terraform state or in a plan printed by CI:
+
+   ```bash
+   printf '%s' "<token>" | gcloud secrets versions add platform-llm-gateway-token --data-file=-
+   ```
+
+3. **Point the API at it** with `PLATFORM_LLM_GATEWAY_BASE_URL` in `infra/gcp`'s `plain_env` (`infra/gcp/README.md`, "Hosted AI").
+4. **Kill switch:** in the dashboard, set the gateway's rate limit to 1 request, or delete the authentication token. Calls fail with a provider error and the API fails over to the second provider through the same gateway, which fails too, so users see "AI unavailable". The cleaner switch is `hosted_ai = false` in `infra/gcp`, which makes Trakwyn AI unavailable and leaves own-key users untouched.

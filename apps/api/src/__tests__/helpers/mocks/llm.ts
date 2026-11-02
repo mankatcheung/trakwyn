@@ -30,6 +30,7 @@ export const makeLLMProviderFactory = (
     provider: makeLLMProvider(),
     providerId: provider ?? 'openai',
     fellBackFrom: null,
+    source: 'byok',
   })),
   fromCredentials: vi.fn().mockReturnValue(makeLLMProvider()),
   ...overrides,

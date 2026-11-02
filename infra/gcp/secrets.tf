@@ -2,7 +2,7 @@
 # Terraform state (README.md, "Secrets"):
 #   printf '%s' "$VALUE" | gcloud secrets versions add jwt-secret --data-file=-
 resource "google_secret_manager_secret" "api" {
-  for_each = var.secret_env_vars
+  for_each = local.secret_env_vars
 
   secret_id = lower(replace(each.value, "_", "-"))
 

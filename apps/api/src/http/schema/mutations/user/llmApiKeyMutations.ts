@@ -77,6 +77,26 @@ builder.mutationField('setDefaultLlmProvider', (t) =>
   }),
 );
 
+builder.mutationField('setAiSource', (t) =>
+  t.boolean({
+    description: "Which key AI calls run on: 'auto', 'trakwyn' or 'own' (JEF-446).",
+    args: {
+      aiSource: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      if (!ctx.user)
+        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
+      const { userResolver } = ctx.diScope.cradle;
+      try {
+        await userResolver.setAiSource(ctx.user.sub, args.aiSource);
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
+    },
+  }),
+);
+
 builder.mutationField('testLlmApiKey', (t) =>
   t.field({
     type: TestLlmApiKeyResultRef,

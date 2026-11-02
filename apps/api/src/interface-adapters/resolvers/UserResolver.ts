@@ -24,6 +24,7 @@ import type { ISaveLlmApiKeyUseCase } from '#src/use-cases/user/ISaveLlmApiKeyUs
 import type { IListLlmApiKeysUseCase } from '#src/use-cases/user/IListLlmApiKeysUseCase.js';
 import type { IDeleteLlmApiKeyUseCase } from '#src/use-cases/user/IDeleteLlmApiKeyUseCase.js';
 import type { ISetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/ISetLlmApiKeyMonthlyLimitUseCase.js';
+import type { ISetAiSourceUseCase } from '#src/use-cases/user/ISetAiSourceUseCase.js';
 import type { ISetDefaultLlmProviderUseCase } from '#src/use-cases/user/ISetDefaultLlmProviderUseCase.js';
 import type {
   ITestLlmApiKeyUseCase,
@@ -80,6 +81,7 @@ interface Deps {
   saveLlmApiKeyUseCase: ISaveLlmApiKeyUseCase;
   listLlmApiKeysUseCase: IListLlmApiKeysUseCase;
   deleteLlmApiKeyUseCase: IDeleteLlmApiKeyUseCase;
+  setAiSourceUseCase: ISetAiSourceUseCase;
   setDefaultLlmProviderUseCase: ISetDefaultLlmProviderUseCase;
   setLlmApiKeyMonthlyLimitUseCase: ISetLlmApiKeyMonthlyLimitUseCase;
   testLlmApiKeyUseCase: ITestLlmApiKeyUseCase;
@@ -220,6 +222,10 @@ export class UserResolver {
 
   async deleteLlmApiKey(userId: string, provider: string): Promise<void> {
     await this.deps.deleteLlmApiKeyUseCase.execute({ userId, provider });
+  }
+
+  async setAiSource(userId: string, aiSource: string): Promise<void> {
+    await this.deps.setAiSourceUseCase.execute({ userId, aiSource });
   }
 
   async setDefaultLlmProvider(userId: string, provider: string): Promise<void> {

@@ -122,6 +122,8 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     private readonly baseUrl: string,
     private readonly model: string,
     private readonly outboundUrlPolicy?: IOutboundUrlPolicy,
+    /** Added to every request, e.g. the gateway's `cf-aig-authorization` (JEF-446). */
+    private readonly extraHeaders: Record<string, string> = {},
   ) {}
 
   async complete(
@@ -276,6 +278,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
       {
         method: 'POST',
         headers: {
+          ...this.extraHeaders,
           'Content-Type': 'application/json',
           Authorization: `${AUTH_HEADER.BEARER_PREFIX}${this.apiKey}`,
         },
@@ -306,6 +309,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
       {
         method: 'POST',
         headers: {
+          ...this.extraHeaders,
           'Content-Type': 'application/json',
           Authorization: `${AUTH_HEADER.BEARER_PREFIX}${this.apiKey}`,
         },

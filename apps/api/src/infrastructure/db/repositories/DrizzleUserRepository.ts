@@ -3,6 +3,7 @@ import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { user } from '../schema.js';
 import type { User } from '#src/domain/user/User.js';
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { getClient } from '../transactionContext.js';
@@ -88,6 +89,7 @@ export class DrizzleUserRepository implements IUserRepository {
       customAiPrompt?: string | null;
       useCrossApplicationContext?: boolean;
       llmFallbackWhenLimited?: boolean;
+      aiSource?: AiSource;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;
@@ -146,6 +148,7 @@ export class DrizzleUserRepository implements IUserRepository {
       customAiPrompt: row.customAiPrompt,
       useCrossApplicationContext: row.useCrossApplicationContext,
       llmFallbackWhenLimited: row.llmFallbackWhenLimited,
+      aiSource: row.aiSource as AiSource,
       backupEmail: row.backupEmail,
       backupEmailVerifiedAt: row.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: row.onboardingChecklistDismissedAt,

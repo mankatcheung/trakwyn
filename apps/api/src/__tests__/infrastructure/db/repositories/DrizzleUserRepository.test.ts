@@ -280,6 +280,17 @@ describe('DrizzleUserRepository', () => {
     });
   });
 
+  describe('aiSource', () => {
+    it('defaults to auto and can be changed (JEF-446)', async () => {
+      const created = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      expect(created.aiSource).toBe('auto');
+
+      const updated = await repo.update('u1', { aiSource: 'trakwyn' });
+      expect(updated.aiSource).toBe('trakwyn');
+      expect((await repo.findById('u1'))?.aiSource).toBe('trakwyn');
+    });
+  });
+
   describe('findScheduledForDeletionBefore', () => {
     it('returns accounts whose date has come, oldest first, and no others', async () => {
       const cutoff = new Date('2026-11-15T00:00:00.000Z');

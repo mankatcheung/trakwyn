@@ -1,3 +1,4 @@
+import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 
 /**
@@ -179,10 +180,24 @@ export const AI_FEATURE = {
 
 export type AiFeature = (typeof AI_FEATURE)[keyof typeof AI_FEATURE];
 
-/** Who paid for an LLM call. Hosted AI 3 adds `platform`; until then every call is the user's own key. */
+/** Who paid for an LLM call: the user's own key, or the platform's (Hosted AI, JEF-446). */
 export const LLM_USAGE_SOURCE = {
   BYOK: 'byok',
+  PLATFORM: 'platform',
 } as const;
+
+/**
+ * Which key a user's AI calls run on (JEF-446). `auto` uses the user's own key
+ * when one is set and Trakwyn AI otherwise; `trakwyn` always uses the
+ * platform's; `own` never does.
+ */
+export const AI_SOURCE = {
+  AUTO: 'auto',
+  TRAKWYN: 'trakwyn',
+  OWN: 'own',
+} as const satisfies Record<string, AiSource>;
+
+export const AI_SOURCES: readonly AiSource[] = Object.values(AI_SOURCE);
 
 export type LlmUsageSource = (typeof LLM_USAGE_SOURCE)[keyof typeof LLM_USAGE_SOURCE];
 

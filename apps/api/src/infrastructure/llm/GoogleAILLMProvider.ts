@@ -97,6 +97,14 @@ export class GoogleAILLMProvider implements ILLMProvider {
   constructor(
     private readonly apiKey: string,
     private readonly model: string = LLM.GOOGLEAI_DEFAULT_MODEL,
+    /**
+     * Replaces `LLM.GOOGLEAI_API_URL` (JEF-446): the platform path points it at
+     * a gateway. Config only — a user-supplied value never reaches here, so it
+     * is not run through `IOutboundUrlPolicy`.
+     */
+    private readonly baseUrl: string = LLM.GOOGLEAI_API_URL,
+    /** Added to every request, e.g. the gateway's `cf-aig-authorization`. */
+    private readonly extraHeaders: Record<string, string> = {},
   ) {}
 
   async complete(
@@ -257,7 +265,11 @@ export class GoogleAILLMProvider implements ILLMProvider {
   }
 
   private headers(): Record<string, string> {
-    return { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey };
+    return {
+      ...this.extraHeaders,
+      'Content-Type': 'application/json',
+      'x-goog-api-key': this.apiKey,
+    };
   }
 
   private async postStream(
@@ -266,7 +278,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
   ): Promise<{ body: ReadableStream<Uint8Array>; onChunk: () => void; dispose: () => void }> {
     // Idle-reset rather than a fixed timeout — see `createIdleAbortController`.
     const idle = createIdleAbortController(LLM.STREAM_IDLE_TIMEOUT_MS, signal);
-    const url = `${LLM.GOOGLEAI_API_URL}/${this.model}:streamGenerateContent?alt=sse`;
+    const url = `${this.baseUrl}/${this.model}:streamGenerateContent?alt=sse`;
     const response = await fetchWithRetry(
       url,
       { method: 'POST', headers: this.headers(), body: JSON.stringify(body) },
@@ -296,7 +308,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
     // logs and error causes all keep the URL verbatim. Google accepts the
     // same key as `x-goog-api-key`. The model id is validated on the way in
     // (`assertValidLlmModelId`), so it cannot re-target the path.
-    const url = `${LLM.GOOGLEAI_API_URL}/${this.model}:generateContent`;
+    const url = `${this.baseUrl}/${this.model}:generateContent`;
 
     const response = await fetchWithRetry(
       url,

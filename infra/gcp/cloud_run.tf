@@ -1,4 +1,13 @@
 locals {
+  # The platform's provider keys and the gateway token (JEF-446). Values are
+  # added out of band, like every secret here; none is ever in state.
+  hosted_ai_secret_env_vars = [
+    "PLATFORM_GOOGLEAI_API_KEY",
+    "PLATFORM_OPENAI_API_KEY",
+    "PLATFORM_LLM_GATEWAY_TOKEN",
+  ]
+  secret_env_vars = var.hosted_ai ? setunion(var.secret_env_vars, local.hosted_ai_secret_env_vars) : var.secret_env_vars
+
   # Config that is the same for every install, plus the per-install values
   # from variables. PORT is deliberately absent: Cloud Run reserves it and
   # injects 8080.
@@ -16,6 +25,7 @@ locals {
       # Whose OIDC tokens the admin cron routes accept (scheduler.tf).
       CRON_INVOKER_SA = google_service_account.cron_invoker.email
     },
+    var.hosted_ai ? { HOSTED_AI_ENABLED = "true" } : {},
     var.plain_env,
   )
 }

@@ -23,6 +23,7 @@ UserRef.implement({
     customAiPrompt: t.exposeString('customAiPrompt', { nullable: true }),
     useCrossApplicationContext: t.exposeBoolean('useCrossApplicationContext'),
     llmFallbackWhenLimited: t.exposeBoolean('llmFallbackWhenLimited'),
+    aiSource: t.exposeString('aiSource'),
     storageUsedBytes: t.exposeFloat('storageUsedBytes'),
     storageLimitBytes: t.exposeFloat('storageLimitBytes'),
     onboardingChecklistDismissedAt: t.field({
