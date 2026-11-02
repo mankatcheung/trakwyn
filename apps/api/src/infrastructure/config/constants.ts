@@ -451,6 +451,21 @@ export const JOB_POSTING_FETCH = {
   MIN_CONTENT_REGION_CHARS: 200,
 } as const;
 
+/** Parsed postings shared between users, keyed on the fetched page's text (JEF-450). */
+export const PARSED_POSTING_CACHE = {
+  KEY_PREFIX: 'parsed-posting',
+  /** Bump when the parse prompt or output shape changes, so old entries are not served. */
+  VERSION: 'v1',
+  /** Postings rarely change and expire within weeks. */
+  TTL_MS: 7 * 24 * 60 * 60 * 1000,
+} as const;
+
+/** Reading a job posting's `schema.org/JobPosting` JSON-LD instead of asking a model (JEF-450). */
+export const JOB_POSTING_JSON_LD = {
+  /** Same bound the Clipper applies to a description it reads from JSON-LD. */
+  MAX_DESCRIPTION_CHARS: 2000,
+} as const;
+
 /**
  * How much of an upstream error body is kept when a provider call fails.
  * Enough to diagnose ("invalid x-api-key", "model not found"), not enough to

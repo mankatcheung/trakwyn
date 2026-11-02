@@ -355,6 +355,12 @@ export const DOCUMENT_TYPE = {
   OTHER: 'other',
 } as const;
 
+/** Complete JSON-LD on a fetched page is used as the parse result, with no model call (JEF-450). */
+export const JOB_POSTING_STRUCTURED = {
+  /** A JSON-LD description shorter than this is a teaser, so the model still runs (with the fields as hints). */
+  MIN_DESCRIPTION_CHARS: 200,
+} as const;
+
 /**
  * Character-truncation limits for job-description-derived content
  * interpolated into LLM prompts. Named here instead of scattered ad hoc

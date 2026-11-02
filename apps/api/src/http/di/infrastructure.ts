@@ -49,6 +49,7 @@ import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
+import { CachedParsedPostingStore } from '#src/infrastructure/jobDescription/CachedParsedPostingStore.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
 import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
 import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
@@ -218,4 +219,5 @@ export const infrastructure = {
   jobPostingSourceResolver: asClass(FetchJobPostingSourceResolver, {
     lifetime: Lifetime.SINGLETON,
   }),
+  parsedPostingCache: asClass(CachedParsedPostingStore, { lifetime: Lifetime.SINGLETON }),
 } satisfies NameAndRegistrationPair<Cradle>;

@@ -3,20 +3,43 @@ import { ParseJobDescriptionUseCase } from '#src/use-cases/jobDescription/ParseJ
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { IJobPostingSourceResolver } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
+import type {
+  IJobPostingSourceResolver,
+  ResolvedJobPosting,
+} from '#src/use-cases/ports/IJobPostingSourceResolver.js';
+import type { IParsedPostingCache } from '#src/use-cases/ports/IParsedPostingCache.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 
-function makeSourceResolver(text: string): IJobPostingSourceResolver {
-  return { resolve: vi.fn().mockResolvedValue(text) };
+function detailed(text: string, extra: Partial<ResolvedJobPosting> = {}): ResolvedJobPosting {
+  return { text, fetchedFromUrl: false, structured: null, ...extra };
+}
+
+function makeSourceResolver(text: string, extra: Partial<ResolvedJobPosting> = {}) {
+  return {
+    resolve: vi.fn().mockResolvedValue(text),
+    resolveDetailed: vi.fn().mockResolvedValue(detailed(text, extra)),
+  } satisfies IJobPostingSourceResolver;
+}
+
+/** Runs `parse` every time, like a cache that never hits. */
+function makeParsedPostingCache(): IParsedPostingCache {
+  return {
+    getOrParse: vi.fn(async (_text: string, parse: () => Promise<unknown>) => ({
+      value: await parse(),
+      cached: false,
+    })) as IParsedPostingCache['getOrParse'],
+  };
 }
 
 describe('ParseJobDescriptionUseCase', () => {
   let llmProviderFactory: ILLMProviderFactory;
   let jobPostingSourceResolver: IJobPostingSourceResolver;
+  let parsedPostingCache: IParsedPostingCache;
   let parseJobDescriptionRateLimiter: IRateLimiter;
 
   beforeEach(() => {
     parseJobDescriptionRateLimiter = makeRateLimiter();
+    parsedPostingCache = makeParsedPostingCache();
     llmProviderFactory = makeLLMProviderFactory({
       forUser: vi.fn().mockResolvedValue(
         makeLLMProvider(
@@ -37,6 +60,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     const result = await useCase.execute({
@@ -66,6 +90,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     const result = await useCase.execute({ userId: 'user-1', text: 'job posting' });
@@ -79,6 +104,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -94,6 +120,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -113,6 +140,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -142,6 +170,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -155,22 +184,25 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
     const err = await useCase.execute({ userId: 'user-1', text: 'some text' }).catch((e) => e);
 
     expect((err as { code: string }).code).toBe('AI_NOT_CONFIGURED');
-    expect(jobPostingSourceResolver.resolve).not.toHaveBeenCalled();
+    expect(jobPostingSourceResolver.resolveDetailed).not.toHaveBeenCalled();
   });
 
   it('throws when neither text nor url is provided', async () => {
     jobPostingSourceResolver = {
-      resolve: vi.fn().mockRejectedValue(new Error('Either text or url must be provided')),
+      resolve: vi.fn(),
+      resolveDetailed: vi.fn().mockRejectedValue(new Error('Either text or url must be provided')),
     };
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     await expect(useCase.execute({ userId: 'user-1' })).rejects.toThrow(
@@ -180,11 +212,13 @@ describe('ParseJobDescriptionUseCase', () => {
 
   it('throws when text is empty string', async () => {
     jobPostingSourceResolver = {
-      resolve: vi.fn().mockRejectedValue(new Error('Either text or url must be provided')),
+      resolve: vi.fn(),
+      resolveDetailed: vi.fn().mockRejectedValue(new Error('Either text or url must be provided')),
     };
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     await expect(useCase.execute({ userId: 'user-1', text: '   ' })).rejects.toThrow(
@@ -194,11 +228,13 @@ describe('ParseJobDescriptionUseCase', () => {
 
   it('throws a VALIDATION-coded error when the resolved text is blank', async () => {
     jobPostingSourceResolver = {
-      resolve: vi.fn().mockResolvedValue('   '),
+      resolve: vi.fn(),
+      resolveDetailed: vi.fn().mockResolvedValue(detailed('   ')),
     };
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -223,17 +259,19 @@ describe('ParseJobDescriptionUseCase', () => {
       forUser: vi.fn().mockResolvedValue(llmProvider),
     });
     jobPostingSourceResolver = {
-      resolve: vi.fn().mockResolvedValue('Senior Engineer at Acme Corp'),
+      resolve: vi.fn(),
+      resolveDetailed: vi.fn().mockResolvedValue(detailed('Senior Engineer at Acme Corp')),
     };
 
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     await useCase.execute({ userId: 'user-1', url: 'https://example.com/job' });
 
-    expect(jobPostingSourceResolver.resolve).toHaveBeenCalledWith({
+    expect(jobPostingSourceResolver.resolveDetailed).toHaveBeenCalledWith({
       text: undefined,
       url: 'https://example.com/job',
     });
@@ -262,6 +300,7 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
@@ -281,27 +320,116 @@ describe('ParseJobDescriptionUseCase', () => {
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
 
     const err = await useCase.execute({ userId: 'user-1', text: 'some text' }).catch((e) => e);
 
     expect((err as { code: string }).code).toBe('RATE_LIMITED');
-    expect(jobPostingSourceResolver.resolve).not.toHaveBeenCalled();
+    expect(jobPostingSourceResolver.resolveDetailed).not.toHaveBeenCalled();
   });
 
   it('throws when source resolver fails', async () => {
     jobPostingSourceResolver = {
-      resolve: vi.fn().mockRejectedValue(new Error('Failed to fetch URL: 404')),
+      resolve: vi.fn(),
+      resolveDetailed: vi.fn().mockRejectedValue(new Error('Failed to fetch URL: 404')),
     };
 
     const useCase = new ParseJobDescriptionUseCase({
       llmProviderFactory,
       jobPostingSourceResolver,
+      parsedPostingCache,
       parseJobDescriptionRateLimiter,
     });
     await expect(
       useCase.execute({ userId: 'user-1', url: 'https://example.com/missing' }),
     ).rejects.toThrow('Failed to fetch URL: 404');
+  });
+
+  describe('cost savers (JEF-450)', () => {
+    const structured = {
+      company: 'Acme Corp',
+      role: 'Platform Engineer',
+      location: 'Remote',
+      salary: 'USD 120000–150000 per year',
+      description: 'Own the build pipeline. '.repeat(20),
+    };
+
+    function build(resolver: IJobPostingSourceResolver) {
+      return new ParseJobDescriptionUseCase({
+        llmProviderFactory,
+        jobPostingSourceResolver: resolver,
+        parsedPostingCache,
+        parseJobDescriptionRateLimiter,
+      });
+    }
+
+    it('returns complete JSON-LD without calling the model or the cache', async () => {
+      const llmProvider = makeLLMProvider('{}');
+      llmProviderFactory = makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(llmProvider),
+      });
+      const resolver = makeSourceResolver('page text', { fetchedFromUrl: true, structured });
+
+      const result = await build(resolver).execute({ userId: 'user-1', url: 'https://x.test/j' });
+
+      expect(result).toEqual(structured);
+      expect(llmProvider.complete).not.toHaveBeenCalled();
+      expect(parsedPostingCache.getOrParse).not.toHaveBeenCalled();
+    });
+
+    it('still calls the model when the JSON-LD description is only a teaser, passing the fields as hints', async () => {
+      const llmProvider = makeLLMProvider(JSON.stringify({ company: 'Acme Corp', role: 'X' }));
+      llmProviderFactory = makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(llmProvider),
+      });
+      const resolver = makeSourceResolver('page text', {
+        fetchedFromUrl: true,
+        structured: { ...structured, description: 'Short.' },
+      });
+
+      await build(resolver).execute({ userId: 'user-1', url: 'https://x.test/j' });
+
+      expect(llmProvider.complete).toHaveBeenCalledTimes(1);
+      const messages = vi.mocked(llmProvider.complete).mock.calls[0]?.[0] ?? [];
+      expect(JSON.stringify(messages)).toContain('Platform Engineer');
+    });
+
+    it('parses a fetched page through the shared cache', async () => {
+      const resolver = makeSourceResolver('Senior Engineer at Acme', { fetchedFromUrl: true });
+
+      await build(resolver).execute({ userId: 'user-1', url: 'https://x.test/j' });
+
+      expect(parsedPostingCache.getOrParse).toHaveBeenCalledWith(
+        'Senior Engineer at Acme',
+        expect.any(Function),
+      );
+    });
+
+    it('returns a cached parse without calling the model', async () => {
+      const cachedValue = { ...structured, description: 'cached' };
+      parsedPostingCache = {
+        getOrParse: vi.fn().mockResolvedValue({ value: cachedValue, cached: true }),
+      };
+      const llmProvider = makeLLMProvider('{}');
+      llmProviderFactory = makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(llmProvider),
+      });
+      const resolver = makeSourceResolver('Senior Engineer at Acme', { fetchedFromUrl: true });
+
+      const result = await build(resolver).execute({ userId: 'user-2', url: 'https://x.test/j' });
+
+      expect(result).toEqual(cachedValue);
+      expect(llmProvider.complete).not.toHaveBeenCalled();
+    });
+
+    it('never puts pasted text in the shared cache', async () => {
+      const resolver = makeSourceResolver('my own notes about Acme');
+
+      await build(resolver).execute({ userId: 'user-1', text: 'my own notes about Acme' });
+
+      expect(parsedPostingCache.getOrParse).not.toHaveBeenCalled();
+    });
   });
 });
