@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
 
@@ -84,5 +84,26 @@ describe('PrivacyPage', () => {
     expect(
       screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
     ).toBeInTheDocument();
+  });
+  it('lists the AI sub-processors with purpose, region and a terms link', () => {
+    render(<PrivacyPage />);
+
+    const table = screen.getByRole('table', { name: /ai sub-processors/i });
+    for (const vendor of ['Google (Gemini API)', 'OpenAI', 'Cloudflare (AI Gateway)']) {
+      expect(within(table).getByRole('rowheader', { name: vendor })).toBeInTheDocument();
+    }
+    expect(within(table).getAllByRole('link', { name: 'Terms' })).toHaveLength(3);
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Vendor', 'Purpose', 'Region', 'Vendor terms']);
+  });
+
+  it('says hosted AI content is not used for training', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { name: 'Trakwyn AI (hosted)' })).toBeInTheDocument();
+    expect(screen.getByText(/not used to train/i)).toBeInTheDocument();
   });
 });

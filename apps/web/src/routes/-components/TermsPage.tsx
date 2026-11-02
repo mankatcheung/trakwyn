@@ -3,7 +3,7 @@ import { CONTACT_EMAIL } from '#/constants';
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'October 25, 2026';
+const LAST_UPDATED = 'November 2, 2026';
 
 /**
  * Drafted from what the app actually does, per JEF-202 — not legally
@@ -32,6 +32,13 @@ export function TermsPage() {
         {t('legal.terms.contentBodyPrefix')} <Link to="/privacy">{t('legal.privacy.title')}</Link>.
       </p>
       <p>{t('legal.terms.contentByokBody')}</p>
+
+      <h2>{t('legal.terms.aiTitle')}</h2>
+      <p>{t('legal.terms.aiCreditsBody')}</p>
+      <p>{t('legal.terms.aiResetBody')}</p>
+      <p>{t('legal.terms.aiFairUseBody')}</p>
+      <p>{t('legal.terms.aiChangesBody')}</p>
+      <p>{t('legal.terms.aiOutputBody')}</p>
 
       <h2>{t('legal.terms.clipperTitle')}</h2>
       <p>{t('legal.terms.clipperBody')}</p>
