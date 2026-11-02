@@ -257,6 +257,14 @@ Trakwyn AI: a user with no key of their own gets answers on keys the platform ho
 - **Dev and CI.** With `LLM_PROVIDER_MODE=fake` both legs are OpenAI-compatible providers pointed at this server's own fake completions route (`PLATFORM_LLM.FAKE_COMPLETIONS_PATH`, which `ROUTES.LLM_FAKE_COMPLETIONS` re-exports) and need no keys, so set `HOSTED_AI_ENABLED=true` to exercise Trakwyn AI in e2e.
 - **Not here yet:** credits (Hosted AI 4), tier routing (5), guardrails (6) and the settings UI (8). Infra and the runbook are `infra/cloudflare` and `infra/gcp/README.md` ("Hosted AI").
 
+## Cheaper AI calls (JEF-450)
+
+The cheapest call is the one not made. Three savers sit in front of the model; the prompt-order audit and `maxTokens` trimming from the ticket are not done (they need `cacheReadTokens` and p95 output from the production dashboard).
+
+- **JSON-LD first.** `FetchJobPostingSourceResolver.resolveDetailed` returns the page text, `fetchedFromUrl` and `structured` (the first `schema.org/JobPosting` in the page, `infrastructure/jobDescription/jsonLdJobPosting.ts`, the server twin of the Clipper's `parseGeneric`). `ParseJobDescriptionUseCase` returns `structured` as the result when it has a title, a company and a description of at least `JOB_POSTING_STRUCTURED.MIN_DESCRIPTION_CHARS` (200): no model call. A partial one goes to the model as "fields the page already states". The key check still runs first, so a user with no key gets `AI_NOT_CONFIGURED` even for such a page.
+- **Cross-user cache, fetched pages only.** `IParsedPostingCache` (`CachedParsedPostingStore` over `ICache`, so Redis in production) keys on `sha256` of the whitespace-normalised page text plus `PARSED_POSTING_CACHE.VERSION`, for seven days. **Bump `VERSION` when the parse prompt or its output shape changes.** Pasted text has `fetchedFromUrl: false` and never reaches the cache, because it can hold the user's own notes. It also single-flights, so two simultaneous first parses make one call.
+- **Match reuse.** `ResumeMatch.jobDescriptionHash` (`hashJobDescription`, whitespace-collapsed) sits beside `resumeTextHash`. `ComputeResumeMatchScoreUseCase` returns the saved row with no model call and no write when both hashes are unchanged. A row saved before the column existed has `null` and is rescored once. `isStale` is still only about the resume text.
+
 ## AI evals (JEF-114)
 
 Unit tests replace the model with `makeLLMProvider`, so they show the use cases handle a reply correctly, not that a prompt produces a good one. `pnpm --filter @trakwyn/api eval` (`evals/`) runs the real use cases, prompt and `parseAiJson` included, against a real provider and scores the output. It spends money and varies run to run, so it is run by hand, never by `pnpm test` or CI: vitest only matches `*.test.ts`, and nothing under `__tests__` imports the runner.

@@ -16,4 +16,6 @@ export interface ResumeMatch {
   generatedAt: Date;
   /** Hash of the resume text that was scored; see `hashResumeText`. */
   resumeTextHash: string;
+  /** Hash of the job description that was scored; `null` for a match saved before it was recorded. */
+  jobDescriptionHash: string | null;
 }

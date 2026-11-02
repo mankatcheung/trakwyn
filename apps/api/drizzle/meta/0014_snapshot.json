@@ -1,5 +1,5 @@
 {
-  "id": "a30aad82-33c3-44a8-a22b-b53d84b3c65c",
+  "id": "836e8515-c84f-4882-8f80-4e458427e287",
   "prevId": "ee78ff71-7349-40d6-b687-b341da14ba89",
   "version": "7",
   "dialect": "postgresql",
@@ -180,13 +180,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "aiSource": {
-          "name": "aiSource",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'auto'"
         },
         "backupEmail": {
           "name": "backupEmail",
@@ -3442,6 +3435,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "jobDescriptionHash": {
+          "name": "jobDescriptionHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {

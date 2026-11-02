@@ -40,6 +40,7 @@ export class DrizzleResumeMatchRepository implements IResumeMatchRepository {
       summary: row.summary,
       generatedAt: row.generatedAt,
       resumeTextHash: row.resumeTextHash,
+      jobDescriptionHash: row.jobDescriptionHash,
     };
   }
 
@@ -74,6 +75,7 @@ export class DrizzleResumeMatchRepository implements IResumeMatchRepository {
           summary: values.summary,
           generatedAt: values.generatedAt,
           resumeTextHash: values.resumeTextHash,
+          jobDescriptionHash: values.jobDescriptionHash,
         },
       })
       .returning();

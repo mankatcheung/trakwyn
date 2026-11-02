@@ -5,11 +5,21 @@ import {
 } from '#src/use-cases/errors/DomainError.js';
 import { z } from 'zod';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { IJobPostingSourceResolver } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
+import type {
+  IJobPostingSourceResolver,
+  StructuredJobPosting,
+} from '#src/use-cases/ports/IJobPostingSourceResolver.js';
+import type { IParsedPostingCache } from '#src/use-cases/ports/IParsedPostingCache.js';
+import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import {
+  AI_PROMPT_INPUT,
+  AI_FEATURE,
+  AI_REASONING_DEFAULTS,
+  JOB_POSTING_STRUCTURED,
+} from '#src/use-cases/constants.js';
 
 export interface ParseJobDescriptionInput {
   userId: string;
@@ -28,6 +38,7 @@ export interface ParsedJobDescription {
 interface Deps {
   llmProviderFactory: ILLMProviderFactory;
   jobPostingSourceResolver: IJobPostingSourceResolver;
+  parsedPostingCache: IParsedPostingCache;
   parseJobDescriptionRateLimiter: IRateLimiter;
 }
 
@@ -35,6 +46,7 @@ const SYSTEM_PROMPT = `You are a job posting parser. Extract structured data fro
 
 const USER_PROMPT_TEMPLATE = (
   text: string,
+  hints: StructuredJobPosting | null,
 ) => `Extract the following from this job posting and return ONLY valid JSON:
 {
   "company": "company name or null",
@@ -45,7 +57,20 @@ const USER_PROMPT_TEMPLATE = (
 }
 
 Job posting:
-${wrapUntrustedContent(text.slice(0, AI_PROMPT_INPUT.JOB_POSTING_MAX_CHARS))}`;
+${wrapUntrustedContent(text.slice(0, AI_PROMPT_INPUT.JOB_POSTING_MAX_CHARS))}${hintsSection(hints)}`;
+
+/** Fields the page's own JSON-LD already gave us, so the model only fills the gaps (JEF-450). */
+function hintsSection(hints: StructuredJobPosting | null): string {
+  if (!hints) return '';
+  const known = Object.fromEntries(
+    Object.entries(hints).filter(([key, value]) => value && key !== 'description'),
+  );
+  if (Object.keys(known).length === 0) return '';
+  return `
+
+Fields the page already states (use them unless the posting contradicts them):
+${wrapUntrustedContent(JSON.stringify(known))}`;
+}
 
 // A field the model omits, or explicitly sends as null, both mean the same
 // thing here ("couldn't determine this") — parseResponse() normalizes both
@@ -60,6 +85,14 @@ const parsedJobDescriptionSchema = z.object({
   salary: nullableStringField,
   description: nullableStringField,
 });
+
+function isCompleteStructuredPosting(posting: StructuredJobPosting): boolean {
+  return Boolean(
+    posting.role &&
+    posting.company &&
+    (posting.description?.length ?? 0) >= JOB_POSTING_STRUCTURED.MIN_DESCRIPTION_CHARS,
+  );
+}
 
 export class ParseJobDescriptionUseCase {
   constructor(private readonly deps: Deps) {}
@@ -80,18 +113,36 @@ export class ParseJobDescriptionUseCase {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }
 
-    const text = await this.deps.jobPostingSourceResolver.resolve({
+    const posting = await this.deps.jobPostingSourceResolver.resolveDetailed({
       text: input.text,
       url: input.url,
     });
+    const text = posting.text;
     if (!text.trim()) {
       throw new ValidationError('No job description content provided');
     }
 
+    // A page that carries complete JSON-LD needs no model at all.
+    if (posting.structured && isCompleteStructuredPosting(posting.structured)) {
+      return { ...posting.structured };
+    }
+
+    const parse = () => this.askModel(llmProvider, text, posting.structured);
+    // Only a page the server fetched from a public URL is shared between
+    // users; pasted text may hold the user's own notes.
+    if (!posting.fetchedFromUrl) return parse();
+    return (await this.deps.parsedPostingCache.getOrParse(text, parse)).value;
+  }
+
+  private async askModel(
+    llmProvider: ILLMProvider,
+    text: string,
+    hints: StructuredJobPosting | null,
+  ): Promise<ParsedJobDescription> {
     const result = await llmProvider.complete(
       [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: USER_PROMPT_TEMPLATE(text) },
+        { role: 'user', content: USER_PROMPT_TEMPLATE(text, hints) },
       ],
       undefined,
       undefined,

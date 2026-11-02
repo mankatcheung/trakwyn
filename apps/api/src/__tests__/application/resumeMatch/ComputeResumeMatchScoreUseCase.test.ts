@@ -2,12 +2,14 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import { RESUME_TEXT_EXTRACTION } from '#src/use-cases/constants.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
+import { hashJobDescription } from '#src/use-cases/shared/hashJobDescription.js';
 import {
   makeDocument,
   makeDocumentDraft,
   makeDocumentDraftRepository,
   makeDocumentRepository,
   makeDocumentTextExtractor,
+  makeResumeMatch,
   makeResumeMatchRepository,
   makeStorageProvider,
   makeStoredObject,
@@ -357,6 +359,80 @@ describe('ComputeResumeMatchScoreUseCase', () => {
     it('strips markdown code fences from the LLM response before parsing', async () => {
       const result = await run(withLlm('```json\n' + MATCH_RESPONSE + '\n```'));
       expect(result.score).toBe(82);
+    });
+  });
+
+  describe('reusing a saved score (JEF-450)', () => {
+    const JD = 'We need a TS engineer';
+    const saved = (overrides = {}) =>
+      makeResumeMatch({
+        documentDraftId: 'draft-1',
+        documentId: null,
+        resumeTextHash: hashResumeText(DRAFT_TEXT),
+        jobDescriptionHash: hashJobDescription(JD),
+        ...overrides,
+      });
+    const withSaved = (match: ReturnType<typeof saved>) => {
+      const deps = makeDeps({
+        resumeMatchRepository: makeResumeMatchRepository({
+          findByApplicationId: vi.fn().mockResolvedValue([match]),
+        }),
+      });
+      return deps;
+    };
+
+    it('returns the saved score with no model call and no write when nothing changed', async () => {
+      const deps = withSaved(saved());
+
+      const result = await run(deps);
+
+      expect(result).toMatchObject({ id: 'match-1', score: 80, isStale: false });
+      expect(deps.llmProviderFactory.forUser).toHaveBeenCalledTimes(1);
+      const provider = await vi.mocked(deps.llmProviderFactory.forUser).mock.results[0]?.value;
+      expect(provider.complete).not.toHaveBeenCalled();
+      expect(deps.resumeMatchRepository.upsert).not.toHaveBeenCalled();
+    });
+
+    it('scores again when the resume text changed', async () => {
+      const deps = withSaved(saved({ resumeTextHash: hashResumeText('something else') }));
+
+      await run(deps);
+
+      expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('scores again when the job description changed', async () => {
+      const deps = withSaved(saved({ jobDescriptionHash: hashJobDescription('another job') }));
+
+      await run(deps);
+
+      expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('scores again for a match saved before the job description was recorded', async () => {
+      const deps = withSaved(saved({ jobDescriptionHash: null }));
+
+      await run(deps);
+
+      expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores another resume's saved score", async () => {
+      const deps = withSaved(saved({ documentDraftId: 'draft-other' }));
+
+      await run(deps);
+
+      expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('records the job description hash on a new score', async () => {
+      const deps = makeDeps();
+
+      await run(deps);
+
+      expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ jobDescriptionHash: hashJobDescription(JD) }),
+      );
     });
   });
 });
