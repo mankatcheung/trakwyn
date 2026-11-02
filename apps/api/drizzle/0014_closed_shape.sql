@@ -1,0 +1,1 @@
+ALTER TABLE "ResumeMatch" ADD COLUMN "jobDescriptionHash" text;

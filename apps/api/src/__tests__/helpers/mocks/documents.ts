@@ -61,6 +61,7 @@ export const makeResumeMatch = (overrides?: Partial<ResumeMatch>): ResumeMatch =
   summary: 'Solid fit.',
   generatedAt: new Date('2026-10-12T12:00:00Z'),
   resumeTextHash: 'hash',
+  jobDescriptionHash: 'jd-hash',
   ...overrides,
 });
 

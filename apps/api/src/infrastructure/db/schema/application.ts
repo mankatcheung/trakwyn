@@ -302,6 +302,8 @@ export const resumeMatch = pgTable(
       .notNull()
       .$defaultFn(() => new Date()),
     resumeTextHash: text('resumeTextHash').notNull(),
+    // Null on rows scored before JEF-450, which are therefore never reused.
+    jobDescriptionHash: text('jobDescriptionHash'),
   },
   (table) => [
     index('ResumeMatch_applicationId_idx').on(table.applicationId),

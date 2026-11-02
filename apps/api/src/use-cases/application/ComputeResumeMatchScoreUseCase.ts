@@ -17,6 +17,7 @@ import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFacto
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
+import { hashJobDescription } from '#src/use-cases/shared/hashJobDescription.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { loadDocumentText } from '#src/use-cases/shared/loadDocumentText.js';
@@ -125,6 +126,19 @@ export class ComputeResumeMatchScoreUseCase {
     }
 
     const resumeText = await this.resolveResumeText(input);
+    const resumeTextHash = hashResumeText(resumeText);
+    const jobDescriptionHash = hashJobDescription(jobDescription);
+
+    // Nothing changed since the last score: that answer is still right, so
+    // no model call and nothing to charge (JEF-450).
+    const previous = await this.findPreviousMatch(input);
+    if (
+      previous &&
+      previous.resumeTextHash === resumeTextHash &&
+      previous.jobDescriptionHash === jobDescriptionHash
+    ) {
+      return { ...previous, isStale: false };
+    }
 
     const result = await llmProvider.complete(
       [
@@ -146,9 +160,23 @@ export class ComputeResumeMatchScoreUseCase {
       documentId: input.documentId ?? null,
       ...this.parseResponse(result.content),
       generatedAt: this.deps.now(),
-      resumeTextHash: hashResumeText(resumeText),
+      resumeTextHash,
+      jobDescriptionHash,
     });
     return { ...saved, isStale: false };
+  }
+
+  private async findPreviousMatch(
+    input: ComputeResumeMatchScoreInput,
+  ): Promise<ResumeMatch | null> {
+    const matches = await this.deps.resumeMatchRepository.findByApplicationId(input.applicationId);
+    return (
+      matches.find((match) =>
+        input.documentDraftId
+          ? match.documentDraftId === input.documentDraftId
+          : match.documentId === input.documentId,
+      ) ?? null
+    );
   }
 
   private async resolveResumeText(input: ComputeResumeMatchScoreInput): Promise<string> {

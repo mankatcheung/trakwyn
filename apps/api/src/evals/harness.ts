@@ -36,7 +36,17 @@ export async function parseJobPosting(
 ): Promise<ParsedJobDescription> {
   const useCase = new ParseJobDescriptionUseCase({
     llmProviderFactory: factoryFor(provider),
-    jobPostingSourceResolver: { resolve: async ({ text }) => text ?? '' },
+    jobPostingSourceResolver: {
+      resolve: async ({ text }) => text ?? '',
+      resolveDetailed: async ({ text }) => ({
+        text: text ?? '',
+        fetchedFromUrl: false,
+        structured: null,
+      }),
+    },
+    parsedPostingCache: {
+      getOrParse: async (_text, parse) => ({ value: await parse(), cached: false }),
+    },
     parseJobDescriptionRateLimiter: unlimited,
   });
 
@@ -68,7 +78,11 @@ export async function scoreResumeMatch(
         plainText: input.resume,
       }),
     },
-    resumeMatchRepository: { upsert: async <T>(match: T): Promise<T> => match },
+    // Never a saved match: an eval must reach the model every time (JEF-450).
+    resumeMatchRepository: {
+      findByApplicationId: async () => [],
+      upsert: async <T>(match: T): Promise<T> => match,
+    },
     documentRepository: {},
     storageProvider: {},
     documentTextExtractor: {},

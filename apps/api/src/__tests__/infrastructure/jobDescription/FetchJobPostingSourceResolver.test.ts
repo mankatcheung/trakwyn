@@ -195,4 +195,40 @@ describe('FetchJobPostingSourceResolver', () => {
     const result = await resolver.resolve({ url: 'https://example.com/job' });
     expect(result).toBe('Acme & Co <engineer> "remote"');
   });
+
+  describe('resolveDetailed (JEF-450)', () => {
+    const FIXTURE = `<html><head><script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'JobPosting',
+      title: 'Platform Engineer',
+      description: `<p>${'Own the build pipeline. '.repeat(15)}</p>`,
+      hiringOrganization: { '@type': 'Organization', name: 'Acme Corp' },
+    })}</script></head><body><main>${'Own the build pipeline. '.repeat(15)}</main></body></html>`;
+
+    it('marks fetched pages and returns their JSON-LD', async () => {
+      vi.mocked(fetch).mockResolvedValue(htmlResponse(FIXTURE));
+
+      const result = await resolver.resolveDetailed({ url: 'https://example.com/job' });
+
+      expect(result.fetchedFromUrl).toBe(true);
+      expect(result.structured).toMatchObject({ role: 'Platform Engineer', company: 'Acme Corp' });
+      expect(result.text).toContain('Own the build pipeline.');
+    });
+
+    it('has no structured data for a fetched page without JSON-LD', async () => {
+      vi.mocked(fetch).mockResolvedValue(htmlResponse('<html><body>Dev at Acme</body></html>'));
+
+      const result = await resolver.resolveDetailed({ url: 'https://example.com/job' });
+
+      expect(result).toEqual({ text: 'Dev at Acme', fetchedFromUrl: true, structured: null });
+    });
+
+    it('never treats pasted text as fetched, even if it looks like JSON-LD', async () => {
+      const result = await resolver.resolveDetailed({ text: FIXTURE });
+
+      expect(result.fetchedFromUrl).toBe(false);
+      expect(result.structured).toBeNull();
+      expect(fetch).not.toHaveBeenCalled();
+    });
+  });
 });

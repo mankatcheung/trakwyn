@@ -1,11 +1,13 @@
 import type {
   IJobPostingSourceResolver,
   JobPostingSource,
+  ResolvedJobPosting,
 } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
 import { ServiceUnavailableError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { JOB_POSTING_FETCH } from '#src/infrastructure/config/constants.js';
 import { htmlToText } from './htmlToText.js';
+import { extractJobPostingJsonLd } from './jsonLdJobPosting.js';
 import { readBounded } from '#src/infrastructure/net/readBounded.js';
 
 interface Deps {
@@ -27,11 +29,21 @@ export class FetchJobPostingSourceResolver implements IJobPostingSourceResolver 
   constructor(private readonly deps: Deps) {}
 
   async resolve(source: JobPostingSource): Promise<string> {
-    if (source.text?.trim()) return source.text.trim();
+    return (await this.resolveDetailed(source)).text;
+  }
+
+  async resolveDetailed(source: JobPostingSource): Promise<ResolvedJobPosting> {
+    if (source.text?.trim()) {
+      return { text: source.text.trim(), fetchedFromUrl: false, structured: null };
+    }
 
     if (source.url?.trim()) {
       const html = await this.fetchPage(source.url.trim());
-      return this.stripHtml(html);
+      return {
+        text: this.stripHtml(html),
+        fetchedFromUrl: true,
+        structured: extractJobPostingJsonLd(html),
+      };
     }
 
     throw new Error('Either text or url must be provided');
