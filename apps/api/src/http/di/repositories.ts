@@ -40,6 +40,8 @@ import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/
 import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
 import { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
 import { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
+import { TrimmingMessageRepository } from '#src/infrastructure/db/repositories/TrimmingMessageRepository.js';
+import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import { DrizzleConversationRepository } from '#src/infrastructure/db/repositories/DrizzleConversationRepository.js';
 import { DrizzleEmailVerificationTokenRepository } from '#src/infrastructure/db/repositories/DrizzleEmailVerificationTokenRepository.js';
 import { DrizzleTotpBackupCodeRepository } from '#src/infrastructure/db/repositories/DrizzleTotpBackupCodeRepository.js';
@@ -179,7 +181,15 @@ export const repositories = {
   cookieConsentRepository: asClass(DrizzleCookieConsentRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
-  messageRepository: asClass(DrizzleMessageRepository, { lifetime: Lifetime.SINGLETON }),
+  drizzleMessageRepository: asClass(DrizzleMessageRepository, { lifetime: Lifetime.SINGLETON }),
+  messageRepository: asFunction(
+    ({ drizzleMessageRepository }: Cradle) =>
+      new TrimmingMessageRepository({
+        inner: drizzleMessageRepository,
+        keepLatest: CONTENT_LIMITS.MESSAGES_PER_CONVERSATION,
+      }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   chatActionProposalRepository: asClass(DrizzleChatActionProposalRepository, {
     lifetime: Lifetime.SINGLETON,
   }),

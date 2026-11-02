@@ -20,6 +20,7 @@ export const makeMessageRepository = (
 ): IMessageRepository => ({
   create: vi.fn().mockImplementation(async (data) => makeMessage(data)),
   findAllByConversationId: vi.fn().mockResolvedValue([]),
+  trimToLatest: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 

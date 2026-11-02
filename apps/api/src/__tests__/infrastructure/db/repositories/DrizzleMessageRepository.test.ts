@@ -92,4 +92,63 @@ describe('DrizzleMessageRepository', () => {
       expect(await repo.findAllByConversationId('conv-1')).toHaveLength(0);
     });
   });
+
+  describe('trimToLatest (JEF-339)', () => {
+    const insertMessages = async (conversationId: string, count: number) => {
+      for (let i = 1; i <= count; i++) {
+        await db.db.insert(message).values({
+          id: `${conversationId}-m${i}`,
+          conversationId,
+          role: 'user',
+          content: `message ${i}`,
+          createdAt: new Date(Date.UTC(2024, 0, i)),
+        });
+      }
+    };
+
+    it('keeps only the newest messages, oldest first', async () => {
+      await insertMessages('conv-1', 5);
+
+      await repo.trimToLatest('conv-1', 3);
+
+      const kept = await repo.findAllByConversationId('conv-1');
+      expect(kept.map((m) => m.id)).toEqual(['conv-1-m3', 'conv-1-m4', 'conv-1-m5']);
+    });
+
+    it('removes nothing when the conversation is at or under the limit', async () => {
+      await insertMessages('conv-1', 3);
+
+      await repo.trimToLatest('conv-1', 3);
+
+      expect(await repo.findAllByConversationId('conv-1')).toHaveLength(3);
+    });
+
+    it('breaks a tie on the timestamp by id, keeping the larger ids', async () => {
+      const sameInstant = new Date('2024-02-01T00:00:00Z');
+      for (const id of ['a', 'b', 'c']) {
+        await db.db.insert(message).values({
+          id,
+          conversationId: 'conv-1',
+          role: 'user',
+          content: id,
+          createdAt: sameInstant,
+        });
+      }
+
+      await repo.trimToLatest('conv-1', 2);
+
+      const kept = await repo.findAllByConversationId('conv-1');
+      expect(kept.map((m) => m.id).sort()).toEqual(['b', 'c']);
+    });
+
+    it('leaves another conversation alone', async () => {
+      await insertMessages('conv-1', 4);
+      await insertMessages('conv-2', 4);
+
+      await repo.trimToLatest('conv-1', 1);
+
+      expect(await repo.findAllByConversationId('conv-1')).toHaveLength(1);
+      expect(await repo.findAllByConversationId('conv-2')).toHaveLength(4);
+    });
+  });
 });

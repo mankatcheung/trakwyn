@@ -3,7 +3,8 @@ import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
-import { DEFAULTS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, DEFAULTS } from '#src/use-cases/constants.js';
+import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
 import type {
   ICreateInterviewRoundUseCase,
   CreateInterviewRoundInput,
@@ -24,6 +25,12 @@ export class CreateInterviewRoundUseCase implements ICreateInterviewRoundUseCase
     const app = await this.deps.applicationRepository.findById(input.applicationId);
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
+
+    assertUnderLimit(
+      await this.deps.interviewRoundRepository.countByApplicationId(input.applicationId),
+      CONTENT_LIMITS.INTERVIEW_ROUNDS_PER_APPLICATION,
+      'interview rounds on this application',
+    );
 
     const round = await this.deps.interviewRoundRepository.create({
       id: this.deps.generateId(),

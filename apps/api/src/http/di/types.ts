@@ -46,6 +46,7 @@ import type { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.
 import type { ConfirmChatActionUseCase } from '#src/use-cases/chat/ConfirmChatActionUseCase.js';
 import type { DismissChatActionUseCase } from '#src/use-cases/chat/DismissChatActionUseCase.js';
 import type { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
+import type { TrimmingMessageRepository } from '#src/infrastructure/db/repositories/TrimmingMessageRepository.js';
 import type { DrizzleConversationRepository } from '#src/infrastructure/db/repositories/DrizzleConversationRepository.js';
 import type { DrizzleEmailVerificationTokenRepository } from '#src/infrastructure/db/repositories/DrizzleEmailVerificationTokenRepository.js';
 import type { DrizzleTotpBackupCodeRepository } from '#src/infrastructure/db/repositories/DrizzleTotpBackupCodeRepository.js';
@@ -337,6 +338,7 @@ import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { GetBillingStatusUseCase } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
+import type { GetContentQuotaUseCase } from '#src/use-cases/quotas/GetContentQuotaUseCase.js';
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IBillingProvider } from '#src/use-cases/ports/IBillingProvider.js';
 import type { DrizzleBillingEventRepository } from '#src/infrastructure/db/repositories/DrizzleBillingEventRepository.js';
@@ -354,6 +356,7 @@ export interface Cradle {
   plansEnforced: boolean;
   entitlementService: IEntitlementService;
   getBillingStatusUseCase: GetBillingStatusUseCase;
+  getContentQuotaUseCase: GetContentQuotaUseCase;
   billingProvider: IBillingProvider;
   billingLiveFrom: Date | null;
   billingEventRepository: DrizzleBillingEventRepository;
@@ -420,7 +423,8 @@ export interface Cradle {
   drizzleSecurityEventRepository: DrizzleSecurityEventRepository;
   securityEventRepository: LoggingSecurityEventRepository;
   cookieConsentRepository: DrizzleCookieConsentRepository;
-  messageRepository: DrizzleMessageRepository;
+  drizzleMessageRepository: DrizzleMessageRepository;
+  messageRepository: TrimmingMessageRepository;
   chatActionProposalRepository: DrizzleChatActionProposalRepository;
   conversationRepository: DrizzleConversationRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;

@@ -6,7 +6,7 @@ import {
   APPLICATION_STATUSES,
   type ApplicationStatus,
 } from '#src/domain/application/ApplicationStatus.js';
-import { DEFAULTS } from '#src/use-cases/constants.js';
+import { CONTENT_LIMITS, DEFAULTS, FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
 import type {
   IImportUserDataUseCase,
   ImportSummary,
@@ -105,10 +105,14 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
           let notes = 0;
           if (Array.isArray(entry.notes)) {
             for (const note of entry.notes) {
+              // Notes past the per-application cap, or too long to save by
+              // hand, are left out rather than failing the whole application.
+              if (notes >= CONTENT_LIMITS.NOTES_PER_APPLICATION) break;
               if (
                 isRecord(note) &&
                 typeof note.content === 'string' &&
-                note.content.trim().length > 0
+                note.content.trim().length > 0 &&
+                note.content.length <= FIELD_LENGTH_LIMITS.NOTE_CONTENT
               ) {
                 await this.deps.noteRepository.create({
                   id: this.deps.generateId(),

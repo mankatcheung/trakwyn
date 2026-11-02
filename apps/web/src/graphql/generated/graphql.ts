@@ -218,6 +218,48 @@ export type Contact = {
   updatedAt?: Maybe<Scalars['String']['output']>;
 };
 
+export type ContentQuota = {
+  __typename?: 'ContentQuota';
+  limits?: Maybe<ContentQuotaLimits>;
+  usage?: Maybe<ContentQuotaUsage>;
+};
+
+/** The most a user may hold of each resource, and the longest a free-text field may be. The same for every plan (JEF-339). */
+export type ContentQuotaLimits = {
+  __typename?: 'ContentQuotaLimits';
+  apiTokensPerUser?: Maybe<Scalars['Int']['output']>;
+  contactsPerApplication?: Maybe<Scalars['Int']['output']>;
+  conversationsPerUser?: Maybe<Scalars['Int']['output']>;
+  documentDraftsPerApplication?: Maybe<Scalars['Int']['output']>;
+  educationsPerUser?: Maybe<Scalars['Int']['output']>;
+  expoPushTokensPerUser?: Maybe<Scalars['Int']['output']>;
+  interviewRoundsPerApplication?: Maybe<Scalars['Int']['output']>;
+  /** Past this the oldest messages are removed to make room. */
+  messagesPerConversation?: Maybe<Scalars['Int']['output']>;
+  noteContentMaxLength?: Maybe<Scalars['Int']['output']>;
+  notesPerApplication?: Maybe<Scalars['Int']['output']>;
+  offersPerApplication?: Maybe<Scalars['Int']['output']>;
+  pushSubscriptionsPerUser?: Maybe<Scalars['Int']['output']>;
+  shareLinksPerUser?: Maybe<Scalars['Int']['output']>;
+  skillsPerUser?: Maybe<Scalars['Int']['output']>;
+  tagNameMaxLength?: Maybe<Scalars['Int']['output']>;
+  tagsPerApplication?: Maybe<Scalars['Int']['output']>;
+  workExperiencesPerUser?: Maybe<Scalars['Int']['output']>;
+};
+
+/** What the user holds of each per-user resource. Per-application counts are on Application.sectionCounts and Application.tags. */
+export type ContentQuotaUsage = {
+  __typename?: 'ContentQuotaUsage';
+  apiTokens?: Maybe<Scalars['Int']['output']>;
+  conversations?: Maybe<Scalars['Int']['output']>;
+  educations?: Maybe<Scalars['Int']['output']>;
+  expoPushTokens?: Maybe<Scalars['Int']['output']>;
+  pushSubscriptions?: Maybe<Scalars['Int']['output']>;
+  shareLinks?: Maybe<Scalars['Int']['output']>;
+  skills?: Maybe<Scalars['Int']['output']>;
+  workExperiences?: Maybe<Scalars['Int']['output']>;
+};
+
 export type Conversation = {
   __typename?: 'Conversation';
   createdAt?: Maybe<Scalars['String']['output']>;
@@ -1647,6 +1689,8 @@ export type Query = {
   chatHistory?: Maybe<Array<Message>>;
   companyBriefing?: Maybe<CompanyBriefing>;
   contacts?: Maybe<Array<Contact>>;
+  /** The limits on what the signed-in user can add, and how much of each per-user limit they have used (JEF-339). */
+  contentQuota?: Maybe<ContentQuota>;
   conversations?: Maybe<Array<Conversation>>;
   documentDraft?: Maybe<DocumentDraft>;
   documentDrafts?: Maybe<Array<DocumentDraft>>;

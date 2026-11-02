@@ -438,8 +438,23 @@ export const PAGINATION = {
   MAX_LIMIT: 100,
 } as const;
 
-/** Per-user content quotas. Counters are maintained transactionally by the repositories. */
+/**
+ * Per-user content quotas.
+ *
+ * Two enforcement shapes, chosen by how contended the resource is (JEF-339):
+ * the first group keeps a counter column that a conditional `UPDATE` reserves
+ * against, which is race-safe but costs a migration and decrement bookkeeping
+ * on every delete path. The second group is a `COUNT(*)` pre-check in the use
+ * case, which is cheap and has no migration; the one-over race it allows is
+ * harmless for rows a user creates a few times a month. The asymmetry is
+ * deliberate, not an oversight.
+ *
+ * Everything in the second group is an abuse ceiling that applies to every
+ * plan, so it lives here rather than in `PLAN_LIMITS` (JEF-344). A user already
+ * over a ceiling keeps their data and simply cannot add more.
+ */
 export const CONTENT_LIMITS = {
+  // Counter column + conditional UPDATE.
   APPLICATIONS_PER_USER: 50,
   DOCUMENTS_PER_APPLICATION: 10,
   /** Total bytes of documents one user may store, across every application (Trash included, JEF-425). */
@@ -447,6 +462,44 @@ export const CONTENT_LIMITS = {
   QUESTIONS_PER_ROUND: 50,
   /** Practice questions have their own quota so they never use up the real one (JEF-393). */
   MOCK_QUESTIONS_PER_ROUND: 30,
+
+  // COUNT(*) pre-check, per application (JEF-339).
+  NOTES_PER_APPLICATION: 100,
+  CONTACTS_PER_APPLICATION: 25,
+  INTERVIEW_ROUNDS_PER_APPLICATION: 15,
+  OFFERS_PER_APPLICATION: 10,
+  /** Also bounds the tags array one create/update call may carry. */
+  TAGS_PER_APPLICATION: 20,
+  DOCUMENT_DRAFTS_PER_APPLICATION: 20,
+  COMPANY_BRIEFINGS_PER_APPLICATION: 10,
+
+  // COUNT(*) pre-check, per user (JEF-339).
+  CONVERSATIONS_PER_USER: 100,
+  WORK_EXPERIENCES_PER_USER: 30,
+  EDUCATIONS_PER_USER: 15,
+  SKILLS_PER_USER: 100,
+  SHARE_LINKS_PER_USER: 50,
+  API_TOKENS_PER_USER: 20,
+  PUSH_SUBSCRIPTIONS_PER_USER: 10,
+  EXPO_PUSH_TOKENS_PER_USER: 10,
+  MCP_OAUTH_CLIENTS_PER_USER: 20,
+
+  /**
+   * Messages kept per conversation. Past this the oldest are trimmed rather
+   * than the new one refused: the model is only ever shown the last
+   * `CHAT.MAX_HISTORY_MESSAGES`, so older rows are stored but never read.
+   */
+  MESSAGES_PER_CONVERSATION: 500,
+} as const;
+
+/**
+ * Longest free text accepted into columns that are otherwise unbounded (JEF-339).
+ * Postgres `text` does not enforce a length, so the use case must. Over-long
+ * input is refused with a `ValidationError`, never truncated.
+ */
+export const FIELD_LENGTH_LIMITS = {
+  NOTE_CONTENT: 10_000,
+  TAG_NAME: 50,
 } as const;
 
 /**
