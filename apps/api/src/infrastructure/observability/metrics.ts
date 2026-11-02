@@ -65,6 +65,8 @@ export const METRICS = {
   LLM_TOKENS: 'trakwyn.llm.tokens',
   /** Provider latency of one LLM call, in ms — same attributes as `LLM_CALLS` (JEF-113). */
   LLM_DURATION: 'trakwyn.llm.duration',
+  /** Estimated spend of LLM calls, in micro-USD — attributes: provider, model, feature, source (JEF-444). Unpriced models add nothing. */
+  LLM_COST_MICROS: 'trakwyn.llm.cost_micros',
 } as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
@@ -133,6 +135,15 @@ export type LlmCallOutcome = 'success' | 'error' | 'aborted';
 /** Which side of a call a token count is for. The cache directions break `input` down, as `LLMUsage` does. */
 export type LlmTokenDirection = 'input' | 'output' | 'cache_read' | 'cache_write';
 
+/** The cost of one priced LLM call, as `recordLlmCost` receives it (JEF-444). Bounded labels and a number, no content. */
+export interface LlmCostMetric {
+  provider: string;
+  model: string | null;
+  feature: string;
+  source: string;
+  costMicros: number;
+}
+
 /** One LLM call, as `recordLlmCall` receives it. No content: every field is a bounded label or a number. */
 export interface LlmCallMetric {
   provider: string;
@@ -193,6 +204,7 @@ export interface IMetrics {
   recordLlmCall(call: LlmCallMetric): void;
   /** Tokens one LLM call used in one direction (JEF-113). */
   recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void;
+  recordLlmCost(cost: LlmCostMetric): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -213,6 +225,7 @@ export const noopMetrics: IMetrics = {
   recordGraphqlValidationFailure: () => {},
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
+  recordLlmCost: () => {},
 };
 
 /**
@@ -242,6 +255,7 @@ class OtelMetrics implements IMetrics {
   private graphqlValidationFailures?: Counter;
   private llmCalls?: Counter;
   private llmTokens?: Counter;
+  private llmCost?: Counter;
   private llmDuration?: Histogram;
 
   private get meter() {
@@ -396,6 +410,14 @@ class OtelMetrics implements IMetrics {
       description: "Tokens used by LLM calls on a user's key, by provider and direction",
     });
     this.llmTokens.add(count, { provider, direction });
+  }
+
+  recordLlmCost({ provider, model, feature, source, costMicros }: LlmCostMetric): void {
+    this.llmCost ??= this.meter.createCounter(METRICS.LLM_COST_MICROS, {
+      description:
+        'Estimated cost of LLM calls in micro-USD, by provider, model, feature and source',
+    });
+    this.llmCost.add(costMicros, { provider, model: model ?? 'unknown', feature, source });
   }
 }
 

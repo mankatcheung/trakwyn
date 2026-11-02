@@ -8,6 +8,7 @@ import {
   makeLlmUsageEventRepository,
 } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { AI_FEATURE } from '#src/use-cases/constants.js';
 
 const NOW = new Date('2026-03-15T12:00:00.000Z');
 const NEXT_RESET = new Date('2026-04-01T00:00:00.000Z');
@@ -36,11 +37,13 @@ function build({
   const provider = { complete: vi.fn(), completeWithToolsStream: vi.fn() };
   const inner = {
     forUser: vi.fn().mockResolvedValue(provider),
-    resolveForUser: vi.fn().mockImplementation(async (_userId: string, requested?: string) => ({
-      provider,
-      providerId: requested ?? defaultLlmProvider ?? 'openai',
-      fellBackFrom: null,
-    })),
+    resolveForUser: vi
+      .fn()
+      .mockImplementation(async (_userId: string, request: { provider?: string }) => ({
+        provider,
+        providerId: request.provider ?? defaultLlmProvider ?? 'openai',
+        fellBackFrom: null,
+      })),
     fromCredentials: vi.fn().mockReturnValue(provider),
   };
   const llmUsageEventRepository = makeLlmUsageEventRepository({
@@ -68,7 +71,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [spent('openai', 9_999_999)],
       });
 
-      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).resolves.toBe(provider);
     });
 
     it('passes through while usage is below the limit', async () => {
@@ -77,7 +82,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [spent('openai', 100, 99)],
       });
 
-      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).resolves.toBe(provider);
     });
 
     it('refuses once the combined tokens meet the limit', async () => {
@@ -86,14 +93,18 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [spent('openai', 100, 100)],
       });
 
-      await expect(factory.forUser('user-1', 'openai')).rejects.toThrow(LlmLimitReachedError);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).rejects.toThrow(LlmLimitReachedError);
       expect(inner.resolveForUser).not.toHaveBeenCalled();
     });
 
     it('reports the provider and when the allowance refills', async () => {
       const { factory } = build({ keys: [key('openai', 10)], usage: [spent('openai', 10)] });
 
-      await expect(factory.forUser('user-1', 'openai')).rejects.toMatchObject({
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).rejects.toMatchObject({
         provider: 'openai',
         resetsAt: NEXT_RESET,
         code: ERROR_CODES.AI_LIMIT_REACHED,
@@ -103,13 +114,15 @@ describe('LimitEnforcingLLMProviderFactory', () => {
     it('resolves the default provider when none is named', async () => {
       const { factory } = build({ keys: [key('openai', 10)], usage: [spent('openai', 10)] });
 
-      await expect(factory.forUser('user-1')).rejects.toThrow(LlmLimitReachedError);
+      await expect(factory.forUser('user-1', { feature: AI_FEATURE.CHAT })).rejects.toThrow(
+        LlmLimitReachedError,
+      );
     });
 
     it('defers to the inner factory when the user has no default provider', async () => {
       const { factory, inner } = build({ defaultLlmProvider: null });
 
-      await factory.forUser('user-1');
+      await factory.forUser('user-1', { feature: AI_FEATURE.CHAT });
 
       expect(inner.resolveForUser).toHaveBeenCalled();
     });
@@ -120,7 +133,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [spent('anthropic', 9_999)],
       });
 
-      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).resolves.toBe(provider);
     });
 
     it('does not enforce a limit on an untracked call', async () => {
@@ -129,7 +144,14 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [spent('openai', 9_999)],
       });
 
-      await expect(factory.forUser('user-1', 'openai', null, false)).resolves.toBe(provider);
+      await expect(
+        factory.forUser('user-1', {
+          feature: AI_FEATURE.CHAT,
+          provider: 'openai',
+          model: null,
+          trackUsage: false,
+        }),
+      ).resolves.toBe(provider);
     });
 
     it('leaves fromCredentials alone — there is no saved key to have a limit', () => {
@@ -147,7 +169,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: false,
       });
 
-      await expect(factory.forUser('user-1', 'openai')).rejects.toThrow(LlmLimitReachedError);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).rejects.toThrow(LlmLimitReachedError);
     });
 
     it('uses another key with headroom when the user has opted in', async () => {
@@ -157,14 +181,15 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      const resolution = await factory.resolveForUser('user-1', 'openai');
+      const resolution = await factory.resolveForUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: 'openai',
+      });
 
       expect(resolution).toMatchObject({ providerId: 'anthropic', fellBackFrom: 'openai' });
       expect(inner.resolveForUser).toHaveBeenCalledWith(
         'user-1',
-        'anthropic',
-        null,
-        true,
+        { feature: AI_FEATURE.CHAT, provider: 'anthropic', model: null },
         expect.anything(),
       );
     });
@@ -177,7 +202,10 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      const resolution = await factory.resolveForUser('user-1', 'openai');
+      const resolution = await factory.resolveForUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: 'openai',
+      });
 
       expect(resolution).toMatchObject({ providerId: 'anthropic' });
     });
@@ -189,7 +217,10 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      const resolution = await factory.resolveForUser('user-1', 'openai');
+      const resolution = await factory.resolveForUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: 'openai',
+      });
 
       expect(resolution).toMatchObject({ providerId: 'mistral' });
     });
@@ -201,7 +232,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      await expect(factory.forUser('user-1', 'openai')).rejects.toMatchObject({
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).rejects.toMatchObject({
         provider: 'openai',
       });
     });
@@ -213,7 +246,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      await expect(factory.forUser('user-1', 'openai')).rejects.toThrow(LlmLimitReachedError);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).rejects.toThrow(LlmLimitReachedError);
     });
 
     /**
@@ -227,13 +262,15 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      await factory.resolveForUser('user-1', 'openai', 'gpt-4o-mini');
+      await factory.resolveForUser('user-1', {
+        feature: AI_FEATURE.CHAT,
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+      });
 
       expect(inner.resolveForUser).toHaveBeenCalledWith(
         'user-1',
-        'anthropic',
-        null,
-        true,
+        { feature: AI_FEATURE.CHAT, provider: 'anthropic', model: null },
         expect.anything(),
       );
     });
@@ -241,7 +278,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
     it('reports no fallback on the ordinary path', async () => {
       const { factory } = build({ keys: [key('openai', 200)], usage: [spent('openai', 10)] });
 
-      await expect(factory.resolveForUser('user-1', 'openai')).resolves.toMatchObject({
+      await expect(
+        factory.resolveForUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).resolves.toMatchObject({
         fellBackFrom: null,
       });
     });
@@ -252,21 +291,25 @@ describe('LimitEnforcingLLMProviderFactory', () => {
       const openai = key('openai', null);
       const { factory, inner } = build({ keys: [openai] });
 
-      await factory.forUser('user-1', 'openai');
+      await factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' });
 
-      expect(inner.resolveForUser).toHaveBeenCalledWith('user-1', 'openai', undefined, true, {
-        user: undefined,
-        key: openai,
-      });
+      expect(inner.resolveForUser).toHaveBeenCalledWith(
+        'user-1',
+        { feature: AI_FEATURE.CHAT, provider: 'openai' },
+        {
+          user: undefined,
+          key: openai,
+        },
+      );
     });
 
     it('loads the user once when the default provider is needed, and passes it down', async () => {
       const openai = key('openai', null);
       const { factory, inner } = build({ keys: [openai], defaultLlmProvider: 'openai' });
 
-      await factory.forUser('user-1');
+      await factory.forUser('user-1', { feature: AI_FEATURE.CHAT });
 
-      const [, , , , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
+      const [, , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
       expect(hints?.user?.defaultLlmProvider).toBe('openai');
       expect(hints?.key).toBe(openai);
     });
@@ -280,10 +323,10 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         llmFallbackWhenLimited: true,
       });
 
-      await factory.forUser('user-1', 'openai');
+      await factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' });
 
-      const [, providerId, , , hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
-      expect(providerId).toBe('anthropic');
+      const [, request, hints] = vi.mocked(inner.resolveForUser).mock.calls[0];
+      expect(request.provider).toBe('anthropic');
       expect(hints?.key).toBe(spare);
     });
   });
@@ -295,7 +338,9 @@ describe('LimitEnforcingLLMProviderFactory', () => {
         usage: [{ ...spent('openai', 10), requestCount: 500 }],
       });
 
-      await expect(factory.forUser('user-1', 'openai')).resolves.toBe(provider);
+      await expect(
+        factory.forUser('user-1', { feature: AI_FEATURE.CHAT, provider: 'openai' }),
+      ).resolves.toBe(provider);
     });
   });
 });

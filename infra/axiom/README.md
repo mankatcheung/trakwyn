@@ -127,3 +127,9 @@ Before relying on an MPL monitor, paste its query into Axiom's query editor agai
 2. Add an `axiom_monitor` to `monitors.tf` under the matching section, with `notifier_ids = [axiom_notifier.email.id]`. Put the "what to do about it" in `description`, since that is what the email shows.
 3. Add a row to both tables above.
 4. `terraform fmt && terraform validate`, then `plan`/`apply` and trigger it once.
+
+## LLM cost dashboard (JEF-444)
+
+`axiom_dashboard.llm_cost` charts `trakwyn.llm.cost_micros` (micro-USD; 1 000 000 = 1 USD) per `feature` and per `source` per day, from the metrics dataset. It is a chart, not a monitor. The counter is written by `UsageTrackingLLMProvider` for every priced call and carries `provider`, `model`, `feature` and `source`; a call on a model with no entry in `LLM_PRICES` adds nothing to it and logs `llm.price_unknown` once per model per process, so a flat chart next to real usage means a missing price. The same figures are stored per call in `LlmUsageEvent.costMicros`, which is where the baseline token sizes per feature come from (query that table, not this chart).
+
+The dashboard document is an opaque JSON string to the provider, so `terraform validate` cannot check the chart fields. After the first apply, open it in Axiom; if a chart is rejected, fix it there and paste the exported JSON back into `monitors.tf`. Like the MPL monitors, check the query in the editor first.

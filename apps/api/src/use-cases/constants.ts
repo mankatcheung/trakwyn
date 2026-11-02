@@ -157,6 +157,35 @@ export const LLM_PROVIDER = {
   CUSTOM: 'custom',
 } as const;
 
+/**
+ * The product feature behind an LLM call (JEF-444). Every real AI call site
+ * names one when it resolves a provider, so each `LlmUsageEvent` says what the
+ * tokens were spent on. `parseCv` and `talkingPoints` are not in the ticket's
+ * list: they call the factory too, and a required tag leaves no call untagged.
+ */
+export const AI_FEATURE = {
+  PARSE_JOB_DESCRIPTION: 'parseJobDescription',
+  RESUME_MATCH: 'resumeMatch',
+  COMPANY_BRIEFING: 'companyBriefing',
+  COVER_LETTER: 'coverLetter',
+  RESUME: 'resume',
+  MOCK_QUESTIONS: 'mockQuestions',
+  MOCK_ANSWER: 'mockAnswer',
+  TALKING_POINTS: 'talkingPoints',
+  PARSE_CV: 'parseCv',
+  CHAT: 'chat',
+  KEY_TEST: 'keyTest',
+} as const;
+
+export type AiFeature = (typeof AI_FEATURE)[keyof typeof AI_FEATURE];
+
+/** Who paid for an LLM call. Hosted AI 3 adds `platform`; until then every call is the user's own key. */
+export const LLM_USAGE_SOURCE = {
+  BYOK: 'byok',
+} as const;
+
+export type LlmUsageSource = (typeof LLM_USAGE_SOURCE)[keyof typeof LLM_USAGE_SOURCE];
+
 /** LLM provider API URLs, default models, and other per-provider settings. */
 export const LLM = {
   OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions',

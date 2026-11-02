@@ -1,3 +1,4 @@
+import type { AiFeature, LlmUsageSource } from '#src/use-cases/constants.js';
 import type { LlmUsageSummary } from '#src/domain/llmUsageEvent/LlmUsageEvent.js';
 
 export interface RecordLlmUsageEventData {
@@ -12,6 +13,11 @@ export interface RecordLlmUsageEventData {
   cacheWriteTokens?: number | null;
   /** True when the counts are an estimate (F3); defaults to false. */
   estimated?: boolean;
+  /** Micro-USD; null when the model has no listed price (JEF-444). */
+  costMicros?: number | null;
+  feature?: AiFeature | null;
+  /** Defaults to `byok` in the database. */
+  source?: LlmUsageSource;
 }
 
 export interface ILlmUsageEventRepository {

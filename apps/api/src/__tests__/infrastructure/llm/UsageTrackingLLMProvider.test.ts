@@ -3,6 +3,10 @@ import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingL
 import type { ILLMProvider, LLMStreamEvent } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { AI_FEATURE, LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
+import { noopMetrics } from '#src/infrastructure/observability/metrics.js';
+import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
+import { resetPriceUnknownWarnings } from '#src/infrastructure/llm/estimateCostMicros.js';
 
 function makeInner(overrides?: Partial<ILLMProvider>): ILLMProvider {
   return {
@@ -36,6 +40,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -58,13 +65,61 @@ describe('UsageTrackingLLMProvider', () => {
         cacheReadTokens: null,
         cacheWriteTokens: null,
         estimated: false,
+        // (10 × 150 000 + 5 × 600 000) / 1 000 000 = 4.5, rounded.
+        costMicros: 5,
+        feature: 'chat',
+        source: 'byok',
       });
+    });
+
+    it('counts the cost in the metric, and records null with one warning for an unpriced model (JEF-444)', async () => {
+      resetPriceUnknownWarnings();
+      const complete = vi
+        .fn()
+        .mockResolvedValue({ content: 'ok', usage: { promptTokens: 10, completionTokens: 5 } });
+      const metrics = makeFakeMetrics();
+      const logger = makeLogger();
+      const usageEventRepository = makeRepo();
+      const build = (model: string) =>
+        new UsageTrackingLLMProvider({
+          inner: makeInner({ complete }),
+          usageEventRepository,
+          logger,
+          generateId: () => 'evt',
+          userId: 'user-1',
+          provider: 'openai',
+          model,
+          feature: AI_FEATURE.COVER_LETTER,
+          source: LLM_USAGE_SOURCE.BYOK,
+          metrics,
+        });
+
+      await build('gpt-4o-mini').complete([{ role: 'user', content: 'hi' }]);
+      await build('gpt-unlisted').complete([{ role: 'user', content: 'hi' }]);
+      await build('gpt-unlisted').complete([{ role: 'user', content: 'hi' }]);
+
+      expect(metrics.llmCosts).toEqual([
+        {
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+          feature: 'coverLetter',
+          source: 'byok',
+          costMicros: 5,
+        },
+      ]);
+      expect(usageEventRepository.record).toHaveBeenLastCalledWith(
+        expect.objectContaining({ costMicros: null, feature: 'coverLetter' }),
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(1);
     });
 
     it('records nothing when the inner provider reports no usage', async () => {
       const inner = makeInner();
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -90,6 +145,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const logger = makeLogger();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger,
@@ -127,6 +185,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -155,6 +216,10 @@ describe('UsageTrackingLLMProvider', () => {
         cacheReadTokens: null,
         cacheWriteTokens: null,
         estimated: false,
+        // No model on the key: priced as Anthropic's default, Haiku 4.5.
+        costMicros: 60,
+        feature: 'chat',
+        source: 'byok',
       });
     });
 
@@ -168,6 +233,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -212,6 +280,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -238,6 +309,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),
@@ -266,6 +340,9 @@ describe('UsageTrackingLLMProvider', () => {
       });
       const usageEventRepository = makeRepo();
       const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
         inner,
         usageEventRepository,
         logger: makeLogger(),

@@ -9,6 +9,12 @@ export type LlmUsageEvent = {
   cacheWriteTokens: number | null;
   /** Counts estimated from the request rather than reported by the provider (F3). */
   estimated: boolean;
+  /** Micro-USD from the price table; null for an unpriced model or an event from before JEF-444. */
+  costMicros: number | null;
+  /** The `AiFeature` that made the call; null for events from before JEF-444. */
+  feature: string | null;
+  /** `LlmUsageSource`: `byok` is the user's own key. */
+  source: string;
   createdAt: Date;
 };
 
