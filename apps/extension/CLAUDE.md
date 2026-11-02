@@ -25,6 +25,17 @@ pnpm zip:firefox     # add-on zip + AMO sources zip in .output/
   - The job boards are covered by the content script's `matches` in `entrypoints/content.ts` (the real list), and the popup reads the tab through `activeTab`. Do not repeat them as `host_permissions`. A new board is a new `matches` entry, and the same re-approval warning applies to it.
 - Use `browser` from `wxt/browser`, never `chrome.*`. Message listeners return a promise rather than calling `sendResponse` and returning `true`, which Safari does not honour reliably.
 
+## Lint and format (JEF-493)
+
+```bash
+pnpm lint            # eslint . (flat config in eslint.config.mjs; also run by the root `pnpm lint`)
+pnpm lint:fix
+pnpm format:check    # prettier --check ., using the root .prettierrc and .prettierignore
+pnpm format
+```
+
+The config mirrors `apps/web`'s (typescript-eslint recommended, React, react-hooks, `eslint-config-prettier`) without the Tailwind and i18n plugins. It ignores `.output/`, `.wxt/`, `dist/` and `safari/`, which are generated (the root `.prettierignore` skips the same). An `eslint-disable` needs a reason beside it.
+
 ## Auth
 
 Both tokens come from the API's `*Mobile` mutations and live in `browser.storage.session` (`lib/storage.ts`). The background worker owns refresh, since the API rotates refresh tokens (`RUNTIME_MESSAGES`).

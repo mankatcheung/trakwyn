@@ -165,6 +165,9 @@ export function App() {
 
   useEffect(() => {
     init();
+    // Runs once on popup open. `init` is re-created every render, so listing
+    // it would re-run the startup load on each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function init() {
@@ -476,7 +479,7 @@ export function App() {
         />
       ) : clip.tab ? (
         <div className="empty-state">
-          <p>Couldn't read this page.</p>
+          <p>Couldn&apos;t read this page.</p>
         </div>
       ) : (
         <div className="empty-state">
