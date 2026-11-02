@@ -49,22 +49,24 @@ describe('seed steps', () => {
     await seedApplications(db.db, userId, now);
 
     const apps = await db.db.select().from(jobApplication);
-    expect(apps).toHaveLength(13);
+    expect(apps).toHaveLength(15);
 
+    // The two "Quota Demo" applications (JEF-494) are `applied` and sit at 80% and
+    // 100% of the per-application caps, so they add to every total below.
     const byStatus = (status: string) => apps.filter((a) => a.status === status);
     expect(byStatus('draft')).toHaveLength(2);
-    expect(byStatus('applied')).toHaveLength(3);
+    expect(byStatus('applied')).toHaveLength(5);
     expect(byStatus('interviewing')).toHaveLength(3);
     expect(byStatus('offered')).toHaveLength(2);
     expect(byStatus('rejected')).toHaveLength(2);
     expect(byStatus('withdrawn')).toHaveLength(1);
 
-    expect((await db.db.select().from(offer)).length).toBe(4);
-    expect((await db.db.select().from(applicationTag)).length).toBe(36);
-    expect((await db.db.select().from(note)).length).toBe(24);
-    expect((await db.db.select().from(contact)).length).toBe(11);
-    expect((await db.db.select().from(interviewRound)).length).toBe(19);
-    expect((await db.db.select().from(activityLog)).length).toBe(56);
+    expect((await db.db.select().from(offer)).length).toBe(4 + 8 + 10);
+    expect((await db.db.select().from(applicationTag)).length).toBe(36 + 16 + 20);
+    expect((await db.db.select().from(note)).length).toBe(24 + 80 + 100);
+    expect((await db.db.select().from(contact)).length).toBe(11 + 20 + 25);
+    expect((await db.db.select().from(interviewRound)).length).toBe(19 + 12 + 15);
+    expect((await db.db.select().from(activityLog)).length).toBe(56 + 2 + 180 + 27);
 
     const appIds = apps.map((a) => a.id);
     const orphanOffers = await db.db
