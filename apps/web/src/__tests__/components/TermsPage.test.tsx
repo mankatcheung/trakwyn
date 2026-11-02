@@ -83,4 +83,13 @@ describe('TermsPage', () => {
       screen.getByText(/cancels any active Pro subscription straight away/),
     ).toBeInTheDocument();
   });
+  it('sets out the AI credit rules', () => {
+    render(<TermsPage />);
+
+    expect(screen.getByRole('heading', { name: 'Trakwyn AI and credits' })).toBeInTheDocument();
+    expect(screen.getByText(/reset.*UTC/i)).toBeInTheDocument();
+    expect(screen.getByText(/do not roll over/i)).toBeInTheDocument();
+    expect(screen.getByText(/fair-use/i)).toBeInTheDocument();
+    expect(screen.getByText(/may be wrong/i)).toBeInTheDocument();
+  });
 });
