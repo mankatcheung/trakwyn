@@ -1468,7 +1468,7 @@
   "pricing.freeApplications": "50",
   "pricing.freeStorage": "100 MB",
   "pricing.proStorage": "2 GB",
-  "pricing.byok": "AI 功能使用你自己的 API 金鑰（OpenAI、Anthropic、Google AI 或 OpenRouter）。費用由服務供應商直接向你收取，Trakwyn 不會額外加價。",
+  "pricing.byok": "包含 Trakwyn AI 和每月額度。新增自己的 API 金鑰（OpenAI、Anthropic、Google AI 或 OpenRouter）即可無限使用 AI：由服務商直接向你收費，Trakwyn 不加收任何費用。",
   "plan.rowMcpAccess": "MCP 存取",
   "integrations.tokenFreePlanNote": "免費方案中，權杖僅可用於 MCP。專業版還可以讓它呼叫 Trakwyn API，例如從腳本中呼叫。",
   "welcome.stepProgress": "第 {{current}} 步,共 {{total}} 步",

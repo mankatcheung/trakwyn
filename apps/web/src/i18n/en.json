@@ -1490,7 +1490,7 @@
   "pricing.freeApplications": "50",
   "pricing.freeStorage": "100 MB",
   "pricing.proStorage": "2 GB",
-  "pricing.byok": "AI features run on your own API key (OpenAI, Anthropic, Google AI or OpenRouter). The provider bills you directly and Trakwyn adds nothing on top.",
+  "pricing.byok": "Trakwyn AI is included, with monthly credits. Add your own API key (OpenAI, Anthropic, Google AI or OpenRouter) for unlimited AI: the provider bills you directly and Trakwyn adds nothing on top.",
   "plan.rowMcpAccess": "MCP access",
   "integrations.tokenFreePlanNote": "On the Free plan a token works with MCP only. Pro also lets it call the Trakwyn API, for example from scripts.",
   "welcome.stepProgress": "Step {{current}} of {{total}}",
