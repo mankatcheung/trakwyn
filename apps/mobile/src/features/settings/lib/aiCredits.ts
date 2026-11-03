@@ -3,6 +3,15 @@ import type { AiCredits } from '../types';
 /** Above this share of the credits the meter warns rather than just reports (JEF-451). */
 export const NEARING_CREDITS_RATIO = 0.8;
 
+/**
+ * Hosted AI (Trakwyn AI) is Pro-only in phase 1: a Free plan has a limit of 0
+ * and no welcome bonus. No credits object at all, e.g. an older cached
+ * response, counts as not available.
+ */
+export function hostedAiAvailable(credits: AiCredits | null | undefined): boolean {
+  return !!credits && (credits.limit > 0 || credits.bonusRemaining > 0);
+}
+
 export interface AiCreditsStanding {
   /** Credits left this month, welcome bonus included. */
   left: number;

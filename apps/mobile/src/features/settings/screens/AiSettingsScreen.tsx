@@ -33,6 +33,8 @@ import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { AiSourceCard } from '../components/AiSourceCard';
+import { AiProNote } from '../components/AiProNote';
+import { hostedAiAvailable } from '../lib/aiCredits';
 import { createSheetStyles } from '../../../components/sheetStyles';
 
 /** Above this share of the limit the meter warns rather than just reports. */
@@ -687,7 +689,8 @@ export function AiSettingsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        {data?.aiCredits ? (
+        {data && !hostedAiAvailable(data.aiCredits) ? <AiProNote /> : null}
+        {data && hostedAiAvailable(data.aiCredits) ? (
           <AiSourceCard
             aiSource={data.aiSource}
             aiCredits={data.aiCredits}

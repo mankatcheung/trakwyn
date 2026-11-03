@@ -1,4 +1,4 @@
-import type { AiCredits } from '#/lib/billingStatus';
+import { useBillingStatus, type AiCredits } from '#/lib/billingStatus';
 
 /** The assistant mentions credits only below this share left, to avoid nagging (JEF-451). */
 export const LOW_CREDITS_FRACTION = 0.3;
@@ -19,7 +19,8 @@ export interface AiCreditsView {
  * once the plan's own size is used up only the bonus remains.
  */
 export function aiCreditsView(credits: AiCredits | undefined | null): AiCreditsView | null {
-  if (!credits) return null;
+  // A plan with no credits (Free, for now) has no hosted AI to show.
+  if (!credits || (credits.limit <= 0 && credits.bonusRemaining <= 0)) return null;
   const left =
     credits.used <= credits.limit
       ? credits.limit - credits.used + credits.bonusRemaining
@@ -33,4 +34,14 @@ export function aiCreditsView(credits: AiCredits | undefined | null): AiCreditsV
 /** True when the assistant should show the "N of M left" hint. */
 export function isLowOnCredits(view: AiCreditsView | null): boolean {
   return view !== null && view.total > 0 && view.left / view.total < LOW_CREDITS_FRACTION;
+}
+
+/**
+ * Hosted AI is Pro-only for now (JEF-451). `null` while billing status loads, so
+ * a screen can wait instead of flashing the Free layout at a Pro user.
+ */
+export function useHostedAiAvailable(): boolean | null {
+  const status = useBillingStatus();
+  if (!status) return null;
+  return aiCreditsView(status.aiCredits) !== null;
 }

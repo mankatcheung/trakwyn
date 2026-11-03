@@ -47,8 +47,34 @@ describe('OnboardingChecklist', () => {
     expect(screen.getByText('Get started with Trakwyn')).toBeInTheDocument();
     expect(screen.getByText('Create your first job application')).toBeInTheDocument();
     expect(screen.getByText('Connect MCP by generating an API token')).toBeInTheDocument();
-    expect(screen.getByText('Try AI on an application')).toBeInTheDocument();
+    expect(screen.getByText('Add an AI provider API key')).toBeInTheDocument();
     expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
+  });
+
+  describe('with Trakwyn AI (a plan that has credits, JEF-451)', () => {
+    const pro = (used: number): OnboardingChecklistData => ({
+      ...baseData,
+      me: {
+        onboardingChecklistDismissedAt: null,
+        aiCredits: { used, limit: 300, bonusRemaining: 0 },
+      },
+    });
+
+    it('offers "Try AI on an application" instead of adding a key', () => {
+      render(<OnboardingChecklist data={pro(0)} hasApplications={false} />, { wrapper: Wrapper });
+
+      expect(screen.getByText('Try AI on an application').closest('a')).toHaveAttribute(
+        'href',
+        '/applications',
+      );
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+    });
+
+    it('ticks it once a credit has been spent', () => {
+      render(<OnboardingChecklist data={pro(3)} hasApplications={false} />, { wrapper: Wrapper });
+
+      expect(screen.getByText('Try AI on an application')).toHaveClass('line-through');
+    });
   });
 
   it('renders nothing when dismissed', () => {
@@ -91,9 +117,9 @@ describe('OnboardingChecklist', () => {
       'href',
       '/settings/integrations',
     );
-    expect(screen.getByText('Try AI on an application').closest('a')).toHaveAttribute(
+    expect(screen.getByText('Add an AI provider API key').closest('a')).toHaveAttribute(
       'href',
-      '/applications',
+      '/settings/ai',
     );
     expect(screen.getByText('Add your work experience and skills').closest('a')).toHaveAttribute(
       'href',
@@ -125,7 +151,7 @@ describe('OnboardingChecklist', () => {
 
       expect(screen.getByText('Create your first job application')).toBeInTheDocument();
       expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
-      expect(screen.queryByText('Try AI on an application')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
       expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
     });
 
@@ -134,7 +160,7 @@ describe('OnboardingChecklist', () => {
         wrapper: Wrapper,
       });
 
-      expect(screen.getByText('Try AI on an application')).toBeInTheDocument();
+      expect(screen.getByText('Add an AI provider API key')).toBeInTheDocument();
       expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
       expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
     });
@@ -145,7 +171,7 @@ describe('OnboardingChecklist', () => {
       });
 
       expect(screen.getByText('Connect MCP by generating an API token')).toBeInTheDocument();
-      expect(screen.queryByText('Try AI on an application')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
       expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
     });
 

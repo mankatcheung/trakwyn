@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
-import { AiCreditsExhaustedError } from '#src/use-cases/errors/DomainError.js';
+import { AiCreditsExhaustedError, PlanRequiredError } from '#src/use-cases/errors/DomainError.js';
 import {
   AI_COST_CEILING_MICROS,
   AI_CREDITS,
@@ -21,7 +21,14 @@ function build(
   userOverrides = {},
   { reserve = true, plansEnforced = true, spent = 0 as number | Error } = {},
 ) {
-  const user = makeUser({ createdAt: OLD_ACCOUNT, ...userOverrides });
+  // Hosted AI is Pro-only for now (JEF-451), so a built user is on Pro unless a test says otherwise.
+  const user = makeUser({
+    createdAt: OLD_ACCOUNT,
+    plan: 'pro',
+    planSource: 'subscription',
+    planExpiresAt: null,
+    ...userOverrides,
+  });
   const userRepository = makeUserRepository({
     findById: vi.fn().mockResolvedValue(user),
     reserveAiCredits: vi.fn().mockResolvedValue(reserve),
@@ -53,7 +60,7 @@ describe('AiCreditService.charge', () => {
     expect(userRepository.reserveAiCredits).toHaveBeenCalledWith(
       'user-1',
       AI_CREDITS.WEIGHTS.coverLetter,
-      PLAN_LIMITS.free.aiCreditsPerMonth,
+      PLAN_LIMITS.pro.aiCreditsPerMonth,
       MONTH,
     );
   });
@@ -83,7 +90,7 @@ describe('AiCreditService.charge', () => {
     expect(userRepository.reserveAiCredits).toHaveBeenCalledWith(
       'user-1',
       1,
-      PLAN_LIMITS.free.aiCreditsPerMonth + AI_CREDITS.WELCOME_BONUS,
+      PLAN_LIMITS.pro.aiCreditsPerMonth + AI_CREDITS.WELCOME_BONUS,
       MONTH,
     );
   });
@@ -96,12 +103,12 @@ describe('AiCreditService.charge', () => {
     await service.charge('user-1', AI_FEATURE.CHAT);
 
     expect(vi.mocked(userRepository.reserveAiCredits).mock.calls[0]?.[2]).toBe(
-      PLAN_LIMITS.free.aiCreditsPerMonth,
+      PLAN_LIMITS.pro.aiCreditsPerMonth,
     );
   });
 
   it('uses the Pro size on Pro and the trial size on a trial', async () => {
-    const pro = build({ plan: 'pro', planSource: 'subscription' });
+    const pro = build();
     await pro.service.charge('user-1', AI_FEATURE.CHAT);
     expect(vi.mocked(pro.userRepository.reserveAiCredits).mock.calls[0]?.[2]).toBe(
       PLAN_LIMITS.pro.aiCreditsPerMonth,
@@ -118,28 +125,43 @@ describe('AiCreditService.charge', () => {
     );
   });
 
-  it('gives the Free size when plans are not enforced', async () => {
-    const { service, userRepository } = build({ plan: 'free' }, { plansEnforced: false });
+  it('gives a Free user no credits, and no welcome bonus, with plans enforced or not', async () => {
+    for (const plansEnforced of [true, false]) {
+      const { service, userRepository } = build(
+        { plan: 'free', planSource: null, createdAt: new Date(NOW.getTime() - DAY) },
+        { plansEnforced },
+      );
 
-    await service.charge('user-1', AI_FEATURE.CHAT);
+      const err = await service.charge('user-1', AI_FEATURE.CHAT).catch((e: unknown) => e);
 
-    expect(vi.mocked(userRepository.reserveAiCredits).mock.calls[0]?.[2]).toBe(
-      PLAN_LIMITS.free.aiCreditsPerMonth,
-    );
+      expect(PLAN_LIMITS.free.aiCreditsPerMonth).toBe(0);
+      expect(err).toBeInstanceOf(PlanRequiredError);
+      expect(err).toMatchObject({ code: 'PLAN_REQUIRED' });
+      expect(userRepository.reserveAiCredits).not.toHaveBeenCalled();
+    }
   });
 
-  it('throws AI_CREDITS_EXHAUSTED with the limit and the reset date when refused', async () => {
-    const { service } = build({}, { reserve: false });
+  it('past the credits a Pro user is refused only at the fair-use ceiling', async () => {
+    const { service } = build({}, { reserve: false, spent: AI_COST_CEILING_MICROS.pro });
 
     const err = await service.charge('user-1', AI_FEATURE.CHAT).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(AiCreditsExhaustedError);
     expect(err).toMatchObject({
       code: 'AI_CREDITS_EXHAUSTED',
-      limit: PLAN_LIMITS.free.aiCreditsPerMonth,
+      limit: PLAN_LIMITS.pro.aiCreditsPerMonth,
       resetsAt: new Date('2026-12-01T00:00:00.000Z'),
     });
-    expect((err as Error).message).toBe(
+  });
+
+  /**
+   * Free has no credits, so this message is unreachable from the service until
+   * Free credits come back (the follow-up to JEF-451); its text stays pinned.
+   */
+  it('words the credits-used-up error for a plan whose credits have run out', () => {
+    const err = new AiCreditsExhaustedError(30, new Date('2026-12-01T00:00:00.000Z'));
+
+    expect(err.message).toBe(
       "You've used this month's AI credits. They reset on December 1, 2026. Upgrade to Pro or add your own API key to keep going.",
     );
   });
@@ -162,7 +184,7 @@ describe('AiCreditService.standing', () => {
 
     expect(service.standing(user)).toEqual({
       used: 12,
-      limit: PLAN_LIMITS.free.aiCreditsPerMonth,
+      limit: PLAN_LIMITS.pro.aiCreditsPerMonth,
       bonusRemaining: 0,
       resetsAt: new Date('2026-12-01T00:00:00.000Z'),
     });
@@ -179,25 +201,38 @@ describe('AiCreditService.standing', () => {
 
   it('shows the full bonus while the plan size is not yet spent, and shrinks it after', () => {
     const createdAt = new Date(NOW.getTime() - DAY);
+    const size = PLAN_LIMITS.pro.aiCreditsPerMonth;
     const fresh = build({ createdAt, aiCreditsUsed: 10, aiCreditsPeriodStart: MONTH });
     expect(fresh.service.standing(fresh.user).bonusRemaining).toBe(AI_CREDITS.WELCOME_BONUS);
 
-    const dipping = build({ createdAt, aiCreditsUsed: 35, aiCreditsPeriodStart: MONTH });
-    expect(dipping.service.standing(dipping.user).bonusRemaining).toBe(15);
+    const dipping = build({ createdAt, aiCreditsUsed: size + 5, aiCreditsPeriodStart: MONTH });
+    expect(dipping.service.standing(dipping.user).bonusRemaining).toBe(
+      AI_CREDITS.WELCOME_BONUS - 5,
+    );
 
-    const spent = build({ createdAt, aiCreditsUsed: 50, aiCreditsPeriodStart: MONTH });
+    const spent = build({
+      createdAt,
+      aiCreditsUsed: size + AI_CREDITS.WELCOME_BONUS,
+      aiCreditsPeriodStart: MONTH,
+    });
     expect(spent.service.standing(spent.user).bonusRemaining).toBe(0);
+
+    const free = build({ plan: 'free', planSource: null, createdAt });
+    expect(free.service.standing(free.user)).toMatchObject({ limit: 0, bonusRemaining: 0 });
   });
 });
 
 describe('AiCreditService.charge past the credit limit (JEF-448)', () => {
   const PRO = { plan: 'pro' as const, planExpiresAt: null, planSource: 'subscription' as const };
 
-  it('refuses a Free user at the limit without reading cost', async () => {
-    const { service, llmUsageEventRepository } = build({}, { reserve: false });
+  it('refuses a Free user with an upgrade prompt, without reading cost', async () => {
+    const { service, llmUsageEventRepository } = build(
+      { plan: 'free', planSource: null },
+      { reserve: false },
+    );
 
     await expect(service.charge('user-1', AI_FEATURE.CHAT)).rejects.toBeInstanceOf(
-      AiCreditsExhaustedError,
+      PlanRequiredError,
     );
     expect(llmUsageEventRepository.sumCostMicros).not.toHaveBeenCalled();
   });
@@ -244,7 +279,7 @@ describe('AiCreditService.charge past the credit limit (JEF-448)', () => {
     );
 
     await expect(service.charge('user-1', AI_FEATURE.CHAT)).rejects.toBeInstanceOf(
-      AiCreditsExhaustedError,
+      PlanRequiredError,
     );
     expect(llmUsageEventRepository.sumCostMicros).not.toHaveBeenCalled();
   });

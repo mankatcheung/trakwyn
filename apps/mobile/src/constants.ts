@@ -32,6 +32,9 @@ export const CHAT_MESSAGE_MAX_CHARS = 8000;
 /** The chat composer grows with its content up to this many lines, then scrolls (JEF-481). */
 export const CHAT_INPUT_MAX_LINES = 10;
 
+/** The action needs a plan the user is not on; for an AI call, Trakwyn AI is Pro-only (JEF-451). */
+export const PLAN_REQUIRED = 'PLAN_REQUIRED';
+
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   VALIDATION: 'VALIDATION',

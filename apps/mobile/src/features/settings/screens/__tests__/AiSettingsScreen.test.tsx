@@ -260,4 +260,22 @@ describe('AiSettingsScreen', () => {
     await fireEvent.press(getByTestId('ai-source-option-own'));
     expect(mutate).toHaveBeenCalledWith('own', expect.any(Object));
   });
+
+  it('Free: hides the meter and the picker, and points at Pro (JEF-451)', async () => {
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: llmApiKeysData({
+        aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+      }),
+      isLoading: false,
+      isError: false,
+    } as never);
+
+    const { getByTestId, queryByTestId, getByText } = await render(<AiSettingsScreen />);
+    expect(getByText('Trakwyn AI is included with Pro')).toBeTruthy();
+    expect(getByTestId('ai-pro-note-upgrade-button')).toBeTruthy();
+    expect(queryByTestId('ai-source-card')).toBeNull();
+    expect(queryByTestId('ai-credits-left')).toBeNull();
+    // The own-key flow is still there.
+    expect(getByTestId('open-add-provider-button')).toBeTruthy();
+  });
 });

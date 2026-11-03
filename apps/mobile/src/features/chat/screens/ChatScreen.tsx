@@ -25,7 +25,7 @@ import { ChatProposalCard } from '../components/ChatProposalCard';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { codedErrorMessage, getErrorCode, getErrorMessage } from '../../../lib/errors';
-import { ERROR_CODES } from '../../../constants';
+import { ERROR_CODES, PLAN_REQUIRED } from '../../../constants';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { CHAT_INPUT_MAX_LINES, CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
 
@@ -178,8 +178,12 @@ export function ChatScreen() {
       ) : null}
 
       {sendError ? (
-        sendErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED ? (
-          <AiCreditsExhaustedNotice surface="assistant" message={sendError} />
+        sendErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED || sendErrorCode === PLAN_REQUIRED ? (
+          <AiCreditsExhaustedNotice
+            surface="assistant"
+            message={sendError}
+            reason={sendErrorCode === PLAN_REQUIRED ? 'plan' : 'credits'}
+          />
         ) : sendErrorCode === ERROR_CODES.EMAIL_NOT_VERIFIED ||
           sendErrorCode === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE ? (
           <Text style={styles.error}>{codedErrorMessage(sendErrorCode) ?? sendError}</Text>

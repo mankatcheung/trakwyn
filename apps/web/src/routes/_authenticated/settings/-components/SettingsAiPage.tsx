@@ -11,6 +11,7 @@ import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
 import { AiSourcePicker, type AiSource } from './AiSourcePicker';
 import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { billingStatusQueryKey } from '#/lib/billingStatus';
+import { useHostedAiAvailable } from '#/lib/aiCredits';
 import { Alert, Button, Card, Checkbox, Skeleton, Textarea } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,
@@ -38,6 +39,7 @@ import {
 export function SettingsAiPage() {
   const { t } = useLocale();
   const qc = useQueryClient();
+  const hostedAi = useHostedAiAvailable();
 
   // AI API keys
   const { data: llmData, isLoading: llmKeysLoading } = useQuery({
@@ -233,23 +235,39 @@ export function SettingsAiPage() {
         </Link>
       </div>
 
-      {/* ── Trakwyn AI: source and credits (JEF-451) ── */}
-      <Card className="space-y-4 p-5">
-        <div>
+      {/* ── Trakwyn AI: source and credits, Pro only for now (JEF-451) ── */}
+      {hostedAi === true && (
+        <Card className="space-y-4 p-5">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t('aiSource.title')}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiSource.description')}</p>
+          </div>
+          <AiCreditsMeter />
+          <AiSourcePicker
+            value={(llmData?.me.aiSource as AiSource | undefined) ?? 'auto'}
+            hasOwnKey={llmApiKeys.length > 0}
+            disabled={updatingAiSource || llmKeysLoading}
+            onChange={onChangeAiSource}
+          />
+          {aiSourceError && <Alert>{aiSourceError}</Alert>}
+        </Card>
+      )}
+      {hostedAi === false && (
+        <Card className="p-5">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            {t('aiSource.title')}
+            {t('aiSource.proTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiSource.description')}</p>
-        </div>
-        <AiCreditsMeter />
-        <AiSourcePicker
-          value={(llmData?.me.aiSource as AiSource | undefined) ?? 'auto'}
-          hasOwnKey={llmApiKeys.length > 0}
-          disabled={updatingAiSource || llmKeysLoading}
-          onChange={onChangeAiSource}
-        />
-        {aiSourceError && <Alert>{aiSourceError}</Alert>}
-      </Card>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('aiSource.proOnly')}</p>
+          <Link
+            to="/settings/plan"
+            className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-400"
+          >
+            {t('aiCredits.upgrade')}
+          </Link>
+        </Card>
+      )}
 
       {/* ── AI features ── */}
       <Card className="overflow-hidden">

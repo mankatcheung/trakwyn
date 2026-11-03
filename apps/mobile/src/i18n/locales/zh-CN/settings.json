@@ -75,6 +75,10 @@
       "exhaustedFallback": "本月的 AI 额度已用完。",
       "upgrade": "升级",
       "addOwnKey": "添加你自己的密钥"
+    },
+    "proNote": {
+      "title": "Pro 套餐包含 Trakwyn AI",
+      "help": "升级后无需密钥即可使用 AI，或在下方添加你自己的 API 密钥免费使用 AI。"
     }
   },
   "danger": {

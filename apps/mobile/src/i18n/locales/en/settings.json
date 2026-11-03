@@ -76,6 +76,10 @@
       "exhaustedFallback": "You've used this month's AI credits.",
       "upgrade": "Upgrade",
       "addOwnKey": "Add your own key"
+    },
+    "proNote": {
+      "title": "Trakwyn AI is included with Pro",
+      "help": "Upgrade to use AI without a key, or add your own API key below to use AI for free."
     }
   },
   "danger": {

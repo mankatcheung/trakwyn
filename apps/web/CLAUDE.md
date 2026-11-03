@@ -59,6 +59,7 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 
 ## Hosted AI in the UI (JEF-451)
 
+- **Pro-only for now:** `useHostedAiAvailable()` (`lib/aiCredits.ts`) is false when the plan has no credits (`limit` and `bonusRemaining` are 0). Free then sees no meter, no source picker and no credits card, the old "add an API key" empty states and checklist item, and a "Trakwyn AI is included with Pro" note in Settings → AI; Free shows "Not included" in the credits rows. The hook is `null` while billing status loads.
 - **Credits** come from `billingStatus.aiCredits` (`useBillingStatus`); `lib/aiCredits.ts` turns them into "left of total" (the welcome bonus is spent last). `AiCreditsMeter` shows it always in Settings → AI and Plan, and as a one-line hint in the assistant only below 30% left.
 - **Source picker** (Settings → AI) calls `setAiSource` (`auto` | `trakwyn` | `own`); "My own key" is disabled without a key. The assistant no longer blocks on "add an API key": with none, the API answers with Trakwyn AI, and `AI_NOT_CONFIGURED` still renders the add-key copy when an instance has hosted AI off.
 - **`AiErrorMessage`** handles `AI_CREDITS_EXHAUSTED` (the API's message names the reset date; Upgrade and Add your own key links, with `ai_credits_exhausted_shown`, `ai_upgrade_clicked`, `ai_add_key_clicked`), `EMAIL_NOT_VERIFIED` and `AI_TEMPORARILY_UNAVAILABLE` (not emitted by the API yet).

@@ -72,6 +72,7 @@ describe('AI source card and credits', () => {
     const { getByTestId } = await render(card(30));
     expect(captureEvent).toHaveBeenCalledWith('ai_credits_exhausted_shown', {
       surface: 'settings',
+      reason: 'credits',
     });
 
     await fireEvent.press(getByTestId('ai-upgrade-button'));

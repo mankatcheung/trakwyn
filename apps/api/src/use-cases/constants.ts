@@ -222,7 +222,7 @@ export const AI_CREDITS = {
     chat: 1,
     keyTest: 0,
   } as const satisfies Record<AiFeature, number>,
-  /** Extra credits a new account has for its first `WELCOME_DAYS`, on top of the plan's monthly size. */
+  /** Extra credits a new account has for its first `WELCOME_DAYS`, on top of the plan's monthly size. A plan with no credits gets none. */
   WELCOME_BONUS: 20,
   WELCOME_DAYS: 14,
 } as const;
@@ -621,7 +621,8 @@ export const PLAN_LIMITS = {
   free: {
     applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
     documentBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
-    aiCreditsPerMonth: 30,
+    // Hosted AI is Pro-only for now: Free has no credits and gets no welcome bonus (JEF-451).
+    aiCreditsPerMonth: 0,
   },
   pro: {
     applications: null,

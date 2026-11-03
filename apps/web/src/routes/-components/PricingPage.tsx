@@ -31,7 +31,7 @@ const ROWS: ComparisonRow[] = [
   { labelKey: 'plan.rowAi', free: { text: 'plan.unlimited' }, pro: { text: 'plan.unlimited' } },
   {
     labelKey: 'plan.rowAiCredits',
-    free: { text: 'pricing.freeAiCredits' },
+    free: { text: 'plan.notIncluded' },
     pro: { text: 'pricing.proAiCredits' },
   },
   { labelKey: 'plan.rowMcpAccess', free: { included: true }, pro: { included: true } },

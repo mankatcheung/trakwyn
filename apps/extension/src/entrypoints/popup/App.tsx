@@ -31,6 +31,13 @@ import { UserHeader } from './UserHeader';
 import { ClipCard } from './ClipCard';
 import { ReadButtons, type ReadMethod } from './ReadButtons';
 
+/** AI failures whose way out is a key of the user's own or the Pro plan (JEF-451). */
+const NOTICE_CODES_WITH_UPGRADE_LINKS: ReadonlySet<string> = new Set([
+  API_ERROR_CODES.AI_NOT_CONFIGURED,
+  API_ERROR_CODES.AI_CREDITS_EXHAUSTED,
+  API_ERROR_CODES.PLAN_REQUIRED,
+]);
+
 interface ReadyScreen {
   type: 'ready';
   clip: Clip;
@@ -454,22 +461,14 @@ export function App() {
       {clip.notice && (
         <div className="error-box" role="status">
           {clip.notice}{' '}
-          {clip.noticeCode === API_ERROR_CODES.AI_CREDITS_EXHAUSTED && (
-            <>
-              <a href={planUrl} target="_blank" rel="noreferrer">
-                Upgrade
-              </a>{' '}
-              or{' '}
-              <a href={settingsUrl} target="_blank" rel="noreferrer">
-                add your own key
-              </a>
-              .{' '}
-            </>
-          )}
-          {clip.noticeCode === API_ERROR_CODES.AI_NOT_CONFIGURED && (
+          {clip.noticeCode && NOTICE_CODES_WITH_UPGRADE_LINKS.has(clip.noticeCode) && (
             <>
               <a href={settingsUrl} target="_blank" rel="noreferrer">
                 Add your own key
+              </a>{' '}
+              or{' '}
+              <a href={planUrl} target="_blank" rel="noreferrer">
+                upgrade to Pro
               </a>
               .{' '}
             </>

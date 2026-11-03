@@ -21,7 +21,8 @@ import type { Conversation } from '../types';
 import { useLlmApiKeys } from '../../settings/hooks/useLlmApiKeys';
 import type { LlmApiKey } from '../../settings/types';
 import { getErrorCode, getErrorMessage } from '../../../lib/errors';
-import { ERROR_CODES } from '../../../constants';
+import { ERROR_CODES, PLAN_REQUIRED } from '../../../constants';
+import { hostedAiAvailable } from '../../settings/lib/aiCredits';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -65,11 +66,13 @@ export function ConversationsScreen() {
     }
   };
 
+  const hostedAvailable =
+    hostedAiAvailable(llmApiKeys?.aiCredits) && llmApiKeys?.aiSource !== 'own';
+
   const onFabPress = () => {
     if (isStarting) return;
-    // Trakwyn AI needs no key: with credits to spend (or an own key to fall back on)
-    // the picker opens; only an account that can use neither is sent to settings.
-    const hostedAvailable = llmApiKeys?.aiSource !== 'own' && !!llmApiKeys?.aiCredits;
+    // Trakwyn AI (Pro) needs no key: the picker opens for it, or for an own key;
+    // an account with neither is sent to settings.
     if (!llmApiKeys || (llmApiKeys.keys.length === 0 && !hostedAvailable)) {
       Alert.alert(t('conversations.noKeysTitle'), t('conversations.noKeysMessage'), [
         { text: t('conversations.cancel'), style: 'cancel' },
@@ -117,8 +120,12 @@ export function ConversationsScreen() {
   return (
     <View style={styles.container}>
       {startError ? (
-        startErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED ? (
-          <AiCreditsExhaustedNotice surface="conversations" message={startError} />
+        startErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED || startErrorCode === PLAN_REQUIRED ? (
+          <AiCreditsExhaustedNotice
+            surface="conversations"
+            message={startError}
+            reason={startErrorCode === PLAN_REQUIRED ? 'plan' : 'credits'}
+          />
         ) : (
           <Text style={styles.error}>{startError}</Text>
         )
@@ -165,7 +172,7 @@ export function ConversationsScreen() {
       {pickerOpen && (
         <ConversationProviderPicker
           keys={llmApiKeys?.keys ?? []}
-          hosted={llmApiKeys?.aiSource !== 'own' && !!llmApiKeys?.aiCredits}
+          hosted={hostedAvailable}
           onSelectHosted={() => void onNewConversation()}
           defaultProvider={llmApiKeys?.defaultProvider ?? null}
           onSelect={(key) => void onNewConversation(key)}

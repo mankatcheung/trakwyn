@@ -13,6 +13,10 @@ describe('aiCreditsView', () => {
     expect(aiCreditsView(undefined)).toBeNull();
   });
 
+  it('returns null for a plan with no credits, so Free shows no meter (JEF-451)', () => {
+    expect(aiCreditsView(credits(0, 0, 0))).toBeNull();
+  });
+
   it('counts what is left of the plan size', () => {
     expect(aiCreditsView(credits(18))).toMatchObject({ left: 12, total: 30, level: 'ok' });
   });

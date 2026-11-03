@@ -536,7 +536,7 @@
   "experience.advanced": "Advanced",
   "experience.expert": "Expert",
   "integrations.aiFeaturesTitle": "AI features",
-  "integrations.aiFeaturesDescription": "Add your own API key from one or more providers to enable the assistant chatbot, cover letter generation, and job description auto-fill. Without a key they run on Trakwyn AI and your monthly credits; with one, nothing counts against your credits. Automatic features (cover letters, job description parsing, resume match) use your default provider below; the assistant chatbot lets you choose the provider and model per conversation.",
+  "integrations.aiFeaturesDescription": "Add your own API key from one or more providers to enable the assistant chatbot, cover letter generation, and job description auto-fill. Pro also includes Trakwyn AI, with monthly credits, so it works without a key. Automatic features (cover letters, job description parsing, resume match) use your default provider below; the assistant chatbot lets you choose the provider and model per conversation.",
   "integrations.default": "Default",
   "integrations.makeDefault": "Make default",
   "integrations.settingDefault": "Setting…",
@@ -1490,7 +1490,7 @@
   "pricing.freeApplications": "50",
   "pricing.freeStorage": "100 MB",
   "pricing.proStorage": "2 GB",
-  "pricing.byok": "Trakwyn AI is included, with monthly credits. Add your own API key (OpenAI, Anthropic, Google AI or OpenRouter) for unlimited AI: the provider bills you directly and Trakwyn adds nothing on top.",
+  "pricing.byok": "Trakwyn AI, with monthly credits, is included with Pro. On any plan, add your own API key (OpenAI, Anthropic, Google AI or OpenRouter) for unlimited AI: the provider bills you directly and Trakwyn adds nothing on top.",
   "plan.rowMcpAccess": "MCP access",
   "integrations.tokenFreePlanNote": "On the Free plan a token works with MCP only. Pro also lets it call the Trakwyn API, for example from scripts.",
   "welcome.stepProgress": "Step {{current}} of {{total}}",
@@ -1598,10 +1598,11 @@
   "aiSource.ownNeedsKey": "Add an API key below to use this option.",
   "aiSource.updateFailed": "Could not change the AI source.",
   "plan.rowAiCredits": "Trakwyn AI credits",
-  "pricing.freeAiCredits": "30 AI credits/month",
   "pricing.proAiCredits": "300 AI credits/month, fair use",
   "assistant.usingTrakwynAi": "Answers come from Trakwyn AI.",
   "assistant.useOwnKey": "Use your own key",
   "onboardingChecklist.tryAi": "Try AI on an application",
-  "plan.creditsPerMonth": "{{n}} per month"
+  "plan.creditsPerMonth": "{{n}} per month",
+  "aiSource.proTitle": "Trakwyn AI",
+  "aiSource.proOnly": "Trakwyn AI is included with Pro. On the Free plan, add your own API key below to use AI."
 }

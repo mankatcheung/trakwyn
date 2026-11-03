@@ -1,4 +1,4 @@
-import { aiCreditsStanding } from '../aiCredits';
+import { aiCreditsStanding, hostedAiAvailable } from '../aiCredits';
 
 const credits = (used: number, limit = 30, bonusRemaining = 0) => ({
   used,
@@ -25,5 +25,18 @@ describe('aiCreditsStanding', () => {
       exhausted: true,
       nearing: false,
     });
+  });
+});
+
+describe('hostedAiAvailable (Pro-only in phase 1)', () => {
+  it('is on for a plan with credits, or a welcome bonus still unspent', () => {
+    expect(hostedAiAvailable(credits(0, 300))).toBe(true);
+    expect(hostedAiAvailable(credits(0, 0, 5))).toBe(true);
+  });
+
+  it('is off for Free (no credits, no bonus) and when there is no credits object', () => {
+    expect(hostedAiAvailable(credits(0, 0, 0))).toBe(false);
+    expect(hostedAiAvailable(null)).toBe(false);
+    expect(hostedAiAvailable(undefined)).toBe(false);
   });
 });

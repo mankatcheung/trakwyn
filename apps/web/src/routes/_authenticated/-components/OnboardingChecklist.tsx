@@ -55,6 +55,8 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
   });
 
   const goals = data.me?.onboardingGoals ?? [];
+  const hostedAi =
+    (data.me?.aiCredits?.limit ?? 0) > 0 || (data.me?.aiCredits?.bonusRemaining ?? 0) > 0;
   const allItems: ChecklistItem[] = [
     {
       key: 'application',
@@ -70,10 +72,18 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
     },
     {
       key: 'tryAi',
-      label: t('onboardingChecklist.tryAi'),
-      // Hosted credits spent, or a key of their own on file: either way they have used AI.
-      done: (data.me?.aiCredits?.used ?? 0) > 0 || (data.llmApiKeys ?? []).length > 0,
-      to: '/applications',
+      // Hosted AI is Pro-only for now, so a Free user is still sent to add a key (JEF-451).
+      ...(hostedAi
+        ? {
+            label: t('onboardingChecklist.tryAi'),
+            done: (data.me?.aiCredits?.used ?? 0) > 0 || (data.llmApiKeys ?? []).length > 0,
+            to: '/applications',
+          }
+        : {
+            label: t('onboardingChecklist.addAiKey'),
+            done: (data.llmApiKeys ?? []).length > 0,
+            to: '/settings/ai',
+          }),
     },
     {
       key: 'experience',

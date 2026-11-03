@@ -370,10 +370,12 @@ export interface AiParsedJob {
 const AI_CREDITS_EXHAUSTED_FALLBACK =
   "You've used this month's AI credits. They reset on the 1st of next month.";
 
+const PLAN_REQUIRED_FALLBACK = 'Trakwyn AI is part of the Pro plan.';
+
 /** What the user is told when the AI read fails with one of the API's codes. */
 const AI_ERROR_MESSAGES: Record<string, string> = {
   [API_ERROR_CODES.AI_NOT_CONFIGURED]:
-    "AI reading isn't available on your account yet. Add your own AI key in Trakwyn settings.",
+    'Add your own AI API key, or upgrade to Pro for Trakwyn AI, to read postings with AI.',
   [API_ERROR_CODES.EMAIL_NOT_VERIFIED]: 'Verify your email address to read postings with AI.',
   [API_ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE]:
     'Trakwyn AI is temporarily unavailable. Try again in a few minutes.',
@@ -398,6 +400,10 @@ export async function parseJobDescription(text: string): Promise<AiParsedJob> {
   } catch (err) {
     if (err instanceof ApiError && err.code === API_ERROR_CODES.AI_CREDITS_EXHAUSTED) {
       throw new ApiError(err.message || AI_CREDITS_EXHAUSTED_FALLBACK, err.code);
+    }
+    // Trakwyn AI is Pro-only for now: the API's own message says which plan the feature needs
+    if (err instanceof ApiError && err.code === API_ERROR_CODES.PLAN_REQUIRED) {
+      throw new ApiError(err.message || PLAN_REQUIRED_FALLBACK, err.code);
     }
     const message = err instanceof ApiError && err.code && AI_ERROR_MESSAGES[err.code];
     if (message) throw new ApiError(message, err.code);

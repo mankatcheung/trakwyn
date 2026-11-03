@@ -40,7 +40,7 @@ function build(opts: {
 }) {
   const user = makeUser({
     aiSource: opts.aiSource,
-    plan: opts.plan ?? 'free',
+    plan: opts.plan ?? 'pro',
     planExpiresAt: null,
     defaultLlmProvider: opts.defaultLlmProvider ?? (opts.hasKey ? LLM_PROVIDER.OPENAI : null),
   });
@@ -89,6 +89,13 @@ describe('platform resolution', () => {
     expect(llmUsageEventRepository.record).toHaveBeenCalledWith(
       expect.objectContaining({ source: 'platform', provider: 'googleai' }),
     );
+  });
+
+  it('keeps AI_NOT_CONFIGURED (null) for a Free user with no key: hosted AI is Pro-only (JEF-451)', async () => {
+    const { limited, platformFactory } = build({ aiSource: 'auto', hasKey: false, plan: 'free' });
+
+    expect(await limited.resolveForUser('user-1', request)).toBeNull();
+    expect(platformFactory.legs).not.toHaveBeenCalled();
   });
 
   it('keeps AI_NOT_CONFIGURED (null) when the flag is off', async () => {

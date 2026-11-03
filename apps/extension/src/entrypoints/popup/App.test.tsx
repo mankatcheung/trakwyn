@@ -474,21 +474,26 @@ describe('popup App — AI parsing (JEF-420)', () => {
   it('keeps the clip and says why when the AI fails', async () => {
     pageWith(complete);
     vi.mocked(parseJobDescription).mockRejectedValue(
-      new ApiError('Add your AI provider key in Trakwyn settings.', 'AI_NOT_CONFIGURED'),
+      new ApiError('Add your own AI API key, or upgrade to Pro.', 'AI_NOT_CONFIGURED'),
     );
 
     rendered = await render(<App />);
     await act(async () => button('Read with AI')!.click());
 
-    expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
-      'AI provider key',
+    const notice = rendered.container.querySelector('[role="status"]')!;
+    expect(notice.textContent).toContain('upgrade to Pro');
+    expect(notice.querySelector('a[href$="/settings/ai"]')?.getAttribute('href')).toBe(
+      `${DEFAULT_WEB_URL}/settings/ai`,
+    );
+    expect(notice.querySelector('a[href$="/settings/plan"]')?.getAttribute('href')).toBe(
+      `${DEFAULT_WEB_URL}/settings/plan`,
     );
     expect(rendered.container.textContent).toContain('Monument');
     expect(button('Read with AI')!.disabled).toBe(false);
     expect(captureException).not.toHaveBeenCalled();
   });
 
-  it('keeps "Read with AI" on for a user with no key (Trakwyn AI)', async () => {
+  it('keeps "Read with AI" on whatever the plan or keys', async () => {
     pageWith(complete);
 
     rendered = await render(<App />);
@@ -518,6 +523,21 @@ describe('popup App — AI parsing (JEF-420)', () => {
       `${DEFAULT_WEB_URL}/settings/ai`,
     );
     expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("shows the API's PLAN_REQUIRED message with both links", async () => {
+    pageWith(complete);
+    vi.mocked(parseJobDescription).mockRejectedValue(
+      new ApiError('Trakwyn AI is a Pro feature.', 'PLAN_REQUIRED'),
+    );
+
+    rendered = await render(<App />);
+    await act(async () => button('Read with AI')!.click());
+
+    const notice = rendered.container.querySelector('[role="status"]')!;
+    expect(notice.textContent).toContain('Trakwyn AI is a Pro feature.');
+    expect(notice.querySelector('a[href$="/settings/plan"]')).not.toBeNull();
+    expect(notice.querySelector('a[href$="/settings/ai"]')).not.toBeNull();
   });
 
   it.each(['EMAIL_NOT_VERIFIED', 'AI_TEMPORARILY_UNAVAILABLE', 'SOME_FUTURE_CODE'])(

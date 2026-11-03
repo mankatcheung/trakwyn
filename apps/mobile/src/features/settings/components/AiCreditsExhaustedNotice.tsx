@@ -12,6 +12,8 @@ interface AiCreditsExhaustedNoticeProps {
   message?: string | null;
   /** Where the notice is shown, for the analytics events. */
   surface: 'assistant' | 'settings' | 'conversations';
+  /** `credits`: a Pro user's month is spent. `plan`: a Free user asked for Trakwyn AI (PLAN_REQUIRED). */
+  reason?: 'credits' | 'plan';
 }
 
 /**
@@ -19,19 +21,27 @@ interface AiCreditsExhaustedNoticeProps {
  * forward: upgrade (billing lives on the web, the app has no in-app purchase)
  * or add the user's own key.
  */
-export function AiCreditsExhaustedNotice({ message, surface }: AiCreditsExhaustedNoticeProps) {
+export function openPlanPage() {
+  void Linking.openURL(`${WEB_URL}/settings/plan`);
+}
+
+export function AiCreditsExhaustedNotice({
+  message,
+  surface,
+  reason = 'credits',
+}: AiCreditsExhaustedNoticeProps) {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
   useEffect(() => {
-    captureEvent(ANALYTICS_EVENTS.AI_CREDITS_EXHAUSTED_SHOWN, { surface });
-  }, [surface]);
+    captureEvent(ANALYTICS_EVENTS.AI_CREDITS_EXHAUSTED_SHOWN, { surface, reason });
+  }, [surface, reason]);
 
   const onUpgrade = () => {
     captureEvent(ANALYTICS_EVENTS.AI_UPGRADE_CLICKED, { surface });
-    void Linking.openURL(`${WEB_URL}/settings/plan`);
+    openPlanPage();
   };
   const onAddKey = () => {
     captureEvent(ANALYTICS_EVENTS.AI_ADD_KEY_CLICKED, { surface });

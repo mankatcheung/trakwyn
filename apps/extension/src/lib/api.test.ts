@@ -133,7 +133,7 @@ describe('parseJobDescription', () => {
   });
 
   it.each([
-    ['AI_NOT_CONFIGURED', /your own AI key/],
+    ['AI_NOT_CONFIGURED', /upgrade to Pro/],
     ['EMAIL_NOT_VERIFIED', /Verify your email/],
     ['AI_TEMPORARILY_UNAVAILABLE', /temporarily unavailable/],
     ['AI_LIMIT_REACHED', /monthly token limit/],
@@ -164,6 +164,18 @@ describe('parseJobDescription', () => {
 
     expect((err as ApiError).code).toBe('AI_CREDITS_EXHAUSTED');
     expect((err as ApiError).message).toContain('December 1, 2026');
+  });
+
+  it("keeps the API's own message for PLAN_REQUIRED", async () => {
+    respondWith({
+      data: null,
+      errors: [{ message: 'Trakwyn AI is a Pro feature.', extensions: { code: 'PLAN_REQUIRED' } }],
+    });
+
+    const err = await parseJobDescription('x').catch((e: unknown) => e);
+
+    expect((err as ApiError).code).toBe('PLAN_REQUIRED');
+    expect((err as ApiError).message).toBe('Trakwyn AI is a Pro feature.');
   });
 
   it('passes other errors through unchanged', async () => {

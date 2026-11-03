@@ -516,7 +516,7 @@
   "experience.advanced": "高級",
   "experience.expert": "專家",
   "integrations.aiFeaturesTitle": "AI 功能",
-  "integrations.aiFeaturesDescription": "新增你自己的一個或多個服務商的 API 金鑰，以啟用助理聊天機器人、求職信生成及職缺描述自動填入功能。沒有金鑰時，這些功能使用 Trakwyn AI 和每月額度；有金鑰時則不消耗額度。自動化功能（求職信、職缺描述解析、履歷配對）會使用下方的預設服務商；助理聊天機器人則可讓你在每次對話中自行選擇服務商與模型。",
+  "integrations.aiFeaturesDescription": "新增你自己的一個或多個服務商的 API 金鑰，以啟用助理聊天機器人、求職信生成及職缺描述自動填入功能。Pro 另包含 Trakwyn AI 和每月額度，無需金鑰即可使用。自動化功能（求職信、職缺描述解析、履歷配對）會使用下方的預設服務商；助理聊天機器人則可讓你在每次對話中自行選擇服務商與模型。",
   "integrations.default": "預設",
   "integrations.makeDefault": "設為預設",
   "integrations.settingDefault": "設定中…",
@@ -1468,7 +1468,7 @@
   "pricing.freeApplications": "50",
   "pricing.freeStorage": "100 MB",
   "pricing.proStorage": "2 GB",
-  "pricing.byok": "包含 Trakwyn AI 和每月額度。新增自己的 API 金鑰（OpenAI、Anthropic、Google AI 或 OpenRouter）即可無限使用 AI：由服務商直接向你收費，Trakwyn 不加收任何費用。",
+  "pricing.byok": "Pro 方案包含 Trakwyn AI 和每月額度。任何方案都可新增自己的 API 金鑰（OpenAI、Anthropic、Google AI 或 OpenRouter）以無限使用 AI：由服務商直接向你收費，Trakwyn 不加收任何費用。",
   "plan.rowMcpAccess": "MCP 存取",
   "integrations.tokenFreePlanNote": "免費方案中，權杖僅可用於 MCP。專業版還可以讓它呼叫 Trakwyn API，例如從腳本中呼叫。",
   "welcome.stepProgress": "第 {{current}} 步,共 {{total}} 步",
@@ -1576,10 +1576,11 @@
   "aiSource.ownNeedsKey": "請先在下方新增 API 金鑰才能使用此選項。",
   "aiSource.updateFailed": "無法變更 AI 來源。",
   "plan.rowAiCredits": "Trakwyn AI 額度",
-  "pricing.freeAiCredits": "每月 30 AI 額度",
   "pricing.proAiCredits": "每月 300 AI 額度（合理使用）",
   "assistant.usingTrakwynAi": "回答由 Trakwyn AI 提供。",
   "assistant.useOwnKey": "使用自己的金鑰",
   "onboardingChecklist.tryAi": "在一個申請上試用 AI",
-  "plan.creditsPerMonth": "每月 {{n}} 個"
+  "plan.creditsPerMonth": "每月 {{n}} 個",
+  "aiSource.proTitle": "Trakwyn AI",
+  "aiSource.proOnly": "Pro 方案包含 Trakwyn AI。免費方案請在下方新增自己的 API 金鑰以使用 AI。"
 }

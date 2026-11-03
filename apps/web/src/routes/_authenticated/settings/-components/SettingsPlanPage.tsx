@@ -11,6 +11,7 @@ import {
 } from '#/lib/billingStatus';
 import { formatStorageSize } from '#/lib/storageUsage';
 import { useBillingPortal, useCheckout, type CheckoutPlan } from '#/lib/billingCheckout';
+import { useHostedAiAvailable } from '#/lib/aiCredits';
 import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
@@ -69,6 +70,8 @@ function UsageMeter({ title, used, limit, caption, fullMessage, warningMessage }
 
 function AiCreditsCard() {
   const { t } = useLocale();
+  const hosted = useHostedAiAvailable();
+  if (!hosted) return null;
   return (
     <Card className="p-5">
       <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -261,7 +264,10 @@ function Comparison({ status }: { status: BillingStatus }) {
     },
     {
       label: t('plan.rowAiCredits'),
-      free: t('plan.creditsPerMonth', { n: free.limits.aiCreditsPerMonth }),
+      free:
+        free.limits.aiCreditsPerMonth > 0
+          ? t('plan.creditsPerMonth', { n: free.limits.aiCreditsPerMonth })
+          : t('plan.notIncluded'),
       pro: t('plan.creditsPerMonth', { n: pro.limits.aiCreditsPerMonth }),
     },
     ...FEATURE_ROWS.map(({ feature, labelKey }) => ({
