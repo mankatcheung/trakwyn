@@ -134,6 +134,12 @@ export const API_ERROR_CODES = {
   AI_LIMIT_REACHED: 'AI_LIMIT_REACHED',
   AI_PROVIDER_ERROR: 'AI_PROVIDER_ERROR',
   AI_RESPONSE_INVALID: 'AI_RESPONSE_INVALID',
+  /** Trakwyn AI's monthly credits are spent (JEF-447); the message carries the reset date. */
+  AI_CREDITS_EXHAUSTED: 'AI_CREDITS_EXHAUSTED',
+  /** Hosted AI is for verified accounts. */
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  /** Not emitted by the API yet; shown with its own copy once it is (JEF-451). */
+  AI_TEMPORARILY_UNAVAILABLE: 'AI_TEMPORARILY_UNAVAILABLE',
   RATE_LIMITED: 'RATE_LIMITED',
 } as const;
 

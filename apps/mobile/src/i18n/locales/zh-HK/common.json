@@ -11,5 +11,8 @@
   "confirm": "確認",
   "back": "返回",
   "errorPlanRequired": "{{message}} 請在網頁版管理你的方案。",
-  "errorPlanRequiredDefault": "這是專業版功能"
+  "errorPlanRequiredDefault": "這是專業版功能",
+  "errorAiCreditsExhausted": "本月的 AI 額度已用完。",
+  "errorEmailNotVerified": "請先驗證你的電子郵件地址以使用 AI。",
+  "errorAiUnavailable": "Trakwyn AI 暫時無法使用，請稍後再試。"
 }

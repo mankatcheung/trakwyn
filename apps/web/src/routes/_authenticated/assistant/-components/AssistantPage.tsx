@@ -1,3 +1,4 @@
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -141,13 +142,16 @@ export function AssistantPage() {
             </div>
           ) : !activeId ? (
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {t('assistant.addApiKeyPrefix')}{' '}
+              {t('assistant.usingTrakwynAi')}{' '}
               <Link to="/settings/ai" className="underline">
-                {t('assistant.settingsLinkText')}
-              </Link>{' '}
-              {t('assistant.addApiKeySuffix')}
+                {t('assistant.useOwnKey')}
+              </Link>
             </p>
           ) : null}
+          <AiCreditsMeter
+            variant="hint"
+            className="mt-1 text-xs text-amber-700 dark:text-amber-400"
+          />
         </div>
 
         <ChatConversationView

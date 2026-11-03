@@ -18,6 +18,7 @@ import { captureEvent, captureException } from '../../lib/observability/report';
 import { markSinceOpen, timed } from '../../lib/startupTiming';
 import type { OAuthLoginResponse } from '../background';
 import {
+  API_ERROR_CODES,
   CONTENT_MESSAGES,
   DEFAULT_WEB_URL,
   OAUTH_PROVIDERS,
@@ -28,12 +29,13 @@ import {
 } from '../../constants';
 import { UserHeader } from './UserHeader';
 import { ClipCard } from './ClipCard';
-import { ReadButtons, type AiAvailability, type ReadMethod } from './ReadButtons';
+import { ReadButtons, type ReadMethod } from './ReadButtons';
 
 interface ReadyScreen {
   type: 'ready';
   clip: Clip;
-  /** Where the user adds the AI key that "Read with AI" needs. */
+  /** The web app's plan and AI-key pages, offered when the AI read cannot go ahead. */
+  planUrl: string;
   settingsUrl: string;
 }
 
@@ -65,6 +67,8 @@ interface Clip {
   readId: number;
   /** Dismissible: why the AI result is missing. */
   notice?: string;
+  /** The API code behind `notice`, which decides the links offered with it (JEF-451). */
+  noticeCode?: string;
 }
 
 async function readActiveTab(): Promise<{ jobData: JobData | null; tab: ClipTab | null }> {
@@ -112,7 +116,8 @@ async function readWithAi(clip: Clip): Promise<Clip> {
   } catch (err) {
     reportUnexpected(err, 'ai_read');
     const notice = err instanceof Error ? err.message : 'The AI read failed.';
-    return { ...clip, busy: null, notice };
+    const noticeCode = err instanceof ApiError ? err.code : undefined;
+    return { ...clip, busy: null, notice, noticeCode };
   }
 }
 
@@ -146,11 +151,9 @@ interface Account {
   user: CurrentUser | null;
   /** The API has answered for this session; until then nothing can be saved. */
   confirmed: boolean;
-  /** The user has a default AI provider with a saved key (JEF-420). */
-  aiAvailable: AiAvailability;
 }
 
-const UNCONFIRMED: Account = { user: null, confirmed: false, aiAvailable: 'checking' };
+const UNCONFIRMED: Account = { user: null, confirmed: false };
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'loading' });
@@ -222,6 +225,7 @@ export function App() {
         busy: null,
         readId: 0,
       },
+      planUrl: `${DEFAULT_WEB_URL}/settings/plan`,
       settingsUrl: `${DEFAULT_WEB_URL}/settings/ai`,
     });
     markSinceOpen('clip-shown');
@@ -234,7 +238,7 @@ export function App() {
         setScreen({ type: 'login' });
         return;
       }
-      setAccount({ user: result.user, confirmed: true, aiAvailable: result.aiAvailable });
+      setAccount({ user: result.user, confirmed: true });
       markSinceOpen('account-confirmed');
       await setCachedUser(result.user).catch((err: unknown) => reportUnexpected(err, 'cache_user'));
     } catch (err) {
@@ -296,7 +300,7 @@ export function App() {
   }
 
   async function handleRead(clip: Clip, method: ReadMethod) {
-    updateClip({ ...clip, busy: method, notice: undefined });
+    updateClip({ ...clip, busy: method, notice: undefined, noticeCode: undefined });
     updateClip(method === 'ai' ? await readWithAi(clip) : await readWithParser(clip));
   }
 
@@ -435,7 +439,7 @@ export function App() {
   }
 
   // ready screen
-  const { clip, settingsUrl } = screen;
+  const { clip, planUrl, settingsUrl } = screen;
   const { jobData } = clip;
 
   return (
@@ -450,23 +454,36 @@ export function App() {
       {clip.notice && (
         <div className="error-box" role="status">
           {clip.notice}{' '}
+          {clip.noticeCode === API_ERROR_CODES.AI_CREDITS_EXHAUSTED && (
+            <>
+              <a href={planUrl} target="_blank" rel="noreferrer">
+                Upgrade
+              </a>{' '}
+              or{' '}
+              <a href={settingsUrl} target="_blank" rel="noreferrer">
+                add your own key
+              </a>
+              .{' '}
+            </>
+          )}
+          {clip.noticeCode === API_ERROR_CODES.AI_NOT_CONFIGURED && (
+            <>
+              <a href={settingsUrl} target="_blank" rel="noreferrer">
+                Add your own key
+              </a>
+              .{' '}
+            </>
+          )}
           <button
             className="btn btn-ghost"
-            onClick={() => updateClip({ ...clip, notice: undefined })}
+            onClick={() => updateClip({ ...clip, notice: undefined, noticeCode: undefined })}
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {clip.tab && (
-        <ReadButtons
-          busy={clip.busy}
-          aiAvailable={account.aiAvailable}
-          settingsUrl={settingsUrl}
-          onRead={(method) => handleRead(clip, method)}
-        />
-      )}
+      {clip.tab && <ReadButtons busy={clip.busy} onRead={(method) => handleRead(clip, method)} />}
 
       {jobData ? (
         <ClipCard

@@ -11,7 +11,7 @@ import {
   type OnboardingChecklistData,
 } from '../dashboard';
 
-type ChecklistItemKey = 'application' | 'mcp' | 'aiKey' | 'experience';
+type ChecklistItemKey = 'application' | 'mcp' | 'tryAi' | 'experience';
 
 interface ChecklistItem {
   key: ChecklistItemKey;
@@ -35,7 +35,7 @@ export function isRelevantToGoals(
       return true;
     case 'mcp':
       return goals.includes('MCP');
-    case 'aiKey':
+    case 'tryAi':
     case 'experience':
       return hasAiGoal(goals);
   }
@@ -69,10 +69,11 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
       to: '/settings/integrations',
     },
     {
-      key: 'aiKey',
-      label: t('onboardingChecklist.addAiKey'),
-      done: (data.llmApiKeys ?? []).length > 0,
-      to: '/settings/ai',
+      key: 'tryAi',
+      label: t('onboardingChecklist.tryAi'),
+      // Hosted credits spent, or a key of their own on file: either way they have used AI.
+      done: (data.me?.aiCredits?.used ?? 0) > 0 || (data.llmApiKeys ?? []).length > 0,
+      to: '/applications',
     },
     {
       key: 'experience',

@@ -52,6 +52,18 @@ export interface LlmApiKey {
   monthlyTokenLimit: number | null;
 }
 
+/** Which key AI calls run on (JEF-446). */
+export type AiSource = 'auto' | 'trakwyn' | 'own';
+export const AI_SOURCES: readonly AiSource[] = ['auto', 'trakwyn', 'own'];
+
+/** This month's hosted credits (`me.aiCredits`, JEF-447). Own-key calls are never counted. */
+export interface AiCredits {
+  used: number;
+  limit: number;
+  bonusRemaining: number;
+  resetsAt: string;
+}
+
 export interface LlmUsageSummary {
   provider: string;
   requestCount: number;

@@ -165,7 +165,20 @@ export const LLM_API_KEYS_QUERY = `
       customAiPrompt
       useCrossApplicationContext
       llmFallbackWhenLimited
+      aiSource
+      aiCredits {
+        used
+        limit
+        bonusRemaining
+        resetsAt
+      }
     }
+  }
+`;
+
+export const SET_AI_SOURCE_MUTATION = `
+  mutation SetAiSource($aiSource: String!) {
+    setAiSource(aiSource: $aiSource)
   }
 `;
 

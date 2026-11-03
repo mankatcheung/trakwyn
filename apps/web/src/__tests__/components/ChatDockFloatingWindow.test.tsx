@@ -116,7 +116,7 @@ describe('ChatDockFloatingWindow', () => {
     expect(mockDock.closeExpanded).toHaveBeenCalledOnce();
   });
 
-  it('shows a settings prompt instead of the chat view when no AI API key is configured', async () => {
+  it('shows the chat view without a key, since Trakwyn AI answers (JEF-451)', async () => {
     mockDock.expanded = 'new';
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('LlmApiKeys'))
@@ -125,7 +125,7 @@ describe('ChatDockFloatingWindow', () => {
     });
     render(<ChatDockFloatingWindow />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByText(/Add an AI API key/)).toBeInTheDocument());
-    expect(screen.queryByPlaceholderText('Ask a question…')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByPlaceholderText('Ask a question…')).toBeInTheDocument());
+    expect(screen.queryByText(/Add an AI API key/)).not.toBeInTheDocument();
   });
 });

@@ -25,6 +25,7 @@
     "deleteTitle": "Delete conversation",
     "deleteMessage": "This cannot be undone.",
     "cancel": "Cancel",
-    "couldNotDeleteTitle": "Could not delete"
+    "couldNotDeleteTitle": "Could not delete",
+    "pickerTrakwynAi": "Trakwyn AI"
   }
 }

@@ -1,5 +1,6 @@
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, Maximize2Icon, XIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
@@ -84,23 +85,17 @@ export function ChatDockFloatingWindow() {
         </div>
       </div>
 
-      {llmApiKeys.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center px-4 text-center text-xs text-gray-400 dark:text-gray-500">
-          {t('assistant.addApiKeyPrefix')}{' '}
-          <Link to="/settings/ai" className="mx-1 underline">
-            {t('assistant.settingsLinkText')}
-          </Link>{' '}
-          {t('assistant.addApiKeySuffix')}
-        </p>
-      ) : (
-        <ChatConversationView
-          conversationId={isNew ? null : (dock.expanded as string)}
-          provider={defaultProvider}
-          model=""
-          onConversationCreated={(id) => dock.promoteNewConversation(id)}
-          compact
-        />
-      )}
+      <AiCreditsMeter
+        variant="hint"
+        className="px-4 pt-2 text-xs text-amber-700 dark:text-amber-400"
+      />
+      <ChatConversationView
+        conversationId={isNew ? null : (dock.expanded as string)}
+        provider={defaultProvider}
+        model=""
+        onConversationCreated={(id) => dock.promoteNewConversation(id)}
+        compact
+      />
     </div>,
     document.body,
   );

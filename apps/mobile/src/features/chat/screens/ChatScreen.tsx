@@ -24,7 +24,9 @@ import { SendIcon } from '../components/SendIcon';
 import { ChatProposalCard } from '../components/ChatProposalCard';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
-import { getErrorMessage } from '../../../lib/errors';
+import { codedErrorMessage, getErrorCode, getErrorMessage } from '../../../lib/errors';
+import { ERROR_CODES } from '../../../constants';
+import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { CHAT_INPUT_MAX_LINES, CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
 
 const INPUT_LINE_HEIGHT = 20;
@@ -52,6 +54,7 @@ export function ChatScreen() {
   const [streamingText, setStreamingText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [sendErrorCode, setSendErrorCode] = useState<string | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const autoSentInitialMessage = useRef(false);
 
@@ -64,6 +67,7 @@ export function ChatScreen() {
   const sendMessage = async (trimmed: string) => {
     if (!trimmed || isSending) return;
     setSendError(null);
+    setSendErrorCode(null);
     setIsSending(true);
     setStreamingText('');
 
@@ -85,6 +89,7 @@ export function ChatScreen() {
       void queryClient.invalidateQueries({ queryKey: conversationsQueryKey });
     } catch (err) {
       setSendError(err instanceof ChatStreamError ? err.message : getErrorMessage(err));
+      setSendErrorCode(err instanceof ChatStreamError ? err.code : getErrorCode(err));
     } finally {
       setIsSending(false);
       setStreamingText('');
@@ -172,7 +177,16 @@ export function ChatScreen() {
         </View>
       ) : null}
 
-      {sendError ? <Text style={styles.error}>{sendError}</Text> : null}
+      {sendError ? (
+        sendErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED ? (
+          <AiCreditsExhaustedNotice surface="assistant" message={sendError} />
+        ) : sendErrorCode === ERROR_CODES.EMAIL_NOT_VERIFIED ||
+          sendErrorCode === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE ? (
+          <Text style={styles.error}>{codedErrorMessage(sendErrorCode) ?? sendError}</Text>
+        ) : (
+          <Text style={styles.error}>{sendError}</Text>
+        )
+      ) : null}
 
       <View style={styles.composer}>
         <TextInput

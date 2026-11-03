@@ -9,15 +9,16 @@ const BILLING_STATUS_QUERY = `
       planExpiresAt
       planSource
       features { notifications analytics offers shareLinks apiAccess mcpAccess }
-      limits { applications documentBytes }
+      limits { applications documentBytes aiCreditsPerMonth }
+      aiCredits { used limit bonusRemaining resetsAt }
       catalogue {
         free {
           features { notifications analytics offers shareLinks apiAccess mcpAccess }
-          limits { applications documentBytes }
+          limits { applications documentBytes aiCreditsPerMonth }
         }
         pro {
           features { notifications analytics offers shareLinks apiAccess mcpAccess }
-          limits { applications documentBytes }
+          limits { applications documentBytes aiCreditsPerMonth }
         }
       }
       usage { applications documentBytes }
@@ -43,6 +44,19 @@ export interface PlanFeatures {
 export interface PlanLimits {
   applications: number | null;
   documentBytes: number;
+  /** Hosted AI credits per month (JEF-447); calls on the user's own key are never counted. */
+  aiCreditsPerMonth: number;
+}
+
+/** This month's hosted AI credits (JEF-447). */
+export interface AiCredits {
+  used: number;
+  /** The plan's monthly size, without the welcome bonus. */
+  limit: number;
+  /** Welcome-bonus credits still unspent. */
+  bonusRemaining: number;
+  /** ISO timestamp of the 1st of next month, UTC. */
+  resetsAt: string;
 }
 
 export interface PlanTerms {
@@ -60,6 +74,7 @@ export interface BillingStatus {
   limits: PlanLimits;
   catalogue: { free: PlanTerms; pro: PlanTerms };
   usage: { applications: number; documentBytes: number };
+  aiCredits?: AiCredits;
 }
 
 /** The signed-in user's plan and usage, or null while loading. */

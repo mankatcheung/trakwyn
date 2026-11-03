@@ -47,7 +47,7 @@ describe('OnboardingChecklist', () => {
     expect(screen.getByText('Get started with Trakwyn')).toBeInTheDocument();
     expect(screen.getByText('Create your first job application')).toBeInTheDocument();
     expect(screen.getByText('Connect MCP by generating an API token')).toBeInTheDocument();
-    expect(screen.getByText('Add an AI provider API key')).toBeInTheDocument();
+    expect(screen.getByText('Try AI on an application')).toBeInTheDocument();
     expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
   });
 
@@ -91,9 +91,9 @@ describe('OnboardingChecklist', () => {
       'href',
       '/settings/integrations',
     );
-    expect(screen.getByText('Add an AI provider API key').closest('a')).toHaveAttribute(
+    expect(screen.getByText('Try AI on an application').closest('a')).toHaveAttribute(
       'href',
-      '/settings/ai',
+      '/applications',
     );
     expect(screen.getByText('Add your work experience and skills').closest('a')).toHaveAttribute(
       'href',
@@ -125,7 +125,7 @@ describe('OnboardingChecklist', () => {
 
       expect(screen.getByText('Create your first job application')).toBeInTheDocument();
       expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
-      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+      expect(screen.queryByText('Try AI on an application')).not.toBeInTheDocument();
       expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
     });
 
@@ -134,7 +134,7 @@ describe('OnboardingChecklist', () => {
         wrapper: Wrapper,
       });
 
-      expect(screen.getByText('Add an AI provider API key')).toBeInTheDocument();
+      expect(screen.getByText('Try AI on an application')).toBeInTheDocument();
       expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
       expect(screen.queryByText('Connect MCP by generating an API token')).not.toBeInTheDocument();
     });
@@ -145,7 +145,7 @@ describe('OnboardingChecklist', () => {
       });
 
       expect(screen.getByText('Connect MCP by generating an API token')).toBeInTheDocument();
-      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+      expect(screen.queryByText('Try AI on an application')).not.toBeInTheDocument();
       expect(screen.queryByText('Add your work experience and skills')).not.toBeInTheDocument();
     });
 
@@ -162,8 +162,8 @@ describe('OnboardingChecklist', () => {
       ['application', ['MCP'], true],
       ['mcp', ['AI_DOCUMENTS'], false],
       ['mcp', ['MCP', 'ASSISTANT'], true],
-      ['aiKey', ['AI_DOCUMENTS'], true],
-      ['aiKey', ['TRACK_APPLICATIONS', 'MCP'], false],
+      ['tryAi', ['AI_DOCUMENTS'], true],
+      ['tryAi', ['TRACK_APPLICATIONS', 'MCP'], false],
       ['experience', ['ASSISTANT'], true],
       ['experience', ['MCP'], false],
     ] as const)('isRelevantToGoals(%s, %j) is %s', (key, goals, expected) => {

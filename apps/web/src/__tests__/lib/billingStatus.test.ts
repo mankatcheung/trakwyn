@@ -9,7 +9,7 @@ const FEATURES = {
   apiAccess: false,
   mcpAccess: true,
 };
-const LIMITS = { applications: 50, documentBytes: 100 };
+const LIMITS = { applications: 50, documentBytes: 100, aiCreditsPerMonth: 30 };
 
 const status = (overrides: Partial<BillingStatus> = {}): BillingStatus => ({
   enforced: true,
@@ -22,7 +22,7 @@ const status = (overrides: Partial<BillingStatus> = {}): BillingStatus => ({
     free: { features: FEATURES, limits: LIMITS },
     pro: {
       features: { ...FEATURES, analytics: true },
-      limits: { applications: null, documentBytes: 200 },
+      limits: { applications: null, documentBytes: 200, aiCreditsPerMonth: 300 },
     },
   },
   usage: { applications: 0, documentBytes: 0 },

@@ -11,5 +11,8 @@
   "confirm": "Confirm",
   "back": "Back",
   "errorPlanRequired": "{{message}} Manage your plan on the web.",
-  "errorPlanRequiredDefault": "This is a Pro feature"
+  "errorPlanRequiredDefault": "This is a Pro feature",
+  "errorAiCreditsExhausted": "You've used this month's AI credits.",
+  "errorEmailNotVerified": "Verify your email address to use AI.",
+  "errorAiUnavailable": "Trakwyn AI is unavailable right now. Please try again in a moment."
 }

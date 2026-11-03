@@ -38,6 +38,9 @@ export const ANALYTICS_EVENTS = {
   ASSISTANT_CHANGE_CONFIRMED: 'assistant_change_confirmed',
   ASSISTANT_CHANGE_DISMISSED: 'assistant_change_dismissed',
   DOCUMENT_UPLOADED: 'document_uploaded',
+  AI_CREDITS_EXHAUSTED_SHOWN: 'ai_credits_exhausted_shown',
+  AI_UPGRADE_CLICKED: 'ai_upgrade_clicked',
+  AI_ADD_KEY_CLICKED: 'ai_add_key_clicked',
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];

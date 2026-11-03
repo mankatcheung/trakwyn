@@ -48,6 +48,9 @@ const ONBOARDING_CHECKLIST_QUERY = `
     me {
       onboardingChecklistDismissedAt
       onboardingGoals
+      aiCredits {
+        used
+      }
     }
     apiTokens {
       id
@@ -123,6 +126,7 @@ type OnboardingChecklistData = {
   me: {
     onboardingChecklistDismissedAt: string | null;
     onboardingGoals?: OnboardingGoal[];
+    aiCredits?: { used: number };
   } | null;
   apiTokens: { id: string }[];
   llmApiKeys: { provider: string }[];

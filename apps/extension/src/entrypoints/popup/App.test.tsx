@@ -48,8 +48,8 @@ const user = {
 };
 
 /** The API's answer as the popup opens. */
-function signedIn(aiAvailable = false) {
-  vi.mocked(getPopupBootstrap).mockResolvedValue({ user, aiAvailable });
+function signedIn() {
+  vi.mocked(getPopupBootstrap).mockResolvedValue({ user });
 }
 
 let rendered: Rendered | undefined;
@@ -414,12 +414,12 @@ describe('popup App — AI parsing (JEF-420)', () => {
   });
 
   /** The content script answers job data and page text; `jobData` null means the parsers found nothing. */
-  function pageWith(jobData: unknown, aiAvailable = true) {
+  function pageWith(jobData: unknown) {
     spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
     spyAsync(browser.tabs, 'sendMessage').mockImplementation(async (_id, message) =>
       (message as { type: string }).type === 'GET_PAGE_TEXT' ? 'Posting text' : { jobData },
     );
-    signedIn(aiAvailable);
+    signedIn();
   }
 
   const button = (label: string) =>
@@ -435,35 +435,6 @@ describe('popup App — AI parsing (JEF-420)', () => {
     expect(parseJobDescription).not.toHaveBeenCalled();
     expect(rendered.container.textContent).toContain('Monument');
     expect(button('Read with parser')!.disabled).toBe(false);
-    expect(button('Read with AI')!.disabled).toBe(false);
-  });
-
-  it('disables "Read with AI" and links to settings when there is no default AI key', async () => {
-    pageWith(complete, false);
-
-    rendered = await render(<App />);
-
-    expect(button('Read with AI')!.disabled).toBe(true);
-    expect(button('Read with parser')!.disabled).toBe(false);
-    expect(
-      rendered.container.querySelector<HTMLAnchorElement>('a[href$="/settings/ai"]'),
-    ).not.toBeNull();
-  });
-
-  it('keeps "Read with AI" disabled, with no settings link, while the check runs (JEF-457)', async () => {
-    pageWith(complete);
-    const answer = deferred<{ user: typeof user; aiAvailable: boolean }>();
-    vi.mocked(getPopupBootstrap).mockReturnValue(answer.promise);
-
-    rendered = await render(<App />);
-
-    expect(button('Read with AI')!.disabled).toBe(true);
-    expect(button('Read with AI')!.getAttribute('aria-busy')).toBe('true');
-    expect(button('Read with parser')!.disabled).toBe(false);
-    expect(rendered.container.querySelector('a[href$="/settings/ai"]')).toBeNull();
-
-    await act(async () => answer.resolve({ user, aiAvailable: true }));
-
     expect(button('Read with AI')!.disabled).toBe(false);
   });
 
@@ -517,6 +488,55 @@ describe('popup App — AI parsing (JEF-420)', () => {
     expect(captureException).not.toHaveBeenCalled();
   });
 
+  it('keeps "Read with AI" on for a user with no key (Trakwyn AI)', async () => {
+    pageWith(complete);
+
+    rendered = await render(<App />);
+
+    expect(button('Read with AI')!.disabled).toBe(false);
+    expect(rendered.container.querySelector('a[href$="/settings/ai"]')).toBeNull();
+  });
+
+  it('offers Upgrade and Add your own key when the credits are spent', async () => {
+    pageWith(complete);
+    vi.mocked(parseJobDescription).mockRejectedValue(
+      new ApiError(
+        "You've used this month's AI credits. They reset on December 1, 2026.",
+        'AI_CREDITS_EXHAUSTED',
+      ),
+    );
+
+    rendered = await render(<App />);
+    await act(async () => button('Read with AI')!.click());
+
+    const notice = rendered.container.querySelector('[role="status"]')!;
+    expect(notice.textContent).toContain('December 1, 2026');
+    expect(notice.querySelector('a[href$="/settings/plan"]')?.getAttribute('href')).toBe(
+      `${DEFAULT_WEB_URL}/settings/plan`,
+    );
+    expect(notice.querySelector('a[href$="/settings/ai"]')?.getAttribute('href')).toBe(
+      `${DEFAULT_WEB_URL}/settings/ai`,
+    );
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it.each(['EMAIL_NOT_VERIFIED', 'AI_TEMPORARILY_UNAVAILABLE', 'SOME_FUTURE_CODE'])(
+    'shows %s as a notice and keeps the clip',
+    async (code) => {
+      pageWith(complete);
+      vi.mocked(parseJobDescription).mockRejectedValue(new ApiError('Not now.', code));
+
+      rendered = await render(<App />);
+      await act(async () => button('Read with AI')!.click());
+
+      expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
+        'Not now.',
+      );
+      expect(rendered.container.textContent).toContain('Monument');
+      expect(button('Read with AI')!.disabled).toBe(false);
+    },
+  );
+
   it('"Read with parser" drops the AI result and reads the page again', async () => {
     pageWith(complete);
     vi.mocked(parseJobDescription).mockResolvedValue({
@@ -564,19 +584,11 @@ describe('popup App — links to the web app (JEF-428)', () => {
     );
     expect(link?.getAttribute('href')).toBe(`${DEFAULT_WEB_URL}/applications/app-1`);
   });
-
-  it('links to AI settings on the web app', async () => {
-    rendered = await render(<App />);
-
-    expect(rendered.container.querySelector('a[href$="/settings/ai"]')?.getAttribute('href')).toBe(
-      `${DEFAULT_WEB_URL}/settings/ai`,
-    );
-  });
 });
 
 describe('popup App — showing the clip before the API answers (JEF-457)', () => {
   const tabUrl = 'https://jobs.example.com/1';
-  let answer: Deferred<{ user: typeof user; aiAvailable: boolean }>;
+  let answer: Deferred<{ user: typeof user }>;
 
   beforeEach(() => {
     spyAsync(browser.tabs, 'query').mockResolvedValue([{ id: 1, url: tabUrl } as Browser.tabs.Tab]);
@@ -605,7 +617,7 @@ describe('popup App — showing the clip before the API answers (JEF-457)', () =
     rendered = await render(<App />);
     expect(saveButton().disabled).toBe(true);
 
-    await act(async () => answer.resolve({ user, aiAvailable: false }));
+    await act(async () => answer.resolve({ user }));
 
     expect(saveButton().disabled).toBe(false);
     expect(rendered.container.textContent).toContain('Ada Lovelace');
@@ -613,7 +625,7 @@ describe('popup App — showing the clip before the API answers (JEF-457)', () =
 
   it('asks the API once as it opens', async () => {
     rendered = await render(<App />);
-    await act(async () => answer.resolve({ user, aiAvailable: false }));
+    await act(async () => answer.resolve({ user }));
 
     expect(getPopupBootstrap).toHaveBeenCalledOnce();
   });
@@ -625,7 +637,7 @@ describe('popup App — showing the clip before the API answers (JEF-457)', () =
     expect(rendered.container.querySelector('.user-name')?.textContent).toBe('Ada (cached)');
     expect(saveButton().disabled).toBe(true);
 
-    await act(async () => answer.resolve({ user, aiAvailable: false }));
+    await act(async () => answer.resolve({ user }));
 
     expect(rendered.container.querySelector('.user-name')?.textContent).toBe('Ada Lovelace');
     expect(setCachedUser).toHaveBeenCalledExactlyOnceWith(user);
@@ -654,7 +666,7 @@ describe('popup App — showing the clip before the API answers (JEF-457)', () =
     expect(getPopupBootstrap).not.toHaveBeenCalled();
 
     await act(async () => renewal.resolve(true));
-    await act(async () => answer.resolve({ user, aiAvailable: false }));
+    await act(async () => answer.resolve({ user }));
 
     expect(rendered.container.textContent).toContain('Ada Lovelace');
   });
@@ -679,7 +691,7 @@ describe('popup App — showing the clip before the API answers (JEF-457)', () =
     )!;
     await act(async () => signOut.click());
 
-    await act(async () => answer.resolve({ user, aiAvailable: true }));
+    await act(async () => answer.resolve({ user }));
 
     expect(rendered.container.querySelector('input[type="password"]')).not.toBeNull();
     expect(setCachedUser).not.toHaveBeenCalled();

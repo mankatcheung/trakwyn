@@ -5,12 +5,13 @@ import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
   SAVE_LLM_API_KEY_MUTATION,
+  SET_AI_SOURCE_MUTATION,
   SET_DEFAULT_LLM_PROVIDER_MUTATION,
   SET_LLM_API_KEY_MONTHLY_LIMIT_MUTATION,
   TEST_LLM_API_KEY_MUTATION,
   UPDATE_PROFILE_MUTATION,
 } from '../graphql/operations';
-import type { LlmApiKey, LlmUsageSummary } from '../types';
+import type { AiCredits, AiSource, LlmApiKey, LlmUsageSummary } from '../types';
 
 export const llmApiKeysQueryKey = ['llmApiKeys'] as const;
 export const llmUsageSummaryQueryKey = ['llmUsageSummary'] as const;
@@ -21,6 +22,8 @@ interface LlmApiKeysResult {
   customAiPrompt: string | null;
   useCrossApplicationContext: boolean;
   llmFallbackWhenLimited: boolean;
+  aiSource: AiSource;
+  aiCredits: AiCredits;
 }
 
 export function useLlmApiKeys() {
@@ -34,6 +37,8 @@ export function useLlmApiKeys() {
           customAiPrompt: string | null;
           useCrossApplicationContext: boolean;
           llmFallbackWhenLimited: boolean;
+          aiSource: AiSource;
+          aiCredits: AiCredits;
         };
       }>(LLM_API_KEYS_QUERY).then((data): LlmApiKeysResult => ({
         keys: data.llmApiKeys,
@@ -41,6 +46,8 @@ export function useLlmApiKeys() {
         customAiPrompt: data.me.customAiPrompt,
         useCrossApplicationContext: data.me.useCrossApplicationContext,
         llmFallbackWhenLimited: data.me.llmFallbackWhenLimited,
+        aiSource: data.me.aiSource,
+        aiCredits: data.me.aiCredits,
       })),
   });
 }
@@ -163,6 +170,15 @@ export function useToggleCrossApplicationContext() {
       gqlRequest<{ updateProfile: boolean }>(UPDATE_PROFILE_MUTATION, {
         useCrossApplicationContext,
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
+  });
+}
+
+export function useSetAiSource() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (aiSource: AiSource) =>
+      gqlRequest<{ setAiSource: boolean }>(SET_AI_SOURCE_MUTATION, { aiSource }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
   });
 }

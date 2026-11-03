@@ -57,6 +57,13 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 - **`useBillingStatus()`** (`lib/billingStatus.ts`) is the one reader of `billingStatus`. Settings → Plan shows the plan, usage against each limit and a Free/Pro comparison built from the API's `catalogue`, so no limit is copied into the web app. Buying Pro arrives with billing (JEF-426).
 - The web app uses inline query strings for this, like the storage card, so there is no `.graphql` file or codegen change.
 
+## Hosted AI in the UI (JEF-451)
+
+- **Credits** come from `billingStatus.aiCredits` (`useBillingStatus`); `lib/aiCredits.ts` turns them into "left of total" (the welcome bonus is spent last). `AiCreditsMeter` shows it always in Settings → AI and Plan, and as a one-line hint in the assistant only below 30% left.
+- **Source picker** (Settings → AI) calls `setAiSource` (`auto` | `trakwyn` | `own`); "My own key" is disabled without a key. The assistant no longer blocks on "add an API key": with none, the API answers with Trakwyn AI, and `AI_NOT_CONFIGURED` still renders the add-key copy when an instance has hosted AI off.
+- **`AiErrorMessage`** handles `AI_CREDITS_EXHAUSTED` (the API's message names the reset date; Upgrade and Add your own key links, with `ai_credits_exhausted_shown`, `ai_upgrade_clicked`, `ai_add_key_clicked`), `EMAIL_NOT_VERIFIED` and `AI_TEMPORARILY_UNAVAILABLE` (not emitted by the API yet).
+- The pricing page's credit figures are checked against `PLAN_LIMITS` in `PricingPage.test.tsx`.
+
 ## Content quotas (JEF-494)
 
 The API's per-resource ceilings (`contentQuota`, `apps/api/CLAUDE.md`) show at each create control.

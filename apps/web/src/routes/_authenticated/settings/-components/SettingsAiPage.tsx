@@ -8,6 +8,9 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { LlmApiKeyRow } from './LlmApiKeyRow';
 import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
+import { AiSourcePicker, type AiSource } from './AiSourcePicker';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { billingStatusQueryKey } from '#/lib/billingStatus';
 import { Alert, Button, Card, Checkbox, Skeleton, Textarea } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,
@@ -16,6 +19,7 @@ import {
   SET_DEFAULT_LLM_PROVIDER,
   SET_LLM_API_KEY_MONTHLY_LIMIT,
   TEST_LLM_API_KEY,
+  SET_AI_SOURCE,
   UPDATE_PROFILE,
   customAiPromptSchema,
   type CustomAiPromptForm,
@@ -46,6 +50,7 @@ export function SettingsAiPage() {
           customAiPrompt: string | null;
           useCrossApplicationContext: boolean;
           llmFallbackWhenLimited: boolean;
+          aiSource?: string;
         };
       }>(LLM_API_KEYS_QUERY),
   });
@@ -126,6 +131,23 @@ export function SettingsAiPage() {
       }));
     } finally {
       setTestingProvider(null);
+    }
+  };
+
+  // AI source (JEF-451)
+  const [aiSourceError, setAiSourceError] = useState<string | null>(null);
+  const [updatingAiSource, setUpdatingAiSource] = useState(false);
+  const onChangeAiSource = async (aiSource: AiSource) => {
+    setUpdatingAiSource(true);
+    setAiSourceError(null);
+    try {
+      await gqlClient.request(SET_AI_SOURCE, { aiSource });
+      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
+      await qc.invalidateQueries({ queryKey: billingStatusQueryKey });
+    } catch (err) {
+      setAiSourceError(extractGqlError(err) ?? t('aiSource.updateFailed'));
+    } finally {
+      setUpdatingAiSource(false);
     }
   };
 
@@ -210,6 +232,24 @@ export function SettingsAiPage() {
           {t('guides.aiMcpSetup.bannerLink')}
         </Link>
       </div>
+
+      {/* ── Trakwyn AI: source and credits (JEF-451) ── */}
+      <Card className="space-y-4 p-5">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('aiSource.title')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiSource.description')}</p>
+        </div>
+        <AiCreditsMeter />
+        <AiSourcePicker
+          value={(llmData?.me.aiSource as AiSource | undefined) ?? 'auto'}
+          hasOwnKey={llmApiKeys.length > 0}
+          disabled={updatingAiSource || llmKeysLoading}
+          onChange={onChangeAiSource}
+        />
+        {aiSourceError && <Alert>{aiSourceError}</Alert>}
+      </Card>
 
       {/* ── AI features ── */}
       <Card className="overflow-hidden">

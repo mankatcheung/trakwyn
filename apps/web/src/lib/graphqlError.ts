@@ -4,6 +4,12 @@ export const AI_NOT_CONFIGURED_CODE = 'AI_NOT_CONFIGURED';
 export const AI_LIMIT_REACHED_CODE = 'AI_LIMIT_REACHED';
 /** The action needs a plan the user is not on, e.g. a Pro feature or the Free AI allowance (JEF-344). */
 export const PLAN_REQUIRED_CODE = 'PLAN_REQUIRED';
+/** This month's hosted AI credits are spent (JEF-447). The message names the reset date. */
+export const AI_CREDITS_EXHAUSTED_CODE = 'AI_CREDITS_EXHAUSTED';
+/** The account's email is not verified yet (JEF-438). */
+export const EMAIL_NOT_VERIFIED_CODE = 'EMAIL_NOT_VERIFIED';
+/** Trakwyn AI could not answer right now; nothing the user did (JEF-451). */
+export const AI_TEMPORARILY_UNAVAILABLE_CODE = 'AI_TEMPORARILY_UNAVAILABLE';
 
 /**
  * Extracts the GraphQL `extensions.code` from a graphql-request error —

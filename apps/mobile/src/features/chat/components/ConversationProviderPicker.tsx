@@ -8,6 +8,9 @@ import { createSheetStyles } from '../../../components/sheetStyles';
 interface ConversationProviderPickerProps {
   keys: LlmApiKey[];
   defaultProvider: string | null;
+  /** Offer a "Trakwyn AI" row that needs no key (JEF-451). */
+  hosted?: boolean;
+  onSelectHosted?: () => void;
   onSelect: (key: LlmApiKey) => void;
   onClose: () => void;
 }
@@ -19,6 +22,8 @@ interface ConversationProviderPickerProps {
 export function ConversationProviderPicker({
   keys,
   defaultProvider,
+  hosted = false,
+  onSelectHosted,
   onSelect,
   onClose,
 }: ConversationProviderPickerProps) {
@@ -36,6 +41,15 @@ export function ConversationProviderPicker({
       <View style={styles.sheetContainer}>
         <View style={styles.sheet}>
           <Text style={styles.sheetTitle}>{t('conversations.pickerTitle')}</Text>
+          {hosted ? (
+            <Pressable
+              style={styles.sheetRow}
+              onPress={() => onSelectHosted?.()}
+              testID="conversation-provider-option-trakwyn"
+            >
+              <Text style={styles.sheetRowText}>{t('conversations.pickerTrakwynAi')}</Text>
+            </Pressable>
+          ) : null}
           {keys.map((key) => {
             const isDefault = key.provider === defaultProvider;
             return (
