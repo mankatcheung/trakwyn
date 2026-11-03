@@ -22,6 +22,10 @@ export interface User {
   applicationCount: number;
   /** Bytes of documents stored, counted against the storage limit (JEF-425). */
   documentBytes: number;
+  /** Hosted AI credits spent in the period starting at `aiCreditsPeriodStart` (JEF-447). Read through `creditsUsedIn`, never raw: it is stale once the month turns. */
+  aiCreditsUsed: number;
+  /** Start (UTC month) of the period `aiCreditsUsed` counts; null before the first hosted call. */
+  aiCreditsPeriodStart: Date | null;
   /** The plan the user is on (JEF-344). Use `resolveEntitlements` for what it allows: an expired Pro plan reads as Free there. */
   plan: Plan;
   /** When a Pro pass or trial ends; null for Free and for an active subscription. */

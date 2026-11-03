@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GetBillingStatusUseCase } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
+import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { PLAN_LIMITS } from '#src/use-cases/constants.js';
@@ -17,12 +18,34 @@ function build(user = makeUser(), { plansEnforced = true } = {}) {
   const useCase = new GetBillingStatusUseCase({
     userRepository,
     entitlementService,
+    aiCreditService: new AiCreditService({ userRepository, entitlementService, now: () => NOW }),
     now: () => NOW,
   });
   return { useCase };
 }
 
 describe('GetBillingStatusUseCase', () => {
+  it('reports hosted AI credits and the plan sizes (JEF-447)', async () => {
+    const { useCase } = build(
+      makeUser({
+        createdAt: new Date('2026-01-01'),
+        aiCreditsUsed: 7,
+        aiCreditsPeriodStart: new Date('2026-11-01T00:00:00.000Z'),
+      }),
+    );
+
+    const status = await useCase.execute({ userId: 'user-1' });
+
+    expect(status.aiCredits).toEqual({
+      used: 7,
+      limit: 30,
+      bonusRemaining: 0,
+      resetsAt: new Date('2026-12-01T00:00:00.000Z'),
+    });
+    expect(status.catalogue.free.limits.aiCreditsPerMonth).toBe(30);
+    expect(status.catalogue.pro.limits.aiCreditsPerMonth).toBe(300);
+  });
+
   it('reports a Free user with the Free limits and what they have used', async () => {
     const { useCase } = build(makeUser({ applicationCount: 12, documentBytes: 3_000_000 }));
 

@@ -1,4 +1,4 @@
-import { eq, asc, lte } from 'drizzle-orm';
+import { and, eq, asc, lte, sql } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { user } from '../schema.js';
 import type { User } from '#src/domain/user/User.js';
@@ -115,6 +115,33 @@ export class DrizzleUserRepository implements IUserRepository {
     await this.db.delete(user).where(eq(user.id, id));
   }
 
+  async reserveAiCredits(
+    userId: string,
+    credits: number,
+    limit: number,
+    periodStart: Date,
+  ): Promise<boolean> {
+    // One conditional UPDATE, so two calls at 29/30 cannot both pass. A counter
+    // from an earlier period reads as zero and is replaced in the same statement.
+    const stale = sql`(${user.aiCreditsPeriodStart} is null or ${user.aiCreditsPeriodStart} < ${periodStart})`;
+    const next = sql`case when ${stale} then ${credits}::int else ${user.aiCreditsUsed} + ${credits}::int end`;
+    const [reserved] = await this.db
+      .update(user)
+      .set({ aiCreditsUsed: next, aiCreditsPeriodStart: periodStart })
+      .where(and(eq(user.id, userId), sql`${next} <= ${limit}::int`))
+      .returning({ id: user.id });
+    return !!reserved;
+  }
+
+  async releaseAiCredits(userId: string, credits: number, periodStart: Date): Promise<void> {
+    // Only inside the period it was charged in: a refund must not eat into the
+    // next month's budget.
+    await this.db
+      .update(user)
+      .set({ aiCreditsUsed: sql`greatest(${user.aiCreditsUsed} - ${credits}::int, 0)` })
+      .where(and(eq(user.id, userId), eq(user.aiCreditsPeriodStart, periodStart)));
+  }
+
   async updateLastDigestSentAt(id: string, sentAt: Date): Promise<void> {
     await this.db.update(user).set({ lastDigestSentAt: sentAt }).where(eq(user.id, id));
   }
@@ -137,6 +164,8 @@ export class DrizzleUserRepository implements IUserRepository {
       weeklyApplicationGoal: row.weeklyApplicationGoal,
       applicationCount: row.applicationCount,
       documentBytes: row.documentBytes,
+      aiCreditsUsed: row.aiCreditsUsed,
+      aiCreditsPeriodStart: row.aiCreditsPeriodStart,
       plan: row.plan as Plan,
       planExpiresAt: row.planExpiresAt,
       planSource: row.planSource as PlanSource | null,

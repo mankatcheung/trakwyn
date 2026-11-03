@@ -27,6 +27,9 @@ const UNENFORCED: Entitlements = {
   limits: {
     applications: PLAN_LIMITS.free.applications,
     documentBytes: PLAN_LIMITS.free.documentBytes,
+    // Hosted AI is real money, unlike the other "everything on" Pro features,
+    // so an unenforced instance still gives the Free size (JEF-447).
+    aiCreditsPerMonth: PLAN_LIMITS.free.aiCreditsPerMonth,
   },
 };
 
@@ -46,9 +49,16 @@ export class EntitlementService implements IEntitlementService {
     return this.deps.plansEnforced;
   }
 
-  forUser(user: Pick<User, 'plan' | 'planExpiresAt'>): Entitlements {
+  forUser(
+    user: Pick<User, 'plan' | 'planExpiresAt'> & Partial<Pick<User, 'planSource'>>,
+  ): Entitlements {
     if (!this.deps.plansEnforced) return UNENFORCED;
-    return resolveEntitlements(user.plan, user.planExpiresAt, this.deps.now());
+    return resolveEntitlements(
+      user.plan,
+      user.planExpiresAt,
+      this.deps.now(),
+      user.planSource ?? null,
+    );
   }
 
   async forUserId(userId: string): Promise<Entitlements> {

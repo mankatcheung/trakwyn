@@ -20,6 +20,8 @@ export const makeUserRepository = (overrides?: Partial<IUserRepository>): IUserR
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  reserveAiCredits: vi.fn().mockResolvedValue(true),
+  releaseAiCredits: vi.fn().mockResolvedValue(undefined),
   updateLastDigestSentAt: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
@@ -41,6 +43,8 @@ export const makeUser = (overrides?: Partial<User>): User => ({
   weeklyApplicationGoal: 5,
   applicationCount: 0,
   documentBytes: 0,
+  aiCreditsUsed: 0,
+  aiCreditsPeriodStart: null,
   plan: 'free',
   planExpiresAt: null,
   planSource: null,

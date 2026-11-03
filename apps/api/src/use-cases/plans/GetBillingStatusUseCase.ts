@@ -1,6 +1,7 @@
 import { effectivePlan } from '#src/domain/plan/Plan.js';
 import type { Entitlements, Plan, PlanSource } from '#src/domain/plan/Plan.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import type { AiCreditStanding, IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { resolveEntitlements } from '#src/use-cases/plans/resolveEntitlements.js';
@@ -8,6 +9,7 @@ import { resolveEntitlements } from '#src/use-cases/plans/resolveEntitlements.js
 interface Deps {
   userRepository: IUserRepository;
   entitlementService: IEntitlementService;
+  aiCreditService: IAiCreditService;
   now: () => Date;
 }
 
@@ -34,6 +36,8 @@ export interface BillingStatus {
     applications: number;
     documentBytes: number;
   };
+  /** This month's hosted AI credits (JEF-447). */
+  aiCredits: AiCreditStanding;
 }
 
 function termsOf(plan: Plan, now: Date): PlanTerms {
@@ -63,6 +67,7 @@ export class GetBillingStatusUseCase {
         applications: user.applicationCount,
         documentBytes: user.documentBytes,
       },
+      aiCredits: this.deps.aiCreditService.standing(user),
     };
   }
 }

@@ -148,6 +148,27 @@ export class LlmLimitReachedError extends DomainError {
 }
 
 /**
+ * The user has spent this month's hosted AI credits (JEF-447). `limit` is what
+ * they had, bonus included, and `resetsAt` the 1st of next month, UTC.
+ */
+export class AiCreditsExhaustedError extends DomainError {
+  constructor(
+    readonly limit = 0,
+    readonly resetsAt = new Date(),
+  ) {
+    super(
+      `You've used this month's AI credits. They reset on ${resetsAt.toLocaleDateString('en-US', {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}. Upgrade to Pro or add your own API key to keep going.`,
+      ERROR_CODES.AI_CREDITS_EXHAUSTED,
+    );
+  }
+}
+
+/**
  * How the user's own provider failed, coarse enough to act on: `auth` means
  * fix the key, `quota`/`rate_limited` mean wait or pay, `bad_request` means
  * the model or request shape, `unavailable` means try later.

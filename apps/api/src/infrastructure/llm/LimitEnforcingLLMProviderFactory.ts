@@ -1,4 +1,4 @@
-import { AI_SOURCE } from '#src/use-cases/constants.js';
+import { AI_SOURCE, LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
 import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import { LlmLimitReachedError } from '#src/use-cases/errors/DomainError.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
@@ -11,6 +11,8 @@ import type {
   LLMProviderRequest,
   LLMProviderResolution,
 } from '#src/use-cases/ports/ILLMProviderFactory.js';
+import type { IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
+import { CreditRefundingLLMProvider } from '#src/infrastructure/llm/CreditRefundingLLMProvider.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { isLimitReached, startOfUtcMonth } from '#src/use-cases/shared/tokenLimit.js';
 
@@ -22,6 +24,8 @@ interface Deps {
   now: () => Date;
   /** Optional (JEF-446): a user on Trakwyn AI has no key to be limited. */
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
+  /** Optional (JEF-447): without it hosted calls are not metered. */
+  aiCreditService?: IAiCreditService;
 }
 
 /**
@@ -59,6 +63,37 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
   }
 
   async resolveForUser(
+    userId: string,
+    request: LLMProviderRequest,
+  ): Promise<LLMProviderResolution | null> {
+    const resolution = await this.resolveKey(userId, request);
+    return resolution ? this.chargeCredits(userId, request, resolution) : null;
+  }
+
+  /**
+   * Hosted AI credits (JEF-447): charged here, at resolve time, and only when
+   * the call runs on the platform's key. A user's own key is never charged,
+   * and neither is a key test (`trackUsage: false`).
+   */
+  private async chargeCredits(
+    userId: string,
+    request: LLMProviderRequest,
+    resolution: LLMProviderResolution,
+  ): Promise<LLMProviderResolution> {
+    const credits = this.deps.aiCreditService;
+    if (
+      !credits ||
+      request.trackUsage === false ||
+      resolution.source !== LLM_USAGE_SOURCE.PLATFORM
+    ) {
+      return resolution;
+    }
+    const charge = await credits.charge(userId, request.feature);
+    if (!charge) return resolution;
+    return { ...resolution, provider: new CreditRefundingLLMProvider(resolution.provider, charge) };
+  }
+
+  private async resolveKey(
     userId: string,
     request: LLMProviderRequest,
   ): Promise<LLMProviderResolution | null> {

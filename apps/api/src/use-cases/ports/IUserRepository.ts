@@ -54,5 +54,19 @@ export interface IUserRepository {
     },
   ): Promise<User>;
   delete(id: string): Promise<void>;
+  /**
+   * Spends `credits` of hosted AI against `limit` for the period starting at
+   * `periodStart` (JEF-447), in one conditional UPDATE so concurrent calls
+   * cannot overshoot. A counter from an earlier period restarts at zero.
+   * Returns false, changing nothing, when it would pass the limit.
+   */
+  reserveAiCredits(
+    userId: string,
+    credits: number,
+    limit: number,
+    periodStart: Date,
+  ): Promise<boolean>;
+  /** Gives `credits` back, only if the counter still belongs to `periodStart`. */
+  releaseAiCredits(userId: string, credits: number, periodStart: Date): Promise<void>;
   updateLastDigestSentAt(id: string, sentAt: Date): Promise<void>;
 }
