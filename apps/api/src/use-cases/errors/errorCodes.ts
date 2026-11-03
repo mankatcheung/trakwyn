@@ -30,6 +30,8 @@ export const ERROR_CODES = {
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
   /** The user has spent this month's hosted AI credits (JEF-447) — the client offers Pro or their own key. Distinct from AI_LIMIT_REACHED, which is a cap on one of their own keys, and from PLAN_REQUIRED, which is a feature gate. */
   AI_CREDITS_EXHAUSTED: 'AI_CREDITS_EXHAUSTED',
+  /** Hosted AI is paused because the day's platform spend budget is used up, or could not be read (JEF-449) — a 503 the user can only wait out, or avoid by using their own key. */
+  AI_TEMPORARILY_UNAVAILABLE: 'AI_TEMPORARILY_UNAVAILABLE',
   /** The action needs a solved captcha and the request carried none (JEF-401) — the client shows the widget and retries. */
   CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED',
   /** The captcha token was sent but the verifier refused it (JEF-401) — expired, reused, or forged. */

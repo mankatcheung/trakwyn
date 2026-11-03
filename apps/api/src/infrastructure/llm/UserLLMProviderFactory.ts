@@ -21,6 +21,7 @@ import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js'
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
@@ -47,6 +48,8 @@ interface Deps {
   metrics?: IMetrics;
   /** The platform-owned path (JEF-446). Absent or disabled, every call is the user's own key. */
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
+  /** Optional (JEF-449): platform calls add their cost to the daily spend. */
+  aiSpendGuard?: IAiSpendGuard;
   /** For the plan in force when picking a tier (JEF-448); defaults to the clock. */
   now?: () => Date;
 }
@@ -232,6 +235,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       generateId: this.deps.generateId,
       logger: this.deps.logger,
       metrics: this.deps.metrics ?? noopMetrics,
+      aiSpendGuard: this.deps.aiSpendGuard,
       ...ctx,
     });
   }

@@ -174,6 +174,19 @@ export class AiCreditsExhaustedError extends DomainError {
 }
 
 /**
+ * Hosted AI is paused for everyone (JEF-449): the day's platform spend
+ * budget is used up, or the counter that tracks it could not be read and the
+ * breaker fails closed. Calls on the user's own key are never refused with it.
+ */
+export class AiTemporarilyUnavailableError extends DomainError {
+  constructor(
+    message = 'Trakwyn AI is temporarily unavailable. Try again later, or add your own API key to keep going.',
+  ) {
+    super(message, ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE);
+  }
+}
+
+/**
  * How the user's own provider failed, coarse enough to act on: `auth` means
  * fix the key, `quota`/`rate_limited` mean wait or pay, `bad_request` means
  * the model or request shape, `unavailable` means try later.

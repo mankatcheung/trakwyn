@@ -123,6 +123,30 @@ describe('DI modules', () => {
   });
 
   /**
+   * JEF-449: the hosted AI limit is a cost guard, not a per-IP ceiling, so it
+   * is a plain `limiter` that bites in every environment: ten calls a minute
+   * per user, the eleventh refused.
+   */
+  it('hostedAiRateLimiter allows 10 a minute per user and bites outside production', async () => {
+    const previous = process.env[ENV.NODE_ENV];
+    process.env[ENV.NODE_ENV] = 'development';
+    try {
+      const { buildContainer } = await import('#src/http/container.js');
+      const { makeLogger } = await import('#src/__tests__/helpers/mocks/infrastructure.js');
+      const { asValue } = await import('awilix');
+      const container = buildContainer();
+      container.register({ logger: asValue(makeLogger()) });
+      const limiter = container.resolve('hostedAiRateLimiter');
+      for (let i = 0; i < 10; i++) expect(await limiter.consume('hosted-ai:user:u1')).toBe(true);
+      expect(await limiter.consume('hosted-ai:user:u1')).toBe(false);
+      expect(await limiter.consume('hosted-ai:user:u2')).toBe(true);
+    } finally {
+      if (previous === undefined) delete process.env[ENV.NODE_ENV];
+      else process.env[ENV.NODE_ENV] = previous;
+    }
+  });
+
+  /**
    * JEF-354: every security event reaches the logs only because every writer
    * resolves `securityEventRepository` through the logging decorator.
    */

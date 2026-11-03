@@ -142,6 +142,13 @@ export class AiCreditsExhaustedAppError extends AppError {
   }
 }
 
+/** 503: hosted AI is paused by the daily spend breaker (JEF-449). */
+export class AiTemporarilyUnavailableAppError extends AppError {
+  constructor(message = 'Trakwyn AI is temporarily unavailable') {
+    super(message, 503, ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE);
+  }
+}
+
 /**
  * 502: the user's own provider failed. Not a 500 — nothing in this server
  * went wrong — and not a 4xx either, since the request to us was fine; the
@@ -191,6 +198,8 @@ export function fromCodedError(err: unknown): AppError {
         return new LlmLimitReachedAppError(err.message);
       case ERROR_CODES.AI_CREDITS_EXHAUSTED:
         return new AiCreditsExhaustedAppError(err.message);
+      case ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE:
+        return new AiTemporarilyUnavailableAppError(err.message);
       case ERROR_CODES.AI_RESPONSE_INVALID:
         return new AiResponseInvalidError(err.message);
       case ERROR_CODES.AI_PROVIDER_ERROR:

@@ -1,4 +1,5 @@
 import type {
+  BreakerOpenReason,
   DatabasePoolState,
   EmailOutcome,
   EmailTemplate,
@@ -85,6 +86,7 @@ export interface FakeMetrics extends IMetrics {
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
   llmCosts: LlmCostMetric[];
+  breakerOpens: BreakerOpenReason[];
 }
 
 /**
@@ -110,6 +112,7 @@ export function makeFakeMetrics(): FakeMetrics {
     llmCalls: [],
     llmTokens: [],
     llmCosts: [],
+    breakerOpens: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -160,6 +163,9 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordLlmCost: (cost) => {
       fake.llmCosts.push(cost);
+    },
+    recordHostedAiBreakerOpen: (reason) => {
+      fake.breakerOpens.push(reason);
     },
   };
   return fake;

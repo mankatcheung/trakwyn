@@ -228,6 +228,16 @@ export const AI_CREDITS = {
 } as const;
 
 /**
+ * Guards on hosted AI spend (JEF-449). The budget is the platform's whole
+ * spend for one UTC day, in micro-USD (1 000 000 = 1 USD), across every user.
+ * `HOSTED_AI_DAILY_BUDGET_USD` overrides it.
+ */
+export const HOSTED_AI = {
+  DAILY_BUDGET_MICROS: 10_000_000,
+  MICROS_PER_USD: 1_000_000,
+} as const;
+
+/**
  * Which model tier a hosted call runs on (JEF-448). `lite` is the cheap model
  * every feature works on; `mid` is worth its price only for the writing a Pro
  * user keeps. Tiers name a class, never a model: the ids live in

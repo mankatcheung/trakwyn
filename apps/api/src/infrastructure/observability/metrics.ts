@@ -59,6 +59,8 @@ export const METRICS = {
   MCP_TOOL_REFUSED: 'trakwyn.mcp.tool_refused',
   /** A document the schema refused to validate — attributes: client, client_version (JEF-472). Shows an old build dying out, or not. */
   GRAPHQL_VALIDATION_FAILURES: 'trakwyn.graphql.validation_failures',
+  /** A hosted AI call refused by the daily spend breaker — attribute: reason (JEF-449). */
+  HOSTED_AI_BREAKER_OPEN: 'trakwyn.hosted_ai.breaker_open',
   /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
   LLM_CALLS: 'trakwyn.llm.calls',
   /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
@@ -168,6 +170,9 @@ export interface LlmCallMetric {
  */
 export type GraphqlClientKind = 'mobile' | 'extension' | 'other';
 
+/** Why the hosted AI breaker refused a call (JEF-449). */
+export type BreakerOpenReason = 'over_budget' | 'store_error';
+
 export interface IMetrics {
   recordCacheHit(): void;
   recordCacheMiss(): void;
@@ -207,6 +212,8 @@ export interface IMetrics {
   /** Tokens one LLM call used in one direction (JEF-113). */
   recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void;
   recordLlmCost(cost: LlmCostMetric): void;
+  /** The daily spend breaker refused a hosted AI call (JEF-449). */
+  recordHostedAiBreakerOpen(reason: BreakerOpenReason): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -228,6 +235,7 @@ export const noopMetrics: IMetrics = {
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
   recordLlmCost: () => {},
+  recordHostedAiBreakerOpen: () => {},
 };
 
 /**
@@ -258,6 +266,7 @@ class OtelMetrics implements IMetrics {
   private llmCalls?: Counter;
   private llmTokens?: Counter;
   private llmCost?: Counter;
+  private hostedAiBreakerOpen?: Counter;
   private llmDuration?: Histogram;
 
   private get meter() {
@@ -426,6 +435,13 @@ class OtelMetrics implements IMetrics {
       source,
       tier: tier ?? 'none',
     });
+  }
+
+  recordHostedAiBreakerOpen(reason: BreakerOpenReason): void {
+    this.hostedAiBreakerOpen ??= this.meter.createCounter(METRICS.HOSTED_AI_BREAKER_OPEN, {
+      description: 'Hosted AI calls refused by the daily spend breaker, by reason',
+    });
+    this.hostedAiBreakerOpen.add(1, { reason });
   }
 }
 
