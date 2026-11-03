@@ -4,12 +4,14 @@ import { CONTENT_LIMITS, PLAN_LIMITS } from '#src/use-cases/constants.js';
 import { makeUser } from '#src/__tests__/helpers/mocks/user.js';
 import {
   makeEntitlements,
+  makeAiCreditService,
   makeEntitlementService,
   makeFreeEntitlements,
 } from '#src/__tests__/helpers/mocks/plans.js';
 
 describe('UserMapper storage fields (JEF-425)', () => {
   const mapper = new UserMapper({
+    aiCreditService: makeAiCreditService(),
     entitlementService: makeEntitlementService({
       forUser: vi.fn().mockReturnValue(makeFreeEntitlements()),
     }),
@@ -24,6 +26,7 @@ describe('UserMapper storage fields (JEF-425)', () => {
 
   it('reports the limit of the plan the user is on (JEF-344)', () => {
     const proMapper = new UserMapper({
+      aiCreditService: makeAiCreditService(),
       entitlementService: makeEntitlementService({
         forUser: vi.fn().mockReturnValue(makeEntitlements()),
       }),
@@ -42,22 +45,29 @@ describe('UserMapper emailVerified (JEF-438)', () => {
   const unverified = makeUser({ emailVerifiedAt: null });
 
   it('reports an unverified address as unverified', () => {
-    expect(new UserMapper({ entitlementService }).toDTO(unverified, null).emailVerified).toBe(
-      false,
-    );
+    expect(
+      new UserMapper({ entitlementService, aiCreditService: makeAiCreditService() }).toDTO(
+        unverified,
+        null,
+      ).emailVerified,
+    ).toBe(false);
   });
 
   it('reports a verified address as verified', () => {
-    const dto = new UserMapper({ entitlementService }).toDTO(
-      makeUser({ emailVerifiedAt: new Date() }),
-      null,
-    );
+    const dto = new UserMapper({
+      entitlementService,
+      aiCreditService: makeAiCreditService(),
+    }).toDTO(makeUser({ emailVerifiedAt: new Date() }), null);
 
     expect(dto.emailVerified).toBe(true);
   });
 
   it('reports everyone as verified when the wall is switched off, so no client shows it', () => {
-    const mapper = new UserMapper({ entitlementService, emailVerificationRequired: false });
+    const mapper = new UserMapper({
+      entitlementService,
+      aiCreditService: makeAiCreditService(),
+      emailVerificationRequired: false,
+    });
 
     expect(mapper.toDTO(unverified, null).emailVerified).toBe(true);
   });

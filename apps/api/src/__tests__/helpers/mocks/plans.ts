@@ -8,6 +8,7 @@
 
 import { vi } from 'vitest';
 import type { Entitlements } from '#src/domain/plan/Plan.js';
+import type { IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import { PLAN_FEATURES, PLAN_LIMITS } from '#src/use-cases/constants.js';
 import { PlanRequiredError } from '#src/use-cases/errors/DomainError.js';
@@ -43,3 +44,15 @@ export const makeFreeEntitlementService = (): IEntitlementService =>
     forUserId: vi.fn().mockResolvedValue(makeFreeEntitlements()),
     assertFeature: vi.fn().mockRejectedValue(new PlanRequiredError('This is a Pro feature')),
   });
+
+/** An AI credit service that never refuses and reports a fresh month (JEF-447). */
+export const makeAiCreditService = (overrides?: Partial<IAiCreditService>): IAiCreditService => ({
+  charge: vi.fn().mockResolvedValue({ refund: vi.fn().mockResolvedValue(undefined) }),
+  standing: vi.fn().mockReturnValue({
+    used: 0,
+    limit: PLAN_LIMITS.free.aiCreditsPerMonth,
+    bonusRemaining: 0,
+    resetsAt: new Date('2026-12-01T00:00:00.000Z'),
+  }),
+  ...overrides,
+});

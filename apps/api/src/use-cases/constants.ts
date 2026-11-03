@@ -201,6 +201,31 @@ export const AI_SOURCES: readonly AiSource[] = Object.values(AI_SOURCE);
 
 export type LlmUsageSource = (typeof LLM_USAGE_SOURCE)[keyof typeof LLM_USAGE_SOURCE];
 
+/**
+ * Hosted AI credits (JEF-447). A call on the platform's key costs the weight
+ * of its feature; a call on the user's own key costs nothing. A chat turn is
+ * one resolve, so it is one charge however many tools the model calls.
+ * `keyTest` is 0 because it only ever tests the user's own key.
+ */
+export const AI_CREDITS = {
+  WEIGHTS: {
+    parseJobDescription: 1,
+    resumeMatch: 1,
+    companyBriefing: 1,
+    coverLetter: 2,
+    resume: 3,
+    mockQuestions: 1,
+    mockAnswer: 1,
+    talkingPoints: 1,
+    parseCv: 1,
+    chat: 1,
+    keyTest: 0,
+  } as const satisfies Record<AiFeature, number>,
+  /** Extra credits a new account has for its first `WELCOME_DAYS`, on top of the plan's monthly size. */
+  WELCOME_BONUS: 20,
+  WELCOME_DAYS: 14,
+} as const;
+
 /** LLM provider API URLs, default models, and other per-provider settings. */
 export const LLM = {
   OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions',
@@ -563,10 +588,12 @@ export const PLAN_LIMITS = {
   free: {
     applications: CONTENT_LIMITS.APPLICATIONS_PER_USER,
     documentBytes: CONTENT_LIMITS.DOCUMENT_STORAGE_LIMIT_BYTES,
+    aiCreditsPerMonth: 30,
   },
   pro: {
     applications: null,
     documentBytes: 2 * 1024 * 1024 * 1024,
+    aiCreditsPerMonth: 300,
   },
 } as const;
 
@@ -598,6 +625,8 @@ export const PLAN_FEATURES = {
 /** How long the operator's launch trial gives an existing user Pro for (JEF-344). */
 export const PLAN_TRIAL = {
   LAUNCH_DAYS: 30,
+  /** Monthly AI credits on a trial: between Free and Pro, so a trial shows the feature without the full Pro budget (JEF-447). */
+  AI_CREDITS: 100,
 } as const;
 
 /**

@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import { PlanEnum, PlanSourceEnum } from '#src/http/schema/types/enums/PlanEnums.js';
+import type { AiCreditStanding } from '#src/use-cases/ports/IAiCreditService.js';
 import type { BillingStatus, PlanTerms } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
 
 type PlanFeatures = BillingStatus['features'];
@@ -21,12 +22,28 @@ PlanFeaturesRef.implement({
   }),
 });
 
+export const AiCreditsRef = builder.objectRef<AiCreditStanding>('AiCredits');
+AiCreditsRef.implement({
+  description: "This month's hosted AI credits. Calls on the user's own key are never counted.",
+  fields: (t) => ({
+    used: t.exposeInt('used'),
+    limit: t.exposeInt('limit', {
+      description: "The plan's monthly size, without the welcome bonus.",
+    }),
+    bonusRemaining: t.exposeInt('bonusRemaining', {
+      description: 'Welcome-bonus credits still unspent; 0 after the first 14 days.',
+    }),
+    resetsAt: t.field({ type: 'String', resolve: (credits) => credits.resetsAt.toISOString() }),
+  }),
+});
+
 const PlanLimitsRef = builder.objectRef<PlanLimits>('PlanLimits');
 PlanLimitsRef.implement({
   description: 'What the user may hold. Null means no limit.',
   fields: (t) => ({
     applications: t.exposeInt('applications', { nullable: true }),
     documentBytes: t.exposeFloat('documentBytes'),
+    aiCreditsPerMonth: t.exposeInt('aiCreditsPerMonth'),
   }),
 });
 
@@ -78,5 +95,6 @@ BillingStatusRef.implement({
     limits: t.field({ type: PlanLimitsRef, resolve: (status) => status.limits }),
     catalogue: t.field({ type: PlanCatalogueRef, resolve: (status) => status.catalogue }),
     usage: t.field({ type: PlanUsageRef, resolve: (status) => status.usage }),
+    aiCredits: t.field({ type: AiCreditsRef, resolve: (status) => status.aiCredits }),
   }),
 });

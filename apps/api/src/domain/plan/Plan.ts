@@ -28,6 +28,8 @@ export interface Entitlements {
   limits: {
     applications: number | null;
     documentBytes: number;
+    /** Hosted AI credits per UTC month (JEF-447), before any welcome bonus. */
+    aiCreditsPerMonth: number;
   };
 }
 

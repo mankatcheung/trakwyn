@@ -339,6 +339,7 @@ import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy
 import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { IOidcTokenVerifier } from '#src/use-cases/ports/IOidcTokenVerifier.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
+import type { IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { GetBillingStatusUseCase } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
 import type { GetContentQuotaUseCase } from '#src/use-cases/quotas/GetContentQuotaUseCase.js';
@@ -358,6 +359,7 @@ export interface Cradle {
   now: () => Date;
   plansEnforced: boolean;
   entitlementService: IEntitlementService;
+  aiCreditService: IAiCreditService;
   getBillingStatusUseCase: GetBillingStatusUseCase;
   getContentQuotaUseCase: GetContentQuotaUseCase;
   billingProvider: IBillingProvider;

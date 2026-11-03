@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import type { UserDTO } from '#src/interface-adapters/mappers/UserMapper.js';
+import { AiCreditsRef } from '#src/http/schema/types/BillingStatusType.js';
 import { OnboardingGoalEnum } from '#src/http/schema/types/enums/OnboardingGoalEnum.js';
 import { StepUpMethodEnum } from '#src/http/schema/types/enums/StepUpMethodEnum.js';
 
@@ -26,6 +27,7 @@ UserRef.implement({
     aiSource: t.exposeString('aiSource'),
     storageUsedBytes: t.exposeFloat('storageUsedBytes'),
     storageLimitBytes: t.exposeFloat('storageLimitBytes'),
+    aiCredits: t.field({ type: AiCreditsRef, resolve: (user) => user.aiCredits }),
     onboardingChecklistDismissedAt: t.field({
       type: 'String',
       nullable: true,

@@ -1,5 +1,6 @@
 import type { User } from '#src/domain/user/User.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
+import type { AiCreditStanding, IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 
 export interface UserDTO {
@@ -26,6 +27,8 @@ export interface UserDTO {
   onboardingCompletedAt: Date | null;
   storageUsedBytes: number;
   storageLimitBytes: number;
+  /** This month's hosted AI credits (JEF-447). */
+  aiCredits: AiCreditStanding;
   hasPassword: boolean;
   /** When the account will be deleted (JEF-463); null unless scheduled. */
   deletionScheduledAt: Date | null;
@@ -33,16 +36,20 @@ export interface UserDTO {
 
 export class UserMapper {
   private readonly entitlementService: IEntitlementService;
+  private readonly aiCreditService: IAiCreditService;
   private readonly emailVerificationRequired: boolean;
 
   constructor({
     entitlementService,
+    aiCreditService,
     emailVerificationRequired = true,
   }: {
     entitlementService: IEntitlementService;
+    aiCreditService: IAiCreditService;
     emailVerificationRequired?: boolean;
   }) {
     this.entitlementService = entitlementService;
+    this.aiCreditService = aiCreditService;
     this.emailVerificationRequired = emailVerificationRequired;
   }
 
@@ -67,6 +74,7 @@ export class UserMapper {
       onboardingCompletedAt: user.onboardingCompletedAt,
       storageUsedBytes: user.documentBytes,
       storageLimitBytes: this.entitlementService.forUser(user).limits.documentBytes,
+      aiCredits: this.aiCreditService.standing(user),
       hasPassword: user.passwordHash !== null,
       deletionScheduledAt: user.deletionScheduledAt,
     };

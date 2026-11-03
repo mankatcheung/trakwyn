@@ -47,6 +47,7 @@ import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderF
 import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
 import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
+import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
@@ -118,6 +119,7 @@ export const infrastructure = {
   autoVerifyEmail: asFunction(() => resolveAutoVerifyEmail(), { lifetime: Lifetime.SINGLETON }),
   plansEnforced: asValue(process.env[ENV.PLANS_ENFORCED] === 'true'),
   entitlementService: asClass(EntitlementService, { lifetime: Lifetime.SINGLETON }),
+  aiCreditService: asClass(AiCreditService, { lifetime: Lifetime.SINGLETON }),
   webAppOrigin: asValue(
     process.env[ENV.CORS_ORIGIN]?.split(',')[0]?.trim() ?? 'http://localhost:3000',
   ),

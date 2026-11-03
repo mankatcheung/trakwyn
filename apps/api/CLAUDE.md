@@ -255,7 +255,19 @@ Trakwyn AI: a user with no key of their own gets answers on keys the platform ho
 - **Gateway.** With `PLATFORM_LLM_GATEWAY_BASE_URL` set, each provider is reached through Cloudflare AI Gateway's per-provider path (`<base>/google-ai-studio/v1beta/models`, `<base>/openai/chat/completions`) with `cf-aig-authorization: Bearer <PLATFORM_LLM_GATEWAY_TOKEN>`. This goes through the registry's `endpointOverride`/`extraHeaders`, which are config and so skip `IOutboundUrlPolicy`; a **user-supplied** `baseUrl` still goes through it. The gateway has logging and caching off (`infra/cloudflare/ai_gateway.tf`).
 - **Failover** is `FailoverLLMProvider`: one retry on the second provider when the first fails with an `LlmProviderError` of kind `rate_limited` or `unavailable` (429 and 5xx), before any streamed event. Never on a 4xx, after output has started, or when the caller aborted. Each leg carries its own tracing and usage tracking, so the call that answered is the one recorded, with its own provider and model; a failed first leg records nothing. A failover logs `llm.platform.failover` at `warn`.
 - **Dev and CI.** With `LLM_PROVIDER_MODE=fake` both legs are OpenAI-compatible providers pointed at this server's own fake completions route (`PLATFORM_LLM.FAKE_COMPLETIONS_PATH`, which `ROUTES.LLM_FAKE_COMPLETIONS` re-exports) and need no keys, so set `HOSTED_AI_ENABLED=true` to exercise Trakwyn AI in e2e.
-- **Not here yet:** credits (Hosted AI 4), tier routing (5), guardrails (6) and the settings UI (8). Infra and the runbook are `infra/cloudflare` and `infra/gcp/README.md` ("Hosted AI").
+- **Credits (Hosted AI 4, JEF-447):** see the next section.
+- **Not here yet:** tier routing (5), guardrails (6) and the settings UI (8). Infra and the runbook are `infra/cloudflare` and `infra/gcp/README.md` ("Hosted AI").
+
+## Hosted AI credits (JEF-447)
+
+A monthly budget for calls on the platform's key. Own-key calls and key tests are never charged.
+
+- **Policy** is `AI_CREDITS` (`WEIGHTS` per `AI_FEATURE`, typed `satisfies Record<AiFeature, number>` so a new feature must be weighed; `WELCOME_BONUS` 20 for `WELCOME_DAYS` 14), `PLAN_LIMITS.<plan>.aiCreditsPerMonth` (Free 30, Pro 300) and `PLAN_TRIAL.AI_CREDITS` (100). `resolveEntitlements` takes the plan source and uses the trial size for a Pro `trial`. `talkingPoints` and `parseCv` weigh 1; the ticket did not list them.
+- **The exception to "not enforced means everything on":** `EntitlementService`'s unenforced entitlements give the **Free** size of credits, not Pro's, because hosted AI costs real money.
+- **Counter on the user row:** `aiCreditsUsed` and `aiCreditsPeriodStart` (the UTC month it counts). `reserveAiCredits(userId, credits, limit, periodStart)` is one conditional `UPDATE` that restarts the counter when `periodStart` is newer and refuses past `limit`, so there is no reset job and two reserves at 29/30 cannot both pass. `releaseAiCredits` refunds, only within the same period. Both bust the cached user row. Read the counter through `AiCreditService.standing`, never raw: it is stale after the month turns. No rollover.
+- **Charging** is `LimitEnforcingLLMProviderFactory.resolveForUser`, after the inner resolution and only when `source === 'platform'` and `trackUsage !== false`: `IAiCreditService.charge` reserves the feature's weight (the limit includes the welcome bonus while it lasts) or throws `AiCreditsExhaustedError` (`AI_CREDITS_EXHAUSTED`, 403, `limit`, `resetsAt`). A chat turn resolves once, so it is one charge.
+- **Refund:** `CreditRefundingLLMProvider` wraps the provider and refunds once if a call fails with `LlmProviderError` before **any** call of that resolution has returned or streamed an event. A success, a partly streamed answer or a cancelled call keeps the credits.
+- **Exposure:** `billingStatus.aiCredits { used, limit, bonusRemaining, resetsAt }`, `billingStatus.limits/catalogue.aiCreditsPerMonth`, and `me.aiCredits`. `limit` is the plan's size without the bonus; `bonusRemaining` is what is left above it.
 
 ## Cheaper AI calls (JEF-450)
 

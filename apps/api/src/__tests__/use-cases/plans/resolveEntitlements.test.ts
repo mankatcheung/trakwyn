@@ -66,9 +66,22 @@ describe('resolveEntitlements', () => {
     expect(limits.documentBytes).toBe(2 * 1024 * 1024 * 1024);
   });
 
-  it('limits neither plan on AI actions, which run on the user’s own key (JEF-442)', () => {
-    expect(Object.keys(PLAN_LIMITS.free).sort()).toEqual(['applications', 'documentBytes']);
-    expect(Object.keys(PLAN_LIMITS.pro).sort()).toEqual(['applications', 'documentBytes']);
+  it('limits own-key AI actions on neither plan; only hosted credits are metered (JEF-442, JEF-447)', () => {
+    const keys = ['aiCreditsPerMonth', 'applications', 'documentBytes'];
+    expect(Object.keys(PLAN_LIMITS.free).sort()).toEqual(keys);
+    expect(Object.keys(PLAN_LIMITS.pro).sort()).toEqual(keys);
+  });
+
+  it('gives 30 hosted AI credits on Free, 300 on Pro and 100 on a trial (JEF-447)', () => {
+    expect(resolveEntitlements('free', null, NOW).limits.aiCreditsPerMonth).toBe(30);
+    expect(resolveEntitlements('pro', null, NOW, 'subscription').limits.aiCreditsPerMonth).toBe(
+      300,
+    );
+    expect(resolveEntitlements('pro', FUTURE, NOW, 'trial').limits.aiCreditsPerMonth).toBe(100);
+  });
+
+  it('reads an expired trial as Free credits', () => {
+    expect(resolveEntitlements('pro', PAST, NOW, 'trial').limits.aiCreditsPerMonth).toBe(30);
   });
 
   it('resolves an expired pass to the free entitlements', () => {

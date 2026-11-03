@@ -95,6 +95,24 @@ export class CachedUserRepository implements IUserRepository {
     if (email) await this.cache.delete(CACHE_KEYS.userByEmail(email));
   }
 
+  // The counter is read back through findById (billing status, `me`), so a
+  // charge or refund drops the cached row (JEF-447).
+  async reserveAiCredits(
+    userId: string,
+    credits: number,
+    limit: number,
+    periodStart: Date,
+  ): Promise<boolean> {
+    const reserved = await this.inner.reserveAiCredits(userId, credits, limit, periodStart);
+    if (reserved) await this.cache.delete(CACHE_KEYS.userById(userId));
+    return reserved;
+  }
+
+  async releaseAiCredits(userId: string, credits: number, periodStart: Date): Promise<void> {
+    await this.inner.releaseAiCredits(userId, credits, periodStart);
+    await this.cache.delete(CACHE_KEYS.userById(userId));
+  }
+
   async updateLastDigestSentAt(id: string, sentAt: Date): Promise<void> {
     await this.inner.updateLastDigestSentAt(id, sentAt);
     await this.cache.delete(CACHE_KEYS.userById(id));

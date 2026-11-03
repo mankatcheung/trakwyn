@@ -133,6 +133,16 @@ export class LlmLimitReachedAppError extends AppError {
 }
 
 /**
+ * 403, like PLAN_REQUIRED: a plan limit the user fixes by upgrading or adding
+ * their own key, not a 429 a client would retry (JEF-447).
+ */
+export class AiCreditsExhaustedAppError extends AppError {
+  constructor(message = "You've used this month's AI credits") {
+    super(message, 403, ERROR_CODES.AI_CREDITS_EXHAUSTED);
+  }
+}
+
+/**
  * 502: the user's own provider failed. Not a 500 — nothing in this server
  * went wrong — and not a 4xx either, since the request to us was fine; the
  * gateway status is the honest one, and the code tells the client which
@@ -179,6 +189,8 @@ export function fromCodedError(err: unknown): AppError {
         return new AiNotConfiguredError(err.message);
       case ERROR_CODES.AI_LIMIT_REACHED:
         return new LlmLimitReachedAppError(err.message);
+      case ERROR_CODES.AI_CREDITS_EXHAUSTED:
+        return new AiCreditsExhaustedAppError(err.message);
       case ERROR_CODES.AI_RESPONSE_INVALID:
         return new AiResponseInvalidError(err.message);
       case ERROR_CODES.AI_PROVIDER_ERROR:
