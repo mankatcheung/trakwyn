@@ -60,6 +60,7 @@ import type { DrizzleMcpOAuthAuthorizationCodeRepository } from '#src/infrastruc
 import type { DrizzleShareLinkRepository } from '#src/infrastructure/db/repositories/DrizzleShareLinkRepository.js';
 import type { DrizzleNotificationRepository } from '#src/infrastructure/db/repositories/DrizzleNotificationRepository.js';
 import type { DrizzleOfferRepository } from '#src/infrastructure/db/repositories/DrizzleOfferRepository.js';
+import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import type { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
@@ -360,6 +361,8 @@ export interface Cradle {
   plansEnforced: boolean;
   entitlementService: IEntitlementService;
   aiCreditService: IAiCreditService;
+  aiSpendGuard: IAiSpendGuard;
+  hostedAiRateLimiter: IRateLimiter;
   getBillingStatusUseCase: GetBillingStatusUseCase;
   getContentQuotaUseCase: GetContentQuotaUseCase;
   billingProvider: IBillingProvider;

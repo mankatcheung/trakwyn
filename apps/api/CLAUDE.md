@@ -256,7 +256,7 @@ Trakwyn AI: a user with no key of their own gets answers on keys the platform ho
 - **Failover** is `FailoverLLMProvider`: one retry on the second provider when the first fails with an `LlmProviderError` of kind `rate_limited` or `unavailable` (429 and 5xx), before any streamed event. Never on a 4xx, after output has started, or when the caller aborted. Each leg carries its own tracing and usage tracking, so the call that answered is the one recorded, with its own provider and model; a failed first leg records nothing. A failover logs `llm.platform.failover` at `warn`.
 - **Dev and CI.** With `LLM_PROVIDER_MODE=fake` both legs are OpenAI-compatible providers pointed at this server's own fake completions route (`PLATFORM_LLM.FAKE_COMPLETIONS_PATH`, which `ROUTES.LLM_FAKE_COMPLETIONS` re-exports) and need no keys, so set `HOSTED_AI_ENABLED=true` to exercise Trakwyn AI in e2e.
 - **Credits (Hosted AI 4, JEF-447):** see the next section.
-- **Not here yet:** guardrails (6) and the settings UI (8). Infra and the runbook are `infra/cloudflare` and `infra/gcp/README.md` ("Hosted AI").
+- **Not here yet:** the settings UI (8). Guardrails are the next section. Infra and the runbook are `infra/cloudflare` and `infra/gcp/README.md` ("Hosted AI").
 
 ## Hosted AI credits (JEF-447)
 
@@ -269,6 +269,17 @@ A monthly budget for calls on the platform's key. Own-key calls and key tests ar
 - **Refund:** `CreditRefundingLLMProvider` wraps the provider and refunds once if a call fails with `LlmProviderError` before **any** call of that resolution has returned or streamed an event. A success, a partly streamed answer or a cancelled call keeps the credits.
 - **Past the credits (JEF-448).** A Free user is refused as above. A Pro user is let through as `overflow` (nothing reserved) until the month's platform spend reaches `AI_COST_CEILING_MICROS.pro` (1_500_000 micro-USD), then refused with `AiCreditsExhaustedError(…, fairUse = true)`, whose message names no amount. The ceiling is read only in the overflow branch (`ILlmUsageEventRepository.sumCostMicros(userId, monthStart, 'platform')`, the primary database) and a failed read throws, so it fails closed. A call whose model has no entry in `LLM_PRICES` records `costMicros` null and adds nothing to that sum, so a new platform model needs a price.
 - **Exposure:** `billingStatus.aiCredits { used, limit, bonusRemaining, resetsAt }`, `billingStatus.limits/catalogue.aiCreditsPerMonth`, and `me.aiCredits`. `limit` is the plan's size without the bonus; `bonusRemaining` is what is left above it.
+
+## Hosted AI spend guards (JEF-449)
+
+Three layers in front of the platform's keys, all in `LimitEnforcingLLMProviderFactory.guardHostedCall`, which runs after the inner resolution, **only** when `source === 'platform'` and `trackUsage !== false`, and **before** the credit charge, so a refused call costs the user no credit. Own-key calls and key tests never reach it.
+
+- **Verified email.** A null `emailVerifiedAt` is `EmailNotVerifiedError("Verify your email to use Trakwyn AI.")` (the JEF-438 code, 403). This reads the user row, not `AssertEmailVerifiedUseCase`, so `EMAIL_VERIFICATION_REQUIRED=false` does not lift it.
+- **Rate limit.** `hostedAiRateLimiter` (`RATE_LIMIT.HOSTED_AI`, 10 a minute, key `hosted-ai:user:<id>`) is an ordinary `limiter`, not `productionOnlyLimiter`: it is per user, so no suite trips it. The 11th is `RATE_LIMITED`. Like every `IRateLimiter` it fails open on a Redis error; the breaker below is what bounds spend then.
+- **Daily breaker.** `IAiSpendGuard` (`HostedAiSpendGuard` over an `IAiSpendCounter`: `RedisAiSpendCounter` when `CACHE_PROVIDER=redis`, `MemoryAiSpendCounter` otherwise). The key is `hosted-ai:spend:<UTC date>` (`HOSTED_AI_SPEND`), checked before each hosted call and incremented by `costMicros` in `UsageTrackingLLMProvider.record` for `platform` calls, so the call that crosses the budget is allowed and the next is refused. **It fails closed:** an unreadable counter is `AiTemporarilyUnavailableError` (`AI_TEMPORARILY_UNAVAILABLE`, 503), unlike the rate limiter and session blocklist. A failed increment is logged and swallowed. Every refusal logs `hosted_ai.breaker_open` at `warn` (with `reason`) and counts `trakwyn.hosted_ai.breaker_open`.
+- **Budget.** `HOSTED_AI.DAILY_BUDGET_MICROS` ($10), or `HOSTED_AI_DAILY_BUDGET_USD` (read on every check; junk or a negative falls back to the default).
+- **Blind spots.** A model with no price (`costMicros` null) adds nothing to the counter, so the provider-side budgets (`infra/gcp/README.md`, "Hosted AI spend budgets") are the backstop. In-flight calls can overshoot the line by their own cost.
+- **Monitors** are in `infra/axiom/monitors.tf`; renaming the metric or the log event means changing them in the same PR.
 
 ## Model tiers (JEF-448)
 

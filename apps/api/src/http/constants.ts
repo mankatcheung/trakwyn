@@ -224,6 +224,12 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 300,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  // Hosted AI calls per user (JEF-449), across every feature: a scripted loop
+  // on the platform's key costs real money, unlike one on the user's own.
+  HOSTED_AI: {
+    MAX_ATTEMPTS: 10,
+    WINDOW_MS: 60 * 1000, // 1 minute
+  },
   CHAT_MESSAGE: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

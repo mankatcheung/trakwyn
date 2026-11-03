@@ -40,6 +40,7 @@ function build(opts: {
 }) {
   const user = makeUser({
     aiSource: opts.aiSource,
+    emailVerifiedAt: new Date('2026-01-01'),
     plan: opts.plan ?? 'free',
     planExpiresAt: null,
     defaultLlmProvider: opts.defaultLlmProvider ?? (opts.hasKey ? LLM_PROVIDER.OPENAI : null),

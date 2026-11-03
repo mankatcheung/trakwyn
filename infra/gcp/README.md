@@ -259,6 +259,16 @@ gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 5. **Apply** (in full) with `hosted_ai = true` and `PLATFORM_LLM_GATEWAY_BASE_URL` in `plain_env` (from `terraform -chdir=../cloudflare output -raw ai_gateway_base_url`). Leave `PLATFORM_LLM_PRIMARY` (`googleai`) and `PLATFORM_LLM_FALLBACK` (`openai`) unset unless you are swapping the pair; model ids are code (`PLATFORM_LLM` in `apps/api/src/infrastructure/config/constants.ts`).
 6. **Verify:** a user with no key and `aiSource` `auto` gets an AI reply, and `LlmUsageEvent.source` is `platform` for it. A missing key does not stop the API starting: it fails the first Trakwyn AI call with `AI_NOT_CONFIGURED`.
 
+### Hosted AI spend budgets (JEF-449)
+
+The API stops hosted calls itself at `HOSTED_AI.DAILY_BUDGET_MICROS` ($10 a day, across all users; override with `HOSTED_AI_DAILY_BUDGET_USD` in `plain_env`). That counter is an estimate from list prices, and it only sees calls the API made, so the providers get their own ceilings as the second layer. Neither is in Terraform: a `google_billing_budget` needs billing-account permissions that this root's service account does not have, and the OpenAI limit has no API. Record the date and who did each.
+
+- [ ] **Google Cloud billing budget on the Gemini API project.** Billing, Budgets & alerts, Create budget, scoped to the project that owns `platform-googleai-api-key`. Amount: $300 a month (the worst case at the daily breaker), alerts at 50%, 80% and 100%, emailed to the billing admins. Or, with `gcloud`, the same command as the account budget above with `--filter-projects="projects/<GEMINI_PROJECT_ID>"`, `--budget-amount=300USD` and `--threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`. Date:
+- [ ] **OpenAI project monthly limit** (platform.openai.com, the dedicated project, Settings, Limits): $300, with the email alert at 50% and 80%. Date:
+- [ ] **Axiom monitors applied** (`infra/axiom`): hourly platform cost, breaker open, failover, `AI_CREDITS_EXHAUSTED`. `terraform plan` shows four new monitors and `apply` leaves no diff. Trigger the breaker once on a staging revision with `HOSTED_AI_DAILY_BUDGET_USD=0` and confirm the "Hosted AI breaker open" email. Date:
+
+Raise the daily budget as Pro grows. The breaker **fails closed**: if Redis cannot be read, hosted calls are refused (`AI_TEMPORARILY_UNAVAILABLE`, 503) until it can, and the "breaker open" monitor reports `reason = store_error`. Own-key calls are never affected.
+
 **Kill switch:** `hosted_ai = false` and apply. It is a new revision, so allow a minute. Users on Trakwyn AI get `AI_NOT_CONFIGURED`; own-key users are untouched. The gateway's rate limit and token (`infra/cloudflare/README.md`) cut the spend faster than a deploy if you need it at once. A provider outage needs neither: the API retries once on the second provider before any output.
 
 **Roll back:** send traffic to the previous revision. The next deploy moves traffic back to the newest revision.
