@@ -36,10 +36,13 @@ function build(opts: {
   hasKey: boolean;
   platformFactory?: IPlatformLLMProviderFactory;
   defaultLlmProvider?: string | null;
+  plan?: 'free' | 'pro';
 }) {
   const user = makeUser({
     aiSource: opts.aiSource,
     emailVerifiedAt: new Date('2026-01-01'),
+    plan: opts.plan ?? 'free',
+    planExpiresAt: null,
     defaultLlmProvider: opts.defaultLlmProvider ?? (opts.hasKey ? LLM_PROVIDER.OPENAI : null),
   });
   const key = makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI });
@@ -192,5 +195,55 @@ describe('platform resolution', () => {
     const resolution = await limited.resolveForUser('user-1', request);
 
     expect(resolution?.provider).not.toBeInstanceOf(FailoverLLMProvider);
+  });
+});
+
+describe('tier routing (JEF-448)', () => {
+  const trakwyn = { aiSource: 'trakwyn', hasKey: false } as const;
+
+  it.each([
+    ['free', AI_FEATURE.COVER_LETTER, 'lite'],
+    ['free', AI_FEATURE.RESUME, 'lite'],
+    ['pro', AI_FEATURE.COVER_LETTER, 'mid'],
+    ['pro', AI_FEATURE.RESUME, 'mid'],
+    ['pro', AI_FEATURE.CHAT, 'lite'],
+    ['pro', AI_FEATURE.PARSE_JOB_DESCRIPTION, 'lite'],
+  ] as const)('%s plan, %s -> %s', async (plan, feature, tier) => {
+    const { limited, platformFactory } = build({ ...trakwyn, plan });
+
+    const resolution = await limited.resolveForUser('user-1', { feature });
+
+    expect(platformFactory.legs).toHaveBeenCalledWith(tier);
+    expect(resolution).toMatchObject({ tier, plan });
+  });
+
+  it('pins to the requested tier over the plan default', async () => {
+    const { inner, platformFactory } = build({ ...trakwyn, plan: 'pro' });
+
+    await inner.resolveForUser('user-1', { feature: AI_FEATURE.RESUME, tier: 'lite' });
+
+    expect(platformFactory.legs).toHaveBeenCalledWith('lite');
+  });
+
+  it('reads an expired Pro plan as free', async () => {
+    const { inner, platformFactory } = build({ ...trakwyn, plan: 'pro' });
+    const user = makeUser({
+      aiSource: 'trakwyn',
+      plan: 'pro',
+      planExpiresAt: new Date('2020-01-01T00:00:00Z'),
+    });
+
+    await inner.resolveForUser('user-1', { feature: AI_FEATURE.RESUME }, { user });
+
+    expect(platformFactory.legs).toHaveBeenCalledWith('lite');
+  });
+
+  it('has no tier or plan on an own key', async () => {
+    const { limited } = build({ aiSource: 'own', hasKey: true, plan: 'pro' });
+
+    const resolution = await limited.resolveForUser('user-1', request);
+
+    expect(resolution?.tier).toBeUndefined();
+    expect(resolution?.plan).toBeUndefined();
   });
 });

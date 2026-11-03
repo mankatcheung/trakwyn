@@ -58,6 +58,7 @@ export const makeLlmUsageEventRepository = (
 ): ILlmUsageEventRepository => ({
   record: vi.fn().mockResolvedValue(undefined),
   summarizeByUserId: vi.fn().mockResolvedValue([]),
+  sumCostMicros: vi.fn().mockResolvedValue(0),
   ...overrides,
 });
 

@@ -26,6 +26,7 @@ function makeRepo(overrides?: Partial<ILlmUsageEventRepository>): ILlmUsageEvent
   return {
     record: vi.fn().mockResolvedValue(undefined),
     summarizeByUserId: vi.fn().mockResolvedValue([]),
+    sumCostMicros: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
 }
@@ -116,6 +117,32 @@ describe('UsageTrackingLLMProvider', () => {
         undefined,
         { reasoning: 'off' },
       );
+    });
+
+    it('puts the hosted tier on the cost metric (JEF-448)', async () => {
+      const metrics = makeFakeMetrics();
+      await new UsageTrackingLLMProvider({
+        inner: makeInner({
+          complete: vi.fn().mockResolvedValue({
+            content: 'ok',
+            usage: { promptTokens: 1_000, completionTokens: 0 },
+          }),
+        }),
+        usageEventRepository: makeRepo(),
+        logger: makeLogger(),
+        generateId: () => 'evt',
+        userId: 'user-1',
+        provider: 'googleai',
+        model: 'gemini-2.5-flash-lite',
+        feature: AI_FEATURE.CHAT,
+        source: LLM_USAGE_SOURCE.PLATFORM,
+        tier: 'lite',
+        metrics,
+      }).complete([{ role: 'user', content: 'hi' }]);
+
+      expect(metrics.llmCosts).toEqual([
+        expect.objectContaining({ tier: 'lite', costMicros: 100 }),
+      ]);
     });
 
     it('counts the cost in the metric, and records null with one warning for an unpriced model (JEF-444)', async () => {

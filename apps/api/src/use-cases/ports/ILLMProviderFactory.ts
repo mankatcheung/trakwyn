@@ -1,7 +1,8 @@
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
 import type { User } from '#src/domain/user/User.js';
-import type { AiFeature, LlmUsageSource } from '#src/use-cases/constants.js';
+import type { Plan } from '#src/domain/plan/Plan.js';
+import type { AiFeature, AiModelTier, LlmUsageSource } from '#src/use-cases/constants.js';
 
 /**
  * Resolves the LLM provider to use for a given user's own API key —
@@ -38,6 +39,10 @@ export interface LLMProviderResolution {
   fellBackFrom: string | null;
   /** Whose key answers: the user's (`byok`) or Trakwyn's (`platform`, JEF-446). */
   source: LlmUsageSource;
+  /** The model tier a platform call runs on (JEF-448); absent on the user's own key. */
+  tier?: AiModelTier;
+  /** The plan in force for a platform call (JEF-448); absent on the user's own key. */
+  plan?: Plan;
 }
 
 /**
@@ -66,6 +71,12 @@ export interface LLMProviderRequest {
   provider?: string;
   model?: string | null;
   trackUsage?: boolean;
+  /**
+   * Pins a platform call to a tier instead of the one the user's plan gets
+   * for the feature (JEF-448). Set by the limit-enforcing decorator when a
+   * Pro user's overflow is sent to `lite`; ignored on the user's own key.
+   */
+  tier?: AiModelTier;
 }
 
 export interface ILLMProviderFactory {

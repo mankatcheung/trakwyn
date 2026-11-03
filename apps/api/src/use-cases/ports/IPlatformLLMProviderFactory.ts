@@ -1,3 +1,4 @@
+import type { AiModelTier } from '#src/use-cases/constants.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 
 /** One provider the platform can call: which, on what model, already built. */
@@ -15,9 +16,10 @@ export interface PlatformLLMLeg {
 export interface IPlatformLLMProviderFactory {
   isEnabled(): boolean;
   /**
-   * The primary leg first, then the failover leg when one is configured.
+   * The primary leg first, then the failover leg when one is configured, each
+   * on the model of `tier` (JEF-448).
    * Throws `AiNotConfiguredError` when hosted AI is on but the primary key is
    * missing, so a misconfigured deploy fails on first use and not at boot.
    */
-  legs(): PlatformLLMLeg[];
+  legs(tier: AiModelTier): PlatformLLMLeg[];
 }

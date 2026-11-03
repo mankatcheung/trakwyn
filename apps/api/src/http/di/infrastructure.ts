@@ -219,6 +219,7 @@ export const infrastructure = {
       logger,
       platformLlmProviderFactory,
       aiSpendGuard,
+      now,
     }: Cradle) =>
       new UserLLMProviderFactory({
         userRepository,
@@ -232,6 +233,7 @@ export const infrastructure = {
         metrics: otelMetrics,
         platformLlmProviderFactory,
         aiSpendGuard,
+        now,
       }),
     { lifetime: Lifetime.SINGLETON },
   ),

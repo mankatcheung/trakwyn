@@ -17,7 +17,7 @@ import type {
   LLMProviderRequest,
   LLMProviderResolution,
 } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
+import type { AiCreditCharge, IAiCreditService } from '#src/use-cases/ports/IAiCreditService.js';
 import { CreditRefundingLLMProvider } from '#src/infrastructure/llm/CreditRefundingLLMProvider.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { isLimitReached, startOfUtcMonth } from '#src/use-cases/shared/tokenLimit.js';
@@ -98,7 +98,26 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     if (!credits) return resolution;
     const charge = await credits.charge(userId, request.feature);
     if (!charge) return resolution;
-    return { ...resolution, provider: new CreditRefundingLLMProvider(resolution.provider, charge) };
+    return this.withCharge(userId, request, resolution, charge);
+  }
+
+  /**
+   * A Pro user past their credits runs on `lite` whatever the feature would
+   * get (JEF-448), so a mid-tier resolution is rebuilt pinned to it. The
+   * overflow took no credits, so there is nothing to refund if that fails.
+   */
+  private async withCharge(
+    userId: string,
+    request: LLMProviderRequest,
+    resolution: LLMProviderResolution,
+    charge: AiCreditCharge,
+  ): Promise<LLMProviderResolution> {
+    let resolved = resolution;
+    if (charge.overflow && resolution.tier !== 'lite') {
+      const lite = await this.resolveKey(userId, { ...request, tier: 'lite' });
+      if (lite) resolved = lite;
+    }
+    return { ...resolved, provider: new CreditRefundingLLMProvider(resolved.provider, charge) };
   }
 
   /**

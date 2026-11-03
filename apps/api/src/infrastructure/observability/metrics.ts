@@ -143,6 +143,8 @@ export interface LlmCostMetric {
   model: string | null;
   feature: string;
   source: string;
+  /** The hosted model tier (JEF-448); absent on the user's own key. */
+  tier?: string;
   costMicros: number;
 }
 
@@ -421,12 +423,18 @@ class OtelMetrics implements IMetrics {
     this.llmTokens.add(count, { provider, direction });
   }
 
-  recordLlmCost({ provider, model, feature, source, costMicros }: LlmCostMetric): void {
+  recordLlmCost({ provider, model, feature, source, tier, costMicros }: LlmCostMetric): void {
     this.llmCost ??= this.meter.createCounter(METRICS.LLM_COST_MICROS, {
       description:
-        'Estimated cost of LLM calls in micro-USD, by provider, model, feature and source',
+        'Estimated cost of LLM calls in micro-USD, by provider, model, feature, source and tier',
     });
-    this.llmCost.add(costMicros, { provider, model: model ?? 'unknown', feature, source });
+    this.llmCost.add(costMicros, {
+      provider,
+      model: model ?? 'unknown',
+      feature,
+      source,
+      tier: tier ?? 'none',
+    });
   }
 
   recordHostedAiBreakerOpen(reason: BreakerOpenReason): void {

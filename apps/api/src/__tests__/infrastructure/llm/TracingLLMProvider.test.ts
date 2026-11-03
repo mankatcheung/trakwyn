@@ -106,6 +106,25 @@ function expectNoContent(span: ReadableSpan): void {
 }
 
 describe('TracingLLMProvider', () => {
+  describe('tier (JEF-448)', () => {
+    it('records app.llm.tier on the span only when a tier is given', async () => {
+      const withTier = new TracingLLMProvider({
+        inner: makeInner(),
+        metrics: makeFakeMetrics(),
+        provider: 'googleai',
+        model: 'gemini-2.5-flash',
+        tier: 'mid',
+      });
+      await withTier.complete(MESSAGES, 256);
+      const { provider: without } = build(makeInner());
+      await without.complete(MESSAGES, 256);
+
+      const [first, second] = exporter.getFinishedSpans();
+      expect(first!.attributes[LLM_SPAN.TIER]).toBe('mid');
+      expect(second!.attributes).not.toHaveProperty(LLM_SPAN.TIER);
+    });
+  });
+
   describe('complete', () => {
     it('emits one client span with provider, model and token counts', async () => {
       const inner = makeInner({

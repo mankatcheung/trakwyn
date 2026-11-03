@@ -10,7 +10,12 @@ import type {
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
-import { LLM_USAGE_SOURCE, type AiFeature, type LlmUsageSource } from '#src/use-cases/constants.js';
+import {
+  LLM_USAGE_SOURCE,
+  type AiFeature,
+  type AiModelTier,
+  type LlmUsageSource,
+} from '#src/use-cases/constants.js';
 import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import {
   estimateCostMicros,
@@ -29,6 +34,8 @@ interface Deps {
   model: string | null;
   feature: AiFeature;
   source: LlmUsageSource;
+  /** The hosted model tier (JEF-448); absent on the user's own key. */
+  tier?: AiModelTier;
   metrics: IMetrics;
   /** Optional (JEF-449): adds a platform call's cost to the day's spend. */
   aiSpendGuard?: IAiSpendGuard;
@@ -119,12 +126,12 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     { estimated = false }: { estimated?: boolean } = {},
   ): Promise<void> {
     if (!usage) return;
-    const { provider, model, feature, source } = this.deps;
+    const { provider, model, feature, source, tier } = this.deps;
     const costMicros = estimateCostMicros(usage, provider, model);
     if (costMicros === null) {
       warnPriceUnknownOnce(this.deps.logger, provider, model);
     } else {
-      this.deps.metrics.recordLlmCost({ provider, model, feature, source, costMicros });
+      this.deps.metrics.recordLlmCost({ provider, model, feature, source, tier, costMicros });
       if (source === LLM_USAGE_SOURCE.PLATFORM) await this.deps.aiSpendGuard?.record(costMicros);
     }
     try {

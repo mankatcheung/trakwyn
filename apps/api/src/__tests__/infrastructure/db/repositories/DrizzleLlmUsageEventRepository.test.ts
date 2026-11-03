@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { DrizzleLlmUsageEventRepository } from '#src/infrastructure/db/repositories/DrizzleLlmUsageEventRepository.js';
 import { createTestDb, type TestDb } from '#src/__tests__/helpers/createTestDb.js';
@@ -301,6 +302,39 @@ describe('DrizzleLlmUsageEventRepository', () => {
           lastUsedAt: expect.any(Date),
         },
       ]);
+    });
+  });
+
+  describe('sumCostMicros (JEF-448)', () => {
+    const base = {
+      userId: 'u1',
+      provider: 'googleai',
+      model: null,
+      promptTokens: 1,
+      completionTokens: 1,
+    };
+
+    it('sums one source since the cutoff and ignores unpriced rows', async () => {
+      await db.db
+        .insert(user)
+        .values({ id: 'u-cost-other', email: 'cost-other@t.com', passwordHash: 'h' });
+      await repo.record({ ...base, id: 'a', costMicros: 400, source: 'platform' });
+      await repo.record({ ...base, id: 'b', costMicros: 600, source: 'platform' });
+      await repo.record({ ...base, id: 'c', costMicros: null, source: 'platform' });
+      await repo.record({ ...base, id: 'd', costMicros: 9_000, source: 'byok' });
+      await repo.record({
+        ...base,
+        id: 'e',
+        userId: 'u-cost-other',
+        costMicros: 7_000,
+        source: 'platform',
+      });
+
+      expect(await repo.sumCostMicros('u1', new Date(0), 'platform')).toBe(1_000);
+      expect(await repo.sumCostMicros('u1', new Date(Date.now() + 60_000), 'platform')).toBe(0);
+
+      await db.db.delete(llmUsageEvent);
+      await db.db.delete(user).where(eq(user.id, 'u-cost-other'));
     });
   });
 });
