@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { AiCreditsExhaustedError } from '#src/use-cases/errors/DomainError.js';
-import { AI_CREDITS, AI_FEATURE, PLAN_LIMITS, PLAN_TRIAL } from '#src/use-cases/constants.js';
+import {
+  AI_COST_CEILING_MICROS,
+  AI_CREDITS,
+  AI_FEATURE,
+  PLAN_LIMITS,
+  PLAN_TRIAL,
+} from '#src/use-cases/constants.js';
+import { makeLlmUsageEventRepository } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 const NOW = new Date('2026-11-15T12:00:00.000Z');
@@ -10,19 +17,31 @@ const MONTH = new Date('2026-11-01T00:00:00.000Z');
 const OLD_ACCOUNT = new Date('2026-01-01T00:00:00.000Z');
 const DAY = 86_400_000;
 
-function build(userOverrides = {}, { reserve = true, plansEnforced = true } = {}) {
+function build(
+  userOverrides = {},
+  { reserve = true, plansEnforced = true, spent = 0 as number | Error } = {},
+) {
   const user = makeUser({ createdAt: OLD_ACCOUNT, ...userOverrides });
   const userRepository = makeUserRepository({
     findById: vi.fn().mockResolvedValue(user),
     reserveAiCredits: vi.fn().mockResolvedValue(reserve),
+  });
+  const llmUsageEventRepository = makeLlmUsageEventRepository({
+    sumCostMicros:
+      spent instanceof Error ? vi.fn().mockRejectedValue(spent) : vi.fn().mockResolvedValue(spent),
   });
   const entitlementService = new EntitlementService({
     userRepository,
     plansEnforced,
     now: () => NOW,
   });
-  const service = new AiCreditService({ userRepository, entitlementService, now: () => NOW });
-  return { service, userRepository, user };
+  const service = new AiCreditService({
+    userRepository,
+    entitlementService,
+    llmUsageEventRepository,
+    now: () => NOW,
+  });
+  return { service, userRepository, user, llmUsageEventRepository };
 }
 
 describe('AiCreditService.charge', () => {
@@ -168,5 +187,65 @@ describe('AiCreditService.standing', () => {
 
     const spent = build({ createdAt, aiCreditsUsed: 50, aiCreditsPeriodStart: MONTH });
     expect(spent.service.standing(spent.user).bonusRemaining).toBe(0);
+  });
+});
+
+describe('AiCreditService.charge past the credit limit (JEF-448)', () => {
+  const PRO = { plan: 'pro' as const, planExpiresAt: null, planSource: 'subscription' as const };
+
+  it('refuses a Free user at the limit without reading cost', async () => {
+    const { service, llmUsageEventRepository } = build({}, { reserve: false });
+
+    await expect(service.charge('user-1', AI_FEATURE.CHAT)).rejects.toBeInstanceOf(
+      AiCreditsExhaustedError,
+    );
+    expect(llmUsageEventRepository.sumCostMicros).not.toHaveBeenCalled();
+  });
+
+  it('lets a Pro user through as overflow, taking nothing, while under the ceiling', async () => {
+    const { service, llmUsageEventRepository } = build(PRO, { reserve: false, spent: 1_499_999 });
+
+    const charge = await service.charge('user-1', AI_FEATURE.COVER_LETTER);
+
+    expect(charge?.overflow).toBe(true);
+    await expect(charge?.refund()).resolves.toBeUndefined();
+    expect(llmUsageEventRepository.sumCostMicros).toHaveBeenCalledWith('user-1', MONTH, 'platform');
+  });
+
+  it('refuses a Pro user at the ceiling with the fair-use message', async () => {
+    const { service } = build(PRO, { reserve: false, spent: AI_COST_CEILING_MICROS.pro });
+
+    const err = await service.charge('user-1', AI_FEATURE.CHAT).catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(AiCreditsExhaustedError);
+    expect((err as AiCreditsExhaustedError).message).toContain('fair-use limit');
+    expect((err as AiCreditsExhaustedError).message).not.toContain('$');
+  });
+
+  it('does not flag overflow while credits remain', async () => {
+    const { service, llmUsageEventRepository } = build(PRO, { reserve: true });
+
+    const charge = await service.charge('user-1', AI_FEATURE.CHAT);
+
+    expect(charge?.overflow).toBeUndefined();
+    expect(llmUsageEventRepository.sumCostMicros).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the cost cannot be read', async () => {
+    const { service } = build(PRO, { reserve: false, spent: new Error('db down') });
+
+    await expect(service.charge('user-1', AI_FEATURE.CHAT)).rejects.toThrow('db down');
+  });
+
+  it('treats an expired Pro plan as Free', async () => {
+    const { service, llmUsageEventRepository } = build(
+      { ...PRO, planExpiresAt: new Date('2026-11-01T00:00:00.000Z') },
+      { reserve: false },
+    );
+
+    await expect(service.charge('user-1', AI_FEATURE.CHAT)).rejects.toBeInstanceOf(
+      AiCreditsExhaustedError,
+    );
+    expect(llmUsageEventRepository.sumCostMicros).not.toHaveBeenCalled();
   });
 });

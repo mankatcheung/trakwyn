@@ -12,6 +12,7 @@ import type { IConversationRepository } from '#src/use-cases/ports/IConversation
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { LLMToolCall, LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
 import { AI_FEATURE, CHAT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { chatLimitsFor } from '#src/use-cases/chat/chatLimits.js';
 import {
   type ChatToolDeps,
   buildChatMessages,
@@ -113,17 +114,6 @@ export class StreamChatWithAssistantUseCase {
 
     const user = await this.deps.userRepository.findById(input.userId);
     const history = await this.deps.messageRepository.findAllByConversationId(input.conversationId);
-    // Only the most recent CHAT.MAX_HISTORY_MESSAGES go to the model — see
-    // that constant's doc comment (JEF-237). `history` itself stays the full,
-    // uncapped list: `history.length === 0` below needs to know whether this
-    // is truly the conversation's first message, not just the first one
-    // still within the cap.
-    const historyForPrompt = trimHistoryToBudget(
-      history.slice(-CHAT.MAX_HISTORY_MESSAGES),
-      CHAT.MAX_HISTORY_CHARS,
-    );
-    const messages = buildChatMessages(historyForPrompt, input.message, user);
-
     const providerName = conversation.llmProvider ?? user?.defaultLlmProvider ?? null;
     const resolution = await this.deps.llmProviderFactory.resolveForUser(input.userId, {
       feature: AI_FEATURE.CHAT,
@@ -145,12 +135,24 @@ export class StreamChatWithAssistantUseCase {
       );
     }
 
+    // Only the most recent CHAT.MAX_HISTORY_MESSAGES go to the model — see
+    // that constant's doc comment (JEF-237). `history` itself stays the full,
+    // uncapped list: `history.length === 0` below needs to know whether this
+    // is truly the conversation's first message, not just the first one
+    // still within the cap.
+    const limits = chatLimitsFor(resolution);
+    const historyForPrompt = trimHistoryToBudget(
+      history.slice(-CHAT.MAX_HISTORY_MESSAGES),
+      limits.maxHistoryChars,
+    );
+    const messages = buildChatMessages(historyForPrompt, input.message, user);
+
     let finalReply =
       'That took more steps than I could complete — try asking something more specific.';
     const toolTrace: string[] = [];
     const proposalIds: string[] = [];
 
-    for (let i = 0; i < CHAT.MAX_TOOL_ITERATIONS; i++) {
+    for (let i = 0; i < limits.maxToolIterations; i++) {
       let content = '';
       let toolCalls: LLMToolCall[] = [];
 

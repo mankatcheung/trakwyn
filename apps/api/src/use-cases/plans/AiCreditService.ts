@@ -1,5 +1,11 @@
 import type { User } from '#src/domain/user/User.js';
-import { AI_CREDITS, type AiFeature } from '#src/use-cases/constants.js';
+import { effectivePlan } from '#src/domain/plan/Plan.js';
+import {
+  AI_COST_CEILING_MICROS,
+  AI_CREDITS,
+  LLM_USAGE_SOURCE,
+  type AiFeature,
+} from '#src/use-cases/constants.js';
 import { AiCreditsExhaustedError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type {
   AiCreditCharge,
@@ -7,12 +13,14 @@ import type {
   IAiCreditService,
 } from '#src/use-cases/ports/IAiCreditService.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
+import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { startOfUtcMonth } from '#src/use-cases/shared/tokenLimit.js';
 
 interface Deps {
   userRepository: IUserRepository;
   entitlementService: IEntitlementService;
+  llmUsageEventRepository: ILlmUsageEventRepository;
   now: () => Date;
 }
 
@@ -49,7 +57,7 @@ export class AiCreditService implements IAiCreditService {
       limit,
       periodStart,
     );
-    if (!reserved) throw new AiCreditsExhaustedError(limit, nextReset(now));
+    if (!reserved) return this.overflow(user, now, periodStart, limit);
 
     let refunded = false;
     return {
@@ -59,6 +67,31 @@ export class AiCreditService implements IAiCreditService {
         await this.deps.userRepository.releaseAiCredits(userId, weight, periodStart);
       },
     };
+  }
+
+  /**
+   * Past the plan's credits. Free is refused. Pro keeps going on the cheap
+   * model until its month of platform spend reaches the ceiling (JEF-448); the
+   * sum is read from the primary database and a failed read propagates, so the
+   * call is refused rather than let through unmetered.
+   */
+  private async overflow(
+    user: User,
+    now: Date,
+    periodStart: Date,
+    limit: number,
+  ): Promise<AiCreditCharge> {
+    const plan = effectivePlan(user.plan, user.planExpiresAt, now);
+    const ceiling = AI_COST_CEILING_MICROS[plan];
+    if (ceiling === null) throw new AiCreditsExhaustedError(limit, nextReset(now));
+
+    const spent = await this.deps.llmUsageEventRepository.sumCostMicros(
+      user.id,
+      periodStart,
+      LLM_USAGE_SOURCE.PLATFORM,
+    );
+    if (spent >= ceiling) throw new AiCreditsExhaustedError(limit, nextReset(now), true);
+    return { refund: async () => undefined, overflow: true };
   }
 
   standing(user: User): AiCreditStanding {

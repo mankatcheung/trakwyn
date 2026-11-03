@@ -13,6 +13,7 @@ import type {
   LlmCallOutcome,
   LlmOperation,
 } from '#src/infrastructure/observability/metrics.js';
+import type { AiModelTier } from '#src/use-cases/constants.js';
 import { LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 import type {
   ILLMProvider,
@@ -45,6 +46,7 @@ export const LLM_SPAN = {
   CACHE_READ_TOKENS: 'app.llm.cache_read_tokens',
   CACHE_WRITE_TOKENS: 'app.llm.cache_write_tokens',
   REASONING_TOKENS: 'app.llm.reasoning_tokens',
+  TIER: 'app.llm.tier',
   ESTIMATED: 'app.llm.estimated',
   TIME_TO_FIRST_TOKEN_MS: 'app.llm.time_to_first_token_ms',
   OUTCOME: 'app.llm.outcome',
@@ -61,6 +63,8 @@ interface Deps {
   metrics: IMetrics;
   provider: string;
   model: string | null;
+  /** The hosted model tier (JEF-448); absent on the user's own key. */
+  tier?: AiModelTier;
   /** Monotonic clock in ms; injectable so tests can assert on exact durations. */
   now?: () => number;
 }
@@ -192,6 +196,7 @@ export class TracingLLMProvider implements ILLMProvider {
           [LLM_SPAN.OPERATION_NAME]: GEN_AI_OPERATION,
           [LLM_SPAN.PROVIDER]: this.deps.provider,
           ...(this.deps.model ? { [LLM_SPAN.MODEL]: this.deps.model } : {}),
+          ...(this.deps.tier ? { [LLM_SPAN.TIER]: this.deps.tier } : {}),
         },
       });
     return new LlmCall(span, operation, this.deps, this.now);

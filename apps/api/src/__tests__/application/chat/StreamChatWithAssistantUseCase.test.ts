@@ -734,6 +734,82 @@ describe('StreamChatWithAssistantUseCase', () => {
     );
   });
 
+  describe('limits by who pays (JEF-448)', () => {
+    const toolRound = {
+      deltas: [],
+      content: null,
+      toolCalls: [{ id: 'call_x', name: 'list_applications', arguments: {} }],
+    };
+
+    async function rounds(resolution: Record<string, unknown>): Promise<number> {
+      const llmProvider = makeStreamingProvider(
+        toolRound,
+        toolRound,
+        toolRound,
+        toolRound,
+        toolRound,
+        toolRound,
+      );
+      const deps = makeDeps({
+        llmProviderFactory: makeLLMProviderFactory({
+          resolveForUser: vi.fn().mockResolvedValue({
+            provider: llmProvider,
+            providerId: 'openai',
+            fellBackFrom: null,
+            ...resolution,
+          }),
+        }),
+      });
+      await collect(new StreamChatWithAssistantUseCase(deps as never), {
+        ...baseInput,
+        message: 'hi',
+      });
+      return vi.mocked(llmProvider.completeWithToolsStream).mock.calls.length;
+    }
+
+    it('stops hosted Free chat at 3 tool iterations', async () => {
+      expect(await rounds({ source: 'platform', plan: 'free', tier: 'lite' })).toBe(3);
+    });
+
+    it('keeps 5 iterations for hosted Pro and for an own key', async () => {
+      expect(await rounds({ source: 'platform', plan: 'pro', tier: 'lite' })).toBe(5);
+      expect(await rounds({ source: 'byok' })).toBe(5);
+    });
+
+    it('trims hosted Free history to 12_000 characters, not 24_000', async () => {
+      const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
+      const history = [
+        makeMessage({ id: 'old', role: 'user', content: 'x'.repeat(13_000) }),
+        makeMessage({ id: 'a', role: 'assistant', content: 'noted' }),
+      ];
+      const deps = makeDeps({
+        llmProviderFactory: makeLLMProviderFactory({
+          resolveForUser: vi.fn().mockResolvedValue({
+            provider: llmProvider,
+            providerId: 'openai',
+            fellBackFrom: null,
+            source: 'platform',
+            plan: 'free',
+          }),
+        }),
+        messageRepository: makeMessageRepository({
+          findAllByConversationId: vi.fn().mockResolvedValue(history),
+        }),
+      });
+
+      await collect(new StreamChatWithAssistantUseCase(deps as never), {
+        ...baseInput,
+        message: 'next',
+      });
+
+      const [messages] = vi.mocked(llmProvider.completeWithToolsStream).mock.calls[0];
+      expect(messages.filter((m) => m.role !== 'system').map((m) => m.content)).toEqual([
+        'noted',
+        'next',
+      ]);
+    });
+  });
+
   it('derives and stores a title from the first message in a new conversation', async () => {
     const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
     const conversationRepository = makeConversationRepository({

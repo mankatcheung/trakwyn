@@ -1,3 +1,4 @@
+import type { Plan } from '#src/domain/plan/Plan.js';
 import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
 
@@ -225,6 +226,32 @@ export const AI_CREDITS = {
   WELCOME_BONUS: 20,
   WELCOME_DAYS: 14,
 } as const;
+
+/**
+ * Which model tier a hosted call runs on (JEF-448). `lite` is the cheap model
+ * every feature works on; `mid` is worth its price only for the writing a Pro
+ * user keeps. Tiers name a class, never a model: the ids live in
+ * `PLATFORM_LLM.MODELS`.
+ */
+export const AI_MODEL_TIER = {
+  free: { default: 'lite' },
+  pro: { default: 'lite', coverLetter: 'mid', resume: 'mid' },
+} as const satisfies Record<
+  Plan,
+  { default: AiModelTier } & Partial<Record<AiFeature, AiModelTier>>
+>;
+
+export type AiModelTier = 'lite' | 'mid';
+
+/**
+ * The most platform spend one user may cause in a UTC month, in micro-USD
+ * (JEF-448). Only a Pro user past their credits is held to it; Free is bounded
+ * by its credits and has none (`null`).
+ */
+export const AI_COST_CEILING_MICROS = {
+  free: null,
+  pro: 1_500_000,
+} as const satisfies Record<Plan, number | null>;
 
 /** LLM provider API URLs, default models, and other per-provider settings. */
 export const LLM = {
@@ -505,6 +532,12 @@ export const CHAT = {
    * 6k tokens — a long conversation still fits comfortably under it.
    */
   MAX_HISTORY_CHARS: 24_000,
+  /**
+   * Tighter limits for a Free user's chat on the platform's key (JEF-448):
+   * chat is the most expensive feature per credit. A Pro user and an own key
+   * keep `MAX_TOOL_ITERATIONS` and `MAX_HISTORY_CHARS`.
+   */
+  HOSTED_FREE: { MAX_TOOL_ITERATIONS: 3, MAX_HISTORY_CHARS: 12_000 },
 } as const;
 
 /** Defaults/limits for cursor-paginated list queries. */

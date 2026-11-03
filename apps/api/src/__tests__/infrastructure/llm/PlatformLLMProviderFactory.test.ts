@@ -47,12 +47,12 @@ describe('PlatformLLMProviderFactory', () => {
         env: { ...enabledEnv, HOSTED_AI_ENABLED: value },
       });
       expect(factory.isEnabled()).toBe(false);
-      expect(factory.legs()).toEqual([]);
+      expect(factory.legs('lite')).toEqual([]);
     }
   });
 
   it('builds Gemini as primary and OpenAI as fallback by default', () => {
-    const legs = new PlatformLLMProviderFactory({ env: enabledEnv }).legs();
+    const legs = new PlatformLLMProviderFactory({ env: enabledEnv }).legs('lite');
 
     expect(legs.map((l) => l.providerId)).toEqual(['googleai', 'openai']);
     expect(legs[0]!.provider).toBeInstanceOf(GoogleAILLMProvider);
@@ -63,7 +63,7 @@ describe('PlatformLLMProviderFactory', () => {
   it('honours PLATFORM_LLM_PRIMARY and PLATFORM_LLM_FALLBACK', () => {
     const legs = new PlatformLLMProviderFactory({
       env: { ...enabledEnv, PLATFORM_LLM_PRIMARY: 'openai', PLATFORM_LLM_FALLBACK: 'googleai' },
-    }).legs();
+    }).legs('lite');
 
     expect(legs.map((l) => l.providerId)).toEqual(['openai', 'googleai']);
   });
@@ -73,13 +73,13 @@ describe('PlatformLLMProviderFactory', () => {
       env: { HOSTED_AI_ENABLED: 'true', PLATFORM_OPENAI_API_KEY: 'o-key' },
     });
 
-    expect(() => factory.legs()).toThrowError(/not configured/i);
+    expect(() => factory.legs('lite')).toThrowError(/not configured/i);
   });
 
   it('drops the failover leg when its key is missing', () => {
     const legs = new PlatformLLMProviderFactory({
       env: { HOSTED_AI_ENABLED: 'true', PLATFORM_GOOGLEAI_API_KEY: 'g-key' },
-    }).legs();
+    }).legs('lite');
 
     expect(legs.map((l) => l.providerId)).toEqual(['googleai']);
   });
@@ -89,12 +89,12 @@ describe('PlatformLLMProviderFactory', () => {
       env: { ...enabledEnv, PLATFORM_LLM_PRIMARY: 'anthropic' },
     });
 
-    expect(() => factory.legs()).toThrowError(/not supported/i);
+    expect(() => factory.legs('lite')).toThrowError(/not supported/i);
   });
 
   it('calls the providers directly when no gateway is set', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(okGemini as unknown as Response);
-    const [primary] = new PlatformLLMProviderFactory({ env: enabledEnv }).legs();
+    const [primary] = new PlatformLLMProviderFactory({ env: enabledEnv }).legs('lite');
 
     await primary!.provider.complete([{ role: 'user', content: 'x' }]);
 
@@ -111,7 +111,7 @@ describe('PlatformLLMProviderFactory', () => {
         PLATFORM_LLM_GATEWAY_BASE_URL: `${GATEWAY}/`,
         PLATFORM_LLM_GATEWAY_TOKEN: 'gw-token',
       },
-    }).legs();
+    }).legs('lite');
 
     await primary!.provider.complete([{ role: 'user', content: 'x' }]);
 
@@ -132,7 +132,7 @@ describe('PlatformLLMProviderFactory', () => {
         PLATFORM_LLM_GATEWAY_BASE_URL: GATEWAY,
         PLATFORM_LLM_GATEWAY_TOKEN: 'gw-token',
       },
-    }).legs();
+    }).legs('lite');
 
     await legs[1]!.provider.complete([{ role: 'user', content: 'x' }]);
 
@@ -147,12 +147,22 @@ describe('PlatformLLMProviderFactory', () => {
     vi.mocked(fetch).mockResolvedValueOnce(okOpenAi as unknown as Response);
     const legs = new PlatformLLMProviderFactory({
       env: { HOSTED_AI_ENABLED: 'true', LLM_PROVIDER_MODE: 'fake', PORT: '4000' },
-    }).legs();
+    }).legs('lite');
 
     expect(legs).toHaveLength(2);
     await legs[0]!.provider.complete([{ role: 'user', content: 'x' }]);
     expect(String(vi.mocked(fetch).mock.calls[0]![0])).toBe(
       'http://127.0.0.1:4000/llm-test/fake/chat/completions',
     );
+  });
+
+  it('builds the model of the tier asked for (JEF-448)', () => {
+    const factory = new PlatformLLMProviderFactory({ env: enabledEnv });
+
+    expect(factory.legs('lite').map((l) => l.model)).toEqual([
+      'gemini-2.5-flash-lite',
+      'gpt-5.6-luna',
+    ]);
+    expect(factory.legs('mid').map((l) => l.model)).toEqual(['gemini-2.5-flash', 'gpt-5.6-luna']);
   });
 });

@@ -1,8 +1,11 @@
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
+import { effectivePlan } from '#src/domain/plan/Plan.js';
+import { aiModelTier } from '#src/use-cases/plans/aiModelTier.js';
 import {
   AI_SOURCE,
   LLM_USAGE_SOURCE,
   type AiFeature,
+  type AiModelTier,
   type LlmUsageSource,
 } from '#src/use-cases/constants.js';
 import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
@@ -44,6 +47,8 @@ interface Deps {
   metrics?: IMetrics;
   /** The platform-owned path (JEF-446). Absent or disabled, every call is the user's own key. */
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
+  /** For the plan in force when picking a tier (JEF-448); defaults to the clock. */
+  now?: () => Date;
 }
 
 export class UserLLMProviderFactory implements ILLMProviderFactory {
@@ -64,7 +69,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
     request: LLMProviderRequest,
     hints: LLMProviderResolveHints = {},
   ): Promise<LLMProviderResolution | null> {
-    const { feature, provider, trackUsage = true } = request;
+    const { provider, trackUsage = true } = request;
     const platform = this.deps.platformLlmProviderFactory;
     // Key tests (`trackUsage: false`) are always about the user's own key.
     const platformOn = !!platform?.isEnabled() && trackUsage;
@@ -76,19 +81,28 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           ? undefined
           : await this.deps.userRepository.findById(userId);
     if (platformOn && user?.aiSource === AI_SOURCE.TRAKWYN) {
-      return this.resolvePlatform(userId, feature);
+      return this.resolvePlatform(userId, request, user);
     }
 
     // `auto` falls to the platform only when the caller named no provider: an
     // explicit one (a chat locked to a key) is a request for that key.
     const own = await this.resolveOwn(userId, request, hints, user);
     if (own || !platformOn || user?.aiSource !== AI_SOURCE.AUTO || provider) return own;
-    return this.resolvePlatform(userId, feature);
+    return this.resolvePlatform(userId, request, user);
   }
 
   /** The platform's providers, each with its own tracking, failing over from the first to the second. */
-  private resolvePlatform(userId: string, feature: AiFeature): LLMProviderResolution {
-    const legs = this.deps.platformLlmProviderFactory!.legs().map((leg) => ({
+  private resolvePlatform(
+    userId: string,
+    request: LLMProviderRequest,
+    user: User | null | undefined,
+  ): LLMProviderResolution {
+    const { feature } = request;
+    const plan = user
+      ? effectivePlan(user.plan, user.planExpiresAt, (this.deps.now ?? (() => new Date()))())
+      : 'free';
+    const tier: AiModelTier = request.tier ?? aiModelTier(plan, feature);
+    const legs = this.deps.platformLlmProviderFactory!.legs(tier).map((leg) => ({
       providerId: leg.providerId,
       provider: this.track(leg.provider, {
         userId,
@@ -96,6 +110,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
         provider: leg.providerId,
         model: leg.model,
         source: LLM_USAGE_SOURCE.PLATFORM,
+        tier,
       }),
     }));
     const [primary, fallback] = legs;
@@ -115,6 +130,8 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       providerId: primary.providerId,
       fellBackFrom: null,
       source: LLM_USAGE_SOURCE.PLATFORM,
+      tier,
+      plan,
     };
   }
 
@@ -189,6 +206,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       provider: string;
       model: string | null;
       source: LlmUsageSource;
+      tier?: AiModelTier;
     },
   ): ILLMProvider {
     const measured = this.deps.traceLlmCalls
@@ -197,6 +215,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           metrics: this.deps.metrics ?? noopMetrics,
           provider: ctx.provider,
           model: ctx.model,
+          tier: ctx.tier,
         })
       : raw;
     return new UsageTrackingLLMProvider({
