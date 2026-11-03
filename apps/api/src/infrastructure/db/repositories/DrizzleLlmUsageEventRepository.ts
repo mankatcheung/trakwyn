@@ -2,6 +2,7 @@ import { and, eq, gte, sql, desc, max } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { llmUsageEvent } from '../schema.js';
 import type { LlmUsageSummary } from '#src/domain/llmUsageEvent/LlmUsageEvent.js';
+import type { LlmUsageSource } from '#src/use-cases/constants.js';
 import type {
   ILlmUsageEventRepository,
   RecordLlmUsageEventData,
@@ -21,6 +22,20 @@ export class DrizzleLlmUsageEventRepository implements ILlmUsageEventRepository 
 
   async record(data: RecordLlmUsageEventData): Promise<void> {
     await this.db.insert(llmUsageEvent).values(data);
+  }
+
+  async sumCostMicros(userId: string, since: Date, source: LlmUsageSource): Promise<number> {
+    const [row] = await this.db
+      .select({ total: sql<number>`coalesce(sum(${llmUsageEvent.costMicros}), 0)` })
+      .from(llmUsageEvent)
+      .where(
+        and(
+          eq(llmUsageEvent.userId, userId),
+          eq(llmUsageEvent.source, source),
+          gte(llmUsageEvent.createdAt, since),
+        ),
+      );
+    return Number(row?.total ?? 0);
   }
 
   async summarizeByUserId(userId: string, since: Date): Promise<LlmUsageSummary[]> {

@@ -1,6 +1,6 @@
 import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
 import { ENV, LLM_PROVIDER_MODE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
-import { LLM_PROVIDER } from '#src/use-cases/constants.js';
+import { LLM_PROVIDER, type AiModelTier } from '#src/use-cases/constants.js';
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
 import type {
   IPlatformLLMProviderFactory,
@@ -39,15 +39,15 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
     return this.env[ENV.HOSTED_AI_ENABLED] === 'true';
   }
 
-  legs(): PlatformLLMLeg[] {
+  legs(tier: AiModelTier): PlatformLLMLeg[] {
     if (!this.isEnabled()) return [];
     const primaryId = this.providerId(ENV.PLATFORM_LLM_PRIMARY, PLATFORM_LLM.DEFAULT_PRIMARY);
     const fallbackId = this.providerId(ENV.PLATFORM_LLM_FALLBACK, PLATFORM_LLM.DEFAULT_FALLBACK);
 
-    const primary = this.build(primaryId, true);
+    const primary = this.build(primaryId, tier, true);
     if (!primary) throw new AiNotConfiguredError('Hosted AI is not configured');
     // A failover leg without its key just means no failover; it never blocks.
-    const fallback = fallbackId === primaryId ? null : this.build(fallbackId, false);
+    const fallback = fallbackId === primaryId ? null : this.build(fallbackId, tier, false);
     return fallback ? [primary, fallback] : [primary];
   }
 
@@ -59,8 +59,12 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
     return id;
   }
 
-  private build(id: PlatformProviderId, required: boolean): PlatformLLMLeg | null {
-    const model = PLATFORM_LLM.MODELS[id].mid;
+  private build(
+    id: PlatformProviderId,
+    tier: AiModelTier,
+    required: boolean,
+  ): PlatformLLMLeg | null {
+    const model = PLATFORM_LLM.MODELS[id][tier];
 
     if (this.env[ENV.LLM_PROVIDER_MODE] === LLM_PROVIDER_MODE.FAKE) {
       const port = this.env[ENV.PORT] ?? 3001;

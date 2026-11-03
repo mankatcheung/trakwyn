@@ -4,6 +4,7 @@ import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { PLAN_LIMITS } from '#src/use-cases/constants.js';
+import { makeLlmUsageEventRepository } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 const NOW = new Date('2026-11-15T12:00:00.000Z');
@@ -18,7 +19,12 @@ function build(user = makeUser(), { plansEnforced = true } = {}) {
   const useCase = new GetBillingStatusUseCase({
     userRepository,
     entitlementService,
-    aiCreditService: new AiCreditService({ userRepository, entitlementService, now: () => NOW }),
+    aiCreditService: new AiCreditService({
+      userRepository,
+      entitlementService,
+      llmUsageEventRepository: makeLlmUsageEventRepository(),
+      now: () => NOW,
+    }),
     now: () => NOW,
   });
   return { useCase };

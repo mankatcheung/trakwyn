@@ -435,7 +435,7 @@ export const PLATFORM_LLM = {
   DEFAULT_PRIMARY: 'googleai',
   DEFAULT_FALLBACK: 'openai',
   MODELS: {
-    googleai: { lite: 'gemini-2.5-flash-lite', mid: 'gemini-2.5-flash-lite' },
+    googleai: { lite: 'gemini-2.5-flash-lite', mid: 'gemini-2.5-flash' },
     openai: { lite: 'gpt-5.6-luna', mid: 'gpt-5.6-luna' },
   },
   /** Path segment of each provider under the gateway base URL. */
@@ -669,6 +669,7 @@ export const LLM_PRICES: Readonly<Record<string, Readonly<Record<string, LlmPric
     },
   },
   googleai: {
+    'gemini-2.5-flash-lite': { input: 100_000, cachedInput: 10_000, output: 400_000 },
     'gemini-2.5-flash': { input: 300_000, cachedInput: 30_000, output: 2_500_000 },
   },
   openrouter: {

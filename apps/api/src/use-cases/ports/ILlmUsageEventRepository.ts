@@ -32,4 +32,11 @@ export interface ILlmUsageEventRepository {
    * aren't deleted, just excluded from this sum.
    */
   summarizeByUserId(userId: string, since: Date): Promise<LlmUsageSummary[]>;
+  /**
+   * What a user's calls from `since` cost in micro-USD, for one `source`
+   * (JEF-448). Events with no listed price (`costMicros` null) add nothing.
+   * Reads the primary database and does not swallow a failure: the caller
+   * enforces a spending ceiling with it and must fail closed.
+   */
+  sumCostMicros(userId: string, since: Date, source: LlmUsageSource): Promise<number>;
 }

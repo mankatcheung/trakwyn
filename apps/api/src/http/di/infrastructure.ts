@@ -202,6 +202,7 @@ export const infrastructure = {
       generateId,
       logger,
       platformLlmProviderFactory,
+      now,
     }: Cradle) =>
       new UserLLMProviderFactory({
         userRepository,
@@ -214,6 +215,7 @@ export const infrastructure = {
         traceLlmCalls: isObservabilityEnabled,
         metrics: otelMetrics,
         platformLlmProviderFactory,
+        now,
       }),
     { lifetime: Lifetime.SINGLETON },
   ),

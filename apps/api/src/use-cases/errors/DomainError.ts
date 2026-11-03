@@ -155,14 +155,19 @@ export class AiCreditsExhaustedError extends DomainError {
   constructor(
     readonly limit = 0,
     readonly resetsAt = new Date(),
+    /** Pro past its cost ceiling (JEF-448): same code, a message that names no dollar amount. */
+    readonly fairUse = false,
   ) {
+    const date = resetsAt.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
     super(
-      `You've used this month's AI credits. They reset on ${resetsAt.toLocaleDateString('en-US', {
-        timeZone: 'UTC',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })}. Upgrade to Pro or add your own API key to keep going.`,
+      fairUse
+        ? `You've reached this month's fair-use limit. It resets on ${date}. Add your own key for unlimited AI.`
+        : `You've used this month's AI credits. They reset on ${date}. Upgrade to Pro or add your own API key to keep going.`,
       ERROR_CODES.AI_CREDITS_EXHAUSTED,
     );
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { CreditRefundingLLMProvider } from '#src/infrastructure/llm/CreditRefundingLLMProvider.js';
 import { AiCreditsExhaustedError, LlmProviderError } from '#src/use-cases/errors/DomainError.js';
@@ -111,5 +111,63 @@ describe('LimitEnforcingLLMProviderFactory hosted AI credits (JEF-447)', () => {
 
     expect(await factory.resolveForUser('user-1', { feature: AI_FEATURE.CHAT })).toBeNull();
     expect(aiCreditService.charge).not.toHaveBeenCalled();
+  });
+
+  it('sends a Pro overflow on a mid-tier resolution back through as lite', async () => {
+    const refund = vi.fn();
+    const { factory } = build(LLM_USAGE_SOURCE.PLATFORM, async () => ({ refund, overflow: true }));
+    const inner = (
+      factory as unknown as { deps: { userLlmProviderFactory: { resolveForUser: Mock } } }
+    ).deps.userLlmProviderFactory;
+    const liteProvider = { complete: vi.fn(), completeWithToolsStream: vi.fn() };
+    inner.resolveForUser
+      .mockResolvedValueOnce({
+        provider: {},
+        providerId: 'googleai',
+        fellBackFrom: null,
+        source: LLM_USAGE_SOURCE.PLATFORM,
+        tier: 'mid',
+        plan: 'pro',
+      })
+      .mockResolvedValueOnce({
+        provider: liteProvider,
+        providerId: 'googleai',
+        fellBackFrom: null,
+        source: LLM_USAGE_SOURCE.PLATFORM,
+        tier: 'lite',
+        plan: 'pro',
+      });
+
+    const resolution = await factory.resolveForUser('user-1', { feature: AI_FEATURE.RESUME });
+
+    expect(inner.resolveForUser).toHaveBeenLastCalledWith(
+      'user-1',
+      expect.objectContaining({ feature: AI_FEATURE.RESUME, tier: 'lite' }),
+      expect.anything(),
+    );
+    expect(resolution?.tier).toBe('lite');
+    expect(resolution?.provider).toBeInstanceOf(CreditRefundingLLMProvider);
+  });
+
+  it('does not resolve twice when the overflow is already lite', async () => {
+    const { factory } = build(LLM_USAGE_SOURCE.PLATFORM, async () => ({
+      refund: vi.fn(),
+      overflow: true,
+    }));
+    const inner = (
+      factory as unknown as { deps: { userLlmProviderFactory: { resolveForUser: Mock } } }
+    ).deps.userLlmProviderFactory;
+    inner.resolveForUser.mockResolvedValue({
+      provider: {},
+      providerId: 'googleai',
+      fellBackFrom: null,
+      source: LLM_USAGE_SOURCE.PLATFORM,
+      tier: 'lite',
+      plan: 'pro',
+    });
+
+    await factory.resolveForUser('user-1', { feature: AI_FEATURE.CHAT });
+
+    expect(inner.resolveForUser).toHaveBeenCalledTimes(1);
   });
 });

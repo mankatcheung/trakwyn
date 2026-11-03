@@ -10,7 +10,7 @@ import type {
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
-import type { AiFeature, LlmUsageSource } from '#src/use-cases/constants.js';
+import type { AiFeature, AiModelTier, LlmUsageSource } from '#src/use-cases/constants.js';
 import {
   estimateCostMicros,
   warnPriceUnknownOnce,
@@ -28,6 +28,8 @@ interface Deps {
   model: string | null;
   feature: AiFeature;
   source: LlmUsageSource;
+  /** The hosted model tier (JEF-448); absent on the user's own key. */
+  tier?: AiModelTier;
   metrics: IMetrics;
 }
 
@@ -116,12 +118,12 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     { estimated = false }: { estimated?: boolean } = {},
   ): Promise<void> {
     if (!usage) return;
-    const { provider, model, feature, source } = this.deps;
+    const { provider, model, feature, source, tier } = this.deps;
     const costMicros = estimateCostMicros(usage, provider, model);
     if (costMicros === null) {
       warnPriceUnknownOnce(this.deps.logger, provider, model);
     } else {
-      this.deps.metrics.recordLlmCost({ provider, model, feature, source, costMicros });
+      this.deps.metrics.recordLlmCost({ provider, model, feature, source, tier, costMicros });
     }
     try {
       await this.deps.usageEventRepository.record({
