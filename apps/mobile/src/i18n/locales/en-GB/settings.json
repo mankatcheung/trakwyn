@@ -59,7 +59,28 @@
     "fallbackUpdateFailed": "Couldn't update this setting. Try again.",
     "crossApplicationContextTitle": "Use context from other applications",
     "crossApplicationContextHelp": "Let the AI reference your other job applications when helping with this one.",
-    "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again."
+    "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again.",
+    "source": {
+      "title": "AI source",
+      "help": "Auto uses your own key when you have one, otherwise Trakwyn AI.",
+      "auto": "Auto",
+      "trakwyn": "Trakwyn AI",
+      "own": "My own key"
+    },
+    "credits": {
+      "title": "Trakwyn AI credits",
+      "left": "{{left}} of {{total}} left",
+      "resets": "Resets on {{date}}. Calls on your own key are never counted.",
+      "nearing": "You're running low on AI credits this month.",
+      "exhausted": "You've used this month's AI credits. They reset on {{date}}.",
+      "exhaustedFallback": "You've used this month's AI credits.",
+      "upgrade": "Upgrade",
+      "addOwnKey": "Add your own key"
+    },
+    "proNote": {
+      "title": "Trakwyn AI is included with Pro",
+      "help": "Upgrade to use AI without a key, or add your own API key below to use AI for free."
+    }
   },
   "danger": {
     "title": "Danger zone",

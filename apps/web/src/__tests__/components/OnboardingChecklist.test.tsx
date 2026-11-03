@@ -51,6 +51,32 @@ describe('OnboardingChecklist', () => {
     expect(screen.getByText('Add your work experience and skills')).toBeInTheDocument();
   });
 
+  describe('with Trakwyn AI (a plan that has credits, JEF-451)', () => {
+    const pro = (used: number): OnboardingChecklistData => ({
+      ...baseData,
+      me: {
+        onboardingChecklistDismissedAt: null,
+        aiCredits: { used, limit: 300, bonusRemaining: 0 },
+      },
+    });
+
+    it('offers "Try AI on an application" instead of adding a key', () => {
+      render(<OnboardingChecklist data={pro(0)} hasApplications={false} />, { wrapper: Wrapper });
+
+      expect(screen.getByText('Try AI on an application').closest('a')).toHaveAttribute(
+        'href',
+        '/applications',
+      );
+      expect(screen.queryByText('Add an AI provider API key')).not.toBeInTheDocument();
+    });
+
+    it('ticks it once a credit has been spent', () => {
+      render(<OnboardingChecklist data={pro(3)} hasApplications={false} />, { wrapper: Wrapper });
+
+      expect(screen.getByText('Try AI on an application')).toHaveClass('line-through');
+    });
+  });
+
   it('renders nothing when dismissed', () => {
     render(
       <OnboardingChecklist
@@ -162,8 +188,8 @@ describe('OnboardingChecklist', () => {
       ['application', ['MCP'], true],
       ['mcp', ['AI_DOCUMENTS'], false],
       ['mcp', ['MCP', 'ASSISTANT'], true],
-      ['aiKey', ['AI_DOCUMENTS'], true],
-      ['aiKey', ['TRACK_APPLICATIONS', 'MCP'], false],
+      ['tryAi', ['AI_DOCUMENTS'], true],
+      ['tryAi', ['TRACK_APPLICATIONS', 'MCP'], false],
       ['experience', ['ASSISTANT'], true],
       ['experience', ['MCP'], false],
     ] as const)('isRelevantToGoals(%s, %j) is %s', (key, goals, expected) => {

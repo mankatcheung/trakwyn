@@ -112,6 +112,16 @@ describe('PricingPage', () => {
       expect(container.textContent).not.toMatch(/AI actions.*a month/);
     });
 
+    it('shows hosted AI as Pro-only: no credits on Free, 300 on Pro (JEF-451)', () => {
+      expect(API_CONSTANTS).toMatch(/aiCreditsPerMonth: 0,/);
+      expect(API_CONSTANTS).toMatch(/aiCreditsPerMonth: 300,/);
+      expect(en['pricing.proAiCredits']).toBe('300 AI credits/month, fair use');
+      render(<PricingPage />);
+      const row = within(screen.getByRole('row', { name: /Trakwyn AI credits/ }));
+      expect(row.getByText('Not included')).toBeInTheDocument();
+      expect(row.getByText('300 AI credits/month, fair use')).toBeInTheDocument();
+    });
+
     it('lists exactly the features the API gates, with MCP the only one on Free', () => {
       const free = /PLAN_FEATURES = \{\s*free: \{([^}]*)\}/.exec(API_CONSTANTS)?.[1] ?? '';
       expect(free.match(/: false/g)).toHaveLength(5);

@@ -19,6 +19,7 @@ jest.mock('../../lib/chatStream', () => ({
 }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: () => ({ push: jest.fn() }),
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
@@ -158,5 +159,24 @@ describe('ChatScreen', () => {
         expect.objectContaining({ conversationId: 'new-conv', message: 'Hi there' }),
       ),
     );
+  });
+
+  it.each([
+    ['PLAN_REQUIRED', 'Trakwyn AI is included with Pro.'],
+    ['AI_CREDITS_EXHAUSTED', "You've used this month's AI credits."],
+  ])('%s shows the API message with Upgrade and Add your own key (JEF-451)', async (code, text) => {
+    mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
+    mockedStreamChatMessage.mockRejectedValue({
+      response: { errors: [{ message: text, extensions: { code } }] },
+    });
+
+    const { getByTestId, findByTestId, findByText } = await renderScreen('conv-1');
+    await fireEvent.changeText(getByTestId('chat-input'), 'Hi');
+    await fireEvent.press(getByTestId('chat-send-button'));
+
+    expect(await findByTestId('ai-credits-exhausted-notice')).toBeTruthy();
+    expect(await findByText(new RegExp(text.slice(0, 12)))).toBeTruthy();
+    expect(getByTestId('ai-upgrade-button')).toBeTruthy();
+    expect(getByTestId('ai-add-key-button')).toBeTruthy();
   });
 });

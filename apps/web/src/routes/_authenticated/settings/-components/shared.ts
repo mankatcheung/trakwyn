@@ -222,7 +222,14 @@ export const LLM_API_KEYS_QUERY = `
       customAiPrompt
       useCrossApplicationContext
       llmFallbackWhenLimited
+      aiSource
     }
+  }
+`;
+
+export const SET_AI_SOURCE = `
+  mutation SetAiSource($aiSource: String!) {
+    setAiSource(aiSource: $aiSource)
   }
 `;
 

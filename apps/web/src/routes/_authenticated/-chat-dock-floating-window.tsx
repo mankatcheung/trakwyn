@@ -1,3 +1,5 @@
+import { useHostedAiAvailable } from '#/lib/aiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -33,6 +35,7 @@ export function ChatDockFloatingWindow() {
         LLM_API_KEYS_QUERY,
       ),
   });
+  const hostedAi = useHostedAiAvailable();
   const llmApiKeys = llmData?.llmApiKeys ?? [];
   const defaultProvider = llmData?.me?.defaultLlmProvider ?? llmApiKeys[0]?.provider ?? null;
 
@@ -84,7 +87,11 @@ export function ChatDockFloatingWindow() {
         </div>
       </div>
 
-      {llmApiKeys.length === 0 ? (
+      <AiCreditsMeter
+        variant="hint"
+        className="px-4 pt-2 text-xs text-amber-700 dark:text-amber-400"
+      />
+      {llmApiKeys.length === 0 && hostedAi === false ? (
         <p className="flex flex-1 items-center justify-center px-4 text-center text-xs text-gray-400 dark:text-gray-500">
           {t('assistant.addApiKeyPrefix')}{' '}
           <Link to="/settings/ai" className="mx-1 underline">

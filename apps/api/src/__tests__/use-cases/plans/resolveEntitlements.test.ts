@@ -72,8 +72,8 @@ describe('resolveEntitlements', () => {
     expect(Object.keys(PLAN_LIMITS.pro).sort()).toEqual(keys);
   });
 
-  it('gives 30 hosted AI credits on Free, 300 on Pro and 100 on a trial (JEF-447)', () => {
-    expect(resolveEntitlements('free', null, NOW).limits.aiCreditsPerMonth).toBe(30);
+  it('gives no hosted AI credits on Free, 300 on Pro and 100 on a trial (JEF-447, JEF-451)', () => {
+    expect(resolveEntitlements('free', null, NOW).limits.aiCreditsPerMonth).toBe(0);
     expect(resolveEntitlements('pro', null, NOW, 'subscription').limits.aiCreditsPerMonth).toBe(
       300,
     );
@@ -81,7 +81,7 @@ describe('resolveEntitlements', () => {
   });
 
   it('reads an expired trial as Free credits', () => {
-    expect(resolveEntitlements('pro', PAST, NOW, 'trial').limits.aiCreditsPerMonth).toBe(30);
+    expect(resolveEntitlements('pro', PAST, NOW, 'trial').limits.aiCreditsPerMonth).toBe(0);
   });
 
   it('resolves an expired pass to the free entitlements', () => {

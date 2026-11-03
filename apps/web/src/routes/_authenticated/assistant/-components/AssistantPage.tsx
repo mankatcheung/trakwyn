@@ -1,3 +1,5 @@
+import { useHostedAiAvailable } from '#/lib/aiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -27,6 +29,7 @@ export function AssistantPage() {
   const { conversation: activeId } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const qc = useQueryClient();
+  const hostedAi = useHostedAiAvailable();
 
   const { data: conversationsData } = useQuery(conversationsQueryOptions);
   const conversations = conversationsData?.conversations ?? [];
@@ -140,14 +143,27 @@ export function AssistantPage() {
               />
             </div>
           ) : !activeId ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              {t('assistant.addApiKeyPrefix')}{' '}
-              <Link to="/settings/ai" className="underline">
-                {t('assistant.settingsLinkText')}
-              </Link>{' '}
-              {t('assistant.addApiKeySuffix')}
-            </p>
+            hostedAi === false ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {t('assistant.addApiKeyPrefix')}{' '}
+                <Link to="/settings/ai" className="underline">
+                  {t('assistant.settingsLinkText')}
+                </Link>{' '}
+                {t('assistant.addApiKeySuffix')}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {t('assistant.usingTrakwynAi')}{' '}
+                <Link to="/settings/ai" className="underline">
+                  {t('assistant.useOwnKey')}
+                </Link>
+              </p>
+            )
           ) : null}
+          <AiCreditsMeter
+            variant="hint"
+            className="mt-1 text-xs text-amber-700 dark:text-amber-400"
+          />
         </div>
 
         <ChatConversationView

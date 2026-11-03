@@ -38,27 +38,18 @@ afterEach(() => {
 });
 
 describe('getPopupBootstrap', () => {
-  it('asks for the user and AI keys in one request with the stored bearer token', async () => {
-    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
+  it('asks for the user in one request with the stored bearer token', async () => {
+    respondWith({ data: { me: user } });
 
-    await expect(getPopupBootstrap()).resolves.toEqual({ user, aiAvailable: false });
+    await expect(getPopupBootstrap()).resolves.toEqual({ user });
 
     expect(globalThis.fetch).toHaveBeenCalledOnce();
     const [url, init] = (globalThis.fetch as Mock).mock.calls[0];
     expect(url).toBe(DEFAULT_API_URL);
     expect(init.headers.Authorization).toBe('Bearer tok');
     const { query } = JSON.parse(init.body) as { query: string };
-    expect(query).toContain('me { id email name avatarUrl defaultLlmProvider }');
-    expect(query).toContain('llmApiKeys { provider }');
-  });
-
-  it('keeps the provider name out of the user it returns', async () => {
-    respondWith({ data: { me: { ...user, defaultLlmProvider: 'anthropic' }, llmApiKeys: [] } });
-
-    const { user: returned } = await getPopupBootstrap();
-
-    expect(returned).toEqual(user);
-    expect(returned).not.toHaveProperty('defaultLlmProvider');
+    expect(query).toContain('me { id email name avatarUrl }');
+    expect(query).not.toContain('llmApiKeys');
   });
 
   it('throws an unauthorized ApiError carrying the API error code', async () => {
@@ -102,7 +93,7 @@ describe('client header (JEF-473)', () => {
     vi.spyOn(fakeBrowser.runtime, 'getManifest').mockReturnValue({
       version: '1.3.1',
     } as Browser.runtime.Manifest);
-    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
+    respondWith({ data: { me: user } });
 
     await getPopupBootstrap();
 
@@ -114,7 +105,7 @@ describe('client header (JEF-473)', () => {
     vi.spyOn(fakeBrowser.runtime, 'getManifest').mockImplementation(() => {
       throw new Error('no manifest');
     });
-    respondWith({ data: { me: { ...user, defaultLlmProvider: null }, llmApiKeys: [] } });
+    respondWith({ data: { me: user } });
 
     await expect(getPopupBootstrap()).resolves.toBeDefined();
 
@@ -142,7 +133,9 @@ describe('parseJobDescription', () => {
   });
 
   it.each([
-    ['AI_NOT_CONFIGURED', /provider key/],
+    ['AI_NOT_CONFIGURED', /upgrade to Pro/],
+    ['EMAIL_NOT_VERIFIED', /Verify your email/],
+    ['AI_TEMPORARILY_UNAVAILABLE', /temporarily unavailable/],
     ['AI_LIMIT_REACHED', /monthly token limit/],
     ['AI_PROVIDER_ERROR', /provider returned an error/],
     ['RATE_LIMITED', /too quickly/],
@@ -156,6 +149,35 @@ describe('parseJobDescription', () => {
     expect((err as ApiError).message).toMatch(copy);
   });
 
+  it("keeps the API's own message for exhausted credits, with its reset date", async () => {
+    respondWith({
+      data: null,
+      errors: [
+        {
+          message: "You've used this month's AI credits. They reset on December 1, 2026.",
+          extensions: { code: 'AI_CREDITS_EXHAUSTED' },
+        },
+      ],
+    });
+
+    const err = await parseJobDescription('x').catch((e: unknown) => e);
+
+    expect((err as ApiError).code).toBe('AI_CREDITS_EXHAUSTED');
+    expect((err as ApiError).message).toContain('December 1, 2026');
+  });
+
+  it("keeps the API's own message for PLAN_REQUIRED", async () => {
+    respondWith({
+      data: null,
+      errors: [{ message: 'Trakwyn AI is a Pro feature.', extensions: { code: 'PLAN_REQUIRED' } }],
+    });
+
+    const err = await parseJobDescription('x').catch((e: unknown) => e);
+
+    expect((err as ApiError).code).toBe('PLAN_REQUIRED');
+    expect((err as ApiError).message).toBe('Trakwyn AI is a Pro feature.');
+  });
+
   it('passes other errors through unchanged', async () => {
     respondWith({
       data: null,
@@ -165,40 +187,5 @@ describe('parseJobDescription', () => {
     const err = await parseJobDescription('x').catch((e: unknown) => e);
 
     expect(isUnauthorizedError(err)).toBe(true);
-  });
-});
-
-describe('getPopupBootstrap — AI availability (JEF-420)', () => {
-  const answer = (defaultLlmProvider: string | null, providers: string[] | null) =>
-    respondWith({
-      data: {
-        me: { ...user, defaultLlmProvider },
-        llmApiKeys: providers?.map((provider) => ({ provider })) ?? null,
-      },
-    });
-  const aiAvailable = async () => (await getPopupBootstrap()).aiAvailable;
-
-  it('is true when the default provider has a saved key', async () => {
-    answer('anthropic', ['openai', 'anthropic']);
-
-    await expect(aiAvailable()).resolves.toBe(true);
-  });
-
-  it('is false when no default provider is set', async () => {
-    answer(null, ['anthropic']);
-
-    await expect(aiAvailable()).resolves.toBe(false);
-  });
-
-  it('is false when the default provider has no saved key', async () => {
-    answer('anthropic', ['openai']);
-
-    await expect(aiAvailable()).resolves.toBe(false);
-  });
-
-  it('reads a missing key list as no key', async () => {
-    answer('anthropic', null);
-
-    await expect(aiAvailable()).resolves.toBe(false);
   });
 });

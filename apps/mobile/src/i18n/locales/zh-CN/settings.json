@@ -58,7 +58,28 @@
     "fallbackUpdateFailed": "Couldn't update this setting. Try again.",
     "crossApplicationContextTitle": "Use context from other applications",
     "crossApplicationContextHelp": "Let the AI reference your other job applications when helping with this one.",
-    "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again."
+    "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again.",
+    "source": {
+      "title": "AI 来源",
+      "help": "自动：有自己的密钥时使用它，否则使用 Trakwyn AI。",
+      "auto": "自动",
+      "trakwyn": "Trakwyn AI",
+      "own": "我自己的密钥"
+    },
+    "credits": {
+      "title": "Trakwyn AI 额度",
+      "left": "剩余 {{left}} / {{total}}",
+      "resets": "将于 {{date}} 重置。使用你自己密钥的调用不会计入。",
+      "nearing": "本月的 AI 额度即将用完。",
+      "exhausted": "本月的 AI 额度已用完，将于 {{date}} 重置。",
+      "exhaustedFallback": "本月的 AI 额度已用完。",
+      "upgrade": "升级",
+      "addOwnKey": "添加你自己的密钥"
+    },
+    "proNote": {
+      "title": "Pro 套餐包含 Trakwyn AI",
+      "help": "升级后无需密钥即可使用 AI，或在下方添加你自己的 API 密钥免费使用 AI。"
+    }
   },
   "danger": {
     "title": "危险区域",

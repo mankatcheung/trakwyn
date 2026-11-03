@@ -747,3 +747,60 @@ describe('SettingsAiPage', () => {
     });
   });
 });
+
+describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
+  const keysPayload = {
+    llmApiKeys: [],
+    me: { defaultLlmProvider: null, customAiPrompt: null, aiSource: 'auto' },
+  };
+  const billing = (limit: number) => ({
+    billingStatus: {
+      aiCredits: { used: 6, limit, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+    },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    stubWideViewport();
+  });
+
+  it('shows the source picker and credits meter to a plan with credits', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(query.includes('BillingStatus') ? billing(300) : keysPayload),
+    );
+    render(<SettingsAiPage />, { wrapper: Wrapper });
+
+    expect(await screen.findByText('294 of 300 AI credits left')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /^Trakwyn AI/ })).toBeInTheDocument();
+  });
+
+  it('tells a Free user Trakwyn AI is Pro, with no picker or meter', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(query.includes('BillingStatus') ? billing(0) : keysPayload),
+    );
+    render(<SettingsAiPage />, { wrapper: Wrapper });
+
+    expect(await screen.findByText(/included with Pro/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Upgrade to Pro' })).toHaveAttribute(
+      'href',
+      '/settings/plan',
+    );
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(screen.queryByText(/AI credits left/)).not.toBeInTheDocument();
+  });
+
+  it('saves the chosen source with setAiSource', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(query.includes('BillingStatus') ? billing(300) : keysPayload),
+    );
+    render(<SettingsAiPage />, { wrapper: Wrapper });
+
+    await userEvent.click(await screen.findByRole('radio', { name: /^Trakwyn AI/ }));
+
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiSource'), {
+        aiSource: 'trakwyn',
+      }),
+    );
+  });
+});

@@ -34,8 +34,8 @@ const ALL_FEATURES = {
   apiAccess: true,
   mcpAccess: true,
 };
-const FREE_LIMITS = { applications: 50, documentBytes: 100 * MB };
-const PRO_LIMITS = { applications: null, documentBytes: 2048 * MB };
+const FREE_LIMITS = { applications: 50, documentBytes: 100 * MB, aiCreditsPerMonth: 30 };
+const PRO_LIMITS = { applications: null, documentBytes: 2048 * MB, aiCreditsPerMonth: 300 };
 
 const freeStatus = (overrides: Partial<BillingStatus> = {}): BillingStatus => ({
   enforced: true,

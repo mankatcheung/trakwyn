@@ -11,7 +11,7 @@ import {
   type OnboardingChecklistData,
 } from '../dashboard';
 
-type ChecklistItemKey = 'application' | 'mcp' | 'aiKey' | 'experience';
+type ChecklistItemKey = 'application' | 'mcp' | 'tryAi' | 'experience';
 
 interface ChecklistItem {
   key: ChecklistItemKey;
@@ -35,7 +35,7 @@ export function isRelevantToGoals(
       return true;
     case 'mcp':
       return goals.includes('MCP');
-    case 'aiKey':
+    case 'tryAi':
     case 'experience':
       return hasAiGoal(goals);
   }
@@ -55,6 +55,8 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
   });
 
   const goals = data.me?.onboardingGoals ?? [];
+  const hostedAi =
+    (data.me?.aiCredits?.limit ?? 0) > 0 || (data.me?.aiCredits?.bonusRemaining ?? 0) > 0;
   const allItems: ChecklistItem[] = [
     {
       key: 'application',
@@ -69,10 +71,19 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
       to: '/settings/integrations',
     },
     {
-      key: 'aiKey',
-      label: t('onboardingChecklist.addAiKey'),
-      done: (data.llmApiKeys ?? []).length > 0,
-      to: '/settings/ai',
+      key: 'tryAi',
+      // Hosted AI is Pro-only for now, so a Free user is still sent to add a key (JEF-451).
+      ...(hostedAi
+        ? {
+            label: t('onboardingChecklist.tryAi'),
+            done: (data.me?.aiCredits?.used ?? 0) > 0 || (data.llmApiKeys ?? []).length > 0,
+            to: '/applications',
+          }
+        : {
+            label: t('onboardingChecklist.addAiKey'),
+            done: (data.llmApiKeys ?? []).length > 0,
+            to: '/settings/ai',
+          }),
     },
     {
       key: 'experience',

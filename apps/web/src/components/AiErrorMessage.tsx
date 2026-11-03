@@ -1,6 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
+import { useEffect } from 'react';
+import { captureEvent, ANALYTICS_EVENTS } from '#/lib/analytics/analytics';
 import {
+  AI_CREDITS_EXHAUSTED_CODE,
+  AI_TEMPORARILY_UNAVAILABLE_CODE,
+  EMAIL_NOT_VERIFIED_CODE,
   AI_LIMIT_REACHED_CODE,
   AI_NOT_CONFIGURED_CODE,
   PLAN_REQUIRED_CODE,
@@ -29,6 +34,52 @@ export interface AiErrorMessageProps {
  */
 export function AiErrorMessage({ code, fallback }: AiErrorMessageProps) {
   const { t } = useLocale();
+
+  // Fires once per appearance of the banner (JEF-451), to measure conversion.
+  useEffect(() => {
+    if (code === AI_CREDITS_EXHAUSTED_CODE)
+      captureEvent(ANALYTICS_EVENTS.AI_CREDITS_EXHAUSTED_SHOWN);
+  }, [code]);
+
+  // Hosted credits are spent. The API's message names the reset date (and, for
+  // Pro past fair use, no dollar amount); the two ways forward follow it.
+  if (code === AI_CREDITS_EXHAUSTED_CODE) {
+    return (
+      <>
+        {fallback}{' '}
+        <Link
+          to="/settings/plan"
+          className="font-medium underline"
+          onClick={() => captureEvent(ANALYTICS_EVENTS.AI_UPGRADE_CLICKED)}
+        >
+          {t('aiCredits.upgrade')}
+        </Link>{' '}
+        ·{' '}
+        <Link
+          to="/settings/ai"
+          className="font-medium underline"
+          onClick={() => captureEvent(ANALYTICS_EVENTS.AI_ADD_KEY_CLICKED)}
+        >
+          {t('aiCredits.addOwnKey')}
+        </Link>
+      </>
+    );
+  }
+
+  if (code === EMAIL_NOT_VERIFIED_CODE) {
+    return (
+      <>
+        {t('aiErrors.emailNotVerified')}{' '}
+        <Link to="/verify-email-required" className="underline">
+          {t('aiErrors.verifyEmail')}
+        </Link>
+      </>
+    );
+  }
+
+  if (code === AI_TEMPORARILY_UNAVAILABLE_CODE) {
+    return <>{t('aiErrors.temporarilyUnavailable')}</>;
+  }
 
   if (code === AI_LIMIT_REACHED_CODE) {
     return (

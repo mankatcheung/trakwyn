@@ -7,6 +7,7 @@ jest.mock('../../hooks/useLlmApiKeys', () => ({
   useLlmUsageSummary: jest.fn(),
   useSaveLlmApiKey: jest.fn(),
   useDeleteLlmApiKey: jest.fn(),
+  useSetAiSource: jest.fn(),
   useSetDefaultLlmProvider: jest.fn(),
   useSetLlmApiKeyMonthlyLimit: jest.fn(),
   useTestLlmApiKey: jest.fn(),
@@ -14,6 +15,7 @@ jest.mock('../../hooks/useLlmApiKeys', () => ({
   useToggleFallbackWhenLimited: jest.fn(),
   useUpdateCustomAiPrompt: jest.fn(),
 }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 
 import {
@@ -21,6 +23,7 @@ import {
   useLlmApiKeys,
   useLlmUsageSummary,
   useSaveLlmApiKey,
+  useSetAiSource,
   useSetDefaultLlmProvider,
   useSetLlmApiKeyMonthlyLimit,
   useTestLlmApiKey,
@@ -38,6 +41,7 @@ const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseLlmUsageSummary = jest.mocked(useLlmUsageSummary);
 const mockedUseSaveLlmApiKey = jest.mocked(useSaveLlmApiKey);
 const mockedUseDeleteLlmApiKey = jest.mocked(useDeleteLlmApiKey);
+const mockedUseSetAiSource = jest.mocked(useSetAiSource);
 const mockedUseSetDefaultLlmProvider = jest.mocked(useSetDefaultLlmProvider);
 const mockedUseSetLlmApiKeyMonthlyLimit = jest.mocked(useSetLlmApiKeyMonthlyLimit);
 const mockedUseTestLlmApiKey = jest.mocked(useTestLlmApiKey);
@@ -59,6 +63,8 @@ function llmApiKeysData(overrides: Partial<Record<string, unknown>> = {}) {
     customAiPrompt: null,
     useCrossApplicationContext: false,
     llmFallbackWhenLimited: false,
+    aiSource: 'auto',
+    aiCredits: { used: 18, limit: 30, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
     ...overrides,
   };
 }
@@ -74,6 +80,7 @@ describe('AiSettingsScreen', () => {
     } as never);
     mockedUseLlmUsageSummary.mockReturnValue({ data: [] } as never);
     mockedUseDeleteLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseSetAiSource.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseSetDefaultLlmProvider.mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
@@ -236,5 +243,39 @@ describe('AiSettingsScreen', () => {
     await fireEvent(getByTestId('cross-application-context-switch'), 'valueChange', true);
 
     expect(mutate).toHaveBeenCalledWith(true, expect.any(Object));
+  });
+
+  it('shows the credits meter and saves a picked AI source (JEF-451)', async () => {
+    const mutate = jest.fn();
+    mockedUseSetAiSource.mockReturnValue({ mutate, isPending: false } as never);
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: llmApiKeysData(),
+      isLoading: false,
+      isError: false,
+    } as never);
+
+    const { getByText, getByTestId } = await render(<AiSettingsScreen />);
+    expect(getByText('12 of 30 left')).toBeTruthy();
+
+    await fireEvent.press(getByTestId('ai-source-option-own'));
+    expect(mutate).toHaveBeenCalledWith('own', expect.any(Object));
+  });
+
+  it('Free: hides the meter and the picker, and points at Pro (JEF-451)', async () => {
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: llmApiKeysData({
+        aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+      }),
+      isLoading: false,
+      isError: false,
+    } as never);
+
+    const { getByTestId, queryByTestId, getByText } = await render(<AiSettingsScreen />);
+    expect(getByText('Trakwyn AI is included with Pro')).toBeTruthy();
+    expect(getByTestId('ai-pro-note-upgrade-button')).toBeTruthy();
+    expect(queryByTestId('ai-source-card')).toBeNull();
+    expect(queryByTestId('ai-credits-left')).toBeNull();
+    // The own-key flow is still there.
+    expect(getByTestId('open-add-provider-button')).toBeTruthy();
   });
 });

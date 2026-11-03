@@ -367,10 +367,18 @@ export interface AiParsedJob {
   description: string | null;
 }
 
+const AI_CREDITS_EXHAUSTED_FALLBACK =
+  "You've used this month's AI credits. They reset on the 1st of next month.";
+
+const PLAN_REQUIRED_FALLBACK = 'Trakwyn AI is part of the Pro plan.';
+
 /** What the user is told when the AI read fails with one of the API's codes. */
 const AI_ERROR_MESSAGES: Record<string, string> = {
   [API_ERROR_CODES.AI_NOT_CONFIGURED]:
-    'Add your AI provider key in Trakwyn settings to read postings with AI.',
+    'Add your own AI API key, or upgrade to Pro for Trakwyn AI, to read postings with AI.',
+  [API_ERROR_CODES.EMAIL_NOT_VERIFIED]: 'Verify your email address to read postings with AI.',
+  [API_ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE]:
+    'Trakwyn AI is temporarily unavailable. Try again in a few minutes.',
   [API_ERROR_CODES.AI_LIMIT_REACHED]: 'Your AI key has reached its monthly token limit.',
   [API_ERROR_CODES.AI_PROVIDER_ERROR]: 'Your AI provider returned an error. Try again later.',
   [API_ERROR_CODES.AI_RESPONSE_INVALID]: "The AI couldn't make sense of this posting.",
@@ -378,9 +386,10 @@ const AI_ERROR_MESSAGES: Record<string, string> = {
 };
 
 /**
- * Sends the page's text to the API's AI parser (JEF-420), which uses the
- * user's own provider key. Rejects with an `ApiError` carrying readable copy
- * for the codes in `AI_ERROR_MESSAGES`.
+ * Sends the page's text to the API's AI parser (JEF-420), which runs on
+ * Trakwyn AI or the user's own key (JEF-451). Rejects with an `ApiError`
+ * carrying readable copy for the codes in `AI_ERROR_MESSAGES`. An exhausted
+ * credit balance keeps the API's own message, which names the reset date.
  */
 export async function parseJobDescription(text: string): Promise<AiParsedJob> {
   try {
@@ -389,6 +398,13 @@ export async function parseJobDescription(text: string): Promise<AiParsedJob> {
     });
     return data.parseJobDescription;
   } catch (err) {
+    if (err instanceof ApiError && err.code === API_ERROR_CODES.AI_CREDITS_EXHAUSTED) {
+      throw new ApiError(err.message || AI_CREDITS_EXHAUSTED_FALLBACK, err.code);
+    }
+    // Trakwyn AI is Pro-only for now: the API's own message says which plan the feature needs
+    if (err instanceof ApiError && err.code === API_ERROR_CODES.PLAN_REQUIRED) {
+      throw new ApiError(err.message || PLAN_REQUIRED_FALLBACK, err.code);
+    }
     const message = err instanceof ApiError && err.code && AI_ERROR_MESSAGES[err.code];
     if (message) throw new ApiError(message, err.code);
     throw err;
@@ -397,39 +413,23 @@ export async function parseJobDescription(text: string): Promise<AiParsedJob> {
 
 /**
  * Everything the popup asks the API for as it opens, in one round trip
- * (JEF-457): the user for the header, and what "Read with AI" needs.
+ * (JEF-457): the user for the header. "Read with AI" needs no key lookup
+ * (JEF-451): Trakwyn AI serves users without one.
  */
 const POPUP_BOOTSTRAP = `
   query PopupBootstrap {
-    me { id email name avatarUrl defaultLlmProvider }
-    llmApiKeys { provider }
+    me { id email name avatarUrl }
   }
 `;
 
 export interface PopupBootstrap {
   user: CurrentUser;
-  /**
-   * Whether "Read with AI" can work (JEF-420): the user has a default provider
-   * and a saved key for it. A default whose key was deleted would otherwise
-   * fail with `AI_NOT_CONFIGURED` only after the page text was sent. Only the
-   * answer is kept; provider names are not.
-   */
-  aiAvailable: boolean;
 }
 
-/**
- * The signed-in user and their AI availability. A null `me` is unauthorized.
- * A missing key list reads as no key, so the parser still works without it.
- */
+/** The signed-in user. A null `me` is unauthorized. */
 export async function getPopupBootstrap(): Promise<PopupBootstrap> {
-  const data = await authedGql<{
-    me: (CurrentUser & { defaultLlmProvider?: string | null }) | null;
-    llmApiKeys?: Array<{ provider: string }> | null;
-  }>(POPUP_BOOTSTRAP);
+  const data = await authedGql<{ me: CurrentUser | null }>(POPUP_BOOTSTRAP);
   if (!data.me) throw new ApiError('Not authenticated', API_ERROR_CODES.UNAUTHORIZED);
-  const { id, email, name, avatarUrl, defaultLlmProvider } = data.me;
-  const aiAvailable =
-    !!defaultLlmProvider &&
-    (data.llmApiKeys ?? []).some((key) => key.provider === defaultLlmProvider);
-  return { user: { id, email, name, avatarUrl }, aiAvailable };
+  const { id, email, name, avatarUrl } = data.me;
+  return { user: { id, email, name, avatarUrl } };
 }

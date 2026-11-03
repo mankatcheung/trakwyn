@@ -20,7 +20,10 @@ import { ConversationProviderPicker } from '../components/ConversationProviderPi
 import type { Conversation } from '../types';
 import { useLlmApiKeys } from '../../settings/hooks/useLlmApiKeys';
 import type { LlmApiKey } from '../../settings/types';
-import { getErrorMessage } from '../../../lib/errors';
+import { getErrorCode, getErrorMessage } from '../../../lib/errors';
+import { ERROR_CODES, PLAN_REQUIRED } from '../../../constants';
+import { hostedAiAvailable } from '../../settings/lib/aiCredits';
+import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
@@ -40,12 +43,14 @@ export function ConversationsScreen() {
 
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [startErrorCode, setStartErrorCode] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const onNewConversation = async (key?: LlmApiKey) => {
     if (isStarting) return;
     setPickerOpen(false);
     setStartError(null);
+    setStartErrorCode(null);
     setIsStarting(true);
     try {
       const created = await createConversation.mutateAsync({
@@ -55,14 +60,20 @@ export function ConversationsScreen() {
       router.push(`./${created.id}`);
     } catch (err) {
       setStartError(getErrorMessage(err));
+      setStartErrorCode(getErrorCode(err));
     } finally {
       setIsStarting(false);
     }
   };
 
+  const hostedAvailable =
+    hostedAiAvailable(llmApiKeys?.aiCredits) && llmApiKeys?.aiSource !== 'own';
+
   const onFabPress = () => {
     if (isStarting) return;
-    if (!llmApiKeys || llmApiKeys.keys.length === 0) {
+    // Trakwyn AI (Pro) needs no key: the picker opens for it, or for an own key;
+    // an account with neither is sent to settings.
+    if (!llmApiKeys || (llmApiKeys.keys.length === 0 && !hostedAvailable)) {
       Alert.alert(t('conversations.noKeysTitle'), t('conversations.noKeysMessage'), [
         { text: t('conversations.cancel'), style: 'cancel' },
         {
@@ -108,7 +119,17 @@ export function ConversationsScreen() {
 
   return (
     <View style={styles.container}>
-      {startError ? <Text style={styles.error}>{startError}</Text> : null}
+      {startError ? (
+        startErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED || startErrorCode === PLAN_REQUIRED ? (
+          <AiCreditsExhaustedNotice
+            surface="conversations"
+            message={startError}
+            reason={startErrorCode === PLAN_REQUIRED ? 'plan' : 'credits'}
+          />
+        ) : (
+          <Text style={styles.error}>{startError}</Text>
+        )
+      ) : null}
       <QuotaHint resource="conversations" used={conversations?.length} />
 
       <FlatList
@@ -151,6 +172,8 @@ export function ConversationsScreen() {
       {pickerOpen && (
         <ConversationProviderPicker
           keys={llmApiKeys?.keys ?? []}
+          hosted={hostedAvailable}
+          onSelectHosted={() => void onNewConversation()}
           defaultProvider={llmApiKeys?.defaultProvider ?? null}
           onSelect={(key) => void onNewConversation(key)}
           onClose={() => setPickerOpen(false)}

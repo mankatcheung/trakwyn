@@ -44,11 +44,11 @@ describe('GetBillingStatusUseCase', () => {
 
     expect(status.aiCredits).toEqual({
       used: 7,
-      limit: 30,
+      limit: 0,
       bonusRemaining: 0,
       resetsAt: new Date('2026-12-01T00:00:00.000Z'),
     });
-    expect(status.catalogue.free.limits.aiCreditsPerMonth).toBe(30);
+    expect(status.catalogue.free.limits.aiCreditsPerMonth).toBe(0);
     expect(status.catalogue.pro.limits.aiCreditsPerMonth).toBe(300);
   });
 

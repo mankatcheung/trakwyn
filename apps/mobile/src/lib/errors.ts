@@ -1,4 +1,5 @@
 import i18n from '../i18n';
+import { ERROR_CODES } from '../constants';
 
 interface GraphQLErrorLike {
   response: {
@@ -31,12 +32,33 @@ function planRequiredMessage(apiMessage: string | undefined): string {
   return i18n.t('common:errorPlanRequired', { message: sentence });
 }
 
+/**
+ * The message for a code that arrives without a GraphQL error to read it from,
+ * such as an SSE error frame. Null for codes the app has no copy for, so an
+ * old build meeting a new code shows the frame's own message (JEF-451).
+ */
+export function codedErrorMessage(code: string): string | null {
+  if (code === ERROR_CODES.EMAIL_NOT_VERIFIED) return i18n.t('common:errorEmailNotVerified');
+  if (code === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE) return i18n.t('common:errorAiUnavailable');
+  return null;
+}
+
 /** Turns any thrown error (GraphQL, network, or otherwise) into a single user-facing message. */
 export function getErrorMessage(error: unknown): string {
   if (isGraphQLErrorLike(error)) {
     const gqlError = error.response.errors?.[0];
     if (gqlError?.extensions?.code === PLAN_REQUIRED_CODE) {
       return planRequiredMessage(gqlError.message);
+    }
+    if (gqlError?.extensions?.code === ERROR_CODES.AI_CREDITS_EXHAUSTED) {
+      // The API's message names the reset date; an empty one still gets copy.
+      return gqlError.message ?? i18n.t('common:errorAiCreditsExhausted');
+    }
+    if (gqlError?.extensions?.code === ERROR_CODES.EMAIL_NOT_VERIFIED) {
+      return i18n.t('common:errorEmailNotVerified');
+    }
+    if (gqlError?.extensions?.code === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE) {
+      return i18n.t('common:errorAiUnavailable');
     }
     return gqlError?.message ?? i18n.t('common:errorGeneric');
   }

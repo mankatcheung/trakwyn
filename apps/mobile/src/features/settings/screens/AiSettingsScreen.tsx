@@ -20,6 +20,7 @@ import {
   useLlmApiKeys,
   useLlmUsageSummary,
   useSaveLlmApiKey,
+  useSetAiSource,
   useSetDefaultLlmProvider,
   useSetLlmApiKeyMonthlyLimit,
   useTestLlmApiKey,
@@ -31,6 +32,9 @@ import { LLM_PROVIDER_LABEL, LLM_PROVIDERS, type LlmApiKey, type LlmUsageSummary
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { AiSourceCard } from '../components/AiSourceCard';
+import { AiProNote } from '../components/AiProNote';
+import { hostedAiAvailable } from '../lib/aiCredits';
 import { createSheetStyles } from '../../../components/sheetStyles';
 
 /** Above this share of the limit the meter warns rather than just reports. */
@@ -543,6 +547,8 @@ export function AiSettingsScreen() {
   const saveKey = useSaveLlmApiKey();
   const deleteKey = useDeleteLlmApiKey();
   const setDefault = useSetDefaultLlmProvider();
+  const setAiSource = useSetAiSource();
+  const [aiSourceError, setAiSourceError] = useState<string | null>(null);
   const testKey = useTestLlmApiKey();
   const setMonthlyLimit = useSetLlmApiKeyMonthlyLimit();
   const updateCustomAiPrompt = useUpdateCustomAiPrompt();
@@ -683,6 +689,22 @@ export function AiSettingsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
+        {data && !hostedAiAvailable(data.aiCredits) ? <AiProNote /> : null}
+        {data && hostedAiAvailable(data.aiCredits) ? (
+          <AiSourceCard
+            aiSource={data.aiSource}
+            aiCredits={data.aiCredits}
+            pending={setAiSource.isPending}
+            error={aiSourceError}
+            onChange={(source) => {
+              setAiSourceError(null);
+              setAiSource.mutate(source, {
+                onError: (err) => setAiSourceError(getErrorMessage(err)),
+              });
+            }}
+          />
+        ) : null}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('ai.configuredProviders')}</Text>
           {keys.length === 0 ? (

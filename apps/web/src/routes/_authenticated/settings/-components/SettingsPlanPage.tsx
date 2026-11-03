@@ -11,6 +11,8 @@ import {
 } from '#/lib/billingStatus';
 import { formatStorageSize } from '#/lib/storageUsage';
 import { useBillingPortal, useCheckout, type CheckoutPlan } from '#/lib/billingCheckout';
+import { useHostedAiAvailable } from '#/lib/aiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.
@@ -66,6 +68,20 @@ function UsageMeter({ title, used, limit, caption, fullMessage, warningMessage }
   );
 }
 
+function AiCreditsCard() {
+  const { t } = useLocale();
+  const hosted = useHostedAiAvailable();
+  if (!hosted) return null;
+  return (
+    <Card className="p-5">
+      <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+        {t('aiCredits.title')}
+      </h2>
+      <AiCreditsMeter />
+    </Card>
+  );
+}
+
 export function SettingsPlanPage() {
   const status = useBillingStatus();
   if (!status) return null;
@@ -75,6 +91,7 @@ export function SettingsPlanPage() {
       <PlanSummary status={status} />
       {status.enforced && <PlanActions status={status} />}
       <Usage status={status} />
+      <AiCreditsCard />
       <Comparison status={status} />
     </div>
   );
@@ -244,6 +261,14 @@ function Comparison({ status }: { status: BillingStatus }) {
       // Runs on the user's own key, so neither plan limits it (JEF-442).
       free: t('plan.unlimited'),
       pro: t('plan.unlimited'),
+    },
+    {
+      label: t('plan.rowAiCredits'),
+      free:
+        free.limits.aiCreditsPerMonth > 0
+          ? t('plan.creditsPerMonth', { n: free.limits.aiCreditsPerMonth })
+          : t('plan.notIncluded'),
+      pro: t('plan.creditsPerMonth', { n: pro.limits.aiCreditsPerMonth }),
     },
     ...FEATURE_ROWS.map(({ feature, labelKey }) => ({
       label: t(labelKey),

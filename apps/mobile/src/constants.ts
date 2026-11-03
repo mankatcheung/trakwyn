@@ -32,6 +32,9 @@ export const CHAT_MESSAGE_MAX_CHARS = 8000;
 /** The chat composer grows with its content up to this many lines, then scrolls (JEF-481). */
 export const CHAT_INPUT_MAX_LINES = 10;
 
+/** The action needs a plan the user is not on; for an AI call, Trakwyn AI is Pro-only (JEF-451). */
+export const PLAN_REQUIRED = 'PLAN_REQUIRED';
+
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   VALIDATION: 'VALIDATION',
@@ -40,6 +43,12 @@ export const ERROR_CODES = {
   STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
   /** Client-side only: the request never reached the server. */
   NETWORK_ERROR: 'NETWORK_ERROR',
+  /** This month's hosted AI credits are spent (JEF-447); the app offers an upgrade or the user's own key (JEF-451). */
+  AI_CREDITS_EXHAUSTED: 'AI_CREDITS_EXHAUSTED',
+  /** The action needs a verified email address. */
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  /** Hosted AI could not answer right now. The API does not send this yet; the app is ready for it (JEF-451). */
+  AI_TEMPORARILY_UNAVAILABLE: 'AI_TEMPORARILY_UNAVAILABLE',
 } as const;
 
 /**

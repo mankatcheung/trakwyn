@@ -74,3 +74,24 @@ describe('getErrorCode', () => {
     expect(getErrorCode(undefined)).toBeNull();
   });
 });
+
+describe('hosted AI codes (JEF-451)', () => {
+  it('keeps the API message for AI_CREDITS_EXHAUSTED, which names the reset date', () => {
+    expect(getErrorMessage(gqlError('Resets on December 1, 2026.', 'AI_CREDITS_EXHAUSTED'))).toBe(
+      'Resets on December 1, 2026.',
+    );
+  });
+
+  it('has its own copy for EMAIL_NOT_VERIFIED and AI_TEMPORARILY_UNAVAILABLE', () => {
+    expect(getErrorMessage(gqlError('x', 'EMAIL_NOT_VERIFIED'))).toBe(
+      'Verify your email address to use AI.',
+    );
+    expect(getErrorMessage(gqlError('x', 'AI_TEMPORARILY_UNAVAILABLE'))).toMatch(/unavailable/);
+  });
+
+  it('shows the generic message for a code it has never heard of, and does not throw', () => {
+    expect(getErrorMessage(gqlError(undefined, 'SOMETHING_NEW'))).toBe(
+      'Something went wrong. Please try again.',
+    );
+  });
+});

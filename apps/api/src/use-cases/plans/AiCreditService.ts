@@ -6,7 +6,11 @@ import {
   LLM_USAGE_SOURCE,
   type AiFeature,
 } from '#src/use-cases/constants.js';
-import { AiCreditsExhaustedError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import {
+  AiCreditsExhaustedError,
+  NotFoundError,
+  PlanRequiredError,
+} from '#src/use-cases/errors/DomainError.js';
 import type {
   AiCreditCharge,
   AiCreditStanding,
@@ -47,6 +51,14 @@ export class AiCreditService implements IAiCreditService {
 
     const user = hint ?? (await this.deps.userRepository.findById(userId));
     if (!user) throw new NotFoundError('User');
+
+    // Hosted AI is Pro-only for now, so a plan with no credits is refused with an
+    // upgrade prompt rather than "you used your credits" (JEF-451).
+    if (this.monthlyLimit(user) <= 0) {
+      throw new PlanRequiredError(
+        'Trakwyn AI is included with Pro. Upgrade, or add your own API key to use AI for free.',
+      );
+    }
 
     const now = this.deps.now();
     const periodStart = startOfUtcMonth(now);
@@ -117,6 +129,7 @@ export class AiCreditService implements IAiCreditService {
   }
 
   private welcomeBonus(user: User, now: Date): number {
+    if (this.monthlyLimit(user) <= 0) return 0;
     const endsAt = user.createdAt.getTime() + AI_CREDITS.WELCOME_DAYS * DAY_MS;
     return now.getTime() < endsAt ? AI_CREDITS.WELCOME_BONUS : 0;
   }

@@ -184,4 +184,46 @@ describe('ConversationsScreen', () => {
     await waitFor(() => expect(getByTestId('delete-conversation-1')).toBeTruthy());
     expect(queryByText('Delete')).toBeNull();
   });
+
+  const emptyList = () =>
+    mockedUseConversations.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+  const keyless = (aiCredits: unknown) =>
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: {
+        keys: [],
+        defaultProvider: null,
+        aiSource: 'auto',
+        aiCredits,
+      },
+    } as never);
+
+  it('Pro without a key: opens the picker with a Trakwyn AI entry (JEF-451)', async () => {
+    emptyList();
+    keyless({ used: 0, limit: 300, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' });
+    const mutateAsync = jest.fn().mockResolvedValue({ id: 'hosted-conv' });
+    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
+
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('new-conversation-button'));
+    await fireEvent.press(getByTestId('conversation-provider-option-trakwyn'));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ provider: null, model: null }));
+  });
+
+  it('Free without a key: no Trakwyn AI entry, the old no-keys alert instead', async () => {
+    emptyList();
+    keyless({ used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' });
+    const alert = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+
+    const { getByTestId, queryByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('new-conversation-button'));
+
+    expect(alert).toHaveBeenCalled();
+    expect(queryByTestId('conversation-provider-option-trakwyn')).toBeNull();
+  });
 });

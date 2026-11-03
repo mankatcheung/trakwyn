@@ -71,4 +71,30 @@ describe('ConversationProviderPicker', () => {
 
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('offers Trakwyn AI, which needs no key, when hosted AI is available', async () => {
+    const onSelectHosted = jest.fn();
+    const { getByTestId, queryByTestId, rerender } = await render(
+      <ConversationProviderPicker
+        keys={[]}
+        defaultProvider={null}
+        hosted
+        onSelectHosted={onSelectHosted}
+        onSelect={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    await fireEvent.press(getByTestId('conversation-provider-option-trakwyn'));
+    expect(onSelectHosted).toHaveBeenCalled();
+
+    await rerender(
+      <ConversationProviderPicker
+        keys={keys}
+        defaultProvider={null}
+        onSelect={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    expect(queryByTestId('conversation-provider-option-trakwyn')).toBeNull();
+  });
 });

@@ -91,7 +91,15 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
     // explicit one (a chat locked to a key) is a request for that key.
     const own = await this.resolveOwn(userId, request, hints, user);
     if (own || !platformOn || user?.aiSource !== AI_SOURCE.AUTO || provider) return own;
+    // Hosted AI is Pro-only for now: a Free user with no key gets the same
+    // `AI_NOT_CONFIGURED` as before it existed (JEF-451).
+    if (!this.isPaid(user)) return own;
     return this.resolvePlatform(userId, request, user);
+  }
+
+  private isPaid(user: User): boolean {
+    const now = (this.deps.now ?? (() => new Date()))();
+    return effectivePlan(user.plan, user.planExpiresAt, now) !== 'free';
   }
 
   /** The platform's providers, each with its own tracking, failing over from the first to the second. */
