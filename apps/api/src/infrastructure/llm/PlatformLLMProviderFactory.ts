@@ -1,6 +1,7 @@
 import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
 import { ENV, LLM_PROVIDER_MODE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
 import { LLM_PROVIDER, type AiModelTier } from '#src/use-cases/constants.js';
+import { isInHostedAiRollout } from '#src/infrastructure/llm/hostedAiRollout.js';
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
 import type {
   IPlatformLLMProviderFactory,
@@ -37,6 +38,17 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
 
   isEnabled(): boolean {
     return this.env[ENV.HOSTED_AI_ENABLED] === 'true';
+  }
+
+  isEnabledFor(userId: string): boolean {
+    return (
+      this.isEnabled() &&
+      isInHostedAiRollout(
+        userId,
+        this.env[ENV.HOSTED_AI_ROLLOUT_PERCENT],
+        this.env[ENV.HOSTED_AI_ALLOWLIST],
+      )
+    );
   }
 
   legs(tier: AiModelTier): PlatformLLMLeg[] {

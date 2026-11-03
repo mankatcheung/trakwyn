@@ -269,6 +269,18 @@ The API stops hosted calls itself at `HOSTED_AI.DAILY_BUDGET_MICROS` ($10 a day,
 
 Raise the daily budget as Pro grows. The breaker **fails closed**: if Redis cannot be read, hosted calls are refused (`AI_TEMPORARILY_UNAVAILABLE`, 503) until it can, and the "breaker open" monitor reports `reason = store_error`. Own-key calls are never affected.
 
+### Hosted AI rollout (JEF-453)
+
+`hosted_ai = true` only makes hosted AI possible. Who gets it is `hosted_ai_rollout_percent` (0-100, default **0**) and `hosted_ai_allowlist` (user ids), which set `HOSTED_AI_ROLLOUT_PERCENT` and `HOSTED_AI_ALLOWLIST`. A user is in when they are on the allowlist or `sha256(userId)` mod 100 is below the percent, so a user's bucket never changes and raising the percent only adds users. Users outside it behave exactly as before hosted AI (`AI_NOT_CONFIGURED` without a key, and `setAiSource(trakwyn)` refused). Unset in the API itself means 100, so a self-hosted instance with `HOSTED_AI_ENABLED=true` is unaffected. Each step is a Terraform apply (new revision, allow a minute).
+
+Record the date and the numbers next to each gate before moving on. Hosted AI 9 (the vendor settings above) must be done before stage 2. Free users only reach hosted AI once Free credits are enabled (JEF-495); until then "Free" in stage 2 means nobody.
+
+1. **Stage 1, staff:** `hosted_ai_rollout_percent = 0`, `hosted_ai_allowlist = ["<id>", …]`. Gates: cost per feature within 2× of the Hosted AI 1 estimates; `reasoningTokens` = 0 on every platform `LlmUsageEvent`; failover works (force a primary error once, e.g. an invalid primary key on a staging revision). Date:
+2. **Stage 2, 10% for a week:** `hosted_ai_rollout_percent = 10`. Gates: projected cost per active Free user under $0.03 a month; the breaker never opens; hosted error rate under 1%; no farming signal (sign-ups per IP, unverified share). Date:
+3. **Stage 3, 100% for two weeks:** `hosted_ai_rollout_percent = 100`. Watch daily cost, the `AI_CREDITS_EXHAUSTED` rate, Free to Pro conversion and the share of Pro users at 300 credits. Then tune `PLAN_LIMITS.*.aiCreditsPerMonth`, the weights, the daily budget and the Pro ceiling in code, decide on a credit pack if over 10% of Pro hit 300, and write the findings into JEF-443. Date:
+
+**Roll back a stage:** lower the percent (0 stops everyone but the allowlist; own-key users are never affected).
+
 **Kill switch:** `hosted_ai = false` and apply. It is a new revision, so allow a minute. Users on Trakwyn AI get `AI_NOT_CONFIGURED`; own-key users are untouched. The gateway's rate limit and token (`infra/cloudflare/README.md`) cut the spend faster than a deploy if you need it at once. A provider outage needs neither: the API retries once on the second provider before any output.
 
 **Roll back:** send traffic to the previous revision. The next deploy moves traffic back to the newest revision.

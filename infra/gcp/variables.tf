@@ -67,6 +67,23 @@ variable "hosted_ai" {
   default     = false
 }
 
+variable "hosted_ai_rollout_percent" {
+  description = "Share of users (0-100) who get hosted AI while hosted_ai is true (JEF-453), by a stable hash of the user id. 0 by default so turning hosted_ai on reaches nobody but the allowlist; raise it per rollout stage (README.md, 'Hosted AI rollout'). Set 0 to roll back without a gateway change."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.hosted_ai_rollout_percent >= 0 && var.hosted_ai_rollout_percent <= 100
+    error_message = "hosted_ai_rollout_percent must be between 0 and 100."
+  }
+}
+
+variable "hosted_ai_allowlist" {
+  description = "User ids who get hosted AI whatever the rollout percentage (JEF-453): the staff-only stage. Ids are not secrets."
+  type        = list(string)
+  default     = []
+}
+
 variable "secret_env_vars" {
   description = "Environment variables served from Secret Manager. Each needs a secret version before the service can start; drop a name to leave that feature unconfigured."
   type        = set(string)

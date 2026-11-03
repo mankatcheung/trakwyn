@@ -148,7 +148,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
 
     // Loaded once here and handed down as hints (F9): the inner factory
     // used to fetch the same user and key again on every call.
-    const platformOn = !!this.deps.platformLlmProviderFactory?.isEnabled();
+    const platformOn = !!this.deps.platformLlmProviderFactory?.isEnabledFor(userId);
     const user =
       provider && !platformOn ? undefined : await this.deps.userRepository.findById(userId);
 

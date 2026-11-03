@@ -16,6 +16,13 @@ export interface PlatformLLMLeg {
 export interface IPlatformLLMProviderFactory {
   isEnabled(): boolean;
   /**
+   * Whether this user is inside the staged rollout (JEF-453): on the staff
+   * allowlist, or in a stable `userId` bucket below `HOSTED_AI_ROLLOUT_PERCENT`.
+   * False whenever `isEnabled()` is. Users outside it behave as if hosted AI
+   * did not exist.
+   */
+  isEnabledFor(userId: string): boolean;
+  /**
    * The primary leg first, then the failover leg when one is configured, each
    * on the model of `tier` (JEF-448).
    * Throws `AiNotConfiguredError` when hosted AI is on but the primary key is

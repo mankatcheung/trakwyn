@@ -25,7 +25,11 @@ locals {
       # Whose OIDC tokens the admin cron routes accept (scheduler.tf).
       CRON_INVOKER_SA = google_service_account.cron_invoker.email
     },
-    var.hosted_ai ? { HOSTED_AI_ENABLED = "true" } : {},
+    var.hosted_ai ? {
+      HOSTED_AI_ENABLED         = "true"
+      HOSTED_AI_ROLLOUT_PERCENT = tostring(var.hosted_ai_rollout_percent)
+      HOSTED_AI_ALLOWLIST       = join(",", var.hosted_ai_allowlist)
+    } : {},
     var.plain_env,
   )
 }

@@ -8,7 +8,11 @@ const build = (hostedAiEnabled: boolean) => {
   });
   const useCase = new SetAiSourceUseCase({
     userRepository,
-    platformLlmProviderFactory: { isEnabled: () => hostedAiEnabled, legs: () => [] },
+    platformLlmProviderFactory: {
+      isEnabled: () => hostedAiEnabled,
+      isEnabledFor: () => hostedAiEnabled,
+      legs: () => [],
+    },
   });
   return { userRepository, useCase };
 };

@@ -67,6 +67,13 @@ export const ENV = {
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
   /** `'true'` turns on the platform-owned LLM path (Hosted AI, JEF-446). Unset, nothing changes. */
   HOSTED_AI_ENABLED: 'HOSTED_AI_ENABLED',
+  /**
+   * Share of users (0-100, default 100) who get hosted AI, by a stable hash of
+   * their id (JEF-453). Users outside it keep the own-key behaviour.
+   */
+  HOSTED_AI_ROLLOUT_PERCENT: 'HOSTED_AI_ROLLOUT_PERCENT',
+  /** Comma-separated user ids who get hosted AI whatever the percentage (JEF-453). */
+  HOSTED_AI_ALLOWLIST: 'HOSTED_AI_ALLOWLIST',
   /** Overrides `HOSTED_AI.DAILY_BUDGET_MICROS` with a USD amount (JEF-449). */
   HOSTED_AI_DAILY_BUDGET_USD: 'HOSTED_AI_DAILY_BUDGET_USD',
   /** Platform provider ids: primary (`googleai`) and failover (`openai`). */

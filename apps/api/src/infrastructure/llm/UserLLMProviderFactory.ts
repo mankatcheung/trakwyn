@@ -75,7 +75,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
     const { provider, trackUsage = true } = request;
     const platform = this.deps.platformLlmProviderFactory;
     // Key tests (`trackUsage: false`) are always about the user's own key.
-    const platformOn = !!platform?.isEnabled() && trackUsage;
+    const platformOn = !!platform?.isEnabledFor(userId) && trackUsage;
 
     const user =
       hints.user !== undefined
