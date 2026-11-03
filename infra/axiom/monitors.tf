@@ -258,6 +258,96 @@ resource "axiom_monitor" "outbound_url_refused" {
   notifier_ids = [axiom_notifier.email.id]
 }
 
+# --- Hosted AI guards (JEF-449) ---------------------------------------------
+#
+# Three layers sit in front of the platform's keys: the daily breaker in the
+# API, the provider-side budgets (infra/gcp/README.md, "Hosted AI spend
+# budgets") and these monitors, which say when the first two are doing work.
+# Same `increase` rule as above.
+
+resource "axiom_monitor" "hosted_ai_hourly_cost" {
+  name        = "Hosted AI spend above ${var.hosted_ai_hourly_cost_usd} USD an hour"
+  description = "Estimated platform LLM spend (METRICS.LLM_COST_MICROS, source = platform) over the last hour. The daily breaker (HOSTED_AI.DAILY_BUDGET_MICROS) is the hard stop; this is the early warning that something is spending fast."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.llm.cost_micros`
+    | filter source == "platform"
+    | map increase
+    | align to 1h using sum
+    | group using sum
+  MPL
+
+  operator         = "Above"
+  threshold        = var.hosted_ai_hourly_cost_usd * 1000000
+  range_minutes    = 60
+  interval_minutes = 15
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
+resource "axiom_monitor" "hosted_ai_breaker_open" {
+  name        = "Hosted AI breaker open"
+  description = "The daily spend breaker refused a hosted AI call (METRICS.HOSTED_AI_BREAKER_OPEN). reason = over_budget: the day's budget is spent, so Trakwyn AI is off until 00:00 UTC. reason = store_error: Redis could not be read and the breaker failed closed."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.hosted_ai.breaker_open`
+    | map increase
+    | align to 5m using sum
+    | group by reason using sum
+  MPL
+
+  operator         = "Above"
+  threshold        = 0
+  range_minutes    = 5
+  interval_minutes = 5
+  notify_by_group  = true
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
+# The failover line is the only signal: nothing counts successful platform
+# calls in the logs dataset, so this is a count, not the share of calls that
+# the ticket asked for. At launch volume a count is the more useful number.
+resource "axiom_monitor" "hosted_ai_failover" {
+  name        = "Hosted AI failing over"
+  description = "More than ${var.hosted_ai_failover_per_hour} llm.platform.failover lines in an hour: the primary platform provider is rate limiting or down and calls are running on the fallback, at its price."
+  type        = "Threshold"
+  apl_query   = <<-APL
+    ['${var.logs_dataset}']
+    | where ${local.log_event} == "llm.platform.failover"
+    | summarize count()
+  APL
+
+  operator         = "Above"
+  threshold        = var.hosted_ai_failover_per_hour
+  range_minutes    = 60
+  interval_minutes = 15
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
+# Read from the use-case spans (traceUseCase records app.error.code), since a
+# DomainError is an expected error and is not logged. Custom span attributes
+# live in the `attributes.custom` map, read through column_ifexists because
+# Axiom rejects a query that names a field the dataset has never had.
+resource "axiom_monitor" "ai_credits_exhausted" {
+  name        = "AI_CREDITS_EXHAUSTED spike"
+  description = "More than ${var.ai_credits_exhausted_per_hour} use-case spans ended in AI_CREDITS_EXHAUSTED in an hour. One user running out is normal; a spike means the credit sizes are wrong or an account is being farmed."
+  type        = "Threshold"
+  apl_query   = <<-APL
+    ['${var.dataset}']
+    | where tostring(column_ifexists('attributes.custom', dynamic({}))['app.error.code']) == "AI_CREDITS_EXHAUSTED"
+    | summarize count()
+  APL
+
+  operator         = "Above"
+  threshold        = var.ai_credits_exhausted_per_hour
+  range_minutes    = 60
+  interval_minutes = 15
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
 # --- LLM spend (metrics dataset, MPL; JEF-444) -------------------------------
 #
 # Not a monitor: nothing here should page anyone. The cost counter is the

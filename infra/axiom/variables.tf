@@ -50,3 +50,21 @@ variable "graphql_error_min_requests" {
   type        = number
   default     = 20
 }
+
+variable "hosted_ai_hourly_cost_usd" {
+  description = "Alert when the platform's LLM spend (source = platform) in a rolling hour exceeds this many USD (JEF-449). The daily breaker is $10, so $3 an hour is well above normal and well below the cap."
+  type        = number
+  default     = 3
+}
+
+variable "hosted_ai_failover_per_hour" {
+  description = "Alert when more than this many platform calls failed over to the second provider in an hour (JEF-449)."
+  type        = number
+  default     = 20
+}
+
+variable "ai_credits_exhausted_per_hour" {
+  description = "Alert when more than this many requests are refused with AI_CREDITS_EXHAUSTED in an hour (JEF-449): a spike means a pricing or abuse problem, not one user running out."
+  type        = number
+  default     = 50
+}

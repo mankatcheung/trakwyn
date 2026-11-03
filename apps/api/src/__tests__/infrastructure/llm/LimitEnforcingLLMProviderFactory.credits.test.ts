@@ -30,7 +30,11 @@ function build(source: LlmUsageSource, chargeImpl?: () => Promise<unknown>) {
   const factory = new LimitEnforcingLLMProviderFactory({
     userLlmProviderFactory: inner,
     userRepository: makeUserRepository({
-      findById: vi.fn().mockResolvedValue(makeUser({ defaultLlmProvider: 'openai' })),
+      findById: vi
+        .fn()
+        .mockResolvedValue(
+          makeUser({ defaultLlmProvider: 'openai', emailVerifiedAt: new Date('2026-01-01') }),
+        ),
     }),
     llmApiKeyRepository: makeLlmApiKeyRepository({
       findAllByUserId: vi.fn().mockResolvedValue([makeLlmApiKey({ provider: 'openai' })]),

@@ -48,6 +48,9 @@ import { isObservabilityEnabled } from '#src/infrastructure/observability/tracin
 import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
 import { AiCreditService } from '#src/use-cases/plans/AiCreditService.js';
+import { HostedAiSpendGuard } from '#src/infrastructure/llm/HostedAiSpendGuard.js';
+import { RedisAiSpendCounter } from '#src/infrastructure/cache/RedisAiSpendCounter.js';
+import { MemoryAiSpendCounter } from '#src/infrastructure/cache/MemoryAiSpendCounter.js';
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
@@ -184,6 +187,19 @@ export const infrastructure = {
     { lifetime: Lifetime.SINGLETON },
   ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
+  // Fails closed, unlike the cache and rate limiter that share this Redis (JEF-449).
+  aiSpendGuard: asFunction(
+    ({ logger, now }: Cradle) => {
+      const redis = getRedisClient();
+      return new HostedAiSpendGuard({
+        counter: redis ? new RedisAiSpendCounter(redis) : new MemoryAiSpendCounter(),
+        logger,
+        metrics: otelMetrics,
+        now,
+      });
+    },
+    { lifetime: Lifetime.SINGLETON },
+  ),
   // asFunction so a missing platform key fails on first use, not at boot
   // (JEF-446); it reads its env on every call.
   platformLlmProviderFactory: asFunction(() => new PlatformLLMProviderFactory(), {
@@ -202,6 +218,7 @@ export const infrastructure = {
       generateId,
       logger,
       platformLlmProviderFactory,
+      aiSpendGuard,
     }: Cradle) =>
       new UserLLMProviderFactory({
         userRepository,
@@ -214,6 +231,7 @@ export const infrastructure = {
         traceLlmCalls: isObservabilityEnabled,
         metrics: otelMetrics,
         platformLlmProviderFactory,
+        aiSpendGuard,
       }),
     { lifetime: Lifetime.SINGLETON },
   ),

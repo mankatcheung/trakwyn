@@ -105,6 +105,7 @@ export const rateLimiters = {
     'documentFileRateLimiter',
     RATE_LIMIT.DOCUMENT_FILE,
   ),
+  hostedAiRateLimiter: limiter('hostedAiRateLimiter', RATE_LIMIT.HOSTED_AI),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
   generateCoverLetterRateLimiter: limiter(

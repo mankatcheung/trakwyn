@@ -67,6 +67,8 @@ export const ENV = {
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
   /** `'true'` turns on the platform-owned LLM path (Hosted AI, JEF-446). Unset, nothing changes. */
   HOSTED_AI_ENABLED: 'HOSTED_AI_ENABLED',
+  /** Overrides `HOSTED_AI.DAILY_BUDGET_MICROS` with a USD amount (JEF-449). */
+  HOSTED_AI_DAILY_BUDGET_USD: 'HOSTED_AI_DAILY_BUDGET_USD',
   /** Platform provider ids: primary (`googleai`) and failover (`openai`). */
   PLATFORM_LLM_PRIMARY: 'PLATFORM_LLM_PRIMARY',
   PLATFORM_LLM_FALLBACK: 'PLATFORM_LLM_FALLBACK',
@@ -681,3 +683,14 @@ export const LLM_PRICES: Readonly<Record<string, Readonly<Record<string, LlmPric
     'deepseek-chat': { input: 280_000, cachedInput: 28_000, output: 420_000 },
   },
 };
+
+/**
+ * The daily hosted-AI spend counter (JEF-449). One key per UTC date; the TTL
+ * outlives the day so a late increment still lands on a key that exists.
+ */
+export const HOSTED_AI_SPEND = {
+  KEY_PREFIX: 'hosted-ai:spend:',
+  TTL_MS: 48 * 60 * 60 * 1000,
+  /** The `fields.event` of the warn line logged whenever the breaker refuses a call. */
+  BREAKER_OPEN_EVENT: 'hosted_ai.breaker_open',
+} as const;

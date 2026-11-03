@@ -1,6 +1,12 @@
 import { AI_SOURCE, LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
 import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
-import { LlmLimitReachedError } from '#src/use-cases/errors/DomainError.js';
+import {
+  EmailNotVerifiedError,
+  LlmLimitReachedError,
+  RateLimitedError,
+} from '#src/use-cases/errors/DomainError.js';
+import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
+import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { LlmApiKey } from '#src/domain/llmApiKey/LlmApiKey.js';
 import type { ILlmApiKeyRepository } from '#src/use-cases/ports/ILlmApiKeyRepository.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
@@ -26,6 +32,10 @@ interface Deps {
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
   /** Optional (JEF-447): without it hosted calls are not metered. */
   aiCreditService?: IAiCreditService;
+  /** Optional (JEF-449): without it hosted calls are not rate limited per user. */
+  hostedAiRateLimiter?: IRateLimiter;
+  /** Optional (JEF-449): without it there is no daily spend breaker. */
+  aiSpendGuard?: IAiSpendGuard;
 }
 
 /**
@@ -80,17 +90,32 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     request: LLMProviderRequest,
     resolution: LLMProviderResolution,
   ): Promise<LLMProviderResolution> {
-    const credits = this.deps.aiCreditService;
-    if (
-      !credits ||
-      request.trackUsage === false ||
-      resolution.source !== LLM_USAGE_SOURCE.PLATFORM
-    ) {
+    if (request.trackUsage === false || resolution.source !== LLM_USAGE_SOURCE.PLATFORM) {
       return resolution;
     }
+    await this.guardHostedCall(userId);
+    const credits = this.deps.aiCreditService;
+    if (!credits) return resolution;
     const charge = await credits.charge(userId, request.feature);
     if (!charge) return resolution;
     return { ...resolution, provider: new CreditRefundingLLMProvider(resolution.provider, charge) };
+  }
+
+  /**
+   * Guards on spend (JEF-449), in front of the credit charge so a refused
+   * call costs the user nothing: a verified email, a per-user rate, and the
+   * platform-wide daily breaker, which fails closed.
+   */
+  private async guardHostedCall(userId: string): Promise<void> {
+    const user = await this.deps.userRepository.findById(userId);
+    if (!user?.emailVerifiedAt) {
+      throw new EmailNotVerifiedError('Verify your email to use Trakwyn AI.');
+    }
+    const limiter = this.deps.hostedAiRateLimiter;
+    if (limiter && !(await limiter.consume(`hosted-ai:user:${userId}`))) {
+      throw new RateLimitedError('Too many Trakwyn AI requests. Wait a minute and try again.');
+    }
+    await this.deps.aiSpendGuard?.assertWithinBudget();
   }
 
   private async resolveKey(
