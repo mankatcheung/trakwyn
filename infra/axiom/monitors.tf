@@ -362,14 +362,13 @@ resource "axiom_monitor" "ai_credits_exhausted" {
 resource "axiom_dashboard" "llm_cost" {
   uid = "trakwyn-llm-cost"
   dashboard = jsonencode({
-    name                       = "Trakwyn LLM cost"
-    description                = "Estimated LLM spend in micro-USD (METRICS.LLM_COST_MICROS), from the price table in apps/api. 1 000 000 = 1 USD."
-    owner                      = "X-AXIOM-EVERYONE"
-    schemaVersion              = 2
-    refreshTime                = 300
-    timeWindowStart            = "qr-now-14d"
-    timeWindowEnd              = "qr-now"
-    overrideDashboardTimeRange = false
+    name            = "Trakwyn LLM cost"
+    description     = "Estimated LLM spend in micro-USD (METRICS.LLM_COST_MICROS), from the price table in apps/api. 1 000 000 = 1 USD."
+    owner           = "X-AXIOM-EVERYONE"
+    schemaVersion   = 2
+    refreshTime     = 300
+    timeWindowStart = "qr-now-14d"
+    timeWindowEnd   = "qr-now"
     charts = [
       {
         id   = "cost-per-feature-per-day"
@@ -399,8 +398,8 @@ resource "axiom_dashboard" "llm_cost" {
       },
     ]
     layout = [
-      { i = "cost-per-feature-per-day", x = 0, y = 0, w = 12, h = 8, minW = 4, minH = 4, moved = false, static = false },
-      { i = "cost-per-source-per-day", x = 0, y = 8, w = 12, h = 6, minW = 4, minH = 4, moved = false, static = false },
+      { i = "cost-per-feature-per-day", x = 0, y = 0, w = 12, h = 8 },
+      { i = "cost-per-source-per-day", x = 0, y = 8, w = 12, h = 6 },
     ]
   })
 }
