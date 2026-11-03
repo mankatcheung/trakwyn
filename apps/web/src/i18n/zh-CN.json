@@ -516,7 +516,7 @@
   "experience.advanced": "高级",
   "experience.expert": "专家",
   "integrations.aiFeaturesTitle": "AI 功能",
-  "integrations.aiFeaturesDescription": "添加你自己的一个或多个服务商的 API 密钥，以启用助手聊天机器人、求职信生成和职位描述自动填充功能。Trakwyn 不提供共享密钥——在你添加密钥之前，这些功能将保持关闭。自动化功能（求职信、职位描述解析、简历匹配）使用下方的默认服务商；助手聊天机器人则可让你在每次对话中自行选择服务商与模型。",
+  "integrations.aiFeaturesDescription": "添加你自己的一个或多个服务商的 API 密钥，以启用助手聊天机器人、求职信生成和职位描述自动填充功能。没有密钥时，这些功能使用 Trakwyn AI 和每月额度；有密钥时则不消耗额度。自动化功能（求职信、职位描述解析、简历匹配）使用下方的默认服务商；助手聊天机器人则可让你在每次对话中自行选择服务商与模型。",
   "integrations.default": "默认",
   "integrations.makeDefault": "设为默认",
   "integrations.settingDefault": "设置中…",

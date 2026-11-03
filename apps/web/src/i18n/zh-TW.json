@@ -516,7 +516,7 @@
   "experience.advanced": "高級",
   "experience.expert": "專家",
   "integrations.aiFeaturesTitle": "AI 功能",
-  "integrations.aiFeaturesDescription": "新增你自己的一個或多個服務商的 API 金鑰，以啟用助理聊天機器人、求職信生成及職缺描述自動填入功能。Trakwyn 不提供共用金鑰——在你新增金鑰之前，這些功能將保持關閉。自動化功能（求職信、職缺描述解析、履歷配對）會使用下方的預設服務商；助理聊天機器人則可讓你在每次對話中自行選擇服務商與模型。",
+  "integrations.aiFeaturesDescription": "新增你自己的一個或多個服務商的 API 金鑰，以啟用助理聊天機器人、求職信生成及職缺描述自動填入功能。沒有金鑰時，這些功能使用 Trakwyn AI 和每月額度；有金鑰時則不消耗額度。自動化功能（求職信、職缺描述解析、履歷配對）會使用下方的預設服務商；助理聊天機器人則可讓你在每次對話中自行選擇服務商與模型。",
   "integrations.default": "預設",
   "integrations.makeDefault": "設為預設",
   "integrations.settingDefault": "設定中…",

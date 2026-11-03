@@ -525,7 +525,7 @@
   "experience.advanced": "Advanced",
   "experience.expert": "Expert",
   "integrations.aiFeaturesTitle": "AI features",
-  "integrations.aiFeaturesDescription": "Add your own API key from one or more providers to enable the assistant chatbot, cover letter generation, and job description auto-fill. Trakwyn doesn't provide a shared key — these features stay off until you add one. Automatic features (cover letters, job description parsing, CV match) use your default provider below; the assistant chatbot lets you choose the provider and model per conversation.",
+  "integrations.aiFeaturesDescription": "Add your own API key from one or more providers to enable the assistant chatbot, cover letter generation, and job description auto-fill. Without a key they run on Trakwyn AI and your monthly credits; with one, nothing counts against your credits. Automatic features (cover letters, job description parsing, CV match) use your default provider below; the assistant chatbot lets you choose the provider and model per conversation.",
   "integrations.default": "Default",
   "integrations.makeDefault": "Make default",
   "integrations.settingDefault": "Setting…",
