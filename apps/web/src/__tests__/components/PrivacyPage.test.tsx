@@ -85,14 +85,26 @@ describe('PrivacyPage', () => {
       screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
     ).toBeInTheDocument();
   });
-  it('lists the AI sub-processors with purpose, region and a terms link', () => {
+  it('names Cloudflare as the only AI sub-processor, with purpose, region and its terms', () => {
     render(<PrivacyPage />);
 
     const table = screen.getByRole('table', { name: /ai sub-processors/i });
-    for (const vendor of ['Google (Gemini API)', 'OpenAI', 'Cloudflare (AI Gateway)']) {
-      expect(within(table).getByRole('rowheader', { name: vendor })).toBeInTheDocument();
-    }
-    expect(within(table).getAllByRole('link', { name: 'Terms' })).toHaveLength(3);
+    expect(
+      within(table).getByRole('rowheader', { name: 'Cloudflare (Workers AI and AI Gateway)' }),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByRole('rowheader')).toHaveLength(1);
+    expect(within(table).getByRole('link', { name: 'Terms' })).toHaveAttribute(
+      'href',
+      'https://www.cloudflare.com/terms/',
+    );
+    expect(within(table).getByRole('link', { name: 'Data use' })).toHaveAttribute(
+      'href',
+      'https://developers.cloudflare.com/workers-ai/platform/data-usage/',
+    );
+    expect(within(table).queryByText(/Gemini|OpenAI/)).not.toBeInTheDocument();
+    expect(
+      within(table).getByText(/transfers outside the UK and EEA rely on/i),
+    ).toBeInTheDocument();
     expect(
       within(table)
         .getAllByRole('columnheader')
@@ -100,10 +112,21 @@ describe('PrivacyPage', () => {
     ).toEqual(['Vendor', 'Purpose', 'Region', 'Vendor terms']);
   });
 
-  it('says hosted AI content is not used for training', () => {
+  it('attributes the training and retention claims to Cloudflare and names its sub-processors', () => {
     render(<PrivacyPage />);
 
     expect(screen.getByRole('heading', { name: 'Trakwyn AI (hosted)' })).toBeInTheDocument();
-    expect(screen.getByText(/not used to train/i)).toBeInTheDocument();
+    expect(screen.getByText(/not used by us to train/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Cloudflare states that it does not use content processed by Workers AI/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Cloudflare states that Workers AI does not keep your prompts/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/CoreWeave \(United States\) and Nebius \(England\)/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no other AI vendor receives your content/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/to detect abuse/i)).not.toBeInTheDocument();
   });
 });

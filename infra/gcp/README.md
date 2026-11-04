@@ -105,9 +105,7 @@ Secret IDs are the env var names in lower-kebab-case:
 | `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; `terraform output -raw turnstile_secret_key` in `infra/cloudflare`)              |
 | `polar-access-token`            | Polar organization access token for the environment `POLAR_SERVER` names. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`) |
 | `polar-webhook-secret`          | the `whsec_…` secret of that environment's Polar webhook endpoint. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`)        |
-| `platform-googleai-api-key`     | hosted AI only (`hosted_ai = true`): the platform's Google AI Studio key, from a **paid-tier** project. Added by hand (see "Hosted AI")     |
-| `platform-openai-api-key`       | hosted AI only: the platform's OpenAI key, from a project with a monthly spend limit. Added by hand                                         |
-| `platform-llm-gateway-token`    | hosted AI only: the Cloudflare AI Gateway authentication token (`infra/cloudflare/README.md`). Added by hand                                |
+| `platform-cloudflare-api-token` | hosted AI only (`hosted_ai = true`): the Cloudflare API token with AI Gateway Run and Workers AI (`infra/cloudflare/README.md`). By hand    |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                                   |
 | `digest-admin-secret`           | a new random value                                                                                                                          |
 | `google-oauth-client-secret`    | Google OAuth client secret                                                                                                                  |
@@ -220,16 +218,20 @@ gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/base-ima
 
 ### Hosted AI vendor settings (JEF-452)
 
-The privacy policy (`PrivacyPage.tsx`) tells users that Trakwyn AI sends their content to Google (Gemini API) and OpenAI through Cloudflare's AI Gateway, on paid API accounts, with gateway logging off, and that content is not used for training. Those statements are only true once every box below is ticked, so finish this **before rollout stage 2 (Hosted AI 10)**. Record the date and who did it next to each item; the console steps cannot be done from Terraform.
+The privacy policy (`PrivacyPage.tsx`, all five locale files) names Cloudflare (Workers AI and AI Gateway) as the only sub-processor of Trakwyn AI content, since hosted AI runs Gemma and gpt-oss on Cloudflare Workers AI (JEF-453). Nothing is sent to Google or OpenAI on that path; a user's own key is described separately. The statements in it are only true once every box below is ticked, so finish this **before rollout stage 2 (Hosted AI 10)**. Record the date and who did it next to each item; the console steps cannot be done from Terraform.
 
-- [ ] **Google Cloud data processing terms accepted** for the platform project (Cloud Console, IAM & Admin, Settings, or the organisation's Cloud Data Processing Addendum). Date:
-- [ ] **Gemini API is on the paid tier.** In Google AI Studio, the project that owns the production key shows a linked Cloud Billing account. The free tier may use prompts to improve Google's products, which would make the "not used for training" line false. Date:
-- [ ] **OpenAI data processing addendum accepted** for the platform organisation (platform.openai.com, Settings, Organisation, Data controls). The account is on a paid plan, and the data-sharing (training) option is off. Date:
-- [ ] **Cloudflare AI Gateway logging is off** for the gateway (Dashboard, AI, AI Gateway, the gateway, Settings, Collect logs). Cloudflare's own DPA is accepted for the account. Date:
-- [ ] **Retention figures confirmed.** Read each vendor's current API data-retention page and copy the real figures here. The policy deliberately gives no number; add one (in all five locale files) only if you want it stated. Gemini API: ____ days. OpenAI API: ____ days. Cloudflare: none (logging off).
-- [ ] **Cross-checked against the UK compliance checklist (JEF-132):** the sub-processor list, international transfers (standard contractual clauses) and the policy's "Last updated" date.
+- [x] **Privacy policy and sub-processor list updated** to name Cloudflare Workers AI as the only processor of hosted AI content (JEF-453). The "last updated" date is in `PrivacyPage.tsx`. Counsel has not reviewed the wording.
+- [x] **Cloudflare's Workers AI data terms read and the policy checked against them (JEF-501, 4 November 2026).** Each claim in the policy's hosted AI section comes from one of these pages:
+  - Training: "Cloudflare does not use Customer Content processed by Workers AI to train AI models" ([Workers AI data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/), last updated 16 October 2026).
+  - Retention: Workers AI "does not retain inputs or outputs after they are no longer needed to process the request", except where a Cloudflare storage service is used or logging or caching is enabled in AI Gateway (same page). Cloudflare may keep operational metadata that "does not include Customer Content" (account and model identifiers, timestamps, sizes, token or neuron counts, latency, status codes).
+  - Sub-processors: Workers AI lists CoreWeave (United States) and Nebius (England) ([Cloudflare sub-processors](https://www.cloudflare.com/gdpr/subprocessors/cloudflare-services/), page dated 1 October 2025).
+  - Transfers: the [Cloudflare DPA](https://www.cloudflare.com/cloudflare-customer-dpa/) (version 6.4, April 2026) uses the EU standard contractual clauses, the UK Addendum and the Data Privacy Framework.
+  - The "Terms" link is the [Self-Serve Subscription Agreement](https://www.cloudflare.com/terms/), which governs a paid self-serve account. If the Cloudflare account is on an Enterprise agreement, link that instead.
+- [ ] **Cloudflare AI Gateway logging and caching are off in the dashboard** (Dashboard, AI, AI Gateway, the gateway, Settings, Logs). Cloudflare's docs say logs are on by default and do not say how Terraform's `collect_logs = false` maps to that setting, so check it after the apply, and check that caching is off (`cache_ttl = 0`). The policy says both are off. Cloudflare's DPA is accepted for the account. Date:
+- [ ] **Gaps the policy deliberately does not fill**, because Cloudflare's pages do not say: a numeric retention period; whether prompt content is reviewed for abuse; where inference runs or whether a region can be chosen; whether the prompt cache behind `x-session-affinity` is isolated per account; and Cloudflare's own training position for AI Gateway (its data-collection page returned a 404). Add a statement to all five locale files only after Cloudflare documents it or confirms it in writing. Date:
+- [ ] **For counsel (JEF-132):** the Self-Serve agreement lets Cloudflare use Customer Content "to the extent necessary to provide the Services" (section 2.5.1) and use "Network Data" to improve its services (section 2.5.5), and it does not say whether prompts count as Network Data. The DPA covers personal data only. Cloudflare's sub-processor page is dated 1 October 2025, so re-check that CoreWeave and Nebius are still listed before launch. Also cross-check the policy's "Last updated" date. Date:
 
-If a vendor is added or swapped, change `AI_SUBPROCESSORS` in `PrivacyPage.tsx` and its locale strings in the same PR, and bump `LAST_UPDATED`. Zero-data-retention agreements are out of scope at launch (OpenAI's needs approval); revisit if enterprise users appear.
+If a vendor is added or swapped, change `AI_SUBPROCESSORS` in `PrivacyPage.tsx` and its locale strings in the same PR, and bump `LAST_UPDATED`.
 
 ## Day two
 
@@ -243,31 +245,41 @@ gcloud iam service-accounts keys list --iam-account="$SA"   # then delete the ol
 gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 ```
 
-**Hosted AI (JEF-446):** Trakwyn AI answers for a user with no key of their own (or who picked it), on keys the platform owns, through the Cloudflare AI Gateway. Off by default; with `hosted_ai` false nothing about the API changes and `AI_NOT_CONFIGURED` is still returned. To switch it on:
+**Hosted AI (JEF-446, JEF-453):** Trakwyn AI answers for a Pro user with no key of their own (or who picked it), on Cloudflare Workers AI models called through the Cloudflare AI Gateway. It uses no Google or OpenAI key; users' own keys are a separate path and unaffected. The models are Gemma 4 26B (lite tier) and gpt-oss-120b (mid tier), each the other's failover (`PLATFORM_LLM` in `apps/api/src/infrastructure/config/constants.ts`). Off by default; with `hosted_ai` false nothing about the API changes and `AI_NOT_CONFIGURED` is still returned. To switch it on:
 
-1. **Google AI Studio:** create a project with **billing enabled (paid tier)** and an API key restricted to the Generative Language API. The free tier trains on prompts and is rate limited far below real use, so it must not back this. Set a budget alert on the project.
-2. **OpenAI:** create a dedicated project, set its **monthly spend limit** (Settings → Limits) to the most you would accept losing in a month, and create a key for it.
-3. **Gateway:** apply `infra/cloudflare` and create the gateway token (`infra/cloudflare/README.md`, "Hosted AI gateway").
-4. **Secrets:** create the containers on their own first, because Cloud Run refuses to start a revision that references a secret with no version: set `hosted_ai = true`, then `terraform apply -target='google_secret_manager_secret.api'` (add `-target='google_secret_manager_secret_iam_member.api_runtime'` to grant access in the same run). Then add a version to each by hand, so none enters Terraform state or a CI log:
+1. **Cloudflare:** apply `infra/cloudflare` (creates the gateway) and create the runtime token with AI Gateway Run and Workers AI (`infra/cloudflare/README.md`, "Hosted AI gateway").
+2. **Secret:** create the container on its own first, because Cloud Run refuses to start a revision that references a secret with no version: set `hosted_ai = true`, then `terraform apply -target='google_secret_manager_secret.api'` (add `-target='google_secret_manager_secret_iam_member.api_runtime'` to grant access in the same run). Then add a version by hand, so it never enters Terraform state or a CI log:
 
    ```bash
-   printf '%s' "<key>"   | gcloud secrets versions add platform-googleai-api-key --data-file=-
-   printf '%s' "<key>"   | gcloud secrets versions add platform-openai-api-key --data-file=-
-   printf '%s' "<token>" | gcloud secrets versions add platform-llm-gateway-token --data-file=-
+   printf '%s' "<token>" | gcloud secrets versions add platform-cloudflare-api-token --data-file=-
    ```
 
-5. **Apply** (in full) with `hosted_ai = true` and `PLATFORM_LLM_GATEWAY_BASE_URL` in `plain_env` (from `terraform -chdir=../cloudflare output -raw ai_gateway_base_url`). Leave `PLATFORM_LLM_PRIMARY` (`googleai`) and `PLATFORM_LLM_FALLBACK` (`openai`) unset unless you are swapping the pair; model ids are code (`PLATFORM_LLM` in `apps/api/src/infrastructure/config/constants.ts`).
-6. **Verify:** a user with no key and `aiSource` `auto` gets an AI reply, and `LlmUsageEvent.source` is `platform` for it. A missing key does not stop the API starting: it fails the first Trakwyn AI call with `AI_NOT_CONFIGURED`.
+3. **Apply** (in full) with `hosted_ai = true` and, in `plain_env`, `PLATFORM_CLOUDFLARE_ACCOUNT_ID` (the account id) and `PLATFORM_CLOUDFLARE_GATEWAY_ID` (`terraform -chdir=../cloudflare output -raw ai_gateway_id`; it defaults to `trakwyn`).
+4. **Verify:** a Pro user with no key and `aiSource` `auto` gets an AI reply, and `LlmUsageEvent.source` is `platform` with `provider` `workersai` for it. A missing token or account id does not stop the API starting: it fails the first Trakwyn AI call with `AI_NOT_CONFIGURED`. If every call fails with an authentication error on a gateway that Terraform created, check the gateway's authentication setting in the dashboard.
 
 ### Hosted AI spend budgets (JEF-449)
 
-The API stops hosted calls itself at `HOSTED_AI.DAILY_BUDGET_MICROS` ($10 a day, across all users; override with `HOSTED_AI_DAILY_BUDGET_USD` in `plain_env`). That counter is an estimate from list prices, and it only sees calls the API made, so the providers get their own ceilings as the second layer. Neither is in Terraform: a `google_billing_budget` needs billing-account permissions that this root's service account does not have, and the OpenAI limit has no API. Record the date and who did each.
+The API stops hosted calls itself at `HOSTED_AI.DAILY_BUDGET_MICROS` ($10 a day, across all users; override with `HOSTED_AI_DAILY_BUDGET_USD` in `plain_env`). That counter is an estimate from list prices, and it only sees calls the API made, so Cloudflare gets its own ceiling as the second layer (JEF-453). It is not in Terraform. Record the date and who did it.
 
-- [ ] **Google Cloud billing budget on the Gemini API project.** Billing, Budgets & alerts, Create budget, scoped to the project that owns `platform-googleai-api-key`. Amount: $300 a month (the worst case at the daily breaker), alerts at 50%, 80% and 100%, emailed to the billing admins. Or, with `gcloud`, the same command as the account budget above with `--filter-projects="projects/<GEMINI_PROJECT_ID>"`, `--budget-amount=300USD` and `--threshold-rule=percent=0.5 --threshold-rule=percent=0.8 --threshold-rule=percent=1.0`. Date:
-- [ ] **OpenAI project monthly limit** (platform.openai.com, the dedicated project, Settings, Limits): $300, with the email alert at 50% and 80%. Date:
+- [ ] **Cloudflare gateway spend limit: $20 a month.** Workers AI is billed by Cloudflare, so the gateway is the provider-side ceiling. In the dashboard: the gateway, Settings, Spend limits, add a rule of $20 over a monthly window, with no model or metadata scope so all hosted calls share one budget. When it is reached the gateway answers 429 until the window resets, so hosted AI stops for everyone that month. It is a dashboard step because the Terraform provider's `spend_limits` block does not document its `window` unit or a monthly value. **Verify it counts:** Cloudflare's docs do not say whether Workers AI (`@cf/`) models count towards a spend limit, or whether it works with logging off. After the first staff calls, check in the gateway analytics that the rule's spend moves; if it does not, rely on the notification below and the API's own breaker. Date:
+- [ ] **Cloudflare billing or usage notification** on the account (dashboard, Notifications), at about $20 a month, and a weekly look at Workers AI usage during the rollout. The dashboard's notification names change, so confirm them against Cloudflare's current docs. Date:
+- [ ] **Gateway rate limit: 600 a minute** (`ai_gateway_rate_limit`, `ai_gateway_rate_limit_interval_s`), which is Workers AI's 300 a minute per model across the two models hosted AI uses. The gateway counts all models together. Whether Workers AI's 300 is per model or per account is not stated in its docs, so watch for 429s from Workers AI during stage 1. Date:
+- [ ] **Match the API's daily breaker to the monthly ceiling.** `HOSTED_AI.DAILY_BUDGET_MICROS` is $10 a day, so one busy day would use half of a $20 month and two would end it. Pick a daily figure that fits (about $1 a day for $20 a month), set it with `HOSTED_AI_DAILY_BUDGET_USD` in `plain_env`, and record it. Date:
 - [ ] **Axiom monitors applied** (`infra/axiom`): hourly platform cost, breaker open, failover, `AI_CREDITS_EXHAUSTED`. `terraform plan` shows four new monitors and `apply` leaves no diff. Trigger the breaker once on a staging revision with `HOSTED_AI_DAILY_BUDGET_USD=0` and confirm the "Hosted AI breaker open" email. Date:
 
 Raise the daily budget as Pro grows. The breaker **fails closed**: if Redis cannot be read, hosted calls are refused (`AI_TEMPORARILY_UNAVAILABLE`, 503) until it can, and the "breaker open" monitor reports `reason = store_error`. Own-key calls are never affected.
+
+### Hosted AI rollout (JEF-453)
+
+`hosted_ai = true` only makes hosted AI possible. Who gets it is `hosted_ai_rollout_percent` (0-100, default **0**) and `hosted_ai_allowlist` (user ids), which set `HOSTED_AI_ROLLOUT_PERCENT` and `HOSTED_AI_ALLOWLIST`. A user is in when they are on the allowlist or `sha256(userId)` mod 100 is below the percent, so a user's bucket never changes and raising the percent only adds users. Users outside it behave exactly as before hosted AI (`AI_NOT_CONFIGURED` without a key, and `setAiSource(trakwyn)` refused). Unset in the API itself means 100, so a self-hosted instance with `HOSTED_AI_ENABLED=true` is unaffected. Each step is a Terraform apply (new revision, allow a minute).
+
+Record the date and the numbers next to each gate before moving on. Hosted AI 9 (the vendor settings above) must be done before stage 2. Free users only reach hosted AI once Free credits are enabled (JEF-495); until then "Free" in stage 2 means nobody.
+
+1. **Stage 1, staff:** `hosted_ai_rollout_percent = 0`, `hosted_ai_allowlist = ["<id>", …]`. Gates: cost per feature within 2× of the Hosted AI 1 estimates; `reasoningTokens` = 0 on every platform `LlmUsageEvent`; failover works (force a primary error once, e.g. an invalid primary key on a staging revision). Date:
+2. **Stage 2, 10% for a week:** `hosted_ai_rollout_percent = 10`. Gates: projected cost per active Free user under $0.03 a month; the breaker never opens; hosted error rate under 1%; no farming signal (sign-ups per IP, unverified share). Date:
+3. **Stage 3, 100% for two weeks:** `hosted_ai_rollout_percent = 100`. Watch daily cost, the `AI_CREDITS_EXHAUSTED` rate, Free to Pro conversion and the share of Pro users at 300 credits. Then tune `PLAN_LIMITS.*.aiCreditsPerMonth`, the weights, the daily budget and the Pro ceiling in code, decide on a credit pack if over 10% of Pro hit 300, and write the findings into JEF-443. Date:
+
+**Roll back a stage:** lower the percent (0 stops everyone but the allowlist; own-key users are never affected).
 
 **Kill switch:** `hosted_ai = false` and apply. It is a new revision, so allow a minute. Users on Trakwyn AI get `AI_NOT_CONFIGURED`; own-key users are untouched. The gateway's rate limit and token (`infra/cloudflare/README.md`) cut the spend faster than a deploy if you need it at once. A provider outage needs neither: the API retries once on the second provider before any output.
 

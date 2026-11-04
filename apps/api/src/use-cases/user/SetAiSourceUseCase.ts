@@ -21,7 +21,10 @@ export class SetAiSourceUseCase implements ISetAiSourceUseCase {
     if (!aiSource) {
       throw new ValidationError(`AI source must be one of: ${AI_SOURCES.join(', ')}`);
     }
-    if (aiSource === AI_SOURCE.TRAKWYN && !this.deps.platformLlmProviderFactory.isEnabled()) {
+    if (
+      aiSource === AI_SOURCE.TRAKWYN &&
+      !this.deps.platformLlmProviderFactory.isEnabledFor(input.userId)
+    ) {
       throw new ValidationError('Trakwyn AI is not available on this server');
     }
     await this.deps.userRepository.update(input.userId, { aiSource });

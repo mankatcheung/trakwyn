@@ -28,7 +28,11 @@ function platform(enabled: boolean, legCount = 2): IPlatformLLMProviderFactory {
     { providerId: 'googleai', model: 'gemini-2.5-flash-lite', provider: leg('gemini') },
     { providerId: 'openai', model: 'gpt-5.6-luna', provider: leg('gpt') },
   ].slice(0, legCount);
-  return { isEnabled: () => enabled, legs: vi.fn(() => (enabled ? legs : [])) };
+  return {
+    isEnabled: () => enabled,
+    isEnabledFor: () => enabled,
+    legs: vi.fn(() => (enabled ? legs : [])),
+  };
 }
 
 function build(opts: {
@@ -98,6 +102,18 @@ describe('platform resolution', () => {
     expect(await limited.resolveForUser('user-1', request)).toBeNull();
     expect(platformFactory.legs).not.toHaveBeenCalled();
   });
+
+  it.each(['auto', 'trakwyn'] as const)(
+    'keeps AI_NOT_CONFIGURED (null) for a %s user outside the rollout (JEF-453)',
+    async (aiSource) => {
+      const platformFactory = { ...platform(true), isEnabledFor: vi.fn(() => false) };
+      const { limited } = build({ aiSource, hasKey: false, platformFactory });
+
+      expect(await limited.resolveForUser('user-1', request)).toBeNull();
+      expect(platformFactory.isEnabledFor).toHaveBeenCalledWith('user-1');
+      expect(platformFactory.legs).not.toHaveBeenCalled();
+    },
+  );
 
   it('keeps AI_NOT_CONFIGURED (null) when the flag is off', async () => {
     const { limited } = build({

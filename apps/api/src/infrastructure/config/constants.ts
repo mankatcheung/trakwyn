@@ -67,17 +67,21 @@ export const ENV = {
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
   /** `'true'` turns on the platform-owned LLM path (Hosted AI, JEF-446). Unset, nothing changes. */
   HOSTED_AI_ENABLED: 'HOSTED_AI_ENABLED',
+  /**
+   * Share of users (0-100, default 100) who get hosted AI, by a stable hash of
+   * their id (JEF-453). Users outside it keep the own-key behaviour.
+   */
+  HOSTED_AI_ROLLOUT_PERCENT: 'HOSTED_AI_ROLLOUT_PERCENT',
+  /** Comma-separated user ids who get hosted AI whatever the percentage (JEF-453). */
+  HOSTED_AI_ALLOWLIST: 'HOSTED_AI_ALLOWLIST',
   /** Overrides `HOSTED_AI.DAILY_BUDGET_MICROS` with a USD amount (JEF-449). */
   HOSTED_AI_DAILY_BUDGET_USD: 'HOSTED_AI_DAILY_BUDGET_USD',
-  /** Platform provider ids: primary (`googleai`) and failover (`openai`). */
-  PLATFORM_LLM_PRIMARY: 'PLATFORM_LLM_PRIMARY',
-  PLATFORM_LLM_FALLBACK: 'PLATFORM_LLM_FALLBACK',
-  PLATFORM_GOOGLEAI_API_KEY: 'PLATFORM_GOOGLEAI_API_KEY',
-  PLATFORM_OPENAI_API_KEY: 'PLATFORM_OPENAI_API_KEY',
-  /** Cloudflare AI Gateway base, `https://gateway.ai.cloudflare.com/v1/<account>/<gateway>`. Optional: unset calls the providers directly. */
-  PLATFORM_LLM_GATEWAY_BASE_URL: 'PLATFORM_LLM_GATEWAY_BASE_URL',
-  /** Sent as `cf-aig-authorization` to an authenticated gateway. */
-  PLATFORM_LLM_GATEWAY_TOKEN: 'PLATFORM_LLM_GATEWAY_TOKEN',
+  /** The Cloudflare account whose Workers AI models answer hosted calls (JEF-453). Not secret. */
+  PLATFORM_CLOUDFLARE_ACCOUNT_ID: 'PLATFORM_CLOUDFLARE_ACCOUNT_ID',
+  /** Cloudflare API token (AI Gateway Run + Workers AI), sent as the bearer token. Secret. */
+  PLATFORM_CLOUDFLARE_API_TOKEN: 'PLATFORM_CLOUDFLARE_API_TOKEN',
+  /** The AI Gateway every hosted call is routed through. Defaults to `PLATFORM_LLM.DEFAULT_GATEWAY_ID`. */
+  PLATFORM_CLOUDFLARE_GATEWAY_ID: 'PLATFORM_CLOUDFLARE_GATEWAY_ID',
   /**
    * `'true'` makes the Free and Pro plans bite (JEF-344): Pro features are refused
    * to Free users and the Free AI allowance applies. Unset or anything else, every
@@ -430,19 +434,25 @@ export const LLM_PROVIDER_MODE = {
 /**
  * The platform-owned LLM path (Hosted AI, JEF-446).
  *
- * `MODELS` are the `lite`/`mid` tier ids per provider; routing between tiers is
- * Hosted AI 5, so until then every call uses `mid`. OpenAI has one tier for now.
+ * Since JEF-453 the platform runs only on Cloudflare Workers AI models, called
+ * through AI Gateway's OpenAI-compatible REST route with one Cloudflare API
+ * token; no Google or OpenAI key is involved (users' own keys are unaffected).
+ * Each tier lists its primary model first and its failover second: a 429 or
+ * 5xx on the first retries once on the other, through the same gateway.
  */
 export const PLATFORM_LLM = {
-  DEFAULT_PRIMARY: 'googleai',
-  DEFAULT_FALLBACK: 'openai',
+  /** The provider id recorded on `LlmUsageEvent` and the metrics. */
+  PROVIDER_ID: 'workersai',
+  DEFAULT_GATEWAY_ID: 'trakwyn',
   MODELS: {
-    googleai: { lite: 'gemini-2.5-flash-lite', mid: 'gemini-2.5-flash' },
-    openai: { lite: 'gpt-5.6-luna', mid: 'gpt-5.6-luna' },
+    lite: ['@cf/google/gemma-4-26b-a4b-it', '@cf/openai/gpt-oss-120b'],
+    mid: ['@cf/openai/gpt-oss-120b', '@cf/google/gemma-4-26b-a4b-it'],
   },
-  /** Path segment of each provider under the gateway base URL. */
-  GATEWAY_PATH: { googleai: 'google-ai-studio', openai: 'openai' },
-  GATEWAY_AUTH_HEADER: 'cf-aig-authorization',
+  /** `https://api.cloudflare.com/client/v4/accounts/<account>/ai/v1/chat/completions` */
+  REST_BASE: 'https://api.cloudflare.com/client/v4/accounts',
+  REST_PATH: 'ai/v1/chat/completions',
+  /** Picks which AI Gateway a REST call is routed through. */
+  GATEWAY_HEADER: 'cf-aig-gateway-id',
   /** Where the fake provider's `/chat/completions` lives; `ROUTES.LLM_FAKE_COMPLETIONS` is this. */
   FAKE_COMPLETIONS_PATH: '/llm-test/fake/chat/completions',
 } as const;
@@ -627,6 +637,25 @@ export const REASONING_CONTROL = {
     { pattern: /^gemini-2\.5-pro/i, off: 128, low: 1024 },
     { pattern: /^gemini-2\.5-flash/i, off: 0, low: 1024 },
   ],
+  /**
+   * Workers AI request fields (JEF-453), found by probing the models, not from
+   * Cloudflare's docs. Gemma 4 drops its thinking entirely with
+   * `chat_template_kwargs.enable_thinking = false` (4 completion tokens against
+   * 239); it ignores `reasoning_effort`. gpt-oss has no off switch: `low` is
+   * its floor and cut a probe from 58 to 21 completion tokens.
+   */
+  WORKERS_AI_MODELS: [
+    {
+      pattern: /gemma-4/i,
+      off: { chat_template_kwargs: { enable_thinking: false } },
+      low: { chat_template_kwargs: { enable_thinking: false } },
+    },
+    {
+      pattern: /gpt-oss/i,
+      off: { reasoning_effort: 'low' },
+      low: { reasoning_effort: 'low' },
+    },
+  ],
 } as const;
 
 /** What one million tokens of a model cost, in micro-USD (1 USD = 1 000 000), per kind of token (JEF-444). */
@@ -673,6 +702,11 @@ export const LLM_PRICES: Readonly<Record<string, Readonly<Record<string, LlmPric
   googleai: {
     'gemini-2.5-flash-lite': { input: 100_000, cachedInput: 10_000, output: 400_000 },
     'gemini-2.5-flash': { input: 300_000, cachedInput: 30_000, output: 2_500_000 },
+  },
+  // Workers AI list prices from each model's page (JEF-453), no cached-input rate.
+  workersai: {
+    '@cf/google/gemma-4-26b-a4b-it': { input: 100_000, output: 300_000 },
+    '@cf/openai/gpt-oss-120b': { input: 350_000, output: 750_000 },
   },
   openrouter: {
     'openai/gpt-4o-mini': { input: 150_000, cachedInput: 75_000, output: 600_000 },

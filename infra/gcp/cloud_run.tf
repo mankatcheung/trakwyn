@@ -1,10 +1,11 @@
 locals {
-  # The platform's provider keys and the gateway token (JEF-446). Values are
-  # added out of band, like every secret here; none is ever in state.
+  # The Cloudflare API token hosted AI calls Workers AI with, through AI Gateway
+  # (JEF-453). Hosted AI uses no Google or OpenAI key. The account id and gateway
+  # id are not secret: they go in plain_env (PLATFORM_CLOUDFLARE_ACCOUNT_ID,
+  # PLATFORM_CLOUDFLARE_GATEWAY_ID). The value is added out of band, like every
+  # secret here; it is never in state.
   hosted_ai_secret_env_vars = [
-    "PLATFORM_GOOGLEAI_API_KEY",
-    "PLATFORM_OPENAI_API_KEY",
-    "PLATFORM_LLM_GATEWAY_TOKEN",
+    "PLATFORM_CLOUDFLARE_API_TOKEN",
   ]
   secret_env_vars = var.hosted_ai ? setunion(var.secret_env_vars, local.hosted_ai_secret_env_vars) : var.secret_env_vars
 
@@ -25,7 +26,11 @@ locals {
       # Whose OIDC tokens the admin cron routes accept (scheduler.tf).
       CRON_INVOKER_SA = google_service_account.cron_invoker.email
     },
-    var.hosted_ai ? { HOSTED_AI_ENABLED = "true" } : {},
+    var.hosted_ai ? {
+      HOSTED_AI_ENABLED         = "true"
+      HOSTED_AI_ROLLOUT_PERCENT = tostring(var.hosted_ai_rollout_percent)
+      HOSTED_AI_ALLOWLIST       = join(",", var.hosted_ai_allowlist)
+    } : {},
     var.plain_env,
   )
 }

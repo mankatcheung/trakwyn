@@ -124,6 +124,12 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     private readonly outboundUrlPolicy?: IOutboundUrlPolicy,
     /** Added to every request, e.g. the gateway's `cf-aig-authorization` (JEF-446). */
     private readonly extraHeaders: Record<string, string> = {},
+    /**
+     * Request fields that turn thinking off or down for this backend (JEF-453).
+     * Set by the platform path for Workers AI, whose controls differ from
+     * OpenAI's; when absent the OpenAI-only `reasoning_effort` rule applies.
+     */
+    private readonly reasoningFields?: (reasoning: 'off' | 'low') => Record<string, unknown>,
   ) {}
 
   async complete(
@@ -234,8 +240,10 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
    * NVIDIA, a custom URL, ...) never gets the field: an unknown parameter can
    * be answered with a 400.
    */
-  private reasoningParams(reasoning: LLMReasoning | undefined): { reasoning_effort?: string } {
-    if (!reasoning || reasoning === 'default' || this.baseUrl !== LLM.OPENAI_API_URL) return {};
+  private reasoningParams(reasoning: LLMReasoning | undefined): Record<string, unknown> {
+    if (!reasoning || reasoning === 'default') return {};
+    if (this.reasoningFields) return this.reasoningFields(reasoning);
+    if (this.baseUrl !== LLM.OPENAI_API_URL) return {};
     const rule = REASONING_CONTROL.OPENAI_MODELS.find((r) => r.pattern.test(this.model));
     if (!rule) return {};
     return { reasoning_effort: reasoning === 'off' ? rule.off : rule.low };

@@ -62,9 +62,26 @@ variable "plain_env" {
 }
 
 variable "hosted_ai" {
-  description = "Turn on hosted AI (Trakwyn AI, JEF-446): sets HOSTED_AI_ENABLED and serves the platform's provider keys and gateway token from Secret Manager. Each of the three secrets needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Hosted AI'). Off by default; set false again as the kill switch."
+  description = "Turn on hosted AI (Trakwyn AI, JEF-446): sets HOSTED_AI_ENABLED and serves the Cloudflare API token that Workers AI is called with from Secret Manager (hosted AI uses no Google or OpenAI key). The secret needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Hosted AI'). Off by default; set false again as the kill switch."
   type        = bool
   default     = false
+}
+
+variable "hosted_ai_rollout_percent" {
+  description = "Share of users (0-100) who get hosted AI while hosted_ai is true (JEF-453), by a stable hash of the user id. 0 by default so turning hosted_ai on reaches nobody but the allowlist; raise it per rollout stage (README.md, 'Hosted AI rollout'). Set 0 to roll back without a gateway change."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.hosted_ai_rollout_percent >= 0 && var.hosted_ai_rollout_percent <= 100
+    error_message = "hosted_ai_rollout_percent must be between 0 and 100."
+  }
+}
+
+variable "hosted_ai_allowlist" {
+  description = "User ids who get hosted AI whatever the rollout percentage (JEF-453): the staff-only stage. Ids are not secrets."
+  type        = list(string)
+  default     = []
 }
 
 variable "secret_env_vars" {
