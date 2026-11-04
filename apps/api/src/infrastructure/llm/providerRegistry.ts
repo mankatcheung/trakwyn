@@ -21,12 +21,6 @@ export interface LLMProviderCreateParams {
   endpointOverride?: string;
   /** Sent on every request, e.g. the gateway's `cf-aig-authorization`. */
   extraHeaders?: Record<string, string>;
-  /**
-   * The gateway holds the provider key (Cloudflare AI Gateway BYOK, JEF-453):
-   * `apiKey` may be empty and no provider auth header is sent. Honoured by
-   * `openai` and `googleai`, the two platform providers.
-   */
-  keyInGateway?: boolean;
 }
 
 export interface LLMProviderRegistryEntry {
@@ -44,14 +38,13 @@ export interface LLMProviderRegistryEntry {
 export const PROVIDER_REGISTRY: Record<string, LLMProviderRegistryEntry> = {
   [LLM_PROVIDER.OPENAI]: {
     label: 'OpenAI',
-    create: ({ apiKey, model, endpointOverride, extraHeaders, keyInGateway }) =>
+    create: ({ apiKey, model, endpointOverride, extraHeaders }) =>
       new OpenAICompatibleLLMProvider(
         apiKey,
         endpointOverride ?? LLM.OPENAI_API_URL,
         model ?? LLM.OPENAI_DEFAULT_MODEL,
         undefined,
         extraHeaders,
-        keyInGateway,
       ),
   },
   [LLM_PROVIDER.ANTHROPIC]: {
@@ -60,14 +53,8 @@ export const PROVIDER_REGISTRY: Record<string, LLMProviderRegistryEntry> = {
   },
   [LLM_PROVIDER.GOOGLEAI]: {
     label: 'Google AI',
-    create: ({ apiKey, model, endpointOverride, extraHeaders, keyInGateway }) =>
-      new GoogleAILLMProvider(
-        apiKey,
-        model ?? undefined,
-        endpointOverride,
-        extraHeaders,
-        keyInGateway,
-      ),
+    create: ({ apiKey, model, endpointOverride, extraHeaders }) =>
+      new GoogleAILLMProvider(apiKey, model ?? undefined, endpointOverride, extraHeaders),
   },
   [LLM_PROVIDER.OPENROUTER]: {
     label: 'OpenRouter',

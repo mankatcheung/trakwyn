@@ -1,14 +1,13 @@
 # The AI gateway behind hosted AI (Hosted AI 3, JEF-446). The API sends the
-# platform's Gemini and OpenAI calls through it for analytics, an edge rate
-# limit and a kill switch. Account-level, like the Turnstile widget, so the
-# token needs Account · AI Gateway · Edit (README.md).
+# platform's Workers AI calls through it (REST route, `cf-aig-gateway-id`) for
+# analytics, an edge rate limit and a kill switch (JEF-453). Account-level, like
+# the Turnstile widget, so the token needs Account · AI Gateway · Edit (README.md).
 #
 # Deliberately restrictive:
 #
-# - Authenticated: a call without `cf-aig-authorization` is refused, so the
-#   gateway URL alone cannot be used to spend the platform's provider keys.
-#   The token is created in the dashboard and goes to Secret Manager
-#   (`platform-llm-gateway-token`); Terraform never sees it.
+# - Authenticated: a call needs a Cloudflare token with AI Gateway Run. The API's
+#   token is created in the dashboard and goes to Secret Manager
+#   (`platform-cloudflare-api-token`); Terraform never sees it.
 # - Logging off: prompts and replies hold resumes and notes. Axiom already
 #   carries token and cost metrics.
 # - Cache off: responses hold personal data and the gateway's cache key is not

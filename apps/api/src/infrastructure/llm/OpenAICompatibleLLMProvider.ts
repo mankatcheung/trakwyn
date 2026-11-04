@@ -125,17 +125,12 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     /** Added to every request, e.g. the gateway's `cf-aig-authorization` (JEF-446). */
     private readonly extraHeaders: Record<string, string> = {},
     /**
-     * The gateway holds the provider key (Cloudflare AI Gateway BYOK, JEF-453):
-     * no key is required here and no `Authorization` header is sent.
+     * Request fields that turn thinking off or down for this backend (JEF-453).
+     * Set by the platform path for Workers AI, whose controls differ from
+     * OpenAI's; when absent the OpenAI-only `reasoning_effort` rule applies.
      */
-    private readonly keyInGateway: boolean = false,
+    private readonly reasoningFields?: (reasoning: 'off' | 'low') => Record<string, unknown>,
   ) {}
-
-  private authHeaders(): Record<string, string> {
-    return this.keyInGateway && !this.apiKey
-      ? {}
-      : { Authorization: `${AUTH_HEADER.BEARER_PREFIX}${this.apiKey}` };
-  }
 
   async complete(
     messages: LLMMessage[],
@@ -143,7 +138,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     signal?: AbortSignal,
     options?: LLMCompleteOptions,
   ): Promise<LLMCompleteResult> {
-    if (!this.apiKey && !this.keyInGateway) throw new Error('API key is not set');
+    if (!this.apiKey) throw new Error('API key is not set');
     await this.outboundUrlPolicy?.assertAllowed(this.baseUrl, 'llm-provider');
 
     const json = await this.post(
@@ -174,7 +169,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     signal?: AbortSignal,
     options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
-    if (!this.apiKey && !this.keyInGateway) throw new Error('API key is not set');
+    if (!this.apiKey) throw new Error('API key is not set');
     await this.outboundUrlPolicy?.assertAllowed(this.baseUrl, 'llm-provider');
 
     const { body, onChunk, dispose } = await this.postStream(
@@ -245,8 +240,10 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
    * NVIDIA, a custom URL, ...) never gets the field: an unknown parameter can
    * be answered with a 400.
    */
-  private reasoningParams(reasoning: LLMReasoning | undefined): { reasoning_effort?: string } {
-    if (!reasoning || reasoning === 'default' || this.baseUrl !== LLM.OPENAI_API_URL) return {};
+  private reasoningParams(reasoning: LLMReasoning | undefined): Record<string, unknown> {
+    if (!reasoning || reasoning === 'default') return {};
+    if (this.reasoningFields) return this.reasoningFields(reasoning);
+    if (this.baseUrl !== LLM.OPENAI_API_URL) return {};
     const rule = REASONING_CONTROL.OPENAI_MODELS.find((r) => r.pattern.test(this.model));
     if (!rule) return {};
     return { reasoning_effort: reasoning === 'off' ? rule.off : rule.low };
@@ -291,7 +288,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
         headers: {
           ...this.extraHeaders,
           'Content-Type': 'application/json',
-          ...this.authHeaders(),
+          Authorization: `${AUTH_HEADER.BEARER_PREFIX}${this.apiKey}`,
         },
         body: JSON.stringify(body),
       },
@@ -322,7 +319,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
         headers: {
           ...this.extraHeaders,
           'Content-Type': 'application/json',
-          ...this.authHeaders(),
+          Authorization: `${AUTH_HEADER.BEARER_PREFIX}${this.apiKey}`,
         },
         body: JSON.stringify(body),
       },

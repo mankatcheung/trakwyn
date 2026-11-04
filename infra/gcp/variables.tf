@@ -62,7 +62,7 @@ variable "plain_env" {
 }
 
 variable "hosted_ai" {
-  description = "Turn on hosted AI (Trakwyn AI, JEF-446): sets HOSTED_AI_ENABLED and serves the Cloudflare AI Gateway token from Secret Manager (the provider keys are stored in the gateway). The secret needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Hosted AI'). Off by default; set false again as the kill switch."
+  description = "Turn on hosted AI (Trakwyn AI, JEF-446): sets HOSTED_AI_ENABLED and serves the Cloudflare API token that Workers AI is called with from Secret Manager (hosted AI uses no Google or OpenAI key). The secret needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Hosted AI'). Off by default; set false again as the kill switch."
   type        = bool
   default     = false
 }

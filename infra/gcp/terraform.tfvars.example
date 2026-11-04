@@ -35,10 +35,12 @@ plain_env = {
   # POLAR_PRODUCT_PASS_3M         = "<uuid>"
   # POLAR_PRODUCT_PASS_6M         = "<uuid>"
 
-  # Hosted AI (JEF-446), used with `hosted_ai = true` below. Optional: unset,
-  # the API calls Gemini and OpenAI directly instead of through the gateway.
-  # `terraform -chdir=../cloudflare output -raw ai_gateway_base_url`
-  # PLATFORM_LLM_GATEWAY_BASE_URL = "https://gateway.ai.cloudflare.com/v1/<account>/trakwyn"
+  # Hosted AI (JEF-446, JEF-453), used with `hosted_ai = true` below. Required
+  # with it: the Cloudflare account whose Workers AI models answer, and the
+  # gateway they are routed through (`terraform -chdir=../cloudflare output -raw ai_gateway_id`).
+  # PLATFORM_CLOUDFLARE_ACCOUNT_ID = "<account id>"
+  # PLATFORM_CLOUDFLARE_GATEWAY_ID = "trakwyn"
+  # Optional: HOSTED_AI_DAILY_BUDGET_USD = "10"
 
   # Temporary diagnostic (JEF-353): one warn line per request carrying the
   # inbound traceparent and its sampled flag. Uncomment, apply, collect over a
@@ -48,7 +50,10 @@ plain_env = {
   # LOG_INBOUND_TRACEPARENT = "true"
 }
 
-# Hosted AI (JEF-446). Add a version to each of platform-googleai-api-key,
-# platform-openai-api-key and platform-llm-gateway-token first (README.md,
-# "Hosted AI"), then set true. Setting it back to false is the kill switch.
+# Hosted AI (JEF-446). Add a version to platform-cloudflare-api-token first
+# (README.md, "Hosted AI"), then set true. Setting it back to false is the kill
+# switch. Who gets it is hosted_ai_rollout_percent (default 0) and
+# hosted_ai_allowlist (README.md, "Hosted AI rollout").
 # hosted_ai = true
+# hosted_ai_rollout_percent = 0
+# hosted_ai_allowlist       = []
