@@ -63,7 +63,7 @@ variable "ai_gateway_id" {
 }
 
 variable "ai_gateway_rate_limit" {
-  description = "Requests the gateway allows per ai_gateway_rate_limit_interval_s. A backstop against a runaway caller, not the per-user limit (the API enforces that)."
+  description = "Requests the gateway allows per ai_gateway_rate_limit_interval_s. A backstop against a runaway caller, not the per-user limit (the API enforces that). The default, 600 a minute, is Workers AI's 300 a minute per model times the two models hosted AI uses (Gemma 4 26B and gpt-oss-120b). The gateway counts all models together, so it cannot enforce 300 for each."
   type        = number
   default     = 600
 }
