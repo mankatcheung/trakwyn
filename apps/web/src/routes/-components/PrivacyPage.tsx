@@ -14,7 +14,10 @@ const AI_SUBPROCESSORS = [
   {
     name: 'Cloudflare (Workers AI and AI Gateway)',
     purposeKey: 'legal.privacy.aiCloudflarePurpose',
-    href: 'https://www.cloudflare.com/website-terms/',
+    /** The Self-Serve Subscription Agreement, which governs a paid self-serve account. */
+    href: 'https://www.cloudflare.com/terms/',
+    /** Cloudflare's statement on training, retention and logging for Workers AI content. */
+    dataUseHref: 'https://developers.cloudflare.com/workers-ai/platform/data-usage/',
   },
 ] as const;
 
@@ -70,6 +73,10 @@ export function PrivacyPage() {
               <td>
                 <a href={vendor.href} target="_blank" rel="noopener noreferrer">
                   {t('legal.privacy.aiTermsLink')}
+                </a>
+                {' · '}
+                <a href={vendor.dataUseHref} target="_blank" rel="noopener noreferrer">
+                  {t('legal.privacy.aiDataUseLink')}
                 </a>
               </td>
             </tr>
