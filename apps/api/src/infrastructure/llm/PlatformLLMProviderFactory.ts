@@ -1,5 +1,10 @@
 import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
-import { ENV, LLM_PROVIDER_MODE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
+import {
+  ENV,
+  LLM_PROVIDER_MODE,
+  NODE_ENV,
+  PLATFORM_LLM,
+} from '#src/infrastructure/config/constants.js';
 import { LLM_PROVIDER, type AiModelTier } from '#src/use-cases/constants.js';
 import { isInHostedAiRollout } from '#src/infrastructure/llm/hostedAiRollout.js';
 import { PROVIDER_REGISTRY } from '#src/infrastructure/llm/providerRegistry.js';
@@ -53,6 +58,7 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
 
   legs(tier: AiModelTier): PlatformLLMLeg[] {
     if (!this.isEnabled()) return [];
+    this.assertGatewayInProduction();
     const primaryId = this.providerId(ENV.PLATFORM_LLM_PRIMARY, PLATFORM_LLM.DEFAULT_PRIMARY);
     const fallbackId = this.providerId(ENV.PLATFORM_LLM_FALLBACK, PLATFORM_LLM.DEFAULT_FALLBACK);
 
@@ -61,6 +67,19 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
     // A failover leg without its key just means no failover; it never blocks.
     const fallback = fallbackId === primaryId ? null : this.build(fallbackId, tier, false);
     return fallback ? [primary, fallback] : [primary];
+  }
+
+  /**
+   * In production every hosted call goes through the gateway (JEF-453): a
+   * missing base URL is a misconfigured deploy, not a licence to call the
+   * providers directly. Fake mode (dev, CI, e2e) needs no gateway.
+   */
+  private assertGatewayInProduction(): void {
+    if (this.env[ENV.LLM_PROVIDER_MODE] === LLM_PROVIDER_MODE.FAKE) return;
+    if (this.env[ENV.NODE_ENV] !== NODE_ENV.PRODUCTION) return;
+    if (!this.env[ENV.PLATFORM_LLM_GATEWAY_BASE_URL]?.trim()) {
+      throw new AiNotConfiguredError('Hosted AI gateway is not configured');
+    }
   }
 
   private providerId(envName: string, fallback: string): PlatformProviderId {
@@ -90,16 +109,21 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
     }
 
     const apiKey = this.env[KEY_ENV[id]];
-    if (!apiKey) {
+    const gateway = this.gateway(id);
+    // A key in env is sent as before. With none, a gateway that stores the
+    // provider keys (Cloudflare BYOK) answers for it; without a gateway a
+    // missing key is the old "not configured" (JEF-453).
+    if (!apiKey && !gateway.endpointOverride) {
       if (required) throw new AiNotConfiguredError('Hosted AI is not configured');
       return null;
     }
 
     const provider = PROVIDER_REGISTRY[id]!.create({
-      apiKey,
+      apiKey: apiKey ?? '',
       model,
       baseUrl: null,
-      ...this.gateway(id),
+      ...gateway,
+      keyInGateway: !apiKey,
     });
     return { providerId: id, model, provider };
   }

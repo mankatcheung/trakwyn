@@ -1,9 +1,10 @@
 locals {
-  # The platform's provider keys and the gateway token (JEF-446). Values are
-  # added out of band, like every secret here; none is ever in state.
+  # The gateway token (JEF-446). The Google and OpenAI keys live in the Cloudflare
+  # gateway (provider keys / BYOK), so the API holds only this one (JEF-453). To keep
+  # a provider key here instead, add PLATFORM_GOOGLEAI_API_KEY or
+  # PLATFORM_OPENAI_API_KEY to secret_env_vars; the API sends a key it has. Values
+  # are added out of band, like every secret here; none is ever in state.
   hosted_ai_secret_env_vars = [
-    "PLATFORM_GOOGLEAI_API_KEY",
-    "PLATFORM_OPENAI_API_KEY",
     "PLATFORM_LLM_GATEWAY_TOKEN",
   ]
   secret_env_vars = var.hosted_ai ? setunion(var.secret_env_vars, local.hosted_ai_secret_env_vars) : var.secret_env_vars

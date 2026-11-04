@@ -105,8 +105,8 @@ Secret IDs are the env var names in lower-kebab-case:
 | `turnstile-secret-key`          | Cloudflare Turnstile secret key (the widget's server half; `terraform output -raw turnstile_secret_key` in `infra/cloudflare`)              |
 | `polar-access-token`            | Polar organization access token for the environment `POLAR_SERVER` names. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`) |
 | `polar-webhook-secret`          | the `whsec_…` secret of that environment's Polar webhook endpoint. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`)        |
-| `platform-googleai-api-key`     | hosted AI only (`hosted_ai = true`): the platform's Google AI Studio key, from a **paid-tier** project. Added by hand (see "Hosted AI")     |
-| `platform-openai-api-key`       | hosted AI only: the platform's OpenAI key, from a project with a monthly spend limit. Added by hand                                         |
+| `platform-googleai-api-key`     | optional, hosted AI only: add `PLATFORM_GOOGLEAI_API_KEY` to `secret_env_vars` only if you keep this key here instead of in the gateway     |
+| `platform-openai-api-key`       | optional, hosted AI only: the same for `PLATFORM_OPENAI_API_KEY`                                                                            |
 | `platform-llm-gateway-token`    | hosted AI only: the Cloudflare AI Gateway authentication token (`infra/cloudflare/README.md`). Added by hand                                |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                                   |
 | `digest-admin-secret`           | a new random value                                                                                                                          |
@@ -245,14 +245,14 @@ gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 
 **Hosted AI (JEF-446):** Trakwyn AI answers for a user with no key of their own (or who picked it), on keys the platform owns, through the Cloudflare AI Gateway. Off by default; with `hosted_ai` false nothing about the API changes and `AI_NOT_CONFIGURED` is still returned. To switch it on:
 
+Every hosted call goes through the Cloudflare AI Gateway, and in production the API refuses to call a provider directly: without `PLATFORM_LLM_GATEWAY_BASE_URL` a hosted call fails with `AI_NOT_CONFIGURED` (JEF-453). The provider keys are stored in the gateway, so the API holds only the gateway token and sends no provider auth header. A key in `secret_env_vars` (`PLATFORM_GOOGLEAI_API_KEY`, `PLATFORM_OPENAI_API_KEY`) is still sent if present.
+
 1. **Google AI Studio:** create a project with **billing enabled (paid tier)** and an API key restricted to the Generative Language API. The free tier trains on prompts and is rate limited far below real use, so it must not back this. Set a budget alert on the project.
 2. **OpenAI:** create a dedicated project, set its **monthly spend limit** (Settings → Limits) to the most you would accept losing in a month, and create a key for it.
-3. **Gateway:** apply `infra/cloudflare` and create the gateway token (`infra/cloudflare/README.md`, "Hosted AI gateway").
-4. **Secrets:** create the containers on their own first, because Cloud Run refuses to start a revision that references a secret with no version: set `hosted_ai = true`, then `terraform apply -target='google_secret_manager_secret.api'` (add `-target='google_secret_manager_secret_iam_member.api_runtime'` to grant access in the same run). Then add a version to each by hand, so none enters Terraform state or a CI log:
+3. **Gateway:** apply `infra/cloudflare`, store both provider keys in the gateway and create the gateway token (`infra/cloudflare/README.md`, "Hosted AI gateway").
+4. **Secret:** create the container on its own first, because Cloud Run refuses to start a revision that references a secret with no version: set `hosted_ai = true`, then `terraform apply -target='google_secret_manager_secret.api'` (add `-target='google_secret_manager_secret_iam_member.api_runtime'` to grant access in the same run). Then add a version by hand, so it never enters Terraform state or a CI log:
 
    ```bash
-   printf '%s' "<key>"   | gcloud secrets versions add platform-googleai-api-key --data-file=-
-   printf '%s' "<key>"   | gcloud secrets versions add platform-openai-api-key --data-file=-
    printf '%s' "<token>" | gcloud secrets versions add platform-llm-gateway-token --data-file=-
    ```
 

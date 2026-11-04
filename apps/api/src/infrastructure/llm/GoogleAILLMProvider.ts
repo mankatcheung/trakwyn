@@ -105,6 +105,11 @@ export class GoogleAILLMProvider implements ILLMProvider {
     private readonly baseUrl: string = LLM.GOOGLEAI_API_URL,
     /** Added to every request, e.g. the gateway's `cf-aig-authorization`. */
     private readonly extraHeaders: Record<string, string> = {},
+    /**
+     * The gateway holds the provider key (Cloudflare AI Gateway BYOK, JEF-453):
+     * no key is required here and none is sent.
+     */
+    private readonly keyInGateway: boolean = false,
   ) {}
 
   async complete(
@@ -113,7 +118,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
     signal?: AbortSignal,
     options?: LLMCompleteOptions,
   ): Promise<LLMCompleteResult> {
-    if (!this.apiKey) throw new Error('Google AI API key is not set');
+    if (!this.apiKey && !this.keyInGateway) throw new Error('Google AI API key is not set');
 
     // Gemini's `contents[].role` is `user` or `model` only; system text is
     // the top-level `systemInstruction`. This method mapped `system` straight
@@ -163,7 +168,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
     signal?: AbortSignal,
     options?: LLMStreamOptions,
   ): AsyncGenerator<LLMStreamEvent> {
-    if (!this.apiKey) throw new Error('Google AI API key is not set');
+    if (!this.apiKey && !this.keyInGateway) throw new Error('Google AI API key is not set');
 
     const { systemInstruction, conversation: turns } = this.splitSystem(messages);
 
@@ -268,7 +273,7 @@ export class GoogleAILLMProvider implements ILLMProvider {
     return {
       ...this.extraHeaders,
       'Content-Type': 'application/json',
-      'x-goog-api-key': this.apiKey,
+      ...(this.keyInGateway && !this.apiKey ? {} : { 'x-goog-api-key': this.apiKey }),
     };
   }
 

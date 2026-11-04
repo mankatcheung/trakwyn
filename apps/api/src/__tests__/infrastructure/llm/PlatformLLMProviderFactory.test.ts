@@ -143,6 +143,68 @@ describe('PlatformLLMProviderFactory', () => {
     expect(headers.Authorization).toBe('Bearer o-key');
   });
 
+  describe('keys held by the gateway (JEF-453)', () => {
+    const gatewayOnly = {
+      HOSTED_AI_ENABLED: 'true',
+      PLATFORM_LLM_GATEWAY_BASE_URL: GATEWAY,
+      PLATFORM_LLM_GATEWAY_TOKEN: 'gw-token',
+    };
+
+    it('builds both legs with no provider keys and sends no provider auth header', async () => {
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(okGemini as unknown as Response)
+        .mockResolvedValueOnce(okOpenAi as unknown as Response);
+      const legs = new PlatformLLMProviderFactory({ env: gatewayOnly }).legs('lite');
+
+      expect(legs.map((l) => l.providerId)).toEqual(['googleai', 'openai']);
+      await legs[0]!.provider.complete([{ role: 'user', content: 'x' }]);
+      await legs[1]!.provider.complete([{ role: 'user', content: 'x' }]);
+
+      const googleHeaders = (vi.mocked(fetch).mock.calls[0]![1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
+      const openAiHeaders = (vi.mocked(fetch).mock.calls[1]![1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
+      expect(googleHeaders['cf-aig-authorization']).toBe('Bearer gw-token');
+      expect(googleHeaders).not.toHaveProperty('x-goog-api-key');
+      expect(openAiHeaders['cf-aig-authorization']).toBe('Bearer gw-token');
+      expect(openAiHeaders).not.toHaveProperty('Authorization');
+    });
+
+    it('still needs a key when there is no gateway to hold it', () => {
+      const factory = new PlatformLLMProviderFactory({ env: { HOSTED_AI_ENABLED: 'true' } });
+
+      expect(() => factory.legs('lite')).toThrowError(/not configured/i);
+    });
+
+    it('refuses to run in production without a gateway, even with provider keys', () => {
+      const factory = new PlatformLLMProviderFactory({
+        env: { ...enabledEnv, NODE_ENV: 'production' },
+      });
+
+      expect(() => factory.legs('lite')).toThrowError(/gateway is not configured/i);
+    });
+
+    it('runs in production through the gateway', () => {
+      const factory = new PlatformLLMProviderFactory({
+        env: { ...gatewayOnly, NODE_ENV: 'production' },
+      });
+
+      expect(factory.legs('lite')).toHaveLength(2);
+    });
+
+    it('needs no gateway in production when the fake provider is selected', () => {
+      const factory = new PlatformLLMProviderFactory({
+        env: { HOSTED_AI_ENABLED: 'true', NODE_ENV: 'production', LLM_PROVIDER_MODE: 'fake' },
+      });
+
+      expect(factory.legs('lite')).toHaveLength(2);
+    });
+  });
+
   it('points both legs at the fake completions route, with no keys, in fake mode', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(okOpenAi as unknown as Response);
     const legs = new PlatformLLMProviderFactory({

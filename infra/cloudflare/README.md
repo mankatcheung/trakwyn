@@ -137,5 +137,7 @@ Hosted AI sends the platform's own Gemini and OpenAI calls through this gateway 
    printf '%s' "<token>" | gcloud secrets versions add platform-llm-gateway-token --data-file=-
    ```
 
+   **Store the provider keys in the gateway** (JEF-453): in the same gateway's provider keys section of the dashboard, add the paid-tier Google AI Studio key and the OpenAI project key. The API then sends only `cf-aig-authorization` and no provider key, so neither key is in Secret Manager. The dashboard labels move, so check Cloudflare's current "AI Gateway, BYOK" docs if the path differs. If you would rather keep a key in Secret Manager, see `infra/gcp/README.md`.
+
 3. **Point the API at it** with `PLATFORM_LLM_GATEWAY_BASE_URL` in `infra/gcp`'s `plain_env` (`infra/gcp/README.md`, "Hosted AI").
 4. **Kill switch:** in the dashboard, set the gateway's rate limit to 1 request, or delete the authentication token. Calls fail with a provider error and the API fails over to the second provider through the same gateway, which fails too, so users see "AI unavailable". The cleaner switch is `hosted_ai = false` in `infra/gcp`, which makes Trakwyn AI unavailable and leaves own-key users untouched.
