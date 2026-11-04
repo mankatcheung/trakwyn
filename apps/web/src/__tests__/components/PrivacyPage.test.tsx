@@ -85,14 +85,16 @@ describe('PrivacyPage', () => {
       screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
     ).toBeInTheDocument();
   });
-  it('lists the AI sub-processors with purpose, region and a terms link', () => {
+  it('names Cloudflare as the only AI sub-processor, with purpose, region and a terms link', () => {
     render(<PrivacyPage />);
 
     const table = screen.getByRole('table', { name: /ai sub-processors/i });
-    for (const vendor of ['Google (Gemini API)', 'OpenAI', 'Cloudflare (AI Gateway)']) {
-      expect(within(table).getByRole('rowheader', { name: vendor })).toBeInTheDocument();
-    }
-    expect(within(table).getAllByRole('link', { name: 'Terms' })).toHaveLength(3);
+    expect(
+      within(table).getByRole('rowheader', { name: 'Cloudflare (Workers AI and AI Gateway)' }),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByRole('rowheader')).toHaveLength(1);
+    expect(within(table).getAllByRole('link', { name: 'Terms' })).toHaveLength(1);
+    expect(within(table).queryByText(/Gemini|OpenAI/)).not.toBeInTheDocument();
     expect(
       within(table)
         .getAllByRole('columnheader')
@@ -100,10 +102,11 @@ describe('PrivacyPage', () => {
     ).toEqual(['Vendor', 'Purpose', 'Region', 'Vendor terms']);
   });
 
-  it('says hosted AI content is not used for training', () => {
+  it('says hosted AI content is not used by Trakwyn for training and goes only to Cloudflare', () => {
     render(<PrivacyPage />);
 
     expect(screen.getByRole('heading', { name: 'Trakwyn AI (hosted)' })).toBeInTheDocument();
-    expect(screen.getByText(/not used to train/i)).toBeInTheDocument();
+    expect(screen.getByText(/not used by us to train/i)).toBeInTheDocument();
+    expect(screen.getByText(/no other AI vendor receives your content/i)).toBeInTheDocument();
   });
 });

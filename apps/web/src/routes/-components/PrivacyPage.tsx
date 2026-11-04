@@ -2,22 +2,17 @@ import { LegalPageLayout } from '#/components/LegalPageLayout';
 import { CONTACT_EMAIL } from '#/constants';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'November 2, 2026';
+const LAST_UPDATED = 'November 4, 2026';
 
-/** AI sub-processors behind Trakwyn AI (JEF-452). Names are not translated. */
+/**
+ * AI sub-processors behind Trakwyn AI (JEF-452, JEF-453). Hosted AI runs on
+ * Cloudflare Workers AI through AI Gateway, so Cloudflare is the only one; no
+ * content goes to Google or OpenAI (a user's own key is a separate path, below).
+ * Names are not translated.
+ */
 const AI_SUBPROCESSORS = [
   {
-    name: 'Google (Gemini API)',
-    purposeKey: 'legal.privacy.aiGeminiPurpose',
-    href: 'https://ai.google.dev/gemini-api/terms',
-  },
-  {
-    name: 'OpenAI',
-    purposeKey: 'legal.privacy.aiOpenAiPurpose',
-    href: 'https://openai.com/policies/business-terms/',
-  },
-  {
-    name: 'Cloudflare (AI Gateway)',
+    name: 'Cloudflare (Workers AI and AI Gateway)',
     purposeKey: 'legal.privacy.aiCloudflarePurpose',
     href: 'https://www.cloudflare.com/website-terms/',
   },
