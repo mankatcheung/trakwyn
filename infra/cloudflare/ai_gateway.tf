@@ -27,4 +27,14 @@ resource "cloudflare_ai_gateway" "hosted_ai" {
   rate_limiting_interval  = var.ai_gateway_rate_limit_interval_s
   rate_limiting_limit     = var.ai_gateway_rate_limit
   rate_limiting_technique = "sliding"
+
+  # Cloudflare's own defaults, stated because the provider PUTs every attribute
+  # and sends `null` for one left unset, which the API rejects ("Expected
+  # boolean, received null" on `logpush`). Logging is off, so none of these
+  # take effect; they only keep the request valid and the plan quiet.
+  logpush                 = false
+  log_classification      = false
+  zdr                     = false
+  log_management          = 100000
+  log_management_strategy = "DELETE_OLDEST"
 }
