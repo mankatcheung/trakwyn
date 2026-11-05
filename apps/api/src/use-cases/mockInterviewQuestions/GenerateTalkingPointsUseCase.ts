@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   AiNotConfiguredError,
   ForbiddenError,
@@ -6,7 +5,6 @@ import {
   RateLimitedError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { LLMMessage } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IMockInterviewQuestionRepository } from '#src/use-cases/ports/IMockInterviewQuestionRepository.js';
@@ -14,11 +12,13 @@ import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import {
+  talkingPointsPrompt,
+  talkingPointsResponseSchema,
+} from '#src/use-cases/prompts/talkingPoints.js';
 import { findOwnedInterviewRound } from '#src/use-cases/interviewQuestions/ownedInterviewRound.js';
 import {
   INTERVIEW_QUESTION_LIMITS,
-  MOCK_INTERVIEW_PROMPT_TASK,
   MOCK_QUESTION_GENERATION,
   AI_FEATURE,
   AI_REASONING_DEFAULTS,
@@ -44,21 +44,6 @@ interface Deps extends CandidateBackgroundDeps {
   generateMockTalkingPointsRateLimiter: IRateLimiter;
 }
 
-const pointsSchema = z.object({
-  points: z.array(z.object({ point: z.string(), source: z.string() })),
-});
-
-const SYSTEM_PROMPT = `You are an interview coach helping a candidate prepare. Given an interview question, the role and the candidate's own background, ${MOCK_INTERVIEW_PROMPT_TASK.TALKING_POINTS}.
-
-Rules:
-- Use only facts that appear in the candidate's profile or resume. Never invent employers, projects, numbers, skills or achievements, and never carry over details from the job description as if the candidate had done them.
-- Each point is one short sentence the candidate could say, starting with a verb where possible (for example "Mention the Postgres replica migration at Acme").
-- For each point, "source" names the profile or resume entry it comes from, such as the employer and role, the institution, or the skill.
-- If nothing in the background is relevant to the question, return an empty list. An empty list is a correct answer; do not stretch to fill it.
-- Give at most ${MOCK_QUESTION_GENERATION.TALKING_POINTS_MAX_COUNT} points, most relevant first.
-
-Respond with ONLY a JSON object: {"points": [{"point": "...", "source": "..."}]}. No markdown and no commentary.`;
-
 export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCase {
   constructor(private readonly deps: Deps) {}
 
@@ -81,6 +66,7 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
 
     const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
       feature: AI_FEATURE.TALKING_POINTS,
+      promptVersion: talkingPointsPrompt.version,
     });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
@@ -102,17 +88,11 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
     ]);
     const context = buildMockInterviewContext(app, round, briefing);
 
-    const messages: LLMMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];
-    if (user?.customAiPrompt) {
-      messages.push({ role: 'system', content: user.customAiPrompt });
-    }
-    messages.push({
-      role: 'user',
-      content: [
-        context.text,
-        `\nInterview question:\n${wrapUntrustedContent(question.question)}`,
-        background.text,
-      ].join('\n'),
+    const messages = talkingPointsPrompt.build({
+      contextText: context.text,
+      backgroundText: background.text,
+      question: question.question,
+      customAiPrompt: user?.customAiPrompt,
     });
 
     const result = await llmProvider.complete(
@@ -122,7 +102,7 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
       { reasoning: AI_REASONING_DEFAULTS.TALKING_POINTS },
     );
     assertNotTruncated(result);
-    const parsed = parseAiJson(result.content, pointsSchema);
+    const parsed = parseAiJson(result.content, talkingPointsResponseSchema);
 
     const points = cleanPoints(parsed.points);
     if (points.length === 0)
