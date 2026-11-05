@@ -165,6 +165,36 @@ describe('UpdateProfileUseCase', () => {
     );
   });
 
+  describe('a saved AI provider order (JEF-503)', () => {
+    it('clears it when an older app turns fall-through on or off, since that setting is then the one in force', async () => {
+      const user = makeUser({ id: 'user-1' });
+      const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
+
+      await new UpdateProfileUseCase({ userRepository }).execute({
+        userId: 'user-1',
+        llmFallbackWhenLimited: true,
+      });
+
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ llmFallbackWhenLimited: true, aiProviderOrder: null }),
+      );
+    });
+
+    it('leaves it alone on an unrelated profile edit', async () => {
+      const user = makeUser({ id: 'user-1' });
+      const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
+
+      await new UpdateProfileUseCase({ userRepository }).execute({
+        userId: 'user-1',
+        name: 'Jeff',
+      });
+
+      const [, data] = vi.mocked(userRepository.update).mock.calls[0];
+      expect(data).not.toHaveProperty('aiProviderOrder');
+    });
+  });
+
   it('throws VALIDATION when customAiPrompt exceeds the max length', async () => {
     const user = makeUser({ id: 'user-1' });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });

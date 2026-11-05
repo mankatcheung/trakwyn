@@ -18,11 +18,8 @@ import {
 import { TrashIcon } from '../components/TrashIcon';
 import type { Conversation } from '../types';
 import { useLlmApiKeys } from '../../settings/hooks/useLlmApiKeys';
-import type { LlmApiKey } from '../../settings/types';
-import { keyForNewConversation } from '../lib/newConversationKey';
 import { getErrorCode, getErrorMessage } from '../../../lib/errors';
 import { ERROR_CODES, PLAN_REQUIRED } from '../../../constants';
-import { hostedAiAvailable } from '../../settings/lib/aiCredits';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -45,16 +42,13 @@ export function ConversationsScreen() {
   const [startError, setStartError] = useState<string | null>(null);
   const [startErrorCode, setStartErrorCode] = useState<string | null>(null);
 
-  const onNewConversation = async (key: LlmApiKey | null) => {
+  const onNewConversation = async () => {
     if (isStarting) return;
     setStartError(null);
     setStartErrorCode(null);
     setIsStarting(true);
     try {
-      const created = await createConversation.mutateAsync({
-        provider: key?.provider ?? null,
-        model: key?.model ?? null,
-      });
+      const created = await createConversation.mutateAsync({});
       router.push(`./${created.id}`);
     } catch (err) {
       setStartError(getErrorMessage(err));
@@ -64,15 +58,12 @@ export function ConversationsScreen() {
     }
   };
 
-  const hostedAvailable =
-    hostedAiAvailable(llmApiKeys?.aiCredits) && llmApiKeys?.aiSource !== 'own';
-
   const onFabPress = () => {
     if (isStarting) return;
-    // Trakwyn AI (Pro) needs no key. Which AI answers is a setting, not a choice
-    // made per chat (JEF-503); an account with neither a key nor Trakwyn AI is
-    // sent to settings.
-    if (!llmApiKeys || (llmApiKeys.keys.length === 0 && !hostedAvailable)) {
+    // Which AI answers is the user's provider order, not a choice made per chat
+    // (JEF-503). An empty order means nothing can answer (no key and no Trakwyn AI),
+    // so the account is sent to settings.
+    if (!llmApiKeys || llmApiKeys.aiProviderOrder.length === 0) {
       Alert.alert(t('conversations.noKeysTitle'), t('conversations.noKeysMessage'), [
         { text: t('conversations.cancel'), style: 'cancel' },
         {
@@ -82,7 +73,7 @@ export function ConversationsScreen() {
       ]);
       return;
     }
-    void onNewConversation(keyForNewConversation(llmApiKeys));
+    void onNewConversation();
   };
 
   const onDelete = (conversation: Conversation) => {

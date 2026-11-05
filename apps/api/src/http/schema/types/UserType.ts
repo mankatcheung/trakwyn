@@ -20,11 +20,24 @@ UserRef.implement({
       nullable: true,
       resolve: (user) => user.backupEmailVerifiedAt?.toISOString() ?? null,
     }),
-    defaultLlmProvider: t.exposeString('defaultLlmProvider', { nullable: true }),
+    aiProviderOrder: t.field({
+      type: ['String'],
+      description:
+        "The providers AI calls try, first to last (JEF-503): 'trakwyn' and/or the ids of the user's own keys. A call never runs on one that is not listed.",
+      resolve: (user, _args, ctx) => ctx.diScope.cradle.getAiProviderOrderUseCase.execute(user.id),
+    }),
+    defaultLlmProvider: t.exposeString('defaultLlmProvider', {
+      nullable: true,
+      deprecationReason: 'Use aiProviderOrder (JEF-503). Kept for apps already in the stores.',
+    }),
     customAiPrompt: t.exposeString('customAiPrompt', { nullable: true }),
     useCrossApplicationContext: t.exposeBoolean('useCrossApplicationContext'),
-    llmFallbackWhenLimited: t.exposeBoolean('llmFallbackWhenLimited'),
-    aiSource: t.exposeString('aiSource'),
+    llmFallbackWhenLimited: t.exposeBoolean('llmFallbackWhenLimited', {
+      deprecationReason: 'Use aiProviderOrder (JEF-503). Kept for apps already in the stores.',
+    }),
+    aiSource: t.exposeString('aiSource', {
+      deprecationReason: 'Use aiProviderOrder (JEF-503). Kept for apps already in the stores.',
+    }),
     storageUsedBytes: t.exposeFloat('storageUsedBytes'),
     storageLimitBytes: t.exposeFloat('storageLimitBytes'),
     aiCredits: t.field({ type: AiCreditsRef, resolve: (user) => user.aiCredits }),

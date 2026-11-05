@@ -810,6 +810,135 @@ describe('StreamChatWithAssistantUseCase', () => {
     });
   });
 
+  describe("the user's provider order (JEF-503)", () => {
+    const resolved = (llmProvider: ILLMProvider, extra: Record<string, unknown> = {}) => ({
+      provider: llmProvider,
+      providerId: 'openai',
+      fellBackFrom: null,
+      source: 'byok',
+      ...extra,
+    });
+
+    it('asks for a provider without naming the conversation’s key or model, so the order decides', async () => {
+      const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
+      const resolveForUser = vi.fn().mockResolvedValue(resolved(llmProvider));
+      const deps = makeDeps({
+        llmProviderFactory: makeLLMProviderFactory({ resolveForUser }),
+        conversationRepository: makeConversationRepository({
+          findById: vi.fn().mockResolvedValue(
+            makeConversation({
+              id: 'conv-1',
+              userId: 'user-1',
+              llmProvider: 'anthropic',
+              llmModel: 'claude-something',
+            }),
+          ),
+        }),
+      });
+
+      await collect(new StreamChatWithAssistantUseCase(deps as never), {
+        ...baseInput,
+        message: 'hi',
+      });
+
+      expect(resolveForUser).toHaveBeenCalledWith('user-1', { feature: AI_FEATURE.CHAT });
+    });
+
+    it('says which entry took over when one was skipped before the call', async () => {
+      const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
+      const deps = makeDeps({
+        llmProviderFactory: makeLLMProviderFactory({
+          resolveForUser: vi
+            .fn()
+            .mockResolvedValue(resolved(llmProvider, { entry: 'openai', fellBackFrom: 'trakwyn' })),
+        }),
+      });
+
+      const events = await collect(new StreamChatWithAssistantUseCase(deps as never), {
+        ...baseInput,
+        message: 'hi',
+      });
+
+      expect(events[0]).toEqual({ type: 'fallback', from: 'trakwyn', to: 'openai' });
+    });
+
+    it('passes on a switch that happens while the call runs, ahead of the answer', async () => {
+      const switching: ILLMProvider = {
+        complete: vi.fn(),
+        completeWithToolsStream: vi.fn(async function* (): AsyncGenerator<LLMStreamEvent> {
+          yield { type: 'fallback', from: 'openai', to: 'trakwyn' };
+          yield { type: 'text_delta', text: 'Hi' };
+          yield { type: 'done', content: 'Hi', toolCalls: [], usage: null };
+        }),
+      };
+      const deps = makeDeps({
+        llmProviderFactory: makeLLMProviderFactory({
+          resolveForUser: vi.fn().mockResolvedValue(resolved(switching, { entry: 'openai' })),
+        }),
+      });
+
+      const events = await collect(new StreamChatWithAssistantUseCase(deps as never), {
+        ...baseInput,
+        message: 'hi',
+      });
+
+      expect(events).toEqual([
+        { type: 'fallback', from: 'openai', to: 'trakwyn' },
+        { type: 'delta', text: 'Hi' },
+        { type: 'done' },
+      ]);
+    });
+
+    describe('the provider recorded on the conversation', () => {
+      const run = async (conversationProvider: string | null, extra: Record<string, unknown>) => {
+        const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
+        const conversationRepository = makeConversationRepository({
+          findById: vi.fn().mockResolvedValue(
+            makeConversation({
+              id: 'conv-1',
+              userId: 'user-1',
+              llmProvider: conversationProvider,
+              llmModel: null,
+            }),
+          ),
+        });
+        const deps = makeDeps({
+          llmProviderFactory: makeLLMProviderFactory({
+            resolveForUser: vi.fn().mockResolvedValue(resolved(llmProvider, extra)),
+          }),
+          conversationRepository,
+        });
+        await collect(new StreamChatWithAssistantUseCase(deps as never), {
+          ...baseInput,
+          message: 'hi',
+        });
+        return conversationRepository;
+      };
+
+      it('is stamped with the key that answered the first time, as the key it started on', async () => {
+        const repo = await run(null, { entry: 'anthropic', providerId: 'anthropic' });
+
+        expect(repo.updateLlmSettings).toHaveBeenCalledWith('conv-1', 'anthropic', null);
+      });
+
+      it('is not stamped when Trakwyn AI answered, since that is not one of the user’s keys', async () => {
+        const repo = await run(null, {
+          entry: 'trakwyn',
+          providerId: 'workersai',
+          source: 'platform',
+        });
+
+        expect(repo.updateLlmSettings).not.toHaveBeenCalled();
+      });
+
+      it('is left alone once set, so the first key stays the one the chat started on', async () => {
+        const repo = await run('openai', { entry: 'anthropic', providerId: 'anthropic' });
+
+        expect(repo.updateLlmSettings).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   it('derives and stores a title from the first message in a new conversation', async () => {
     const llmProvider = makeStreamingProvider({ deltas: ['ok'], content: 'ok', toolCalls: [] });
     const conversationRepository = makeConversationRepository({

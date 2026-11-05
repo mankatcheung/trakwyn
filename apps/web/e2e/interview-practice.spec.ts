@@ -30,7 +30,7 @@ async function setupFakeAiProvider(page: Page): Promise<void> {
     .fill(FAKE_LLM_URL);
   await page.getByPlaceholder('e.g. gpt-4o-mini').fill('fake-model');
   await page.getByRole('button', { name: 'Add key' }).click();
-  await expect(page.getByText('Custom (OpenAI-compatible)')).toBeVisible();
+  await expect(page.getByTestId('llm-provider-row-custom')).toBeVisible();
 }
 
 async function openInterviewsAt(

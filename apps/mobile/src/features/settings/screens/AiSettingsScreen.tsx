@@ -20,19 +20,18 @@ import {
   useLlmApiKeys,
   useLlmUsageSummary,
   useSaveLlmApiKey,
-  useSetAiSource,
-  useSetDefaultLlmProvider,
+  useSetAiProviderOrder,
   useSetLlmApiKeyMonthlyLimit,
   useTestLlmApiKey,
   useToggleCrossApplicationContext,
-  useToggleFallbackWhenLimited,
   useUpdateCustomAiPrompt,
 } from '../hooks/useLlmApiKeys';
 import { LLM_PROVIDER_LABEL, LLM_PROVIDERS, type LlmApiKey, type LlmUsageSummary } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import { AiSourceCard } from '../components/AiSourceCard';
+import { AiCreditsCard } from '../components/AiCreditsCard';
+import { AiProviderOrderCard } from '../components/AiProviderOrderCard';
 import { AiProNote } from '../components/AiProNote';
 import { hostedAiAvailable } from '../lib/aiCredits';
 import { createSheetStyles } from '../../../components/sheetStyles';
@@ -130,11 +129,10 @@ function ProviderPicker({ value, onChange }: ProviderPickerProps) {
 interface KeyRowProps {
   apiKey: LlmApiKey;
   usage?: LlmUsageSummary;
-  isDefault: boolean;
   onOpenActions: () => void;
 }
 
-function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
+function KeyRow({ apiKey, usage, onOpenActions }: KeyRowProps) {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -147,11 +145,7 @@ function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
 
   return (
     <Pressable
-      style={[
-        styles.keyRow,
-        isDefault && !reached && styles.keyRowDefault,
-        reached && styles.keyRowPaused,
-      ]}
+      style={[styles.keyRow, reached && styles.keyRowPaused]}
       onPress={onOpenActions}
       testID={`llm-key-${apiKey.provider}`}
     >
@@ -159,7 +153,6 @@ function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
         <View style={styles.keyProviderLine}>
           <Text style={styles.keyProvider}>
             {LLM_PROVIDER_LABEL[apiKey.provider] ?? apiKey.provider}
-            {isDefault ? t('ai.default') : ''}
           </Text>
           {reached && (
             <View style={styles.badgeDanger}>
@@ -223,25 +216,14 @@ function KeyRow({ apiKey, usage, isDefault, onOpenActions }: KeyRowProps) {
 
 interface ActionsSheetProps {
   apiKey: LlmApiKey;
-  isDefault: boolean;
   busy: boolean;
   onClose: () => void;
   onTest: () => void;
-  onMakeDefault: () => void;
   onEditLimit: () => void;
   onDelete: () => void;
 }
 
-function ActionsSheet({
-  apiKey,
-  isDefault,
-  busy,
-  onClose,
-  onTest,
-  onMakeDefault,
-  onEditLimit,
-  onDelete,
-}: ActionsSheetProps) {
+function ActionsSheet({ apiKey, busy, onClose, onTest, onEditLimit, onDelete }: ActionsSheetProps) {
   const { t } = useTranslation('settings');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -276,17 +258,6 @@ function ActionsSheet({
           >
             <Text style={styles.sheetRowText}>{t('ai.test')}</Text>
           </Pressable>
-
-          {!isDefault && (
-            <Pressable
-              style={styles.sheetRow}
-              onPress={onMakeDefault}
-              disabled={busy}
-              testID={`sheet-make-default-${apiKey.provider}`}
-            >
-              <Text style={styles.sheetRowText}>{t('ai.makeDefault')}</Text>
-            </Pressable>
-          )}
 
           <Pressable
             style={[styles.sheetRow, styles.sheetRowLast]}
@@ -546,13 +517,11 @@ export function AiSettingsScreen() {
   const { data: usageSummary } = useLlmUsageSummary();
   const saveKey = useSaveLlmApiKey();
   const deleteKey = useDeleteLlmApiKey();
-  const setDefault = useSetDefaultLlmProvider();
-  const setAiSource = useSetAiSource();
-  const [aiSourceError, setAiSourceError] = useState<string | null>(null);
+  const setAiProviderOrder = useSetAiProviderOrder();
+  const [orderError, setOrderError] = useState<string | null>(null);
   const testKey = useTestLlmApiKey();
   const setMonthlyLimit = useSetLlmApiKeyMonthlyLimit();
   const updateCustomAiPrompt = useUpdateCustomAiPrompt();
-  const toggleFallback = useToggleFallbackWhenLimited();
   const toggleCrossAppContext = useToggleCrossApplicationContext();
 
   const usageByProvider = useMemo(
@@ -636,14 +605,6 @@ export function AiSettingsScreen() {
     });
   };
 
-  const [fallbackError, setFallbackError] = useState<string | null>(null);
-  const onToggleFallback = (checked: boolean) => {
-    setFallbackError(null);
-    toggleFallback.mutate(checked, {
-      onError: (err) => setFallbackError(getErrorMessage(err) || t('ai.fallbackUpdateFailed')),
-    });
-  };
-
   const [crossAppContextError, setCrossAppContextError] = useState<string | null>(null);
   const onToggleCrossAppContext = (checked: boolean) => {
     setCrossAppContextError(null);
@@ -681,7 +642,7 @@ export function AiSettingsScreen() {
     ? limitEditorUsage.promptTokens + limitEditorUsage.completionTokens
     : 0;
 
-  const busy = testKey.isPending || setDefault.isPending || deleteKey.isPending;
+  const busy = testKey.isPending || deleteKey.isPending;
 
   return (
     <KeyboardAvoidingView
@@ -690,19 +651,23 @@ export function AiSettingsScreen() {
     >
       <ScrollView contentContainerStyle={styles.content}>
         {data && !hostedAiAvailable(data.aiCredits) ? <AiProNote /> : null}
-        {data && hostedAiAvailable(data.aiCredits) ? (
-          <AiSourceCard
-            aiSource={data.aiSource}
-            aiCredits={data.aiCredits}
-            pending={setAiSource.isPending}
-            error={aiSourceError}
-            onChange={(source) => {
-              setAiSourceError(null);
-              setAiSource.mutate(source, {
-                onError: (err) => setAiSourceError(getErrorMessage(err)),
+        {data ? (
+          <AiProviderOrderCard
+            order={data.aiProviderOrder}
+            keys={keys}
+            hostedAi={hostedAiAvailable(data.aiCredits)}
+            pending={setAiProviderOrder.isPending}
+            error={orderError}
+            onChange={(order) => {
+              setOrderError(null);
+              setAiProviderOrder.mutate(order, {
+                onError: (err) => setOrderError(getErrorMessage(err) || t('ai.order.updateFailed')),
               });
             }}
           />
+        ) : null}
+        {data && hostedAiAvailable(data.aiCredits) ? (
+          <AiCreditsCard aiCredits={data.aiCredits} />
         ) : null}
 
         <View style={styles.card}>
@@ -716,7 +681,6 @@ export function AiSettingsScreen() {
                   key={key.provider}
                   apiKey={key}
                   usage={usageByProvider.get(key.provider)}
-                  isDefault={key.provider === data?.defaultProvider}
                   onOpenActions={() => setActionsForProvider(key.provider)}
                 />
               ))}
@@ -767,22 +731,6 @@ export function AiSettingsScreen() {
         <View style={styles.card}>
           <View style={styles.switchRow}>
             <View style={styles.switchRowText}>
-              <Text style={styles.switchRowTitle}>{t('ai.fallbackWhenLimitedTitle')}</Text>
-              <Text style={styles.cardHelpText}>{t('ai.fallbackWhenLimitedHelp')}</Text>
-            </View>
-            <Switch
-              value={data?.llmFallbackWhenLimited ?? false}
-              onValueChange={onToggleFallback}
-              disabled={toggleFallback.isPending}
-              testID="fallback-when-limited-switch"
-            />
-          </View>
-          {fallbackError ? <Text style={styles.error}>{fallbackError}</Text> : null}
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.switchRow}>
-            <View style={styles.switchRowText}>
               <Text style={styles.switchRowTitle}>{t('ai.crossApplicationContextTitle')}</Text>
               <Text style={styles.cardHelpText}>{t('ai.crossApplicationContextHelp')}</Text>
             </View>
@@ -800,7 +748,6 @@ export function AiSettingsScreen() {
       {actionsKey && (
         <ActionsSheet
           apiKey={actionsKey}
-          isDefault={actionsKey.provider === data?.defaultProvider}
           busy={busy}
           onClose={() => setActionsForProvider(null)}
           onTest={() => {
@@ -811,10 +758,6 @@ export function AiSettingsScreen() {
                 onError: (err) => Alert.alert(t('ai.testFailed'), getErrorMessage(err)),
               },
             );
-          }}
-          onMakeDefault={() => {
-            setActionsForProvider(null);
-            setDefault.mutate(actionsKey.provider);
           }}
           onEditLimit={() => {
             setActionsForProvider(null);

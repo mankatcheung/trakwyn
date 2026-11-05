@@ -218,18 +218,16 @@ export const LLM_API_KEYS_QUERY = `
       monthlyTokenLimit
     }
     me {
-      defaultLlmProvider
+      aiProviderOrder
       customAiPrompt
       useCrossApplicationContext
-      llmFallbackWhenLimited
-      aiSource
     }
   }
 `;
 
-export const SET_AI_SOURCE = `
-  mutation SetAiSource($aiSource: String!) {
-    setAiSource(aiSource: $aiSource)
+export const SET_AI_PROVIDER_ORDER = `
+  mutation SetAiProviderOrder($order: [String!]!) {
+    setAiProviderOrder(order: $order)
   }
 `;
 
@@ -242,12 +240,6 @@ export const SAVE_LLM_API_KEY = `
 export const DELETE_LLM_API_KEY = `
   mutation DeleteLlmApiKey($provider: String!) {
     deleteLlmApiKey(provider: $provider)
-  }
-`;
-
-export const SET_DEFAULT_LLM_PROVIDER = `
-  mutation SetDefaultLlmProvider($provider: String!) {
-    setDefaultLlmProvider(provider: $provider)
   }
 `;
 

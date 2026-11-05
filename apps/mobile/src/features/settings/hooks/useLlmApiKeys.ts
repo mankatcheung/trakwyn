@@ -5,24 +5,22 @@ import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
   SAVE_LLM_API_KEY_MUTATION,
-  SET_AI_SOURCE_MUTATION,
-  SET_DEFAULT_LLM_PROVIDER_MUTATION,
+  SET_AI_PROVIDER_ORDER_MUTATION,
   SET_LLM_API_KEY_MONTHLY_LIMIT_MUTATION,
   TEST_LLM_API_KEY_MUTATION,
   UPDATE_PROFILE_MUTATION,
 } from '../graphql/operations';
-import type { AiCredits, AiSource, LlmApiKey, LlmUsageSummary } from '../types';
+import type { AiCredits, LlmApiKey, LlmUsageSummary } from '../types';
 
 export const llmApiKeysQueryKey = ['llmApiKeys'] as const;
 export const llmUsageSummaryQueryKey = ['llmUsageSummary'] as const;
 
 interface LlmApiKeysResult {
   keys: LlmApiKey[];
-  defaultProvider: string | null;
+  /** The providers AI calls try, first to last (JEF-503). */
+  aiProviderOrder: string[];
   customAiPrompt: string | null;
   useCrossApplicationContext: boolean;
-  llmFallbackWhenLimited: boolean;
-  aiSource: AiSource;
   aiCredits: AiCredits;
 }
 
@@ -33,20 +31,16 @@ export function useLlmApiKeys() {
       gqlRequest<{
         llmApiKeys: LlmApiKey[];
         me: {
-          defaultLlmProvider: string | null;
+          aiProviderOrder: string[];
           customAiPrompt: string | null;
           useCrossApplicationContext: boolean;
-          llmFallbackWhenLimited: boolean;
-          aiSource: AiSource;
           aiCredits: AiCredits;
         };
       }>(LLM_API_KEYS_QUERY).then((data): LlmApiKeysResult => ({
         keys: data.llmApiKeys,
-        defaultProvider: data.me.defaultLlmProvider,
+        aiProviderOrder: data.me.aiProviderOrder,
         customAiPrompt: data.me.customAiPrompt,
         useCrossApplicationContext: data.me.useCrossApplicationContext,
-        llmFallbackWhenLimited: data.me.llmFallbackWhenLimited,
-        aiSource: data.me.aiSource,
         aiCredits: data.me.aiCredits,
       })),
   });
@@ -85,17 +79,6 @@ export function useDeleteLlmApiKey() {
   return useMutation({
     mutationFn: (provider: string) =>
       gqlRequest<{ deleteLlmApiKey: boolean }>(DELETE_LLM_API_KEY_MUTATION, { provider }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
-  });
-}
-
-export function useSetDefaultLlmProvider() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: string) =>
-      gqlRequest<{ setDefaultLlmProvider: boolean }>(SET_DEFAULT_LLM_PROVIDER_MUTATION, {
-        provider,
-      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
   });
 }
@@ -152,17 +135,6 @@ export function useUpdateCustomAiPrompt() {
   });
 }
 
-export function useToggleFallbackWhenLimited() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (llmFallbackWhenLimited: boolean) =>
-      gqlRequest<{ updateProfile: boolean }>(UPDATE_PROFILE_MUTATION, {
-        llmFallbackWhenLimited,
-      }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
-  });
-}
-
 export function useToggleCrossApplicationContext() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -174,11 +146,12 @@ export function useToggleCrossApplicationContext() {
   });
 }
 
-export function useSetAiSource() {
+/** Saves which providers AI calls try, in order (JEF-503). Replaces the source, default and fall-through settings. */
+export function useSetAiProviderOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (aiSource: AiSource) =>
-      gqlRequest<{ setAiSource: boolean }>(SET_AI_SOURCE_MUTATION, { aiSource }),
+    mutationFn: (order: string[]) =>
+      gqlRequest<{ setAiProviderOrder: boolean }>(SET_AI_PROVIDER_ORDER_MUTATION, { order }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: llmApiKeysQueryKey }),
   });
 }

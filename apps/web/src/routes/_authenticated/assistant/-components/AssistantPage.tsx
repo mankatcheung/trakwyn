@@ -29,7 +29,7 @@ export function AssistantPage() {
   const conversations = conversationsData?.conversations ?? [];
   const activeConversation = conversations.find((c) => c.id === activeId);
 
-  const { runsOnFor, newRunsOn, newConversationProvider, label } = useChatRunsOn();
+  const { runsOnFor, newRunsOn, label } = useChatRunsOn();
   const runsOn = activeId ? (activeConversation ? runsOnFor(activeConversation) : null) : newRunsOn;
   const runsOnLabel = label(runsOn);
 
@@ -126,7 +126,6 @@ export function AssistantPage() {
 
         <ChatConversationView
           conversationId={activeId ?? null}
-          provider={newConversationProvider}
           suggestedQuestions={SUGGESTED_QUESTIONS}
           onConversationCreated={(id) => void navigate({ search: { conversation: id } })}
         />

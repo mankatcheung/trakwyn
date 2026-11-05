@@ -107,6 +107,13 @@ export type LLMStreamEvent =
    * Consumers other than the usage tracker should ignore it.
    */
   | { type: 'prompt_usage'; promptTokens: number }
+  /**
+   * The provider that was answering failed before any output and another one
+   * from the user's order took over (JEF-503). Emitted once per switch, ahead of
+   * the new provider's own events, by the fallback wrapper; no provider emits it.
+   * `from` and `to` are order entries: `trakwyn` or the id of one of the user's keys.
+   */
+  | { type: 'fallback'; from: string; to: string }
   | { type: 'done'; content: string | null; toolCalls: LLMToolCall[]; usage: LLMUsage | null };
 
 /**

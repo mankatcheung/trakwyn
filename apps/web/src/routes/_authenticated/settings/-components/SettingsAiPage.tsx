@@ -8,19 +8,16 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { LlmApiKeyRow } from './LlmApiKeyRow';
 import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
-import { AiSourcePicker, type AiSource } from './AiSourcePicker';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
-import { billingStatusQueryKey } from '#/lib/billingStatus';
+import { AiProviderOrderCard } from './AiProviderOrderCard';
 import { useHostedAiAvailable } from '#/lib/aiCredits';
 import { Alert, Button, Card, Checkbox, Skeleton, Textarea } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
   DELETE_LLM_API_KEY,
-  SET_DEFAULT_LLM_PROVIDER,
   SET_LLM_API_KEY_MONTHLY_LIMIT,
   TEST_LLM_API_KEY,
-  SET_AI_SOURCE,
+  SET_AI_PROVIDER_ORDER,
   UPDATE_PROFILE,
   customAiPromptSchema,
   type CustomAiPromptForm,
@@ -32,8 +29,8 @@ import {
 } from './shared';
 
 /**
- * Bring-your-own-key AI settings: provider keys, which provider is the
- * default, and the custom instructions appended to every prompt. The
+ * Bring-your-own-key AI settings: provider keys, which providers answer and in
+ * what order, and the custom instructions appended to every prompt. The
  * target for every "add your API key" prompt scattered through the app.
  */
 export function SettingsAiPage() {
@@ -48,16 +45,13 @@ export function SettingsAiPage() {
       gqlClient.request<{
         llmApiKeys: LlmApiKey[];
         me: {
-          defaultLlmProvider: string | null;
+          aiProviderOrder: string[];
           customAiPrompt: string | null;
           useCrossApplicationContext: boolean;
-          llmFallbackWhenLimited: boolean;
-          aiSource?: string;
         };
       }>(LLM_API_KEYS_QUERY),
   });
   const llmApiKeys = llmData?.llmApiKeys ?? [];
-  const defaultLlmProvider = llmData?.me.defaultLlmProvider ?? null;
 
   // Usage summary (JEF-250) — separate query so a slow/failed usage lookup
   // never blocks the keys list itself from rendering.
@@ -93,20 +87,6 @@ export function SettingsAiPage() {
     }
   };
 
-  const [settingDefaultProvider, setSettingDefaultProvider] = useState<string | null>(null);
-  const onSetDefaultProvider = async (provider: string) => {
-    setSettingDefaultProvider(provider);
-    setLlmKeyListError(null);
-    try {
-      await gqlClient.request(SET_DEFAULT_LLM_PROVIDER, { provider });
-      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
-    } catch (err) {
-      setLlmKeyListError(extractGqlError(err) ?? t('integrations.setDefaultProviderFailed'));
-    } finally {
-      setSettingDefaultProvider(null);
-    }
-  };
-
   // Testing a saved key (JEF-247) — separate pending/result state per
   // provider row, so testing one key doesn't disturb another's last result.
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
@@ -136,20 +116,19 @@ export function SettingsAiPage() {
     }
   };
 
-  // AI source (JEF-451)
-  const [aiSourceError, setAiSourceError] = useState<string | null>(null);
-  const [updatingAiSource, setUpdatingAiSource] = useState(false);
-  const onChangeAiSource = async (aiSource: AiSource) => {
-    setUpdatingAiSource(true);
-    setAiSourceError(null);
+  // Which AI answers (JEF-503): each change is saved as the whole list.
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const onChangeOrder = async (order: string[]) => {
+    setSavingOrder(true);
+    setOrderError(null);
     try {
-      await gqlClient.request(SET_AI_SOURCE, { aiSource });
+      await gqlClient.request(SET_AI_PROVIDER_ORDER, { order });
       await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
-      await qc.invalidateQueries({ queryKey: billingStatusQueryKey });
     } catch (err) {
-      setAiSourceError(extractGqlError(err) ?? t('aiSource.updateFailed'));
+      setOrderError(extractGqlError(err) ?? t('aiOrder.updateFailed'));
     } finally {
-      setUpdatingAiSource(false);
+      setSavingOrder(false);
     }
   };
 
@@ -181,22 +160,6 @@ export function SettingsAiPage() {
       customAiPromptForm.setError('root', {
         message: extractGqlError(err) ?? t('integrations.updateCustomInstructionsFailed'),
       });
-    }
-  };
-
-  // Fallback when a key hits its limit (JEF-258)
-  const [fallbackError, setFallbackError] = useState<string | null>(null);
-  const [updatingFallback, setUpdatingFallback] = useState(false);
-  const onToggleFallbackWhenLimited = async (checked: boolean) => {
-    setUpdatingFallback(true);
-    setFallbackError(null);
-    try {
-      await gqlClient.request(UPDATE_PROFILE, { llmFallbackWhenLimited: checked });
-      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
-    } catch (err) {
-      setFallbackError(extractGqlError(err) ?? t('integrations.fallbackUpdateFailed'));
-    } finally {
-      setUpdatingFallback(false);
     }
   };
 
@@ -235,24 +198,20 @@ export function SettingsAiPage() {
         </Link>
       </div>
 
-      {/* ── Trakwyn AI: source and credits, Pro only for now (JEF-451) ── */}
-      {hostedAi === true && (
-        <Card className="space-y-4 p-5">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {t('aiSource.title')}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiSource.description')}</p>
-          </div>
-          <AiCreditsMeter />
-          <AiSourcePicker
-            value={(llmData?.me.aiSource as AiSource | undefined) ?? 'auto'}
-            hasOwnKey={llmApiKeys.length > 0}
-            disabled={updatingAiSource || llmKeysLoading}
-            onChange={onChangeAiSource}
-          />
-          {aiSourceError && <Alert>{aiSourceError}</Alert>}
+      {/* ── Which AI answers, in order; Trakwyn AI is Pro only for now (JEF-451, JEF-503) ── */}
+      {llmKeysLoading ? (
+        <Card className="p-5">
+          <Skeleton className="h-24 w-full rounded-lg" />
         </Card>
+      ) : (
+        <AiProviderOrderCard
+          order={llmData?.me.aiProviderOrder ?? []}
+          keys={llmApiKeys}
+          hostedAi={hostedAi}
+          busy={savingOrder}
+          error={orderError}
+          onChange={onChangeOrder}
+        />
       )}
       {hostedAi === false && (
         <Card className="p-5">
@@ -300,15 +259,9 @@ export function SettingsAiPage() {
                     key={key.provider}
                     llmApiKey={key}
                     usage={usageByProvider.get(key.provider)}
-                    isDefault={key.provider === defaultLlmProvider}
                     testResult={savedKeyTestResults[key.provider]}
-                    busy={
-                      testingProvider === key.provider ||
-                      settingDefaultProvider === key.provider ||
-                      removingProvider === key.provider
-                    }
+                    busy={testingProvider === key.provider || removingProvider === key.provider}
                     onTest={() => onTestSavedLlmApiKey(key.provider)}
-                    onMakeDefault={() => onSetDefaultProvider(key.provider)}
                     onRemove={() => onRemoveLlmApiKey(key.provider)}
                     onSaveLimit={(monthlyTokenLimit) =>
                       onSaveMonthlyLimit(key.provider, monthlyTokenLimit)
@@ -400,32 +353,6 @@ export function SettingsAiPage() {
               : t('integrations.saveInstructions')}
           </Button>
         </form>
-      </Card>
-
-      {/* ── Fallback when a key hits its limit (JEF-258) ── */}
-      <Card className="p-5">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {t('integrations.fallbackWhenLimitedLabel')}
-            </h2>
-            <p className="mt-1 max-w-xl text-sm text-gray-500 dark:text-gray-400">
-              {t('integrations.fallbackWhenLimitedHelp')}
-            </p>
-          </div>
-          <Checkbox
-            id="llm-fallback-when-limited"
-            aria-label={t('integrations.fallbackWhenLimitedLabel')}
-            checked={llmData?.me.llmFallbackWhenLimited ?? false}
-            disabled={updatingFallback}
-            onChange={(e) => onToggleFallbackWhenLimited(e.target.checked)}
-          />
-        </div>
-        {fallbackError && (
-          <div className="mt-3">
-            <Alert>{fallbackError}</Alert>
-          </div>
-        )}
       </Card>
 
       {/* ── Cross-application context (JEF-249) ── */}

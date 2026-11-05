@@ -291,6 +291,47 @@ describe('DrizzleUserRepository', () => {
     });
   });
 
+  describe('aiProviderOrder (JEF-503)', () => {
+    it('is null until one is saved, which means the older settings decide', async () => {
+      const u = await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+
+      expect(u.aiProviderOrder).toBeNull();
+    });
+
+    it('saves a list in the order given', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+
+      const updated = await repo.update('u1', {
+        aiProviderOrder: ['anthropic', 'trakwyn', 'openai'],
+      });
+
+      expect(updated.aiProviderOrder).toEqual(['anthropic', 'trakwyn', 'openai']);
+      expect((await repo.findById('u1'))?.aiProviderOrder).toEqual([
+        'anthropic',
+        'trakwyn',
+        'openai',
+      ]);
+    });
+
+    it('goes back to null when cleared', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      await repo.update('u1', { aiProviderOrder: ['openai'] });
+
+      const cleared = await repo.update('u1', { aiProviderOrder: null });
+
+      expect(cleared.aiProviderOrder).toBeNull();
+    });
+
+    it('is left alone by an update that does not mention it', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      await repo.update('u1', { aiProviderOrder: ['openai'] });
+
+      const updated = await repo.update('u1', { name: 'Jeff' });
+
+      expect(updated.aiProviderOrder).toEqual(['openai']);
+    });
+  });
+
   describe('findScheduledForDeletionBefore', () => {
     it('returns accounts whose date has come, oldest first, and no others', async () => {
       const cutoff = new Date('2026-11-15T00:00:00.000Z');

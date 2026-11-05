@@ -200,6 +200,15 @@ export const AI_SOURCE = {
 
 export const AI_SOURCES: readonly AiSource[] = Object.values(AI_SOURCE);
 
+/**
+ * `User.aiProviderOrder` (JEF-503): the providers a user's AI calls try, first to
+ * last. Each entry is `TRAKWYN` (the platform's key) or the id of one of the
+ * user's own keys, so the list needs no second field to say which is which.
+ */
+export const AI_PROVIDER_ORDER = {
+  TRAKWYN: 'trakwyn',
+} as const;
+
 export type LlmUsageSource = (typeof LLM_USAGE_SOURCE)[keyof typeof LLM_USAGE_SOURCE];
 
 /**

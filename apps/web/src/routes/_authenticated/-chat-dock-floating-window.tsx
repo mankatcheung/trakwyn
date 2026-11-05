@@ -25,7 +25,7 @@ export function ChatDockFloatingWindow() {
 
   const { data: conversationsData } = useQuery(conversationsQueryOptions);
   const hostedAi = useHostedAiAvailable();
-  const { settings, newConversationProvider } = useChatRunsOn();
+  const { settings } = useChatRunsOn();
   const llmApiKeys = settings?.llmApiKeys ?? [];
 
   if (!dock.expanded) return null;
@@ -91,7 +91,6 @@ export function ChatDockFloatingWindow() {
       ) : (
         <ChatConversationView
           conversationId={isNew ? null : (dock.expanded as string)}
-          provider={newConversationProvider}
           onConversationCreated={(id) => dock.promoteNewConversation(id)}
           compact
         />

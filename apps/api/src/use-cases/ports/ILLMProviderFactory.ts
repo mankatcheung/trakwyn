@@ -37,6 +37,14 @@ export interface LLMProviderResolution {
   providerId: string;
   /** The paused provider this fell back from, or null on the normal path. */
   fellBackFrom: string | null;
+  /**
+   * The entry of the user's provider order that answers (JEF-503): `trakwyn` or the
+   * id of one of their keys. Unlike `providerId`, which names the provider
+   * behind the call (a hosted model's own id), this is the name the user knows,
+   * and the one `fellBackFrom` and a chat's fallback notice use. Absent when the
+   * call was not resolved through the order (a named key, a key test).
+   */
+  entry?: string;
   /** Whose key answers: the user's (`byok`) or Trakwyn's (`platform`, JEF-446). */
   source: LlmUsageSource;
   /** The model tier a platform call runs on (JEF-448); absent on the user's own key. */
@@ -54,6 +62,14 @@ export interface LLMProviderResolution {
 export interface LLMProviderResolveHints {
   user?: User | null;
   key?: LlmApiKey | null;
+  /**
+   * Resolve on exactly this path (JEF-503): the platform's key, or the user's
+   * own key named by `request.provider`. Without it the factory decides from the
+   * user's `aiSource`, as it always did. The limit-enforcing decorator sets it
+   * when it walks the user's provider order, so the order and not `aiSource`
+   * decides which key answers.
+   */
+  via?: 'platform' | 'key';
 }
 
 /**

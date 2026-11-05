@@ -7,12 +7,10 @@ jest.mock('../../hooks/useLlmApiKeys', () => ({
   useLlmUsageSummary: jest.fn(),
   useSaveLlmApiKey: jest.fn(),
   useDeleteLlmApiKey: jest.fn(),
-  useSetAiSource: jest.fn(),
-  useSetDefaultLlmProvider: jest.fn(),
+  useSetAiProviderOrder: jest.fn(),
   useSetLlmApiKeyMonthlyLimit: jest.fn(),
   useTestLlmApiKey: jest.fn(),
   useToggleCrossApplicationContext: jest.fn(),
-  useToggleFallbackWhenLimited: jest.fn(),
   useUpdateCustomAiPrompt: jest.fn(),
 }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
@@ -23,12 +21,10 @@ import {
   useLlmApiKeys,
   useLlmUsageSummary,
   useSaveLlmApiKey,
-  useSetAiSource,
-  useSetDefaultLlmProvider,
+  useSetAiProviderOrder,
   useSetLlmApiKeyMonthlyLimit,
   useTestLlmApiKey,
   useToggleCrossApplicationContext,
-  useToggleFallbackWhenLimited,
   useUpdateCustomAiPrompt,
 } from '../../hooks/useLlmApiKeys';
 import { AiSettingsScreen } from '../AiSettingsScreen';
@@ -41,12 +37,10 @@ const mockedUseTheme = jest.mocked(useTheme);
 const mockedUseLlmUsageSummary = jest.mocked(useLlmUsageSummary);
 const mockedUseSaveLlmApiKey = jest.mocked(useSaveLlmApiKey);
 const mockedUseDeleteLlmApiKey = jest.mocked(useDeleteLlmApiKey);
-const mockedUseSetAiSource = jest.mocked(useSetAiSource);
-const mockedUseSetDefaultLlmProvider = jest.mocked(useSetDefaultLlmProvider);
+const mockedUseSetAiProviderOrder = jest.mocked(useSetAiProviderOrder);
 const mockedUseSetLlmApiKeyMonthlyLimit = jest.mocked(useSetLlmApiKeyMonthlyLimit);
 const mockedUseTestLlmApiKey = jest.mocked(useTestLlmApiKey);
 const mockedUseToggleCrossApplicationContext = jest.mocked(useToggleCrossApplicationContext);
-const mockedUseToggleFallbackWhenLimited = jest.mocked(useToggleFallbackWhenLimited);
 const mockedUseUpdateCustomAiPrompt = jest.mocked(useUpdateCustomAiPrompt);
 
 const key: LlmApiKey = {
@@ -55,18 +49,31 @@ const key: LlmApiKey = {
   baseUrl: null,
   monthlyTokenLimit: null,
 };
+const secondKey: LlmApiKey = {
+  provider: 'anthropic',
+  model: null,
+  baseUrl: null,
+  monthlyTokenLimit: null,
+};
 
 function llmApiKeysData(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     keys: [key],
-    defaultProvider: 'openai',
+    aiProviderOrder: ['openai'],
     customAiPrompt: null,
     useCrossApplicationContext: false,
-    llmFallbackWhenLimited: false,
-    aiSource: 'auto',
     aiCredits: { used: 18, limit: 30, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
     ...overrides,
   };
+}
+
+function loaded(data: unknown) {
+  mockedUseLlmApiKeys.mockReturnValue({
+    data,
+    isLoading: false,
+    isError: false,
+    error: null,
+  } as never);
 }
 
 describe('AiSettingsScreen', () => {
@@ -79,12 +86,9 @@ describe('AiSettingsScreen', () => {
       setMode: jest.fn(),
     } as never);
     mockedUseLlmUsageSummary.mockReturnValue({ data: [] } as never);
+    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDeleteLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
-    mockedUseSetAiSource.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
-    mockedUseSetDefaultLlmProvider.mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    } as never);
+    mockedUseSetAiProviderOrder.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseSetLlmApiKeyMonthlyLimit.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -94,38 +98,23 @@ describe('AiSettingsScreen', () => {
       mutate: jest.fn(),
       isPending: false,
     } as never);
-    mockedUseToggleFallbackWhenLimited.mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    } as never);
     mockedUseUpdateCustomAiPrompt.mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
     } as never);
   });
 
-  it('lists configured providers, marking the default', async () => {
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData(),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+  it('lists configured providers, without a default marker (JEF-503)', async () => {
+    loaded(llmApiKeysData());
 
-    const { getByText } = await render(<AiSettingsScreen />);
+    const { getByText, queryByText } = await render(<AiSettingsScreen />);
 
-    await waitFor(() => expect(getByText('OpenAI · Default')).toBeTruthy());
+    await waitFor(() => expect(getByText('gpt-4o-mini')).toBeTruthy());
+    expect(queryByText(/Default/)).toBeNull();
   });
 
   it('opens and closes the add-provider modal', async () => {
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData({ keys: [], defaultProvider: null }),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    loaded(llmApiKeysData({ keys: [], aiProviderOrder: [] }));
 
     const { getByTestId, queryByTestId } = await render(<AiSettingsScreen />);
 
@@ -140,12 +129,7 @@ describe('AiSettingsScreen', () => {
 
   it('saves a new key with the selected provider', async () => {
     const mutate = jest.fn();
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData({ keys: [], defaultProvider: null }),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
+    loaded(llmApiKeysData({ keys: [], aiProviderOrder: [] }));
     mockedUseSaveLlmApiKey.mockReturnValue({ mutate, isPending: false } as never);
 
     const { getByTestId } = await render(<AiSettingsScreen />);
@@ -162,40 +146,21 @@ describe('AiSettingsScreen', () => {
     );
   });
 
-  it('opens the actions sheet and makes a non-default key the default', async () => {
-    const mutate = jest.fn();
-    const secondKey: LlmApiKey = {
-      provider: 'anthropic',
-      model: null,
-      baseUrl: null,
-      monthlyTokenLimit: null,
-    };
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData({ keys: [key, secondKey], defaultProvider: 'openai' }),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
-    mockedUseSetDefaultLlmProvider.mockReturnValue({ mutate, isPending: false } as never);
+  it('opens the actions sheet for a key, with no make-default action (JEF-503)', async () => {
+    loaded(llmApiKeysData({ keys: [key, secondKey], aiProviderOrder: ['openai', 'anthropic'] }));
 
-    const { getByTestId } = await render(<AiSettingsScreen />);
+    const { getByTestId, queryByTestId } = await render(<AiSettingsScreen />);
 
     await fireEvent.press(getByTestId('llm-key-actions-anthropic'));
-    await fireEvent.press(getByTestId('sheet-make-default-anthropic'));
 
-    expect(mutate).toHaveBeenCalledWith('anthropic');
+    expect(getByTestId('sheet-test-anthropic')).toBeTruthy();
+    expect(getByTestId('sheet-limit-anthropic')).toBeTruthy();
+    expect(queryByTestId('sheet-make-default-anthropic')).toBeNull();
   });
 
   it('saves the custom AI prompt', async () => {
     const mutate = jest.fn();
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData(),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    loaded(llmApiKeysData());
     mockedUseUpdateCustomAiPrompt.mockReturnValue({ mutate, isPending: false } as never);
 
     const { getByTestId } = await render(<AiSettingsScreen />);
@@ -206,33 +171,17 @@ describe('AiSettingsScreen', () => {
     expect(mutate).toHaveBeenCalledWith('Be concise', expect.any(Object));
   });
 
-  it('toggles the fallback-when-limited switch', async () => {
-    const mutate = jest.fn();
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData(),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
-    mockedUseToggleFallbackWhenLimited.mockReturnValue({ mutate, isPending: false } as never);
+  it('no longer has a fall-through switch: the provider order replaces it (JEF-503)', async () => {
+    loaded(llmApiKeysData());
 
-    const { getByTestId } = await render(<AiSettingsScreen />);
+    const { queryByTestId } = await render(<AiSettingsScreen />);
 
-    await fireEvent(getByTestId('fallback-when-limited-switch'), 'valueChange', true);
-
-    expect(mutate).toHaveBeenCalledWith(true, expect.any(Object));
+    expect(queryByTestId('fallback-when-limited-switch')).toBeNull();
   });
 
   it('toggles the cross-application context switch', async () => {
     const mutate = jest.fn();
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData(),
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-    mockedUseSaveLlmApiKey.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    loaded(llmApiKeysData());
     mockedUseToggleCrossApplicationContext.mockReturnValue({
       mutate,
       isPending: false,
@@ -245,36 +194,76 @@ describe('AiSettingsScreen', () => {
     expect(mutate).toHaveBeenCalledWith(true, expect.any(Object));
   });
 
-  it('shows the credits meter and saves a picked AI source (JEF-451)', async () => {
-    const mutate = jest.fn();
-    mockedUseSetAiSource.mockReturnValue({ mutate, isPending: false } as never);
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData(),
-      isLoading: false,
-      isError: false,
-    } as never);
+  describe('which AI answers (JEF-503)', () => {
+    it('lists the providers in the order they are tried', async () => {
+      loaded(llmApiKeysData({ keys: [key, secondKey], aiProviderOrder: ['anthropic', 'openai'] }));
 
-    const { getByText, getByTestId } = await render(<AiSettingsScreen />);
-    expect(getByText('12 of 30 left')).toBeTruthy();
+      const { getByTestId } = await render(<AiSettingsScreen />);
 
-    await fireEvent.press(getByTestId('ai-source-option-own'));
-    expect(mutate).toHaveBeenCalledWith('own', expect.any(Object));
+      expect(getByTestId('ai-order-anthropic')).toBeTruthy();
+      expect(getByTestId('ai-order-openai')).toBeTruthy();
+    });
+
+    it('saves the whole list when a provider is moved', async () => {
+      const mutate = jest.fn();
+      mockedUseSetAiProviderOrder.mockReturnValue({ mutate, isPending: false } as never);
+      loaded(llmApiKeysData({ keys: [key, secondKey], aiProviderOrder: ['openai', 'anthropic'] }));
+
+      const { getByTestId } = await render(<AiSettingsScreen />);
+      await fireEvent.press(getByTestId('ai-order-down-openai'));
+
+      expect(mutate).toHaveBeenCalledWith(['anthropic', 'openai'], expect.any(Object));
+    });
+
+    it('adds Trakwyn AI after the keys already listed', async () => {
+      const mutate = jest.fn();
+      mockedUseSetAiProviderOrder.mockReturnValue({ mutate, isPending: false } as never);
+      loaded(llmApiKeysData());
+
+      const { getByTestId } = await render(<AiSettingsScreen />);
+      await fireEvent.press(getByTestId('ai-order-add-trakwyn'));
+
+      expect(mutate).toHaveBeenCalledWith(['openai', 'trakwyn'], expect.any(Object));
+    });
+
+    it('says so when saving fails', async () => {
+      // An API error reads as the API's own message, which is what the user is shown.
+      const apiError = {
+        response: { errors: [{ message: 'Add an API key for groq before listing it' }] },
+      };
+      const mutate = jest.fn((_order, options) => options.onError(apiError));
+      mockedUseSetAiProviderOrder.mockReturnValue({ mutate, isPending: false } as never);
+      loaded(llmApiKeysData({ keys: [key, secondKey], aiProviderOrder: ['openai', 'anthropic'] }));
+
+      const { getByTestId, findByText } = await render(<AiSettingsScreen />);
+      await fireEvent.press(getByTestId('ai-order-down-openai'));
+
+      expect(await findByText('Add an API key for groq before listing it')).toBeTruthy();
+    });
+
+    it('shows the credits meter alongside the list (JEF-451)', async () => {
+      loaded(llmApiKeysData({ aiProviderOrder: ['trakwyn'] }));
+
+      const { getByText, getByTestId } = await render(<AiSettingsScreen />);
+
+      expect(getByText('12 of 30 left')).toBeTruthy();
+      expect(getByTestId('ai-order-trakwyn')).toBeTruthy();
+    });
   });
 
-  it('Free: hides the meter and the picker, and points at Pro (JEF-451)', async () => {
-    mockedUseLlmApiKeys.mockReturnValue({
-      data: llmApiKeysData({
+  it('Free: hides the meter and Trakwyn AI, and points at Pro (JEF-451)', async () => {
+    loaded(
+      llmApiKeysData({
         aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
       }),
-      isLoading: false,
-      isError: false,
-    } as never);
+    );
 
     const { getByTestId, queryByTestId, getByText } = await render(<AiSettingsScreen />);
     expect(getByText('Trakwyn AI is included with Pro')).toBeTruthy();
     expect(getByTestId('ai-pro-note-upgrade-button')).toBeTruthy();
-    expect(queryByTestId('ai-source-card')).toBeNull();
+    expect(queryByTestId('ai-credits-card')).toBeNull();
     expect(queryByTestId('ai-credits-left')).toBeNull();
+    expect(queryByTestId('ai-order-add-trakwyn')).toBeNull();
     // The own-key flow is still there.
     expect(getByTestId('open-add-provider-button')).toBeTruthy();
   });

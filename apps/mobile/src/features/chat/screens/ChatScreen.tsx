@@ -21,18 +21,23 @@ import {
 import { conversationsQueryKey } from '../hooks/useConversations';
 import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import { SendIcon } from '../components/SendIcon';
+import { providerEntryLabel } from '../../settings/lib/aiProviderOrder';
 import { ChatProposalCard } from '../components/ChatProposalCard';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { codedErrorMessage, getErrorCode, getErrorMessage } from '../../../lib/errors';
-import { ERROR_CODES, PLAN_REQUIRED } from '../../../constants';
+import {
+  ERROR_CODES,
+  PLAN_REQUIRED,
+  CHAT_INPUT_MAX_LINES,
+  CHAT_MESSAGE_MAX_CHARS,
+} from '../../../constants';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
-import { CHAT_INPUT_MAX_LINES, CHAT_MESSAGE_MAX_CHARS } from '../../../constants';
+import { useTheme } from '../../../theme/ThemeContext';
+import type { ThemeColors } from '../../../theme/colors';
 
 const INPUT_LINE_HEIGHT = 20;
 const INPUT_VERTICAL_PADDING = 11;
-import { useTheme } from '../../../theme/ThemeContext';
-import type { ThemeColors } from '../../../theme/colors';
 
 function tempMessageId(): string {
   return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -55,6 +60,8 @@ export function ChatScreen() {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendErrorCode, setSendErrorCode] = useState<string | null>(null);
+  // The provider that would have answered could not, and the next one in the user's order did (JEF-503).
+  const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const autoSentInitialMessage = useRef(false);
 
@@ -68,6 +75,7 @@ export function ChatScreen() {
     if (!trimmed || isSending) return;
     setSendError(null);
     setSendErrorCode(null);
+    setFallbackNotice(null);
     setIsSending(true);
     setStreamingText('');
 
@@ -83,6 +91,7 @@ export function ChatScreen() {
         conversationId,
         message: trimmed,
         onDelta: (text) => setStreamingText((prev) => prev + text),
+        onFallback: setFallbackNotice,
       });
 
       await queryClient.invalidateQueries({ queryKey: chatHistoryQueryKey(conversationId) });
@@ -192,6 +201,15 @@ export function ChatScreen() {
         )
       ) : null}
 
+      {fallbackNotice ? (
+        <Text style={styles.notice} testID="chat-fallback-notice">
+          {t('fallbackNotice', {
+            from: providerEntryLabel(fallbackNotice.from),
+            to: providerEntryLabel(fallbackNotice.to),
+          })}
+        </Text>
+      ) : null}
+
       <View style={styles.composer}>
         <TextInput
           placeholderTextColor={colors.textFaint}
@@ -234,6 +252,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     bubbleTextUser: { color: colors.onPrimary, fontSize: 15, lineHeight: 20 },
+    notice: { fontSize: 12, color: colors.textSubtle, paddingHorizontal: 16, paddingBottom: 6 },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,

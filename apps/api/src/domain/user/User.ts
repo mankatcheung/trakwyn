@@ -47,6 +47,13 @@ export interface User {
   aiSource: AiSource;
   /** Fall through to another key when one hits its monthly limit (JEF-258). */
   llmFallbackWhenLimited: boolean;
+  /**
+   * The AI providers to try, first to last (JEF-503): `trakwyn` and/or the ids of
+   * the user's own keys; null until the user sets one. Read it through
+   * `effectiveAiProviderOrder`, which derives the order from the three fields above
+   * when this is null.
+   */
+  aiProviderOrder: string[] | null;
   /** Secondary email for account recovery when primary inbox is inaccessible. */
   backupEmail: string | null;
   /** When the backup email was verified; null until verification completes. */

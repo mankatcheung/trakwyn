@@ -24,5 +24,6 @@
     "deleteMessage": "此操作無法復原。",
     "cancel": "取消",
     "couldNotDeleteTitle": "無法刪除"
-  }
+  },
+  "fallbackNotice": "{{from}} 無法回答，已改用 {{to}}。"
 }

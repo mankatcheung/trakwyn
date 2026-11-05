@@ -59,11 +59,20 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 
 ## Hosted AI in the UI (JEF-451)
 
-- **Pro-only for now:** `useHostedAiAvailable()` (`lib/aiCredits.ts`) is false when the plan has no credits (`limit` and `bonusRemaining` are 0). Free then sees no meter, no source picker and no credits card, the old "add an API key" empty states and checklist item, and a "Trakwyn AI is included with Pro" note in Settings → AI; Free shows "Not included" in the credits rows. The hook is `null` while billing status loads.
+- **Pro-only for now:** `useHostedAiAvailable()` (`lib/aiCredits.ts`) is false when the plan has no credits (`limit` and `bonusRemaining` are 0). Free then sees no meter and no credits card, and nothing to add Trakwyn AI to the provider order with, the old "add an API key" empty states and checklist item, and a "Trakwyn AI is included with Pro" note in Settings → AI; Free shows "Not included" in the credits rows. The hook is `null` while billing status loads.
 - **Credits** come from `billingStatus.aiCredits` (`useBillingStatus`); `lib/aiCredits.ts` turns them into "left of total" (the welcome bonus is spent last). `AiCreditsMeter` shows it always in Settings → AI and Plan, and as a one-line hint in the assistant only below 30% left.
-- **Source picker** (Settings → AI) calls `setAiSource` (`auto` | `trakwyn` | `own`); "My own key" is disabled without a key. The assistant no longer blocks on "add an API key": with none, the API answers with Trakwyn AI, and `AI_NOT_CONFIGURED` still renders the add-key copy when an instance has hosted AI off.
+- **Which AI answers** is the provider order card (Settings → AI, JEF-503, below), not a source picker. The assistant no longer blocks on "add an API key": with none, the API answers with Trakwyn AI, and `AI_NOT_CONFIGURED` still renders the add-key copy when an instance has hosted AI off.
 - **`AiErrorMessage`** handles `AI_CREDITS_EXHAUSTED` (the API's message names the reset date; Upgrade and Add your own key links, with `ai_credits_exhausted_shown`, `ai_upgrade_clicked`, `ai_add_key_clicked`), `EMAIL_NOT_VERIFIED` and `AI_TEMPORARILY_UNAVAILABLE` (not emitted by the API yet).
 - The pricing page's credit figures are checked against `PLAN_LIMITS` in `PricingPage.test.tsx`.
+
+## Which AI answers (JEF-503)
+
+- **One ordered list replaces the source picker, "make default" and the fall-through checkbox.** `AiProviderOrderCard` (`settings/-components/`) lists `me.aiProviderOrder`, tried first to last, with move up, move down and remove on each row and an "add" button for every saved key (and Trakwyn AI on a plan that has it) that is not listed. Each change saves the whole list with `setAiProviderOrder`. The last provider cannot be removed, since an empty list would mean no AI. `aiProviderOrder.ts` holds the pure list helpers, tested without a renderer.
+- **The list is what can run, not what was saved.** The API returns it without entries that could not run today, so the card never shows a provider the call would skip. Where the data goes is spelled out per row ("Your messages go to OpenAI", "Uses your monthly credits").
+- **The chat says what answers now.** `assistant/-runsOn.ts` is the one place that decides it, from the first entry of the order that can run (Trakwyn AI cannot on a plan without it), for the header, the history page and the dock picker. A chat is not locked to the key it started on, so the provider stored on the conversation is only the answer while the order is unknown or empty. Nothing is shown until the settings load, and for an order that leads with Trakwyn AI until billing status does too, so a row never flashes a provider that is about to change. A new chat is created with no provider.
+- **The notice names either side of a switch.** `providerEntryLabel` turns an order entry (`trakwyn` or a key id) into a name. The SSE `fallback` event now also covers failures during the call, not only a limit.
+- The queries are inline strings in `settings/-components/shared.ts` and no `.graphql` document reads these fields, so there is no codegen change. The deprecated `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited` are no longer read here.
+- Mobile mirrors this (`AiProviderOrderCard`, `AiCreditsCard`, `settings/lib/aiProviderOrder.ts`, and a notice in `ChatScreen`).
 
 ## Content quotas (JEF-494)
 

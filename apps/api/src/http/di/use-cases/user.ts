@@ -18,6 +18,8 @@ import { SaveLlmApiKeyUseCase } from '#src/use-cases/user/SaveLlmApiKeyUseCase.j
 import { ListLlmApiKeysUseCase } from '#src/use-cases/user/ListLlmApiKeysUseCase.js';
 import { DeleteLlmApiKeyUseCase } from '#src/use-cases/user/DeleteLlmApiKeyUseCase.js';
 import { SetAiSourceUseCase } from '#src/use-cases/user/SetAiSourceUseCase.js';
+import { SetAiProviderOrderUseCase } from '#src/use-cases/user/SetAiProviderOrderUseCase.js';
+import { GetAiProviderOrderUseCase } from '#src/use-cases/user/GetAiProviderOrderUseCase.js';
 import { SetDefaultLlmProviderUseCase } from '#src/use-cases/user/SetDefaultLlmProviderUseCase.js';
 import { SetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/SetLlmApiKeyMonthlyLimitUseCase.js';
 import { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.js';
@@ -72,6 +74,8 @@ export const user = {
   listLlmApiKeysUseCase: asClass(ListLlmApiKeysUseCase, { lifetime: Lifetime.TRANSIENT }),
   deleteLlmApiKeyUseCase: asClass(DeleteLlmApiKeyUseCase, { lifetime: Lifetime.TRANSIENT }),
   setAiSourceUseCase: asClass(SetAiSourceUseCase, { lifetime: Lifetime.TRANSIENT }),
+  setAiProviderOrderUseCase: asClass(SetAiProviderOrderUseCase, { lifetime: Lifetime.TRANSIENT }),
+  getAiProviderOrderUseCase: asClass(GetAiProviderOrderUseCase, { lifetime: Lifetime.TRANSIENT }),
   setDefaultLlmProviderUseCase: asClass(SetDefaultLlmProviderUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),

@@ -202,6 +202,8 @@ import type { ListLlmApiKeysUseCase } from '#src/use-cases/user/ListLlmApiKeysUs
 import type { DeleteLlmApiKeyUseCase } from '#src/use-cases/user/DeleteLlmApiKeyUseCase.js';
 import type { SetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/SetLlmApiKeyMonthlyLimitUseCase.js';
 import type { SetAiSourceUseCase } from '#src/use-cases/user/SetAiSourceUseCase.js';
+import type { SetAiProviderOrderUseCase } from '#src/use-cases/user/SetAiProviderOrderUseCase.js';
+import type { GetAiProviderOrderUseCase } from '#src/use-cases/user/GetAiProviderOrderUseCase.js';
 import type { SetDefaultLlmProviderUseCase } from '#src/use-cases/user/SetDefaultLlmProviderUseCase.js';
 import type { TestLlmApiKeyUseCase } from '#src/use-cases/user/TestLlmApiKeyUseCase.js';
 import type { GetLlmUsageSummaryUseCase } from '#src/use-cases/user/GetLlmUsageSummaryUseCase.js';
@@ -623,6 +625,8 @@ export interface Cradle {
   listLlmApiKeysUseCase: ListLlmApiKeysUseCase;
   deleteLlmApiKeyUseCase: DeleteLlmApiKeyUseCase;
   setAiSourceUseCase: SetAiSourceUseCase;
+  setAiProviderOrderUseCase: SetAiProviderOrderUseCase;
+  getAiProviderOrderUseCase: GetAiProviderOrderUseCase;
   setDefaultLlmProviderUseCase: SetDefaultLlmProviderUseCase;
   setLlmApiKeyMonthlyLimitUseCase: SetLlmApiKeyMonthlyLimitUseCase;
   testLlmApiKeyUseCase: TestLlmApiKeyUseCase;

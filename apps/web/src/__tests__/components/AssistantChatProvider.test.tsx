@@ -62,25 +62,21 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 interface Setup {
-  aiSource?: string;
+  /** The providers AI calls try, first to last (JEF-503). */
+  order?: string[];
   keys?: Array<{ provider: string }>;
-  defaultProvider?: string | null;
   conversations?: Array<Record<string, unknown>>;
 }
 
 function setup({
-  aiSource = 'auto',
+  order = ['openai'],
   keys = [{ provider: 'openai' }],
-  defaultProvider = 'openai',
   conversations = [],
 }: Setup = {}) {
   mockGqlRequest.mockImplementation((arg: unknown) => {
     const query = documentOf(arg);
     if (query.includes('LlmApiKeys'))
-      return Promise.resolve({
-        llmApiKeys: keys,
-        me: { defaultLlmProvider: defaultProvider, aiSource },
-      });
+      return Promise.resolve({ llmApiKeys: keys, me: { aiProviderOrder: order } });
     if (query.includes('CreateConversation'))
       return Promise.resolve({
         createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
@@ -106,14 +102,11 @@ async function settingsRendered(): Promise<void> {
 }
 
 /** The variables the page sent when it created a conversation, or `undefined` if it never did. */
-function createConversationVariables(): Record<string, unknown> | undefined {
-  const call = mockGqlRequest.mock.calls.find((c) =>
-    documentOf(c[0]).includes('CreateConversation'),
-  );
-  return call?.[1] as Record<string, unknown> | undefined;
+function createConversationCall() {
+  return mockGqlRequest.mock.calls.find((c) => documentOf(c[0]).includes('CreateConversation'));
 }
 
-describe('AssistantPage — which AI answers (JEF-503)', () => {
+describe('AssistantPage: which AI answers (JEF-503)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearch.mockReturnValue({});
@@ -121,9 +114,13 @@ describe('AssistantPage — which AI answers (JEF-503)', () => {
     mockStreamChatMessage.mockResolvedValue(undefined);
   });
 
-  describe.each(['auto', 'own', 'trakwyn'])('a new chat with the source set to %s', (aiSource) => {
+  describe.each([
+    ['Trakwyn AI alone', ['trakwyn']],
+    ['one own key', ['openai']],
+    ['a key then Trakwyn AI', ['openai', 'trakwyn']],
+  ])('a new chat with %s listed', (_name, order) => {
     it('has no provider or model picker', async () => {
-      setup({ aiSource });
+      setup({ order });
       render(<AssistantPage />, { wrapper: Wrapper });
 
       await waitFor(() =>
@@ -139,8 +136,8 @@ describe('AssistantPage — which AI answers (JEF-503)', () => {
     });
   });
 
-  it('says Trakwyn AI answers, with a way to use a key, under the Trakwyn AI source', async () => {
-    setup({ aiSource: 'trakwyn' });
+  it('says Trakwyn AI answers, with a way to use a key, when it leads the order', async () => {
+    setup({ order: ['trakwyn', 'openai'] });
     render(<AssistantPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/Answers come from Trakwyn AI\./)).toBeInTheDocument();
@@ -150,55 +147,35 @@ describe('AssistantPage — which AI answers (JEF-503)', () => {
     );
   });
 
-  it('names the key a new chat will use, and links to settings, under own key', async () => {
-    setup({ aiSource: 'own' });
+  it('names the key that leads the order, and links to settings to change it', async () => {
+    setup({
+      order: ['anthropic', 'openai'],
+      keys: [{ provider: 'openai' }, { provider: 'anthropic' }],
+    });
     render(<AssistantPage />, { wrapper: Wrapper });
 
-    expect(await screen.findByText(/Using OpenAI/)).toBeInTheDocument();
+    expect(await screen.findByText(/Using Anthropic \(Claude\)/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Change in settings' })).toHaveAttribute(
       'href',
       '/settings/ai',
     );
   });
 
-  it('sends no provider when a chat is created under the Trakwyn AI source', async () => {
-    setup({ aiSource: 'trakwyn' });
-    render(<AssistantPage />, { wrapper: Wrapper });
-    await screen.findByText(/Answers come from Trakwyn AI\./);
-
-    fireEvent.click(screen.getByText('Summarize my interviews this month'));
-
-    await waitFor(() => expect(mockStreamChatMessage).toHaveBeenCalled());
-    expect(createConversationVariables()).toEqual({ provider: null });
-  });
-
-  it("creates the chat with the user's default key under own key", async () => {
+  it('creates the conversation with no provider, whichever AI leads the order', async () => {
     setup({
-      aiSource: 'own',
-      keys: [{ provider: 'anthropic' }, { provider: 'openai' }],
-      defaultProvider: 'openai',
+      order: ['anthropic', 'openai'],
+      keys: [{ provider: 'openai' }, { provider: 'anthropic' }],
     });
-    render(<AssistantPage />, { wrapper: Wrapper });
-    await screen.findByText(/Using OpenAI/);
-
-    fireEvent.click(screen.getByText('Summarize my interviews this month'));
-
-    await waitFor(() => expect(mockStreamChatMessage).toHaveBeenCalled());
-    expect(createConversationVariables()).toEqual({ provider: 'openai' });
-  });
-
-  it('falls back to the first key when the default key was deleted', async () => {
-    setup({ aiSource: 'auto', keys: [{ provider: 'anthropic' }], defaultProvider: null });
     render(<AssistantPage />, { wrapper: Wrapper });
     await screen.findByText(/Using Anthropic/);
 
     fireEvent.click(screen.getByText('Summarize my interviews this month'));
 
     await waitFor(() => expect(mockStreamChatMessage).toHaveBeenCalled());
-    expect(createConversationVariables()).toEqual({ provider: 'anthropic' });
+    expect(createConversationCall()?.[1]).toBeUndefined();
   });
 
-  describe('an existing conversation locked to an own key', () => {
+  describe('an existing conversation that was started on an OpenAI key', () => {
     const conversations = [
       { id: 'conv-1', title: 'Prep', llmProvider: 'openai', llmModel: 'gpt-4o' },
     ];
@@ -207,8 +184,8 @@ describe('AssistantPage — which AI answers (JEF-503)', () => {
       mockSearch.mockReturnValue({ conversation: 'conv-1' });
     });
 
-    it('says Trakwyn AI under the Trakwyn AI source, not the stored provider', async () => {
-      setup({ aiSource: 'trakwyn', conversations });
+    it('says Trakwyn AI when it leads the order, not the stored key', async () => {
+      setup({ order: ['trakwyn', 'openai'], conversations });
       render(<AssistantPage />, { wrapper: Wrapper });
 
       expect(await screen.findByText('Using Trakwyn AI')).toBeInTheDocument();
@@ -216,38 +193,43 @@ describe('AssistantPage — which AI answers (JEF-503)', () => {
       expect(screen.queryByText(/gpt-4o/)).not.toBeInTheDocument();
     });
 
-    it.each(['auto', 'own'])(
-      'still names the key and model under the %s source',
-      async (aiSource) => {
-        setup({ aiSource, conversations });
-        render(<AssistantPage />, { wrapper: Wrapper });
+    it('names the key that leads now, not the one the chat started on, with no stale model', async () => {
+      setup({ order: ['anthropic', 'openai'], conversations });
+      render(<AssistantPage />, { wrapper: Wrapper });
 
-        expect(await screen.findByText('Using OpenAI (gpt-4o)')).toBeInTheDocument();
-      },
-    );
+      expect(await screen.findByText('Using Anthropic (Claude)')).toBeInTheDocument();
+      expect(screen.queryByText(/gpt-4o/)).not.toBeInTheDocument();
+    });
 
-    it('shows the stored provider when Trakwyn AI is not available on the plan', async () => {
-      mockHostedAi.mockReturnValue(false);
-      setup({ aiSource: 'trakwyn', conversations });
+    it('keeps the model while the key it was started on still leads', async () => {
+      setup({ order: ['openai'], conversations });
       render(<AssistantPage />, { wrapper: Wrapper });
 
       expect(await screen.findByText('Using OpenAI (gpt-4o)')).toBeInTheDocument();
     });
 
-    it('shows nothing until it knows, for a Trakwyn AI user whose plan is still loading', async () => {
+    it('names the key behind Trakwyn AI when the plan has none', async () => {
+      mockHostedAi.mockReturnValue(false);
+      setup({ order: ['trakwyn', 'openai'], conversations });
+      render(<AssistantPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByText('Using OpenAI (gpt-4o)')).toBeInTheDocument();
+    });
+
+    it('shows nothing until it knows, when Trakwyn AI leads and the plan is still loading', async () => {
       mockHostedAi.mockReturnValue(null);
-      setup({ aiSource: 'trakwyn', conversations });
+      setup({ order: ['trakwyn', 'openai'], conversations });
       render(<AssistantPage />, { wrapper: Wrapper });
 
       await screen.findByText('Prep');
-      await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+      await settingsRendered();
       expect(screen.queryByText(/^Using/)).not.toBeInTheDocument();
     });
   });
 
-  it('asks for a key when there is none and Trakwyn AI is not available', async () => {
+  it('asks for a key when nothing is listed and Trakwyn AI is not on the plan', async () => {
     mockHostedAi.mockReturnValue(false);
-    setup({ aiSource: 'auto', keys: [], defaultProvider: null });
+    setup({ order: [], keys: [] });
     render(<AssistantPage />, { wrapper: Wrapper });
 
     expect(await screen.findByRole('link', { name: 'Settings' })).toHaveAttribute(
