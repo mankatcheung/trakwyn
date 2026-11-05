@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.2...api-v0.12.0) (2026-11-05)
+
+
+### Features
+
+* **api,web,mobile:** choose which AI answers with one ordered provider list (JEF-503) ([#1224](https://github.com/mankatcheung/trakwyn/issues/1224)) ([d314bfa](https://github.com/mankatcheung/trakwyn/commit/d314bfae563ee21024ba881fa99834d858b97eb7))
+* **api:** add a platform-owned LLM provider behind Cloudflare AI Gateway (JEF-446) ([#1205](https://github.com/mankatcheung/trakwyn/issues/1205)) ([0850477](https://github.com/mankatcheung/trakwyn/commit/08504770364408f875b69e21d3e80811d8b3d6c2))
+* **api:** add monthly hosted AI credits to Free and Pro plans (JEF-447) ([#1206](https://github.com/mankatcheung/trakwyn/issues/1206)) ([63a843c](https://github.com/mankatcheung/trakwyn/commit/63a843cf277f2ef3c8c4728d539db37f636026d7))
+* **api:** cap rows and text length on creation paths that had none (JEF-339) ([#1195](https://github.com/mankatcheung/trakwyn/issues/1195)) ([63cb829](https://github.com/mankatcheung/trakwyn/commit/63cb82917933514976e3e1315e1b5989cdb1a6bf))
+* **api:** guard hosted AI spend with verification, rate limits and a daily budget breaker (JEF-449) ([#1208](https://github.com/mankatcheung/trakwyn/issues/1208)) ([73b72bd](https://github.com/mankatcheung/trakwyn/commit/73b72bda76b928267829dc50b2907a4bb7180585))
+* **api:** record cost, feature and source on every LLM call (JEF-444) ([#1203](https://github.com/mankatcheung/trakwyn/issues/1203)) ([bb5a55e](https://github.com/mankatcheung/trakwyn/commit/bb5a55e9c1d5e42136e18f17ff973a07254ccc5b))
+* **api:** route hosted AI calls to a model tier by plan and feature, with a Pro cost ceiling (JEF-448) ([#1207](https://github.com/mankatcheung/trakwyn/issues/1207)) ([883559b](https://github.com/mankatcheung/trakwyn/commit/883559b7e4ef06ba54627ea16dbd057a68499048))
+* **api:** skip the model for JSON-LD postings, share parsed URL postings, reuse unchanged match scores (JEF-450) ([#1204](https://github.com/mankatcheung/trakwyn/issues/1204)) ([8398b30](https://github.com/mankatcheung/trakwyn/commit/8398b305e670cc775dba71006bbc298a0f958bde))
+* **api:** staged rollout and Cloudflare-only hosted AI (JEF-453) ([#1213](https://github.com/mankatcheung/trakwyn/issues/1213)) ([6115ecd](https://github.com/mankatcheung/trakwyn/commit/6115ecda261fa492ddcb36e7966a740544192b55))
+* **api:** turn off thinking and reasoning tokens per feature in the LLM adapters (JEF-445) ([#1201](https://github.com/mankatcheung/trakwyn/issues/1201)) ([446085e](https://github.com/mankatcheung/trakwyn/commit/446085e37015eeb64ae0026a3414670c8cc81048))
+* show remaining quota at create affordances on web and mobile (JEF-494) ([#1199](https://github.com/mankatcheung/trakwyn/issues/1199)) ([a05e9c9](https://github.com/mankatcheung/trakwyn/commit/a05e9c9f5dee845083e3bdefc9346b521b524c8b))
+* show Trakwyn AI, credits and upgrade prompts in web, mobile and the Clipper (JEF-451) ([#1209](https://github.com/mankatcheung/trakwyn/issues/1209)) ([047196b](https://github.com/mankatcheung/trakwyn/commit/047196b53b91803204cf472b25a765a8147db859))
+
 ## [0.11.2](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.1...api-v0.11.2) (2026-11-02)
 
 
