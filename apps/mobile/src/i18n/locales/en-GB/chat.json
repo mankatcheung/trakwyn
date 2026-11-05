@@ -16,8 +16,6 @@
     "empty": "No conversations yet.",
     "newButtonLabel": "New conversation",
     "newConversation": "New conversation",
-    "pickerTitle": "Use which AI model?",
-    "pickerDefault": "Default",
     "noKeysTitle": "No AI models set up",
     "noKeysMessage": "Add an API key in AI settings before starting a conversation.",
     "noKeysGoToSettings": "Go to settings",
@@ -25,7 +23,6 @@
     "deleteTitle": "Delete conversation",
     "deleteMessage": "This cannot be undone.",
     "cancel": "Cancel",
-    "couldNotDeleteTitle": "Could not delete",
-    "pickerTrakwynAi": "Trakwyn AI"
+    "couldNotDeleteTitle": "Could not delete"
   }
 }

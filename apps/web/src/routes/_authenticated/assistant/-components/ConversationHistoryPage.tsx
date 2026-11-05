@@ -11,7 +11,7 @@ import {
   timeAgo,
   type Conversation,
 } from '#/routes/_authenticated/assistant/-shared';
-import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
+import { useChatRunsOn } from '#/routes/_authenticated/assistant/-runsOn';
 
 /** Keeps the server search from firing on every keystroke. */
 function useDebouncedValue<T>(value: T, delay = 250): T {
@@ -34,6 +34,7 @@ function useDebouncedValue<T>(value: T, delay = 250): T {
 function ConversationList({ conversations }: { conversations: Conversation[] }) {
   const { t } = useLocale();
   const qc = useQueryClient();
+  const { runsOnFor, label } = useChatRunsOn();
 
   return (
     <ul className="space-y-1.5">
@@ -50,7 +51,7 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
               </p>
               <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                 {timeAgo(c.updatedAt, t)}
-                {c.llmProvider ? ` · ${LLM_PROVIDER_LABEL[c.llmProvider] ?? c.llmProvider}` : ''}
+                {label(runsOnFor(c)) ? ` · ${label(runsOnFor(c))}` : ''}
               </p>
             </div>
           </Link>
