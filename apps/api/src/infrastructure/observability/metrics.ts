@@ -61,6 +61,10 @@ export const METRICS = {
   GRAPHQL_VALIDATION_FAILURES: 'trakwyn.graphql.validation_failures',
   /** A hosted AI call refused by the daily spend breaker — attribute: reason (JEF-449). */
   HOSTED_AI_BREAKER_OPEN: 'trakwyn.hosted_ai.breaker_open',
+  /** A hosted model's health circuit changed state — attributes: model, from, to (JEF-504). Not the spend breaker. */
+  HOSTED_AI_CIRCUIT_TRANSITIONS: 'trakwyn.hosted_ai.circuit_transitions',
+  /** A hosted call refused because its model's circuit is open — attribute: model (JEF-504). */
+  HOSTED_AI_CIRCUIT_SHORT_CIRCUITS: 'trakwyn.hosted_ai.circuit_short_circuits',
   /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
   LLM_CALLS: 'trakwyn.llm.calls',
   /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
@@ -225,6 +229,10 @@ export interface IMetrics {
   recordLlmCostMismatch(model: string | null, direction: CostMismatchDirection): void;
   /** The daily spend breaker refused a hosted AI call (JEF-449). */
   recordHostedAiBreakerOpen(reason: BreakerOpenReason): void;
+  /** A hosted model's health circuit moved between closed, open and half-open (JEF-504). */
+  recordHostedAiCircuitTransition(model: string, from: string, to: string): void;
+  /** A hosted call was refused without a request because its model's circuit is open (JEF-504). */
+  recordHostedAiCircuitShortCircuit(model: string): void;
 }
 
 /** Used in tests and wherever metrics are irrelevant. */
@@ -249,6 +257,8 @@ export const noopMetrics: IMetrics = {
   recordLlmNeuronCost: () => {},
   recordLlmCostMismatch: () => {},
   recordHostedAiBreakerOpen: () => {},
+  recordHostedAiCircuitTransition: () => {},
+  recordHostedAiCircuitShortCircuit: () => {},
 };
 
 /**
@@ -282,6 +292,8 @@ class OtelMetrics implements IMetrics {
   private llmNeuronCost?: Counter;
   private llmCostMismatch?: Counter;
   private hostedAiBreakerOpen?: Counter;
+  private hostedAiCircuitTransitions?: Counter;
+  private hostedAiCircuitShortCircuits?: Counter;
   private llmDuration?: Histogram;
 
   private get meter() {
@@ -472,6 +484,24 @@ class OtelMetrics implements IMetrics {
       description: 'Hosted AI calls refused by the daily spend breaker, by reason',
     });
     this.hostedAiBreakerOpen.add(1, { reason });
+  }
+
+  recordHostedAiCircuitTransition(model: string, from: string, to: string): void {
+    this.hostedAiCircuitTransitions ??= this.meter.createCounter(
+      METRICS.HOSTED_AI_CIRCUIT_TRANSITIONS,
+      { description: 'Hosted AI model health circuit state changes, by model' },
+    );
+    this.hostedAiCircuitTransitions.add(1, { model, from, to });
+  }
+
+  recordHostedAiCircuitShortCircuit(model: string): void {
+    this.hostedAiCircuitShortCircuits ??= this.meter.createCounter(
+      METRICS.HOSTED_AI_CIRCUIT_SHORT_CIRCUITS,
+      {
+        description: 'Hosted AI calls refused without a request because the model circuit is open',
+      },
+    );
+    this.hostedAiCircuitShortCircuits.add(1, { model });
   }
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RedisCache } from '#src/infrastructure/cache/RedisCache.js';
 import { RedisRateLimiter } from '#src/infrastructure/rateLimit/RedisRateLimiter.js';
 import { RedisSessionBlocklist } from '#src/infrastructure/sessionBlocklist/RedisSessionBlocklist.js';
-import { CircuitBreaker } from '#src/infrastructure/cache/CircuitBreaker.js';
+import { CircuitBreaker } from '#src/infrastructure/resilience/CircuitBreaker.js';
 import type { IRedisClient } from '#src/infrastructure/cache/IRedisClient.js';
 import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 

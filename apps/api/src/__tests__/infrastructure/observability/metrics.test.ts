@@ -26,6 +26,9 @@ describe('OtelMetrics', () => {
     otelMetrics.recordCacheHit();
     otelMetrics.recordCacheMiss();
     otelMetrics.recordFailOpen('session_blocklist', 'circuit_open');
+    otelMetrics.recordHostedAiCircuitTransition('@cf/test/model-a', 'closed', 'open');
+    otelMetrics.recordHostedAiCircuitShortCircuit('@cf/test/model-a');
+    otelMetrics.recordHostedAiCircuitShortCircuit('@cf/test/model-a');
     otelMetrics.recordCircuitTransition('cache', 'closed', 'open');
 
     await reader.forceFlush();
@@ -49,6 +52,17 @@ describe('OtelMetrics', () => {
     const transition = byName(METRICS.CIRCUIT_TRANSITIONS)?.dataPoints[0];
     expect(transition?.value).toBe(1);
     expect(transition?.attributes).toEqual({ component: 'cache', from: 'closed', to: 'open' });
+
+    const hostedTransition = byName(METRICS.HOSTED_AI_CIRCUIT_TRANSITIONS)?.dataPoints[0];
+    expect(hostedTransition?.value).toBe(1);
+    expect(hostedTransition?.attributes).toEqual({
+      model: '@cf/test/model-a',
+      from: 'closed',
+      to: 'open',
+    });
+    const shortCircuits = byName(METRICS.HOSTED_AI_CIRCUIT_SHORT_CIRCUITS)?.dataPoints[0];
+    expect(shortCircuits?.value).toBe(2);
+    expect(shortCircuits?.attributes).toEqual({ model: '@cf/test/model-a' });
 
     await provider.shutdown();
   });

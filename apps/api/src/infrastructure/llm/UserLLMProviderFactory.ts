@@ -8,7 +8,11 @@ import {
   type AiModelTier,
   type LlmUsageSource,
 } from '#src/use-cases/constants.js';
-import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
+import {
+  AiNotConfiguredError,
+  AiTemporarilyUnavailableError,
+} from '#src/use-cases/errors/DomainError.js';
+import type { HostedAiCircuits } from '#src/infrastructure/llm/HostedAiCircuits.js';
 import type { User } from '#src/domain/user/User.js';
 import { llmApiKeyCipherContext } from '#src/use-cases/user/llmApiKeyCipherContext.js';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
@@ -50,6 +54,8 @@ interface Deps {
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
   /** Optional (JEF-449): platform calls add their cost to the daily spend. */
   aiSpendGuard?: IAiSpendGuard;
+  /** Optional (JEF-504): a model that is down is skipped, and the circuit sits around each platform leg. */
+  hostedAiCircuits?: HostedAiCircuits;
   /** For the plan in force when picking a tier (JEF-448); defaults to the clock. */
   now?: () => Date;
 }
@@ -122,21 +128,30 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       ? effectivePlan(user.plan, user.planExpiresAt, (this.deps.now ?? (() => new Date()))())
       : 'free';
     const tier: AiModelTier = request.tier ?? aiModelTier(plan, feature);
-    const legs = this.deps
-      .platformLlmProviderFactory!.legs(tier, { userId, feature })
-      .map((leg) => ({
-        providerId: leg.providerId,
-        provider: this.track(leg.provider, {
+    const configured = this.deps.platformLlmProviderFactory!.legs(tier, { userId, feature });
+    if (configured.length === 0) throw new AiNotConfiguredError('Hosted AI is not configured');
+    const circuits = this.deps.hostedAiCircuits;
+    // A model whose circuit is open is left out, so the other one answers at once. Thrown
+    // here, before the caller charges credits, when no model is left (JEF-504).
+    const legs = configured
+      .filter((leg) => !circuits?.refuses(leg.model))
+      .map((leg) => {
+        const tracked = this.track(leg.provider, {
           userId,
           feature,
           provider: leg.providerId,
           model: leg.model,
           source: LLM_USAGE_SOURCE.PLATFORM,
           tier,
-        }),
-      }));
+        });
+        return {
+          providerId: leg.providerId,
+          // Outside the tracker: a refused call never reached the model and records no usage.
+          provider: circuits ? circuits.wrap(leg.model, leg.providerId, tracked) : tracked,
+        };
+      });
     const [primary, fallback] = legs;
-    if (!primary) throw new AiNotConfiguredError('Hosted AI is not configured');
+    if (!primary) throw new AiTemporarilyUnavailableError();
     const provider = fallback
       ? new FailoverLLMProvider(primary.provider, fallback.provider, (err) =>
           this.deps.logger.warn('llm.platform.failover', undefined, {

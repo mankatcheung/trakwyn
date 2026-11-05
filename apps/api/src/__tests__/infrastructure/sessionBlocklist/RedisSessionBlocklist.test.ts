@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RedisSessionBlocklist } from '#src/infrastructure/sessionBlocklist/RedisSessionBlocklist.js';
-import { CircuitBreaker } from '#src/infrastructure/cache/CircuitBreaker.js';
+import { CircuitBreaker } from '#src/infrastructure/resilience/CircuitBreaker.js';
 import type { IRedisClient } from '#src/infrastructure/cache/IRedisClient.js';
 
 /**
