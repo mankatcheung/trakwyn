@@ -60,6 +60,13 @@ export const user = pgTable('User', {
   llmFallbackWhenLimited: boolean('llmFallbackWhenLimited').notNull().default(false),
   /** `auto` | `trakwyn` | `own` (JEF-446): which key AI calls run on. See `AI_SOURCE`. */
   aiSource: text('aiSource').notNull().default('auto'),
+  /**
+   * The AI providers to try, first to last (JEF-503): `trakwyn` and/or the ids
+   * of the user's own keys. Null means the user never set one, and the order is
+   * derived from `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited`
+   * (`effectiveAiProviderOrder`), so nobody's behaviour changed when this arrived.
+   */
+  aiProviderOrder: text('aiProviderOrder').array(),
   /** Secondary email for account recovery when primary inbox is inaccessible. */
   backupEmail: text('backupEmail'),
   /** When the backup email was verified; null until verification completes. */

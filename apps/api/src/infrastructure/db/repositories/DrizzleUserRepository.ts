@@ -90,6 +90,7 @@ export class DrizzleUserRepository implements IUserRepository {
       useCrossApplicationContext?: boolean;
       llmFallbackWhenLimited?: boolean;
       aiSource?: AiSource;
+      aiProviderOrder?: string[] | null;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;
@@ -178,6 +179,7 @@ export class DrizzleUserRepository implements IUserRepository {
       useCrossApplicationContext: row.useCrossApplicationContext,
       llmFallbackWhenLimited: row.llmFallbackWhenLimited,
       aiSource: row.aiSource as AiSource,
+      aiProviderOrder: row.aiProviderOrder,
       backupEmail: row.backupEmail,
       backupEmailVerifiedAt: row.backupEmailVerifiedAt,
       onboardingChecklistDismissedAt: row.onboardingChecklistDismissedAt,

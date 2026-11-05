@@ -62,6 +62,8 @@ export class UpdateProfileUseCase implements IUpdateProfileUseCase {
       customAiPrompt,
       useCrossApplicationContext: input.useCrossApplicationContext,
       llmFallbackWhenLimited: input.llmFallbackWhenLimited,
+      // Only the toggle (an older app) resets a saved order; an unrelated profile edit leaves it alone.
+      ...(input.llmFallbackWhenLimited === undefined ? {} : { aiProviderOrder: null }),
     });
   }
 }

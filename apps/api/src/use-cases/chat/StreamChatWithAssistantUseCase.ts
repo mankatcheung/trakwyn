@@ -114,23 +114,23 @@ export class StreamChatWithAssistantUseCase {
 
     const user = await this.deps.userRepository.findById(input.userId);
     const history = await this.deps.messageRepository.findAllByConversationId(input.conversationId);
-    const providerName = conversation.llmProvider ?? user?.defaultLlmProvider ?? null;
+    // The user's provider order decides which key answers (JEF-503), so a conversation is
+    // no longer locked to the key it started on; `llmProvider` only records the first one.
     const resolution = await this.deps.llmProviderFactory.resolveForUser(input.userId, {
       feature: AI_FEATURE.CHAT,
-      provider: providerName ?? undefined,
-      model: conversation.llmModel,
     });
     const llmProvider = resolution?.provider ?? null;
-    if (resolution?.fellBackFrom) {
-      yield { type: 'fallback', from: resolution.fellBackFrom, to: resolution.providerId };
+    const answeredBy = resolution ? (resolution.entry ?? resolution.providerId) : null;
+    if (resolution?.fellBackFrom && answeredBy) {
+      yield { type: 'fallback', from: resolution.fellBackFrom, to: answeredBy };
     }
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }
-    if (!conversation.llmProvider && providerName) {
+    if (!conversation.llmProvider && resolution?.source === 'byok' && answeredBy) {
       await this.deps.conversationRepository.updateLlmSettings(
         conversation.id,
-        providerName,
+        answeredBy,
         conversation.llmModel,
       );
     }
@@ -168,6 +168,9 @@ export class StreamChatWithAssistantUseCase {
         } else if (event.type === 'done') {
           content = event.content ?? '';
           toolCalls = event.toolCalls;
+        } else if (event.type === 'fallback') {
+          // The provider answering failed before any output and the next one in the order took over.
+          yield { type: 'fallback', from: event.from, to: event.to };
         }
         // `prompt_usage` is the usage tracker's business, not the chat's.
       }

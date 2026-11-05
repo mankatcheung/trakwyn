@@ -25,7 +25,6 @@ export const UPDATE_PROFILE_MUTATION = `
     $targetRole: String
     $customAiPrompt: String
     $useCrossApplicationContext: Boolean
-    $llmFallbackWhenLimited: Boolean
   ) {
     updateProfile(
       name: $name
@@ -33,7 +32,6 @@ export const UPDATE_PROFILE_MUTATION = `
       targetRole: $targetRole
       customAiPrompt: $customAiPrompt
       useCrossApplicationContext: $useCrossApplicationContext
-      llmFallbackWhenLimited: $llmFallbackWhenLimited
     )
   }
 `;
@@ -161,11 +159,9 @@ export const LLM_API_KEYS_QUERY = `
       monthlyTokenLimit
     }
     me {
-      defaultLlmProvider
+      aiProviderOrder
       customAiPrompt
       useCrossApplicationContext
-      llmFallbackWhenLimited
-      aiSource
       aiCredits {
         used
         limit
@@ -176,9 +172,9 @@ export const LLM_API_KEYS_QUERY = `
   }
 `;
 
-export const SET_AI_SOURCE_MUTATION = `
-  mutation SetAiSource($aiSource: String!) {
-    setAiSource(aiSource: $aiSource)
+export const SET_AI_PROVIDER_ORDER_MUTATION = `
+  mutation SetAiProviderOrder($order: [String!]!) {
+    setAiProviderOrder(order: $order)
   }
 `;
 
@@ -211,12 +207,6 @@ export const SAVE_LLM_API_KEY_MUTATION = `
 export const DELETE_LLM_API_KEY_MUTATION = `
   mutation DeleteLlmApiKey($provider: String!) {
     deleteLlmApiKey(provider: $provider)
-  }
-`;
-
-export const SET_DEFAULT_LLM_PROVIDER_MUTATION = `
-  mutation SetDefaultLlmProvider($provider: String!) {
-    setDefaultLlmProvider(provider: $provider)
   }
 `;
 

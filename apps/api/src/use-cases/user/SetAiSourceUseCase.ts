@@ -27,6 +27,7 @@ export class SetAiSourceUseCase implements ISetAiSourceUseCase {
     ) {
       throw new ValidationError('Trakwyn AI is not available on this server');
     }
-    await this.deps.userRepository.update(input.userId, { aiSource });
+    // A saved order outranks the source; changing the source means the older setting is the one in force.
+    await this.deps.userRepository.update(input.userId, { aiSource, aiProviderOrder: null });
   }
 }

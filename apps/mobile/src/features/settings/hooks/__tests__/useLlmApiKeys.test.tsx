@@ -10,11 +10,10 @@ import {
   useLlmApiKeys,
   useLlmUsageSummary,
   useSaveLlmApiKey,
-  useSetDefaultLlmProvider,
+  useSetAiProviderOrder,
   useSetLlmApiKeyMonthlyLimit,
   useTestLlmApiKey,
   useToggleCrossApplicationContext,
-  useToggleFallbackWhenLimited,
   useUpdateCustomAiPrompt,
 } from '../useLlmApiKeys';
 import type { LlmApiKey, LlmUsageSummary } from '../../types';
@@ -38,14 +37,13 @@ describe('useLlmApiKeys', () => {
     jest.clearAllMocks();
   });
 
-  it('fetches keys and the default provider', async () => {
+  it('fetches keys and the provider order', async () => {
     mockedGqlRequest.mockResolvedValueOnce({
       llmApiKeys: [key],
       me: {
-        defaultLlmProvider: 'openai',
+        aiProviderOrder: ['openai', 'trakwyn'],
         customAiPrompt: 'Keep it short',
         useCrossApplicationContext: true,
-        llmFallbackWhenLimited: false,
       },
     });
 
@@ -54,10 +52,9 @@ describe('useLlmApiKeys', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({
       keys: [key],
-      defaultProvider: 'openai',
+      aiProviderOrder: ['openai', 'trakwyn'],
       customAiPrompt: 'Keep it short',
       useCrossApplicationContext: true,
-      llmFallbackWhenLimited: false,
     });
   });
 
@@ -106,16 +103,16 @@ describe('useLlmApiKeys', () => {
     });
   });
 
-  it('toggles fallback when limited', async () => {
-    mockedGqlRequest.mockResolvedValueOnce({ updateProfile: true });
-    const { result } = await renderHook(() => useToggleFallbackWhenLimited(), { wrapper });
+  it('saves the provider order as the whole list (JEF-503)', async () => {
+    mockedGqlRequest.mockResolvedValueOnce({ setAiProviderOrder: true });
+    const { result } = await renderHook(() => useSetAiProviderOrder(), { wrapper });
 
     await act(async () => {
-      await result.current.mutateAsync(true);
+      await result.current.mutateAsync(['anthropic', 'trakwyn']);
     });
 
-    expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), {
-      llmFallbackWhenLimited: true,
+    expect(mockedGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiProviderOrder'), {
+      order: ['anthropic', 'trakwyn'],
     });
   });
 
@@ -155,17 +152,6 @@ describe('useLlmApiKeys', () => {
     });
 
     expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), { provider: 'openai' });
-  });
-
-  it('sets the default provider', async () => {
-    mockedGqlRequest.mockResolvedValueOnce({ setDefaultLlmProvider: true });
-    const { result } = await renderHook(() => useSetDefaultLlmProvider(), { wrapper });
-
-    await act(async () => {
-      await result.current.mutateAsync('anthropic');
-    });
-
-    expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), { provider: 'anthropic' });
   });
 
   it('tests a key', async () => {

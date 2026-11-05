@@ -60,6 +60,7 @@ builder.mutationField('deleteLlmApiKey', (t) =>
 
 builder.mutationField('setDefaultLlmProvider', (t) =>
   t.boolean({
+    deprecationReason: 'Use setAiProviderOrder (JEF-503). Kept for apps already in the stores.',
     args: {
       provider: t.arg.string({ required: true }),
     },
@@ -77,8 +78,30 @@ builder.mutationField('setDefaultLlmProvider', (t) =>
   }),
 );
 
+builder.mutationField('setAiProviderOrder', (t) =>
+  t.boolean({
+    description:
+      "Saves the providers AI calls try, first to last (JEF-503): 'trakwyn' and/or the ids of the user's own keys. Replaces setAiSource, setDefaultLlmProvider and the fall-through toggle.",
+    args: {
+      order: t.arg.stringList({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      if (!ctx.user)
+        throw new GraphQLError('Unauthorized', { extensions: { code: ERROR_CODES.UNAUTHORIZED } });
+      const { userResolver } = ctx.diScope.cradle;
+      try {
+        await userResolver.setAiProviderOrder(ctx.user.sub, args.order);
+        return true;
+      } catch (err) {
+        throw fromCodedError(err);
+      }
+    },
+  }),
+);
+
 builder.mutationField('setAiSource', (t) =>
   t.boolean({
+    deprecationReason: 'Use setAiProviderOrder (JEF-503). Kept for apps already in the stores.',
     description: "Which key AI calls run on: 'auto', 'trakwyn' or 'own' (JEF-446).",
     args: {
       aiSource: t.arg.string({ required: true }),

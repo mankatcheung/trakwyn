@@ -4,15 +4,19 @@ import { gqlClient } from '#/graphql/client';
 import { useHostedAiAvailable } from '#/lib/aiCredits';
 import { useLocale } from '#/lib/i18n';
 import {
+  TRAKWYN_ENTRY,
+  providerEntryLabel,
+} from '#/routes/_authenticated/settings/-components/aiProviderOrder';
+import {
   LLM_API_KEYS_QUERY,
-  LLM_PROVIDER_LABEL,
   type LlmApiKey,
 } from '#/routes/_authenticated/settings/-components/shared';
 
 /** The `['llmApiKeys']` query the settings page and the chat surfaces share. */
 export interface LlmSettings {
   llmApiKeys: LlmApiKey[];
-  me: { defaultLlmProvider: string | null; aiSource?: string };
+  /** The providers AI calls try, first to last (JEF-503). */
+  me: { aiProviderOrder: string[] };
 }
 
 export function useLlmSettings() {
@@ -26,88 +30,77 @@ export function useLlmSettings() {
 export type RunsOn = { kind: 'trakwyn' } | { kind: 'key'; provider: string; model: string | null };
 
 interface RunsOnContext {
-  /** `undefined` while the settings load (or if they failed to). */
-  aiSource: string | undefined;
+  /** `undefined` while the settings load, or if they failed to. */
+  order: string[] | undefined;
   /** `null` while billing status loads. */
   hostedAi: boolean | null;
 }
 
-/** Under Trakwyn AI the API ignores any provider a conversation names (`UserLLMProviderFactory`). */
-function usesTrakwynAi({ aiSource, hostedAi }: RunsOnContext): boolean {
-  return aiSource === 'trakwyn' && hostedAi === true;
-}
-
-/** The source says Trakwyn AI but billing status has not said whether it is available yet. */
-function isUndecided({ aiSource, hostedAi }: RunsOnContext): boolean {
-  return aiSource === 'trakwyn' && hostedAi === null;
+interface StoredConversation {
+  llmProvider: string | null;
+  llmModel?: string | null;
 }
 
 /**
- * What an existing conversation actually runs on. The provider stored on the
- * row is only the answer when the user's own key is in play: with the source
- * set to Trakwyn AI it is ignored, so showing it would be wrong. Stored data
- * is never rewritten, only read through here.
+ * The entry that answers: the first one in the user's order that can run. Trakwyn AI
+ * cannot on a plan without it, so a list that leads with it still reads as its key
+ * for that user. `undefined` when no entry qualifies or the order is not known.
+ */
+function answeringEntry({ order, hostedAi }: RunsOnContext): string | undefined {
+  return order?.find((entry) => entry !== TRAKWYN_ENTRY || hostedAi !== false);
+}
+
+/** The order leads with Trakwyn AI but billing status has not said whether the plan has it yet. */
+function isUndecided({ order, hostedAi }: RunsOnContext): boolean {
+  return order?.[0] === TRAKWYN_ENTRY && hostedAi === null;
+}
+
+/**
+ * What a conversation runs on now (JEF-503). It is the user's order, not the provider the
+ * conversation was started on: a chat is not locked to a key, so the provider stored on
+ * the row is only the answer while the order is unknown or empty, and its model only
+ * while that same key still leads. Stored data is read through here and never rewritten.
  */
 export function conversationRunsOn(
-  conversation: { llmProvider: string | null; llmModel?: string | null },
+  conversation: StoredConversation,
   context: RunsOnContext,
 ): RunsOn | null {
   if (isUndecided(context)) return null;
-  if (usesTrakwynAi(context)) return { kind: 'trakwyn' };
+  const entry = answeringEntry(context);
+  if (entry === TRAKWYN_ENTRY) return { kind: 'trakwyn' };
+  if (entry) {
+    const startedHere = conversation.llmProvider === entry;
+    return {
+      kind: 'key',
+      provider: entry,
+      model: startedHere ? (conversation.llmModel ?? null) : null,
+    };
+  }
   if (!conversation.llmProvider) return null;
   return { kind: 'key', provider: conversation.llmProvider, model: conversation.llmModel ?? null };
 }
 
-/** The provider a new conversation will use, so the header can say so. `null` when there is no key. */
-export function newConversationRunsOn(
-  settings: Pick<LlmSettings, 'llmApiKeys' | 'me'> | undefined,
-  context: RunsOnContext,
-): RunsOn | null {
-  if (isUndecided(context)) return null;
-  if (usesTrakwynAi(context)) return { kind: 'trakwyn' };
-  const provider = ownProvider(settings);
-  return provider ? { kind: 'key', provider, model: null } : null;
-}
-
-/** The user's default key, or the first one when the default was deleted. */
-function ownProvider(settings: Pick<LlmSettings, 'llmApiKeys' | 'me'> | undefined): string | null {
-  return settings?.me?.defaultLlmProvider ?? settings?.llmApiKeys?.[0]?.provider ?? null;
+/** What a new conversation will run on, so the header can say so. `null` when nothing can. */
+export function newConversationRunsOn(context: RunsOnContext): RunsOn | null {
+  return conversationRunsOn({ llmProvider: null }, context);
 }
 
 /**
- * The provider to create a conversation with. Not asked of the user any more
- * (JEF-503), but the API falls back to `defaultLlmProvider` and finds no key
- * when that was deleted while others remain, which the old picker papered over
- * by preselecting the first key. Under Trakwyn AI the API ignores it, so none
- * is named.
- */
-export function providerForNewConversation(
-  settings: Pick<LlmSettings, 'llmApiKeys' | 'me'> | undefined,
-  context: RunsOnContext,
-): string | null {
-  if (usesTrakwynAi(context)) return null;
-  return ownProvider(settings);
-}
-
-/**
- * Resolves the Trakwyn AI / own key decision for the chat surfaces. Nothing is
- * answered until the settings have loaded, and not for a Trakwyn AI user until
- * billing status has too, so a list never flashes a provider that is about to
- * be replaced by "Trakwyn AI".
+ * Resolves what answers for the chat surfaces. Nothing is answered until the settings
+ * have loaded, and not for a user whose order leads with Trakwyn AI until billing status
+ * has too, so a list never flashes a provider that is about to be replaced.
  */
 export function useChatRunsOn() {
   const { t } = useLocale();
   const hostedAi = useHostedAiAvailable();
   const { data, isPending } = useLlmSettings();
-  const context: RunsOnContext = { aiSource: data?.me?.aiSource, hostedAi };
+  const context: RunsOnContext = { order: data?.me?.aiProviderOrder, hostedAi };
   const ready = !isPending;
 
   const label = useCallback(
     (runsOn: RunsOn | null): string | null => {
       if (!runsOn) return null;
-      return runsOn.kind === 'trakwyn'
-        ? t('aiSource.trakwyn')
-        : (LLM_PROVIDER_LABEL[runsOn.provider] ?? runsOn.provider);
+      return providerEntryLabel(runsOn.kind === 'trakwyn' ? TRAKWYN_ENTRY : runsOn.provider, t);
     },
     [t],
   );
@@ -115,11 +108,9 @@ export function useChatRunsOn() {
   return {
     ready,
     settings: data,
-    context,
-    runsOnFor: (conversation: { llmProvider: string | null; llmModel?: string | null }) =>
+    runsOnFor: (conversation: StoredConversation) =>
       ready ? conversationRunsOn(conversation, context) : null,
-    newRunsOn: ready ? newConversationRunsOn(data, context) : null,
-    newConversationProvider: providerForNewConversation(data, context),
+    newRunsOn: ready ? newConversationRunsOn(context) : null,
     label,
   };
 }

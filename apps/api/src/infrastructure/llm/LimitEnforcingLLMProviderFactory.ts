@@ -1,8 +1,23 @@
-import { AI_SOURCE, LLM_USAGE_SOURCE } from '#src/use-cases/constants.js';
+import {
+  AI_PROVIDER_ORDER,
+  AI_SOURCE,
+  LLM_USAGE_SOURCE,
+  type AiModelTier,
+} from '#src/use-cases/constants.js';
+import {
+  canAutoUseTrakwyn,
+  effectiveAiProviderOrder,
+  keyProvidersOldestFirst,
+} from '#src/use-cases/shared/aiProviderOrder.js';
+import { OrderedFallbackLLMProvider } from '#src/infrastructure/llm/OrderedFallbackLLMProvider.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import {
+  AiCreditsExhaustedError,
+  AiTemporarilyUnavailableError,
   EmailNotVerifiedError,
   LlmLimitReachedError,
+  PlanRequiredError,
   RateLimitedError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
@@ -22,12 +37,32 @@ import { CreditRefundingLLMProvider } from '#src/infrastructure/llm/CreditRefund
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { isLimitReached, startOfUtcMonth } from '#src/use-cases/shared/tokenLimit.js';
 
+type ReResolve = (tier: AiModelTier) => Promise<LLMProviderResolution | null>;
+
+/**
+ * Reasons to try the next entry in the user's order rather than fail: a key at
+ * its monthly limit, or the platform refusing for credits, plan, rate or breaker
+ * (JEF-503). Anything else, an unverified email above all, is not something
+ * another provider fixes, so it stops the call.
+ */
+function isSkippable(err: unknown): boolean {
+  return (
+    err instanceof LlmLimitReachedError ||
+    err instanceof AiCreditsExhaustedError ||
+    err instanceof PlanRequiredError ||
+    err instanceof AiTemporarilyUnavailableError ||
+    err instanceof RateLimitedError
+  );
+}
+
 interface Deps {
   userLlmProviderFactory: ILLMProviderFactory;
   userRepository: IUserRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;
   llmUsageEventRepository: ILlmUsageEventRepository;
   now: () => Date;
+  /** Optional (JEF-503): a switch to the next provider in the user's order is logged. */
+  logger?: ILogger;
   /** Optional (JEF-446): a user on Trakwyn AI has no key to be limited. */
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
   /** Optional (JEF-447): without it hosted calls are not metered. */
@@ -76,8 +111,17 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     userId: string,
     request: LLMProviderRequest,
   ): Promise<LLMProviderResolution | null> {
+    // A caller that names a key asks for that key, and a key test is always about one key:
+    // both keep the single-key path. Everything else walks the user's provider order (JEF-503).
+    if (!request.provider && request.trackUsage !== false) {
+      return this.resolveOrdered(userId, request);
+    }
     const resolution = await this.resolveKey(userId, request);
-    return resolution ? this.chargeCredits(userId, request, resolution) : null;
+    return resolution
+      ? this.chargeCredits(userId, request, resolution, (tier) =>
+          this.resolveKey(userId, { ...request, tier }),
+        )
+      : null;
   }
 
   /**
@@ -89,6 +133,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     userId: string,
     request: LLMProviderRequest,
     resolution: LLMProviderResolution,
+    reResolve: ReResolve,
   ): Promise<LLMProviderResolution> {
     if (request.trackUsage === false || resolution.source !== LLM_USAGE_SOURCE.PLATFORM) {
       return resolution;
@@ -98,7 +143,7 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
     if (!credits) return resolution;
     const charge = await credits.charge(userId, request.feature);
     if (!charge) return resolution;
-    return this.withCharge(userId, request, resolution, charge);
+    return this.withCharge(resolution, charge, reResolve);
   }
 
   /**
@@ -107,14 +152,13 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
    * overflow took no credits, so there is nothing to refund if that fails.
    */
   private async withCharge(
-    userId: string,
-    request: LLMProviderRequest,
     resolution: LLMProviderResolution,
     charge: AiCreditCharge,
+    reResolve: ReResolve,
   ): Promise<LLMProviderResolution> {
     let resolved = resolution;
     if (charge.overflow && resolution.tier !== 'lite') {
-      const lite = await this.resolveKey(userId, { ...request, tier: 'lite' });
+      const lite = await reResolve('lite');
       if (lite) resolved = lite;
     }
     return { ...resolved, provider: new CreditRefundingLLMProvider(resolved.provider, charge) };
@@ -135,6 +179,124 @@ export class LimitEnforcingLLMProviderFactory implements ILLMProviderFactory {
       throw new RateLimitedError('Too many Trakwyn AI requests. Wait a minute and try again.');
     }
     await this.deps.aiSpendGuard?.assertWithinBudget();
+  }
+
+  /**
+   * Resolves through the user's provider order (JEF-503): the first entry that can
+   * run answers, and the entries after it stand by for a failure during the call.
+   *
+   * An entry is skipped, never replaced by one the user did not list, when it
+   * cannot run: its key is gone, hosted AI is off for them, the key is paused at its
+   * monthly limit, or the platform refuses for credits, plan, rate or breaker. If
+   * every entry is skipped the first one's own error is what the user sees, so a
+   * single paused key still reads "limit reached" and an empty Trakwyn AI balance
+   * still reads "credits exhausted".
+   */
+  private async resolveOrdered(
+    userId: string,
+    request: LLMProviderRequest,
+  ): Promise<LLMProviderResolution | null> {
+    const user = await this.deps.userRepository.findById(userId);
+    if (!user) return this.deps.userLlmProviderFactory.resolveForUser(userId, request);
+
+    const [keys, usedByProvider] = await Promise.all([
+      this.deps.llmApiKeyRepository.findAllByUserId(userId),
+      this.usedTokensByProvider(userId),
+    ]);
+    const platformOn = !!this.deps.platformLlmProviderFactory?.isEnabledFor(userId);
+    const keysByProvider = new Map(keys.map((key) => [key.provider, key]));
+    const order = effectiveAiProviderOrder(user, keyProvidersOldestFirst(keys), {
+      autoMayUseTrakwyn: canAutoUseTrakwyn(user, platformOn, this.deps.now()),
+    });
+    const candidates = order.filter((entry) =>
+      entry === AI_PROVIDER_ORDER.TRAKWYN ? platformOn : keysByProvider.has(entry),
+    );
+
+    let index = 0;
+    let firstSkipped: string | null = null;
+    let firstError: unknown = null;
+    const advance = async (): Promise<{
+      resolution: LLMProviderResolution;
+      entry: string;
+    } | null> => {
+      while (index < candidates.length) {
+        const entry = candidates[index++];
+        try {
+          const resolution = await this.resolveEntry(userId, request, entry, {
+            user,
+            key: keysByProvider.get(entry) ?? null,
+            usedByProvider,
+          });
+          if (resolution) return { resolution, entry };
+        } catch (err) {
+          if (!isSkippable(err)) throw err;
+          firstError ??= err;
+          firstSkipped ??= entry;
+        }
+      }
+      return null;
+    };
+
+    const first = await advance();
+    if (!first) {
+      if (firstError) throw firstError;
+      return null;
+    }
+
+    const standingBy = index < candidates.length;
+    const provider = standingBy
+      ? new OrderedFallbackLLMProvider(
+          first.resolution.provider,
+          first.entry,
+          async () => {
+            const next = await advance();
+            return next ? { provider: next.resolution.provider, entry: next.entry } : null;
+          },
+          (from, to, err) =>
+            this.deps.logger?.warn('llm.fallback', undefined, {
+              from,
+              to,
+              kind: err.kind,
+              status: err.status,
+            }),
+        )
+      : first.resolution.provider;
+
+    return { ...first.resolution, provider, entry: first.entry, fellBackFrom: firstSkipped };
+  }
+
+  private async resolveEntry(
+    userId: string,
+    request: LLMProviderRequest,
+    entry: string,
+    context: {
+      user: NonNullable<Awaited<ReturnType<IUserRepository['findById']>>>;
+      key: LlmApiKey | null;
+      usedByProvider: Map<string, number>;
+    },
+  ): Promise<LLMProviderResolution | null> {
+    const { user, key, usedByProvider } = context;
+    const inner = this.deps.userLlmProviderFactory;
+
+    const resolve = (tier?: AiModelTier) => {
+      if (entry === AI_PROVIDER_ORDER.TRAKWYN) {
+        return inner.resolveForUser(userId, { ...request, tier }, { user, via: 'platform' });
+      }
+      // The key's own model, not the caller's: a model name is provider-specific.
+      return inner.resolveForUser(
+        userId,
+        { ...request, provider: entry, model: null, tier },
+        { user, key, via: 'key' },
+      );
+    };
+
+    if (entry !== AI_PROVIDER_ORDER.TRAKWYN && key && this.isPaused(key, usedByProvider)) {
+      throw new LlmLimitReachedError(entry, this.nextReset());
+    }
+    const resolution = await resolve(request.tier);
+    // Charged on the resolution's source, whichever entry produced it: only a call that
+    // runs on the platform's key costs credits.
+    return resolution ? this.chargeCredits(userId, request, resolution, resolve) : null;
   }
 
   private async resolveKey(

@@ -24,5 +24,6 @@
     "deleteMessage": "This cannot be undone.",
     "cancel": "Cancel",
     "couldNotDeleteTitle": "Could not delete"
-  }
+  },
+  "fallbackNotice": "{{from}} could not answer, so {{to}} did."
 }

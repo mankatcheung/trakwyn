@@ -32,6 +32,10 @@ describe('SetDefaultLlmProviderUseCase', () => {
       provider: 'openai',
     });
 
-    expect(userRepository.update).toHaveBeenCalledWith('user-1', { defaultLlmProvider: 'openai' });
+    // A saved provider order outranks the default, so an older app changing it clears the order.
+    expect(userRepository.update).toHaveBeenCalledWith('user-1', {
+      defaultLlmProvider: 'openai',
+      aiProviderOrder: null,
+    });
   });
 });

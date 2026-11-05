@@ -5,7 +5,7 @@ import { streamChatMessage, ChatStreamError } from '#/lib/chatStream';
 import { CHAT_MESSAGE_MAX_CHARS } from '#/constants';
 import { Link } from '@tanstack/react-router';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
-import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
+import { providerEntryLabel } from '#/routes/_authenticated/settings/-components/aiProviderOrder';
 import { getErrorMessage } from '#/lib/errors';
 import { QuotaHint } from '#/components/QuotaHint';
 import { contentQuotaQueryKey, useQuotaState } from '#/lib/contentQuota';
@@ -34,12 +34,6 @@ function tempMessageId(): string {
 interface ChatConversationViewProps {
   /** null means no conversation has been created yet — the first send lazily creates one. */
   conversationId: string | null;
-  /**
-   * Provider to create the conversation with, if `conversationId` is null. Not a
-   * choice the user makes in chat (JEF-503): the caller resolves it from their
-   * AI settings, and passes `null` when the API should pick (Trakwyn AI).
-   */
-  provider: string | null;
   /** Called once a conversation is lazily created on first send, so the caller can navigate/pin/etc. */
   onConversationCreated: (id: string) => void;
   /** Shown as clickable chips in the empty state, before any messages exist. Omit for a tighter layout. */
@@ -58,7 +52,6 @@ interface ChatConversationViewProps {
  */
 export function ChatConversationView({
   conversationId,
-  provider,
   onConversationCreated,
   suggestedQuestions,
   compact = false,
@@ -120,8 +113,8 @@ export function ChatConversationView({
   };
 
   const createConversation = useMutation({
-    mutationFn: (vars: { provider?: string | null }) =>
-      gqlClient.request<{ createConversation: Conversation }>(CREATE_CONVERSATION, vars),
+    // Which AI answers is the user's provider order, not something a chat is created with (JEF-503).
+    mutationFn: () => gqlClient.request<{ createConversation: Conversation }>(CREATE_CONVERSATION),
   });
 
   useEffect(() => {
@@ -160,9 +153,7 @@ export function ChatConversationView({
     if (!targetConversationId) {
       let created: { createConversation: Conversation };
       try {
-        created = await createConversation.mutateAsync({
-          provider,
-        });
+        created = await createConversation.mutateAsync();
       } catch {
         // Shown below with the API's message (a cap reached by a race names its
         // limit); the text goes back into the composer so nothing is lost.
@@ -289,8 +280,8 @@ export function ChatConversationView({
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-900/20">
             <p className="text-xs text-amber-700 dark:text-amber-500">
               {t('assistant.fallbackNotice', {
-                from: LLM_PROVIDER_LABEL[fallbackNotice.from] ?? fallbackNotice.from,
-                to: LLM_PROVIDER_LABEL[fallbackNotice.to] ?? fallbackNotice.to,
+                from: providerEntryLabel(fallbackNotice.from, t),
+                to: providerEntryLabel(fallbackNotice.to, t),
               })}{' '}
               <Link to="/settings/ai" className="underline">
                 {t('assistant.manageLimits')}

@@ -47,4 +47,45 @@ describe('DeleteLlmApiKeyUseCase', () => {
 
     expect(userRepository.update).toHaveBeenCalledWith('user-1', { defaultLlmProvider: null });
   });
+
+  describe('a saved provider order (JEF-503)', () => {
+    const run = async (aiProviderOrder: string[] | null, deleted: string) => {
+      const user = makeUser({ aiProviderOrder });
+      const userRepository = makeUserRepository({
+        findById: vi.fn().mockResolvedValue(user),
+        update: vi.fn().mockResolvedValue(user),
+      });
+      await new DeleteLlmApiKeyUseCase({
+        userRepository,
+        llmApiKeyRepository: makeLlmApiKeyRepository(),
+      }).execute({ userId: 'user-1', provider: deleted });
+      return userRepository;
+    };
+
+    it('removes the deleted key from the list and keeps the rest in order', async () => {
+      const userRepository = await run(['anthropic', 'openai', 'groq'], 'openai');
+
+      expect(userRepository.update).toHaveBeenCalledWith('user-1', {
+        aiProviderOrder: ['anthropic', 'groq'],
+      });
+    });
+
+    it('goes back to the older settings when the deleted key was the only entry', async () => {
+      const userRepository = await run(['openai'], 'openai');
+
+      expect(userRepository.update).toHaveBeenCalledWith('user-1', { aiProviderOrder: null });
+    });
+
+    it('leaves the list alone when the deleted key was not in it', async () => {
+      const userRepository = await run(['anthropic'], 'openai');
+
+      expect(userRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('leaves a user with no saved list alone', async () => {
+      const userRepository = await run(null, 'openai');
+
+      expect(userRepository.update).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -27,6 +27,14 @@ export class DeleteLlmApiKeyUseCase implements IDeleteLlmApiKeyUseCase {
       if (user.defaultLlmProvider === input.provider) {
         await this.deps.userRepository.update(input.userId, { defaultLlmProvider: null });
       }
+
+      if (user.aiProviderOrder?.includes(input.provider)) {
+        const remaining = user.aiProviderOrder.filter((entry) => entry !== input.provider);
+        // An empty list would mean "no AI"; with nothing left the older settings decide again.
+        await this.deps.userRepository.update(input.userId, {
+          aiProviderOrder: remaining.length > 0 ? remaining : null,
+        });
+      }
     });
   }
 }

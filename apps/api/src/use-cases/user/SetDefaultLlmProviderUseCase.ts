@@ -23,6 +23,10 @@ export class SetDefaultLlmProviderUseCase implements ISetDefaultLlmProviderUseCa
       throw new ValidationError('Add an API key for this provider before making it the default');
     }
 
-    await this.deps.userRepository.update(input.userId, { defaultLlmProvider: input.provider });
+    // A saved order outranks the default; changing the default means the older setting is the one in force.
+    await this.deps.userRepository.update(input.userId, {
+      defaultLlmProvider: input.provider,
+      aiProviderOrder: null,
+    });
   }
 }

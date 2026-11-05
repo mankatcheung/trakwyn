@@ -40,6 +40,7 @@ export interface IUserRepository {
       useCrossApplicationContext?: boolean;
       llmFallbackWhenLimited?: boolean;
       aiSource?: AiSource;
+      aiProviderOrder?: string[] | null;
       backupEmail?: string | null;
       backupEmailVerifiedAt?: Date | null;
       onboardingChecklistDismissedAt?: Date | null;

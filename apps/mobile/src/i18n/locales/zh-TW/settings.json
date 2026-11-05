@@ -2,10 +2,8 @@
   "ai": {
     "configuredProviders": "已設定的供應商",
     "noProvidersYet": "尚未設定任何供應商。",
-    "default": " · 預設",
     "limitPaused": "Paused",
     "limitPercentUsed": "{{percent}}% used",
-    "makeDefault": "設為預設",
     "delete": "刪除",
     "deleteKeyTitle": "刪除金鑰",
     "deleteKeyMessage": "移除您的 {{provider}} 金鑰？",
@@ -53,19 +51,9 @@
     "saveInstructions": "Save instructions",
     "customInstructionsUpdated": "Instructions updated.",
     "customInstructionsFailed": "Couldn't update instructions. Try again.",
-    "fallbackWhenLimitedTitle": "Fall back to another provider when limited",
-    "fallbackWhenLimitedHelp": "If your default provider hits its monthly limit, use another configured provider instead of stopping.",
-    "fallbackUpdateFailed": "Couldn't update this setting. Try again.",
     "crossApplicationContextTitle": "Use context from other applications",
     "crossApplicationContextHelp": "Let the AI reference your other job applications when helping with this one.",
     "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again.",
-    "source": {
-      "title": "AI 來源",
-      "help": "自動：有自己的金鑰時使用它，否則使用 Trakwyn AI。",
-      "auto": "自動",
-      "trakwyn": "Trakwyn AI",
-      "own": "我自己的金鑰"
-    },
     "credits": {
       "title": "Trakwyn AI 額度",
       "left": "剩餘 {{left}} / {{total}}",
@@ -79,6 +67,20 @@
     "proNote": {
       "title": "Pro 方案包含 Trakwyn AI",
       "help": "升級後無需金鑰即可使用 AI，或在下方新增你自己的 API 金鑰免費使用 AI。"
+    },
+    "order": {
+      "title": "由哪個 AI 回答",
+      "help": "AI 功能會依此順序嘗試。某個服務商出錯或額度用盡時，由下一個接手。清單以外的服務商絕不會被使用。",
+      "trakwynNote": "包含於 Pro。會消耗每月額度，你的訊息會傳送給 Trakwyn 的 AI 服務商。",
+      "keyNote": "使用你的 {{provider}} 金鑰。你的訊息會傳送給 {{provider}}。",
+      "moveUp": "上移 {{name}}",
+      "moveDown": "下移 {{name}}",
+      "remove": "不再使用 {{name}}",
+      "addTitle": "未列入清單",
+      "add": "加入 {{name}}",
+      "onlyOne": "只列出了一個服務商，它出錯時沒有備援。",
+      "empty": "尚未列出任何服務商，AI 功能已關閉。請在下方加入。",
+      "updateFailed": "無法儲存順序。"
     }
   },
   "danger": {

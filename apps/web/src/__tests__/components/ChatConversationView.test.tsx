@@ -76,10 +76,9 @@ describe('ChatConversationView', () => {
       return Promise.resolve({});
     });
 
-    render(
-      <ChatConversationView conversationId="c1" provider={null} onConversationCreated={vi.fn()} />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => expect(screen.getByText('Move Acme to interviewing')).toBeInTheDocument());
     expect(screen.getAllByTestId('chat-proposal')).toHaveLength(2);
@@ -88,14 +87,9 @@ describe('ChatConversationView', () => {
   });
 
   it('shows the empty state and no suggested questions when none are given', async () => {
-    render(
-      <ChatConversationView
-        conversationId={null}
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId={null} onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() =>
       expect(
@@ -137,7 +131,6 @@ describe('ChatConversationView', () => {
     render(
       <ChatConversationView
         conversationId={null}
-        provider="anthropic"
         onConversationCreated={onConversationCreated}
         suggestedQuestions={['What are my active applications?']}
       />,
@@ -159,6 +152,11 @@ describe('ChatConversationView', () => {
       ),
     );
     expect(onConversationCreated).toHaveBeenCalledWith('new-conv');
+    // Which AI answers is the user's provider order, so a new chat is created with no provider (JEF-503).
+    const createCall = mockGqlRequest.mock.calls.find((c) =>
+      documentOf(c[0]).includes('CreateConversation'),
+    );
+    expect(createCall?.[1]).toBeUndefined();
 
     capturedOnDelta?.('Here');
     capturedOnDelta?.(' you go.');
@@ -183,14 +181,9 @@ describe('ChatConversationView', () => {
       return Promise.resolve({});
     });
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => expect(screen.getByText('hi')).toBeInTheDocument());
     expect(screen.getByText('hello!')).toBeInTheDocument();
@@ -198,12 +191,7 @@ describe('ChatConversationView', () => {
 
   it('applies compact spacing when compact is true', async () => {
     const { container } = render(
-      <ChatConversationView
-        conversationId={null}
-        provider={null}
-        onConversationCreated={vi.fn()}
-        compact
-      />,
+      <ChatConversationView conversationId={null} onConversationCreated={vi.fn()} compact />,
       { wrapper: Wrapper },
     );
 
@@ -241,14 +229,9 @@ describe('ChatConversationView', () => {
       },
     );
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     fireEvent.change(screen.getByPlaceholderText('Ask a question…'), { target: { value: 'hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -267,14 +250,9 @@ describe('ChatConversationView', () => {
       });
     });
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     fireEvent.change(screen.getByPlaceholderText('Ask a question…'), {
       target: { value: 'hello' },
@@ -296,14 +274,9 @@ describe('ChatConversationView', () => {
     mockGqlRequest.mockImplementation(() => Promise.resolve({ chatHistory: [] }));
     mockStreamChatMessage.mockRejectedValue(new Error('boom'));
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     fireEvent.change(screen.getByPlaceholderText('Ask a question…'), {
       target: { value: 'hello' },
@@ -321,14 +294,9 @@ describe('ChatConversationView', () => {
       new ChatStreamError('Add your AI API key', 'AI_NOT_CONFIGURED'),
     );
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     fireEvent.change(screen.getByPlaceholderText('Ask a question…'), { target: { value: 'hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -342,14 +310,9 @@ describe('ChatConversationView', () => {
       new ChatStreamError('Too many messages — please wait a moment and try again', 'RATE_LIMITED'),
     );
 
-    render(
-      <ChatConversationView
-        conversationId="conv-1"
-        provider={null}
-        onConversationCreated={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
+    render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+      wrapper: Wrapper,
+    });
 
     fireEvent.change(screen.getByPlaceholderText('Ask a question…'), { target: { value: 'hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -361,7 +324,7 @@ describe('ChatConversationView', () => {
     );
   });
 
-  describe('limit fallback (JEF-258)', () => {
+  describe('provider fallback (JEF-258, JEF-503)', () => {
     const sendAndStream = (
       impl: (params: {
         onDelta: (text: string) => void;
@@ -371,14 +334,9 @@ describe('ChatConversationView', () => {
       mockGqlRequest.mockImplementation(() => Promise.resolve({ chatHistory: [] }));
       mockStreamChatMessage.mockImplementation(impl);
 
-      render(
-        <ChatConversationView
-          conversationId="conv-1"
-          provider={null}
-          onConversationCreated={vi.fn()}
-        />,
-        { wrapper: Wrapper },
-      );
+      render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
 
       fireEvent.change(screen.getByPlaceholderText('Ask a question…'), { target: { value: 'hi' } });
       fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -391,9 +349,18 @@ describe('ChatConversationView', () => {
       });
 
       expect(
-        await screen.findByText(
-          /OpenAI hit its monthly limit — using Anthropic \(Claude\) instead/,
-        ),
+        await screen.findByText(/OpenAI could not answer, so Anthropic \(Claude\) did\./),
+      ).toBeInTheDocument();
+    });
+
+    it('names Trakwyn AI when it is the one that took over, or the one that could not answer', async () => {
+      sendAndStream(async ({ onDelta, onFallback }) => {
+        onFallback?.({ from: 'trakwyn', to: 'openai' });
+        onDelta('Answer.');
+      });
+
+      expect(
+        await screen.findByText(/Trakwyn AI could not answer, so OpenAI did\./),
       ).toBeInTheDocument();
     });
 
@@ -403,7 +370,7 @@ describe('ChatConversationView', () => {
         onDelta('Answer.');
       });
 
-      const link = await screen.findByRole('link', { name: 'Manage limits' });
+      const link = await screen.findByRole('link', { name: 'Manage providers' });
       expect(link).toHaveAttribute('href', '/settings/ai');
     });
 
@@ -415,7 +382,7 @@ describe('ChatConversationView', () => {
       // The streamed text is transient — it clears once the history refetch
       // lands — so the send itself is what marks the turn as done here.
       await waitFor(() => expect(mockStreamChatMessage).toHaveBeenCalled());
-      expect(screen.queryByText(/hit its monthly limit/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/could not answer/)).not.toBeInTheDocument();
     });
   });
 });

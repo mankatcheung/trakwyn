@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 import { captureEvent } from '../../../../lib/analytics';
-import { AiSourceCard } from '../AiSourceCard';
+import { AiCreditsCard } from '../AiCreditsCard';
 import { AiCreditsExhaustedNotice } from '../AiCreditsExhaustedNotice';
 
 const credits = (used: number) => ({
@@ -23,19 +23,7 @@ const credits = (used: number) => ({
   resetsAt: '2026-12-01T00:00:00.000Z',
 });
 
-function card(used: number, onChange = jest.fn()) {
-  return (
-    <AiSourceCard
-      aiSource="auto"
-      aiCredits={credits(used)}
-      pending={false}
-      error={null}
-      onChange={onChange}
-    />
-  );
-}
-
-describe('AI source card and credits', () => {
+describe('AI credits card', () => {
   const push = jest.fn();
   beforeEach(() => {
     jest.mocked(useTheme).mockReturnValue({
@@ -49,27 +37,29 @@ describe('AI source card and credits', () => {
     push.mockClear();
   });
 
-  it('shows the remaining credits as a number and switches source', async () => {
-    const onChange = jest.fn();
-    const { getByTestId, getByText, queryByTestId } = await render(card(18, onChange));
+  it('shows the remaining credits as a number', async () => {
+    const { getByText, queryByTestId } = await render(<AiCreditsCard aiCredits={credits(18)} />);
+
     expect(getByText('12 of 30 left')).toBeTruthy();
     expect(queryByTestId('ai-credits-nearing')).toBeNull();
     expect(queryByTestId('ai-credits-exhausted-notice')).toBeNull();
+  });
 
-    await fireEvent.press(getByTestId('ai-source-option-trakwyn'));
-    expect(onChange).toHaveBeenCalledWith('trakwyn');
-    await fireEvent.press(getByTestId('ai-source-option-auto'));
-    expect(onChange).toHaveBeenCalledTimes(1);
+  it('no longer carries a source picker: the provider order says which AI answers (JEF-503)', async () => {
+    const { queryByTestId } = await render(<AiCreditsCard aiCredits={credits(18)} />);
+
+    expect(queryByTestId('ai-source-option-trakwyn')).toBeNull();
+    expect(queryByTestId('ai-source-option-auto')).toBeNull();
   });
 
   it('warns at 80%', async () => {
-    const { getByTestId } = await render(card(25));
+    const { getByTestId } = await render(<AiCreditsCard aiCredits={credits(25)} />);
     expect(getByTestId('ai-credits-nearing')).toBeTruthy();
   });
 
   it('at 100% offers Upgrade and Add your own key, and reports each', async () => {
     const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
-    const { getByTestId } = await render(card(30));
+    const { getByTestId } = await render(<AiCreditsCard aiCredits={credits(30)} />);
     expect(captureEvent).toHaveBeenCalledWith('ai_credits_exhausted_shown', {
       surface: 'settings',
       reason: 'credits',

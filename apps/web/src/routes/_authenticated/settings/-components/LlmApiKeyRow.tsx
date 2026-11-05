@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { EllipsisVerticalIcon, PencilIcon, StarIcon, Trash2Icon, ZapIcon } from 'lucide-react';
+import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, ZapIcon } from 'lucide-react';
 import { Alert, Button, Input, Menu, type MenuItem } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import {
@@ -18,11 +18,9 @@ const ICON = 16;
 export interface LlmApiKeyRowProps {
   llmApiKey: LlmApiKey;
   usage?: LlmUsageSummary;
-  isDefault: boolean;
   testResult?: TestLlmApiKeyResult;
   busy?: boolean;
   onTest: () => void;
-  onMakeDefault: () => void;
   onRemove: () => void;
   onSaveLimit: (monthlyTokenLimit: number | null) => Promise<void>;
 }
@@ -45,11 +43,9 @@ export interface LlmApiKeyRowProps {
 export function LlmApiKeyRow({
   llmApiKey,
   usage,
-  isDefault,
   testResult,
   busy = false,
   onTest,
-  onMakeDefault,
   onRemove,
   onSaveLimit,
 }: LlmApiKeyRowProps) {
@@ -70,15 +66,6 @@ export function LlmApiKeyRow({
       icon: <PencilIcon size={ICON} />,
     },
     { id: 'test', label: t('integrations.testKey'), icon: <ZapIcon size={ICON} /> },
-    ...(isDefault
-      ? []
-      : [
-          {
-            id: 'default',
-            label: t('integrations.makeDefault'),
-            icon: <StarIcon size={ICON} />,
-          },
-        ]),
     {
       id: 'remove',
       label: t('integrations.remove'),
@@ -91,7 +78,6 @@ export function LlmApiKeyRow({
   const onSelect = (id: string) => {
     if (id === 'limit') setEditing(true);
     else if (id === 'test') onTest();
-    else if (id === 'default') onMakeDefault();
     else if (id === 'remove') onRemove();
   };
 
@@ -116,11 +102,6 @@ export function LlmApiKeyRow({
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {LLM_PROVIDER_LABEL[llmApiKey.provider] ?? llmApiKey.provider}
-              {isDefault && (
-                <span className="ml-2 text-xs font-normal text-green-600">
-                  {t('integrations.default')}
-                </span>
-              )}
               {reached && (
                 <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
                   {t('integrations.limitPaused')}

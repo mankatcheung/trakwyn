@@ -14,6 +14,7 @@ import type { IListLlmApiKeysUseCase } from '#src/use-cases/user/IListLlmApiKeys
 import type { IDeleteLlmApiKeyUseCase } from '#src/use-cases/user/IDeleteLlmApiKeyUseCase.js';
 import type { ISetLlmApiKeyMonthlyLimitUseCase } from '#src/use-cases/user/ISetLlmApiKeyMonthlyLimitUseCase.js';
 import type { ISetAiSourceUseCase } from '#src/use-cases/user/ISetAiSourceUseCase.js';
+import type { ISetAiProviderOrderUseCase } from '#src/use-cases/user/ISetAiProviderOrderUseCase.js';
 import type { ISetDefaultLlmProviderUseCase } from '#src/use-cases/user/ISetDefaultLlmProviderUseCase.js';
 import type { ITestLlmApiKeyUseCase } from '#src/use-cases/user/ITestLlmApiKeyUseCase.js';
 import type { IGetLlmUsageSummaryUseCase } from '#src/use-cases/user/IGetLlmUsageSummaryUseCase.js';
@@ -67,6 +68,9 @@ const makeDeps = (overrides?: object) => ({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   setAiSourceUseCase: stub<ISetAiSourceUseCase>({
+    execute: vi.fn().mockResolvedValue(undefined),
+  }),
+  setAiProviderOrderUseCase: stub<ISetAiProviderOrderUseCase>({
     execute: vi.fn().mockResolvedValue(undefined),
   }),
   setDefaultLlmProviderUseCase: stub<ISetDefaultLlmProviderUseCase>({
@@ -460,6 +464,19 @@ describe('UserResolver', () => {
       expect(deps.setAiSourceUseCase.execute).toHaveBeenCalledWith({
         userId: 'user-1',
         aiSource: 'trakwyn',
+      });
+    });
+  });
+
+  describe('setAiProviderOrder', () => {
+    it('delegates to setAiProviderOrderUseCase with the correct arguments', async () => {
+      const deps = makeDeps();
+
+      await new UserResolver(deps).setAiProviderOrder('user-1', ['anthropic', 'trakwyn']);
+
+      expect(deps.setAiProviderOrderUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-1',
+        order: ['anthropic', 'trakwyn'],
       });
     });
   });

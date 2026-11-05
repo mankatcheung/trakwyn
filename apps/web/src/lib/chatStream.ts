@@ -18,8 +18,10 @@ export interface StreamChatMessageParams {
   /** Called once per incremental chunk of assistant text, in arrival order. */
   onDelta: (text: string) => void;
   /**
-   * The key this turn would have used was paused at its monthly limit and the
-   * user's opt-in fallback picked another (JEF-258). Arrives before any text.
+   * The provider this turn would have used could not answer (a monthly limit, no
+   * credits left, or a failure) and the next one in the user's order did
+   * (JEF-258, JEF-503). `from` and `to` are order entries: `trakwyn` or a key's
+   * provider id. Arrives before any text.
    */
   onFallback?: (fallback: { from: string; to: string }) => void;
   /**

@@ -2,10 +2,8 @@
   "ai": {
     "configuredProviders": "Configured providers",
     "noProvidersYet": "No providers configured yet.",
-    "default": " · Default",
     "limitPaused": "Paused",
     "limitPercentUsed": "{{percent}}% used",
-    "makeDefault": "Make default",
     "delete": "Delete",
     "deleteKeyTitle": "Delete key",
     "deleteKeyMessage": "Remove your {{provider}} key?",
@@ -54,19 +52,9 @@
     "saveInstructions": "Save instructions",
     "customInstructionsUpdated": "Instructions updated.",
     "customInstructionsFailed": "Couldn't update instructions. Try again.",
-    "fallbackWhenLimitedTitle": "Fall back to another provider when limited",
-    "fallbackWhenLimitedHelp": "If your default provider hits its monthly limit, use another configured provider instead of stopping.",
-    "fallbackUpdateFailed": "Couldn't update this setting. Try again.",
     "crossApplicationContextTitle": "Use context from other applications",
     "crossApplicationContextHelp": "Let the AI reference your other job applications when helping with this one.",
     "crossApplicationContextUpdateFailed": "Couldn't update this setting. Try again.",
-    "source": {
-      "title": "AI source",
-      "help": "Auto uses your own key when you have one, otherwise Trakwyn AI.",
-      "auto": "Auto",
-      "trakwyn": "Trakwyn AI",
-      "own": "My own key"
-    },
     "credits": {
       "title": "Trakwyn AI credits",
       "left": "{{left}} of {{total}} left",
@@ -80,6 +68,20 @@
     "proNote": {
       "title": "Trakwyn AI is included with Pro",
       "help": "Upgrade to use AI without a key, or add your own API key below to use AI for free."
+    },
+    "order": {
+      "title": "Which AI answers",
+      "help": "Your AI features try these in order. If one fails or runs out, the next one takes over. Nothing outside this list is ever used.",
+      "trakwynNote": "Included with Pro. Uses your monthly credits, and your messages go to Trakwyn's AI provider.",
+      "keyNote": "Uses your {{provider}} key. Your messages go to {{provider}}.",
+      "moveUp": "Move {{name}} up",
+      "moveDown": "Move {{name}} down",
+      "remove": "Stop using {{name}}",
+      "addTitle": "Not in the list",
+      "add": "Add {{name}}",
+      "onlyOne": "Only one provider is listed, so there is no fallback if it fails.",
+      "empty": "No provider is listed, so AI features are off. Add one below.",
+      "updateFailed": "Could not save the order."
     }
   },
   "danger": {

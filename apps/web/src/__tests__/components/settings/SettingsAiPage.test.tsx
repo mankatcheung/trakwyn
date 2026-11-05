@@ -188,10 +188,10 @@ describe('SettingsAiPage', () => {
     );
   });
 
-  it("shows an existing key's provider and default badge", async () => {
+  it("shows an existing key's provider, without a default badge (JEF-503)", async () => {
     mockGqlRequest.mockResolvedValue({
       llmApiKeys: [{ provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null }],
-      me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
+      me: { aiProviderOrder: ['openrouter'], customAiPrompt: null },
     });
     render(<SettingsAiPage />, { wrapper: Wrapper });
 
@@ -199,7 +199,7 @@ describe('SettingsAiPage', () => {
     // before the list loads, so wait for the loaded row itself.
     const row = await screen.findByTestId('llm-provider-row-openrouter');
     expect(row).toHaveTextContent('OpenRouter');
-    expect(row).toHaveTextContent('Default');
+    expect(row).not.toHaveTextContent('Default');
   });
 
   describe('testing a saved key (JEF-247)', () => {
@@ -687,97 +687,178 @@ describe('SettingsAiPage', () => {
     });
   });
 
-  describe('fallback when a key hits its limit (JEF-258)', () => {
-    const withSetting = (llmFallbackWhenLimited: boolean) =>
+  describe('which AI answers (JEF-503)', () => {
+    const key = (provider: string) => ({
+      provider,
+      model: null,
+      baseUrl: null,
+      monthlyTokenLimit: null,
+    });
+    const withOrder = (
+      order: string[],
+      providers: string[] = ['openai', 'anthropic'],
+      onSave?: () => Promise<unknown>,
+    ) =>
       mockGqlRequest.mockImplementation((document: string) => {
         if (document.includes('query LlmApiKeys')) {
           return Promise.resolve({
-            llmApiKeys: [],
+            llmApiKeys: providers.map(key),
             me: {
-              defaultLlmProvider: null,
+              aiProviderOrder: order,
               customAiPrompt: null,
               useCrossApplicationContext: false,
-              llmFallbackWhenLimited,
             },
           });
         }
+        if (document.includes('setAiProviderOrder') && onSave) return onSave();
         return Promise.resolve({});
       });
 
-    const toggle = () =>
-      screen.findByRole('checkbox', { name: 'Use another key when one hits its limit' });
-
-    it('is off by default', async () => {
-      withSetting(false);
-      render(<SettingsAiPage />, { wrapper: Wrapper });
-
-      expect(await toggle()).not.toBeChecked();
-    });
-
-    it('reflects the saved setting when it is on', async () => {
-      withSetting(true);
-      render(<SettingsAiPage />, { wrapper: Wrapper });
-
-      // The checkbox renders unchecked before the query lands, so the wait
-      // has to be on the state rather than on the element existing.
-      await waitFor(async () => expect(await toggle()).toBeChecked());
-    });
-
-    it('saves the setting when switched on', async () => {
-      const user = userEvent.setup();
-      withSetting(false);
-      render(<SettingsAiPage />, { wrapper: Wrapper });
-
-      await user.click(await toggle());
-
-      await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateProfile'), {
-          llmFallbackWhenLimited: true,
-        });
+    const rowIds = () =>
+      screen.getAllByTestId(/^ai-order-/).map((el) => el.getAttribute('data-testid'));
+    const savedWith = (order: string[]) =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiProviderOrder'), {
+        order,
       });
-    });
 
-    it('explains what opting in costs', async () => {
-      withSetting(false);
+    it('lists the providers in the order they are tried', async () => {
+      withOrder(['anthropic', 'openai']);
       render(<SettingsAiPage />, { wrapper: Wrapper });
 
+      await screen.findByTestId('ai-order-anthropic');
+      expect(rowIds()).toEqual(['ai-order-anthropic', 'ai-order-openai']);
+    });
+
+    it('says where the messages go for each provider', async () => {
+      withOrder(['openai']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByTestId('ai-order-openai')).toHaveTextContent(
+        'Your messages go to OpenAI.',
+      );
+    });
+
+    it('saves the whole list when a provider is moved', async () => {
+      const user = userEvent.setup();
+      withOrder(['openai', 'anthropic']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      await user.click(await screen.findByRole('button', { name: 'Move OpenAI down' }));
+
+      await waitFor(() => savedWith(['anthropic', 'openai']));
+    });
+
+    it('cannot move the first provider up or the last one down', async () => {
+      withOrder(['openai', 'anthropic']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByRole('button', { name: 'Move OpenAI up' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Move Anthropic (Claude) down' })).toBeDisabled();
+    });
+
+    it('takes a provider out of the list', async () => {
+      const user = userEvent.setup();
+      withOrder(['openai', 'anthropic']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Stop using Anthropic (Claude)' }),
+      );
+
+      await waitFor(() => savedWith(['openai']));
+    });
+
+    it('keeps at least one provider, and says there is no fallback when only one is listed', async () => {
+      withOrder(['openai']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      expect(await screen.findByRole('button', { name: 'Stop using OpenAI' })).toBeDisabled();
+      expect(screen.getByText(/no fallback if it fails/)).toBeInTheDocument();
+    });
+
+    it('offers a saved key that is not listed, and adds it at the end', async () => {
+      const user = userEvent.setup();
+      withOrder(['openai']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      await user.click(await screen.findByRole('button', { name: 'Add Anthropic (Claude)' }));
+
+      await waitFor(() => savedWith(['openai', 'anthropic']));
+    });
+
+    it('does not offer a provider that is already listed', async () => {
+      withOrder(['openai', 'anthropic']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      await screen.findByTestId('ai-order-openai');
       expect(
-        await screen.findByText(/spends money on a provider you did not pick/),
-      ).toBeInTheDocument();
+        screen.queryByRole('button', { name: /^Add (OpenAI|Anthropic)/ }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('says so when saving fails, and leaves the list as it was', async () => {
+      const user = userEvent.setup();
+      withOrder(['openai', 'anthropic'], undefined, () => Promise.reject(new Error('boom')));
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      await user.click(await screen.findByRole('button', { name: 'Move OpenAI down' }));
+
+      expect(await screen.findByText('Could not save the order.')).toBeInTheDocument();
+      expect(rowIds()).toEqual(['ai-order-openai', 'ai-order-anthropic']);
+    });
+
+    it('no longer has a default key action or a fall-through checkbox', async () => {
+      const user = userEvent.setup();
+      withOrder(['openai', 'anthropic']);
+      render(<SettingsAiPage />, { wrapper: Wrapper });
+
+      const row = await screen.findByTestId('llm-provider-row-anthropic');
+      await user.click(within(row).getByRole('button', { name: 'Key actions' }));
+
+      expect(screen.queryByRole('menuitem', { name: 'Make default' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('checkbox', { name: /another key when one hits its limit/ }),
+      ).not.toBeInTheDocument();
     });
   });
 });
 
 describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
-  const keysPayload = {
-    llmApiKeys: [],
-    me: { defaultLlmProvider: null, customAiPrompt: null, aiSource: 'auto' },
-  };
+  const payload = (order: string[], providers: string[] = []) => ({
+    llmApiKeys: providers.map((provider) => ({
+      provider,
+      model: null,
+      baseUrl: null,
+      monthlyTokenLimit: null,
+    })),
+    me: { aiProviderOrder: order, customAiPrompt: null },
+  });
   const billing = (limit: number) => ({
     billingStatus: {
       aiCredits: { used: 6, limit, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
     },
   });
+  const serve = (limit: number, keys: ReturnType<typeof payload>) =>
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(query.includes('BillingStatus') ? billing(limit) : keys),
+    );
 
   beforeEach(() => {
     vi.clearAllMocks();
     stubWideViewport();
   });
 
-  it('shows the source picker and credits meter to a plan with credits', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(query.includes('BillingStatus') ? billing(300) : keysPayload),
-    );
+  it('shows the credits meter and Trakwyn AI in the list to a plan with credits', async () => {
+    serve(300, payload(['trakwyn']));
     render(<SettingsAiPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText('294 of 300 AI credits left')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /^Trakwyn AI/ })).toBeInTheDocument();
+    expect(screen.getByTestId('ai-order-trakwyn')).toHaveTextContent('Trakwyn AI');
+    expect(screen.getByTestId('ai-order-trakwyn')).toHaveTextContent('Uses your monthly credits');
   });
 
-  it('tells a Free user Trakwyn AI is Pro, with no picker or meter', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(query.includes('BillingStatus') ? billing(0) : keysPayload),
-    );
+  it('tells a Free user Trakwyn AI is Pro, with no meter and nothing to add', async () => {
+    serve(0, payload([], ['openai']));
     render(<SettingsAiPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/included with Pro/)).toBeInTheDocument();
@@ -785,21 +866,19 @@ describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
       'href',
       '/settings/plan',
     );
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.queryByText(/AI credits left/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Trakwyn AI' })).not.toBeInTheDocument();
   });
 
-  it('saves the chosen source with setAiSource', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(query.includes('BillingStatus') ? billing(300) : keysPayload),
-    );
+  it('adds Trakwyn AI after the keys already listed', async () => {
+    serve(300, payload(['openai'], ['openai']));
     render(<SettingsAiPage />, { wrapper: Wrapper });
 
-    await userEvent.click(await screen.findByRole('radio', { name: /^Trakwyn AI/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add Trakwyn AI' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiSource'), {
-        aiSource: 'trakwyn',
+      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiProviderOrder'), {
+        order: ['openai', 'trakwyn'],
       }),
     );
   });

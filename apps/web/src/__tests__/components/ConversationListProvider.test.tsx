@@ -70,13 +70,14 @@ const conversations = [
   },
 ];
 
-function setup(aiSource: string) {
+/** `order` is the providers AI calls try, first to last (JEF-503). */
+function setup(order: string[]) {
   mockGqlRequest.mockImplementation((arg: unknown) => {
     const query = documentOf(arg);
     if (query.includes('LlmApiKeys'))
       return Promise.resolve({
-        llmApiKeys: [{ provider: 'openai' }],
-        me: { defaultLlmProvider: 'openai', aiSource },
+        llmApiKeys: [{ provider: 'openai' }, { provider: 'anthropic' }],
+        me: { aiProviderOrder: order },
       });
     return Promise.resolve({ conversations });
   });
@@ -98,16 +99,24 @@ describe.each(surfaces)('conversation rows on %s (JEF-503)', (_name, renderSurfa
     mockHostedAi.mockReturnValue(true);
   });
 
-  it.each(['auto', 'own'])('names the stored provider under the %s source', async (aiSource) => {
-    setup(aiSource);
+  it('names the key that leads the order on every row', async () => {
+    setup(['openai']);
     render(renderSurface(), { wrapper: Wrapper });
 
     await waitFor(() => expect(metaOf('Locked to a key')).toContain('· OpenAI'));
-    expect(metaOf('Never named a key')).not.toContain('·');
+    expect(metaOf('Never named a key')).toContain('· OpenAI');
   });
 
-  it('says Trakwyn AI on every row under the Trakwyn AI source, not the stored provider', async () => {
-    setup('trakwyn');
+  it('names the key that leads now, not the one a chat was started on', async () => {
+    setup(['anthropic', 'openai']);
+    render(renderSurface(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(metaOf('Locked to a key')).toContain('· Anthropic (Claude)'));
+    expect(metaOf('Locked to a key')).not.toContain('OpenAI');
+  });
+
+  it('says Trakwyn AI on every row when it leads the order, not the stored provider', async () => {
+    setup(['trakwyn', 'openai']);
     render(renderSurface(), { wrapper: Wrapper });
 
     await waitFor(() => expect(metaOf('Locked to a key')).toContain('· Trakwyn AI'));
@@ -115,9 +124,17 @@ describe.each(surfaces)('conversation rows on %s (JEF-503)', (_name, renderSurfa
     expect(metaOf('Never named a key')).toContain('· Trakwyn AI');
   });
 
-  it('does not flash the stored provider while a Trakwyn AI user’s plan is loading', async () => {
+  it('falls back to the stored provider when the order is empty', async () => {
+    setup([]);
+    render(renderSurface(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(metaOf('Locked to a key')).toContain('· OpenAI'));
+    expect(metaOf('Never named a key')).not.toContain('·');
+  });
+
+  it('does not flash the stored provider while a plan that leads with Trakwyn AI is loading', async () => {
     mockHostedAi.mockReturnValue(null);
-    setup('trakwyn');
+    setup(['trakwyn', 'openai']);
     render(renderSurface(), { wrapper: Wrapper });
 
     await screen.findByText('Locked to a key');

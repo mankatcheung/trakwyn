@@ -77,6 +77,15 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
     // Key tests (`trackUsage: false`) are always about the user's own key.
     const platformOn = !!platform?.isEnabledFor(userId) && trackUsage;
 
+    // The caller has already chosen the path from the user's provider order (JEF-503).
+    if (hints.via === 'platform') {
+      if (!platformOn) return null;
+      const platformUser =
+        hints.user !== undefined ? hints.user : await this.deps.userRepository.findById(userId);
+      return this.resolvePlatform(userId, request, platformUser);
+    }
+    if (hints.via === 'key') return this.resolveOwn(userId, request, hints, hints.user);
+
     const user =
       hints.user !== undefined
         ? hints.user

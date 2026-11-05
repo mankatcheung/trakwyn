@@ -108,6 +108,42 @@ describe('ChatScreen', () => {
     expect(queryByTestId('chat-proposal-confirm-p2')).toBeNull();
   });
 
+  describe('provider fallback (JEF-503)', () => {
+    const sendWith = async (fallback: { from: string; to: string } | null) => {
+      mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
+      mockedStreamChatMessage.mockImplementationOnce(async ({ onFallback }) => {
+        if (fallback) onFallback?.(fallback);
+      });
+      const screen = await renderScreen('conv-1');
+      await fireEvent.changeText(screen.getByTestId('chat-input'), 'Hi');
+      await fireEvent.press(screen.getByTestId('chat-send-button'));
+      await waitFor(() => expect(mockedStreamChatMessage).toHaveBeenCalled());
+      return screen;
+    };
+
+    it('says which provider took over when the first could not answer', async () => {
+      const { findByTestId } = await sendWith({ from: 'openai', to: 'anthropic' });
+
+      expect((await findByTestId('chat-fallback-notice')).props.children).toBe(
+        'OpenAI could not answer, so Anthropic did.',
+      );
+    });
+
+    it('names Trakwyn AI on either side of the switch', async () => {
+      const { findByTestId } = await sendWith({ from: 'trakwyn', to: 'openai' });
+
+      expect((await findByTestId('chat-fallback-notice')).props.children).toBe(
+        'Trakwyn AI could not answer, so OpenAI did.',
+      );
+    });
+
+    it('shows nothing when the first provider answered', async () => {
+      const { queryByTestId } = await sendWith(null);
+
+      expect(queryByTestId('chat-fallback-notice')).toBeNull();
+    });
+  });
+
   it('sends a message and streams the reply', async () => {
     mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
     mockedStreamChatMessage.mockResolvedValueOnce(undefined);
