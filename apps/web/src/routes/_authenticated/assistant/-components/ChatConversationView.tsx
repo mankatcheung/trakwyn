@@ -34,9 +34,12 @@ function tempMessageId(): string {
 interface ChatConversationViewProps {
   /** null means no conversation has been created yet — the first send lazily creates one. */
   conversationId: string | null;
-  /** Provider/model to create the conversation with, if `conversationId` is null. Picking UI lives in the caller. */
+  /**
+   * Provider to create the conversation with, if `conversationId` is null. Not a
+   * choice the user makes in chat (JEF-503): the caller resolves it from their
+   * AI settings, and passes `null` when the API should pick (Trakwyn AI).
+   */
   provider: string | null;
-  model: string;
   /** Called once a conversation is lazily created on first send, so the caller can navigate/pin/etc. */
   onConversationCreated: (id: string) => void;
   /** Shown as clickable chips in the empty state, before any messages exist. Omit for a tighter layout. */
@@ -50,13 +53,12 @@ interface ChatConversationViewProps {
  * floating chat dock widget (JEF-133) — history fetching, optimistic send,
  * the "thinking…" loading state, and AI_NOT_CONFIGURED error handling all
  * live here so the two surfaces can't drift apart. Header chrome (title,
- * delete/new/history actions, minimize/maximize/close) and the
- * provider/model picker are caller-specific and stay outside this component.
+ * delete/new/history actions, minimize/maximize/close) and the line saying
+ * what answers are caller-specific and stay outside this component.
  */
 export function ChatConversationView({
   conversationId,
   provider,
-  model,
   onConversationCreated,
   suggestedQuestions,
   compact = false,
@@ -118,7 +120,7 @@ export function ChatConversationView({
   };
 
   const createConversation = useMutation({
-    mutationFn: (vars: { provider?: string | null; model?: string | null }) =>
+    mutationFn: (vars: { provider?: string | null }) =>
       gqlClient.request<{ createConversation: Conversation }>(CREATE_CONVERSATION, vars),
   });
 
@@ -160,7 +162,6 @@ export function ChatConversationView({
       try {
         created = await createConversation.mutateAsync({
           provider,
-          model: model.trim() || undefined,
         });
       } catch {
         // Shown below with the API's message (a cap reached by a race names its

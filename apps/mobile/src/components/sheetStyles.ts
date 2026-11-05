@@ -4,7 +4,7 @@ import type { ThemeColors } from '../theme/colors';
 /** Shared bottom-sheet chrome (backdrop, sheet card, list rows, cancel
  * button) used by every Modal-based picker/actions sheet across the app —
  * extracted from AiSettingsScreen's original ProviderPicker/ActionsSheet so
- * new sheets (e.g. ConversationProviderPicker) reuse it instead of
+ * new sheets reuse it instead of
  * re-deriving the same values. */
 export function createSheetStyles(colors: ThemeColors) {
   return StyleSheet.create({

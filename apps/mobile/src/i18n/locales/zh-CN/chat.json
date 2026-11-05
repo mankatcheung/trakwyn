@@ -16,8 +16,6 @@
     "empty": "还没有对话记录。",
     "newButtonLabel": "新建对话",
     "newConversation": "新建对话",
-    "pickerTitle": "使用哪个 AI 模型？",
-    "pickerDefault": "默认",
     "noKeysTitle": "尚未设置 AI 模型",
     "noKeysMessage": "请先在 AI 设置中添加 API 密钥，然后再开始对话。",
     "noKeysGoToSettings": "前往设置",
@@ -25,7 +23,6 @@
     "deleteTitle": "删除对话",
     "deleteMessage": "此操作无法撤销。",
     "cancel": "取消",
-    "couldNotDeleteTitle": "无法删除",
-    "pickerTrakwynAi": "Trakwyn AI"
+    "couldNotDeleteTitle": "无法删除"
   }
 }

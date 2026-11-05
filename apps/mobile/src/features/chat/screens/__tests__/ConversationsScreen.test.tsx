@@ -95,23 +95,7 @@ describe('ConversationsScreen', () => {
     expect(push).toHaveBeenCalledWith('./1');
   });
 
-  it('renders a FAB that opens the model picker instead of creating immediately', async () => {
-    mockedUseConversations.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isError: false,
-      error: null,
-    } as never);
-
-    const { getByTestId } = await renderScreen();
-
-    await fireEvent.press(getByTestId('new-conversation-button'));
-
-    expect(getByTestId('conversation-provider-picker-backdrop')).toBeTruthy();
-    expect(getByTestId('conversation-provider-option-openai')).toBeTruthy();
-  });
-
-  it('creates a conversation with the selected provider/model and navigates into it', async () => {
+  it('starts a conversation straight from the FAB, with no picker in between', async () => {
     const push = jest.fn();
     const mutateAsync = jest.fn().mockResolvedValue({ id: 'new-conv' });
     mockedUseConversations.mockReturnValue({
@@ -122,18 +106,70 @@ describe('ConversationsScreen', () => {
     } as never);
     mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
 
-    const { getByTestId } = await renderScreen(push);
+    const { getByTestId, queryByTestId } = await renderScreen(push);
 
     await fireEvent.press(getByTestId('new-conversation-button'));
-    await fireEvent.press(getByTestId('conversation-provider-option-openai'));
 
+    expect(queryByTestId('conversation-provider-picker-backdrop')).toBeNull();
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({ provider: 'openai', model: 'gpt-4o-mini' }),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith('./new-conv'));
   });
 
-  it('redirects to AI settings instead of opening the picker when no keys are saved', async () => {
+  it('creates the conversation with the first key when the default key was deleted', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: 'new-conv' });
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: {
+        keys: [{ provider: 'anthropic', model: 'claude', baseUrl: null, monthlyTokenLimit: null }],
+        defaultProvider: null,
+        aiSource: 'auto',
+        aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+      },
+    } as never);
+    mockedUseConversations.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
+
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('new-conversation-button'));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ provider: 'anthropic', model: 'claude' }),
+    );
+  });
+
+  it('names no provider under the Trakwyn AI source, even with a saved key', async () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: 'new-conv' });
+    mockedUseLlmApiKeys.mockReturnValue({
+      data: {
+        keys: [
+          { provider: 'openai', model: 'gpt-4o-mini', baseUrl: null, monthlyTokenLimit: null },
+        ],
+        defaultProvider: 'openai',
+        aiSource: 'trakwyn',
+        aiCredits: { used: 0, limit: 300, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+      },
+    } as never);
+    mockedUseConversations.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
+
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('new-conversation-button'));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ provider: null, model: null }));
+  });
+
+  it('redirects to AI settings instead of creating a conversation when no keys are saved', async () => {
     const push = jest.fn();
     mockedUseLlmApiKeys.mockReturnValue({
       data: {
@@ -151,11 +187,16 @@ describe('ConversationsScreen', () => {
       error: null,
     } as never);
 
-    const { getByTestId, queryByTestId } = await renderScreen(push);
+    const mutateAsync = jest.fn();
+    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
+    const alert = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+
+    const { getByTestId } = await renderScreen(push);
 
     await fireEvent.press(getByTestId('new-conversation-button'));
 
-    expect(queryByTestId('conversation-provider-picker-backdrop')).toBeNull();
+    expect(alert).toHaveBeenCalled();
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it('does not show a chat composer on the conversation list', async () => {
@@ -202,7 +243,7 @@ describe('ConversationsScreen', () => {
       },
     } as never);
 
-  it('Pro without a key: opens the picker with a Trakwyn AI entry (JEF-451)', async () => {
+  it('Pro without a key: starts a Trakwyn AI conversation straight away (JEF-451)', async () => {
     emptyList();
     keyless({ used: 0, limit: 300, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' });
     const mutateAsync = jest.fn().mockResolvedValue({ id: 'hosted-conv' });
@@ -210,20 +251,22 @@ describe('ConversationsScreen', () => {
 
     const { getByTestId } = await renderScreen();
     await fireEvent.press(getByTestId('new-conversation-button'));
-    await fireEvent.press(getByTestId('conversation-provider-option-trakwyn'));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ provider: null, model: null }));
   });
 
-  it('Free without a key: no Trakwyn AI entry, the old no-keys alert instead', async () => {
+  it('Free without a key: the no-keys alert instead of a conversation', async () => {
     emptyList();
     keyless({ used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' });
     const alert = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
 
-    const { getByTestId, queryByTestId } = await renderScreen();
+    const mutateAsync = jest.fn();
+    mockedUseCreateConversation.mockReturnValue({ mutateAsync } as never);
+
+    const { getByTestId } = await renderScreen();
     await fireEvent.press(getByTestId('new-conversation-button'));
 
     expect(alert).toHaveBeenCalled();
-    expect(queryByTestId('conversation-provider-option-trakwyn')).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

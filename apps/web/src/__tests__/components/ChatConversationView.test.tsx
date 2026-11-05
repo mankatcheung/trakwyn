@@ -77,12 +77,7 @@ describe('ChatConversationView', () => {
     });
 
     render(
-      <ChatConversationView
-        conversationId="c1"
-        provider={null}
-        model=""
-        onConversationCreated={vi.fn()}
-      />,
+      <ChatConversationView conversationId="c1" provider={null} onConversationCreated={vi.fn()} />,
       { wrapper: Wrapper },
     );
 
@@ -97,7 +92,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId={null}
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -144,7 +138,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId={null}
         provider="anthropic"
-        model=""
         onConversationCreated={onConversationCreated}
         suggestedQuestions={['What are my active applications?']}
       />,
@@ -194,7 +187,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -209,7 +201,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId={null}
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
         compact
       />,
@@ -254,7 +245,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -281,7 +271,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -311,7 +300,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -337,7 +325,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -359,7 +346,6 @@ describe('ChatConversationView', () => {
       <ChatConversationView
         conversationId="conv-1"
         provider={null}
-        model=""
         onConversationCreated={vi.fn()}
       />,
       { wrapper: Wrapper },
@@ -389,7 +375,6 @@ describe('ChatConversationView', () => {
         <ChatConversationView
           conversationId="conv-1"
           provider={null}
-          model=""
           onConversationCreated={vi.fn()}
         />,
         { wrapper: Wrapper },

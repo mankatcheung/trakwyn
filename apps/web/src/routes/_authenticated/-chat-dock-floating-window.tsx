@@ -4,15 +4,11 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, Maximize2Icon, XIcon } from 'lucide-react';
-import { gqlClient } from '#/graphql/client';
 import { IconButton } from '@trakwyn/ui';
 import { useChatDock } from '#/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
 import { conversationsQueryOptions } from '#/routes/_authenticated/assistant/-shared';
-import {
-  LLM_API_KEYS_QUERY,
-  type LlmApiKey,
-} from '#/routes/_authenticated/settings/-components/shared';
+import { useChatRunsOn } from '#/routes/_authenticated/assistant/-runsOn';
 import { ChatConversationView } from '#/routes/_authenticated/assistant/-components/ChatConversationView';
 
 /**
@@ -28,16 +24,9 @@ export function ChatDockFloatingWindow() {
   const navigate = useNavigate();
 
   const { data: conversationsData } = useQuery(conversationsQueryOptions);
-  const { data: llmData } = useQuery({
-    queryKey: ['llmApiKeys'],
-    queryFn: () =>
-      gqlClient.request<{ llmApiKeys: LlmApiKey[]; me: { defaultLlmProvider: string | null } }>(
-        LLM_API_KEYS_QUERY,
-      ),
-  });
   const hostedAi = useHostedAiAvailable();
-  const llmApiKeys = llmData?.llmApiKeys ?? [];
-  const defaultProvider = llmData?.me?.defaultLlmProvider ?? llmApiKeys[0]?.provider ?? null;
+  const { settings, newConversationProvider } = useChatRunsOn();
+  const llmApiKeys = settings?.llmApiKeys ?? [];
 
   if (!dock.expanded) return null;
 
@@ -102,8 +91,7 @@ export function ChatDockFloatingWindow() {
       ) : (
         <ChatConversationView
           conversationId={isNew ? null : (dock.expanded as string)}
-          provider={defaultProvider}
-          model=""
+          provider={newConversationProvider}
           onConversationCreated={(id) => dock.promoteNewConversation(id)}
           compact
         />

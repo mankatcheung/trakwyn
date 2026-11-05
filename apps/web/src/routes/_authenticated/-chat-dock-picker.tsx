@@ -3,7 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import { useChatDock } from '#/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
 import { conversationsQueryOptions, timeAgo } from '#/routes/_authenticated/assistant/-shared';
-import { LLM_PROVIDER_LABEL } from '#/routes/_authenticated/settings/-components/shared';
+import { useChatRunsOn } from '#/routes/_authenticated/assistant/-runsOn';
 
 const RECENT_LIMIT = 6;
 
@@ -16,6 +16,7 @@ export function ChatDockConversationPicker({ onSelect }: { onSelect: () => void 
   const { t } = useLocale();
   const dock = useChatDock();
   const { data } = useQuery(conversationsQueryOptions);
+  const { runsOnFor, label } = useChatRunsOn();
   const conversations = (data?.conversations ?? []).slice(0, RECENT_LIMIT);
 
   return (
@@ -53,7 +54,7 @@ export function ChatDockConversationPicker({ onSelect }: { onSelect: () => void 
                 </p>
                 <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                   {timeAgo(c.updatedAt, t)}
-                  {c.llmProvider ? ` · ${LLM_PROVIDER_LABEL[c.llmProvider] ?? c.llmProvider}` : ''}
+                  {label(runsOnFor(c)) ? ` · ${label(runsOnFor(c))}` : ''}
                 </p>
               </button>
             </li>
