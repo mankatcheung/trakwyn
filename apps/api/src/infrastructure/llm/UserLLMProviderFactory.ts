@@ -122,17 +122,19 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       ? effectivePlan(user.plan, user.planExpiresAt, (this.deps.now ?? (() => new Date()))())
       : 'free';
     const tier: AiModelTier = request.tier ?? aiModelTier(plan, feature);
-    const legs = this.deps.platformLlmProviderFactory!.legs(tier).map((leg) => ({
-      providerId: leg.providerId,
-      provider: this.track(leg.provider, {
-        userId,
-        feature,
-        provider: leg.providerId,
-        model: leg.model,
-        source: LLM_USAGE_SOURCE.PLATFORM,
-        tier,
-      }),
-    }));
+    const legs = this.deps
+      .platformLlmProviderFactory!.legs(tier, { userId, feature })
+      .map((leg) => ({
+        providerId: leg.providerId,
+        provider: this.track(leg.provider, {
+          userId,
+          feature,
+          provider: leg.providerId,
+          model: leg.model,
+          source: LLM_USAGE_SOURCE.PLATFORM,
+          tier,
+        }),
+      }));
     const [primary, fallback] = legs;
     if (!primary) throw new AiNotConfiguredError('Hosted AI is not configured');
     const provider = fallback

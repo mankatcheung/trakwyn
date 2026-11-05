@@ -285,6 +285,32 @@ resource "axiom_monitor" "hosted_ai_hourly_cost" {
   notifier_ids     = [axiom_notifier.email.id]
 }
 
+# The price table in the API (`LLM_PRICES.workersai`) is typed in by hand, so a
+# Cloudflare price change would go unnoticed. Each platform response carries
+# Workers AI's own `neurons`; METRICS.LLM_COST_MISMATCH counts calls where the
+# table's estimate and the neurons-based cost differ by more than
+# `WORKERS_AI_BILLING.MISMATCH_TOLERANCE` (JEF-497). direction = under: the
+# table is too low and real spend is higher than the breaker believes.
+resource "axiom_monitor" "hosted_ai_cost_mismatch" {
+  name        = "Hosted AI cost estimate off from Cloudflare's neurons"
+  description = "Platform calls whose price-table estimate and neurons-based cost disagree (METRICS.LLM_COST_MISMATCH). Check LLM_PRICES.workersai against the model pages. direction = under means real spend is higher than the daily breaker counts."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.llm.cost_mismatch`
+    | map increase
+    | align to 1h using sum
+    | group by model, direction using sum
+  MPL
+
+  operator         = "Above"
+  threshold        = var.hosted_ai_cost_mismatch_per_hour
+  range_minutes    = 60
+  interval_minutes = 15
+  notify_by_group  = true
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
 resource "axiom_monitor" "hosted_ai_breaker_open" {
   name        = "Hosted AI breaker open"
   description = "The daily spend breaker refused a hosted AI call (METRICS.HOSTED_AI_BREAKER_OPEN). reason = over_budget: the day's budget is spent, so Trakwyn AI is off until 00:00 UTC. reason = store_error: Redis could not be read and the breaker failed closed."
@@ -396,10 +422,39 @@ resource "axiom_dashboard" "llm_cost" {
           MPL
         }
       },
+      {
+        id   = "estimate-per-model-per-day"
+        name = "Platform cost per model per day, price table (micro-USD)"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.llm.cost_micros`
+            | filter source == "platform"
+            | map increase
+            | align to 1d using sum
+            | group by model using sum
+          MPL
+        }
+      },
+      {
+        id   = "neurons-per-model-per-day"
+        name = "Platform cost per model per day, from Workers AI neurons (micro-USD)"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.llm.neuron_cost_micros`
+            | map increase
+            | align to 1d using sum
+            | group by model using sum
+          MPL
+        }
+      },
     ]
     layout = [
       { i = "cost-per-feature-per-day", x = 0, y = 0, w = 12, h = 8 },
       { i = "cost-per-source-per-day", x = 0, y = 8, w = 12, h = 6 },
+      { i = "estimate-per-model-per-day", x = 0, y = 14, w = 6, h = 6 },
+      { i = "neurons-per-model-per-day", x = 6, y = 14, w = 6, h = 6 },
     ]
   })
 }

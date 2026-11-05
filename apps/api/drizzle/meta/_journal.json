@@ -127,6 +127,13 @@
       "when": 1793889561174,
       "tag": "0017_bitter_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793895318369,
+      "tag": "0018_condemned_hemingway",
+      "breakpoints": true
     }
   ]
 }

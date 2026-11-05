@@ -1,5 +1,6 @@
 import type {
   BreakerOpenReason,
+  CostMismatchDirection,
   DatabasePoolState,
   EmailOutcome,
   EmailTemplate,
@@ -86,6 +87,8 @@ export interface FakeMetrics extends IMetrics {
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
   llmCosts: LlmCostMetric[];
+  llmNeuronCosts: Array<{ model: string | null; feature: string; costMicros: number }>;
+  llmCostMismatches: Array<{ model: string | null; direction: CostMismatchDirection }>;
   breakerOpens: BreakerOpenReason[];
 }
 
@@ -112,6 +115,8 @@ export function makeFakeMetrics(): FakeMetrics {
     llmCalls: [],
     llmTokens: [],
     llmCosts: [],
+    llmNeuronCosts: [],
+    llmCostMismatches: [],
     breakerOpens: [],
     recordCacheHit: () => {
       fake.hits++;
@@ -160,6 +165,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordLlmTokens: (provider, direction, count) => {
       fake.llmTokens.push({ provider, direction, count });
+    },
+    recordLlmNeuronCost: (model, feature, costMicros) => {
+      fake.llmNeuronCosts.push({ model, feature, costMicros });
+    },
+    recordLlmCostMismatch: (model, direction) => {
+      fake.llmCostMismatches.push({ model, direction });
     },
     recordLlmCost: (cost) => {
       fake.llmCosts.push(cost);

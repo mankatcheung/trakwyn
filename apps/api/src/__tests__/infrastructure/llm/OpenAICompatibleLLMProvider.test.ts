@@ -536,4 +536,115 @@ describe('OpenAICompatibleLLMProvider', () => {
       });
     });
   });
+
+  describe('neurons and reasoning output (JEF-497)', () => {
+    const msgs: LLMMessage[] = [{ role: 'user', content: 'hi' }];
+
+    it('keeps the neurons Workers AI reports, and omits them when the response has none', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        jsonResponse({
+          choices: [{ message: { content: 'ok' } }],
+          usage: { prompt_tokens: 10, completion_tokens: 5, neurons: 12.5 },
+        }) as never,
+      );
+      vi.mocked(fetch).mockResolvedValueOnce(
+        jsonResponse({
+          choices: [{ message: { content: 'ok' } }],
+          usage: { prompt_tokens: 10, completion_tokens: 5 },
+        }) as never,
+      );
+      const provider = new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL);
+
+      expect((await provider.complete(msgs)).usage).toMatchObject({ neurons: 12.5 });
+      expect((await provider.complete(msgs)).usage).not.toHaveProperty('neurons');
+    });
+
+    it.each(['reasoning', 'reasoning_content'])(
+      'flags a reply that carries %s text',
+      async (field) => {
+        vi.mocked(fetch).mockResolvedValue(
+          jsonResponse({
+            choices: [{ message: { content: 'ok', [field]: 'let me think' } }],
+            usage: { prompt_tokens: 10, completion_tokens: 5 },
+          }) as never,
+        );
+
+        const { usage } = await new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL).complete(
+          msgs,
+        );
+
+        expect(usage?.reasoningReturned).toBe(true);
+      },
+    );
+
+    it('does not flag a reply with no, null or empty reasoning', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({
+          choices: [{ message: { content: 'ok', reasoning: '', reasoning_content: null } }],
+          usage: { prompt_tokens: 10, completion_tokens: 5 },
+        }) as never,
+      );
+
+      const { usage } = await new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL).complete(msgs);
+
+      expect(usage).not.toHaveProperty('reasoningReturned');
+    });
+
+    it('reads neurons from the final usage chunk and the reasoning flag from earlier deltas when streaming', async () => {
+      const sse = [
+        'data: {"choices":[{"delta":{"reasoning_content":"hmm"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n',
+        'data: {"choices":[],"usage":{"prompt_tokens":3,"completion_tokens":4,"neurons":7}}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+      vi.mocked(fetch).mockResolvedValue(streamResponse(sse) as never);
+
+      const events = await collectStream(
+        new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL),
+        msgs,
+        [],
+      );
+
+      expect(events[events.length - 1]).toMatchObject({
+        type: 'done',
+        usage: { promptTokens: 3, completionTokens: 4, neurons: 7, reasoningReturned: true },
+      });
+    });
+
+    it('leaves the flag off a stream that never carried reasoning text', async () => {
+      const sse = [
+        'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n',
+        'data: {"choices":[],"usage":{"prompt_tokens":3,"completion_tokens":4}}\n\n',
+        'data: [DONE]\n\n',
+      ].join('');
+      vi.mocked(fetch).mockResolvedValue(streamResponse(sse) as never);
+
+      const events = await collectStream(
+        new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL),
+        msgs,
+        [],
+      );
+
+      expect(events[events.length - 1]).toMatchObject({ type: 'done', usage: { promptTokens: 3 } });
+      expect((events[events.length - 1] as { usage: object }).usage).not.toHaveProperty(
+        'reasoningReturned',
+      );
+    });
+
+    it('still returns null usage for a stream that reported none', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        streamResponse(
+          'data: {"choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
+        ) as never,
+      );
+
+      const events = await collectStream(
+        new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL),
+        msgs,
+        [],
+      );
+
+      expect(events[events.length - 1]).toMatchObject({ type: 'done', usage: null });
+    });
+  });
 });

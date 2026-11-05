@@ -69,6 +69,33 @@ describe('DrizzleLlmUsageEventRepository', () => {
       expect(byId).toEqual({ 'evt-r': 0, 'evt-n': null });
     });
 
+    it('persists neurons and reasoningReturned, null when omitted, and keeps a false flag (JEF-497)', async () => {
+      const base = { userId: 'u1', provider: 'workersai', model: null };
+      await repo.record({
+        ...base,
+        id: 'evt-both',
+        promptTokens: 1,
+        completionTokens: 1,
+        neurons: 12.5,
+        reasoningReturned: false,
+      });
+      await repo.record({
+        ...base,
+        id: 'evt-none',
+        promptTokens: 1,
+        completionTokens: 1,
+      });
+
+      const rows = await db.db.select().from(llmUsageEvent);
+      const byId = Object.fromEntries(
+        rows.map((r) => [r.id, { neurons: r.neurons, reasoningReturned: r.reasoningReturned }]),
+      );
+      expect(byId).toEqual({
+        'evt-both': { neurons: 12.5, reasoningReturned: false },
+        'evt-none': { neurons: null, reasoningReturned: null },
+      });
+    });
+
     it('stores cost, feature and source, and leaves them null or byok when omitted (JEF-444)', async () => {
       await repo.record({
         id: 'evt-full',

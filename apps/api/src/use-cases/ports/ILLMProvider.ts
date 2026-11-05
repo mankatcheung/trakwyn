@@ -58,6 +58,13 @@ export interface LLMUsage {
    * provider does not report it.
    */
   reasoningTokens?: number;
+  /** Workers AI's billing unit for the call (JEF-497); absent when the response carried none. */
+  neurons?: number;
+  /**
+   * The response carried reasoning output (`reasoning` or `reasoning_content`),
+   * which Workers AI does not count separately (JEF-497). Set only when seen.
+   */
+  reasoningReturned?: boolean;
 }
 
 export interface LLMCompleteResult {
