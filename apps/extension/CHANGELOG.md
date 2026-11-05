@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.4.1...clipper-v1.5.0) (2026-11-05)
+
+
+### Features
+
+* show Trakwyn AI, credits and upgrade prompts in web, mobile and the Clipper (JEF-451) ([#1209](https://github.com/mankatcheung/trakwyn/issues/1209)) ([047196b](https://github.com/mankatcheung/trakwyn/commit/047196b53b91803204cf472b25a765a8147db859))
+
 ## [1.4.1](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.4.0...clipper-v1.4.1) (2026-11-01)
 
 
