@@ -63,6 +63,12 @@ variable "hosted_ai_failover_per_hour" {
   default     = 20
 }
 
+variable "hosted_ai_cost_mismatch_per_hour" {
+  description = "Alert when more than this many platform calls in an hour have a price-table estimate that differs from Cloudflare's neurons-based cost beyond tolerance (JEF-497). One call can be rounding on a small request; a price change moves every call."
+  type        = number
+  default     = 10
+}
+
 variable "ai_credits_exhausted_per_hour" {
   description = "Alert when more than this many requests are refused with AI_CREDITS_EXHAUSTED in an hour (JEF-449): a spike means a pricing or abuse problem, not one user running out."
   type        = number

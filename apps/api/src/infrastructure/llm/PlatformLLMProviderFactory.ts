@@ -1,11 +1,13 @@
 import { AiNotConfiguredError } from '#src/use-cases/errors/DomainError.js';
 import { ENV, LLM_PROVIDER_MODE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
 import { type AiModelTier } from '#src/use-cases/constants.js';
+import { buildGatewayMetadata } from '#src/infrastructure/llm/gatewayMetadata.js';
 import { isInHostedAiRollout } from '#src/infrastructure/llm/hostedAiRollout.js';
 import { OpenAICompatibleLLMProvider } from '#src/infrastructure/llm/OpenAICompatibleLLMProvider.js';
 import { workersAiReasoningFields } from '#src/infrastructure/llm/workersAiReasoning.js';
 import type {
   IPlatformLLMProviderFactory,
+  PlatformCallContext,
   PlatformLLMLeg,
 } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 
@@ -21,6 +23,10 @@ type Env = Record<string, string | undefined>;
  * OpenAI key and no direct provider call. With `LLM_PROVIDER_MODE=fake` both
  * legs point at this server's own fake completions route and need no
  * credentials.
+ *
+ * Each real gateway call also carries `cf-aig-metadata` (JEF-497): a hash of the
+ * user, the feature and the tier, so gateway analytics can split spend. The
+ * fake route is this server, not the gateway, and gets none.
  */
 export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
   constructor(private readonly deps: { env?: Env } = {}) {}
@@ -44,12 +50,12 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
     );
   }
 
-  legs(tier: AiModelTier): PlatformLLMLeg[] {
+  legs(tier: AiModelTier, context: PlatformCallContext): PlatformLLMLeg[] {
     if (!this.isEnabled()) return [];
-    return PLATFORM_LLM.MODELS[tier].map((model) => this.build(model));
+    return PLATFORM_LLM.MODELS[tier].map((model) => this.build(model, tier, context));
   }
 
-  private build(model: string): PlatformLLMLeg {
+  private build(model: string, tier: AiModelTier, context: PlatformCallContext): PlatformLLMLeg {
     const providerId = PLATFORM_LLM.PROVIDER_ID;
     const reasoningFields = workersAiReasoningFields(model);
 
@@ -77,7 +83,10 @@ export class PlatformLLMProviderFactory implements IPlatformLLMProviderFactory {
       `${PLATFORM_LLM.REST_BASE}/${encodeURIComponent(accountId)}/${PLATFORM_LLM.REST_PATH}`,
       model,
       undefined,
-      { [PLATFORM_LLM.GATEWAY_HEADER]: gatewayId },
+      {
+        [PLATFORM_LLM.GATEWAY_HEADER]: gatewayId,
+        [PLATFORM_LLM.METADATA_HEADER]: buildGatewayMetadata(context, tier),
+      },
       reasoningFields,
     );
     return { providerId, model, provider };

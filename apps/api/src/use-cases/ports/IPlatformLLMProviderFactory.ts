@@ -1,4 +1,4 @@
-import type { AiModelTier } from '#src/use-cases/constants.js';
+import type { AiFeature, AiModelTier } from '#src/use-cases/constants.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 
 /** One provider the platform can call: which, on what model, already built. */
@@ -6,6 +6,12 @@ export interface PlatformLLMLeg {
   providerId: string;
   model: string;
   provider: ILLMProvider;
+}
+
+/** Who a platform call is for and why (JEF-497); the adapter turns it into opaque gateway tags. */
+export interface PlatformCallContext {
+  userId: string;
+  feature: AiFeature;
 }
 
 /**
@@ -24,9 +30,10 @@ export interface IPlatformLLMProviderFactory {
   isEnabledFor(userId: string): boolean;
   /**
    * The primary leg first, then the failover leg when one is configured, each
-   * on the model of `tier` (JEF-448).
+   * on the model of `tier` (JEF-448). `context` becomes the gateway's request
+   * metadata (JEF-497): hashed, never the user id itself.
    * Throws `AiNotConfiguredError` when hosted AI is on but the primary key is
    * missing, so a misconfigured deploy fails on first use and not at boot.
    */
-  legs(tier: AiModelTier): PlatformLLMLeg[];
+  legs(tier: AiModelTier, context: PlatformCallContext): PlatformLLMLeg[];
 }

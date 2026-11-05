@@ -23,6 +23,7 @@ import {
 } from '#src/infrastructure/llm/estimateCostMicros.js';
 import type { IMetrics } from '#src/infrastructure/observability/metrics.js';
 import { estimatePromptTokens } from '#src/use-cases/shared/tokenEstimate.js';
+import { costMismatch, neuronsToMicros } from '#src/infrastructure/llm/neuronCost.js';
 
 interface Deps {
   inner: ILLMProvider;
@@ -110,11 +111,11 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     } finally {
       if (!recorded) {
         if (promptTokens !== null) {
-          await this.record({ promptTokens, completionTokens: 0 });
+          await this.record({ promptTokens, completionTokens: 0 }, { finished: false });
         } else if (started) {
           await this.record(
             { promptTokens: estimatePromptTokens(messages, tools), completionTokens: 0 },
-            { estimated: true },
+            { estimated: true, finished: false },
           );
         }
       }
@@ -123,16 +124,18 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
 
   private async record(
     usage: LLMUsage | null,
-    { estimated = false }: { estimated?: boolean } = {},
+    { estimated = false, finished = true }: { estimated?: boolean; finished?: boolean } = {},
   ): Promise<void> {
     if (!usage) return;
     const { provider, model, feature, source, tier } = this.deps;
     const costMicros = estimateCostMicros(usage, provider, model);
+    const isPlatform = source === LLM_USAGE_SOURCE.PLATFORM;
+    if (isPlatform && finished) this.compareWithNeurons(usage, costMicros);
     if (costMicros === null) {
       warnPriceUnknownOnce(this.deps.logger, provider, model);
     } else {
       this.deps.metrics.recordLlmCost({ provider, model, feature, source, tier, costMicros });
-      if (source === LLM_USAGE_SOURCE.PLATFORM) await this.deps.aiSpendGuard?.record(costMicros);
+      if (isPlatform) await this.deps.aiSpendGuard?.record(costMicros);
     }
     try {
       await this.deps.usageEventRepository.record({
@@ -145,6 +148,10 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         cacheReadTokens: usage.cacheReadTokens ?? null,
         cacheWriteTokens: usage.cacheWriteTokens ?? null,
         reasoningTokens: usage.reasoningTokens ?? null,
+        neurons: usage.neurons ?? null,
+        // Absent on a finished platform call means no thinking text was seen.
+        // An aborted call never saw the whole response, so it says nothing.
+        reasoningReturned: isPlatform && finished ? (usage.reasoningReturned ?? false) : null,
         estimated,
         costMicros,
         feature,
@@ -153,5 +160,28 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     } catch (err) {
       this.deps.logger.error('[llm-usage] failed to record usage event — continuing', err);
     }
+  }
+
+  /**
+   * Sets the neurons-based cost beside the price-table estimate (JEF-497) and
+   * flags a gap, so a Cloudflare price change shows up in Axiom. Both numbers
+   * are kept: neurons only check the estimate, they do not replace it.
+   */
+  private compareWithNeurons(usage: LLMUsage, costMicros: number | null): void {
+    if (typeof usage.neurons !== 'number') return;
+    const { model, feature } = this.deps;
+    const neuronMicros = neuronsToMicros(usage.neurons);
+    this.deps.metrics.recordLlmNeuronCost(model, feature, neuronMicros);
+    if (costMicros === null) return;
+    const direction = costMismatch(costMicros, neuronMicros);
+    if (!direction) return;
+    this.deps.metrics.recordLlmCostMismatch(model, direction);
+    this.deps.logger.warn('llm.cost_mismatch', undefined, {
+      model,
+      direction,
+      estimateMicros: costMicros,
+      neuronMicros,
+      neurons: usage.neurons,
+    });
   }
 }

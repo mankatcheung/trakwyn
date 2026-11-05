@@ -69,6 +69,10 @@ export const METRICS = {
   LLM_DURATION: 'trakwyn.llm.duration',
   /** Estimated spend of LLM calls, in micro-USD — attributes: provider, model, feature, source (JEF-444). Unpriced models add nothing. */
   LLM_COST_MICROS: 'trakwyn.llm.cost_micros',
+  /** Cost of platform calls from Workers AI's own neurons, in micro-USD — attributes: model, feature (JEF-497). Chart beside `LLM_COST_MICROS`. */
+  LLM_NEURON_COST_MICROS: 'trakwyn.llm.neuron_cost_micros',
+  /** A platform call whose neurons-based cost and price-table estimate disagree beyond tolerance — attributes: model, direction (JEF-497). */
+  LLM_COST_MISMATCH: 'trakwyn.llm.cost_mismatch',
 } as const;
 
 /** Which Redis-backed subsystem a resilience event came from. */
@@ -136,6 +140,9 @@ export type LlmCallOutcome = 'success' | 'error' | 'aborted';
 
 /** Which side of a call a token count is for. The cache directions break `input` down, as `LLMUsage` does. */
 export type LlmTokenDirection = 'input' | 'output' | 'cache_read' | 'cache_write';
+
+/** Which way the price-table estimate missed the neurons-based cost (JEF-497). */
+export type CostMismatchDirection = 'over' | 'under';
 
 /** The cost of one priced LLM call, as `recordLlmCost` receives it (JEF-444). Bounded labels and a number, no content. */
 export interface LlmCostMetric {
@@ -212,6 +219,10 @@ export interface IMetrics {
   /** Tokens one LLM call used in one direction (JEF-113). */
   recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void;
   recordLlmCost(cost: LlmCostMetric): void;
+  /** What Workers AI's neurons say a platform call cost (JEF-497). */
+  recordLlmNeuronCost(model: string | null, feature: string, costMicros: number): void;
+  /** The estimate is `over` or `under` the neurons-based cost beyond tolerance (JEF-497). */
+  recordLlmCostMismatch(model: string | null, direction: CostMismatchDirection): void;
   /** The daily spend breaker refused a hosted AI call (JEF-449). */
   recordHostedAiBreakerOpen(reason: BreakerOpenReason): void;
 }
@@ -235,6 +246,8 @@ export const noopMetrics: IMetrics = {
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
   recordLlmCost: () => {},
+  recordLlmNeuronCost: () => {},
+  recordLlmCostMismatch: () => {},
   recordHostedAiBreakerOpen: () => {},
 };
 
@@ -266,6 +279,8 @@ class OtelMetrics implements IMetrics {
   private llmCalls?: Counter;
   private llmTokens?: Counter;
   private llmCost?: Counter;
+  private llmNeuronCost?: Counter;
+  private llmCostMismatch?: Counter;
   private hostedAiBreakerOpen?: Counter;
   private llmDuration?: Histogram;
 
@@ -435,6 +450,21 @@ class OtelMetrics implements IMetrics {
       source,
       tier: tier ?? 'none',
     });
+  }
+
+  recordLlmNeuronCost(model: string | null, feature: string, costMicros: number): void {
+    this.llmNeuronCost ??= this.meter.createCounter(METRICS.LLM_NEURON_COST_MICROS, {
+      description: "Cost of platform LLM calls from Workers AI's neurons, in micro-USD",
+    });
+    this.llmNeuronCost.add(costMicros, { model: model ?? 'unknown', feature });
+  }
+
+  recordLlmCostMismatch(model: string | null, direction: CostMismatchDirection): void {
+    this.llmCostMismatch ??= this.meter.createCounter(METRICS.LLM_COST_MISMATCH, {
+      description:
+        'Platform LLM calls whose price-table estimate and neurons-based cost disagree, by model and direction',
+    });
+    this.llmCostMismatch.add(1, { model: model ?? 'unknown', direction });
   }
 
   recordHostedAiBreakerOpen(reason: BreakerOpenReason): void {

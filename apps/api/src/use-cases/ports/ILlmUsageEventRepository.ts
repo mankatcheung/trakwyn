@@ -13,6 +13,10 @@ export interface RecordLlmUsageEventData {
   cacheWriteTokens?: number | null;
   /** Hidden thinking tokens, part of `completionTokens` (JEF-445); null when not reported. */
   reasoningTokens?: number | null;
+  /** Workers AI neurons for the call (JEF-497); null when not reported or off the platform path. */
+  neurons?: number | null;
+  /** Whether the response carried reasoning output (JEF-497); null off the platform path. */
+  reasoningReturned?: boolean | null;
   /** True when the counts are an estimate (F3); defaults to false. */
   estimated?: boolean;
   /** Micro-USD; null when the model has no listed price (JEF-444). */

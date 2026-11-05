@@ -4,6 +4,7 @@ import {
   integer,
   bigint,
   boolean,
+  doublePrecision,
   timestamp,
   index,
   uniqueIndex,
@@ -76,6 +77,19 @@ export const llmUsageEvent = pgTable(
      * as output (JEF-445). Null when the provider does not report them.
      */
     reasoningTokens: integer('reasoningTokens'),
+    /**
+     * Workers AI's own billing unit for the call (JEF-497), kept beside the
+     * price-table estimate in `costMicros` so a Cloudflare price change shows
+     * up as a gap between them. Null off the platform path and when the
+     * response carried none.
+     */
+    neurons: doublePrecision('neurons'),
+    /**
+     * Whether the response carried reasoning output (JEF-497). Workers AI
+     * reports no reasoning-token count, so this is the only way to check that
+     * "reasoning off" held. Null off the platform path.
+     */
+    reasoningReturned: boolean('reasoningReturned'),
     /**
      * The counts above were not reported by the provider but estimated from
      * the request (F3) — a stream that was aborted before a provider that

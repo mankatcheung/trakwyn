@@ -236,7 +236,10 @@ describe('tier routing (JEF-448)', () => {
 
     const resolution = await limited.resolveForUser('user-1', { feature });
 
-    expect(platformFactory.legs).toHaveBeenCalledWith(tier);
+    expect(platformFactory.legs).toHaveBeenCalledWith(tier, {
+      userId: 'user-1',
+      feature: expect.any(String),
+    });
     expect(resolution).toMatchObject({ tier, plan });
   });
 
@@ -245,7 +248,10 @@ describe('tier routing (JEF-448)', () => {
 
     await inner.resolveForUser('user-1', { feature: AI_FEATURE.RESUME, tier: 'lite' });
 
-    expect(platformFactory.legs).toHaveBeenCalledWith('lite');
+    expect(platformFactory.legs).toHaveBeenCalledWith('lite', {
+      userId: 'user-1',
+      feature: expect.any(String),
+    });
   });
 
   it('reads an expired Pro plan as free', async () => {
@@ -258,7 +264,10 @@ describe('tier routing (JEF-448)', () => {
 
     await inner.resolveForUser('user-1', { feature: AI_FEATURE.RESUME }, { user });
 
-    expect(platformFactory.legs).toHaveBeenCalledWith('lite');
+    expect(platformFactory.legs).toHaveBeenCalledWith('lite', {
+      userId: 'user-1',
+      feature: expect.any(String),
+    });
   });
 
   it('has no tier or plan on an own key', async () => {

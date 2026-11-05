@@ -9,6 +9,10 @@ export type LlmUsageEvent = {
   cacheWriteTokens: number | null;
   /** Of completionTokens, hidden reasoning tokens (JEF-445); null when not reported. */
   reasoningTokens: number | null;
+  /** Workers AI neurons for the call (JEF-497); null when not reported. */
+  neurons: number | null;
+  /** The response carried reasoning output (JEF-497); null off the platform path. */
+  reasoningReturned: boolean | null;
   /** Counts estimated from the request rather than reported by the provider (F3). */
   estimated: boolean;
   /** Micro-USD from the price table; null for an unpriced model or an event from before JEF-444. */

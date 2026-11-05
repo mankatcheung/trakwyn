@@ -66,6 +66,8 @@ describe('UsageTrackingLLMProvider', () => {
         cacheReadTokens: null,
         cacheWriteTokens: null,
         reasoningTokens: null,
+        neurons: null,
+        reasoningReturned: null,
         estimated: false,
         // (10 × 150 000 + 5 × 600 000) / 1 000 000 = 4.5, rounded.
         costMicros: 5,
@@ -289,6 +291,8 @@ describe('UsageTrackingLLMProvider', () => {
         cacheReadTokens: null,
         cacheWriteTokens: null,
         reasoningTokens: null,
+        neurons: null,
+        reasoningReturned: null,
         estimated: false,
         // No model on the key: priced as Anthropic's default, Haiku 4.5.
         costMicros: 60,
@@ -430,6 +434,164 @@ describe('UsageTrackingLLMProvider', () => {
         drain(provider.completeWithToolsStream([{ role: 'user', content: 'hi' }], [])),
       ).rejects.toThrow('401');
       expect(usageEventRepository.record).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('neurons and reasoning output (JEF-497)', () => {
+    const GEMMA = '@cf/google/gemma-4-26b-a4b-it';
+    // 1M prompt + 1M completion tokens on Gemma is 400_000 micro-USD by the price table.
+    const usage = { promptTokens: 1_000_000, completionTokens: 1_000_000 };
+
+    function build(opts: {
+      source: 'platform' | 'byok';
+      usage: object | null;
+      model?: string;
+      metrics?: ReturnType<typeof makeFakeMetrics>;
+      logger?: ReturnType<typeof makeLogger>;
+      stream?: boolean;
+    }) {
+      const repo = makeRepo();
+      const metrics = opts.metrics ?? makeFakeMetrics();
+      const logger = opts.logger ?? makeLogger();
+      const provider = new UsageTrackingLLMProvider({
+        inner: makeInner({
+          complete: vi.fn().mockResolvedValue({ content: 'ok', usage: opts.usage }),
+          completeWithToolsStream: vi.fn(async function* (): AsyncGenerator<LLMStreamEvent> {
+            yield { type: 'text_delta', text: 'partial' };
+            if (!opts.stream) return;
+            yield { type: 'done', content: 'ok', toolCalls: [], usage: opts.usage as never };
+          }),
+        }),
+        usageEventRepository: repo,
+        logger,
+        generateId: () => 'evt',
+        userId: 'user-1',
+        provider: opts.source === 'platform' ? 'workersai' : 'openai',
+        model: opts.model ?? GEMMA,
+        feature: AI_FEATURE.CHAT,
+        source: opts.source,
+        metrics,
+      });
+      return { provider, repo, metrics, logger };
+    }
+
+    const msgs = [{ role: 'user' as const, content: 'hi' }];
+
+    it('stores neurons and reasoningReturned on a platform event', async () => {
+      const { provider, repo } = build({
+        source: 'platform',
+        usage: { ...usage, neurons: 36_000, reasoningReturned: true },
+      });
+
+      await provider.complete(msgs);
+
+      expect(repo.record).toHaveBeenCalledWith(
+        expect.objectContaining({ neurons: 36_000, reasoningReturned: true }),
+      );
+    });
+
+    it('reads a finished platform call with no reasoning text as reasoningReturned = false', async () => {
+      const { provider, repo } = build({ source: 'platform', usage });
+
+      await provider.complete(msgs);
+
+      expect(repo.record).toHaveBeenCalledWith(
+        expect.objectContaining({ neurons: null, reasoningReturned: false }),
+      );
+    });
+
+    it('records no reasoningReturned off the platform path', async () => {
+      const { provider, repo } = build({
+        source: 'byok',
+        model: 'gpt-4o-mini',
+        usage: { promptTokens: 10, completionTokens: 5, reasoningReturned: true },
+      });
+
+      await provider.complete(msgs);
+
+      expect(repo.record).toHaveBeenCalledWith(
+        expect.objectContaining({ reasoningReturned: null, neurons: null }),
+      );
+    });
+
+    it('records no reasoningReturned for a stream cut off before it finished', async () => {
+      const { provider, repo } = build({ source: 'platform', usage: null, stream: false });
+
+      await drain(provider.completeWithToolsStream(msgs, []));
+
+      expect(repo.record).toHaveBeenCalledWith(
+        expect.objectContaining({ estimated: true, reasoningReturned: null }),
+      );
+    });
+
+    it('counts the neurons-based cost and stays quiet when it agrees with the estimate', async () => {
+      // 400_000 micro-USD / 11 per neuron ≈ 36_364 neurons.
+      const { provider, metrics, logger } = build({
+        source: 'platform',
+        usage: { ...usage, neurons: 36_364 },
+      });
+
+      await provider.complete(msgs);
+
+      expect(metrics.llmNeuronCosts).toEqual([
+        { model: GEMMA, feature: 'chat', costMicros: 400_004 },
+      ]);
+      expect(metrics.llmCostMismatches).toEqual([]);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('flags a mismatch, with a direction, when Cloudflare billed far more than the table says', async () => {
+      const { provider, metrics, logger } = build({
+        source: 'platform',
+        usage: { ...usage, neurons: 72_000 },
+      });
+
+      await provider.complete(msgs);
+
+      expect(metrics.llmCostMismatches).toEqual([{ model: GEMMA, direction: 'under' }]);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'llm.cost_mismatch',
+        undefined,
+        expect.objectContaining({ estimateMicros: 400_000, neuronMicros: 792_000 }),
+      );
+    });
+
+    it('flags the other direction when the table is the higher number', async () => {
+      const { provider, metrics } = build({
+        source: 'platform',
+        usage: { ...usage, neurons: 10_000 },
+      });
+
+      await provider.complete(msgs);
+
+      expect(metrics.llmCostMismatches).toEqual([{ model: GEMMA, direction: 'over' }]);
+    });
+
+    it('ignores a gap on a tiny call', async () => {
+      const { provider, metrics } = build({
+        source: 'platform',
+        usage: { promptTokens: 100, completionTokens: 100, neurons: 3 },
+      });
+
+      await provider.complete(msgs);
+
+      expect(metrics.llmCostMismatches).toEqual([]);
+    });
+
+    it('does no neuron accounting for a call with no neurons, or off the platform path', async () => {
+      const platform = build({ source: 'platform', usage });
+      const byok = build({
+        source: 'byok',
+        model: 'gpt-4o-mini',
+        usage: { promptTokens: 10, completionTokens: 5, neurons: 99_999 },
+      });
+
+      await platform.provider.complete(msgs);
+      await byok.provider.complete(msgs);
+
+      expect(platform.metrics.llmNeuronCosts).toEqual([]);
+      expect(byok.metrics.llmNeuronCosts).toEqual([]);
+      expect(byok.metrics.llmCostMismatches).toEqual([]);
     });
   });
 });

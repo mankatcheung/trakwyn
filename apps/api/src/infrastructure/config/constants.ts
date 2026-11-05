@@ -453,8 +453,27 @@ export const PLATFORM_LLM = {
   REST_PATH: 'ai/v1/chat/completions',
   /** Picks which AI Gateway a REST call is routed through. */
   GATEWAY_HEADER: 'cf-aig-gateway-id',
+  /**
+   * Opaque request tags for gateway analytics (JEF-497): a JSON object of at
+   * most five string/number/boolean entries. Never an email or a raw user id.
+   */
+  METADATA_HEADER: 'cf-aig-metadata',
   /** Where the fake provider's `/chat/completions` lives; `ROUTES.LLM_FAKE_COMPLETIONS` is this. */
   FAKE_COMPLETIONS_PATH: '/llm-test/fake/chat/completions',
+} as const;
+
+/**
+ * Workers AI bills in neurons (JEF-497). The estimate in `LLM_PRICES` and the
+ * `neurons` figure a response carries should agree; a gap beyond the tolerance
+ * means a price changed or the table is wrong.
+ */
+export const WORKERS_AI_BILLING = {
+  /** $0.011 per 1,000 neurons is 11 micro-USD each. */
+  MICRO_USD_PER_NEURON: 11,
+  /** Relative gap between the estimate and the neurons-based cost that counts as a mismatch. */
+  MISMATCH_TOLERANCE: 0.25,
+  /** Gaps smaller than this are rounding on a tiny call, not a price change. */
+  MISMATCH_MIN_MICROS: 200,
 } as const;
 
 /**

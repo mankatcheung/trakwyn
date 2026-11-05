@@ -37,12 +37,17 @@ interface OpenAIWireUsage {
   prompt_tokens_details?: { cached_tokens?: number } | null;
   /** OpenAI's hidden reasoning tokens; already counted in completion_tokens. */
   completion_tokens_details?: { reasoning_tokens?: number } | null;
+  /** Workers AI's billing unit for the call (JEF-497); other backends omit it. */
+  neurons?: number | null;
 }
 
 interface OpenAIWireResponse {
   choices: Array<{
     message: {
       content: string | null;
+      /** Reasoning output, under either name a backend uses (JEF-497). */
+      reasoning?: string | null;
+      reasoning_content?: string | null;
       tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
     };
     finish_reason?: string | null;
@@ -50,7 +55,10 @@ interface OpenAIWireResponse {
   usage?: OpenAIWireUsage;
 }
 
-function toLLMUsage(usage: OpenAIWireUsage | null | undefined): LLMUsage | null {
+function toLLMUsage(
+  usage: OpenAIWireUsage | null | undefined,
+  reasoningReturned: boolean,
+): LLMUsage | null {
   if (!usage) return null;
   const cached = usage.prompt_tokens_details?.cached_tokens;
   const reasoning = usage.completion_tokens_details?.reasoning_tokens;
@@ -59,7 +67,20 @@ function toLLMUsage(usage: OpenAIWireUsage | null | undefined): LLMUsage | null 
     completionTokens: usage.completion_tokens,
     ...(typeof cached === 'number' ? { cacheReadTokens: cached } : {}),
     ...(typeof reasoning === 'number' ? { reasoningTokens: reasoning } : {}),
+    ...(typeof usage.neurons === 'number' ? { neurons: usage.neurons } : {}),
+    // Absent unless seen: a backend that never returns thinking text is
+    // indistinguishable from one that cannot, so the platform path reads
+    // absent as `false` (UsageTrackingLLMProvider).
+    ...(reasoningReturned ? { reasoningReturned: true } : {}),
   };
+}
+
+/** A non-empty `reasoning` or `reasoning_content` field: the backend returned thinking text. */
+function hasReasoningText(part: {
+  reasoning?: string | null;
+  reasoning_content?: string | null;
+}): boolean {
+  return Boolean(part.reasoning || part.reasoning_content);
 }
 
 const OPENAI_STREAM_DONE = '[DONE]';
@@ -76,6 +97,8 @@ interface OpenAIStreamChunk {
   choices?: Array<{
     delta?: {
       content?: string | null;
+      reasoning?: string | null;
+      reasoning_content?: string | null;
       tool_calls?: Array<{
         index: number;
         id?: string;
@@ -157,7 +180,10 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
 
     return {
       content: json.choices[0]?.message?.content ?? '',
-      usage: toLLMUsage(json.usage),
+      usage: toLLMUsage(
+        json.usage,
+        json.choices.some((c) => c.message && hasReasoningText(c.message)),
+      ),
       truncated: json.choices[0]?.finish_reason === 'length',
     };
   }
@@ -191,6 +217,8 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     let content = '';
     const toolCalls = new Map<number, { id: string; name: string; arguments: string }>();
     let usage: LLMUsage | null = null;
+    let wireUsage: OpenAIWireUsage | null = null;
+    let reasoningReturned = false;
 
     try {
       for await (const frame of parseSSE(body, onChunk)) {
@@ -199,10 +227,11 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
         const chunk = JSON.parse(frame.data) as OpenAIStreamChunk;
         // The usage-bearing final chunk has empty `choices` — read it
         // independently rather than folding it into the `!delta` guard below.
-        if (chunk.usage) usage = toLLMUsage(chunk.usage);
+        if (chunk.usage) wireUsage = chunk.usage;
 
         const delta = chunk.choices?.[0]?.delta;
         if (!delta) continue;
+        if (hasReasoningText(delta)) reasoningReturned = true;
 
         if (delta.content) {
           content += delta.content;
@@ -221,6 +250,10 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     } finally {
       dispose();
     }
+
+    // The usage chunk arrives after the deltas, so the reasoning flag is only
+    // known once the stream has ended.
+    usage = toLLMUsage(wireUsage, reasoningReturned);
 
     yield {
       type: 'done',
