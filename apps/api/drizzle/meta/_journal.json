@@ -134,6 +134,13 @@
       "when": 1793895318369,
       "tag": "0018_condemned_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793919243726,
+      "tag": "0019_cool_talos",
+      "breakpoints": true
     }
   ]
 }

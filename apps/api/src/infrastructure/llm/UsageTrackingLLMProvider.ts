@@ -34,6 +34,8 @@ interface Deps {
   provider: string;
   model: string | null;
   feature: AiFeature;
+  /** The version of the prompt the call sends (JEF-505); absent when it sends none. */
+  promptVersion?: number;
   source: LlmUsageSource;
   /** The hosted model tier (JEF-448); absent on the user's own key. */
   tier?: AiModelTier;
@@ -155,6 +157,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         estimated,
         costMicros,
         feature,
+        promptVersion: this.deps.promptVersion ?? null,
         source,
       });
     } catch (err) {

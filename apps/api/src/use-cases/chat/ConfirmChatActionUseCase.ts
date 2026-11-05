@@ -4,6 +4,7 @@ import type { IChatActionProposalRepository } from '#src/use-cases/ports/IChatAc
 import type { IChatWriteTools } from '#src/use-cases/ports/IChatWriteTools.js';
 import type { IMessageRepository } from '#src/use-cases/ports/IMessageRepository.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { chatActionNote } from '#src/use-cases/prompts/chat.js';
 import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
@@ -67,11 +68,11 @@ export class ConfirmChatActionUseCase {
       if (err instanceof ConflictError) throw err;
       const message = err instanceof DomainError ? err.message : FAILED_FALLBACK;
       await proposals.resolvePending(existing.id, input.userId, 'failed', now, message);
-      await this.note(existing, `User confirmed "${existing.summary}" but it failed: ${message}`);
+      await this.note(existing, chatActionNote.failed(existing.summary, message));
       throw err;
     }
 
-    await this.note(applied, `User confirmed: ${applied.summary}`);
+    await this.note(applied, chatActionNote.confirmed(applied.summary));
     return { proposal: applied };
   }
 

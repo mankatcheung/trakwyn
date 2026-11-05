@@ -133,6 +133,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           model: leg.model,
           source: LLM_USAGE_SOURCE.PLATFORM,
           tier,
+          promptVersion: request.promptVersion,
         }),
       }));
     const [primary, fallback] = legs;
@@ -207,6 +208,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       provider: resolvedProvider,
       model: resolvedModel,
       source: LLM_USAGE_SOURCE.BYOK,
+      promptVersion: request.promptVersion,
     });
     return {
       provider: tracked,
@@ -229,6 +231,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       model: string | null;
       source: LlmUsageSource;
       tier?: AiModelTier;
+      promptVersion?: number;
     },
   ): ILLMProvider {
     const measured = this.deps.traceLlmCalls
@@ -238,6 +241,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           provider: ctx.provider,
           model: ctx.model,
           tier: ctx.tier,
+          promptVersion: ctx.promptVersion,
         })
       : raw;
     return new UsageTrackingLLMProvider({

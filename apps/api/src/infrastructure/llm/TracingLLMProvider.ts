@@ -47,6 +47,7 @@ export const LLM_SPAN = {
   CACHE_WRITE_TOKENS: 'app.llm.cache_write_tokens',
   REASONING_TOKENS: 'app.llm.reasoning_tokens',
   TIER: 'app.llm.tier',
+  PROMPT_VERSION: 'app.llm.prompt_version',
   ESTIMATED: 'app.llm.estimated',
   TIME_TO_FIRST_TOKEN_MS: 'app.llm.time_to_first_token_ms',
   OUTCOME: 'app.llm.outcome',
@@ -65,6 +66,8 @@ interface Deps {
   model: string | null;
   /** The hosted model tier (JEF-448); absent on the user's own key. */
   tier?: AiModelTier;
+  /** The version of the prompt the call sends (JEF-505); absent when it sends none. */
+  promptVersion?: number;
   /** Monotonic clock in ms; injectable so tests can assert on exact durations. */
   now?: () => number;
 }
@@ -197,6 +200,9 @@ export class TracingLLMProvider implements ILLMProvider {
           [LLM_SPAN.PROVIDER]: this.deps.provider,
           ...(this.deps.model ? { [LLM_SPAN.MODEL]: this.deps.model } : {}),
           ...(this.deps.tier ? { [LLM_SPAN.TIER]: this.deps.tier } : {}),
+          ...(this.deps.promptVersion !== undefined
+            ? { [LLM_SPAN.PROMPT_VERSION]: this.deps.promptVersion }
+            : {}),
         },
       });
     return new LlmCall(span, operation, this.deps, this.now);

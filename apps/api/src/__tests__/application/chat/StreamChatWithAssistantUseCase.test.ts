@@ -3,6 +3,7 @@ import { CHAT_TOOLS, toLlmToolDefinitions } from '#src/interface-adapters/llm/to
 import { StreamChatWithAssistantUseCase } from '#src/use-cases/chat/StreamChatWithAssistantUseCase.js';
 import { CHAT, AI_FEATURE } from '#src/use-cases/constants.js';
 import { NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import { chatPrompt } from '#src/use-cases/prompts/chat.js';
 import {
   makeConversation,
   makeChatActionProposalRepository,
@@ -841,7 +842,12 @@ describe('StreamChatWithAssistantUseCase', () => {
         message: 'hi',
       });
 
-      expect(resolveForUser).toHaveBeenCalledWith('user-1', { feature: AI_FEATURE.CHAT });
+      // No provider and no model: the order decides. The only other thing the
+      // call says is which version of the chat prompt it sends (JEF-505).
+      expect(resolveForUser).toHaveBeenCalledWith('user-1', {
+        feature: AI_FEATURE.CHAT,
+        promptVersion: chatPrompt.version,
+      });
     });
 
     it('says which entry took over when one was skipped before the call', async () => {

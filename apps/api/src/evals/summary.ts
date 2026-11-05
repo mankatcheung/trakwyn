@@ -55,6 +55,11 @@ function featureColumn(summary: RunSummary): string {
     .join(', ');
 }
 
+/** The distinct `id@version` of the prompts a target's cases ran against (JEF-505). */
+function promptColumn(results: CaseResult[]): string {
+  return [...new Set(results.map((result) => result.prompt))].sort().join(', ');
+}
+
 /** A table with a row per target, then each failing case and why it failed. */
 export function formatReport(runs: TargetRun[]): string {
   const rows = runs.map(({ label, results }) => {
@@ -64,11 +69,20 @@ export function formatReport(runs: TargetRun[]): string {
       `${summary.passed}/${summary.total} (${percent(summary.passRate)})`,
       percent(summary.schemaValidRate),
       featureColumn(summary),
+      promptColumn(results),
       `${summary.promptTokens}/${summary.completionTokens}`,
       `${Math.round(summary.meanLatencyMs)} ms`,
     ];
   });
-  const header = ['Target', 'Passed', 'Schema', 'By feature', 'Tokens in/out', 'Mean latency'];
+  const header = [
+    'Target',
+    'Passed',
+    'Schema',
+    'By feature',
+    'Prompts',
+    'Tokens in/out',
+    'Mean latency',
+  ];
   const widths = header.map((title, column) =>
     Math.max(title.length, ...rows.map((row) => (row[column] as string).length)),
   );

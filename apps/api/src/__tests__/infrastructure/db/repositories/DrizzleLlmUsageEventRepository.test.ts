@@ -96,6 +96,16 @@ describe('DrizzleLlmUsageEventRepository', () => {
       });
     });
 
+    it('stores the prompt version, null when the call sent no versioned prompt (JEF-505)', async () => {
+      const base = { userId: 'u1', provider: 'openai', model: null, promptTokens: 1 };
+      await repo.record({ ...base, id: 'evt-v', completionTokens: 1, promptVersion: 3 });
+      await repo.record({ ...base, id: 'evt-n', completionTokens: 1 });
+
+      const rows = await db.db.select().from(llmUsageEvent);
+      const byId = Object.fromEntries(rows.map((r) => [r.id, r.promptVersion]));
+      expect(byId).toEqual({ 'evt-v': 3, 'evt-n': null });
+    });
+
     it('stores cost, feature and source, and leaves them null or byok when omitted (JEF-444)', async () => {
       await repo.record({
         id: 'evt-full',

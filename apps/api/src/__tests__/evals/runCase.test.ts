@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runCase } from '#src/evals/runCase.js';
 import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescription.js';
+import { resumeMatchPrompt } from '#src/use-cases/prompts/resumeMatch.js';
 import type { EvalCase } from '#src/evals/types.js';
 import { makeLLMProvider } from '#src/__tests__/helpers/mocks/llm.js';
 
@@ -36,6 +38,20 @@ describe('runCase', () => {
       promptTokens: 12,
       completionTokens: 5,
     });
+  });
+
+  it('records the prompt and version the case ran against (JEF-505)', async () => {
+    const job = await runCase(
+      evalCase(async () => []),
+      makeLLMProvider(),
+    );
+    const match = await runCase(
+      { ...evalCase(async () => []), feature: 'resumeMatch' },
+      makeLLMProvider(),
+    );
+
+    expect(job.prompt).toBe(`parseJobDescription@${parseJobDescriptionPrompt.version}`);
+    expect(match.prompt).toBe(`resumeMatch@${resumeMatchPrompt.version}`);
   });
 
   it('fails with the case’s own reasons', async () => {

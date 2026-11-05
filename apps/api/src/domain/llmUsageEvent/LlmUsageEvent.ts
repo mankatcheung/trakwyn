@@ -19,6 +19,8 @@ export type LlmUsageEvent = {
   costMicros: number | null;
   /** The `AiFeature` that made the call; null for events from before JEF-444. */
   feature: string | null;
+  /** The version of the prompt the call sent (JEF-505); null for events from before it. */
+  promptVersion: number | null;
   /** `LlmUsageSource`: `byok` is the user's own key. */
   source: string;
   createdAt: Date;

@@ -1,4 +1,5 @@
 import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import { promptRefOf } from '#src/evals/promptRef.js';
 import { meterProvider } from '#src/evals/usageMeter.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { CaseResult, EvalCase } from '#src/evals/types.js';
@@ -29,6 +30,7 @@ export async function runCase(evalCase: EvalCase, provider: ILLMProvider): Promi
   return {
     caseId: evalCase.id,
     feature: evalCase.feature,
+    prompt: promptRefOf(evalCase.feature),
     passed: failures.length === 0,
     schemaValid,
     failures,

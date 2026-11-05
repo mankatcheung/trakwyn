@@ -106,6 +106,12 @@ export const llmUsageEvent = pgTable(
     costMicros: bigint('costMicros', { mode: 'number' }),
     /** The `AiFeature` that made the call; null for events recorded before JEF-444. */
     feature: text('feature'),
+    /**
+     * The `version` of the prompt the call sent (JEF-505), so cost and output
+     * quality can be compared across wording changes. Null for events recorded
+     * before the column existed and for calls that send no versioned prompt.
+     */
+    promptVersion: integer('promptVersion'),
     /** Who paid: `byok` is the user's own key. See `LLM_USAGE_SOURCE`. */
     source: text('source').notNull().default('byok'),
     createdAt: timestamp('createdAt', TIMESTAMP)

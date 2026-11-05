@@ -24,6 +24,8 @@ export interface EvalCase {
 export interface CaseResult {
   caseId: string;
   feature: EvalFeature;
+  /** The prompt and version the case ran against, as `id@version` (JEF-505). */
+  prompt: string;
   passed: boolean;
   /** False only when the reply could not be read as the JSON the prompt asks for. */
   schemaValid: boolean;
