@@ -1,5 +1,8 @@
 import { CACHE } from '#src/infrastructure/config/constants.js';
-import { CircuitBreaker, CircuitBreakerOpenError } from './CircuitBreaker.js';
+import {
+  CircuitBreaker,
+  CircuitBreakerOpenError,
+} from '#src/infrastructure/resilience/CircuitBreaker.js';
 import type { ICache } from './ICache.js';
 import type { IRedisClient } from './IRedisClient.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';

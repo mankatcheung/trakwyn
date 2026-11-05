@@ -38,6 +38,15 @@ describe('FailoverLLMProvider', () => {
       expect(onFailover).toHaveBeenCalledTimes(1);
     });
 
+    it('retries on the fallback when the primary timed out or dropped the connection (JEF-504)', async () => {
+      const provider = new FailoverLLMProvider(
+        failing(new LlmProviderError('unreachable', { provider: 'workersai' })),
+        makeLLMProvider('fb'),
+      );
+
+      expect((await provider.complete([])).content).toBe('fb');
+    });
+
     it('retries on the fallback when the primary is rate limited', async () => {
       const provider = new FailoverLLMProvider(
         failing(new LlmProviderError('rate_limited', { status: 429 })),

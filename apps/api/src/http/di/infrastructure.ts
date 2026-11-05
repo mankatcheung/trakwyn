@@ -44,6 +44,7 @@ import { LlmApiKeyCipher } from '#src/infrastructure/llm/LlmApiKeyCipher.js';
 import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
 import { PlatformLLMProviderFactory } from '#src/infrastructure/llm/PlatformLLMProviderFactory.js';
 import { UserLLMProviderFactory } from '#src/infrastructure/llm/UserLLMProviderFactory.js';
+import { HostedAiCircuits } from '#src/infrastructure/llm/HostedAiCircuits.js';
 import { isObservabilityEnabled } from '#src/infrastructure/observability/tracing.js';
 import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { EntitlementService } from '#src/use-cases/plans/EntitlementService.js';
@@ -200,6 +201,13 @@ export const infrastructure = {
     },
     { lifetime: Lifetime.SINGLETON },
   ),
+  // One health circuit per hosted model (JEF-504). A singleton because the
+  // platform factory below builds fresh providers on every call and cannot hold
+  // state; process-local, like the Redis breaker. Not the spend guard above.
+  hostedAiCircuits: asFunction(
+    ({ logger }: Cradle) => new HostedAiCircuits({ logger, metrics: otelMetrics }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
   // asFunction so a missing platform key fails on first use, not at boot
   // (JEF-446); it reads its env on every call.
   platformLlmProviderFactory: asFunction(() => new PlatformLLMProviderFactory(), {
@@ -219,6 +227,7 @@ export const infrastructure = {
       logger,
       platformLlmProviderFactory,
       aiSpendGuard,
+      hostedAiCircuits,
       now,
     }: Cradle) =>
       new UserLLMProviderFactory({
@@ -233,6 +242,7 @@ export const infrastructure = {
         metrics: otelMetrics,
         platformLlmProviderFactory,
         aiSpendGuard,
+        hostedAiCircuits,
         now,
       }),
     { lifetime: Lifetime.SINGLETON },

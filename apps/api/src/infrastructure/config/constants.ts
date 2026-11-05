@@ -440,6 +440,28 @@ export const LLM_PROVIDER_MODE = {
  * Each tier lists its primary model first and its failover second: a 429 or
  * 5xx on the first retries once on the other, through the same gateway.
  */
+/**
+ * The default `CircuitBreaker` shape (JEF-159, JEF-504): consecutive failures
+ * before short-circuiting further calls, and how long to wait before letting one
+ * trial call through to check whether the dependency has recovered. Redis uses
+ * these as they are; hosted AI sets its own in `HOSTED_AI_CIRCUIT`.
+ */
+export const CIRCUIT_BREAKER = {
+  FAILURE_THRESHOLD: 5,
+  COOLDOWN_MS: 30_000,
+} as const;
+
+/**
+ * One circuit per hosted model (JEF-504). Lower than the default: a hosted call
+ * can wait the full request timeout before it fails, so three in a row is
+ * already half a minute of users waiting. This tracks health; the daily spend
+ * breaker (`HOSTED_AI_SPEND`, JEF-449) is a separate budget guard.
+ */
+export const HOSTED_AI_CIRCUIT = {
+  FAILURE_THRESHOLD: 3,
+  COOLDOWN_MS: 30_000,
+} as const;
+
 export const PLATFORM_LLM = {
   /** The provider id recorded on `LlmUsageEvent` and the metrics. */
   PROVIDER_ID: 'workersai',
@@ -556,11 +578,6 @@ export const CACHE = {
   STAMPEDE_LOCK_TTL_MS: 10_000,
   STAMPEDE_POLL_INTERVAL_MS: 50,
   STAMPEDE_MAX_POLL_ATTEMPTS: 20, // ~1s of waiting
-  // Circuit breaker (RedisCache): consecutive failures before short-circuiting
-  // further calls, and how long to wait before letting one trial call through
-  // to check whether Redis has recovered.
-  CIRCUIT_FAILURE_THRESHOLD: 5,
-  CIRCUIT_COOLDOWN_MS: 30_000,
   // Bearer credentials are cached far more briefly than the 5-minute default.
   // A cached row carries its own revokedAt, so revocation is only dangerous in
   // the gap between the DB write and the cache delete — this is the ceiling on

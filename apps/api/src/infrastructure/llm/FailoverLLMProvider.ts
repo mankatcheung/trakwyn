@@ -9,8 +9,12 @@ import type {
   LLMToolDefinition,
 } from '#src/use-cases/ports/ILLMProvider.js';
 
-/** Kinds worth a second provider: the first one is busy or down, not wrong. */
-const FAILOVER_KINDS: ReadonlySet<string> = new Set(['rate_limited', 'unavailable']);
+/**
+ * Kinds worth a second provider: the first one is busy or down, not wrong.
+ * `unreachable` (a timeout or a dropped connection, JEF-504) is down too, and
+ * the second model is a different deployment, so it may well answer.
+ */
+const FAILOVER_KINDS: ReadonlySet<string> = new Set(['rate_limited', 'unavailable', 'unreachable']);
 
 function shouldFailOver(err: unknown): boolean {
   return err instanceof LlmProviderError && FAILOVER_KINDS.has(err.kind);
