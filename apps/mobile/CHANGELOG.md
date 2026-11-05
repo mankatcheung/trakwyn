@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.5.0...mobile-v0.6.0) (2026-11-05)
+
+
+### Features
+
+* **api,web,mobile:** choose which AI answers with one ordered provider list (JEF-503) ([#1224](https://github.com/mankatcheung/trakwyn/issues/1224)) ([d314bfa](https://github.com/mankatcheung/trakwyn/commit/d314bfae563ee21024ba881fa99834d858b97eb7))
+* show remaining quota at create affordances on web and mobile (JEF-494) ([#1199](https://github.com/mankatcheung/trakwyn/issues/1199)) ([a05e9c9](https://github.com/mankatcheung/trakwyn/commit/a05e9c9f5dee845083e3bdefc9346b521b524c8b))
+* show Trakwyn AI, credits and upgrade prompts in web, mobile and the Clipper (JEF-451) ([#1209](https://github.com/mankatcheung/trakwyn/issues/1209)) ([047196b](https://github.com/mankatcheung/trakwyn/commit/047196b53b91803204cf472b25a765a8147db859))
+
+
+### Bug Fixes
+
+* **web,mobile:** drop the per-chat provider picker and say what actually answers (JEF-503) ([#1223](https://github.com/mankatcheung/trakwyn/issues/1223)) ([bbb6c30](https://github.com/mankatcheung/trakwyn/commit/bbb6c3058ae97ed394a843292dd82ba641e04bf2))
+
 ## [0.5.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.4.0...mobile-v0.5.0) (2026-11-01)
 
 
