@@ -39,22 +39,36 @@ function RowShell({
 
   const render = (chip: ReactNode, modals: ReactNode) => (
     <li className="border-b border-gray-200 last:border-b-0 dark:border-gray-700">
-      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 px-4 py-3.5">
+      {/*
+        JEF-510: a grid, so the menu is always the top-right cell. Below `sm` the chips take their
+        own left-aligned line under the text; from `sm` they sit before the menu on the first line.
+      */}
+      <div
+        className={`grid items-center gap-x-3.5 gap-y-2 px-4 py-3.5 ${
+          chip
+            ? 'grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]'
+            : 'grid-cols-[auto_minmax(0,1fr)_auto]'
+        }`}
+      >
         <div
           aria-hidden="true"
           className={`flex size-11 shrink-0 items-center justify-center rounded-[10px] ${tileClass}`}
         >
           {tile}
         </div>
-        <div className="flex min-w-48 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2">
             {title}
             {badges}
           </div>
           <span className="text-sm text-gray-600 dark:text-gray-400">{meta}</span>
         </div>
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          {chip}
+        {chip && (
+          <div className="col-span-2 col-start-2 row-start-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:col-start-3 sm:row-start-1">
+            {chip}
+          </div>
+        )}
+        <div className={`col-start-3 row-start-1 ${chip ? 'sm:col-start-4' : ''}`}>
           <Menu
             label={t('documents.moreActions')}
             items={menuItems}
@@ -120,6 +134,7 @@ export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRow
         <Link
           to="/applications/$applicationId/documents/$draftId"
           params={editParams}
+          title={draft.title}
           className="truncate text-[15px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
         >
           {draft.title}
@@ -192,6 +207,7 @@ export function FileRow({
         <button
           type="button"
           onClick={open}
+          title={document.name}
           className="min-w-0 truncate text-left text-[15px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
         >
           {document.name}

@@ -220,21 +220,24 @@ describe('ResumeMatch', () => {
     expect(screen.getByRole('button', { name: /generate match/i })).toBeEnabled();
   });
 
-  describe('credit cost (JEF-507)', () => {
-    it('shows what a match costs beside the button on Trakwyn AI', async () => {
+  describe('credit cost (JEF-507, JEF-510)', () => {
+    it('keeps what a match costs in the button’s tooltip and name, not as row text', async () => {
       credits.onTrakwynAi = true;
       mockApi({});
       renderPanel({ documentDraftId: 'draft-1' });
 
-      await chipName(/generate match/i);
-      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+      const button = await chipName(/generate match/i);
+      expect(button).toHaveAttribute('title', 'Uses 1 credit');
+      expect(button).toHaveAccessibleName('Generate match · Uses 1 credit');
+      expect(screen.queryByText('Uses 1 credit')).not.toBeInTheDocument();
     });
 
-    it('shows nothing with the user’s own key', async () => {
+    it('adds nothing with the user’s own key', async () => {
       mockApi({});
       renderPanel({ documentDraftId: 'draft-1' });
 
-      await chipName(/generate match/i);
+      const button = await chipName(/generate match/i);
+      expect(button).not.toHaveAttribute('title');
       expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
     });
   });
