@@ -99,10 +99,10 @@ export function RootNavigator() {
 
   return (
     <Stack>
-      <Stack.Protected guard={isAuthenticated}>
+      <Stack.Protected guard={isAuthenticated} redirectTo="/login">
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={!isAuthenticated}>
+      <Stack.Protected guard={!isAuthenticated} redirectTo="/(tabs)/(home)">
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
