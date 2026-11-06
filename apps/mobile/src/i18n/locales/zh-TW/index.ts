@@ -9,6 +9,7 @@ import dashboard from './dashboard.json';
 import analytics from './analytics.json';
 import calendar from './calendar.json';
 import chat from './chat.json';
+import ai from './ai.json';
 import documents from './documents.json';
 import notes from './notes.json';
 import interviews from './interviews.json';
@@ -30,6 +31,7 @@ export default {
   analytics,
   calendar,
   chat,
+  ai,
   documents,
   notes,
   interviews,

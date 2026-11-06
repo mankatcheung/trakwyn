@@ -97,6 +97,7 @@
   "companyBriefing": {
     "description": "Generate an AI research briefing on this company: culture, recent news, and interview tips.",
     "generateBriefing": "Generate briefing",
+    "promptPlaceholder": "e.g. focus on remote culture and funding stability",
     "regenerate": "Regenerate",
     "regenerateConfirmTitle": "Regenerate briefing",
     "regenerateConfirm": "This will replace the current briefing. This cannot be undone.",

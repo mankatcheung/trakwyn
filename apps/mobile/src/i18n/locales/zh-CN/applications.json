@@ -97,6 +97,7 @@
   "companyBriefing": {
     "description": "生成关于该公司的 AI 调研简报：企业文化、近期新闻和面试建议。",
     "generateBriefing": "生成简报",
+    "promptPlaceholder": "例如：侧重远程办公文化和资金稳定性",
     "regenerate": "重新生成",
     "regenerateConfirmTitle": "重新生成简报",
     "regenerateConfirm": "这将替换当前的简报，且无法撤销。",

@@ -33,7 +33,7 @@ import type { ThemeColors } from '../../../theme/colors';
 import { AiCreditsCard } from '../components/AiCreditsCard';
 import { AiProviderOrderCard } from '../components/AiProviderOrderCard';
 import { AiProNote } from '../components/AiProNote';
-import { hostedAiAvailable } from '../lib/aiCredits';
+import { hostedAiAvailable } from '../../ai/lib/aiCredits';
 import { createSheetStyles } from '../../../components/sheetStyles';
 
 /** Above this share of the limit the meter warns rather than just reports. */

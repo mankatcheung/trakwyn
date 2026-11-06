@@ -62,6 +62,8 @@
   "generateTitle": "產生練習問題",
   "generatePromptLabel": "問題應著重哪些方面？",
   "generatePromptPlaceholder": "例如：系統設計，5 個問題",
+  "answerPromptPlaceholder": "例如：用我的支付遷移經歷，STAR 結構，口述約 90 秒",
+  "talkingPointsPromptPlaceholder": "例如：側重我的機器學習經驗",
   "generate": "產生",
   "regenerate": "重新產生",
   "suggestionsHeading": "建議 · {{count}}",

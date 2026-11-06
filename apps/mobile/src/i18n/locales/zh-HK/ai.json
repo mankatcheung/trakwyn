@@ -1,0 +1,12 @@
+{
+  "costOne": "消耗 {{count}} 點額度",
+  "costMany": "消耗 {{count}} 點額度",
+  "creditsLeft": "剩餘 {{left}} / {{total}} · {{date}} 重置",
+  "promptLabel": "指示",
+  "optional": "（選填）",
+  "addInstructions": "新增指示",
+  "hideInstructions": "隱藏指示",
+  "setupHelp": "請先設定 AI 服務供應商才能使用。",
+  "setupAction": "設定 AI",
+  "exhausted": "本月 AI 額度已用完。"
+}

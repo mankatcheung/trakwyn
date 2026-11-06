@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { getErrorMessage } from '../../../lib/errors';
 import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
-import { useAiCredits } from '../../settings/hooks/useAiCredits';
+import { useAiCredits } from '../../ai/hooks/useAiCredits';
 import type { ResumeChoice } from '../components/ResumeSourcePicker';
 import { useGenerateIntoDocumentDraft, usePolishDocumentDraft } from './useDocumentDraftAi';
 import type { DraftSaver } from './useDraftSaver';

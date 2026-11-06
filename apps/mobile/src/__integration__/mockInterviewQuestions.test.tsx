@@ -152,7 +152,7 @@ describe('practice interview questions against a real API', () => {
     );
     const answerError = await act(async () =>
       result.current.answer
-        .mutateAsync(result.current.practice.data![0].id)
+        .mutateAsync({ questionId: result.current.practice.data![0].id })
         .catch((error: unknown) => error),
     );
 

@@ -2,12 +2,12 @@ import React from 'react';
 import { act, renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-jest.mock('../useLlmApiKeys', () => ({
+jest.mock('../../../settings/hooks/useLlmApiKeys', () => ({
   useLlmApiKeys: jest.fn(),
   llmApiKeysQueryKey: ['llmApiKeys'],
 }));
 
-import { useLlmApiKeys } from '../useLlmApiKeys';
+import { useLlmApiKeys } from '../../../settings/hooks/useLlmApiKeys';
 import { useAiCredits } from '../useAiCredits';
 
 const costs = [
@@ -49,6 +49,30 @@ describe('useAiCredits', () => {
     expect(result.current.costOf('coverLetter')).toBeNull();
     expect(result.current.canAfford('resume')).toBe(true);
     expect(result.current.standing?.left).toBe(20);
+  });
+
+  it('reads the cost of the interview and briefing features from billing status', async () => {
+    load(['trakwyn'], {
+      costs: [
+        { feature: 'mockQuestions', credits: 1 },
+        { feature: 'mockAnswer', credits: 2 },
+        { feature: 'talkingPoints', credits: 3 },
+        { feature: 'companyBriefing', credits: 4 },
+        { feature: 'resumeMatch', credits: 1 },
+      ],
+    });
+    const { result } = await setup();
+    expect(result.current.costOf('mockQuestions')).toBe(1);
+    expect(result.current.costOf('mockAnswer')).toBe(2);
+    expect(result.current.costOf('talkingPoints')).toBe(3);
+    expect(result.current.costOf('companyBriefing')).toBe(4);
+    expect(result.current.costOf('resumeMatch')).toBe(1);
+  });
+
+  it('exposes when the credits reset, only on Trakwyn AI plans', async () => {
+    load(['trakwyn'], {});
+    const hosted = await setup();
+    expect(hosted.result.current.resetsAt).toBe('2026-12-01');
   });
 
   it('cannot afford an action when what is left is below its cost', async () => {

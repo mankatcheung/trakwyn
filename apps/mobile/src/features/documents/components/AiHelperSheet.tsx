@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { createSheetStyles } from '../../../components/sheetStyles';
-import { useAiCredits, type AiFeature } from '../../settings/hooks/useAiCredits';
+import { useAiCredits, type AiFeature } from '../../ai/hooks/useAiCredits';
 import { AI_PROMPT_MAX_LENGTH, type PolishSuggestion } from '../hooks/useDraftAiHelper';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';

@@ -64,6 +64,8 @@
   "generateTitle": "Generate practice questions",
   "generatePromptLabel": "What should the questions focus on?",
   "generatePromptPlaceholder": "e.g. system design, 5 questions",
+  "answerPromptPlaceholder": "e.g. use my payments-migration story, STAR, about 90 seconds spoken",
+  "talkingPointsPromptPlaceholder": "e.g. steer toward my ML experience",
   "generate": "Generate",
   "regenerate": "Regenerate",
   "suggestionsHeading": "Suggestions · {{count}}",

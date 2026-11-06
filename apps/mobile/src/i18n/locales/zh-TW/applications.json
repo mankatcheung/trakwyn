@@ -97,6 +97,7 @@
   "companyBriefing": {
     "description": "產生這間公司的 AI 研究簡報：企業文化、近期新聞與面試建議。",
     "generateBriefing": "產生簡報",
+    "promptPlaceholder": "例如：側重遠端工作文化和資金穩定性",
     "regenerate": "重新產生",
     "regenerateConfirmTitle": "重新產生簡報",
     "regenerateConfirm": "這將取代目前的簡報，且無法復原。",

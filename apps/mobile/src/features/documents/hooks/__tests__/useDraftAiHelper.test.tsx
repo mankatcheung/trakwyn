@@ -7,9 +7,9 @@ jest.mock('../useDocumentDraftAi', () => ({
   usePolishDocumentDraft: jest.fn(),
   useGenerateIntoDocumentDraft: jest.fn(),
 }));
-jest.mock('../../../settings/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
+jest.mock('../../../ai/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
 
-import { useAiCredits } from '../../../settings/hooks/useAiCredits';
+import { useAiCredits } from '../../../ai/hooks/useAiCredits';
 import { useGenerateIntoDocumentDraft, usePolishDocumentDraft } from '../useDocumentDraftAi';
 import { useDraftAiHelper } from '../useDraftAiHelper';
 
