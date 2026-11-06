@@ -2,6 +2,7 @@ import type { ChatActionProposal } from '#src/domain/chatActionProposal/ChatActi
 import { ConflictError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IChatActionProposalRepository } from '#src/use-cases/ports/IChatActionProposalRepository.js';
 import type { IMessageRepository } from '#src/use-cases/ports/IMessageRepository.js';
+import { chatActionNote } from '#src/use-cases/prompts/chat.js';
 
 interface Deps {
   chatActionProposalRepository: IChatActionProposalRepository;
@@ -39,7 +40,7 @@ export class DismissChatActionUseCase {
       id: this.deps.generateId(),
       conversationId: dismissed.conversationId,
       role: 'system',
-      content: `User dismissed: ${dismissed.summary}`,
+      content: chatActionNote.dismissed(dismissed.summary),
     });
     return { proposal: dismissed };
   }

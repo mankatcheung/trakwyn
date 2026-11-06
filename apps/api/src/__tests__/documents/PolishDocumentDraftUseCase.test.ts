@@ -17,6 +17,7 @@ import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js'
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
+import { polishDraftPrompt } from '#src/use-cases/prompts/polishDraft.js';
 
 interface Options {
   response?: string;
@@ -114,6 +115,7 @@ describe('PolishDocumentDraftUseCase', () => {
 
     expect(ctx.llmProviderFactory.forUser).toHaveBeenCalledWith('user-1', {
       feature: AI_FEATURE.POLISH_DRAFT,
+      promptVersion: polishDraftPrompt.version,
     });
     expect(AI_FEATURE.POLISH_DRAFT).toBe('polishDraft');
   });

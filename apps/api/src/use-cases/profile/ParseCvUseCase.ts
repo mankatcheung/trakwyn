@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   AiNotConfiguredError,
   DomainError,
@@ -9,7 +8,6 @@ import {
 import {
   AI_PROMPT_INPUT,
   CV_IMPORT,
-  CV_IMPORT_PROMPT_TASK,
   RESUME_TEXT_EXTRACTION,
   AI_FEATURE,
   AI_REASONING_DEFAULTS,
@@ -39,8 +37,9 @@ import type {
   ParsedCvWorkExperience,
 } from '#src/use-cases/profile/IParseCvUseCase.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { parseCvPrompt, parsedCvResponseSchema } from '#src/use-cases/prompts/parseCv.js';
+import type { ParsedCvReply } from '#src/use-cases/prompts/parseCv.js';
 import { withTimeout } from '#src/use-cases/shared/withTimeout.js';
-import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
 interface Deps {
   llmProviderFactory: ILLMProviderFactory;
@@ -51,86 +50,9 @@ interface Deps {
   parseCvRateLimiter: IRateLimiter;
 }
 
-const SYSTEM_PROMPT = `You are a CV parser. Your task is to ${CV_IMPORT_PROMPT_TASK} and return ONLY valid JSON with no markdown, no explanation, and no code fences. Copy what the CV says; never invent employers, schools, dates or skills. If a field cannot be determined, use null.`;
-
-const USER_PROMPT_TEMPLATE = (
-  text: string,
-) => `Extract the following from this CV and return ONLY valid JSON:
-{
-  "workExperiences": [
-    {
-      "company": "employer name",
-      "title": "job title",
-      "location": "city, country or remote, or null",
-      "startDate": "YYYY-MM, or YYYY when only the year is given",
-      "endDate": "YYYY-MM, YYYY, or \\"Present\\" when the role is still held",
-      "description": "one sentence of at most 200 characters on the responsibilities and achievements, or null"
-    }
-  ],
-  "educations": [
-    {
-      "institution": "school or university",
-      "degree": "degree or qualification, or null",
-      "field": "field of study, or null",
-      "startDate": "YYYY-MM, or YYYY when only the year is given",
-      "endDate": "YYYY-MM, YYYY, \\"Present\\", or null",
-      "description": "honours or thesis in at most 100 characters, or null"
-    }
-  ],
-  "skills": [
-    { "name": "skill name", "category": "e.g. Language, Framework, Tool, Soft skill, or null", "proficiency": "beginner, intermediate, advanced or expert, only if the CV states a level; otherwise null" }
-  ]
-}
-
-List work experience and education from most recent to oldest. Leave out an entry whose start date the CV does not give.
-
-CV:
-${wrapUntrustedContent(text)}`;
-
 const UNREADABLE_FILE_MESSAGE =
   "We couldn't read this file. It may be damaged or password protected.";
 const NO_TEXT_MESSAGE = "We couldn't read any text from this file. It may be a scanned image.";
-
-// A model may send null, omit a key, or give a year as a number; the
-// normalisers decide what is usable. A field of the wrong kind (an object, a
-// section that is a string) fails the whole reply rather than slipping through.
-const textField = z.string().nullable().optional();
-const dateField = z.union([z.string(), z.number()]).nullable().optional();
-
-const parsedCvSchema = z.object({
-  workExperiences: z
-    .array(
-      z.object({
-        company: textField,
-        title: textField,
-        location: textField,
-        startDate: dateField,
-        endDate: dateField,
-        description: textField,
-      }),
-    )
-    .nullable()
-    .optional(),
-  educations: z
-    .array(
-      z.object({
-        institution: textField,
-        degree: textField,
-        field: textField,
-        startDate: dateField,
-        endDate: dateField,
-        description: textField,
-      }),
-    )
-    .nullable()
-    .optional(),
-  skills: z
-    .array(z.object({ name: textField, category: textField, proficiency: textField }))
-    .nullable()
-    .optional(),
-});
-
-type ParsedCvReply = z.infer<typeof parsedCvSchema>;
 
 /**
  * Reads an uploaded CV into profile entries for the user to review (JEF-461).
@@ -154,6 +76,7 @@ export class ParseCvUseCase implements IParseCvUseCase {
     // Before reading the file: no key means no point spending the parse.
     const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
       feature: AI_FEATURE.PARSE_CV,
+      promptVersion: parseCvPrompt.version,
     });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
@@ -164,19 +87,13 @@ export class ParseCvUseCase implements IParseCvUseCase {
 
     const truncated = text.length > AI_PROMPT_INPUT.CV_IMPORT_MAX_CHARS;
     const result = await llmProvider.complete(
-      [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: USER_PROMPT_TEMPLATE(text.slice(0, AI_PROMPT_INPUT.CV_IMPORT_MAX_CHARS)),
-        },
-      ],
+      parseCvPrompt.build({ cvText: text.slice(0, AI_PROMPT_INPUT.CV_IMPORT_MAX_CHARS) }),
       CV_IMPORT.MAX_OUTPUT_TOKENS,
       undefined,
       { json: true, reasoning: AI_REASONING_DEFAULTS.CV_IMPORT },
     );
     assertNotTruncated(result);
-    const reply = parseAiJson(result.content, parsedCvSchema);
+    const reply = parseAiJson(result.content, parsedCvResponseSchema);
 
     return { ...(await this.toProfile(input.userId, reply)), truncated };
   }

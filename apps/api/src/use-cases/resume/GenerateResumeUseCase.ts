@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   AiNotConfiguredError,
   AiResponseInvalidError,
@@ -8,7 +7,6 @@ import {
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { LLMMessage } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
@@ -17,8 +15,9 @@ import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDra
 import { formatApplicationContext } from '#src/use-cases/shared/applicationContext.js';
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
-import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import { resumePrompt, resumeResponseSchema } from '#src/use-cases/prompts/resume.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import {
   loadUserProfile,
   formatUserProfile,
@@ -26,11 +25,6 @@ import {
   type UserProfile,
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
-import {
-  fenceUserInstructions,
-  normaliseAiInstructions,
-  USER_INSTRUCTIONS_RULE,
-} from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateResumeInput {
@@ -48,40 +42,6 @@ interface Deps extends UserProfileRepositories {
   noteRepository: INoteRepository;
   documentDraftRepository: IDocumentDraftRepository;
 }
-
-const resumeSchema = z.object({
-  summary: z.string().optional(),
-  experience: z.array(
-    z.object({
-      company: z.string(),
-      title: z.string(),
-      period: z.string().optional(),
-      bullets: z.array(z.string()),
-    }),
-  ),
-  education: z.array(
-    z.object({
-      institution: z.string(),
-      qualification: z.string().optional(),
-      period: z.string().optional(),
-    }),
-  ),
-  skills: z.array(z.object({ category: z.string(), items: z.array(z.string()) })),
-});
-
-const SYSTEM_PROMPT = `You are a resume writer. You will be given a candidate's real work experience, education and skills, and a job they are applying for.
-
-Your job is to SELECT, ORDER and REWORD what you are given so it reads well for this specific role. You are tailoring, not authoring.
-
-Absolute rules:
-- Never invent an employer, job title, institution, qualification, date, skill or achievement. Every company and institution you name must be one that appears in the candidate's background below.
-- Never inflate seniority or exaggerate scope. If the background is thin, produce a short resume.
-- Prefer the candidate's own wording where it is already clear.
-- Write bullets as concrete accomplishments drawn from the descriptions provided. If a role has no description, write no bullets for it rather than imagining them.
-${USER_INSTRUCTIONS_RULE}
-
-Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
-{"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}]}`;
 
 /** Compared loosely: rewording is allowed, inventing is not. */
 const normalize = (value: string) => value.trim().toLowerCase();
@@ -132,6 +92,7 @@ export class GenerateResumeUseCase {
 
     const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
       feature: AI_FEATURE.RESUME,
+      promptVersion: resumePrompt.version,
     });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
@@ -166,11 +127,13 @@ export class GenerateResumeUseCase {
       crossApplicationContext = formatCrossApplicationContext(otherNotes, otherCoverLetters);
     }
 
-    const messages: LLMMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];
-    if (user?.customAiPrompt) messages.push({ role: 'system', content: user.customAiPrompt });
-    messages.push({
-      role: 'user',
-      content: this.buildPrompt(app, profile, context, crossApplicationContext, instructions),
+    const messages = resumePrompt.build({
+      app,
+      profileText: formatUserProfile(profile),
+      applicationContext: context,
+      crossApplicationContext,
+      customAiPrompt: user?.customAiPrompt,
+      instructions,
     });
 
     const result = await llmProvider.complete(messages, 2048, undefined, {
@@ -178,36 +141,8 @@ export class GenerateResumeUseCase {
       reasoning: AI_REASONING_DEFAULTS.RESUME,
     });
     assertNotTruncated(result);
-    const resume = parseAiJson<ResumeContent>(result.content, resumeSchema);
+    const resume = parseAiJson<ResumeContent>(result.content, resumeResponseSchema);
     assertGrounded(resume, profile);
     return resume;
-  }
-
-  private buildPrompt(
-    app: { company: string; role: string; location?: string | null; description?: string | null },
-    profile: UserProfile,
-    applicationContext: string,
-    crossApplicationContext: string,
-    instructions: string | null,
-  ): string {
-    return [
-      'Tailor this candidate to the following role.',
-      `Company: ${app.company}`,
-      `Role: ${app.role}`,
-      ...(app.location ? [`Location: ${app.location}`] : []),
-      ...(app.description
-        ? [
-            `\nJob description:\n${wrapUntrustedContent(
-              app.description.slice(0, AI_PROMPT_INPUT.COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS),
-            )}`,
-          ]
-        : []),
-      ...(applicationContext ? [`\n${applicationContext}`] : []),
-      ...(crossApplicationContext ? [`\n${crossApplicationContext}`] : []),
-      `\nCandidate background — the only facts you may use:\n${formatUserProfile(profile)}`,
-      ...(instructions
-        ? [`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`]
-        : []),
-    ].join('\n');
   }
 }

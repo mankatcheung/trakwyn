@@ -51,4 +51,13 @@ describe('AI feature tags', () => {
       expect(args).toMatch(/feature:\s*AI_FEATURE\.[A-Z_]+/);
     },
   );
+
+  // JEF-505: a call also says which version of its prompt it sends, so the
+  // usage event can be traced to the wording. The key test sends a fixed probe
+  // rather than one of our prompts, so it is the one call without a version.
+  it.each(
+    calls.filter((c) => !/AI_FEATURE\.KEY_TEST/.test(c.args)).map((c) => [c.file, c.args] as const),
+  )('%s names the version of the prompt it sends', (_file, args) => {
+    expect(args).toMatch(/promptVersion:\s*[a-zA-Z]+Prompt\.version/);
+  });
 });

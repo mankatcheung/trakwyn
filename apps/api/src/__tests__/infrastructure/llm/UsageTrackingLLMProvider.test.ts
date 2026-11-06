@@ -72,8 +72,37 @@ describe('UsageTrackingLLMProvider', () => {
         // (10 × 150 000 + 5 × 600 000) / 1 000 000 = 4.5, rounded.
         costMicros: 5,
         feature: 'chat',
+        promptVersion: null,
         source: 'byok',
       });
+    });
+
+    it('records the version of the prompt the call sent (JEF-505)', async () => {
+      const inner = makeInner({
+        complete: vi
+          .fn()
+          .mockResolvedValue({ content: 'ok', usage: { promptTokens: 10, completionTokens: 5 } }),
+      });
+      const usageEventRepository = makeRepo();
+      const provider = new UsageTrackingLLMProvider({
+        feature: AI_FEATURE.COVER_LETTER,
+        promptVersion: 3,
+        source: LLM_USAGE_SOURCE.BYOK,
+        metrics: noopMetrics,
+        inner,
+        usageEventRepository,
+        logger: makeLogger(),
+        generateId: () => 'evt-1',
+        userId: 'user-1',
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+      });
+
+      await provider.complete([{ role: 'user', content: 'hi' }]);
+
+      expect(usageEventRepository.record).toHaveBeenCalledWith(
+        expect.objectContaining({ feature: 'coverLetter', promptVersion: 3 }),
+      );
     });
 
     it('records reasoningTokens and forwards the per-call options (JEF-445)', async () => {
@@ -297,6 +326,7 @@ describe('UsageTrackingLLMProvider', () => {
         // No model on the key: priced as Anthropic's default, Haiku 4.5.
         costMicros: 60,
         feature: 'chat',
+        promptVersion: null,
         source: 'byok',
       });
     });

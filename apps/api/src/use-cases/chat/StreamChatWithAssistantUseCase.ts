@@ -13,6 +13,7 @@ import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { LLMToolCall, LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
 import { AI_FEATURE, CHAT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { chatLimitsFor } from '#src/use-cases/chat/chatLimits.js';
+import { chatPrompt } from '#src/use-cases/prompts/chat.js';
 import {
   type ChatToolDeps,
   buildChatMessages,
@@ -118,6 +119,7 @@ export class StreamChatWithAssistantUseCase {
     // no longer locked to the key it started on; `llmProvider` only records the first one.
     const resolution = await this.deps.llmProviderFactory.resolveForUser(input.userId, {
       feature: AI_FEATURE.CHAT,
+      promptVersion: chatPrompt.version,
     });
     const llmProvider = resolution?.provider ?? null;
     const answeredBy = resolution ? (resolution.entry ?? resolution.providerId) : null;

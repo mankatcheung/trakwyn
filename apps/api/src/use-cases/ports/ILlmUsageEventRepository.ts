@@ -22,6 +22,8 @@ export interface RecordLlmUsageEventData {
   /** Micro-USD; null when the model has no listed price (JEF-444). */
   costMicros?: number | null;
   feature?: AiFeature | null;
+  /** The version of the prompt the call sent (JEF-505); null when it sent none. */
+  promptVersion?: number | null;
   /** Defaults to `byok` in the database. */
   source?: LlmUsageSource;
 }

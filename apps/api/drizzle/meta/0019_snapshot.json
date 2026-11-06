@@ -1,5 +1,5 @@
 {
-  "id": "d795126b-bdf8-4561-a253-4aced5e14ed3",
+  "id": "11c6a0d1-455f-4412-97fe-f3236ced3600",
   "prevId": "e2b718ce-3042-4a20-b5be-995cf731e87d",
   "version": "7",
   "dialect": "postgresql",
@@ -1351,6 +1351,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "promptVersion": {
+          "name": "promptVersion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "source": {
           "name": "source",
           "type": "text",
@@ -2513,12 +2519,6 @@
         },
         "sourceDocumentId": {
           "name": "sourceDocumentId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "aiInstructions": {
-          "name": "aiInstructions",
           "type": "text",
           "primaryKey": false,
           "notNull": false

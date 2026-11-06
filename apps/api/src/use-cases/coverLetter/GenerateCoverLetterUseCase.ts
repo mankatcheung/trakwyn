@@ -5,7 +5,6 @@ import {
   RateLimitedError,
 } from '#src/use-cases/errors/DomainError.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
-import type { LLMMessage } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
@@ -17,13 +16,9 @@ import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDra
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import { formatApplicationContext } from '#src/use-cases/shared/applicationContext.js';
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
-import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
-import {
-  fenceUserInstructions,
-  normaliseAiInstructions,
-  USER_INSTRUCTIONS_RULE,
-} from '#src/use-cases/shared/aiInstructions.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCoverLetterInput {
@@ -47,9 +42,6 @@ interface Deps {
   companyBriefingRepository: ICompanyBriefingRepository;
 }
 
-const SYSTEM_PROMPT = `You are a professional cover letter writer. Write compelling, personalized cover letters that are concise (3-4 paragraphs), specific to the role, and written in first person. Return ONLY the cover letter body — no subject line, no date, no address block, no explanation.
-${USER_INSTRUCTIONS_RULE}`;
-
 export class GenerateCoverLetterUseCase {
   constructor(private readonly deps: Deps) {}
 
@@ -71,6 +63,7 @@ export class GenerateCoverLetterUseCase {
 
     const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
       feature: AI_FEATURE.COVER_LETTER,
+      promptVersion: coverLetterPrompt.version,
     });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
@@ -106,76 +99,20 @@ export class GenerateCoverLetterUseCase {
       crossApplicationContext = formatCrossApplicationContext(otherNotes, otherCoverLetters);
     }
 
-    const userPrompt = this.buildPrompt(
+    const messages = coverLetterPrompt.build({
       app,
       profile,
-      input.resumeText,
-      context,
+      resumeText: input.resumeText,
+      applicationContext: context,
       crossApplicationContext,
+      customAiPrompt: user?.customAiPrompt,
       instructions,
-    );
-
-    const messages: LLMMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];
-    if (user?.customAiPrompt) {
-      messages.push({ role: 'system', content: user.customAiPrompt });
-    }
-    messages.push({ role: 'user', content: userPrompt });
+    });
 
     return (
       await llmProvider.complete(messages, 1024, undefined, {
         reasoning: AI_REASONING_DEFAULTS.COVER_LETTER,
       })
     ).content;
-  }
-
-  private buildPrompt(
-    app: { company: string; role: string; location?: string | null; description?: string | null },
-    profile: string,
-    resumeText: string | null | undefined,
-    applicationContext: string,
-    crossApplicationContext: string,
-    instructions: string | null,
-  ): string {
-    const lines = [
-      `Write a cover letter for this job application:`,
-      `Company: ${app.company}`,
-      `Role: ${app.role}`,
-      ...(app.location ? [`Location: ${app.location}`] : []),
-      ...(app.description
-        ? [
-            `\nJob description:\n${wrapUntrustedContent(app.description.slice(0, AI_PROMPT_INPUT.COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS))}`,
-          ]
-        : []),
-    ];
-
-    if (applicationContext) {
-      lines.push(`\n${applicationContext}`);
-    }
-
-    if (crossApplicationContext) {
-      lines.push(`\n${crossApplicationContext}`);
-    }
-
-    // The profile is what the user maintains in Settings, so it is always the
-    // base. A selected resume adds to it rather than standing in for it
-    // (JEF-396); only with neither is the letter written generically.
-    const hasResume = Boolean(resumeText?.trim());
-    if (profile) {
-      lines.push(
-        `\nMy background (work experience, education and skills):\n${profile.slice(0, 4000)}`,
-      );
-    }
-    if (hasResume) {
-      lines.push(`\nMy resume:\n${resumeText!.trim().slice(0, 4000)}`);
-    }
-    if (!profile && !hasResume) {
-      lines.push('\nWrite a strong general cover letter for someone applying to this role.');
-    }
-
-    if (instructions) {
-      lines.push(`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`);
-    }
-
-    return lines.join('\n');
   }
 }

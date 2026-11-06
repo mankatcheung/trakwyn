@@ -5,7 +5,6 @@ import {
   RateLimitedError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
-import { z } from 'zod';
 import type { ResumeMatch } from '#src/domain/resumeMatch/ResumeMatch.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
@@ -15,11 +14,14 @@ import type { IStorageProvider } from '#src/use-cases/ports/IStorageProvider.js'
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
-import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import {
+  resumeMatchPrompt,
+  resumeMatchResponseSchema,
+} from '#src/use-cases/prompts/resumeMatch.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
 import { hashJobDescription } from '#src/use-cases/shared/hashJobDescription.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
-import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { loadDocumentText } from '#src/use-cases/shared/loadDocumentText.js';
 
 export interface ComputeResumeMatchScoreInput {
@@ -49,36 +51,6 @@ interface Deps {
 }
 
 const RESUME_DOCUMENT_TYPE = 'resume';
-
-const SYSTEM_PROMPT = `You are an ATS (applicant tracking system) resume screener. Compare a resume against a job description and return ONLY valid JSON with no markdown, no explanation, and no code fences.`;
-
-const USER_PROMPT_TEMPLATE = (
-  jobDescription: string,
-  resumeText: string,
-) => `Compare this resume against the job description below. Return ONLY valid JSON in this exact shape:
-{
-  "matchPercentage": <number 0-100>,
-  "matchedKeywords": ["keyword1", "keyword2", ...],
-  "missingKeywords": ["keyword1", "keyword2", ...],
-  "summary": "2-3 sentence summary of the fit and the biggest gaps"
-}
-
-Job description:
-${wrapUntrustedContent(jobDescription.slice(0, AI_PROMPT_INPUT.RESUME_MATCH_JOB_DESCRIPTION_MAX_CHARS))}
-
-Resume:
-${resumeText.slice(0, 6000)}`;
-
-// matchPercentage is intentionally left unclamped here — parseResponse()
-// clamps it to 0-100 after parsing. matchedKeywords/missingKeywords are
-// validated as arrays so a malformed-but-truthy LLM response (e.g. a
-// string) can't pass straight through as if it were valid.
-const resumeMatchLlmResponseSchema = z.object({
-  matchPercentage: z.number().optional(),
-  matchedKeywords: z.array(z.string()).optional(),
-  missingKeywords: z.array(z.string()).optional(),
-  summary: z.string().optional(),
-});
 
 function scoreLabel(score: number): string {
   if (score >= 90) return 'Excellent match';
@@ -113,6 +85,7 @@ export class ComputeResumeMatchScoreUseCase {
 
     const llmProvider = await this.deps.llmProviderFactory.forUser(input.userId, {
       feature: AI_FEATURE.RESUME_MATCH,
+      promptVersion: resumeMatchPrompt.version,
     });
     if (!llmProvider) {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
@@ -141,10 +114,7 @@ export class ComputeResumeMatchScoreUseCase {
     }
 
     const result = await llmProvider.complete(
-      [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: USER_PROMPT_TEMPLATE(jobDescription, resumeText) },
-      ],
+      resumeMatchPrompt.build({ jobDescription, resumeText }),
       undefined,
       undefined,
       { json: true, reasoning: AI_REASONING_DEFAULTS.RESUME_MATCH },
@@ -211,7 +181,7 @@ export class ComputeResumeMatchScoreUseCase {
   private parseResponse(
     raw: string,
   ): Pick<ResumeMatch, 'score' | 'label' | 'matchedKeywords' | 'missingKeywords' | 'summary'> {
-    const parsed = parseAiJson(raw, resumeMatchLlmResponseSchema);
+    const parsed = parseAiJson(raw, resumeMatchResponseSchema);
     const score = Math.max(0, Math.min(100, Math.round(parsed.matchPercentage ?? 0)));
     return {
       score,
