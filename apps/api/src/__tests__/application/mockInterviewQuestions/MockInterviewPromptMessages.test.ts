@@ -54,9 +54,16 @@ function makeDeps(llmProvider: ReturnType<typeof makeLLMProvider>, customAiPromp
       }),
     }),
     workExperienceRepository: makeWorkExperienceRepository({
-      findAllByUserId: vi
-        .fn()
-        .mockResolvedValue([makeWorkExperience({ company: 'Acme', title: 'Engineer' })]),
+      findAllByUserId: vi.fn().mockResolvedValue([
+        makeWorkExperience({
+          company: 'Acme',
+          title: 'Engineer',
+          // Noon UTC, 1 January: prints the same in any locale and timezone,
+          // since the profile is formatted with the machine's.
+          startDate: new Date('2020-01-01T12:00:00Z'),
+          endDate: new Date('2023-01-01T12:00:00Z'),
+        }),
+      ]),
     }),
     educationRepository: makeEducationRepository(),
     skillRepository: makeSkillRepository(),
