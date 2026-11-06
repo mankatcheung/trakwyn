@@ -5,6 +5,7 @@ import type { CaseResult } from '#src/evals/types.js';
 const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
   caseId: 'c',
   feature: 'jobDescription',
+  prompt: 'parseJobDescription@1',
   passed: true,
   schemaValid: true,
   failures: [],
@@ -73,6 +74,24 @@ describe('formatReport', () => {
     expect(report).toContain('bad-case');
     expect(report).toContain('score 90 above 25');
     expect(report).not.toContain('ok-case');
+  });
+
+  it('names the prompt versions each target ran, so runs before and after a change differ (JEF-505)', () => {
+    const report = formatReport([
+      {
+        label: 'openai:gpt-x',
+        results: [
+          result(),
+          result({ feature: 'resumeMatch', prompt: 'resumeMatch@2' }),
+          result({ caseId: 'again' }),
+        ],
+      },
+    ]);
+
+    expect(report).toContain('Prompts');
+    expect(report).toContain('parseJobDescription@1, resumeMatch@2');
+    // Each distinct prompt once, however many cases ran against it.
+    expect(report.match(/parseJobDescription@1/g)).toHaveLength(1);
   });
 
   it('says so when nothing failed', () => {

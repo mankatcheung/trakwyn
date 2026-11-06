@@ -283,6 +283,50 @@ describe('UserLLMProviderFactory', () => {
       expect(provider).not.toBeInstanceOf(OpenAICompatibleLLMProvider);
     });
 
+    it('records the version of the prompt the request names on the usage event (JEF-505)', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              choices: [{ message: { role: 'assistant', content: 'hi' }, finish_reason: 'stop' }],
+              usage: { prompt_tokens: 3, completion_tokens: 2 },
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+      );
+      try {
+        const llmUsageEventRepository = makeLlmUsageEventRepository();
+        const factory = new UserLLMProviderFactory({
+          userRepository: makeUserRepository(),
+          llmApiKeyRepository: makeLlmApiKeyRepository({
+            findByUserIdAndProvider: vi
+              .fn()
+              .mockResolvedValue(makeLlmApiKey({ provider: LLM_PROVIDER.OPENAI })),
+          }),
+          llmApiKeyCipher: makeLlmApiKeyCipher(),
+          outboundUrlPolicy: makeOutboundUrlPolicy(),
+          llmUsageEventRepository,
+          generateId: () => 'evt-id',
+          logger: makeLogger(),
+        });
+
+        const provider = await factory.forUser('user-1', {
+          feature: AI_FEATURE.COVER_LETTER,
+          promptVersion: 4,
+          provider: LLM_PROVIDER.OPENAI,
+        });
+        await provider!.complete([{ role: 'user', content: 'hi' }]);
+
+        expect(llmUsageEventRepository.record).toHaveBeenCalledWith(
+          expect.objectContaining({ feature: 'coverLetter', promptVersion: 4 }),
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('returns the raw provider, unwrapped, when trackUsage is false', async () => {
       const llmApiKeyRepository = makeLlmApiKeyRepository({
         findByUserIdAndProvider: vi

@@ -84,6 +84,12 @@ export interface LLMProviderResolveHints {
  */
 export interface LLMProviderRequest {
   feature: AiFeature;
+  /**
+   * The `version` of the prompt the call sends (JEF-505), recorded on its
+   * `LlmUsageEvent` and log line so output quality and cost can be traced to
+   * a wording change. Omitted by callers that send no versioned prompt.
+   */
+  promptVersion?: number;
   provider?: string;
   model?: string | null;
   trackUsage?: boolean;
