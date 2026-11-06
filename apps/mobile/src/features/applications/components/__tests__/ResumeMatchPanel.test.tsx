@@ -6,7 +6,13 @@ import '../../../../i18n';
 
 jest.mock('../../../../graphql/client', () => ({ gqlRequest: jest.fn() }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../../ai/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
+jest.mock('../../../ai/hooks/useRefreshAiCredits', () => ({
+  useRefreshAiCredits: () => jest.fn(),
+}));
 
+import { useAiCredits } from '../../../ai/hooks/useAiCredits';
+import { ownKeyCredits, trakwynCredits } from '../../../ai/testing/aiCreditsFixture';
 import { gqlRequest } from '../../../../graphql/client';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
@@ -69,6 +75,27 @@ describe('ResumeMatchPanel', () => {
       colors: lightColors,
       setMode: jest.fn(),
     } as never);
+    jest.mocked(useAiCredits).mockReturnValue(ownKeyCredits());
+  });
+
+  it('shows the cost line and credits left on Trakwyn AI', async () => {
+    mockApi({});
+    jest.mocked(useAiCredits).mockReturnValue(trakwynCredits());
+
+    const { findByText, getByTestId } = await renderPanel();
+
+    expect(await findByText('Uses 1 credit')).toBeTruthy();
+    expect(getByTestId('resume-match-credits-draft-1')).toBeTruthy();
+  });
+
+  it('shows no cost or credits line on the userʼs own key', async () => {
+    mockApi({});
+
+    const { findByTestId, queryByText, queryByTestId } = await renderPanel();
+
+    await findByTestId('generate-resume-match-draft-1');
+    expect(queryByText(/Uses \d+ credit/)).toBeNull();
+    expect(queryByTestId('resume-match-credits-draft-1')).toBeNull();
   });
 
   it('offers to generate a match when there is none yet', async () => {

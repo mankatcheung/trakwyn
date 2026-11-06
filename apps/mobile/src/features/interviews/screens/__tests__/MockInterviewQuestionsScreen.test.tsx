@@ -20,7 +20,20 @@ jest.mock('../../hooks/useMockInterviewQuestionMutations', () => ({
 jest.mock('../../../documents/hooks/useDocumentQueries', () => ({ useDocuments: jest.fn() }));
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
+  useRouter: () => ({ push: jest.fn() }),
   Stack: { Screen: () => null },
+}));
+jest.mock('../../../ai/hooks/useAiCredits', () => ({
+  // A user on their own key: no credit lines, nothing disabled.
+  useAiCredits: () => ({
+    onTrakwynAi: false,
+    needsSetup: false,
+    standing: null,
+    resetsAt: null,
+    costOf: () => null,
+    canAfford: () => true,
+    refresh: jest.fn(),
+  }),
 }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 
@@ -426,10 +439,37 @@ describe('MockInterviewQuestionsScreen', () => {
 
       await fireEvent.press(getByTestId('generate-answer-q3'));
 
-      expect(generateAnswerMutate).toHaveBeenCalledWith('q3', expect.any(Object));
+      expect(generateAnswerMutate).toHaveBeenCalledWith(
+        { questionId: 'q3', prompt: '' },
+        expect.any(Object),
+      );
       expect(getByTestId('answer-draft-input').props.value).toBe('A drafted answer.');
       expect(getByTestId('answer-draft-badge')).toBeTruthy();
       expect(updateMutate).not.toHaveBeenCalled();
+    });
+
+    it('keeps the instructions behind a toggle and sends them with the draft request', async () => {
+      givenGeneratedAnswer({
+        answer: 'A drafted answer.',
+        usedJobDescription: true,
+        usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
+      });
+      const { getByTestId, queryByTestId } = await renderScreen();
+
+      expect(queryByTestId('answer-prompt-input-q3')).toBeNull();
+      await fireEvent.press(getByTestId('answer-instructions-toggle-q3'));
+      await fireEvent.changeText(
+        getByTestId('answer-prompt-input-q3'),
+        'Use my payments-migration story, STAR',
+      );
+      await fireEvent.press(getByTestId('generate-answer-q3'));
+
+      expect(generateAnswerMutate).toHaveBeenCalledWith(
+        { questionId: 'q3', prompt: 'Use my payments-migration story, STAR' },
+        expect.any(Object),
+      );
     });
 
     it('saves the draft, as the user left it, marked as AI generated', async () => {
@@ -591,7 +631,29 @@ describe('MockInterviewQuestionsScreen', () => {
       await fireEvent.press(getByTestId('talking-points-submit-button'));
 
       expect(talkingPointsMutate).toHaveBeenCalledWith(
-        { questionId: 'q3', useProfile: true, documentId: null },
+        { questionId: 'q3', prompt: '', useProfile: true, documentId: null },
+        expect.any(Object),
+      );
+    });
+
+    it('sends the instructions typed behind the toggle with the talking points', async () => {
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('talking-points-button-q3'));
+
+      await fireEvent.press(getByTestId('talking-points-instructions-toggle'));
+      await fireEvent.changeText(
+        getByTestId('talking-points-prompt-input'),
+        'Steer toward my ML experience',
+      );
+      await fireEvent.press(getByTestId('talking-points-submit-button'));
+
+      expect(talkingPointsMutate).toHaveBeenCalledWith(
+        {
+          questionId: 'q3',
+          prompt: 'Steer toward my ML experience',
+          useProfile: true,
+          documentId: null,
+        },
         expect.any(Object),
       );
     });

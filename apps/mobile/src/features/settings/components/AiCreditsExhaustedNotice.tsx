@@ -11,7 +11,7 @@ interface AiCreditsExhaustedNoticeProps {
   /** What the API said; it names the reset date. Falls back to generic copy. */
   message?: string | null;
   /** Where the notice is shown, for the analytics events. */
-  surface: 'assistant' | 'settings' | 'conversations';
+  surface: 'assistant' | 'settings' | 'conversations' | 'ai_action';
   /** `credits`: a Pro user's month is spent. `plan`: a Free user asked for Trakwyn AI (PLAN_REQUIRED). */
   reason?: 'credits' | 'plan';
 }

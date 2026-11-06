@@ -1,15 +1,8 @@
-import React, { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { AiActionBar } from '../../ai/components/AiActionBar';
 import { Markdown } from '../../../components/Markdown';
 import { useCompanyBriefing } from '../hooks/useCompanyBriefingQueries';
 import { useGenerateCompanyBriefing } from '../hooks/useCompanyBriefingMutations';
@@ -25,9 +18,11 @@ export function CompanyBriefingScreen() {
   const { data: briefing, isLoading } = useCompanyBriefing(applicationId);
   const generate = useGenerateCompanyBriefing(applicationId);
 
+  const [instructions, setInstructions] = useState('');
+
   const onGenerate = () => {
     const proceed = () =>
-      generate.mutate(undefined, {
+      generate.mutate(instructions, {
         onError: (err) =>
           Alert.alert(t('companyBriefing.couldNotGenerateTitle'), getErrorMessage(err)),
       });
@@ -50,20 +45,20 @@ export function CompanyBriefingScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
         <Text style={styles.description}>{t('companyBriefing.description')}</Text>
-        <Pressable
-          style={[styles.generateButton, generate.isPending && styles.buttonDisabled]}
-          onPress={onGenerate}
-          disabled={generate.isPending || isLoading}
-          testID="generate-company-briefing-button"
-        >
-          {generate.isPending ? (
-            <ActivityIndicator size="small" color={colors.onPrimary} />
-          ) : (
-            <Text style={styles.generateButtonText}>
-              {briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}
-            </Text>
-          )}
-        </Pressable>
+        <AiActionBar
+          feature="companyBriefing"
+          label={briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}
+          loading={generate.isPending}
+          disabled={isLoading}
+          onRun={onGenerate}
+          buttonTestID="generate-company-briefing-button"
+          instructions={{
+            value: instructions,
+            onChange: setInstructions,
+            placeholder: t('companyBriefing.promptPlaceholder'),
+            inputTestID: 'company-briefing-prompt-input',
+          }}
+        />
       </View>
 
       {briefing ? (
@@ -93,17 +88,6 @@ function createStyles(colors: ThemeColors) {
       gap: 10,
     },
     description: { fontSize: 14, color: colors.textMuted },
-    generateButton: {
-      alignSelf: 'flex-start',
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      minWidth: 100,
-      alignItems: 'center',
-    },
-    buttonDisabled: { opacity: 0.6 },
-    generateButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '700' },
     generatedAt: { fontSize: 12, color: colors.textFaint },
   });
 }

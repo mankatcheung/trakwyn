@@ -1,0 +1,12 @@
+{
+  "costOne": "Uses {{count}} credit",
+  "costMany": "Uses {{count}} credits",
+  "creditsLeft": "{{left}} of {{total}} left · resets {{date}}",
+  "promptLabel": "Instructions",
+  "optional": "(optional)",
+  "addInstructions": "Add instructions",
+  "hideInstructions": "Hide instructions",
+  "setupHelp": "Set up an AI provider to use this.",
+  "setupAction": "Set up AI",
+  "exhausted": "You are out of AI credits this month."
+}

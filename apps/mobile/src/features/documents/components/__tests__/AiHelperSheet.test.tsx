@@ -4,7 +4,7 @@ import '../../../../i18n';
 
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
-jest.mock('../../../settings/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
+jest.mock('../../../ai/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
 jest.mock('../ResumeSourcePicker', () => {
   const { Pressable } = require('react-native');
   return {
@@ -17,7 +17,7 @@ jest.mock('../ResumeSourcePicker', () => {
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
-import { useAiCredits } from '../../../settings/hooks/useAiCredits';
+import { useAiCredits } from '../../../ai/hooks/useAiCredits';
 import { AiHelperSheet } from '../AiHelperSheet';
 
 const push = jest.fn();

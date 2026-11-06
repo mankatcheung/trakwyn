@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -8,10 +7,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { AiActionBar } from '../../ai/components/AiActionBar';
 import {
   useAddMockInterviewQuestions,
   useGenerateMockInterviewQuestions,
@@ -122,39 +121,27 @@ export function GenerateQuestionsModal({
         </View>
 
         <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-          <Text style={styles.fieldLabel}>
-            {t('generatePromptLabel')} <Text style={styles.optional}>{t('responseOptional')}</Text>
-          </Text>
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={[styles.input, styles.multiline]}
-            placeholder={t('generatePromptPlaceholder')}
-            value={prompt}
-            onChangeText={setPrompt}
-            maxLength={MOCK_QUESTION_LIMITS.PROMPT_MAX_CHARS}
-            multiline
-            testID="generate-prompt-input"
-          />
-          <BackgroundChooser
-            applicationId={applicationId}
-            value={background}
-            onChange={setBackground}
-          />
-          <Pressable
-            style={[styles.generateButton, busy && styles.buttonDisabled]}
-            onPress={runGenerate}
+          <AiActionBar
+            feature="mockQuestions"
+            label={result ? t('regenerate') : t('generate')}
+            loading={generate.isPending}
             disabled={busy}
-            accessibilityRole="button"
-            testID="generate-submit-button"
+            onRun={runGenerate}
+            buttonTestID="generate-submit-button"
+            instructions={{
+              value: prompt,
+              onChange: setPrompt,
+              label: t('generatePromptLabel'),
+              placeholder: t('generatePromptPlaceholder'),
+              inputTestID: 'generate-prompt-input',
+            }}
           >
-            {generate.isPending ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <Text style={styles.generateButtonText}>
-                {result ? t('regenerate') : t('generate')}
-              </Text>
-            )}
-          </Pressable>
+            <BackgroundChooser
+              applicationId={applicationId}
+              value={background}
+              onChange={setBackground}
+            />
+          </AiActionBar>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -232,27 +219,6 @@ function createStyles(colors: ThemeColors) {
     linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
     body: { flex: 1 },
     bodyContent: { padding: 16, gap: 10 },
-    fieldLabel: { fontSize: 13, fontWeight: '700', color: colors.text },
-    optional: { fontWeight: '400', color: colors.textFaint },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 16,
-      backgroundColor: colors.surface,
-      color: colors.text,
-    },
-    multiline: { minHeight: 88, textAlignVertical: 'top' },
-    generateButton: {
-      minHeight: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-    },
-    generateButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '700' },
     buttonDisabled: { opacity: 0.5 },
     error: {
       color: colors.danger,

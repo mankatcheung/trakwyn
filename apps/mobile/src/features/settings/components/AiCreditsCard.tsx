@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { aiCreditsStanding } from '../lib/aiCredits';
+import { aiCreditsStanding } from '../../ai/lib/aiCredits';
 import type { AiCredits } from '../types';
 import { AiCreditsExhaustedNotice } from './AiCreditsExhaustedNotice';
 import { useTheme } from '../../../theme/ThemeContext';

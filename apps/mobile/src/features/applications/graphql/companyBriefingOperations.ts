@@ -17,8 +17,8 @@ export const COMPANY_BRIEFING_QUERY = `
 `;
 
 export const GENERATE_COMPANY_BRIEFING_MUTATION = `
-  mutation GenerateCompanyBriefing($applicationId: ID!) {
-    generateCompanyBriefing(applicationId: $applicationId) {
+  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {
+    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) {
       ${BRIEFING_FIELDS}
     }
   }

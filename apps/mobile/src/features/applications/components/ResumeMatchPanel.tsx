@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { AiCreditCost } from '../../ai/components/AiCreditCost';
+import { AiCreditsInline } from '../../ai/components/AiCreditsInline';
 import { useComputeResumeMatchScore } from '../hooks/useResumeMatchMutations';
 import { findResumeMatch, useResumeMatches } from '../hooks/useResumeMatchQueries';
 import type { ResumeRef } from '../types';
@@ -46,6 +48,13 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
     });
   };
 
+  const cost = (
+    <View style={styles.meter}>
+      <AiCreditCost feature="resumeMatch" testID={`resume-match-cost-${resumeId}`} />
+      <AiCreditsInline testID={`resume-match-credits-${resumeId}`} />
+    </View>
+  );
+
   const button = (
     <Pressable
       style={[styles.button, compute.isPending && styles.buttonDisabled]}
@@ -79,6 +88,7 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
             <Text style={styles.generateBarText}>{t('resumeMatch.generate')}</Text>
           )}
         </Pressable>
+        {cost}
       </View>
     );
   }
@@ -151,6 +161,7 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
           ) : null}
 
           {button}
+          {cost}
         </View>
       ) : null}
     </View>
@@ -160,6 +171,7 @@ export function ResumeMatchPanel({ applicationId, resume, resumeId }: ResumeMatc
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { gap: 10, marginTop: 8 },
+    meter: { gap: 2 },
     bar: {
       minHeight: 44,
       borderRadius: 10,

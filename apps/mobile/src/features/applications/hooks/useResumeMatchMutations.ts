@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gqlRequest } from '../../../graphql/client';
 import { COMPUTE_RESUME_MATCH_SCORE_MUTATION } from '../graphql/resumeMatchOperations';
+import { useRefreshAiCredits } from '../../ai/hooks/useRefreshAiCredits';
 import type { ResumeMatch, ResumeRef } from '../types';
 import { resumeMatchesQueryKey } from './useResumeMatchQueries';
 
@@ -11,7 +12,9 @@ const sameResume = (a: ResumeMatch, b: ResumeMatch): boolean =>
 /** Scores one resume and stores the result in the cached list, replacing its old match. */
 export function useComputeResumeMatchScore(applicationId: string) {
   const queryClient = useQueryClient();
+  const refreshCredits = useRefreshAiCredits();
   return useMutation({
+    onSettled: () => void refreshCredits(),
     mutationFn: (resume: ResumeRef) =>
       gqlRequest<{ computeResumeMatchScore: ResumeMatch }>(COMPUTE_RESUME_MATCH_SCORE_MUTATION, {
         applicationId,

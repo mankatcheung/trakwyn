@@ -1,11 +1,19 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { aiCreditsStanding, hostedAiAvailable, type AiCreditsStanding } from '../lib/aiCredits';
-import { TRAKWYN_ENTRY } from '../lib/aiProviderOrder';
-import { llmApiKeysQueryKey, useLlmApiKeys } from './useLlmApiKeys';
+import { TRAKWYN_ENTRY } from '../../settings/lib/aiProviderOrder';
+import { llmApiKeysQueryKey, useLlmApiKeys } from '../../settings/hooks/useLlmApiKeys';
 
 /** The hosted features whose cost the API reports (`billingStatus.aiCredits.costs`). */
-export type AiFeature = 'coverLetter' | 'resume' | 'polishDraft';
+export type AiFeature =
+  | 'coverLetter'
+  | 'resume'
+  | 'polishDraft'
+  | 'mockQuestions'
+  | 'mockAnswer'
+  | 'talkingPoints'
+  | 'companyBriefing'
+  | 'resumeMatch';
 
 export interface UseAiCredits {
   /** True when the next AI call is answered by Trakwyn AI and so spends credits. */
@@ -13,6 +21,8 @@ export interface UseAiCredits {
   /** True once the provider order has loaded and nothing can answer: no key, no hosted AI. */
   needsSetup: boolean;
   standing: AiCreditsStanding | null;
+  /** When the month's credits reset (ISO), or `null` without hosted AI. */
+  resetsAt: string | null;
   /** Credits one run of the feature costs, or `null` when the API did not say. */
   costOf: (feature: AiFeature) => number | null;
   /** False only when the call would be on Trakwyn AI and the credits left do not cover it. */
@@ -57,5 +67,13 @@ export function useAiCredits(): UseAiCredits {
     [queryClient],
   );
 
-  return { onTrakwynAi, needsSetup, standing, costOf, canAfford, refresh };
+  return {
+    onTrakwynAi,
+    needsSetup,
+    standing,
+    resetsAt: standing ? (credits?.resetsAt ?? null) : null,
+    costOf,
+    canAfford,
+    refresh,
+  };
 }

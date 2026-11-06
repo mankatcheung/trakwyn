@@ -9,6 +9,7 @@ import {
   REORDER_MOCK_INTERVIEW_QUESTIONS_MUTATION,
   UPDATE_MOCK_INTERVIEW_QUESTION_MUTATION,
 } from '../graphql/operations';
+import { useRefreshAiCredits } from '../../ai/hooks/useRefreshAiCredits';
 import { getRememberedUseProfile } from '../lib/mockBackgroundChoice';
 import { interviewRoundsQueryKey } from './useInterviewQueries';
 import { mockInterviewQuestionsQueryKey } from './useMockInterviewQuestionQueries';
@@ -149,7 +150,9 @@ export function useReorderMockInterviewQuestions(applicationId: string, roundId:
 
 /** Asks the AI for suggestions. Nothing is saved: the screen decides what to keep. */
 export function useGenerateMockInterviewQuestions(roundId: string) {
+  const refreshCredits = useRefreshAiCredits();
   return useMutation({
+    onSettled: () => void refreshCredits(),
     mutationFn: ({
       prompt,
       useProfile,
@@ -177,11 +180,17 @@ export function useGenerateMockInterviewQuestions(roundId: string) {
  * step. It sends the profile only if the user switched that on in a dialog.
  */
 export function useGenerateMockInterviewAnswer() {
+  const refreshCredits = useRefreshAiCredits();
   return useMutation({
-    mutationFn: (questionId: string) =>
+    onSettled: () => void refreshCredits(),
+    mutationFn: ({ questionId, prompt }: { questionId: string; prompt?: string }) =>
       gqlRequest<{ generateMockInterviewAnswer: GeneratedMockAnswer }>(
         GENERATE_MOCK_INTERVIEW_ANSWER_MUTATION,
-        { mockInterviewQuestionId: questionId, useProfile: getRememberedUseProfile() },
+        {
+          mockInterviewQuestionId: questionId,
+          prompt: prompt?.trim() || null,
+          useProfile: getRememberedUseProfile(),
+        },
       ).then((data) => data.generateMockInterviewAnswer),
   });
 }
@@ -189,19 +198,28 @@ export function useGenerateMockInterviewAnswer() {
 /** Generates and saves talking points on one question, then refreshes the list. */
 export function useGenerateMockTalkingPoints(applicationId: string, roundId: string) {
   const { refreshQuestions } = useRefreshers(applicationId, roundId);
+  const refreshCredits = useRefreshAiCredits();
   return useMutation({
+    onSettled: () => void refreshCredits(),
     mutationFn: ({
       questionId,
+      prompt,
       useProfile,
       documentId,
     }: {
       questionId: string;
+      prompt?: string;
       useProfile: boolean;
       documentId: string | null;
     }) =>
       gqlRequest<{ generateMockTalkingPoints: GeneratedMockTalkingPoints }>(
         GENERATE_MOCK_TALKING_POINTS_MUTATION,
-        { mockInterviewQuestionId: questionId, useProfile, documentId },
+        {
+          mockInterviewQuestionId: questionId,
+          prompt: prompt?.trim() || null,
+          useProfile,
+          documentId,
+        },
       ).then((data) => data.generateMockTalkingPoints),
     onSuccess: refreshQuestions,
   });

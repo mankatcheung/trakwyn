@@ -39,6 +39,7 @@ import { IconButton } from '../../../components/IconButton';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { AiGeneratedBadge } from '../components/AiGeneratedBadge';
 import { AnswerDraftModal } from '../components/AnswerDraftModal';
+import { MockAnswerAction } from '../components/MockAnswerAction';
 import { GenerateQuestionsModal } from '../components/GenerateQuestionsModal';
 import { TalkingPointsSection } from '../components/TalkingPointsSection';
 
@@ -158,6 +159,7 @@ export function MockInterviewQuestionsScreen() {
     question: MockInterviewQuestion;
     text: string;
     version: number;
+    prompt: string;
   } | null>(null);
 
   const round = rounds?.find((r) => r.id === roundId);
@@ -205,19 +207,26 @@ export function MockInterviewQuestionsScreen() {
     else createQuestion.mutate(form, handlers);
   };
 
-  const startDraft = (question: MockInterviewQuestion) =>
-    generateAnswer.mutate(question.id, {
-      onSuccess: (result) => setDraft({ question, text: result.answer, version: 0 }),
-      onError: (err) => Alert.alert(t('couldNotGenerateTitle'), getErrorMessage(err)),
-    });
+  const startDraft = (question: MockInterviewQuestion, prompt: string) =>
+    generateAnswer.mutate(
+      { questionId: question.id, prompt },
+      {
+        onSuccess: (result) => setDraft({ question, text: result.answer, version: 0, prompt }),
+        onError: (err) => Alert.alert(t('couldNotGenerateTitle'), getErrorMessage(err)),
+      },
+    );
 
+  // Regenerating reuses the instructions the draft was made with.
   const regenerateDraft = () => {
     if (!draft) return;
-    generateAnswer.mutate(draft.question.id, {
-      onSuccess: (result) =>
-        setDraft({ question: draft.question, text: result.answer, version: draft.version + 1 }),
-      onError: (err) => Alert.alert(t('couldNotGenerateTitle'), getErrorMessage(err)),
-    });
+    generateAnswer.mutate(
+      { questionId: draft.question.id, prompt: draft.prompt },
+      {
+        onSuccess: (result) =>
+          setDraft({ ...draft, text: result.answer, version: draft.version + 1 }),
+        onError: (err) => Alert.alert(t('couldNotGenerateTitle'), getErrorMessage(err)),
+      },
+    );
   };
 
   const saveDraft = (answer: string) => {
@@ -308,20 +317,16 @@ export function MockInterviewQuestionsScreen() {
                     >
                       <Text style={styles.answerButtonText}>{t('writeAnswer')}</Text>
                     </Pressable>
-                    <Pressable
-                      style={[styles.answerButton, styles.answerButtonAi]}
-                      onPress={() => startDraft(question)}
-                      disabled={generateAnswer.isPending}
-                      accessibilityRole="button"
-                      testID={`generate-answer-${question.id}`}
-                    >
-                      <Text style={[styles.answerButtonText, styles.answerButtonAiText]}>
-                        {generateAnswer.isPending && generateAnswer.variables === question.id
-                          ? t('generating')
-                          : t('generateAnswer')}
-                      </Text>
-                    </Pressable>
                   </View>
+                  <MockAnswerAction
+                    question={question}
+                    loading={
+                      generateAnswer.isPending &&
+                      generateAnswer.variables?.questionId === question.id
+                    }
+                    disabled={generateAnswer.isPending}
+                    onGenerate={startDraft}
+                  />
                 </View>
               )}
               <TalkingPointsSection
@@ -472,8 +477,6 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
     },
     answerButtonText: { fontSize: 13, fontWeight: '600', color: colors.text },
-    answerButtonAi: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-    answerButtonAiText: { color: colors.primary, fontWeight: '700' },
     cardActions: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
     spacer: { flex: 1 },
     modalContainer: { flex: 1, backgroundColor: colors.background },

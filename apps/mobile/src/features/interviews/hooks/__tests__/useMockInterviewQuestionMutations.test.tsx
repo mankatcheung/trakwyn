@@ -17,6 +17,7 @@ import {
 } from '../useMockInterviewQuestionMutations';
 import { rememberUseProfile } from '../../lib/mockBackgroundChoice';
 import { mockInterviewQuestionsQueryKey } from '../useMockInterviewQuestionQueries';
+import { llmApiKeysQueryKey } from '../../../settings/hooks/useLlmApiKeys';
 import { interviewRoundsQueryKey } from '../useInterviewQueries';
 import type { MockInterviewQuestion } from '../../types';
 
@@ -295,7 +296,8 @@ describe('useMockInterviewQuestionMutations', () => {
         useProfile: false,
         documentId: null,
       });
-      expect(invalidate).not.toHaveBeenCalled();
+      // Only the credits meter: suggestions are not saved, so no question list changes.
+      expect(invalidatedKeys(invalidate)).toEqual([llmApiKeysQueryKey]);
     });
 
     it('sends the profile and the chosen resume when asked', async () => {
@@ -356,15 +358,32 @@ describe('useMockInterviewQuestionMutations', () => {
 
       let value: unknown;
       await act(async () => {
-        value = await result.current.mutateAsync('q1');
+        value = await result.current.mutateAsync({ questionId: 'q1' });
       });
 
       expect(value).toEqual(generated);
       expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), {
         mockInterviewQuestionId: 'q1',
+        prompt: null,
         useProfile: false,
       });
-      expect(invalidate).not.toHaveBeenCalled();
+      // A draft saves nothing: only the credits meter is re-read.
+      expect(invalidatedKeys(invalidate)).toEqual([llmApiKeysQueryKey]);
+    });
+
+    it('sends the trimmed instructions as the prompt', async () => {
+      mockedGqlRequest.mockResolvedValueOnce({ generateMockInterviewAnswer: { answer: 'A' } });
+      const { wrapper } = setup();
+      const { result } = await renderHook(() => useGenerateMockInterviewAnswer(), { wrapper });
+
+      await act(async () => {
+        await result.current.mutateAsync({ questionId: 'q1', prompt: '  STAR, 90 seconds  ' });
+      });
+
+      expect(mockedGqlRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ prompt: 'STAR, 90 seconds' }),
+      );
     });
 
     it('sends the profile only once the user has switched it on', async () => {
@@ -374,7 +393,7 @@ describe('useMockInterviewQuestionMutations', () => {
       const { result } = await renderHook(() => useGenerateMockInterviewAnswer(), { wrapper });
 
       await act(async () => {
-        await result.current.mutateAsync('q1');
+        await result.current.mutateAsync({ questionId: 'q1' });
       });
       rememberUseProfile(false);
 
@@ -410,10 +429,43 @@ describe('useMockInterviewQuestionMutations', () => {
 
       expect(mockedGqlRequest).toHaveBeenCalledWith(expect.any(String), {
         mockInterviewQuestionId: 'q1',
+        prompt: null,
         useProfile: true,
         documentId: 'doc-1',
       });
-      expect(invalidatedKeys(invalidate)).toEqual([mockInterviewQuestionsQueryKey('round-1')]);
+      expect(invalidatedKeys(invalidate)).toEqual([
+        mockInterviewQuestionsQueryKey('round-1'),
+        llmApiKeysQueryKey,
+      ]);
+    });
+
+    it('sends the instructions as the prompt', async () => {
+      mockedGqlRequest.mockResolvedValueOnce({
+        generateMockTalkingPoints: {
+          nothingRelevant: false,
+          usedProfile: true,
+          usedDocument: false,
+          question: question('q1'),
+        },
+      });
+      const { wrapper } = setup();
+      const { result } = await renderHook(() => useGenerateMockTalkingPoints('app-1', 'round-1'), {
+        wrapper,
+      });
+
+      await act(async () => {
+        await result.current.mutateAsync({
+          questionId: 'q1',
+          prompt: 'Steer toward my ML experience',
+          useProfile: true,
+          documentId: null,
+        });
+      });
+
+      expect(mockedGqlRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ prompt: 'Steer toward my ML experience' }),
+      );
     });
   });
 });

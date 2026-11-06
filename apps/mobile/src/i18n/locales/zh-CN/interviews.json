@@ -62,6 +62,8 @@
   "generateTitle": "生成练习问题",
   "generatePromptLabel": "问题应侧重哪些方面？",
   "generatePromptPlaceholder": "例如：系统设计，5 个问题",
+  "answerPromptPlaceholder": "例如：用我的支付迁移经历，STAR 结构，口述约 90 秒",
+  "talkingPointsPromptPlaceholder": "例如：侧重我的机器学习经验",
   "generate": "生成",
   "regenerate": "重新生成",
   "suggestionsHeading": "建议 · {{count}}",

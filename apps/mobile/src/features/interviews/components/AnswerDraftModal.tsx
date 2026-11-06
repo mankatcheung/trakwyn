@@ -15,6 +15,7 @@ import { INTERVIEW_QUESTION_LIMITS } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 import { AiGeneratedBadge } from './AiGeneratedBadge';
+import { AiCreditCost } from '../../ai/components/AiCreditCost';
 
 interface AnswerDraftModalProps {
   question: string;
@@ -105,6 +106,7 @@ export function AnswerDraftModal({
               {isRegenerating ? t('generating') : t('regenerate')}
             </Text>
           </Pressable>
+          <AiCreditCost feature="mockAnswer" />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>

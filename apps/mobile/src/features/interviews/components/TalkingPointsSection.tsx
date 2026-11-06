@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { AiActionBar } from '../../ai/components/AiActionBar';
 import { useGenerateMockTalkingPoints } from '../hooks/useMockInterviewQuestionMutations';
 import type { MockInterviewQuestion } from '../types';
 import { BackgroundChooser, type MockBackground } from './BackgroundChooser';
@@ -54,6 +54,7 @@ export function TalkingPointsSection({
     documentId: null,
   });
   const [nothingRelevant, setNothingRelevant] = useState(false);
+  const [instructions, setInstructions] = useState('');
 
   const bullets = talkingPointBullets(question.talkingPoints);
   const hasSource = background.useProfile || background.documentId !== null;
@@ -62,6 +63,7 @@ export function TalkingPointsSection({
     generate.reset();
     setNothingRelevant(false);
     setBackground({ useProfile: true, documentId: null });
+    setInstructions('');
     setOpen(true);
   };
 
@@ -69,6 +71,7 @@ export function TalkingPointsSection({
     generate.mutate(
       {
         questionId: question.id,
+        prompt: instructions,
         useProfile: background.useProfile,
         documentId: background.documentId,
       },
@@ -148,22 +151,22 @@ export function TalkingPointsSection({
               {generate.isError ? (
                 <Text style={styles.error}>{getErrorMessage(generate.error)}</Text>
               ) : null}
-              <Pressable
-                style={[
-                  styles.generateButton,
-                  (generate.isPending || !hasSource) && styles.disabled,
-                ]}
-                onPress={run}
-                disabled={generate.isPending || !hasSource}
-                accessibilityRole="button"
-                testID="talking-points-submit-button"
-              >
-                {generate.isPending ? (
-                  <ActivityIndicator color={colors.onPrimary} />
-                ) : (
-                  <Text style={styles.generateButtonText}>{t('generateTalkingPoints')}</Text>
-                )}
-              </Pressable>
+              <AiActionBar
+                feature="talkingPoints"
+                label={t('generateTalkingPoints')}
+                loading={generate.isPending}
+                disabled={!hasSource}
+                onRun={run}
+                buttonTestID="talking-points-submit-button"
+                instructions={{
+                  value: instructions,
+                  onChange: setInstructions,
+                  collapsible: true,
+                  placeholder: t('talkingPointsPromptPlaceholder'),
+                  inputTestID: 'talking-points-prompt-input',
+                  toggleTestID: 'talking-points-instructions-toggle',
+                }}
+              />
             </ScrollView>
           </KeyboardAvoidingView>
         </Modal>
@@ -217,14 +220,5 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 13,
     },
-    generateButton: {
-      minHeight: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-    },
-    generateButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '700' },
-    disabled: { opacity: 0.5 },
   });
 }

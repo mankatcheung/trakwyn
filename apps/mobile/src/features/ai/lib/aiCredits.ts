@@ -1,4 +1,4 @@
-import type { AiCredits } from '../types';
+import type { AiCredits } from '../../settings/types';
 
 /** Above this share of the credits the meter warns rather than just reports (JEF-451). */
 export const NEARING_CREDITS_RATIO = 0.8;
