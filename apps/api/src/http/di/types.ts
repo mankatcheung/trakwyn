@@ -175,6 +175,8 @@ import type { GetDocumentsUseCase } from '#src/use-cases/documents/GetDocumentsU
 import type { DeleteDocumentUseCase } from '#src/use-cases/documents/DeleteDocumentUseCase.js';
 import type { CreateDocumentDraftUseCase } from '#src/use-cases/documents/CreateDocumentDraftUseCase.js';
 import type { UpdateDocumentDraftContentUseCase } from '#src/use-cases/documents/UpdateDocumentDraftContentUseCase.js';
+import type { PolishDocumentDraftUseCase } from '#src/use-cases/documents/PolishDocumentDraftUseCase.js';
+import type { GenerateIntoDocumentDraftUseCase } from '#src/use-cases/documents/GenerateIntoDocumentDraftUseCase.js';
 import type { RenameDocumentDraftUseCase } from '#src/use-cases/documents/RenameDocumentDraftUseCase.js';
 import type { GenerateCoverLetterDraftUseCase } from '#src/use-cases/documents/GenerateCoverLetterDraftUseCase.js';
 import type { GenerateResumeDraftUseCase } from '#src/use-cases/documents/GenerateResumeDraftUseCase.js';
@@ -462,6 +464,7 @@ export interface Cradle {
   generateCompanyBriefingRateLimiter: IRateLimiter;
   generateMockQuestionsRateLimiter: IRateLimiter;
   generateMockAnswerRateLimiter: IRateLimiter;
+  polishDocumentDraftRateLimiter: IRateLimiter;
   generateMockTalkingPointsRateLimiter: IRateLimiter;
   testLlmApiKeyRateLimiter: IRateLimiter;
   updatePasswordRateLimiter: IRateLimiter;
@@ -600,6 +603,8 @@ export interface Cradle {
   createDocumentDraftUseCase: CreateDocumentDraftUseCase;
   updateDocumentDraftContentUseCase: UpdateDocumentDraftContentUseCase;
   renameDocumentDraftUseCase: RenameDocumentDraftUseCase;
+  polishDocumentDraftUseCase: PolishDocumentDraftUseCase;
+  generateIntoDocumentDraftUseCase: GenerateIntoDocumentDraftUseCase;
   generateCoverLetterDraftUseCase: GenerateCoverLetterDraftUseCase;
   generateResumeDraftUseCase: GenerateResumeDraftUseCase;
   generateResumeUseCase: GenerateResumeUseCase;

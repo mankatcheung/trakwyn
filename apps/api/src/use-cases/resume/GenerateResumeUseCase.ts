@@ -26,11 +26,18 @@ import {
   type UserProfile,
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
+import {
+  fenceUserInstructions,
+  normaliseAiInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateResumeInput {
   applicationId: string;
   userId: string;
+  /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
+  instructions?: string | null;
 }
 
 interface Deps extends UserProfileRepositories {
@@ -71,6 +78,7 @@ Absolute rules:
 - Never inflate seniority or exaggerate scope. If the background is thin, produce a short resume.
 - Prefer the candidate's own wording where it is already clear.
 - Write bullets as concrete accomplishments drawn from the descriptions provided. If a role has no description, write no bullets for it rather than imagining them.
+${USER_INSTRUCTIONS_RULE}
 
 Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
 {"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}]}`;
@@ -104,6 +112,7 @@ export class GenerateResumeUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GenerateResumeInput): Promise<ResumeContent> {
+    const instructions = normaliseAiInstructions(input.instructions);
     if (!(await this.deps.generateResumeRateLimiter.consume(`resume:user:${input.userId}`))) {
       throw new RateLimitedError('Too many requests — please wait a moment and try again');
     }
@@ -161,7 +170,7 @@ export class GenerateResumeUseCase {
     if (user?.customAiPrompt) messages.push({ role: 'system', content: user.customAiPrompt });
     messages.push({
       role: 'user',
-      content: this.buildPrompt(app, profile, context, crossApplicationContext),
+      content: this.buildPrompt(app, profile, context, crossApplicationContext, instructions),
     });
 
     const result = await llmProvider.complete(messages, 2048, undefined, {
@@ -179,6 +188,7 @@ export class GenerateResumeUseCase {
     profile: UserProfile,
     applicationContext: string,
     crossApplicationContext: string,
+    instructions: string | null,
   ): string {
     return [
       'Tailor this candidate to the following role.',
@@ -195,6 +205,9 @@ export class GenerateResumeUseCase {
       ...(applicationContext ? [`\n${applicationContext}`] : []),
       ...(crossApplicationContext ? [`\n${crossApplicationContext}`] : []),
       `\nCandidate background — the only facts you may use:\n${formatUserProfile(profile)}`,
+      ...(instructions
+        ? [`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`]
+        : []),
     ].join('\n');
   }
 }

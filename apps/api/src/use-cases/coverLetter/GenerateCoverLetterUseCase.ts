@@ -19,12 +19,19 @@ import { formatApplicationContext } from '#src/use-cases/shared/applicationConte
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
+import {
+  fenceUserInstructions,
+  normaliseAiInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCoverLetterInput {
   applicationId: string;
   userId: string;
   resumeText?: string | null;
+  /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
+  instructions?: string | null;
 }
 
 interface Deps {
@@ -40,12 +47,14 @@ interface Deps {
   companyBriefingRepository: ICompanyBriefingRepository;
 }
 
-const SYSTEM_PROMPT = `You are a professional cover letter writer. Write compelling, personalized cover letters that are concise (3-4 paragraphs), specific to the role, and written in first person. Return ONLY the cover letter body — no subject line, no date, no address block, no explanation.`;
+const SYSTEM_PROMPT = `You are a professional cover letter writer. Write compelling, personalized cover letters that are concise (3-4 paragraphs), specific to the role, and written in first person. Return ONLY the cover letter body — no subject line, no date, no address block, no explanation.
+${USER_INSTRUCTIONS_RULE}`;
 
 export class GenerateCoverLetterUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GenerateCoverLetterInput): Promise<string> {
+    const instructions = normaliseAiInstructions(input.instructions);
     if (
       !(await this.deps.generateCoverLetterRateLimiter.consume(`cover-letter:user:${input.userId}`))
     ) {
@@ -103,6 +112,7 @@ export class GenerateCoverLetterUseCase {
       input.resumeText,
       context,
       crossApplicationContext,
+      instructions,
     );
 
     const messages: LLMMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];
@@ -124,6 +134,7 @@ export class GenerateCoverLetterUseCase {
     resumeText: string | null | undefined,
     applicationContext: string,
     crossApplicationContext: string,
+    instructions: string | null,
   ): string {
     const lines = [
       `Write a cover letter for this job application:`,
@@ -159,6 +170,10 @@ export class GenerateCoverLetterUseCase {
     }
     if (!profile && !hasResume) {
       lines.push('\nWrite a strong general cover letter for someone applying to this role.');
+    }
+
+    if (instructions) {
+      lines.push(`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`);
     }
 
     return lines.join('\n');

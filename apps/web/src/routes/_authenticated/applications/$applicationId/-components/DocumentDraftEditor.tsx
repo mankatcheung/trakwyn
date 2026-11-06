@@ -11,6 +11,23 @@ import {
   ListOrderedIcon,
 } from 'lucide-react';
 import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
+import type { TiptapNode } from '#/lib/markdownToTiptapDoc';
+
+/**
+ * What the AI helper panel may do to the visible editor (JEF-506). The
+ * changes do not go through the editor's debounced save: the caller reads the
+ * result back and saves it itself, so it knows when the save is done.
+ */
+export interface DocumentEditorHandle {
+  getText: () => string;
+  getJson: () => string;
+  /** Swaps the whole document. Any edit still waiting out the save debounce is sent first. */
+  replaceContent: (nodes: TiptapNode[]) => void;
+  /** Adds blocks after the last one. */
+  appendContent: (nodes: TiptapNode[]) => void;
+  /** Read-only while an AI request is in flight, so nothing typed meanwhile is overwritten. */
+  setEditable: (editable: boolean) => void;
+}
 
 interface DocumentDraftEditorProps {
   contentJson: string;
@@ -21,6 +38,10 @@ interface DocumentDraftEditorProps {
    * run against content the server has not seen yet.
    */
   flushRef?: RefObject<(() => void) | null>;
+  /** Receives the handle the AI helper drives the editor through. */
+  editorRef?: RefObject<DocumentEditorHandle | null>;
+  /** Called on every change with the live text, ahead of the save debounce. */
+  onTextChange?: (plainText: string) => void;
 }
 
 function ToolbarButton({
@@ -50,7 +71,13 @@ function ToolbarButton({
   );
 }
 
-export function DocumentDraftEditor({ contentJson, onUpdate, flushRef }: DocumentDraftEditorProps) {
+export function DocumentDraftEditor({
+  contentJson,
+  onUpdate,
+  flushRef,
+  editorRef,
+  onTextChange,
+}: DocumentDraftEditorProps) {
   let initialContent;
   try {
     initialContent = JSON.parse(contentJson);
@@ -77,8 +104,29 @@ export function DocumentDraftEditor({ contentJson, onUpdate, flushRef }: Documen
     onUpdate: ({ editor: e }) => {
       const json = JSON.stringify(e.getJSON());
       const plainText = e.getText();
+      onTextChange?.(plainText);
       debouncedUpdate(json, plainText);
     },
+  });
+
+  useEffect(() => {
+    if (!editorRef || !editor) return;
+    editorRef.current = {
+      getText: () => editor.getText(),
+      getJson: () => JSON.stringify(editor.getJSON()),
+      replaceContent: (nodes) => {
+        flushPendingUpdate();
+        editor.commands.setContent({ type: 'doc', content: nodes }, { emitUpdate: false });
+      },
+      appendContent: (nodes) => {
+        flushPendingUpdate();
+        editor.commands.insertContentAt(editor.state.doc.content.size, nodes);
+      },
+      setEditable: (editable) => editor.setEditable(editable, false),
+    };
+    return () => {
+      editorRef.current = null;
+    };
   });
 
   if (!editor) return null;

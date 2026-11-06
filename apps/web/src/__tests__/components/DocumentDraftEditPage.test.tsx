@@ -20,6 +20,21 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 vi.mock('#/lib/downloadUrl', () => ({ downloadUrl: mockDownloadUrl }));
+vi.mock('#/routes/_authenticated/applications/$applicationId/-components/AiHelperPanel', () => ({
+  AiHelperPanel: ({
+    onSave,
+    plainText,
+    initialInstructions,
+  }: {
+    onSave: (json: string, text: string, instructions: string) => Promise<boolean>;
+    plainText: string;
+    initialInstructions: string | null;
+  }) => (
+    <button onClick={() => void onSave('{"ai":true}', 'ai text', 'make it short')}>
+      mock ai save [{plainText}] [{initialInstructions}]
+    </button>
+  ),
+}));
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 // Stands in for the TipTap editor with an edit still waiting out its save
@@ -30,11 +45,18 @@ vi.mock(
     DocumentDraftEditor: ({
       onUpdate,
       flushRef,
+      editorRef,
     }: {
       onUpdate: (json: string, text: string) => void;
       flushRef?: RefObject<(() => void) | null>;
+      editorRef?: RefObject<{
+        getJson: () => string;
+        getText: () => string;
+      } | null>;
     }) => {
       if (flushRef) flushRef.current = () => onUpdate('{"edited":true}', 'edited');
+      if (editorRef)
+        editorRef.current = { getJson: () => '{"on":"screen"}', getText: () => 'on screen' };
       return <div data-testid="editor" />;
     },
   }),
@@ -50,6 +72,7 @@ const DRAFT = {
   contentJson: '{}',
   plainText: '',
   sourceDocumentId: null,
+  aiInstructions: 'last prompt',
   createdAt: '2026-09-01T00:00:00Z',
   updatedAt: '2026-09-01T00:00:00Z',
 };
@@ -180,5 +203,96 @@ describe('DocumentDraftEditPage — Export PDF', () => {
     expect(mockDownloadUrl).not.toHaveBeenCalled();
     expect(mockToastSuccess).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /export pdf/i })).toBeEnabled();
+  });
+});
+
+describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi();
+  });
+
+  it('hands the helper the saved text and the last prompt', async () => {
+    renderPage();
+    expect(await screen.findByText(/mock ai save \[\] \[last prompt\]/)).toBeInTheDocument();
+  });
+
+  it("saves the helper's content together with its prompt, and treats it as saved", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByText(/mock ai save/));
+
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateDocumentDraftContent'),
+        {
+          input: {
+            draftId: 'draft-1',
+            contentJson: '{"ai":true}',
+            plainText: 'ai text',
+            aiInstructions: 'make it short',
+          },
+        },
+      ),
+    );
+    expect(
+      await screen.findByText(/mock ai save \[ai text\] \[make it short\]/),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps an AI save that failed visible, and retries it with what is on screen', async () => {
+    let failNext = true;
+    mockApi({
+      save: () => (failNext ? Promise.reject(new Error('offline')) : Promise.resolve({ ok: true })),
+    });
+    renderPage();
+    fireEvent.click(await screen.findByText(/mock ai save/));
+
+    expect(await screen.findByText(/could not be saved/i)).toBeInTheDocument();
+    // The text counts as the draft's even though the save failed.
+    expect(screen.getByText(/mock ai save \[ai text\]/)).toBeInTheDocument();
+
+    failNext = false;
+    fireEvent.click(screen.getByRole('button', { name: /retry save/i }));
+
+    await waitFor(() => expect(screen.queryByText(/could not be saved/i)).not.toBeInTheDocument());
+    expect(mockGqlRequest).toHaveBeenLastCalledWith(
+      expect.stringContaining('UpdateDocumentDraftContent'),
+      {
+        input: {
+          draftId: 'draft-1',
+          contentJson: '{"on":"screen"}',
+          plainText: 'on screen',
+          aiInstructions: 'make it short',
+        },
+      },
+    );
+  });
+
+  it('runs saves one at a time, in order, so an older one cannot land after a newer one', async () => {
+    const finishers: Array<(v: unknown) => void> = [];
+    mockApi({ save: () => new Promise((resolve) => finishers.push(resolve)) });
+    renderPage();
+    const button = await screen.findByText(/mock ai save/);
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => expect(finishers).toHaveLength(1));
+    // The second save has not been sent while the first is in flight.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(finishers).toHaveLength(1);
+
+    finishers[0]!({ ok: true });
+    await waitFor(() => expect(finishers).toHaveLength(2));
+  });
+
+  it('does not send aiInstructions for an ordinary editor save', async () => {
+    renderPage();
+    await clickExport();
+
+    await waitFor(() => expect(mockDownloadUrl).toHaveBeenCalled());
+    const save = mockGqlRequest.mock.calls.find(([q]) =>
+      String(q).includes('UpdateDocumentDraftContent'),
+    );
+    expect(save![1].input).not.toHaveProperty('aiInstructions');
   });
 });

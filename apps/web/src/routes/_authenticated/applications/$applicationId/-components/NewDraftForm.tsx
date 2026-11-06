@@ -10,17 +10,6 @@ import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input, Select } from '@trakwyn/ui';
 import type { SectionId } from '../-sections';
-import { GenerateCoverLetterCard } from './GenerateCoverLetterCard';
-import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
-
-const GENERATE_RESUME_MUTATION = `
-  mutation GenerateResume($applicationId: ID!) {
-    generateResume(applicationId: $applicationId) {
-      id
-      applicationId
-    }
-  }
-`;
 
 const CREATE_DRAFT_MUTATION = `
   mutation CreateDocumentDraft($input: CreateDocumentDraftInput!) {
@@ -68,7 +57,8 @@ interface NewDraftFormProps {
 /**
  * The create-draft form behind both `cover-letters/new` and `resumes/new`.
  * Each route passes its own type, so there is nothing for the user to choose
- * (JEF-396); each offers its own AI generation from the saved profile.
+ * (JEF-396). It only creates the draft: writing it with AI happens in the
+ * editor's AI helper (JEF-506), for both types.
  */
 export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
   const { t } = useLocale();
@@ -81,8 +71,6 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const profileEmpty = useIsProfileEmpty();
-  const [askAboutProfile, setAskAboutProfile] = useState(false);
   const { data: draftsData } = useQuery(documentDraftsQueryOptions(applicationId));
   const draftCount = draftsData?.documentDrafts?.length ?? 0;
   const draftsFull = useQuotaState('documentDrafts', draftCount)?.level === 'full';
@@ -144,27 +132,6 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
     }
   };
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await gqlClient.request<{
-        generateResume: { id: string; applicationId: string };
-      }>(GENERATE_RESUME_MUTATION, { applicationId });
-      await navigate({
-        to: '/applications/$applicationId/documents/$draftId',
-        params: { applicationId: res.generateResume.applicationId, draftId: res.generateResume.id },
-      });
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // An empty profile makes a generic resume, so ask first (JEF-460).
-  const startGenerate = () => (profileEmpty ? setAskAboutProfile(true) : void handleGenerate());
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -205,36 +172,6 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
           )}
         </div>
 
-        {type === 'cover_letter' && <GenerateCoverLetterCard applicationId={applicationId} />}
-
-        {type === 'resume' && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {t('documentDraft.generateResumeTitle')}
-            </p>
-            <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-              {t('documentDraft.generateResumeHelp')}
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-3"
-              onClick={startGenerate}
-              disabled={loading || draftsFull}
-            >
-              {loading ? t('documentDraft.generating') : `✨ ${t('documentDraft.generateResume')}`}
-            </Button>
-            {askAboutProfile && (
-              <EmptyProfilePrompt
-                onGenerateAnyway={() => {
-                  setAskAboutProfile(false);
-                  void handleGenerate();
-                }}
-              />
-            )}
-          </div>
-        )}
-
         <QuotaHint resource="documentDrafts" used={draftCount} />
 
         {error && <Alert>{error}</Alert>}
@@ -253,7 +190,7 @@ export function NewDraftForm({ applicationId, type }: NewDraftFormProps) {
           >
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={loading || !title.trim() || draftsFull}>
+          <Button type="submit" disabled={loading || draftsFull}>
             {loading ? t('documentDraft.creating') : t('documentDraft.createDraft')}
           </Button>
         </div>

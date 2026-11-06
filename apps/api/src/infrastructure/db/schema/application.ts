@@ -264,6 +264,7 @@ export const documentDraft = pgTable(
     sourceDocumentId: text('sourceDocumentId').references(() => document.id, {
       onDelete: 'set null',
     }),
+    aiInstructions: text('aiInstructions'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),

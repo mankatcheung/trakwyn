@@ -177,6 +177,7 @@ export const AI_FEATURE = {
   PARSE_CV: 'parseCv',
   CHAT: 'chat',
   KEY_TEST: 'keyTest',
+  POLISH_DRAFT: 'polishDraft',
 } as const;
 
 export type AiFeature = (typeof AI_FEATURE)[keyof typeof AI_FEATURE];
@@ -230,6 +231,7 @@ export const AI_CREDITS = {
     parseCv: 1,
     chat: 1,
     keyTest: 0,
+    polishDraft: 1,
   } as const satisfies Record<AiFeature, number>,
   /** Extra credits a new account has for its first `WELCOME_DAYS`, on top of the plan's monthly size. A plan with no credits gets none. */
   WELCOME_BONUS: 20,
@@ -456,6 +458,10 @@ export const JOB_POSTING_STRUCTURED = {
  * user paste of one, not from the requesting user's own account data.
  */
 export const AI_PROMPT_INPUT = {
+  /** The user's optional steer on a generated or polished resume/cover letter (JEF-506). */
+  AI_INSTRUCTIONS_MAX_CHARS: 500,
+  /** The document text sent to be polished (JEF-506). */
+  POLISH_DOCUMENT_MAX_CHARS: 20000,
   /** ParseJobDescriptionUseCase — raw scraped/pasted job posting text. */
   JOB_POSTING_MAX_CHARS: 8000,
   /** GenerateCoverLetterUseCase — the application's job description field. */
@@ -701,6 +707,12 @@ export const MOCK_INTERVIEW_PROMPT_TASK = {
  */
 export const CV_IMPORT_PROMPT_TASK = 'extract structured data from a CV';
 
+/** The task sentence the polish prompt carries (JEF-506); the fake LLM route reads it to answer with canned markdown. */
+export const POLISH_DRAFT_PROMPT_TASK = 'polish a resume or cover letter the user wrote';
+
+/** Output budget for a polished document (JEF-506); sized above POLISH_DOCUMENT_MAX_CHARS of prose. */
+export const POLISH_DRAFT_MAX_TOKENS = 6000;
+
 /** How many practice questions one generate request may ask the model for (JEF-393). */
 export const MOCK_QUESTION_GENERATION = {
   DEFAULT_COUNT: 5,
@@ -924,4 +936,5 @@ export const AI_REASONING_DEFAULTS = {
   MOCK_ANSWER: 'off',
   TALKING_POINTS: 'off',
   TEST_API_KEY: 'off',
+  POLISH_DRAFT: 'off',
 } as const satisfies Record<string, 'off' | 'low' | 'default'>;

@@ -7,7 +7,8 @@ import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { downloadUrl } from '#/lib/downloadUrl';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
-import { DocumentDraftEditor } from '../-components/DocumentDraftEditor';
+import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
+import { AiHelperPanel } from '../-components/AiHelperPanel';
 import { resumeAtsScoresQueryKey } from '../-resumeAtsQueries';
 import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
@@ -23,6 +24,7 @@ const DRAFT_QUERY = `
       contentJson
       plainText
       sourceDocumentId
+      aiInstructions
       createdAt
       updatedAt
     }
@@ -85,12 +87,24 @@ export function DocumentDraftEditPage() {
   // screen. Export flushes the first and waits out the second.
   const flushEditorRef = useRef<(() => void) | null>(null);
   const pendingSaveRef = useRef<Promise<boolean> | null>(null);
+  // The AI helper reads and changes the visible editor through this.
+  const editorRef = useRef<DocumentEditorHandle | null>(null);
+  // Saves run one after another, in the order they were asked for, so an older
+  // one (the editor's flush before an AI result is applied) cannot land after it.
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const aiInstructionsRef = useRef<string | undefined>(undefined);
+  // The text on screen, ahead of the debounced save: the helper chooses
+  // Generate or Polish by it, and a preview goes stale when it changes.
+  const [liveText, setLiveText] = useState('');
+  // The helper's last result is on screen but its save failed.
+  const [aiUnsaved, setAiUnsaved] = useState(false);
   const [draft, setDraft] = useState<{
     id: string;
     type: string;
     title: string;
     contentJson: string;
     plainText: string;
+    aiInstructions: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,21 +133,54 @@ export function DocumentDraftEditPage() {
   useEffect(() => {
     gqlClient
       .request<{ documentDraft: typeof draft }>(DRAFT_QUERY, { id: draftId })
-      .then((res) => setDraft(res.documentDraft))
+      .then((res) => {
+        setDraft(res.documentDraft);
+        setLiveText(res.documentDraft?.plainText ?? '');
+      })
       .catch((err) =>
         setError(err instanceof Error ? err.message : t('documentDraftEdit.loadFailed')),
       )
       .finally(() => setLoading(false));
   }, [draftId, t]);
 
-  const saveContent = async (contentJson: string, plainText: string): Promise<boolean> => {
+  const saveContent = (
+    contentJson: string,
+    plainText: string,
+    aiInstructions?: string,
+  ): Promise<boolean> => {
+    const run = saveQueueRef.current.then(() =>
+      writeContent(contentJson, plainText, aiInstructions),
+    );
+    saveQueueRef.current = run;
+    return run;
+  };
+
+  const writeContent = async (
+    contentJson: string,
+    plainText: string,
+    aiInstructions?: string,
+  ): Promise<boolean> => {
     setSaving(true);
     try {
       await gqlClient.request(UPDATE_CONTENT_MUTATION, {
-        input: { draftId, contentJson, plainText },
+        input: {
+          draftId,
+          contentJson,
+          plainText,
+          ...(aiInstructions !== undefined && { aiInstructions }),
+        },
       });
       setLastSaved(new Date());
-      setDraft((prev) => (prev ? { ...prev, contentJson, plainText } : prev));
+      setDraft((prev) =>
+        prev
+          ? {
+              ...prev,
+              contentJson,
+              plainText,
+              aiInstructions: aiInstructions ?? prev.aiInstructions,
+            }
+          : prev,
+      );
       // The resume's saved match and ATS result are stale once its text changes;
       // refetch so the Resumes list shows the reminder instead of a cached "up to
       // date" result.
@@ -151,9 +198,35 @@ export function DocumentDraftEditPage() {
   const handleUpdate = (contentJson: string, plainText: string) => {
     const save = saveContent(contentJson, plainText);
     pendingSaveRef.current = save;
+    void save.then((ok) => {
+      // What is on screen is now saved, whatever the helper had left unsaved.
+      if (ok) setAiUnsaved(false);
+    });
     void save.finally(() => {
       if (pendingSaveRef.current === save) pendingSaveRef.current = null;
     });
+  };
+
+  // The helper's saves go through the same pending-save tracking as the editor's,
+  // so Export waits for them too.
+  const handleAiSave = (contentJson: string, plainText: string, aiInstructions: string) => {
+    // The editor is already showing the result: count it as the text even if the
+    // save fails, and keep the failure visible with a way to retry.
+    setLiveText(plainText);
+    aiInstructionsRef.current = aiInstructions;
+    const save = saveContent(contentJson, plainText, aiInstructions);
+    pendingSaveRef.current = save;
+    void save.then((ok) => setAiUnsaved(!ok));
+    void save.finally(() => {
+      if (pendingSaveRef.current === save) pendingSaveRef.current = null;
+    });
+    return save;
+  };
+
+  const retryAiSave = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    void handleAiSave(editor.getJson(), editor.getText(), aiInstructionsRef.current ?? '');
   };
 
   const handleExportPdf = async () => {
@@ -220,7 +293,7 @@ export function DocumentDraftEditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto max-w-6xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <IconButton
@@ -285,12 +358,35 @@ export function DocumentDraftEditPage() {
       </div>
 
       {error && <Alert className="mb-4">{error}</Alert>}
+      {aiUnsaved && (
+        <Alert className="mb-4">
+          {t('documentDraftEdit.aiUnsaved')}{' '}
+          <button type="button" className="font-medium underline" onClick={retryAiSave}>
+            {t('documentDraftEdit.retrySave')}
+          </button>
+        </Alert>
+      )}
 
-      <DocumentDraftEditor
-        contentJson={draft.contentJson}
-        onUpdate={handleUpdate}
-        flushRef={flushEditorRef}
-      />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <DocumentDraftEditor
+          contentJson={draft.contentJson}
+          onUpdate={handleUpdate}
+          flushRef={flushEditorRef}
+          editorRef={editorRef}
+          onTextChange={setLiveText}
+        />
+        <div className="lg:sticky lg:top-4 lg:self-start">
+          <AiHelperPanel
+            draftId={draft.id}
+            applicationId={applicationId}
+            type={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
+            plainText={liveText}
+            initialInstructions={draft.aiInstructions}
+            editorRef={editorRef}
+            onSave={handleAiSave}
+          />
+        </div>
+      </div>
     </div>
   );
 }

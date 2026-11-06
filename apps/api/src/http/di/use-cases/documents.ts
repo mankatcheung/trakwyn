@@ -14,6 +14,8 @@ import { GetDocumentDraftUseCase } from '#src/use-cases/documents/GetDocumentDra
 import { DeleteDocumentDraftUseCase } from '#src/use-cases/documents/DeleteDocumentDraftUseCase.js';
 import { ExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
 import { ExportDocumentDraftToPdfUseCase } from '#src/use-cases/documents/ExportDocumentDraftToPdfUseCase.js';
+import { PolishDocumentDraftUseCase } from '#src/use-cases/documents/PolishDocumentDraftUseCase.js';
+import { GenerateIntoDocumentDraftUseCase } from '#src/use-cases/documents/GenerateIntoDocumentDraftUseCase.js';
 import { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
 
 import type { Cradle } from '../types.js';
@@ -47,6 +49,12 @@ export const documents = {
     lifetime: Lifetime.TRANSIENT,
   }),
   exportDocumentDraftToPdfUseCase: asClass(ExportDocumentDraftToPdfUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  polishDocumentDraftUseCase: asClass(PolishDocumentDraftUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  generateIntoDocumentDraftUseCase: asClass(GenerateIntoDocumentDraftUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
   getDocumentVersionOutcomesUseCase: asClass(GetDocumentVersionOutcomesUseCase, {

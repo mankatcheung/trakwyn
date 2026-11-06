@@ -174,4 +174,43 @@ describe('DrizzleDocumentDraftRepository', () => {
       expect(drafts[0].id).toBe('d-app2-b');
     });
   });
+
+  describe('countByApplicationId and aiInstructions (JEF-506)', () => {
+    const make = (id: string, plainText: string) =>
+      repo.create({ id, applicationId: 'app-1', type: 'resume', title: id, plainText });
+
+    it('does not count drafts whose text is empty or only whitespace', async () => {
+      await make('d-empty', '');
+      await make('d-blank', ' \n\t ');
+      await make('d-text', 'Real content');
+
+      expect(await repo.countByApplicationId('app-1')).toBe(1);
+    });
+
+    it('defaults aiInstructions to null and saves them on create', async () => {
+      expect((await make('d-1', 'x')).aiInstructions).toBeNull();
+      const created = await repo.create({
+        id: 'd-2',
+        applicationId: 'app-1',
+        type: 'resume',
+        title: 'd-2',
+        aiInstructions: 'Be brief',
+      });
+      expect(created.aiInstructions).toBe('Be brief');
+    });
+
+    it('updateContent leaves instructions alone when absent, sets and clears them otherwise', async () => {
+      await make('d-1', 'x');
+      const content = { contentJson: '{}', plainText: 'y' };
+
+      expect((await repo.updateContent('d-1', content)).aiInstructions).toBeNull();
+      expect(
+        (await repo.updateContent('d-1', { ...content, aiInstructions: 'Shorter' })).aiInstructions,
+      ).toBe('Shorter');
+      expect((await repo.updateContent('d-1', content)).aiInstructions).toBe('Shorter');
+      expect(
+        (await repo.updateContent('d-1', { ...content, aiInstructions: null })).aiInstructions,
+      ).toBeNull();
+    });
+  });
 });

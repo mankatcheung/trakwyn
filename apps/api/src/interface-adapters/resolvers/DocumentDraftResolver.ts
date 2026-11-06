@@ -7,6 +7,14 @@ import type { IGetDocumentDraftsUseCase } from '#src/use-cases/documents/GetDocu
 import type { IGetDocumentDraftUseCase } from '#src/use-cases/documents/GetDocumentDraftUseCase.js';
 import type { IDeleteDocumentDraftUseCase } from '#src/use-cases/documents/DeleteDocumentDraftUseCase.js';
 import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
+import type {
+  IPolishDocumentDraftUseCase,
+  PolishDocumentDraftOutput,
+} from '#src/use-cases/documents/IPolishDocumentDraftUseCase.js';
+import type {
+  IGenerateIntoDocumentDraftUseCase,
+  GenerateIntoDocumentDraftOutput,
+} from '#src/use-cases/documents/GenerateIntoDocumentDraftUseCase.js';
 import type { IExportDocumentDraftToPdfUseCase } from '#src/use-cases/documents/ExportDocumentDraftToPdfUseCase.js';
 import type {
   DocumentDraftMapper,
@@ -22,6 +30,8 @@ interface Deps {
   renameDocumentDraftUseCase: IRenameDocumentDraftUseCase;
   generateCoverLetterDraftUseCase: IGenerateCoverLetterDraftUseCase;
   generateResumeDraftUseCase: IGenerateResumeDraftUseCase;
+  polishDocumentDraftUseCase: IPolishDocumentDraftUseCase;
+  generateIntoDocumentDraftUseCase: IGenerateIntoDocumentDraftUseCase;
   getDocumentDraftsUseCase: IGetDocumentDraftsUseCase;
   getDocumentDraftUseCase: IGetDocumentDraftUseCase;
   deleteDocumentDraftUseCase: IDeleteDocumentDraftUseCase;
@@ -45,6 +55,7 @@ interface UpdateContentInput {
   draftId: string;
   contentJson: string;
   plainText: string;
+  aiInstructions?: string | null;
 }
 
 export class DocumentDraftResolver {
@@ -82,6 +93,7 @@ export class DocumentDraftResolver {
       draftId: input.draftId,
       contentJson: input.contentJson,
       plainText: input.plainText,
+      aiInstructions: input.aiInstructions,
     });
     return this.deps.documentDraftMapper.toDTO(draft);
   }
@@ -117,6 +129,25 @@ export class DocumentDraftResolver {
   async generateResumeDraft(userId: string, applicationId: string): Promise<DocumentDraftDTO> {
     const draft = await this.deps.generateResumeDraftUseCase.execute({ userId, applicationId });
     return this.deps.documentDraftMapper.toDTO(draft);
+  }
+
+  async polishDocumentDraft(
+    userId: string,
+    input: { draftId: string; plainText: string; instructions?: string | null },
+  ): Promise<PolishDocumentDraftOutput> {
+    return this.deps.polishDocumentDraftUseCase.execute({ userId, ...input });
+  }
+
+  async generateIntoDocumentDraft(
+    userId: string,
+    input: {
+      draftId: string;
+      instructions?: string | null;
+      resumeDocumentId?: string | null;
+      resumeDraftId?: string | null;
+    },
+  ): Promise<GenerateIntoDocumentDraftOutput> {
+    return this.deps.generateIntoDocumentDraftUseCase.execute({ userId, ...input });
   }
 
   async deleteDocumentDraft(userId: string, draftId: string): Promise<boolean> {

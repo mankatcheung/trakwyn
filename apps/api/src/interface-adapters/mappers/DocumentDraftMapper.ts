@@ -8,6 +8,7 @@ export interface DocumentDraftDTO {
   contentJson: string;
   plainText: string;
   sourceDocumentId: string | null;
+  aiInstructions: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +23,7 @@ export class DocumentDraftMapper {
       contentJson: draft.contentJson,
       plainText: draft.plainText,
       sourceDocumentId: draft.sourceDocumentId,
+      aiInstructions: draft.aiInstructions,
       createdAt: draft.createdAt.toISOString(),
       updatedAt: draft.updatedAt.toISOString(),
     };

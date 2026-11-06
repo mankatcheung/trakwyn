@@ -199,15 +199,18 @@ test.describe('AI resume generation', () => {
     const applicationId = await createApplication(page, { company: 'DestCo', role: 'Engineer' });
 
     // The resume form is its own page, so there is no type to pick (JEF-396).
+    // Create new opens a blank draft; the AI helper beside the editor writes it (JEF-506).
     await page.goto(`/applications/${applicationId}/resumes/new`);
-    await page.getByRole('button', { name: /generate resume/i }).click();
+    await page.getByPlaceholder('Resume').fill('DestCo — Engineer');
+    await page.getByRole('button', { name: /create draft/i }).click();
 
     // (?!new$) excludes the form's own URL — it already matches
-    // ".../documents/<segment>$" before the post-generate navigation happens,
+    // ".../documents/<segment>$" before the post-create navigation happens,
     // the same trap createApplication's helper had (see its own fix).
     await expect(page).toHaveURL(
       new RegExp(`/applications/${applicationId}/documents/(?!new$)[^/]+$`),
     );
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
     await expect(page.getByText('Acme Corp')).toBeVisible();
     await expect(page.getByText('Built things.')).toBeVisible();
 
@@ -226,14 +229,17 @@ test.describe('AI resume generation', () => {
   }) => {
     const applicationId = await createApplication(page, { company: 'LetterCo', role: 'Engineer' });
 
-    // Same flow as the resume: the generate block lives on the create form.
+    // Same flow as the resume: Create new opens the editor, the helper generates (JEF-506).
     await page.goto(`/applications/${applicationId}/cover-letters/new`);
-    await expect(page.getByLabel(/base it on a resume/i)).toBeVisible();
-    await page.getByRole('button', { name: /generate cover letter/i }).click();
+    await page.getByPlaceholder('Cover letter').fill('LetterCo — Engineer');
+    await page.getByRole('button', { name: /create draft/i }).click();
 
     await expect(page).toHaveURL(
       new RegExp(`/applications/${applicationId}/documents/(?!new$)[^/]+$`),
     );
+    await expect(page.getByLabel(/base it on a resume/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Polish', exact: true })).toBeVisible();
 
     await page.goto(`/applications/${applicationId}`);
     await page

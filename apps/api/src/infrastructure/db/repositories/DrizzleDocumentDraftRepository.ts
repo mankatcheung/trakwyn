@@ -24,7 +24,13 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
     const [row] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(documentDraft)
-      .where(eq(documentDraft.applicationId, applicationId));
+      .where(
+        and(
+          eq(documentDraft.applicationId, applicationId),
+          // A draft with no text yet (a blank one the editor made on open) does not use up a slot (JEF-506).
+          sql`${documentDraft.plainText} ~ '\\S'`,
+        ),
+      );
     return Number(row?.count ?? 0);
   }
 
@@ -57,6 +63,7 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
         contentJson: data.contentJson ?? '{}',
         plainText: data.plainText ?? '',
         sourceDocumentId: data.sourceDocumentId ?? null,
+        aiInstructions: data.aiInstructions ?? null,
       })
       .returning();
     return this.toEntity(row);
@@ -68,6 +75,8 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
       .set({
         contentJson: data.contentJson,
         plainText: data.plainText,
+        // Absent leaves the saved instructions alone; null clears them.
+        ...(data.aiInstructions !== undefined ? { aiInstructions: data.aiInstructions } : {}),
         updatedAt: new Date(),
       })
       .where(eq(documentDraft.id, id))
@@ -119,6 +128,7 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
       contentJson: row.contentJson,
       plainText: row.plainText,
       sourceDocumentId: row.sourceDocumentId,
+      aiInstructions: row.aiInstructions,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

@@ -1,6 +1,10 @@
 import type { RouteDefinition } from '#src/http/ports/RouteDefinition.js';
 import { ROUTES } from '#src/http/constants.js';
-import { CV_IMPORT_PROMPT_TASK, MOCK_INTERVIEW_PROMPT_TASK } from '#src/use-cases/constants.js';
+import {
+  CV_IMPORT_PROMPT_TASK,
+  MOCK_INTERVIEW_PROMPT_TASK,
+  POLISH_DRAFT_PROMPT_TASK,
+} from '#src/use-cases/constants.js';
 
 const FAKE_CHAT_REPLY = 'Fake assistant reply for e2e testing.';
 
@@ -19,6 +23,9 @@ const FAKE_TALKING_POINTS = {
 };
 const FAKE_MOCK_ANSWER =
   'I would start by clarifying the goal, then walk through the trade-offs I weighed and what I learned.';
+
+const FAKE_POLISHED_DRAFT =
+  '# Polished draft\n\nA tighter, clearer version of your text, with the same facts.';
 
 /** What the CV import (JEF-461) reads out of any CV in dev and e2e: two roles, one degree, three skills. */
 const FAKE_CV_PROFILE = {
@@ -133,6 +140,10 @@ export function fakeLlmCompletionsRoutes(): RouteDefinition[] {
         }
         if (system.includes(MOCK_INTERVIEW_PROMPT_TASK.ANSWER)) {
           res.send({ choices: [{ message: { content: FAKE_MOCK_ANSWER, tool_calls: [] } }] });
+          return;
+        }
+        if (system.includes(POLISH_DRAFT_PROMPT_TASK)) {
+          res.send({ choices: [{ message: { content: FAKE_POLISHED_DRAFT, tool_calls: [] } }] });
           return;
         }
         if (system.includes(CV_IMPORT_PROMPT_TASK)) {
