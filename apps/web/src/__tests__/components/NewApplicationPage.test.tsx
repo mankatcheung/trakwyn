@@ -27,6 +27,17 @@ vi.mock('#/lib/queryClient', () => ({
 
 import { NewApplicationPage } from '#/routes/_authenticated/applications/-components/NewApplicationPage';
 
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: false,
+    needsSetup: false,
+    view: null,
+    costOf: () => null,
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+
 describe('NewApplicationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();

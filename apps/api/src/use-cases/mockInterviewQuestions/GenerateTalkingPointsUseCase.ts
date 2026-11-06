@@ -23,7 +23,10 @@ import {
   AI_FEATURE,
   AI_REASONING_DEFAULTS,
 } from '#src/use-cases/constants.js';
-import { buildMockInterviewContext } from '#src/use-cases/mockInterviewQuestions/mockInterviewContext.js';
+import {
+  buildMockInterviewContext,
+  normaliseMockPrompt,
+} from '#src/use-cases/mockInterviewQuestions/mockInterviewContext.js';
 import {
   buildCandidateBackground,
   type CandidateBackgroundDeps,
@@ -55,6 +58,8 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
     ) {
       throw new RateLimitedError('Too many requests — please wait a moment and try again');
     }
+
+    const prompt = normaliseMockPrompt(input.prompt);
 
     const question = await this.deps.mockInterviewQuestionRepository.findById(input.questionId);
     if (!question) throw new NotFoundError('Practice question not found');
@@ -92,6 +97,7 @@ export class GenerateTalkingPointsUseCase implements IGenerateTalkingPointsUseCa
       contextText: context.text,
       backgroundText: background.text,
       question: question.question,
+      request: prompt,
       customAiPrompt: user?.customAiPrompt,
     });
 

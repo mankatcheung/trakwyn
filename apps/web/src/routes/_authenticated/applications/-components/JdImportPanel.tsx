@@ -3,6 +3,9 @@ import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode, AI_NOT_CONFIGURED_CODE } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
+import { AiCreditCost } from '#/components/ai/AiCreditCost';
+import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { SparklesIcon } from 'lucide-react';
 import { Button, Input, Textarea } from '@trakwyn/ui';
 
@@ -28,6 +31,7 @@ interface Props {
 
 export function JdImportPanel({ onFill }: Props) {
   const { t } = useLocale();
+  const { onTrakwynAi } = useAiCredits();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'text' | 'url'>('text');
   const [text, setText] = useState('');
@@ -140,6 +144,8 @@ export function JdImportPanel({ onFill }: Props) {
                   : t('jdImport.autoFillFields')}
             </span>
           </Button>
+          <AiCreditCost feature="parseJobDescription" />
+          {onTrakwynAi && <AiCreditsMeter variant="inline" />}
           <p className="text-xs text-blue-500 dark:text-blue-400">{t('jdImport.prefilledNote')}</p>
         </div>
       )}

@@ -91,11 +91,13 @@ mutation GenerateMockInterviewAnswer(
 
 mutation GenerateMockTalkingPoints(
   $mockInterviewQuestionId: ID!
+  $prompt: String
   $useProfile: Boolean
   $documentId: ID
 ) {
   generateMockTalkingPoints(
     mockInterviewQuestionId: $mockInterviewQuestionId
+    prompt: $prompt
     useProfile: $useProfile
     documentId: $documentId
   ) {

@@ -132,7 +132,7 @@ describe('GenerateMockQuestionsUseCase', () => {
     const user = sentMessages(llmProvider).find((m) => m.role === 'user')!.content;
     expect(user).toContain('Build APIs.');
     expect(user).toContain('Acme is a payments company.');
-    expect(user).toContain('system design');
+    expect(user).toContain('<user_instructions>\nsystem design\n</user_instructions>');
     expect(user.match(/<untrusted_external_content>/g)).toHaveLength(2);
   });
 
@@ -166,7 +166,7 @@ describe('GenerateMockQuestionsUseCase', () => {
       .execute({
         userId: 'user-1',
         roundId: 'round-1',
-        prompt: 'x'.repeat(AI_PROMPT_INPUT.MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS + 1),
+        prompt: 'x'.repeat(AI_PROMPT_INPUT.AI_INSTRUCTIONS_MAX_CHARS + 1),
       })
       .catch((e) => e);
 

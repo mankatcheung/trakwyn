@@ -14,6 +14,20 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { CompanyBriefingTab } from '#/routes/_authenticated/applications/$applicationId/-components/CompanyBriefingTab';
 
+const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+
 const makeClient = () =>
   new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
 
@@ -38,6 +52,7 @@ const respondWith = (briefing: unknown, generated?: unknown) =>
 describe('CompanyBriefingTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    credits.onTrakwynAi = false;
     Object.assign(navigator, { clipboard: { writeText: vi.fn() } });
   });
 
@@ -178,5 +193,56 @@ describe('CompanyBriefingTab', () => {
     fireEvent.click(screen.getByRole('button', { name: /copy/i }));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(stored.content);
+  });
+
+  describe('instructions and credits (JEF-507)', () => {
+    it('sends the instructions typed with the generate mutation', async () => {
+      respondWith(null);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      const box = await screen.findByLabelText('Instructions (optional)');
+      fireEvent.change(box, { target: { value: '  focus on remote culture  ' } });
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /generate briefing/i })).toBeEnabled(),
+      );
+      fireEvent.click(screen.getByRole('button', { name: /generate briefing/i }));
+
+      await waitFor(() =>
+        expect(mockGqlRequest).toHaveBeenCalledWith(
+          expect.stringContaining('GenerateCompanyBriefing'),
+          { applicationId: 'app-1', instructions: 'focus on remote culture' },
+        ),
+      );
+    });
+
+    it('sends null when the box is left empty', async () => {
+      respondWith(null);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /generate briefing/i })).toBeEnabled(),
+      );
+      fireEvent.click(screen.getByRole('button', { name: /generate briefing/i }));
+
+      await waitFor(() =>
+        expect(mockGqlRequest).toHaveBeenCalledWith(
+          expect.stringContaining('GenerateCompanyBriefing'),
+          { applicationId: 'app-1', instructions: null },
+        ),
+      );
+    });
+
+    it('shows the cost on Trakwyn AI and nothing with the user’s own key', async () => {
+      respondWith(null);
+      const { unmount } = render(<CompanyBriefingTab applicationId="app-1" />, {
+        wrapper: Wrapper,
+      });
+      expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
+      unmount();
+
+      credits.onTrakwynAi = true;
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+      expect(await screen.findByText('Uses 1 credit')).toBeInTheDocument();
+    });
   });
 });

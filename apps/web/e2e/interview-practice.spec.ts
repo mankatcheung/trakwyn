@@ -103,14 +103,20 @@ for (const viewport of VIEWPORTS) {
       await shot(page, `${viewport.name}-4-label-kept`);
     });
 
-    test('asks for an AI key, with the API’s own message, when none is set', async ({ page }) => {
+    test('offers to set up AI, instead of a Generate button, when no AI is set (JEF-507)', async ({
+      page,
+    }) => {
       await openInterviewsAt(page, viewport, { withAiKey: false });
       await addRoundAndOpenPractice(page);
 
       await page.getByRole('button', { name: 'Generate questions' }).click();
-      await page.getByRole('button', { name: 'Generate', exact: true }).click();
 
-      await expect(page.getByRole('alert')).toContainText(/AI API key/i);
+      await expect(page.getByText('Set up an AI provider to use the helper.')).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Set up AI' })).toHaveAttribute(
+        'href',
+        '/settings/ai',
+      );
+      await expect(page.getByRole('button', { name: 'Generate', exact: true })).toHaveCount(0);
     });
 
     test('says so, rather than inventing experience, when the profile has nothing relevant (JEF-394)', async ({

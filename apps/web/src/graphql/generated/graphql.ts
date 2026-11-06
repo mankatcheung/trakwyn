@@ -35,6 +35,26 @@ export type ActivityLog = {
   payload?: Maybe<Scalars['String']['output']>;
 };
 
+/** What one hosted AI action costs, in credits. */
+export type AiCreditCost = {
+  __typename?: 'AiCreditCost';
+  credits: Scalars['Int']['output'];
+  feature: Scalars['String']['output'];
+};
+
+/** This month's hosted AI credits. Calls on the user's own key are never counted. */
+export type AiCredits = {
+  __typename?: 'AiCredits';
+  /** Welcome-bonus credits still unspent; 0 after the first 14 days. */
+  bonusRemaining?: Maybe<Scalars['Int']['output']>;
+  /** What each AI action costs in credits (the same on every plan). */
+  costs: Array<AiCreditCost>;
+  /** The plan's monthly size, without the welcome bonus. */
+  limit?: Maybe<Scalars['Int']['output']>;
+  resetsAt?: Maybe<Scalars['String']['output']>;
+  used?: Maybe<Scalars['Int']['output']>;
+};
+
 export type AnswerSource =
   | 'ai'
   | 'user';
@@ -134,6 +154,7 @@ export type BillingRedirect = {
 
 export type BillingStatus = {
   __typename?: 'BillingStatus';
+  aiCredits?: Maybe<AiCredits>;
   catalogue?: Maybe<PlanCatalogue>;
   /** False when this instance does not enforce plans: every feature is then on. */
   enforced?: Maybe<Scalars['Boolean']['output']>;
@@ -400,6 +421,7 @@ export type Document = {
 
 export type DocumentDraft = {
   __typename?: 'DocumentDraft';
+  aiInstructions?: Maybe<Scalars['String']['output']>;
   applicationId?: Maybe<Scalars['ID']['output']>;
   contentJson?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
@@ -443,6 +465,12 @@ export type EmptyTrashResult = {
 export type ExtractDocumentTextPayload = {
   __typename?: 'ExtractDocumentTextPayload';
   text?: Maybe<Scalars['String']['output']>;
+};
+
+export type GeneratedDraftContent = {
+  __typename?: 'GeneratedDraftContent';
+  contentJson: Scalars['String']['output'];
+  plainText: Scalars['String']['output'];
 };
 
 export type GeneratedMockAnswer = {
@@ -768,6 +796,8 @@ export type Mutation = {
   extractDocumentText?: Maybe<ExtractDocumentTextPayload>;
   generateCompanyBriefing?: Maybe<CompanyBriefing>;
   generateCoverLetter?: Maybe<DocumentDraft>;
+  /** Generates content for an existing draft from the application and the profile. Saves nothing and creates no draft. */
+  generateIntoDocumentDraft: GeneratedDraftContent;
   generateMockInterviewAnswer?: Maybe<GeneratedMockAnswer>;
   generateMockInterviewQuestions?: Maybe<GeneratedMockQuestions>;
   generateMockTalkingPoints?: Maybe<GeneratedTalkingPoints>;
@@ -784,6 +814,8 @@ export type Mutation = {
   moveApplicationOnBoard?: Maybe<Array<JobApplication>>;
   parseJobDescription?: Maybe<ParsedJobDescription>;
   permanentlyDeleteApplication?: Maybe<Scalars['Boolean']['output']>;
+  /** Rewords the text the editor holds (which may be unsaved) and returns it as markdown. Saves nothing. */
+  polishDocumentDraft: PolishDocumentDraftResult;
   reauthenticate?: Maybe<LoginResult>;
   reauthenticateMobile?: Maybe<MobileLoginResult>;
   recordCookieConsent?: Maybe<Scalars['Boolean']['output']>;
@@ -817,6 +849,14 @@ export type Mutation = {
   revokeOtherSessions?: Maybe<Scalars['Boolean']['output']>;
   revokeSession?: Maybe<Scalars['Boolean']['output']>;
   saveLlmApiKey?: Maybe<Scalars['Boolean']['output']>;
+  /** Saves the providers AI calls try, first to last (JEF-503): 'trakwyn' and/or the ids of the user's own keys. Replaces setAiSource, setDefaultLlmProvider and the fall-through toggle. */
+  setAiProviderOrder?: Maybe<Scalars['Boolean']['output']>;
+  /**
+   * Which key AI calls run on: 'auto', 'trakwyn' or 'own' (JEF-446).
+   * @deprecated Use setAiProviderOrder (JEF-503). Kept for apps already in the stores.
+   */
+  setAiSource?: Maybe<Scalars['Boolean']['output']>;
+  /** @deprecated Use setAiProviderOrder (JEF-503). Kept for apps already in the stores. */
   setDefaultLlmProvider?: Maybe<Scalars['Boolean']['output']>;
   setLlmApiKeyMonthlyLimit?: Maybe<Scalars['Boolean']['output']>;
   /** A short-lived ticket for `/auth/oauth/:provider/start?mode=reauth&ticket=…`, which refreshes this session once the provider signs the user in again. */
@@ -1136,6 +1176,7 @@ export type MutationExtractDocumentTextArgs = {
 
 export type MutationGenerateCompanyBriefingArgs = {
   applicationId: Scalars['ID']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1144,6 +1185,14 @@ export type MutationGenerateCoverLetterArgs = {
   resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
   resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
   resumeText?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGenerateIntoDocumentDraftArgs = {
+  draftId: Scalars['ID']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
+  resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
+  resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1167,6 +1216,7 @@ export type MutationGenerateMockInterviewQuestionsArgs = {
 export type MutationGenerateMockTalkingPointsArgs = {
   documentId?: InputMaybe<Scalars['ID']['input']>;
   mockInterviewQuestionId: Scalars['ID']['input'];
+  prompt?: InputMaybe<Scalars['String']['input']>;
   useProfile?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
@@ -1232,6 +1282,13 @@ export type MutationParseJobDescriptionArgs = {
 
 export type MutationPermanentlyDeleteApplicationArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationPolishDocumentDraftArgs = {
+  draftId: Scalars['ID']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
+  plainText: Scalars['String']['input'];
 };
 
 
@@ -1375,6 +1432,16 @@ export type MutationSaveLlmApiKeyArgs = {
   baseUrl?: InputMaybe<Scalars['String']['input']>;
   model?: InputMaybe<Scalars['String']['input']>;
   provider: Scalars['String']['input'];
+};
+
+
+export type MutationSetAiProviderOrderArgs = {
+  order: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationSetAiSourceArgs = {
+  aiSource: Scalars['String']['input'];
 };
 
 
@@ -1650,6 +1717,7 @@ export type PlanFeatures = {
 /** What the user may hold. Null means no limit. */
 export type PlanLimits = {
   __typename?: 'PlanLimits';
+  aiCreditsPerMonth?: Maybe<Scalars['Int']['output']>;
   applications?: Maybe<Scalars['Int']['output']>;
   documentBytes?: Maybe<Scalars['Float']['output']>;
 };
@@ -1672,6 +1740,11 @@ export type PlanUsage = {
   __typename?: 'PlanUsage';
   applications?: Maybe<Scalars['Int']['output']>;
   documentBytes?: Maybe<Scalars['Float']['output']>;
+};
+
+export type PolishDocumentDraftResult = {
+  __typename?: 'PolishDocumentDraftResult';
+  markdown: Scalars['String']['output'];
 };
 
 export type Query = {
@@ -1985,6 +2058,7 @@ export type UpdateApplicationInput = {
 };
 
 export type UpdateDocumentDraftContentInput = {
+  aiInstructions?: InputMaybe<Scalars['String']['input']>;
   contentJson: Scalars['String']['input'];
   draftId: Scalars['ID']['input'];
   plainText: Scalars['String']['input'];
@@ -2055,10 +2129,16 @@ export type UploadUrlPayload = {
 
 export type User = {
   __typename?: 'User';
+  aiCredits?: Maybe<AiCredits>;
+  /** The providers AI calls try, first to last (JEF-503): 'trakwyn' and/or the ids of the user's own keys. A call never runs on one that is not listed. */
+  aiProviderOrder?: Maybe<Array<Scalars['String']['output']>>;
+  /** @deprecated Use aiProviderOrder (JEF-503). Kept for apps already in the stores. */
+  aiSource?: Maybe<Scalars['String']['output']>;
   avatarUrl?: Maybe<Scalars['String']['output']>;
   backupEmail?: Maybe<Scalars['String']['output']>;
   backupEmailVerifiedAt?: Maybe<Scalars['String']['output']>;
   customAiPrompt?: Maybe<Scalars['String']['output']>;
+  /** @deprecated Use aiProviderOrder (JEF-503). Kept for apps already in the stores. */
   defaultLlmProvider?: Maybe<Scalars['String']['output']>;
   /** When the account will be deleted; null unless a deletion is scheduled (JEF-463). While set, only cancelling it is allowed. */
   deletionScheduledAt?: Maybe<Scalars['String']['output']>;
@@ -2067,6 +2147,7 @@ export type User = {
   /** False for an account created through Google or GitHub that never set one. */
   hasPassword?: Maybe<Scalars['Boolean']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  /** @deprecated Use aiProviderOrder (JEF-503). Kept for apps already in the stores. */
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
@@ -2395,6 +2476,7 @@ export type GenerateMockInterviewAnswerMutation = { __typename?: 'Mutation', gen
 
 export type GenerateMockTalkingPointsMutationVariables = Exact<{
   mockInterviewQuestionId: Scalars['ID']['input'];
+  prompt?: InputMaybe<Scalars['String']['input']>;
   useProfile?: InputMaybe<Scalars['Boolean']['input']>;
   documentId?: InputMaybe<Scalars['ID']['input']>;
 }>;
@@ -2541,7 +2623,7 @@ export const DeleteMockInterviewQuestionDocument = {"kind":"Document","definitio
 export const ReorderMockInterviewQuestionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderMockInterviewQuestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderedIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderMockInterviewQuestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"interviewRoundId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}}},{"kind":"Argument","name":{"kind":"Name","value":"orderedIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderedIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"answerSource"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPoints"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPointsGeneratedAt"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<ReorderMockInterviewQuestionsMutation, ReorderMockInterviewQuestionsMutationVariables>;
 export const GenerateMockInterviewQuestionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateMockInterviewQuestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"count"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMockInterviewQuestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"interviewRoundId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"interviewRoundId"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}},{"kind":"Argument","name":{"kind":"Name","value":"count"},"value":{"kind":"Variable","name":{"kind":"Name","value":"count"}}},{"kind":"Argument","name":{"kind":"Name","value":"useProfile"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}}},{"kind":"Argument","name":{"kind":"Name","value":"documentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"suggestions"}},{"kind":"Field","name":{"kind":"Name","value":"usedJobDescription"}},{"kind":"Field","name":{"kind":"Name","value":"usedBriefing"}},{"kind":"Field","name":{"kind":"Name","value":"usedProfile"}},{"kind":"Field","name":{"kind":"Name","value":"usedDocument"}}]}}]}}]} as unknown as DocumentNode<GenerateMockInterviewQuestionsMutation, GenerateMockInterviewQuestionsMutationVariables>;
 export const GenerateMockInterviewAnswerDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateMockInterviewAnswer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMockInterviewAnswer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"mockInterviewQuestionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}},{"kind":"Argument","name":{"kind":"Name","value":"useProfile"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}}},{"kind":"Argument","name":{"kind":"Name","value":"documentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"usedJobDescription"}},{"kind":"Field","name":{"kind":"Name","value":"usedBriefing"}},{"kind":"Field","name":{"kind":"Name","value":"usedProfile"}},{"kind":"Field","name":{"kind":"Name","value":"usedDocument"}}]}}]}}]} as unknown as DocumentNode<GenerateMockInterviewAnswerMutation, GenerateMockInterviewAnswerMutationVariables>;
-export const GenerateMockTalkingPointsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateMockTalkingPoints"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMockTalkingPoints"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"mockInterviewQuestionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"useProfile"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}}},{"kind":"Argument","name":{"kind":"Name","value":"documentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nothingRelevant"}},{"kind":"Field","name":{"kind":"Name","value":"usedProfile"}},{"kind":"Field","name":{"kind":"Name","value":"usedDocument"}},{"kind":"Field","name":{"kind":"Name","value":"question"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"answerSource"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPoints"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPointsGeneratedAt"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]}}]} as unknown as DocumentNode<GenerateMockTalkingPointsMutation, GenerateMockTalkingPointsMutationVariables>;
+export const GenerateMockTalkingPointsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateMockTalkingPoints"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMockTalkingPoints"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"mockInterviewQuestionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mockInterviewQuestionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}},{"kind":"Argument","name":{"kind":"Name","value":"useProfile"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useProfile"}}},{"kind":"Argument","name":{"kind":"Name","value":"documentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nothingRelevant"}},{"kind":"Field","name":{"kind":"Name","value":"usedProfile"}},{"kind":"Field","name":{"kind":"Name","value":"usedDocument"}},{"kind":"Field","name":{"kind":"Name","value":"question"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"interviewRoundId"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"answerSource"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPoints"}},{"kind":"Field","name":{"kind":"Name","value":"talkingPointsGeneratedAt"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]}}]} as unknown as DocumentNode<GenerateMockTalkingPointsMutation, GenerateMockTalkingPointsMutationVariables>;
 export const CreateNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"applicationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<CreateNoteMutation, CreateNoteMutationVariables>;
 export const UpdateNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateNoteMutation, UpdateNoteMutationVariables>;
 export const DeleteNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteNoteMutation, DeleteNoteMutationVariables>;

@@ -6,6 +6,9 @@ import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { AiCreditCost } from '#/components/ai/AiCreditCost';
+import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import {
@@ -143,25 +146,30 @@ function ComputeButton({
   className: string;
 }) {
   const { t } = useLocale();
+  const { onTrakwynAi } = useAiCredits();
   return (
-    <button
-      type="button"
-      onClick={() => compute.mutate()}
-      disabled={compute.isPending}
-      className={`${className} disabled:opacity-60`}
-    >
-      {compute.isPending ? (
-        <>
-          <Spinner tone="white" />
-          {t('resumeMatch.checkingMatch')}
-        </>
-      ) : (
-        <>
-          <TargetIcon size={14} />
-          {label}
-        </>
-      )}
-    </button>
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => compute.mutate()}
+        disabled={compute.isPending}
+        className={`${className} disabled:opacity-60`}
+      >
+        {compute.isPending ? (
+          <>
+            <Spinner tone="white" />
+            {t('resumeMatch.checkingMatch')}
+          </>
+        ) : (
+          <>
+            <TargetIcon size={14} />
+            {label}
+          </>
+        )}
+      </button>
+      <AiCreditCost feature="resumeMatch" />
+      {onTrakwynAi && <AiCreditsMeter variant="inline" />}
+    </span>
   );
 }
 

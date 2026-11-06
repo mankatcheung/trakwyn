@@ -1600,5 +1600,19 @@
   "documentDraftEdit.importChoose": "選擇文件",
   "documentDraftEdit.importAction": "匯入",
   "documentDraftEdit.importing": "正在匯入…",
-  "documentDraftEdit.importEmpty": "該文件中沒有可讀取的文字。"
+  "documentDraftEdit.importEmpty": "該文件中沒有可讀取的文字。",
+  "aiHelper.addInstructions": "新增說明",
+  "aiHelper.hideInstructions": "隱藏說明",
+  "aiHelper.questionsExample1": "重點考察系統設計；面試官是工程副總裁",
+  "aiHelper.questionsExample2": "以關於衝突處理的行為面試題為主",
+  "aiHelper.questionsExample3": "比一般初篩更有難度",
+  "aiHelper.answerExample1": "使用我的支付系統遷移經歷，採用 STAR 結構，口述約 90 秒",
+  "aiHelper.answerExample2": "控制在一分鐘以內",
+  "aiHelper.answerExample3": "先說結果，再講背景",
+  "aiHelper.pointsExample1": "側重我的機器學習經驗",
+  "aiHelper.pointsExample2": "側重領導力方面的例子",
+  "aiHelper.pointsExample3": "優先使用我最近一份工作",
+  "aiHelper.briefingExample1": "重點關注遠端工作文化和融資穩定性",
+  "aiHelper.briefingExample2": "我應該向工程團隊問些什麼？",
+  "aiHelper.briefingExample3": "簡短一些，只用要點列表"
 }

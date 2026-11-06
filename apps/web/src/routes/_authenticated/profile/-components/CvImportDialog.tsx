@@ -4,6 +4,9 @@ import { LockIcon, UploadIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, Button, Modal, Spinner } from '@trakwyn/ui';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { AiCreditCost } from '#/components/ai/AiCreditCost';
+import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { ERROR_CODES } from '#/constants';
 import { gqlClient } from '#/graphql/client';
 import {
@@ -68,6 +71,7 @@ interface ImportResult {
 }
 
 function CvImportFlow({ onClose }: { onClose: () => void }) {
+  const { onTrakwynAi } = useAiCredits();
   const { t } = useLocale();
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<Phase>('choose');
@@ -233,6 +237,8 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
             <LockIcon size={13} className="mt-0.5 shrink-0" />
             {t('cvImport.privacy')}
           </p>
+          <AiCreditCost feature="parseCv" />
+          {onTrakwynAi && <AiCreditsMeter variant="inline" />}
         </div>
       )}
 

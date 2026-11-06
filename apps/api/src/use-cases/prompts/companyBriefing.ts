@@ -1,10 +1,16 @@
 import { AI_FEATURE, AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
 import { promptMessages } from '#src/use-cases/prompts/shared.js';
+import {
+  fenceUserInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
 export interface CompanyBriefingPromptInput {
   app: { company: string; role: string; location?: string | null; description?: string | null };
+  /** The user's own steer, already trimmed and capped. */
+  instructions?: string | null;
   customAiPrompt: string | null | undefined;
 }
 
@@ -17,9 +23,12 @@ const SYSTEM_PROMPT = `You are a career research assistant preparing a candidate
 
 Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything time-sensitive — you have no reliable access to real-time information, and presenting stale or fabricated "recent" facts as current would be actively misleading. If you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
 
-Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.`;
+Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.
 
-function userPrompt({ app }: CompanyBriefingPromptInput): string {
+The user may add <user_instructions> to focus the briefing on what matters to them. Keep the four sections and the no-recent-news rule whatever they ask; the instructions only change what you emphasise.
+${USER_INSTRUCTIONS_RULE}`;
+
+function userPrompt({ app, instructions }: CompanyBriefingPromptInput): string {
   const lines = [
     `Prepare a briefing for this application:`,
     `Company: ${app.company}`,
@@ -30,6 +39,7 @@ function userPrompt({ app }: CompanyBriefingPromptInput): string {
           `\nJob description:\n${wrapUntrustedContent(app.description.slice(0, AI_PROMPT_INPUT.COMPANY_BRIEFING_JOB_DESCRIPTION_MAX_CHARS))}`,
         ]
       : []),
+    ...(instructions ? [`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`] : []),
   ];
 
   return lines.join('\n');
@@ -37,7 +47,7 @@ function userPrompt({ app }: CompanyBriefingPromptInput): string {
 
 export const companyBriefingPrompt: PromptDefinition<CompanyBriefingPromptInput> = {
   id: AI_FEATURE.COMPANY_BRIEFING,
-  version: 1,
+  version: 2,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

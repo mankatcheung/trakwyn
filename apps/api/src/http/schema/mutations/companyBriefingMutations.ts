@@ -11,6 +11,7 @@ builder.mutationField('generateCompanyBriefing', (t) =>
     type: CompanyBriefingRef,
     args: {
       applicationId: t.arg.id({ required: true }),
+      instructions: t.arg.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.user)
@@ -20,6 +21,7 @@ builder.mutationField('generateCompanyBriefing', (t) =>
         return await companyBriefingResolver.generateCompanyBriefing(
           ctx.user.sub,
           String(args.applicationId),
+          args.instructions,
         );
       } catch (err) {
         throw fromCodedError(err);

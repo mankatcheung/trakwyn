@@ -479,7 +479,6 @@ export const AI_PROMPT_INPUT = {
   /** Cover letter generation — how many *other* applications' notes/drafts to pull from, most recent first (JEF-249). */
   CROSS_APPLICATION_CONTEXT_MAX_APPLICATIONS: 3,
   /** Practice question and answer generation — what the user asks for (JEF-393). */
-  MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS: 500,
   /** Practice question and answer generation — the application's job description field (JEF-393). */
   MOCK_INTERVIEW_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** Practice question and answer generation — the stored company briefing (JEF-393). */

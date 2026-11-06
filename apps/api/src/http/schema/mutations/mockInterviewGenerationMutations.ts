@@ -116,6 +116,7 @@ builder.mutationField('generateMockTalkingPoints', (t) =>
     type: GeneratedTalkingPointsRef,
     args: {
       mockInterviewQuestionId: t.arg.id({ required: true }),
+      prompt: t.arg.string({ required: false }),
       useProfile: t.arg.boolean({ required: false }),
       documentId: t.arg.id({ required: false }),
     },
@@ -126,6 +127,7 @@ builder.mutationField('generateMockTalkingPoints', (t) =>
       try {
         return await mockInterviewQuestionResolver.generateMockTalkingPoints(ctx.user.sub, {
           questionId: String(args.mockInterviewQuestionId),
+          prompt: args.prompt ?? undefined,
           useProfile: args.useProfile ?? undefined,
           documentId: args.documentId ? String(args.documentId) : undefined,
         });

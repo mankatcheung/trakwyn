@@ -7,7 +7,9 @@ import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
 import { invalidateSectionCounts } from '../-sectionCounts';
-import { Button, Card, Spinner } from '@trakwyn/ui';
+import { Button, Card } from '@trakwyn/ui';
+import { AiActionBar } from '#/components/ai/AiActionBar';
+import { AiPromptInput } from '#/components/ai/AiPromptInput';
 
 const BRIEFING_FIELDS = `id applicationId content generatedAt`;
 
@@ -18,10 +20,16 @@ const COMPANY_BRIEFING_QUERY = `
 `;
 
 const GENERATE_COMPANY_BRIEFING = `
-  mutation GenerateCompanyBriefing($applicationId: ID!) {
-    generateCompanyBriefing(applicationId: $applicationId) { ${BRIEFING_FIELDS} }
+  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {
+    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) { ${BRIEFING_FIELDS} }
   }
 `;
+
+const BRIEFING_EXAMPLES = [
+  'aiHelper.briefingExample1',
+  'aiHelper.briefingExample2',
+  'aiHelper.briefingExample3',
+] as const;
 
 type Briefing = { id: string; applicationId: string; content: string; generatedAt: string };
 
@@ -29,6 +37,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
   const { t, formatDate } = useLocale();
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [instructions, setInstructions] = useState('');
 
   const queryKey = ['companyBriefing', applicationId] as const;
 
@@ -48,6 +57,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
     mutationFn: () =>
       gqlClient.request<{ generateCompanyBriefing: Briefing }>(GENERATE_COMPANY_BRIEFING, {
         applicationId,
+        instructions: instructions.trim() || null,
       }),
     onSuccess: (result) => {
       qc.setQueryData(queryKey, { companyBriefing: result.generateCompanyBriefing });
@@ -57,11 +67,11 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
     },
   });
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     // Regenerating overwrites the stored briefing and there is no undo, so an
     // existing one is confirmed before it is replaced.
     if (briefing && !confirm(t('companyBriefing.regenerateConfirm'))) return;
-    generate.mutate();
+    await generate.mutateAsync();
   };
 
   const handleCopy = () => {
@@ -77,21 +87,21 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
         <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('companyBriefing.description')}
         </p>
-        <Button onClick={handleGenerate} disabled={generate.isPending || isLoading}>
-          <span className="flex items-center gap-2">
-            {generate.isPending ? (
-              <>
-                <Spinner tone="white" />
-                {t('companyBriefing.researching')}
-              </>
-            ) : (
-              <>
-                ✨{' '}
-                {briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}
-              </>
-            )}
-          </span>
-        </Button>
+        <AiActionBar
+          feature="companyBriefing"
+          onRun={handleGenerate}
+          label={`✨ ${briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}`}
+          loadingLabel={t('companyBriefing.researching')}
+          loading={generate.isPending}
+          disabled={isLoading}
+        >
+          <AiPromptInput
+            value={instructions}
+            onChange={setInstructions}
+            disabled={generate.isPending}
+            placeholderExamples={BRIEFING_EXAMPLES.map((key) => t(key))}
+          />
+        </AiActionBar>
         {generate.isError && (
           <p className="text-sm text-red-600 dark:text-red-400">
             <AiErrorMessage

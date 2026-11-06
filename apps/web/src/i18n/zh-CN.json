@@ -1600,5 +1600,19 @@
   "documentDraftEdit.importChoose": "选择文档",
   "documentDraftEdit.importAction": "导入",
   "documentDraftEdit.importing": "正在导入…",
-  "documentDraftEdit.importEmpty": "该文档中没有可读取的文字。"
+  "documentDraftEdit.importEmpty": "该文档中没有可读取的文字。",
+  "aiHelper.addInstructions": "添加说明",
+  "aiHelper.hideInstructions": "隐藏说明",
+  "aiHelper.questionsExample1": "重点考察系统设计；面试官是工程副总裁",
+  "aiHelper.questionsExample2": "以关于冲突处理的行为面试题为主",
+  "aiHelper.questionsExample3": "比一般初筛更有难度",
+  "aiHelper.answerExample1": "使用我的支付系统迁移经历，采用 STAR 结构，口述约 90 秒",
+  "aiHelper.answerExample2": "控制在一分钟以内",
+  "aiHelper.answerExample3": "先说结果，再讲背景",
+  "aiHelper.pointsExample1": "侧重我的机器学习经验",
+  "aiHelper.pointsExample2": "侧重领导力方面的例子",
+  "aiHelper.pointsExample3": "优先使用我最近一份工作",
+  "aiHelper.briefingExample1": "重点关注远程办公文化和融资稳定性",
+  "aiHelper.briefingExample2": "我应该向工程团队问些什么？",
+  "aiHelper.briefingExample3": "简短一些，只用要点列表"
 }

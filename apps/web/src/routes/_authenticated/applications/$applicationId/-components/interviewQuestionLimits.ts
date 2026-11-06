@@ -13,7 +13,7 @@ export const INTERVIEW_QUESTION_LIMITS = {
 /**
  * Mirrors the practice-question limits in `apps/api/src/use-cases/constants.ts`
  * (`CONTENT_LIMITS.MOCK_QUESTIONS_PER_ROUND`, `MOCK_QUESTION_GENERATION` and
- * `AI_PROMPT_INPUT.MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS`). Same caveat: the API
+ * `AI_PROMPT_INPUT.AI_INSTRUCTIONS_MAX_CHARS`). Same caveat: the API
  * enforces them, these only size inputs and decide what to offer.
  */
 export const MOCK_QUESTION_LIMITS = {

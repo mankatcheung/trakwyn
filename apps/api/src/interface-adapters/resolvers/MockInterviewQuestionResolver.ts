@@ -126,7 +126,7 @@ export class MockInterviewQuestionResolver {
 
   async generateMockTalkingPoints(
     userId: string,
-    input: { questionId: string; useProfile?: boolean; documentId?: string },
+    input: { questionId: string; prompt?: string; useProfile?: boolean; documentId?: string },
   ): Promise<GeneratedTalkingPointsDTO> {
     const result = await this.deps.generateTalkingPointsUseCase.execute({ userId, ...input });
     return {

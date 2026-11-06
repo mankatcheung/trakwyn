@@ -230,4 +230,28 @@ describe('MockInterviewQuestionResolver', () => {
       usedProfile: true,
     });
   });
+
+  it('generateMockTalkingPoints: passes the optional prompt through (JEF-507)', async () => {
+    const deps = makeDeps({
+      generateTalkingPointsUseCase: stub<IGenerateTalkingPointsUseCase>({
+        execute: vi.fn().mockResolvedValue({
+          question: makeMockInterviewQuestion({ id: 'q1' }),
+          nothingRelevant: false,
+          usedProfile: true,
+          usedDocument: false,
+        }),
+      }),
+    });
+
+    await new MockInterviewQuestionResolver(deps).generateMockTalkingPoints('user-1', {
+      questionId: 'q1',
+      prompt: 'lean on my ML experience',
+    });
+
+    expect(deps.generateTalkingPointsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      questionId: 'q1',
+      prompt: 'lean on my ML experience',
+    });
+  });
 });

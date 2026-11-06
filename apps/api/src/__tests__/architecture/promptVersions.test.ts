@@ -119,10 +119,10 @@ const RECORDED: Record<string, string> = {
   'resumeMatch@1': '73972db89d3346a5',
   'parseJobDescription@1': 'e357e943306332df',
   'parseCv@1': '8ec90529a7927086',
-  'companyBriefing@1': '7c4c434eed86f09d',
-  'mockQuestions@1': '0e0a760da2716c36',
-  'mockAnswer@1': '3d48115b301bb086',
-  'talkingPoints@1': 'ef855303af185aff',
+  'companyBriefing@2': '5712bd78cdde2670',
+  'mockQuestions@2': '4d51b8cf709d35c1',
+  'mockAnswer@2': 'eee623a9c4491be3',
+  'talkingPoints@2': '938bd643a9771d75',
   'chat@1': '7b62802d0559f33f',
 };
 

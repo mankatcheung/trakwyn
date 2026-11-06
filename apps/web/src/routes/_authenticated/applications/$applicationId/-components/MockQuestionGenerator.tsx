@@ -1,7 +1,9 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { SparklesIcon } from 'lucide-react';
-import { Button, FormLabel, Textarea } from '@trakwyn/ui';
+import { Button } from '@trakwyn/ui';
+import { AiActionBar } from '#/components/ai/AiActionBar';
+import { AiPromptInput } from '#/components/ai/AiPromptInput';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -13,6 +15,12 @@ import {
 import { MOCK_QUESTION_LIMITS } from './interviewQuestionLimits';
 import { MockBackgroundPicker, type MockBackground } from './MockBackgroundPicker';
 import { readRememberedUseProfile } from './mockBackgroundChoice';
+
+const QUESTION_EXAMPLES = [
+  'aiHelper.questionsExample1',
+  'aiHelper.questionsExample2',
+  'aiHelper.questionsExample3',
+] as const;
 
 /**
  * Asks the AI for practice questions and lets the user choose which to keep.
@@ -40,7 +48,6 @@ export function MockQuestionGenerator({
   }));
   const [result, setResult] = useState<GeneratedQuestions | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
-  const promptId = `generate-prompt-${useId()}`;
 
   const generate = useMutation({
     mutationFn: () =>
@@ -105,20 +112,6 @@ export function MockQuestionGenerator({
         <SparklesIcon size={14} aria-hidden="true" />
         {t('interviews.generateTitle')}
       </h4>
-      <div>
-        <FormLabel size="xs" htmlFor={promptId}>
-          {t('interviews.generatePromptLabel')}{' '}
-          <span className="font-normal text-gray-500">{t('interviews.responseOptional')}</span>
-        </FormLabel>
-        <Textarea
-          id={promptId}
-          value={prompt}
-          maxLength={MOCK_QUESTION_LIMITS.PROMPT_MAX_CHARS}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="h-20"
-          placeholder={t('interviews.generatePromptPlaceholder')}
-        />
-      </div>
       <MockBackgroundPicker
         applicationId={applicationId}
         value={background}
@@ -129,21 +122,26 @@ export function MockQuestionGenerator({
           {getErrorMessage(generate.error)}
         </p>
       )}
-      <div className="flex justify-between gap-2">
+      <AiActionBar
+        feature="mockQuestions"
+        onRun={() => generate.mutateAsync()}
+        label={result ? t('interviews.regenerate') : t('interviews.generate')}
+        loadingLabel={t('interviews.generating')}
+        loading={generate.isPending}
+        disabled={save.isPending}
+      >
+        <AiPromptInput
+          label={t('interviews.generatePromptLabel')}
+          value={prompt}
+          onChange={setPrompt}
+          disabled={generate.isPending}
+          maxLength={MOCK_QUESTION_LIMITS.PROMPT_MAX_CHARS}
+          placeholderExamples={QUESTION_EXAMPLES.map((key) => t(key))}
+        />
+      </AiActionBar>
+      <div className="flex justify-start">
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
           {t('common.cancel')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={generate.isPending || save.isPending}
-          onClick={() => generate.mutate()}
-        >
-          {generate.isPending
-            ? t('interviews.generating')
-            : result
-              ? t('interviews.regenerate')
-              : t('interviews.generate')}
         </Button>
       </div>
 

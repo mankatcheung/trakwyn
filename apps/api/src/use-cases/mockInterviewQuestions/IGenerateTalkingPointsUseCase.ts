@@ -3,6 +3,8 @@ import type { MockInterviewQuestion } from '#src/domain/interviewRound/MockInter
 export interface GenerateTalkingPointsInput {
   userId: string;
   questionId: string;
+  /** Optional steer, e.g. "lean on my ML experience". Fenced as data; never adds experience. */
+  prompt?: string;
   /** Defaults to true: talking points are meaningless without the candidate's background. */
   useProfile?: boolean;
   /** One of the user's own documents, used instead of or alongside the profile. */

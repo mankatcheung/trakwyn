@@ -11,11 +11,14 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 import { companyBriefingPrompt } from '#src/use-cases/prompts/companyBriefing.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCompanyBriefingInput {
   applicationId: string;
   userId: string;
+  /** The user's own steer, e.g. "focus on remote culture". Fenced as data. */
+  instructions?: string | null;
 }
 
 interface Deps {
@@ -32,6 +35,7 @@ export class GenerateCompanyBriefingUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GenerateCompanyBriefingInput): Promise<CompanyBriefing> {
+    const instructions = normaliseAiInstructions(input.instructions);
     if (
       !(await this.deps.generateCompanyBriefingRateLimiter.consume(
         `company-briefing:user:${input.userId}`,
@@ -57,7 +61,11 @@ export class GenerateCompanyBriefingUseCase {
     }
 
     const user = await this.deps.userRepository.findById(input.userId);
-    const messages = companyBriefingPrompt.build({ app, customAiPrompt: user?.customAiPrompt });
+    const messages = companyBriefingPrompt.build({
+      app,
+      instructions,
+      customAiPrompt: user?.customAiPrompt,
+    });
 
     const { content } = await llmProvider.complete(messages, 768, undefined, {
       reasoning: AI_REASONING_DEFAULTS.COMPANY_BRIEFING,

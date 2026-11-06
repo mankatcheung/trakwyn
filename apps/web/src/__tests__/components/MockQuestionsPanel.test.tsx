@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { mockGqlRequest } = vi.hoisted(() => ({
+const { mockGqlRequest, credits } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
+  credits: { onTrakwynAi: false },
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -29,6 +30,17 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { MockQuestionsPanel } from '#/routes/_authenticated/applications/$applicationId/-components/MockQuestionsPanel';
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({
@@ -152,6 +164,7 @@ async function openPanel(overrides: Partial<typeof props> = {}) {
 describe('MockQuestionsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    credits.onTrakwynAi = false;
     window.localStorage.clear();
     mockApi();
   });
@@ -487,6 +500,7 @@ describe('MockQuestionsPanel', () => {
         await waitFor(() => expect(callsTo('GenerateMockTalkingPoints')).toHaveLength(1));
         expect(callsTo('GenerateMockTalkingPoints')[0][1]).toEqual({
           mockInterviewQuestionId: 'q3',
+          prompt: null,
           useProfile: true,
           documentId: null,
         });
@@ -663,6 +677,77 @@ describe('MockQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Generate answer with AI' }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(/Too many requests/);
+    });
+  });
+
+  describe('instructions and credits (JEF-507)', () => {
+    const openTalkingPoints = async () => {
+      await openPanel();
+      const card = screen.getByText('Third question').closest('article')!;
+      fireEvent.click(within(card).getByRole('button', { name: 'Talking points' }));
+      return card;
+    };
+
+    it('shows the credit cost of generating questions on Trakwyn AI', async () => {
+      credits.onTrakwynAi = true;
+      await openPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Generate questions' }));
+
+      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+    });
+
+    it('shows no credit cost with the user’s own key', async () => {
+      await openPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Generate questions' }));
+
+      expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
+    });
+
+    it('sends the instructions typed for a regenerated answer', async () => {
+      await openPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Generate answer with AI' }));
+      await screen.findByDisplayValue('A drafted answer.');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add instructions' }));
+      fireEvent.change(screen.getByLabelText('Instructions (optional)'), {
+        target: { value: '  use my payments story  ' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+
+      await waitFor(() => expect(callsTo('GenerateMockInterviewAnswer')).toHaveLength(2));
+      expect(callsTo('GenerateMockInterviewAnswer')[1][1]).toMatchObject({
+        prompt: 'use my payments story',
+      });
+    });
+
+    it('shows the cost of a regenerated answer on Trakwyn AI only', async () => {
+      credits.onTrakwynAi = true;
+      await openPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Generate answer with AI' }));
+      await screen.findByDisplayValue('A drafted answer.');
+
+      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+    });
+
+    it('sends the instructions typed for talking points', async () => {
+      const card = await openTalkingPoints();
+
+      fireEvent.click(within(card).getByRole('button', { name: 'Add instructions' }));
+      fireEvent.change(within(card).getByLabelText('Instructions (optional)'), {
+        target: { value: 'steer toward my ML experience' },
+      });
+      fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
+
+      await waitFor(() => expect(callsTo('GenerateMockTalkingPoints')).toHaveLength(1));
+      expect(callsTo('GenerateMockTalkingPoints')[0][1]).toMatchObject({
+        prompt: 'steer toward my ML experience',
+      });
+    });
+
+    it('shows the cost of generating talking points on Trakwyn AI', async () => {
+      credits.onTrakwynAi = true;
+      const card = await openTalkingPoints();
+      expect(within(card).getByText('Uses 1 credit')).toBeInTheDocument();
     });
   });
 });

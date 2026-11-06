@@ -1,6 +1,8 @@
 import { useId, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Textarea } from '@trakwyn/ui';
+import { AiActionBar } from '#/components/ai/AiActionBar';
+import { AiPromptInput } from '#/components/ai/AiPromptInput';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -8,6 +10,12 @@ import { AiGeneratedBadge } from './AiGeneratedBadge';
 import { GENERATE_MOCK_ANSWER, type GeneratedAnswer } from './mockQuestionApi';
 import { INTERVIEW_QUESTION_LIMITS } from './interviewQuestionLimits';
 import { readRememberedUseProfile } from './mockBackgroundChoice';
+
+const ANSWER_EXAMPLES = [
+  'aiHelper.answerExample1',
+  'aiHelper.answerExample2',
+  'aiHelper.answerExample3',
+] as const;
 
 /**
  * An AI-drafted answer for one practice question, held open for review. The
@@ -34,12 +42,15 @@ export function MockAnswerDraft({
   const { t } = useLocale();
   const [draft, setDraft] = useState(initialDraft);
   const [usedProfile, setUsedProfile] = useState(initialUsedProfile);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [instructions, setInstructions] = useState('');
   const draftId = `answer-draft-${useId()}`;
 
   const regenerate = useMutation({
     mutationFn: () =>
       gqlClient.request<{ generateMockInterviewAnswer: GeneratedAnswer }>(GENERATE_MOCK_ANSWER, {
         mockInterviewQuestionId: questionId,
+        prompt: instructions.trim() || null,
         useProfile: readRememberedUseProfile(false),
       }),
     onSuccess: (data) => {
@@ -77,16 +88,34 @@ export function MockAnswerDraft({
           {error}
         </p>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
+      <div className="space-y-2">
+        <button
           type="button"
-          variant="secondary"
-          size="sm"
-          disabled={busy}
-          onClick={() => regenerate.mutate()}
+          className="text-xs font-medium text-violet-700 underline dark:text-violet-300"
+          aria-expanded={showInstructions}
+          onClick={() => setShowInstructions((v) => !v)}
         >
-          {regenerate.isPending ? t('interviews.generating') : t('interviews.regenerate')}
-        </Button>
+          {showInstructions ? t('aiHelper.hideInstructions') : t('aiHelper.addInstructions')}
+        </button>
+        <AiActionBar
+          feature="mockAnswer"
+          onRun={() => regenerate.mutateAsync()}
+          label={t('interviews.regenerate')}
+          loadingLabel={t('interviews.generating')}
+          loading={regenerate.isPending}
+          disabled={saving}
+        >
+          {showInstructions && (
+            <AiPromptInput
+              value={instructions}
+              onChange={setInstructions}
+              disabled={regenerate.isPending}
+              placeholderExamples={ANSWER_EXAMPLES.map((key) => t(key))}
+            />
+          )}
+        </AiActionBar>
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex gap-2">
           <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onDiscard}>
             {t('interviews.discardDraft')}

@@ -2,6 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { JdImportPanel } from '#/routes/_authenticated/applications/-components/JdImportPanel';
 
+const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
 }));
@@ -21,6 +35,7 @@ describe('JdImportPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    credits.onTrakwynAi = false;
   });
 
   it('renders the collapsed toggle button', () => {
@@ -176,6 +191,24 @@ describe('JdImportPanel', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/add your ai api key/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('credit cost (JEF-507)', () => {
+    it('shows what parsing costs on Trakwyn AI, with no prompt box', () => {
+      credits.onTrakwynAi = true;
+      render(<JdImportPanel onFill={onFill} />);
+      fireEvent.click(screen.getByText('Auto-fill from job posting'));
+
+      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Instructions (optional)')).not.toBeInTheDocument();
+    });
+
+    it('shows nothing with the user’s own key', () => {
+      render(<JdImportPanel onFill={onFill} />);
+      fireEvent.click(screen.getByText('Auto-fill from job posting'));
+
+      expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
     });
   });
 });

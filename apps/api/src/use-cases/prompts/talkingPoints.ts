@@ -5,6 +5,10 @@ import {
   MOCK_QUESTION_GENERATION,
 } from '#src/use-cases/constants.js';
 import { promptMessages } from '#src/use-cases/prompts/shared.js';
+import {
+  fenceUserInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
@@ -14,6 +18,8 @@ export interface TalkingPointsPromptInput {
   /** The candidate's profile or resume, from `buildCandidateBackground`. */
   backgroundText: string;
   question: string;
+  /** The candidate's own steer, already trimmed and capped. */
+  request?: string | null;
   customAiPrompt: string | null | undefined;
 }
 
@@ -27,13 +33,15 @@ Rules:
 - For each point, "source" names the profile or resume entry it comes from, such as the employer and role, the institution, or the skill.
 - If nothing in the background is relevant to the question, return an empty list. An empty list is a correct answer; do not stretch to fill it.
 - Give at most ${MOCK_QUESTION_GENERATION.TALKING_POINTS_MAX_COUNT} points, most relevant first.
+- The candidate may steer which experience to lean on. That never lets you use anything outside their profile or resume.
+${USER_INSTRUCTIONS_RULE}
 
 Respond with ONLY a JSON object: {"points": [{"point": "...", "source": "..."}]}. No markdown and no commentary.`;
 
 export const talkingPointsPrompt: PromptDefinition<TalkingPointsPromptInput> = {
   id: AI_FEATURE.TALKING_POINTS,
-  version: 1,
-  build: ({ contextText, backgroundText, question, customAiPrompt }) =>
+  version: 2,
+  build: ({ contextText, backgroundText, question, request, customAiPrompt }) =>
     promptMessages({
       system: SYSTEM_PROMPT,
       customAiPrompt,
@@ -41,6 +49,7 @@ export const talkingPointsPrompt: PromptDefinition<TalkingPointsPromptInput> = {
         contextText,
         `\nInterview question:\n${wrapUntrustedContent(question)}`,
         backgroundText,
+        ...(request ? [`\nThe candidate's request:\n${fenceUserInstructions(request)}`] : []),
       ].join('\n'),
     }),
 };

@@ -1622,5 +1622,19 @@
   "documentDraftEdit.importChoose": "Choose a document",
   "documentDraftEdit.importAction": "Import",
   "documentDraftEdit.importing": "Importing…",
-  "documentDraftEdit.importEmpty": "That document has no readable text."
+  "documentDraftEdit.importEmpty": "That document has no readable text.",
+  "aiHelper.addInstructions": "Add instructions",
+  "aiHelper.hideInstructions": "Hide instructions",
+  "aiHelper.questionsExample1": "Focus on system design; the interviewer is the VP of Eng",
+  "aiHelper.questionsExample2": "Mostly behavioural questions about conflict",
+  "aiHelper.questionsExample3": "Make them harder than a typical screen",
+  "aiHelper.answerExample1": "Use my payments-migration story, STAR format, about 90 seconds spoken",
+  "aiHelper.answerExample2": "Keep it under a minute",
+  "aiHelper.answerExample3": "Lead with the result, then the context",
+  "aiHelper.pointsExample1": "Steer toward my ML experience",
+  "aiHelper.pointsExample2": "Focus on leadership examples",
+  "aiHelper.pointsExample3": "Prefer my most recent role",
+  "aiHelper.briefingExample1": "Focus on remote culture and funding stability",
+  "aiHelper.briefingExample2": "What should I ask about the engineering team?",
+  "aiHelper.briefingExample3": "Keep it short, bullet points only"
 }
