@@ -58,6 +58,8 @@ export interface AiCredits {
   limit: number;
   bonusRemaining: number;
   resetsAt: string;
+  /** What one run of each hosted AI feature costs, in credits (JEF-506). */
+  costs?: { feature: string; credits: number }[];
 }
 
 export interface LlmUsageSummary {

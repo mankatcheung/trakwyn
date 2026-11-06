@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,78 +12,114 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocumentDraft } from '../hooks/useDocumentDraftQueries';
-import { useUpdateDocumentDraftContent } from '../hooks/useUpdateDocumentDraftContent';
 import { useRenameDocumentDraft } from '../hooks/useRenameDocumentDraft';
 import { useDeleteDocumentDraft } from '../hooks/useDeleteDocumentDraft';
 import { useExportDocumentDraftToPdf } from '../hooks/useExportDocumentDraftToPdf';
+import { useDraftSaver } from '../hooks/useDraftSaver';
+import { useDraftAiHelper } from '../hooks/useDraftAiHelper';
+import { AiHelperSheet } from '../components/AiHelperSheet';
+import { DraftFormattingToolbar } from '../components/DraftFormattingToolbar';
+import { ImportFromDocument } from '../components/ImportFromDocument';
+import type { ResumeChoice } from '../components/ResumeSourcePicker';
 import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback';
-import { toggleLinePrefix, wrapSelection, type Selection } from '../lib/markdownEditing';
+import type { Selection, TextEdit } from '../lib/markdownEditing';
 import { timeAgo } from '../../notifications/lib/timeAgo';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import type { DocumentDraftType } from '../types';
 
 const AUTOSAVE_DELAY_MS = 1000;
 
 export function DocumentDraftEditorScreen() {
   const { t } = useTranslation('documents');
+  const { t: tCommon } = useTranslation('common');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { id: applicationId, draftId } = useLocalSearchParams<{ id: string; draftId: string }>();
 
   const { data: draft, isLoading, isError, error } = useDocumentDraft(draftId);
-  const updateContent = useUpdateDocumentDraftContent();
   const renameDraft = useRenameDocumentDraft();
   const deleteDraft = useDeleteDocumentDraft(applicationId);
   const exportPdf = useExportDocumentDraftToPdf(applicationId);
+  const saver = useDraftSaver(draft?.id);
 
   const [text, setText] = useState('');
+  // The text on screen right now, for callbacks that outlive a render (autosave, AI results).
+  const textRef = useRef('');
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const [syncedDraftId, setSyncedDraftId] = useState<string | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState('');
+  const [helperOpen, setHelperOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   if (draft && draft.id !== syncedDraftId) {
     setSyncedDraftId(draft.id);
     setText(draft.plainText);
-    setLastSavedAt(draft.updatedAt);
+    setTitleDraft(draft.title);
+    setInstructions(draft.aiInstructions ?? '');
+    saver.setLastSavedAt(draft.updatedAt);
   }
 
-  const debouncedSave = useDebouncedCallback((value: string) => {
-    if (!draft) return;
-    const { contentJson, plainText } = proseToTiptapDoc(value);
-    updateContent.mutate(
-      { draftId: draft.id, contentJson, plainText },
-      {
-        onSuccess: (result) => setLastSavedAt(result.updatedAt),
-        onError: (err) => setSaveError(getErrorMessage(err)),
-      },
-    );
-  }, AUTOSAVE_DELAY_MS);
+  // The draft loading (not a keystroke) also sets `text`; keep the ref level with it.
+  useEffect(() => {
+    textRef.current = text;
+  }, [text]);
 
-  const onChangeText = (value: string) => {
+  const applyText = (value: string) => {
+    textRef.current = value;
     setText(value);
-    setSaveError(null);
-    debouncedSave(value);
   };
 
-  const applyEdit = (edit: { text: string; selection: Selection }) => {
+  const saveText = (value: string) => {
+    const { contentJson, plainText } = proseToTiptapDoc(value);
+    return saver.save({ contentJson, plainText });
+  };
+
+  // Reads the latest text when it fires, not the text it was scheduled with: an AI
+  // result written in the meantime must not be overwritten by an older keystroke.
+  const debouncedSave = useDebouncedCallback(
+    () => void saveText(textRef.current),
+    AUTOSAVE_DELAY_MS,
+  );
+
+  const onChangeText = (value: string) => {
+    applyText(value);
+    saver.clearError();
+    debouncedSave();
+  };
+
+  const applyEdit = (edit: TextEdit) => {
     onChangeText(edit.text);
     setSelection(edit.selection);
   };
 
+  const ai = useDraftAiHelper({
+    draftId: draft?.id ?? '',
+    type: (draft?.type ?? 'resume') as DocumentDraftType,
+    getText: () => textRef.current,
+    setText: applyText,
+    saver,
+  });
+
   const commitRename = () => {
     const title = titleDraft.trim();
-    setRenaming(false);
-    if (!draft || !title || title === draft.title) return;
+    if (!draft || !title || title === draft.title) {
+      if (draft) setTitleDraft(draft.title);
+      return;
+    }
     renameDraft.mutate(
       { draftId: draft.id, title },
-      { onError: (err) => setSaveError(getErrorMessage(err)) },
+      { onError: (err) => setActionError(getErrorMessage(err)) },
     );
+  };
+
+  const importText = (imported: string) => {
+    onChangeText(imported);
+    void saveText(imported);
   };
 
   const handleDelete = () => {
@@ -111,6 +147,8 @@ export function DocumentDraftEditorScreen() {
   };
 
   const busy = exportPdf.isPending || deleteDraft.isPending;
+  const hasText = text.trim().length > 0;
+  const bannerError = saver.error ?? actionError;
 
   if (isLoading) {
     return (
@@ -128,13 +166,15 @@ export function DocumentDraftEditorScreen() {
     );
   }
 
+  const isCoverLetter = draft.type === 'cover_letter';
+
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
           title: draft.title,
           headerRight: () =>
-            updateContent.isPending ? (
+            saver.saving ? (
               <Text style={styles.savingText}>{t('savingEllipsis')}</Text>
             ) : (
               <Text style={styles.savedText}>{`✓ ${t('saved')}`}</Text>
@@ -142,50 +182,44 @@ export function DocumentDraftEditorScreen() {
         }}
       />
 
+      <TextInput
+        style={styles.titleInput}
+        value={titleDraft}
+        onChangeText={setTitleDraft}
+        onBlur={commitRename}
+        onSubmitEditing={commitRename}
+        placeholder={t(isCoverLetter ? 'cover_letter' : 'resume')}
+        placeholderTextColor={colors.textFaint}
+        accessibilityLabel={t('titleLabel')}
+        returnKeyType="done"
+        testID="draft-title-input"
+      />
+
       <View style={styles.metaRow}>
         <View style={styles.metaRowStart}>
           <View
             style={[
               styles.typeBadge,
-              draft.type === 'cover_letter' ? styles.typeBadgeCoverLetter : styles.typeBadgeResume,
+              isCoverLetter ? styles.typeBadgeCoverLetter : styles.typeBadgeResume,
             ]}
           >
             <Text
               style={[
                 styles.typeBadgeText,
-                draft.type === 'cover_letter'
-                  ? styles.typeBadgeTextCoverLetter
-                  : styles.typeBadgeTextResume,
+                isCoverLetter ? styles.typeBadgeTextCoverLetter : styles.typeBadgeTextResume,
               ]}
             >
-              {draft.type === 'cover_letter' ? t('cover_letter') : t('resume')}
+              {isCoverLetter ? t('cover_letter') : t('resume')}
             </Text>
           </View>
-          {renaming ? (
-            <TextInput
-              autoFocus
-              style={styles.renameInput}
-              value={titleDraft}
-              onChangeText={setTitleDraft}
-              onBlur={commitRename}
-              onSubmitEditing={commitRename}
-              testID="draft-rename-input"
-            />
-          ) : (
-            <Pressable
-              onPress={() => {
-                setTitleDraft(draft.title);
-                setRenaming(true);
-              }}
-              testID="draft-rename-trigger"
-            >
-              <Text style={styles.editedText}>
-                {lastSavedAt ? `${t('editedPrefix')} ${timeAgo(lastSavedAt)}` : ''}
-              </Text>
-            </Pressable>
-          )}
+          <Text style={styles.editedText}>
+            {saver.lastSavedAt ? `${t('editedPrefix')} ${timeAgo(saver.lastSavedAt)}` : ''}
+          </Text>
         </View>
         <View style={styles.metaRowActions}>
+          <Pressable onPress={() => setHelperOpen(true)} hitSlop={8} testID="ai-helper-open">
+            <Text style={styles.headerActionText}>{`✨ ${t('aiTitle')}`}</Text>
+          </Pressable>
           <Pressable
             onPress={() => void handleExport()}
             disabled={busy}
@@ -209,61 +243,33 @@ export function DocumentDraftEditorScreen() {
         </View>
       </View>
 
-      {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
+      {bannerError ? (
+        <View style={styles.errorRow}>
+          <Text style={styles.errorText} testID="draft-save-error">
+            {bannerError}
+          </Text>
+          {saver.error ? (
+            <Pressable onPress={() => void saver.retry()} hitSlop={8} testID="draft-save-retry">
+              <Text style={styles.headerActionText}>{tCommon('retry')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
-      <View style={styles.toolbar}>
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(wrapSelection(text, selection, '**'))}
-          testID="toolbar-bold"
-        >
-          <Text style={styles.toolbarButtonTextBold}>B</Text>
-        </Pressable>
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(wrapSelection(text, selection, '*'))}
-          testID="toolbar-italic"
-        >
-          <Text style={styles.toolbarButtonTextItalic}>I</Text>
-        </Pressable>
-        <View style={styles.toolbarDivider} />
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(toggleLinePrefix(text, selection, '# '))}
-          testID="toolbar-h1"
-        >
-          <Text style={styles.toolbarButtonText}>H1</Text>
-        </Pressable>
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(toggleLinePrefix(text, selection, '## '))}
-          testID="toolbar-h2"
-        >
-          <Text style={styles.toolbarButtonText}>H2</Text>
-        </Pressable>
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(toggleLinePrefix(text, selection, '### '))}
-          testID="toolbar-h3"
-        >
-          <Text style={styles.toolbarButtonText}>H3</Text>
-        </Pressable>
-        <View style={styles.toolbarDivider} />
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(toggleLinePrefix(text, selection, '- '))}
-          testID="toolbar-bullet-list"
-        >
-          <Text style={styles.toolbarButtonText}>{'• ≡'}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.toolbarButton}
-          onPress={() => applyEdit(toggleLinePrefix(text, selection, '1. '))}
-          testID="toolbar-ordered-list"
-        >
-          <Text style={styles.toolbarButtonText}>{'1. ≡'}</Text>
-        </Pressable>
-      </View>
+      {hasText || !applicationId ? null : (
+        <ImportFromDocument
+          applicationId={applicationId}
+          onImport={importText}
+          disabled={ai.running}
+        />
+      )}
+
+      <DraftFormattingToolbar
+        text={text}
+        selection={selection}
+        onEdit={applyEdit}
+        disabled={ai.running}
+      />
 
       <ScrollView style={styles.editorScroll} keyboardShouldPersistTaps="handled">
         <TextInput
@@ -274,9 +280,39 @@ export function DocumentDraftEditorScreen() {
           onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
           placeholder={t('editorPlaceholder')}
           placeholderTextColor={colors.textFaint}
+          // Read-only while the AI answers, so nothing typed is lost under its result.
+          editable={!ai.running}
           testID="draft-content-input"
         />
       </ScrollView>
+
+      <AiHelperSheet
+        visible={helperOpen}
+        onClose={() => setHelperOpen(false)}
+        applicationId={applicationId}
+        type={draft.type as DocumentDraftType}
+        hasText={hasText}
+        instructions={instructions}
+        onInstructionsChange={setInstructions}
+        running={ai.running}
+        failure={ai.failure}
+        suggestion={ai.suggestion}
+        currentText={text}
+        onGenerate={async (resume: ResumeChoice | null) => {
+          // Stays open while it runs, so a failure shows where the button was pressed.
+          if (await ai.generate(instructions, resume)) setHelperOpen(false);
+        }}
+        onPolish={() => void ai.polish(instructions)}
+        onReplace={() => {
+          setHelperOpen(false);
+          void ai.replace(instructions);
+        }}
+        onInsertBelow={() => {
+          setHelperOpen(false);
+          void ai.insertBelow(instructions);
+        }}
+        onDiscard={ai.discard}
+      />
     </View>
   );
 }
@@ -316,43 +352,28 @@ function createStyles(colors: ThemeColors) {
     typeBadgeTextCoverLetter: { color: colors.primary },
     typeBadgeTextResume: { color: colors.textMuted },
     editedText: { fontSize: 12, color: colors.textFaint },
-    renameInput: {
-      flex: 1,
-      fontSize: 13,
+    titleInput: {
+      marginHorizontal: 16,
+      marginTop: 14,
+      paddingVertical: 6,
+      fontSize: 20,
+      fontWeight: '700',
       color: colors.text,
       borderBottomWidth: 1,
-      borderBottomColor: colors.primary,
-      paddingVertical: 2,
+      borderBottomColor: colors.border,
     },
-    toolbar: {
+    errorRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      marginTop: 12,
-      borderTopWidth: 1,
-      borderBottomWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceAlt,
+      justifyContent: 'space-between',
+      gap: 10,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 8,
+      padding: 10,
+      margin: 16,
+      marginBottom: 0,
     },
-    toolbarButton: {
-      minWidth: 32,
-      height: 32,
-      borderRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 6,
-    },
-    toolbarButtonText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
-    toolbarButtonTextBold: { fontSize: 14, fontWeight: '800', color: colors.textMuted },
-    toolbarButtonTextItalic: {
-      fontSize: 14,
-      fontWeight: '700',
-      fontStyle: 'italic',
-      color: colors.textMuted,
-    },
-    toolbarDivider: { width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 4 },
+    errorText: { flex: 1, color: colors.danger, fontSize: 14 },
     editorScroll: { flex: 1 },
     editor: {
       flex: 1,

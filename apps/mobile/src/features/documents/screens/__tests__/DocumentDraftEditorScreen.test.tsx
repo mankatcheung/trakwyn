@@ -1,12 +1,33 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDraft: jest.fn() }));
-jest.mock('../../hooks/useUpdateDocumentDraftContent', () => ({
-  useUpdateDocumentDraftContent: jest.fn(),
+jest.mock('../../hooks/useDraftSaver', () => ({ useDraftSaver: jest.fn() }));
+jest.mock('../../hooks/useDraftAiHelper', () => ({
+  useDraftAiHelper: jest.fn(),
+  AI_PROMPT_MAX_LENGTH: 500,
 }));
+// The sheet and import list have their own tests; here they only have to be wired.
+jest.mock('../../components/AiHelperSheet', () => {
+  const { View } = require('react-native');
+  return {
+    AiHelperSheet: (props: Record<string, unknown>) => {
+      mockSheetProps(props);
+      return props.visible ? <View testID="ai-helper-sheet-mock" /> : null;
+    },
+  };
+});
+jest.mock('../../components/ImportFromDocument', () => {
+  const { Pressable } = require('react-native');
+  return {
+    ImportFromDocument: ({ onImport }: { onImport: (t: string) => void }) => (
+      <Pressable testID="import-mock" onPress={() => onImport('Imported text')} />
+    ),
+  };
+});
+const mockSheetProps = jest.fn();
 jest.mock('../../hooks/useRenameDocumentDraft', () => ({ useRenameDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useExportDocumentDraftToPdf', () => ({
@@ -27,7 +48,8 @@ jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDocumentDraft } from '../../hooks/useDocumentDraftQueries';
-import { useUpdateDocumentDraftContent } from '../../hooks/useUpdateDocumentDraftContent';
+import { useDraftSaver } from '../../hooks/useDraftSaver';
+import { useDraftAiHelper } from '../../hooks/useDraftAiHelper';
 import { useRenameDocumentDraft } from '../../hooks/useRenameDocumentDraft';
 import { useDeleteDocumentDraft } from '../../hooks/useDeleteDocumentDraft';
 import { useExportDocumentDraftToPdf } from '../../hooks/useExportDocumentDraftToPdf';
@@ -39,7 +61,8 @@ import { lightColors } from '../../../../theme/colors';
 const mockedUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseDocumentDraft = jest.mocked(useDocumentDraft);
-const mockedUseUpdateDocumentDraftContent = jest.mocked(useUpdateDocumentDraftContent);
+const mockedUseDraftSaver = jest.mocked(useDraftSaver);
+const mockedUseDraftAiHelper = jest.mocked(useDraftAiHelper);
 const mockedUseRenameDocumentDraft = jest.mocked(useRenameDocumentDraft);
 const mockedUseDeleteDocumentDraft = jest.mocked(useDeleteDocumentDraft);
 const mockedUseExportDocumentDraftToPdf = jest.mocked(useExportDocumentDraftToPdf);
@@ -54,6 +77,7 @@ const draft: DocumentDraft = {
     '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Dear Hiring Manager,"}]}]}',
   plainText: 'Dear Hiring Manager,',
   sourceDocumentId: null,
+  aiInstructions: 'Keep it short',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -65,7 +89,27 @@ function renderScreen() {
 
 describe('DocumentDraftEditorScreen', () => {
   const back = jest.fn();
-  const updateContentMutate = jest.fn();
+  const save = jest.fn().mockResolvedValue(true);
+  const retry = jest.fn();
+  const baseSaver = {
+    save,
+    retry,
+    saving: false,
+    error: null as string | null,
+    clearError: jest.fn(),
+    lastSavedAt: null as string | null,
+    setLastSavedAt: jest.fn(),
+  };
+  const baseAi = {
+    running: false,
+    suggestion: null,
+    failure: null,
+    generate: jest.fn().mockResolvedValue(true),
+    polish: jest.fn(),
+    replace: jest.fn(),
+    insertBelow: jest.fn(),
+    discard: jest.fn(),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -76,10 +120,8 @@ describe('DocumentDraftEditorScreen', () => {
       setMode: jest.fn(),
     } as never);
     mockedUseRouter.mockReturnValue({ back } as never);
-    mockedUseUpdateDocumentDraftContent.mockReturnValue({
-      mutate: updateContentMutate,
-      isPending: false,
-    } as never);
+    mockedUseDraftSaver.mockReturnValue(baseSaver as never);
+    mockedUseDraftAiHelper.mockReturnValue(baseAi as never);
     mockedUseRenameDocumentDraft.mockReturnValue({ mutate: jest.fn() } as never);
     mockedUseDeleteDocumentDraft.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseExportDocumentDraftToPdf.mockReturnValue({
@@ -129,12 +171,8 @@ describe('DocumentDraftEditorScreen', () => {
 
     jest.advanceTimersByTime(1000);
 
-    expect(updateContentMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        draftId: 'draft-1',
-        plainText: 'Dear Hiring Manager,\nUpdated body.',
-      }),
-      expect.any(Object),
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ plainText: 'Dear Hiring Manager,\nUpdated body.' }),
     );
     jest.useRealTimers();
   });
@@ -175,5 +213,91 @@ describe('DocumentDraftEditorScreen', () => {
     await fireEvent.press(getByTestId('toolbar-h1'));
 
     expect(getByTestId('draft-content-input').props.value).toBe('# Dear Hiring Manager,');
+  });
+
+  const loaded = (data: DocumentDraft = draft) =>
+    mockedUseDocumentDraft.mockReturnValue({
+      data,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+
+  it('edits the title inline and renames on blur', async () => {
+    const rename = jest.fn();
+    mockedUseRenameDocumentDraft.mockReturnValue({ mutate: rename } as never);
+    loaded();
+
+    const { getByTestId } = await renderScreen();
+    const input = getByTestId('draft-title-input');
+    expect(input.props.value).toBe('Cover Letter — Acme Corp');
+    await fireEvent.changeText(input, 'My letter');
+    await fireEvent(input, 'blur');
+
+    expect(rename).toHaveBeenCalledWith(
+      { draftId: 'draft-1', title: 'My letter' },
+      expect.any(Object),
+    );
+  });
+
+  it('imports a document into an empty draft and saves it', async () => {
+    loaded({ ...draft, plainText: '' });
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('import-mock'));
+
+    expect(getByTestId('draft-content-input').props.value).toBe('Imported text');
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'Imported text' }));
+  });
+
+  it('hides import once the draft has text', async () => {
+    loaded();
+    const { queryByTestId } = await renderScreen();
+    expect(queryByTestId('import-mock')).toBeNull();
+  });
+
+  it('opens the AI helper with the saved prompt and the live text state', async () => {
+    loaded();
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('ai-helper-open'));
+
+    expect(getByTestId('ai-helper-sheet-mock')).toBeTruthy();
+    const props = mockSheetProps.mock.calls.at(-1)?.[0];
+    expect(props).toMatchObject({
+      instructions: 'Keep it short',
+      hasText: true,
+      type: 'cover_letter',
+    });
+  });
+
+  it('makes the editor read-only while an AI request runs', async () => {
+    mockedUseDraftAiHelper.mockReturnValue({ ...baseAi, running: true } as never);
+    loaded();
+
+    const { getByTestId } = await renderScreen();
+    expect(getByTestId('draft-content-input').props.editable).toBe(false);
+  });
+
+  it('offers Retry when a save failed and retries it', async () => {
+    mockedUseDraftSaver.mockReturnValue({ ...baseSaver, error: 'Offline' } as never);
+    loaded();
+
+    const { getByTestId } = await renderScreen();
+    expect(getByTestId('draft-save-error').props.children).toBe('Offline');
+    await fireEvent.press(getByTestId('draft-save-retry'));
+    expect(retry).toHaveBeenCalled();
+  });
+
+  it('autosave reads the text at fire time so an AI result is not overwritten', async () => {
+    jest.useFakeTimers();
+    loaded();
+    const { getByTestId } = await renderScreen();
+    await fireEvent.changeText(getByTestId('draft-content-input'), 'typed');
+    // An AI result lands (through the helper's setText) before the debounce fires.
+    const { setText } = mockedUseDraftAiHelper.mock.calls.at(-1)![0];
+    await act(async () => setText('AI text'));
+    jest.advanceTimersByTime(1000);
+
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'AI text' }));
+    jest.useRealTimers();
   });
 });

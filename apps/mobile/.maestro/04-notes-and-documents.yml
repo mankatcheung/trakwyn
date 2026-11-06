@@ -77,6 +77,42 @@ appId: com.trakwyn.app
     commands:
       - tapOn:
           id: 'BackButton'
+# Cover letters: Create new opens the editor at once (JEF-508), with the AI
+# helper in its header. Nothing is generated, so the flow spends no credits.
+- scrollUntilVisible:
+    element:
+      id: 'section-index-coverLetters'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'section-index-coverLetters'
+- tapOn:
+    id: 'new-draft-button'
+- assertVisible:
+    id: 'draft-title-input'
+- tapOn:
+    id: 'ai-helper-open'
+- assertVisible:
+    id: 'ai-helper-run'
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'ai-helper-backdrop'
+      - tapOn:
+          id: 'BackButton'
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'BackButton'
 # Other documents sits further down the section index than a small phone
 # shows. It is upload-only, so it is the one document screen with nothing else
 # to wait for (JEF-396 split Documents into Cover letters, Resumes and Other).

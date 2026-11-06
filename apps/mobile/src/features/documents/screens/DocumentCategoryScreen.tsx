@@ -13,13 +13,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '../hooks/useDocumentQueries';
 import { useDeleteDocument } from '../hooks/useDeleteDocument';
 import { useUploadDocument, type UploadDocumentInput } from '../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../hooks/useDocumentDraftQueries';
 import { useDeleteDocumentDraft } from '../hooks/useDeleteDocumentDraft';
+import { useCreateOrOpenDraft } from '../hooks/useCreateOrOpenDraft';
 import {
   documentCategory,
   UPLOAD_TYPES_BY_CATEGORY,
@@ -36,17 +37,16 @@ import { DraftCard, FileCard } from '../components/DocumentCards';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import type { DocumentDraftType } from '../types';
 import { PlusIcon, UploadIcon } from '../../applications/components/ApplicationIcons';
 
 /**
- * Cover letters and Resumes each have their own create-draft screen, so the
- * type is never asked for; Other documents is upload-only. The routes are
- * flat siblings of this one, like `./documents/<id>`, so a bare relative push
- * resolves against `[id]/` (JEF-310).
+ * Cover letters and Resumes have a Create new button that opens the editor
+ * straight away (JEF-508); Other documents is upload-only.
  */
-const NEW_DRAFT_ROUTE: Partial<Record<DocumentCategory, string>> = {
-  cover_letter: './new-cover-letter',
-  resume: './new-resume',
+const DRAFT_TYPE_BY_CATEGORY: Partial<Record<DocumentCategory, DocumentDraftType>> = {
+  cover_letter: 'cover_letter',
+  resume: 'resume',
 };
 
 const EMPTY_TEXT_KEY: Record<DocumentCategory, string> = {
@@ -70,13 +70,15 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
   const { t } = useTranslation('documents');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const router = useRouter();
   const { id: applicationId } = useLocalSearchParams<{ id: string }>();
   const { data: allDocuments, isLoading, isError, error } = useDocuments(applicationId);
   const { data: allDrafts } = useDocumentDrafts(applicationId);
   const uploadDocument = useUploadDocument(applicationId);
   const deleteDocument = useDeleteDocument(applicationId);
   const deleteDraft = useDeleteDocumentDraft(applicationId);
+  const newDraftType = DRAFT_TYPE_BY_CATEGORY[category];
+  // Other documents never creates a draft, so its type is only a placeholder.
+  const createOrOpen = useCreateOrOpenDraft(applicationId, newDraftType ?? 'resume');
   const [filter, setFilter] = useState<ListFilter>('all');
 
   const allowedTypes = UPLOAD_TYPES_BY_CATEGORY[category];
@@ -138,7 +140,6 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
     );
   }
 
-  const newDraftRoute = NEW_DRAFT_ROUTE[category];
   const matchApplicationId = category === 'resume' ? applicationId : undefined;
   const items = buildListItems(drafts, documents);
   const counts = countItems(items);
@@ -170,6 +171,11 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
       ) : null}
 
       {pickError ? <Text style={styles.error}>{pickError}</Text> : null}
+      {createOrOpen.error ? (
+        <Text style={styles.error} testID="create-draft-error">
+          {createOrOpen.error}
+        </Text>
+      ) : null}
 
       {pending ? (
         <View style={styles.pendingCard}>
@@ -276,15 +282,16 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
             <Text style={styles.uploadFabText}>{t('uploadFile')}</Text>
           </Pressable>
         )}
-        {newDraftRoute ? (
+        {newDraftType ? (
           <Pressable
-            style={styles.newDraftFab}
-            onPress={() => router.push(newDraftRoute as never)}
+            style={[styles.newDraftFab, createOrOpen.pending && styles.fabPending]}
+            onPress={() => void createOrOpen.run()}
+            disabled={createOrOpen.pending}
             accessibilityRole="button"
             testID="new-draft-button"
           >
             <PlusIcon color={colors.onPrimary} size={18} />
-            <Text style={styles.newDraftFabText}>{t('newDraft')}</Text>
+            <Text style={styles.newDraftFabText}>{t('createNew')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -295,6 +302,7 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
+    fabPending: { opacity: 0.6 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: {
       color: colors.danger,
