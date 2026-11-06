@@ -88,7 +88,7 @@ describe('SettingsScreen', () => {
   });
 
   it('opens the legal pages in the browser', async () => {
-    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue();
     mockedUseRouter.mockReturnValue({ push: jest.fn() } as never);
     mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
 

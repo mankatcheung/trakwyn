@@ -27,7 +27,7 @@ export function HangWatchdog() {
   useEffect(() => {
     let stop: (() => void) | null = null;
 
-    const sync = (state: AppStateStatus) => {
+    const sync = (state: AppStateStatus | string | null | undefined) => {
       const inForeground = state !== 'background' && state !== 'inactive';
       if (inForeground && !stop) {
         stop = startHangWatchdog({ getRoute: () => routeRef.current });
