@@ -24,6 +24,14 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
     const [row] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(documentDraft)
+      .where(eq(documentDraft.applicationId, applicationId));
+    return Number(row?.count ?? 0);
+  }
+
+  async countWithTextByApplicationId(applicationId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(documentDraft)
       .where(
         and(
           eq(documentDraft.applicationId, applicationId),

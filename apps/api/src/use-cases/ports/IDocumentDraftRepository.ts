@@ -20,8 +20,10 @@ export interface UpdateDocumentDraftContentData {
 
 export interface IDocumentDraftRepository {
   findAllByApplicationId(applicationId: string): Promise<DocumentDraft[]>;
-  /** Drafts that count against the per-application cap: those with any text. A blank draft does not. */
+  /** Every draft on the application, blank or not: what a list or badge shows. */
   countByApplicationId(applicationId: string): Promise<number>;
+  /** Drafts that count against the per-application cap: those with any text. A blank draft does not (JEF-506). */
+  countWithTextByApplicationId(applicationId: string): Promise<number>;
   findById(id: string): Promise<DocumentDraft | null>;
   create(data: CreateDocumentDraftData): Promise<DocumentDraft>;
   updateContent(id: string, data: UpdateDocumentDraftContentData): Promise<DocumentDraft>;

@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 const state = vi.hoisted(() => ({
   hook: { run: vi.fn(), pending: false, error: null as string | null },
   level: 'ok' as string,
+  used: [] as Array<number | undefined>,
 }));
 
 vi.mock(
@@ -13,8 +14,18 @@ vi.mock(
     return { ...actual, useCreateOrOpenDraft: () => state.hook };
   },
 );
-vi.mock('#/lib/contentQuota', () => ({ useQuotaState: () => ({ level: state.level }) }));
-vi.mock('#/components/QuotaHint', () => ({ QuotaHint: () => null }));
+vi.mock('#/lib/contentQuota', () => ({
+  useQuotaState: (_resource: string, used?: number) => {
+    state.used.push(used);
+    return { level: state.level };
+  },
+}));
+vi.mock('#/components/QuotaHint', () => ({
+  QuotaHint: ({ used }: { used?: number }) => {
+    state.used.push(used);
+    return null;
+  },
+}));
 
 import { CreateDraftButton } from '#/routes/_authenticated/applications/$applicationId/-components/CreateDraftButton';
 
@@ -34,6 +45,19 @@ describe('CreateDraftButton', () => {
   beforeEach(() => {
     state.hook = { run: vi.fn(), pending: false, error: null };
     state.level = 'ok';
+    state.used = [];
+  });
+
+  it('counts only drafts with text towards the quota, as the API does', () => {
+    render(
+      <CreateDraftButton
+        applicationId="app-1"
+        type="resume"
+        drafts={[draft('a', 'words'), draft('b', ''), draft('c', '  \n '), draft('d', 'more')]}
+      />,
+    );
+    expect(state.used.length).toBeGreaterThan(0);
+    expect(new Set(state.used)).toEqual(new Set([2]));
   });
 
   it('is enabled below the cap', () => {

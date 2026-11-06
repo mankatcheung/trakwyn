@@ -175,16 +175,25 @@ describe('DrizzleDocumentDraftRepository', () => {
     });
   });
 
-  describe('countByApplicationId and aiInstructions (JEF-506)', () => {
+  describe('draft counts and aiInstructions (JEF-506)', () => {
     const make = (id: string, plainText: string) =>
       repo.create({ id, applicationId: 'app-1', type: 'resume', title: id, plainText });
 
-    it('does not count drafts whose text is empty or only whitespace', async () => {
+    it('countWithTextByApplicationId skips drafts whose text is empty or only whitespace', async () => {
       await make('d-empty', '');
       await make('d-blank', ' \n\t ');
       await make('d-text', 'Real content');
 
-      expect(await repo.countByApplicationId('app-1')).toBe(1);
+      expect(await repo.countWithTextByApplicationId('app-1')).toBe(1);
+    });
+
+    it('countByApplicationId counts every draft, blank or not, so it matches the list', async () => {
+      await make('d-empty', '');
+      await make('d-blank', ' \n\t ');
+      await make('d-text', 'Real content');
+
+      expect(await repo.countByApplicationId('app-1')).toBe(3);
+      expect((await repo.findAllByApplicationId('app-1')).length).toBe(3);
     });
 
     it('defaults aiInstructions to null and saves them on create', async () => {

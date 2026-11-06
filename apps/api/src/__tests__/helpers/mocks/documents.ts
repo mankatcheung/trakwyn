@@ -115,6 +115,7 @@ export const makeDocumentDraftRepository = (
 ): IDocumentDraftRepository => ({
   findAllByApplicationId: vi.fn().mockResolvedValue([]),
   countByApplicationId: vi.fn().mockResolvedValue(0),
+  countWithTextByApplicationId: vi.fn().mockResolvedValue(0),
   findById: vi.fn(),
   create: vi.fn(),
   updateContent: vi.fn(),
