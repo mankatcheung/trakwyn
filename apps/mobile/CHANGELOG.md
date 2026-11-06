@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.6.0...mobile-v0.7.0) (2026-11-06)
+
+
+### Features
+
+* **mobile:** add the AI helper and direct Create new to the resume and cover letter editor (JEF-508) ([#1236](https://github.com/mankatcheung/trakwyn/issues/1236)) ([aa4165e](https://github.com/mankatcheung/trakwyn/commit/aa4165ea49e507d2a8a4e4a85189f03121ba0b3d))
+
 ## [0.6.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.5.0...mobile-v0.6.0) (2026-11-05)
 
 
