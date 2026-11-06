@@ -1,7 +1,7 @@
 import {
   CircuitBreaker,
   CircuitBreakerOpenError,
-} from '#src/infrastructure/cache/CircuitBreaker.js';
+} from '#src/infrastructure/resilience/CircuitBreaker.js';
 import type { IRedisClient } from '#src/infrastructure/cache/IRedisClient.js';
 import { SESSION_BLOCKLIST } from '#src/infrastructure/config/constants.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';

@@ -331,6 +331,33 @@ resource "axiom_monitor" "hosted_ai_breaker_open" {
   notifier_ids     = [axiom_notifier.email.id]
 }
 
+# A hosted model's health circuit (JEF-504), not the spend breaker above: it
+# opens when a model has failed three calls in a row (5xx, timeout, dropped
+# connection), after which calls skip that model without a request for 30 s at a
+# time. 4xx, 429 and a refused token never open it, so an alert here is the model
+# or the gateway being down. `trakwyn.hosted_ai.circuit_short_circuits` (by
+# model) says how many calls it turned away; chart it beside this one.
+resource "axiom_monitor" "hosted_ai_circuit_open" {
+  name        = "Hosted AI model circuit opened"
+  description = "A Workers AI model's health circuit moved to open (METRICS.HOSTED_AI_CIRCUIT_TRANSITIONS where to = open): three failed calls in a row on one API instance, so that instance now skips the model. Both models opening means Trakwyn AI is down for it and users fall through to their own keys."
+  type        = "Threshold"
+  mpl_query   = <<-MPL
+    `${var.metrics_dataset}`:`trakwyn.hosted_ai.circuit_transitions`
+    | where to == "open"
+    | map increase
+    | align to 5m using sum
+    | group by model using sum
+  MPL
+
+  operator         = "Above"
+  threshold        = 0
+  range_minutes    = 5
+  interval_minutes = 5
+  notify_by_group  = true
+  alert_on_no_data = false
+  notifier_ids     = [axiom_notifier.email.id]
+}
+
 # The failover line is the only signal: nothing counts successful platform
 # calls in the logs dataset, so this is a count, not the share of calls that
 # the ticket asked for. At launch volume a count is the more useful number.

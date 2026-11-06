@@ -90,6 +90,8 @@ export interface FakeMetrics extends IMetrics {
   llmNeuronCosts: Array<{ model: string | null; feature: string; costMicros: number }>;
   llmCostMismatches: Array<{ model: string | null; direction: CostMismatchDirection }>;
   breakerOpens: BreakerOpenReason[];
+  hostedCircuitTransitions: Array<{ model: string; from: string; to: string }>;
+  hostedCircuitShortCircuits: string[];
 }
 
 /**
@@ -118,6 +120,8 @@ export function makeFakeMetrics(): FakeMetrics {
     llmNeuronCosts: [],
     llmCostMismatches: [],
     breakerOpens: [],
+    hostedCircuitTransitions: [],
+    hostedCircuitShortCircuits: [],
     recordCacheHit: () => {
       fake.hits++;
     },
@@ -177,6 +181,12 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordHostedAiBreakerOpen: (reason) => {
       fake.breakerOpens.push(reason);
+    },
+    recordHostedAiCircuitTransition: (model, from, to) => {
+      fake.hostedCircuitTransitions.push({ model, from, to });
+    },
+    recordHostedAiCircuitShortCircuit: (model) => {
+      fake.hostedCircuitShortCircuits.push(model);
     },
   };
   return fake;
