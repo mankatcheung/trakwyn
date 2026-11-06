@@ -115,6 +115,7 @@ export const makeDocumentDraftRepository = (
 ): IDocumentDraftRepository => ({
   findAllByApplicationId: vi.fn().mockResolvedValue([]),
   countByApplicationId: vi.fn().mockResolvedValue(0),
+  countWithTextByApplicationId: vi.fn().mockResolvedValue(0),
   findById: vi.fn(),
   create: vi.fn(),
   updateContent: vi.fn(),
@@ -132,6 +133,7 @@ export const makeDocumentDraft = (overrides?: Partial<DocumentDraft>): DocumentD
   contentJson: '{"type":"doc","content":[]}',
   plainText: '',
   sourceDocumentId: null,
+  aiInstructions: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   ...overrides,

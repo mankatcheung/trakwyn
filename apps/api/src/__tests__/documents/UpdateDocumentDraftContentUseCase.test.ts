@@ -4,6 +4,7 @@ import {
   makeDocumentDraft,
   makeDocumentDraftRepository,
 } from '#src/__tests__/helpers/mocks/documents.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 describe('UpdateDocumentDraftContentUseCase', () => {
@@ -74,6 +75,53 @@ describe('UpdateDocumentDraftContentUseCase', () => {
     expect(documentDraftRepository.updateContent).toHaveBeenCalledWith('draft-1', {
       contentJson: '{"type":"doc","content":[{"type":"paragraph"}]}',
       plainText: 'Hello world',
+    });
+  });
+
+  describe('aiInstructions (JEF-506)', () => {
+    const setup = () => {
+      const documentDraftRepository = makeDocumentDraftRepository({
+        findById: vi.fn().mockResolvedValue(makeDocumentDraft()),
+        updateContent: vi.fn().mockResolvedValue(makeDocumentDraft()),
+      });
+      const useCase = new UpdateDocumentDraftContentUseCase({
+        documentDraftRepository,
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        }),
+      });
+      return { useCase, documentDraftRepository };
+    };
+    const base = { userId: 'user-1', draftId: 'draft-1', contentJson: '{}', plainText: 'x' };
+
+    it('persists trimmed instructions when provided', async () => {
+      const { useCase, documentDraftRepository } = setup();
+      await useCase.execute({ ...base, aiInstructions: '  Be brief ' });
+      expect(documentDraftRepository.updateContent).toHaveBeenCalledWith('draft-1', {
+        contentJson: '{}',
+        plainText: 'x',
+        aiInstructions: 'Be brief',
+      });
+    });
+
+    it('does not touch them when absent', async () => {
+      const { useCase, documentDraftRepository } = setup();
+      await useCase.execute(base);
+      expect(documentDraftRepository.updateContent).toHaveBeenCalledWith('draft-1', {
+        contentJson: '{}',
+        plainText: 'x',
+      });
+    });
+
+    it('clears them when empty and rejects over-long ones', async () => {
+      const { useCase, documentDraftRepository } = setup();
+      await useCase.execute({ ...base, aiInstructions: '  ' });
+      expect(vi.mocked(documentDraftRepository.updateContent).mock.calls[0]![1]).toMatchObject({
+        aiInstructions: null,
+      });
+      await expect(
+        useCase.execute({ ...base, aiInstructions: 'a'.repeat(501) }),
+      ).rejects.toBeInstanceOf(ValidationError);
     });
   });
 });

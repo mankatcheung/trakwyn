@@ -3,6 +3,10 @@ import { AI_FEATURE, AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
 import { promptMessages } from '#src/use-cases/prompts/shared.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import {
+  fenceUserInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 
 export interface ResumePromptInput {
   app: { company: string; role: string; location?: string | null; description?: string | null };
@@ -13,6 +17,8 @@ export interface ResumePromptInput {
   /** Notes and letters from other applications, only when the user opted in; may be empty. */
   crossApplicationContext: string;
   customAiPrompt: string | null | undefined;
+  /** The user's own steer for this resume (JEF-506), already trimmed; `null` for none. */
+  instructions?: string | null;
 }
 
 const SYSTEM_PROMPT = `You are a resume writer. You will be given a candidate's real work experience, education and skills, and a job they are applying for.
@@ -24,6 +30,7 @@ Absolute rules:
 - Never inflate seniority or exaggerate scope. If the background is thin, produce a short resume.
 - Prefer the candidate's own wording where it is already clear.
 - Write bullets as concrete accomplishments drawn from the descriptions provided. If a role has no description, write no bullets for it rather than imagining them.
+${USER_INSTRUCTIONS_RULE}
 
 Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
 {"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}]}`;
@@ -33,6 +40,7 @@ function userPrompt({
   profileText,
   applicationContext,
   crossApplicationContext,
+  instructions,
 }: ResumePromptInput): string {
   return [
     'Tailor this candidate to the following role.',
@@ -49,12 +57,13 @@ function userPrompt({
     ...(applicationContext ? [`\n${applicationContext}`] : []),
     ...(crossApplicationContext ? [`\n${crossApplicationContext}`] : []),
     `\nCandidate background — the only facts you may use:\n${profileText}`,
+    ...(instructions ? [`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`] : []),
   ].join('\n');
 }
 
 export const resumePrompt: PromptDefinition<ResumePromptInput> = {
   id: AI_FEATURE.RESUME,
-  version: 1,
+  version: 2,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

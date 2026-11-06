@@ -2,6 +2,10 @@ import { AI_FEATURE, AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
 import { promptMessages } from '#src/use-cases/prompts/shared.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
+import {
+  fenceUserInstructions,
+  USER_INSTRUCTIONS_RULE,
+} from '#src/use-cases/shared/aiInstructions.js';
 
 export interface CoverLetterPromptInput {
   app: { company: string; role: string; location?: string | null; description?: string | null };
@@ -13,12 +17,16 @@ export interface CoverLetterPromptInput {
   /** Notes and letters from other applications, only when the user opted in; may be empty. */
   crossApplicationContext: string;
   customAiPrompt: string | null | undefined;
+  /** The user's own steer for this letter (JEF-506), already trimmed; `null` for none. */
+  instructions?: string | null;
 }
 
-const SYSTEM_PROMPT = `You are a professional cover letter writer. Write compelling, personalized cover letters that are concise (3-4 paragraphs), specific to the role, and written in first person. Return ONLY the cover letter body — no subject line, no date, no address block, no explanation.`;
+const SYSTEM_PROMPT = `You are a professional cover letter writer. Write compelling, personalized cover letters that are concise (3-4 paragraphs), specific to the role, and written in first person. Return ONLY the cover letter body — no subject line, no date, no address block, no explanation.
+${USER_INSTRUCTIONS_RULE}`;
 
 function userPrompt(input: CoverLetterPromptInput): string {
-  const { app, profile, resumeText, applicationContext, crossApplicationContext } = input;
+  const { app, profile, resumeText, applicationContext, crossApplicationContext, instructions } =
+    input;
   const lines = [
     `Write a cover letter for this job application:`,
     `Company: ${app.company}`,
@@ -55,12 +63,16 @@ function userPrompt(input: CoverLetterPromptInput): string {
     lines.push('\nWrite a strong general cover letter for someone applying to this role.');
   }
 
+  if (instructions) {
+    lines.push(`\nThe user's instructions:\n${fenceUserInstructions(instructions)}`);
+  }
+
   return lines.join('\n');
 }
 
 export const coverLetterPrompt: PromptDefinition<CoverLetterPromptInput> = {
   id: AI_FEATURE.COVER_LETTER,
-  version: 1,
+  version: 2,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

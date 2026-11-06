@@ -60,4 +60,26 @@ describe('AiCreditsMeter', () => {
     render(<AiCreditsMeter variant="hint" />);
     expect(screen.getByRole('status')).toHaveTextContent('7 of 30 AI credits left');
   });
+
+  // The inline variant (JEF-506) sits next to an AI action.
+  it('inline: is always visible, even with plenty left, as one compact line', () => {
+    withCredits(2);
+    render(<AiCreditsMeter variant="inline" />);
+    expect(screen.getByRole('status')).toHaveTextContent('28 of 30 AI credits left');
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('inline: turns red when nothing is left', () => {
+    withCredits(30);
+    render(<AiCreditsMeter variant="inline" />);
+    expect(screen.getByRole('status')).toHaveClass('text-red-600');
+  });
+
+  it('inline: renders nothing when the plan has no credits', () => {
+    billing.status = {
+      aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+    };
+    const { container } = render(<AiCreditsMeter variant="inline" />);
+    expect(container).toBeEmptyDOMElement();
+  });
 });

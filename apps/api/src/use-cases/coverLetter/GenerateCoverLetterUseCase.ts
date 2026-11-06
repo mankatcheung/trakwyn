@@ -18,12 +18,15 @@ import { formatApplicationContext } from '#src/use-cases/shared/applicationConte
 import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplicationContext.js';
 import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 
 export interface GenerateCoverLetterInput {
   applicationId: string;
   userId: string;
   resumeText?: string | null;
+  /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
+  instructions?: string | null;
 }
 
 interface Deps {
@@ -43,6 +46,7 @@ export class GenerateCoverLetterUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GenerateCoverLetterInput): Promise<string> {
+    const instructions = normaliseAiInstructions(input.instructions);
     if (
       !(await this.deps.generateCoverLetterRateLimiter.consume(`cover-letter:user:${input.userId}`))
     ) {
@@ -102,6 +106,7 @@ export class GenerateCoverLetterUseCase {
       applicationContext: context,
       crossApplicationContext,
       customAiPrompt: user?.customAiPrompt,
+      instructions,
     });
 
     return (

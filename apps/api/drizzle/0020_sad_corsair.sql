@@ -1,0 +1,1 @@
+ALTER TABLE "DocumentDraft" ADD COLUMN "aiInstructions" text;

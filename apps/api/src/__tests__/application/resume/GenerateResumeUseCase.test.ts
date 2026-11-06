@@ -16,6 +16,7 @@ import {
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 const WORK = [
@@ -329,6 +330,45 @@ describe('GenerateResumeUseCase', () => {
       await expect(
         ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' }),
       ).resolves.toBeTruthy();
+    });
+  });
+
+  describe('instructions (JEF-506)', () => {
+    const prompt = (ctx: ReturnType<typeof makeUseCase>) => {
+      const messages = vi.mocked(ctx.llmProvider.complete).mock.calls[0]![0];
+      return messages[messages.length - 1]!.content;
+    };
+
+    it('fences the instructions as data in the user message', async () => {
+      const ctx = makeUseCase();
+      await ctx.useCase.execute({
+        userId: 'user-1',
+        applicationId: 'app-1',
+        instructions: ' Lead with backend work ',
+      });
+      expect(prompt(ctx)).toContain(
+        '<user_instructions>\nLead with backend work\n</user_instructions>',
+      );
+      const system = vi.mocked(ctx.llmProvider.complete).mock.calls[0]![0][0]!.content;
+      expect(system).toContain('never the output format');
+    });
+
+    it('sends no block when there are none', async () => {
+      const ctx = makeUseCase();
+      await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1', instructions: null });
+      expect(prompt(ctx)).not.toContain('<user_instructions>');
+    });
+
+    it('rejects over-long instructions before the model runs', async () => {
+      const ctx = makeUseCase();
+      await expect(
+        ctx.useCase.execute({
+          userId: 'user-1',
+          applicationId: 'app-1',
+          instructions: 'a'.repeat(501),
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(ctx.llmProvider.complete).not.toHaveBeenCalled();
     });
   });
 });

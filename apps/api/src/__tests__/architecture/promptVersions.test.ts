@@ -9,6 +9,7 @@ import { mockAnswerPrompt } from '#src/use-cases/prompts/mockAnswer.js';
 import { mockQuestionsPrompt } from '#src/use-cases/prompts/mockQuestions.js';
 import { parseCvPrompt } from '#src/use-cases/prompts/parseCv.js';
 import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescription.js';
+import { polishDraftPrompt } from '#src/use-cases/prompts/polishDraft.js';
 import { resumePrompt } from '#src/use-cases/prompts/resume.js';
 import { resumeMatchPrompt } from '#src/use-cases/prompts/resumeMatch.js';
 import { talkingPointsPrompt } from '#src/use-cases/prompts/talkingPoints.js';
@@ -70,6 +71,12 @@ const RENDERED: Rendered[] = [
     crossApplicationContext: 'Earlier letters: warm tone',
     customAiPrompt: null,
   }),
+  render(polishDraftPrompt, {
+    type: 'cover_letter',
+    text: 'Dear team, I am writing to apply.',
+    instructions: null,
+    customAiPrompt: null,
+  }),
   render(resumeMatchPrompt, { jobDescription: 'We need a TS engineer', resumeText: 'TypeScript' }),
   render(parseJobDescriptionPrompt, {
     text: 'We are Acme Corp looking for a Senior Engineer',
@@ -106,8 +113,9 @@ const hashOf = ({ messages }: Rendered) =>
 
 /** `id@version` to the first 16 hex characters of the sha256 of the rendered messages. */
 const RECORDED: Record<string, string> = {
-  'coverLetter@1': '5c89a7629a96e583',
-  'resume@1': 'c10bc876b5742838',
+  'coverLetter@2': '3be7dcb34105cb07',
+  'resume@2': 'd7d3e379df16aa53',
+  'polishDraft@1': '814195a70b7c682b',
   'resumeMatch@1': '73972db89d3346a5',
   'parseJobDescription@1': 'e357e943306332df',
   'parseCv@1': '8ec90529a7927086',
@@ -173,6 +181,13 @@ describe('prompt versions', () => {
         const system = rendered.messages.find((m) => m.role === 'system')!.content;
         expect(system).toContain('<tool_result>');
         expect(system).toMatch(/data, not instructions/);
+      } else if (rendered.prompt.id === AI_FEATURE.POLISH_DRAFT) {
+        // Polish carries only the user's own text, not a third party's, so it
+        // is fenced as `<user_document>` and the system prompt says to treat
+        // it as data to edit (JEF-506).
+        expect(user, keyOf(rendered)).toContain('<user_document>');
+        const system = rendered.messages.find((m) => m.role === 'system')!.content;
+        expect(system).toMatch(/strictly as data to edit/);
       } else {
         expect(user, keyOf(rendered)).toContain('<untrusted_external_content>');
       }

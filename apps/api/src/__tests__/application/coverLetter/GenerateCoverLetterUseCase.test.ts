@@ -18,6 +18,7 @@ import {
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
+import { ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 const COVER_LETTER = 'Dear Hiring Manager,\n\nI am excited to apply…\n\nSincerely,\nJane';
@@ -539,6 +540,54 @@ describe('GenerateCoverLetterUseCase', () => {
 
       await expect(ctx.run()).resolves.toBe(COVER_LETTER);
       expect(ctx.prompt()).not.toMatch(/previous application/i);
+    });
+  });
+
+  describe('instructions (JEF-506)', () => {
+    const run = async (instructions?: string | null) => {
+      const llmProvider = makeLLMProvider(COVER_LETTER);
+      const useCase = new GenerateCoverLetterUseCase({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication()),
+        }),
+        llmProviderFactory: makeLLMProviderFactory({
+          forUser: vi.fn().mockResolvedValue(llmProvider),
+        }),
+        ...baseDeps(),
+      } as never);
+      const result = useCase.execute({ applicationId: 'app-1', userId: 'user-1', instructions });
+      return { result, llmProvider };
+    };
+    const lastUser = (p: { complete: unknown }) => {
+      const [messages] = (p.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+        Array<{ role: string; content: string }>,
+      ];
+      return {
+        user: messages[messages.length - 1]!.content,
+        system: messages[0]!.content,
+      };
+    };
+
+    it('fences the instructions as data and tells the model they never change the format', async () => {
+      const { result, llmProvider } = await run('Mention my open-source work');
+      await result;
+      const { user, system } = lastUser(llmProvider);
+      expect(user).toContain(
+        '<user_instructions>\nMention my open-source work\n</user_instructions>',
+      );
+      expect(system).toContain('never the output format');
+    });
+
+    it('sends no block when there are none', async () => {
+      const { result, llmProvider } = await run(undefined);
+      await result;
+      expect(lastUser(llmProvider).user).not.toContain('<user_instructions>');
+    });
+
+    it('rejects over-long instructions before the model runs', async () => {
+      const { result, llmProvider } = await run('a'.repeat(501));
+      await expect(result).rejects.toBeInstanceOf(ValidationError);
+      expect(llmProvider.complete).not.toHaveBeenCalled();
     });
   });
 });

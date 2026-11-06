@@ -20,6 +20,7 @@ const UpdateDocumentDraftContentInput = builder.inputType('UpdateDocumentDraftCo
     draftId: t.id({ required: true }),
     contentJson: t.string({ required: true }),
     plainText: t.string({ required: true }),
+    aiInstructions: t.string(),
   }),
 });
 

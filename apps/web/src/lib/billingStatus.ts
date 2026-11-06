@@ -10,7 +10,7 @@ const BILLING_STATUS_QUERY = `
       planSource
       features { notifications analytics offers shareLinks apiAccess mcpAccess }
       limits { applications documentBytes aiCreditsPerMonth }
-      aiCredits { used limit bonusRemaining resetsAt }
+      aiCredits { used limit bonusRemaining resetsAt costs { feature credits } }
       catalogue {
         free {
           features { notifications analytics offers shareLinks apiAccess mcpAccess }
@@ -57,6 +57,15 @@ export interface AiCredits {
   bonusRemaining: number;
   /** ISO timestamp of the 1st of next month, UTC. */
   resetsAt: string;
+  /** What one run of each hosted AI feature costs, in credits (JEF-506). */
+  costs?: AiFeatureCost[];
+}
+
+export type AiFeature = 'coverLetter' | 'resume' | 'polishDraft';
+
+export interface AiFeatureCost {
+  feature: AiFeature | (string & {});
+  credits: number;
 }
 
 export interface PlanTerms {

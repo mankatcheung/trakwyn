@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { FileTextIcon, PlusIcon, UploadIcon } from 'lucide-react';
+import { FileTextIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
 import { storageUsageQueryKey } from '#/lib/storageUsage';
 import { useLocale } from '#/lib/i18n';
@@ -16,6 +15,7 @@ import {
 import { EmptyState } from '@trakwyn/ui';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import { DraftRow, FileRow } from './DocumentListRow';
+import { CreateDraftButton } from './CreateDraftButton';
 import { DocumentUploadPanel } from './DocumentUploadPanel';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import {
@@ -36,8 +36,6 @@ const EMPTY_MESSAGE_KEY: Record<DocumentCategory, string> = {
   other: 'documents.emptyOther',
 };
 
-const NEW_DRAFT_CLASS =
-  'flex min-h-10 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700';
 const UPLOAD_CLASS =
   'flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700';
 
@@ -47,11 +45,6 @@ const FILTERS: readonly { id: ListFilter; labelKey: string }[] = [
   { id: 'files', labelKey: 'documents.filterFiles' },
 ];
 
-const NEW_DRAFT_ROUTE = {
-  cover_letter: '/applications/$applicationId/cover-letters/new',
-  resume: '/applications/$applicationId/resumes/new',
-} as const;
-
 interface DocumentListProps {
   applicationId: string;
   /** Only this category's drafts and uploads are shown — no tab overlaps another. */
@@ -60,7 +53,7 @@ interface DocumentListProps {
 
 /**
  * One list for all three document tabs. Cover letters and Resumes can start a
- * draft (each through its own form, so the type is never asked for); Other
+ * draft ("Create new" opens the editor, JEF-506); Other
  * documents is upload-only.
  */
 export function DocumentList({ applicationId, category }: DocumentListProps) {
@@ -135,14 +128,11 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
             {t('documents.uploadFile')}
           </button>
           {category !== 'other' && (
-            <Link
-              to={NEW_DRAFT_ROUTE[category]}
-              params={{ applicationId }}
-              className={NEW_DRAFT_CLASS}
-            >
-              <PlusIcon size={16} aria-hidden="true" />
-              {t('documents.newDraft')}
-            </Link>
+            <CreateDraftButton
+              applicationId={applicationId}
+              type={category}
+              drafts={draftsData?.documentDrafts ?? []}
+            />
           )}
         </div>
       </div>

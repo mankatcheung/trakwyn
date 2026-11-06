@@ -17,6 +17,7 @@ import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplic
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import { resumePrompt, resumeResponseSchema } from '#src/use-cases/prompts/resume.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import {
   loadUserProfile,
   formatUserProfile,
@@ -29,6 +30,8 @@ import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cas
 export interface GenerateResumeInput {
   applicationId: string;
   userId: string;
+  /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
+  instructions?: string | null;
 }
 
 interface Deps extends UserProfileRepositories {
@@ -69,6 +72,7 @@ export class GenerateResumeUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: GenerateResumeInput): Promise<ResumeContent> {
+    const instructions = normaliseAiInstructions(input.instructions);
     if (!(await this.deps.generateResumeRateLimiter.consume(`resume:user:${input.userId}`))) {
       throw new RateLimitedError('Too many requests — please wait a moment and try again');
     }
@@ -129,6 +133,7 @@ export class GenerateResumeUseCase {
       applicationContext: context,
       crossApplicationContext,
       customAiPrompt: user?.customAiPrompt,
+      instructions,
     });
 
     const result = await llmProvider.complete(messages, 2048, undefined, {

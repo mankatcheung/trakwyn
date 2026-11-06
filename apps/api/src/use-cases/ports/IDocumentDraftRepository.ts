@@ -8,16 +8,22 @@ export interface CreateDocumentDraftData {
   contentJson?: string;
   plainText?: string;
   sourceDocumentId?: string | null;
+  aiInstructions?: string | null;
 }
 
 export interface UpdateDocumentDraftContentData {
   contentJson: string;
   plainText: string;
+  /** Absent leaves the saved instructions as they are; `null` clears them. */
+  aiInstructions?: string | null;
 }
 
 export interface IDocumentDraftRepository {
   findAllByApplicationId(applicationId: string): Promise<DocumentDraft[]>;
+  /** Every draft on the application, blank or not: what a list or badge shows. */
   countByApplicationId(applicationId: string): Promise<number>;
+  /** Drafts that count against the per-application cap: those with any text. A blank draft does not (JEF-506). */
+  countWithTextByApplicationId(applicationId: string): Promise<number>;
   findById(id: string): Promise<DocumentDraft | null>;
   create(data: CreateDocumentDraftData): Promise<DocumentDraft>;
   updateContent(id: string, data: UpdateDocumentDraftContentData): Promise<DocumentDraft>;

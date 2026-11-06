@@ -1,15 +1,16 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
- * The shared "new draft" form asked which type to create. Each type has its
- * own form now (JEF-396); an old link lands on the resume one, matching where
- * the old `?section=documents` lands.
+ * The shared "new draft" form asked which type to create. There are no
+ * new-draft pages any more (JEF-506): "Create new" on a tab opens the editor.
+ * An old link lands on the Resumes tab.
  */
 export const Route = createFileRoute('/_authenticated/applications/$applicationId/documents/new')({
   beforeLoad: ({ params }) => {
     throw redirect({
-      to: '/applications/$applicationId/resumes/new',
+      to: '/applications/$applicationId',
       params: { applicationId: params.applicationId },
+      search: { section: 'resumes' },
       replace: true,
     });
   },

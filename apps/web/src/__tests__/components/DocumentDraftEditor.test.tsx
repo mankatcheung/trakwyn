@@ -34,7 +34,10 @@ vi.mock('@tiptap/react', () => ({
 
 vi.mock('@tiptap/starter-kit', () => ({ default: {} }));
 
-import { DocumentDraftEditor } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentDraftEditor';
+import {
+  DocumentDraftEditor,
+  type DocumentEditorHandle,
+} from '#/routes/_authenticated/applications/$applicationId/-components/DocumentDraftEditor';
 
 describe('DocumentDraftEditor', () => {
   let capturedConfig: EditorUpdateConfig | undefined;
@@ -93,5 +96,71 @@ describe('DocumentDraftEditor', () => {
 
     expect(onUpdate).toHaveBeenCalledWith(JSON.stringify({ type: 'doc' }), 'hello world');
     vi.useRealTimers();
+  });
+
+  describe('editorRef handle (JEF-506)', () => {
+    const nodes = [{ type: 'paragraph' }];
+    const setup = () => {
+      const commands = { setContent: vi.fn(), insertContentAt: vi.fn() };
+      Object.assign(mockEditor, {
+        commands,
+        getText: () => 'now',
+        getJSON: () => ({ type: 'doc' }),
+        state: { doc: { content: { size: 42 } } },
+      });
+      const editorRef = { current: null as DocumentEditorHandle | null };
+      const onUpdate = vi.fn();
+      render(<DocumentDraftEditor contentJson="{}" onUpdate={onUpdate} editorRef={editorRef} />);
+      return { commands, editorRef, onUpdate };
+    };
+
+    it('reads the live text and document', () => {
+      const { editorRef } = setup();
+      expect(editorRef.current!.getText()).toBe('now');
+      expect(editorRef.current!.getJson()).toBe('{"type":"doc"}');
+    });
+
+    it('replaces the document without emitting an update', () => {
+      const { editorRef, commands } = setup();
+      editorRef.current!.replaceContent(nodes);
+      expect(commands.setContent).toHaveBeenCalledWith(
+        { type: 'doc', content: nodes },
+        { emitUpdate: false },
+      );
+    });
+
+    it('toggles editing without emitting an update', () => {
+      const { editorRef } = setup();
+      const setEditable = vi.fn();
+      Object.assign(mockEditor, { setEditable });
+      editorRef.current!.setEditable(false);
+      expect(setEditable).toHaveBeenCalledWith(false, false);
+    });
+
+    it('reports the live text on every change, ahead of the save debounce', () => {
+      const onTextChange = vi.fn();
+      render(
+        <DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} onTextChange={onTextChange} />,
+      );
+      capturedConfig?.onUpdate({ editor: { getJSON: () => ({}), getText: () => 'typed' } });
+      expect(onTextChange).toHaveBeenCalledWith('typed');
+    });
+
+    it('appends after the last block', () => {
+      const { editorRef, commands } = setup();
+      editorRef.current!.appendContent(nodes);
+      expect(commands.insertContentAt).toHaveBeenCalledWith(42, nodes);
+    });
+
+    it('sends an edit still waiting out the debounce before replacing, so it cannot land later', () => {
+      vi.useFakeTimers();
+      const { editorRef, onUpdate } = setup();
+      capturedConfig?.onUpdate({
+        editor: { getJSON: () => ({ type: 'doc' }), getText: () => 'x' },
+      });
+      editorRef.current!.replaceContent(nodes);
+      expect(onUpdate).toHaveBeenCalledWith('{"type":"doc"}', 'x');
+      vi.useRealTimers();
+    });
   });
 });

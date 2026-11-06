@@ -195,7 +195,7 @@ describe('per-application caps (JEF-339)', () => {
     const FULL = CONTENT_LIMITS.DOCUMENT_DRAFTS_PER_APPLICATION;
     const draftRepository = (count: number) =>
       makeDocumentDraftRepository({
-        countByApplicationId: vi.fn().mockResolvedValue(count),
+        countWithTextByApplicationId: vi.fn().mockResolvedValue(count),
         create: vi.fn().mockImplementation((data) => Promise.resolve(makeDocumentDraft(data))),
       });
 
@@ -211,6 +211,27 @@ describe('per-application caps (JEF-339)', () => {
         applicationId: 'app-1',
         type: 'cover_letter',
         title: 'Letter',
+      });
+      expect(documentDraftRepository.create).toHaveBeenCalled();
+    });
+
+    it('does not let blank drafts use up the cap (JEF-506)', async () => {
+      const documentDraftRepository = makeDocumentDraftRepository({
+        // The list shows 30 drafts, but none of them has any text yet.
+        countByApplicationId: vi.fn().mockResolvedValue(FULL + 10),
+        countWithTextByApplicationId: vi.fn().mockResolvedValue(0),
+        create: vi.fn().mockImplementation((data) => Promise.resolve(makeDocumentDraft(data))),
+      });
+      const useCase = new CreateDocumentDraftUseCase({
+        documentDraftRepository,
+        applicationRepository: ownedApp(),
+        generateId: () => 'draft-1',
+      });
+      await useCase.execute({
+        userId: 'user-1',
+        applicationId: 'app-1',
+        type: 'resume',
+        title: 'CV',
       });
       expect(documentDraftRepository.create).toHaveBeenCalled();
     });

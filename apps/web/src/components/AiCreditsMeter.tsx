@@ -4,7 +4,7 @@ import { useBillingStatus } from '#/lib/billingStatus';
 
 interface AiCreditsMeterProps {
   /** `full` is the settings meter with a bar; `hint` is the one-line assistant note, shown only when low. */
-  variant?: 'full' | 'hint';
+  variant?: 'full' | 'hint' | 'inline';
   className?: string;
 }
 
@@ -32,6 +32,21 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
 
   const text = t('aiCredits.left', { left: view.left, total: view.total });
   const resets = t('aiCredits.resets', { date: formatResetDate(view.resetsAt, locale) });
+
+  // A compact, always-visible line next to an AI action (JEF-506).
+  if (variant === 'inline') {
+    const tone =
+      view.level === 'empty'
+        ? 'text-red-600 dark:text-red-400'
+        : view.level === 'warning'
+          ? 'text-amber-700 dark:text-amber-400'
+          : 'text-gray-500 dark:text-gray-400';
+    return (
+      <p className={className ?? `text-xs ${tone}`} role="status" title={resets}>
+        {text}
+      </p>
+    );
+  }
 
   if (variant === 'hint') {
     return (

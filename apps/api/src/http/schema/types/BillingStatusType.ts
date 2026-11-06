@@ -1,5 +1,6 @@
 import { builder } from '#src/http/schema/builder.js';
 import { PlanEnum, PlanSourceEnum } from '#src/http/schema/types/enums/PlanEnums.js';
+import { AI_CREDITS } from '#src/use-cases/constants.js';
 import type { AiCreditStanding } from '#src/use-cases/ports/IAiCreditService.js';
 import type { BillingStatus, PlanTerms } from '#src/use-cases/plans/GetBillingStatusUseCase.js';
 
@@ -22,6 +23,25 @@ PlanFeaturesRef.implement({
   }),
 });
 
+interface AiCreditCost {
+  feature: string;
+  credits: number;
+}
+
+const AiCreditCostRef = builder.objectRef<AiCreditCost>('AiCreditCost');
+AiCreditCostRef.implement({
+  description: 'What one hosted AI action costs, in credits.',
+  fields: (t) => ({
+    feature: t.exposeString('feature', { nullable: false }),
+    credits: t.exposeInt('credits', { nullable: false }),
+  }),
+});
+
+/** Every feature's weight, from `AI_CREDITS.WEIGHTS` so the table is stated once. */
+const AI_CREDIT_COSTS: readonly AiCreditCost[] = Object.entries(AI_CREDITS.WEIGHTS).map(
+  ([feature, credits]) => ({ feature, credits }),
+);
+
 export const AiCreditsRef = builder.objectRef<AiCreditStanding>('AiCredits');
 AiCreditsRef.implement({
   description: "This month's hosted AI credits. Calls on the user's own key are never counted.",
@@ -34,6 +54,12 @@ AiCreditsRef.implement({
       description: 'Welcome-bonus credits still unspent; 0 after the first 14 days.',
     }),
     resetsAt: t.field({ type: 'String', resolve: (credits) => credits.resetsAt.toISOString() }),
+    costs: t.field({
+      type: [AiCreditCostRef],
+      nullable: false,
+      description: 'What each AI action costs in credits (the same on every plan).',
+      resolve: () => [...AI_CREDIT_COSTS],
+    }),
   }),
 });
 

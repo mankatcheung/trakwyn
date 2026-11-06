@@ -104,6 +104,7 @@ import './mutations/mcpOAuthGrantMutations.js';
 import './mutations/contactMutations.js';
 import './mutations/jobDescriptionMutations.js';
 import './mutations/coverLetterMutations.js';
+import './mutations/draftAiMutations.js';
 import './mutations/resumeMutations.js';
 import './types/CompanyBriefingType.js';
 import './queries/companyBriefingQueries.js';

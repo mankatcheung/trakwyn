@@ -1,3 +1,4 @@
+import { AI_CREDITS } from '#src/use-cases/constants.js';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { buildTestApp, type TestApp } from './helpers/buildTestApp.js';
@@ -103,6 +104,26 @@ describe('plans integration, plans not enforced (the default)', () => {
     expect(body.errors).toBeUndefined();
     expect(body.data!.billingStatus.enforced).toBe(false);
     expect(Object.values(body.data!.billingStatus.features).every(Boolean)).toBe(true);
+  });
+
+  it('exposes what each AI action costs, from the credit weights (JEF-506)', async () => {
+    const { token } = await registerAndLogin(testApp);
+
+    const res = await authedInject(
+      testApp,
+      token,
+      'query { billingStatus { aiCredits { costs { feature credits } } } }',
+    );
+    const body = res.json() as GraphQLResponse<{
+      billingStatus: { aiCredits: { costs: Array<{ feature: string; credits: number }> } };
+    }>;
+
+    expect(body.errors).toBeUndefined();
+    const costs = body.data!.billingStatus.aiCredits.costs;
+    expect(Object.fromEntries(costs.map((c) => [c.feature, c.credits]))).toEqual(
+      AI_CREDITS.WEIGHTS,
+    );
+    expect(costs.find((c) => c.feature === 'polishDraft')?.credits).toBe(1);
   });
 
   it('lets a new user use a Pro feature', async () => {

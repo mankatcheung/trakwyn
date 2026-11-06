@@ -11,6 +11,7 @@ DocumentDraftRef.implement({
     contentJson: t.exposeString('contentJson'),
     plainText: t.exposeString('plainText'),
     sourceDocumentId: t.exposeString('sourceDocumentId', { nullable: true }),
+    aiInstructions: t.exposeString('aiInstructions', { nullable: true }),
     createdAt: t.exposeString('createdAt'),
     updatedAt: t.exposeString('updatedAt'),
   }),

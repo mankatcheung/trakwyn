@@ -164,6 +164,18 @@ for (const viewport of STICKY_VIEWPORTS) {
   });
 }
 
+const DRAFT_URL = (applicationId: string) =>
+  new RegExp(`/applications/${applicationId}/documents/[^/]+$`);
+
+/** Opens one of the application's section tabs. */
+async function openTab(page: Page, applicationId: string, name: string) {
+  await page.goto(`/applications/${applicationId}`);
+  await page
+    .getByRole('navigation', { name: 'Section navigation' })
+    .getByRole('button', { name })
+    .click();
+}
+
 test.describe('AI resume generation', () => {
   const password = 'SecurePass123';
 
@@ -198,50 +210,55 @@ test.describe('AI resume generation', () => {
   }) => {
     const applicationId = await createApplication(page, { company: 'DestCo', role: 'Engineer' });
 
-    // The resume form is its own page, so there is no type to pick (JEF-396).
-    await page.goto(`/applications/${applicationId}/resumes/new`);
-    await page.getByRole('button', { name: /generate resume/i }).click();
+    // Create new on the Resumes tab opens a blank draft in the editor; the AI
+    // helper beside it writes it (JEF-506). The title defaults to the type label.
+    await openTab(page, applicationId, 'Resumes');
+    await page.getByRole('button', { name: 'Create new' }).click();
+    await expect(page).toHaveURL(DRAFT_URL(applicationId));
+    const draftUrl = page.url();
+    await expect(page.getByRole('textbox', { name: 'Rename draft' })).toHaveValue('Resume');
 
-    // (?!new$) excludes the form's own URL — it already matches
-    // ".../documents/<segment>$" before the post-generate navigation happens,
-    // the same trap createApplication's helper had (see its own fix).
-    await expect(page).toHaveURL(
-      new RegExp(`/applications/${applicationId}/documents/(?!new$)[^/]+$`),
-    );
+    // Clicking Create new again reuses the blank draft instead of piling up another.
+    await openTab(page, applicationId, 'Resumes');
+    await page.getByRole('button', { name: 'Create new' }).click();
+    await expect(page).toHaveURL(draftUrl);
+
+    // The title is an inline field.
+    const title = page.getByRole('textbox', { name: 'Rename draft' });
+    await title.fill('DestCo — Engineer');
+    await title.press('Enter');
+
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
     await expect(page.getByText('Acme Corp')).toBeVisible();
     await expect(page.getByText('Built things.')).toBeVisible();
 
     // Reachable again from the application's own Resumes tab, not just the
     // page this navigation happened to land on.
-    await page.goto(`/applications/${applicationId}`);
-    await page
-      .getByRole('navigation', { name: 'Section navigation' })
-      .getByRole('button', { name: 'Resumes' })
-      .click();
+    await openTab(page, applicationId, 'Resumes');
     await expect(page.getByRole('link', { name: /DestCo — Engineer/ })).toBeVisible();
   });
 
-  test('generates a cover letter from its own create form and lists it under Cover letters', async ({
+  test('generates a cover letter with Create new and lists it under Cover letters', async ({
     page,
   }) => {
     const applicationId = await createApplication(page, { company: 'LetterCo', role: 'Engineer' });
 
-    // Same flow as the resume: the generate block lives on the create form.
-    await page.goto(`/applications/${applicationId}/cover-letters/new`);
+    // Same flow as the resume: Create new opens the editor, the helper generates (JEF-506).
+    await openTab(page, applicationId, 'Cover letters');
+    await page.getByRole('button', { name: 'Create new' }).click();
+    await expect(page).toHaveURL(DRAFT_URL(applicationId));
+    const title = page.getByRole('textbox', { name: 'Rename draft' });
+    await expect(title).toHaveValue('Cover Letter');
+    await title.fill('LetterCo — Engineer');
+    await title.press('Enter');
+
     await expect(page.getByLabel(/base it on a resume/i)).toBeVisible();
-    await page.getByRole('button', { name: /generate cover letter/i }).click();
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Polish', exact: true })).toBeVisible();
 
-    await expect(page).toHaveURL(
-      new RegExp(`/applications/${applicationId}/documents/(?!new$)[^/]+$`),
-    );
-
-    await page.goto(`/applications/${applicationId}`);
-    await page
-      .getByRole('navigation', { name: 'Section navigation' })
-      .getByRole('button', { name: 'Cover letters' })
-      .click();
+    await openTab(page, applicationId, 'Cover letters');
     await expect(page.getByRole('link', { name: /LetterCo — Engineer/ })).toBeVisible();
-    // The old in-tab generator is gone: generation happens on the create form only.
+    // Generation happens in the editor only.
     await expect(page.getByRole('button', { name: /generate cover letter/i })).toHaveCount(0);
   });
 });

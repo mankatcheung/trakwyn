@@ -10,11 +10,11 @@ import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
  * cannot be saved.
  */
 export async function assertDraftCapacity(
-  repository: Pick<IDocumentDraftRepository, 'countByApplicationId'>,
+  repository: Pick<IDocumentDraftRepository, 'countWithTextByApplicationId'>,
   applicationId: string,
 ): Promise<void> {
   assertUnderLimit(
-    await repository.countByApplicationId(applicationId),
+    await repository.countWithTextByApplicationId(applicationId),
     CONTENT_LIMITS.DOCUMENT_DRAFTS_PER_APPLICATION,
     'document drafts on this application',
   );

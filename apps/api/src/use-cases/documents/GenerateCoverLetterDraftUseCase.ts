@@ -3,11 +3,8 @@ import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDra
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
-import {
-  ForbiddenError,
-  NotFoundError,
-  ValidationError,
-} from '#src/use-cases/errors/DomainError.js';
+import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import { resolveResumeText } from '#src/use-cases/documents/resolveResumeText.js';
 import { proseToTiptapDoc } from '#src/use-cases/shared/proseToTiptapDoc.js';
 import { assertDraftCapacity } from '#src/use-cases/documents/assertDraftCapacity.js';
 
@@ -74,7 +71,7 @@ export class GenerateCoverLetterDraftUseCase implements IGenerateCoverLetterDraf
 
     await assertDraftCapacity(this.deps.documentDraftRepository, command.applicationId);
 
-    const resumeText = await this.resolveResumeText(command);
+    const resumeText = await resolveResumeText(this.deps, command);
 
     const letter = await this.deps.generateCoverLetterUseCase.execute({
       userId: command.userId,
@@ -92,47 +89,5 @@ export class GenerateCoverLetterDraftUseCase implements IGenerateCoverLetterDraf
       contentJson,
       plainText,
     });
-  }
-
-  /**
-   * The text of the selected resume, or the legacy pasted text. A selected
-   * resume must belong to this application — the same rule the picker offers —
-   * and be a resume, so an id from elsewhere is "not found" rather than read.
-   */
-  private async resolveResumeText(
-    command: GenerateCoverLetterDraftCommand,
-  ): Promise<string | null | undefined> {
-    const { resumeDocumentId, resumeDraftId } = command;
-    if (resumeDocumentId && resumeDraftId) {
-      throw new ValidationError('Choose one resume, not both');
-    }
-
-    if (resumeDraftId) {
-      const draft = await this.deps.documentDraftRepository.findById(resumeDraftId);
-      if (!draft || draft.applicationId !== command.applicationId) {
-        throw new NotFoundError('Resume not found');
-      }
-      if (draft.type !== 'resume') {
-        throw new ValidationError('That draft is not a resume');
-      }
-      return draft.plainText;
-    }
-
-    if (resumeDocumentId) {
-      const document = await this.deps.documentRepository.findById(resumeDocumentId);
-      if (!document || document.applicationId !== command.applicationId) {
-        throw new NotFoundError('Resume not found');
-      }
-      if (document.documentType !== 'resume') {
-        throw new ValidationError('That file is not a resume');
-      }
-      const { text } = await this.deps.extractDocumentTextUseCase.execute({
-        userId: command.userId,
-        documentId: resumeDocumentId,
-      });
-      return text;
-    }
-
-    return command.resumeText;
   }
 }

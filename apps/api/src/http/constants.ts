@@ -330,6 +330,11 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 30,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  /** Polish a resume or cover letter the user wrote (JEF-506). */
+  POLISH_DOCUMENT_DRAFT: {
+    MAX_ATTEMPTS: 20,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   GENERATE_MOCK_TALKING_POINTS: {
     MAX_ATTEMPTS: 30,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

@@ -137,6 +137,10 @@ export const rateLimiters = {
     'generateMockAnswerRateLimiter',
     RATE_LIMIT.GENERATE_MOCK_ANSWER,
   ),
+  polishDocumentDraftRateLimiter: limiter(
+    'polishDocumentDraftRateLimiter',
+    RATE_LIMIT.POLISH_DOCUMENT_DRAFT,
+  ),
   generateMockTalkingPointsRateLimiter: limiter(
     'generateMockTalkingPointsRateLimiter',
     RATE_LIMIT.GENERATE_MOCK_TALKING_POINTS,
