@@ -144,6 +144,42 @@ describe('GenerateTalkingPointsUseCase', () => {
     expect(user.match(/<untrusted_external_content>/g)).toHaveLength(3);
   });
 
+  it('sends the user’s steer to the model fenced as data', async () => {
+    const { useCase, llmProvider } = makeUseCase({ workExperiences: ACME });
+
+    await useCase.execute({ ...input, prompt: '  steer toward my ML experience  ' });
+
+    const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      Array<{ role: string; content: string }>,
+    ];
+    const user = messages.find((m) => m.role === 'user')!.content;
+    expect(user).toContain(
+      '<user_instructions>\nsteer toward my ML experience\n</user_instructions>',
+    );
+  });
+
+  it('sends no instructions block when there is no steer', async () => {
+    const { useCase, llmProvider } = makeUseCase({ workExperiences: ACME });
+
+    await useCase.execute({ ...input, prompt: '   ' });
+
+    const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      Array<{ role: string; content: string }>,
+    ];
+    expect(messages.find((m) => m.role === 'user')!.content).not.toContain('<user_instructions>');
+  });
+
+  it('rejects an over-long steer with a ValidationError before calling the model', async () => {
+    const { useCase, llmProvider } = makeUseCase({ workExperiences: ACME });
+
+    const err = await useCase
+      .execute({ ...input, prompt: 'x'.repeat(AI_PROMPT_INPUT.AI_INSTRUCTIONS_MAX_CHARS + 1) })
+      .catch((e) => e);
+
+    expect((err as { code: string }).code).toBe('VALIDATION');
+    expect(llmProvider.complete).not.toHaveBeenCalled();
+  });
+
   it('caps a large profile before it reaches the model', async () => {
     const { useCase, llmProvider } = makeUseCase({
       workExperiences: Array.from({ length: 200 }, (_, i) =>

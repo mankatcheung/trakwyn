@@ -1,7 +1,7 @@
 import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 import type { InterviewRound } from '#src/domain/interviewRound/InterviewRound.js';
 import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
-import { ValidationError } from '#src/use-cases/errors/DomainError.js';
+import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
 interface ApplicationFacts {
@@ -56,14 +56,5 @@ export function buildMockInterviewContext(
   };
 }
 
-/** The user's free-text steer: optional, trimmed and capped. */
-export function normaliseMockPrompt(raw: string | undefined): string | null {
-  const prompt = raw?.trim();
-  if (!prompt) return null;
-  if (prompt.length > AI_PROMPT_INPUT.MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS) {
-    throw new ValidationError(
-      `Prompt must be at most ${AI_PROMPT_INPUT.MOCK_INTERVIEW_USER_PROMPT_MAX_CHARS} characters`,
-    );
-  }
-  return prompt;
-}
+/** The user's free-text steer: optional, trimmed and capped like every AI instruction (JEF-507). */
+export const normaliseMockPrompt = normaliseAiInstructions;

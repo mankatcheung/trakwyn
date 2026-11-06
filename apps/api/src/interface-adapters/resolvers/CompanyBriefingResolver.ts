@@ -25,10 +25,12 @@ export class CompanyBriefingResolver {
   async generateCompanyBriefing(
     userId: string,
     applicationId: string,
+    instructions?: string | null,
   ): Promise<CompanyBriefingDTO> {
     const briefing = await this.deps.generateCompanyBriefingUseCase.execute({
       userId,
       applicationId,
+      instructions,
     });
     return this.deps.companyBriefingMapper.toDTO(briefing);
   }
