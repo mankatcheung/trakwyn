@@ -371,6 +371,33 @@ describe('DocumentDraftEditPage — inline title (JEF-506)', () => {
     expect(renameCalls()).toHaveLength(0);
   });
 
+  it('puts the saved title back on Escape and saves nothing, even from a focused field', async () => {
+    mockApi();
+    renderPage();
+    const field = await titleField();
+    field.focus();
+    fireEvent.change(field, { target: { value: 'Other' } });
+    expect(field).toHaveValue('Other');
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    await waitFor(() => expect(field).toHaveValue('My Resume'));
+    expect(renameCalls()).toHaveLength(0);
+  });
+
+  it('keeps what is typed straight after the field appears (nothing resets it to the saved title)', async () => {
+    mockApi();
+    renderPage();
+    // No waiting between the field showing up and the first edit: an effect that
+    // copied the title into the field's state on mount used to overwrite it.
+    const field = await titleField();
+    fireEvent.change(field, { target: { value: 'Typed at once' } });
+    fireEvent.blur(field);
+
+    await waitFor(() => expect(renameCalls()).toHaveLength(1));
+    expect(renameCalls()[0][1]).toEqual({ draftId: 'draft-1', title: 'Typed at once' });
+  });
+
   it('reverts and says why when the save fails', async () => {
     mockApi({
       rename: () =>
