@@ -431,23 +431,41 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
     await waitFor(() => expect(screen.getByText('No cover letters yet')).toBeInTheDocument());
   });
 
-  it('links each draftable tab to its own create form and gives Other none', async () => {
-    const hrefOfNewDraft = async (category: 'cover_letter' | 'resume' | 'other') => {
+  it('offers Create new on the draftable tabs and none on Other', async () => {
+    const hasCreateNew = async (category: 'cover_letter' | 'resume' | 'other') => {
       const { unmount } = render(<DocumentList applicationId="app-1" category={category} />, {
         wrapper: Wrapper,
       });
       await waitFor(() =>
         expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument(),
       );
-      const link = screen.queryByText('New Draft')?.closest('a') ?? null;
-      const href = link?.getAttribute('href') ?? null;
+      const found = screen.queryByRole('button', { name: 'Create new' }) !== null;
       unmount();
-      return href;
+      return found;
     };
 
-    expect(await hrefOfNewDraft('cover_letter')).toContain('/cover-letters/new');
-    expect(await hrefOfNewDraft('resume')).toContain('/resumes/new');
-    expect(await hrefOfNewDraft('other')).toBeNull();
+    expect(await hasCreateNew('cover_letter')).toBe(true);
+    expect(await hasCreateNew('resume')).toBe(true);
+    expect(await hasCreateNew('other')).toBe(false);
+  });
+
+  it('Create new opens the editor of the new draft instead of linking to a form', async () => {
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('CreateDocumentDraft'))
+        return Promise.resolve({ createDocumentDraft: { id: 'new-1', applicationId: 'app-1' } });
+      if (query.includes('query DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
+      return Promise.resolve({ documents: [] });
+    });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Create new' }));
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/applications/$applicationId/documents/$draftId',
+        params: { applicationId: 'app-1', draftId: 'new-1' },
+      }),
+    );
   });
 
   describe('upload type', () => {
@@ -626,7 +644,7 @@ describe('DocumentList — one unified list (JEF-399)', () => {
     expect(screen.queryByText(/click to upload/i)).not.toBeInTheDocument();
   });
 
-  it('puts Upload file and New draft above the filter, on Resumes and Cover Letters (JEF-405)', async () => {
+  it('puts Upload file and Create new above the filter, on Resumes and Cover Letters (JEF-405)', async () => {
     for (const category of ['resume', 'cover_letter'] as const) {
       mockResponses({
         documents: [{ ...mockDoc, documentType: category }],
@@ -637,7 +655,7 @@ describe('DocumentList — one unified list (JEF-399)', () => {
       });
       const filter = await screen.findByRole('group', { name: 'Filter' });
       const upload = screen.getByRole('button', { name: 'Upload file' });
-      const newDraft = screen.getByRole('link', { name: 'New Draft' });
+      const newDraft = screen.getByRole('button', { name: 'Create new' });
       const before = Node.DOCUMENT_POSITION_FOLLOWING;
       expect(upload.compareDocumentPosition(filter) & before).toBeTruthy();
       expect(newDraft.compareDocumentPosition(filter) & before).toBeTruthy();

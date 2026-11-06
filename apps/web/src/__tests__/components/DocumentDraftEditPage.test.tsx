@@ -35,6 +35,16 @@ vi.mock('#/routes/_authenticated/applications/$applicationId/-components/AiHelpe
     </button>
   ),
 }));
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/ImportDocumentAction',
+  () => ({
+    ImportDocumentAction: ({
+      onSave,
+    }: {
+      onSave: (json: string, text: string) => Promise<boolean>;
+    }) => <button onClick={() => void onSave('{"imported":true}', 'imported')}>mock import</button>,
+  }),
+);
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 // Stands in for the TipTap editor with an edit still waiting out its save
@@ -78,21 +88,30 @@ const DRAFT = {
 };
 const PDF = { id: 'doc-9', name: 'My_Resume.pdf', url: 'https://blob.example/doc-9.pdf' };
 
-type Handlers = { save?: () => Promise<unknown>; exportPdf?: () => Promise<unknown> };
+type Handlers = {
+  save?: () => Promise<unknown>;
+  exportPdf?: () => Promise<unknown>;
+  rename?: () => Promise<unknown>;
+};
 
-function mockApi({ save, exportPdf }: Handlers = {}) {
+function mockApi({ save, exportPdf, rename }: Handlers = {}) {
   mockGqlRequest.mockImplementation((query: string) => {
     if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
     if (query.includes('UpdateDocumentDraftContent'))
       return save ? save() : Promise.resolve({ updateDocumentDraftContent: { id: 'draft-1' } });
+    if (query.includes('RenameDocumentDraft'))
+      return rename ? rename() : Promise.resolve({ renameDocumentDraft: { id: 'draft-1' } });
     if (query.includes('ExportDocumentDraftToPdf'))
       return exportPdf ? exportPdf() : Promise.resolve({ exportDocumentDraftToPdf: PDF });
     return Promise.resolve({});
   });
 }
 
+// The import action reads the application's documents; that is not what these tests are about.
 const operations = () =>
-  mockGqlRequest.mock.calls.map(([query]) => /(?:query|mutation) (\w+)/.exec(String(query))?.[1]);
+  mockGqlRequest.mock.calls
+    .map(([query]) => /(?:query|mutation) (\w+)/.exec(String(query))?.[1])
+    .filter((name) => name !== 'Documents');
 
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -294,5 +313,148 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
       String(q).includes('UpdateDocumentDraftContent'),
     );
     expect(save![1].input).not.toHaveProperty('aiInstructions');
+  });
+});
+
+describe('DocumentDraftEditPage — inline title (JEF-506)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi();
+  });
+
+  const titleField = () => screen.findByRole('textbox', { name: /rename draft/i });
+  const renameCalls = () =>
+    mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('RenameDocumentDraft'));
+
+  it('is an input from the start, showing the title, with the type as placeholder', async () => {
+    renderPage();
+    const field = await titleField();
+    expect(field).toHaveValue('My Resume');
+    expect(field).toHaveAttribute('placeholder', 'Resume');
+  });
+
+  it('saves a trimmed title on blur', async () => {
+    renderPage();
+    const field = await titleField();
+    fireEvent.change(field, { target: { value: '  Acme resume  ' } });
+    fireEvent.blur(field);
+
+    await waitFor(() => expect(renameCalls()).toHaveLength(1));
+    expect(renameCalls()[0]![1]).toEqual({ draftId: 'draft-1', title: 'Acme resume' });
+    expect(field).toHaveValue('Acme resume');
+  });
+
+  it('saves on Enter', async () => {
+    renderPage();
+    const field = await titleField();
+    field.focus();
+    fireEvent.change(field, { target: { value: 'Renamed' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() => expect(renameCalls()).toHaveLength(1));
+  });
+
+  it('puts the previous title back for an empty one, without a request', async () => {
+    renderPage();
+    const field = await titleField();
+    fireEvent.change(field, { target: { value: '   ' } });
+    fireEvent.blur(field);
+
+    expect(field).toHaveValue('My Resume');
+    expect(renameCalls()).toHaveLength(0);
+  });
+
+  it('sends nothing for an unchanged title', async () => {
+    renderPage();
+    const field = await titleField();
+    fireEvent.blur(field);
+    expect(renameCalls()).toHaveLength(0);
+  });
+
+  it('reverts and says why when the save fails', async () => {
+    mockApi({
+      rename: () =>
+        Promise.reject({
+          response: {
+            errors: [{ message: 'Title is taken', extensions: { code: 'VALIDATION_ERROR' } }],
+          },
+        }),
+    });
+    renderPage();
+    const field = await titleField();
+    fireEvent.change(field, { target: { value: 'Other' } });
+    fireEvent.blur(field);
+
+    expect(await screen.findByText(/title is taken/i)).toBeInTheDocument();
+    await waitFor(() => expect(field).toHaveValue('My Resume'));
+  });
+
+  it('makes Export wait for a title save still in flight', async () => {
+    let finishRename: (v: unknown) => void = () => {};
+    mockApi({ rename: () => new Promise((resolve) => (finishRename = resolve)) });
+    renderPage();
+    const field = await titleField();
+    fireEvent.change(field, { target: { value: 'Other' } });
+    fireEvent.blur(field);
+    await waitFor(() => expect(renameCalls()).toHaveLength(1));
+
+    await clickExport();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(operations()).not.toContain('ExportDocumentDraftToPdf');
+
+    finishRename({ renameDocumentDraft: { id: 'draft-1' } });
+    await waitFor(() => expect(operations()).toContain('ExportDocumentDraftToPdf'));
+  });
+});
+
+describe('DocumentDraftEditPage — import into an empty draft (JEF-506)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi();
+  });
+
+  it('offers the import while the draft is empty', async () => {
+    renderPage();
+    expect(await screen.findByText('mock import')).toBeInTheDocument();
+  });
+
+  it('hides it once the draft has text', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      query.includes('query DocumentDraft')
+        ? Promise.resolve({ documentDraft: { ...DRAFT, plainText: 'already written' } })
+        : Promise.resolve({}),
+    );
+    renderPage();
+    await screen.findByRole('textbox', { name: /rename draft/i });
+    expect(screen.queryByText('mock import')).not.toBeInTheDocument();
+  });
+
+  it('saves the imported text through the same path as an AI result, keeping the prompt', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByText('mock import'));
+
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateDocumentDraftContent'),
+        {
+          input: {
+            draftId: 'draft-1',
+            contentJson: '{"imported":true}',
+            plainText: 'imported',
+            aiInstructions: 'last prompt',
+          },
+        },
+      ),
+    );
+    // Now it has text, so the import goes away.
+    await waitFor(() => expect(screen.queryByText('mock import')).not.toBeInTheDocument());
+  });
+
+  it('keeps a failed import save visible, with a retry', async () => {
+    mockApi({ save: () => Promise.reject(new Error('offline')) });
+    renderPage();
+    fireEvent.click(await screen.findByText('mock import'));
+
+    expect(await screen.findByRole('button', { name: /retry save/i })).toBeInTheDocument();
   });
 });

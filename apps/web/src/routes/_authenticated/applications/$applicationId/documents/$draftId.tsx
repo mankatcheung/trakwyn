@@ -9,6 +9,9 @@ import { downloadUrl } from '#/lib/downloadUrl';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
 import { AiHelperPanel } from '../-components/AiHelperPanel';
+import { DraftTitleField } from '../-components/DraftTitleField';
+import { ImportDocumentAction } from '../-components/ImportDocumentAction';
+import { documentDraftsQueryKey } from '../-documentQueries';
 import { resumeAtsScoresQueryKey } from '../-resumeAtsQueries';
 import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
@@ -111,25 +114,6 @@ export function DocumentDraftEditPage() {
   const [exporting, setExporting] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState(false);
-  const [titleDraft, setTitleDraft] = useState('');
-
-  const commitRename = async () => {
-    const title = titleDraft.trim();
-    setRenaming(false);
-    // An unchanged or emptied title is a no-op rather than an error: the user
-    // clicked away, they did not ask for anything.
-    if (!title || !draft || title === draft.title) return;
-    const previous = draft.title;
-    setDraft({ ...draft, title });
-    try {
-      await gqlClient.request(RENAME_DRAFT_MUTATION, { draftId, title });
-    } catch (err) {
-      setDraft((d) => (d ? { ...d, title: previous } : d));
-      setError(getErrorMessage(err));
-    }
-  };
-
   useEffect(() => {
     gqlClient
       .request<{ documentDraft: typeof draft }>(DRAFT_QUERY, { id: draftId })
@@ -195,16 +179,43 @@ export function DocumentDraftEditPage() {
     }
   };
 
+  // Export waits for whatever save was asked for last.
+  const trackSave = (save: Promise<boolean>) => {
+    pendingSaveRef.current = save;
+    void save.finally(() => {
+      if (pendingSaveRef.current === save) pendingSaveRef.current = null;
+    });
+  };
+
   const handleUpdate = (contentJson: string, plainText: string) => {
     const save = saveContent(contentJson, plainText);
-    pendingSaveRef.current = save;
+    trackSave(save);
     void save.then((ok) => {
       // What is on screen is now saved, whatever the helper had left unsaved.
       if (ok) setAiUnsaved(false);
     });
-    void save.finally(() => {
-      if (pendingSaveRef.current === save) pendingSaveRef.current = null;
+  };
+
+  // The title is saved through the same queue and tracking as the content.
+  const renameTitle = (title: string): Promise<boolean> => {
+    const run = saveQueueRef.current.then(async () => {
+      setSaving(true);
+      setError(null);
+      try {
+        await gqlClient.request(RENAME_DRAFT_MUTATION, { draftId, title });
+        setDraft((d) => (d ? { ...d, title } : d));
+        void queryClient.invalidateQueries({ queryKey: documentDraftsQueryKey(applicationId) });
+        return true;
+      } catch (err) {
+        setError(getErrorMessage(err));
+        return false;
+      } finally {
+        setSaving(false);
+      }
     });
+    saveQueueRef.current = run;
+    trackSave(run);
+    return run;
   };
 
   // The helper's saves go through the same pending-save tracking as the editor's,
@@ -215,13 +226,14 @@ export function DocumentDraftEditPage() {
     setLiveText(plainText);
     aiInstructionsRef.current = aiInstructions;
     const save = saveContent(contentJson, plainText, aiInstructions);
-    pendingSaveRef.current = save;
+    trackSave(save);
     void save.then((ok) => setAiUnsaved(!ok));
-    void save.finally(() => {
-      if (pendingSaveRef.current === save) pendingSaveRef.current = null;
-    });
     return save;
   };
+
+  // An imported document is saved like an AI result, keeping the prompt as it was.
+  const handleImportSave = (contentJson: string, plainText: string) =>
+    handleAiSave(contentJson, plainText, aiInstructionsRef.current ?? draft?.aiInstructions ?? '');
 
   const retryAiSave = () => {
     const editor = editorRef.current;
@@ -274,6 +286,9 @@ export function DocumentDraftEditPage() {
     }
   };
 
+  const typeLabel =
+    draft?.type === 'cover_letter' ? t('documents.cover_letter') : t('documents.resume');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -303,35 +318,10 @@ export function DocumentDraftEditPage() {
               navigate({ to: '/applications/$applicationId', params: { applicationId } })
             }
           />
-          <div>
-            {renaming ? (
-              <input
-                autoFocus
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onBlur={() => void commitRename()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void commitRename();
-                  if (e.key === 'Escape') setRenaming(false);
-                }}
-                aria-label={t('documentDraftEdit.renameAria')}
-                className="border-b border-blue-500 bg-transparent text-xl font-bold text-gray-900 outline-none dark:text-gray-100"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setTitleDraft(draft.title);
-                  setRenaming(true);
-                }}
-                title={t('documentDraftEdit.renameAria')}
-                className="text-left text-xl font-bold text-gray-900 hover:underline dark:text-gray-100"
-              >
-                {draft.title}
-              </button>
-            )}
+          <div className="min-w-0">
+            <DraftTitleField title={draft.title} placeholder={typeLabel} onCommit={renameTitle} />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {draft.type === 'cover_letter' ? t('documents.cover_letter') : t('documents.resume')}
+              {typeLabel}
               {lastSaved && (
                 <span className="ml-2">
                   · {t('documentDraftEdit.savedAt', { time: lastSaved.toLocaleTimeString() })}
@@ -375,7 +365,14 @@ export function DocumentDraftEditPage() {
           editorRef={editorRef}
           onTextChange={setLiveText}
         />
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          {liveText.trim() === '' && (
+            <ImportDocumentAction
+              applicationId={applicationId}
+              editorRef={editorRef}
+              onSave={handleImportSave}
+            />
+          )}
           <AiHelperPanel
             draftId={draft.id}
             applicationId={applicationId}

@@ -14,6 +14,7 @@ export const DOCUMENT_DRAFTS_QUERY = `
       applicationId
       type
       title
+      plainText
       createdAt
       updatedAt
     }
@@ -37,6 +38,8 @@ export type DocumentDraft = {
   applicationId: string;
   type: string;
   title: string;
+  /** Only the lists that ask for it; a blank draft is found by it. */
+  plainText?: string;
   createdAt: string;
   updatedAt: string;
 };
