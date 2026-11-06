@@ -94,7 +94,7 @@ export function NotificationsScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <ActivityIndicator style={styles.footerLoading} color={colors.primary} />
-            ) : null
+            ) : undefined
           }
         />
       )}

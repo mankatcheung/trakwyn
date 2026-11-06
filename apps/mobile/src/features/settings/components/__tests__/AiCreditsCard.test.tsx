@@ -58,7 +58,7 @@ describe('AI credits card', () => {
   });
 
   it('at 100% offers Upgrade and Add your own key, and reports each', async () => {
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
     const { getByTestId } = await render(<AiCreditsCard aiCredits={credits(30)} />);
     expect(captureEvent).toHaveBeenCalledWith('ai_credits_exhausted_shown', {
       surface: 'settings',

@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
@@ -71,10 +72,8 @@ describe('CalendarScreen', () => {
     const monthChip = getByTestId('calendar-view-month');
     const row = monthChip.parent;
 
-    expect(row?.props.style).not.toContainEqual(
-      expect.objectContaining({ alignSelf: 'flex-start' }),
-    );
-    expect(monthChip.props.style).toContainEqual(expect.objectContaining({ flex: 1 }));
+    expect(StyleSheet.flatten(row?.props.style)).not.toMatchObject({ alignSelf: 'flex-start' });
+    expect(StyleSheet.flatten(monthChip.props.style)).toMatchObject({ flex: 1 });
   });
 
   it('shows events for the selected day and navigates on tap', async () => {

@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  NativeSyntheticEvent,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextLayoutEventData,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextLayoutEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -23,7 +17,7 @@ export function CollapsibleDescription({ text }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
 
-  const onMeasuredLayout = (event: NativeSyntheticEvent<TextLayoutEventData>) => {
+  const onMeasuredLayout = (event: TextLayoutEvent) => {
     setIsTruncated(event.nativeEvent.lines.length > PREVIEW_LINES);
   };
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import '../../../../i18n';
 
@@ -58,9 +59,9 @@ describe('AppearanceScreen', () => {
     const { getByTestId } = await render(<AppearanceScreen />);
 
     const list = getByTestId('appearance-light').parent;
-    expect(list?.props.style).not.toContainEqual(expect.objectContaining({ flexDirection: 'row' }));
-    expect(getByTestId('appearance-light').props.style).toContainEqual(
-      expect.objectContaining({ alignSelf: 'stretch' }),
-    );
+    expect(StyleSheet.flatten(list?.props.style)).not.toMatchObject({ flexDirection: 'row' });
+    expect(StyleSheet.flatten(getByTestId('appearance-light').props.style)).toMatchObject({
+      alignSelf: 'stretch',
+    });
   });
 });
