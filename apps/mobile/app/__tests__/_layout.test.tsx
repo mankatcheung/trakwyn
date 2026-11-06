@@ -10,11 +10,23 @@ jest.mock('../../src/lib/analytics', () => ({
   ...jest.requireActual('../../src/lib/analytics'),
   reportAppStarted: jest.fn(),
 }));
+const mockProtectedProps: { guard: boolean; redirectTo?: string }[] = [];
+
 jest.mock('expo-router', () => {
   const Stack = ({ children }: { children?: React.ReactNode }) => children;
   Stack.Screen = () => null;
-  Stack.Protected = ({ guard, children }: { guard: boolean; children?: React.ReactNode }) =>
-    guard ? children : null;
+  Stack.Protected = ({
+    guard,
+    redirectTo,
+    children,
+  }: {
+    guard: boolean;
+    redirectTo?: string;
+    children?: React.ReactNode;
+  }) => {
+    mockProtectedProps.push({ guard, redirectTo });
+    return guard ? children : null;
+  };
   return { Stack, useRouter: jest.fn(), usePathname: jest.fn() };
 });
 
@@ -61,12 +73,27 @@ describe('RootNavigator', () => {
       setMode: jest.fn(),
     } as never);
     jest.clearAllMocks();
+    mockProtectedProps.length = 0;
     mockedUseRouter.mockReturnValue({ replace } as never);
     mockedUsePathname.mockReturnValue('/');
   });
 
   afterEach(() => {
     cleanup();
+  });
+
+  // Expo Router 58 sends a route whose guard fails to a computed fallback. With
+  // two mutually exclusive groups at the root that fallback bounced between
+  // them ("Maximum update depth exceeded"), so each names its own destination.
+  it('gives both auth guards an explicit redirectTo', async () => {
+    mockedUseAuth.mockReturnValue(authState({ isAuthenticated: false }));
+
+    await render(<RootNavigator />);
+
+    expect(mockProtectedProps).toEqual([
+      { guard: false, redirectTo: '/login' },
+      { guard: true, redirectTo: '/(tabs)/(home)' },
+    ]);
   });
 
   it('shows a loading indicator while auth state is being restored', async () => {
