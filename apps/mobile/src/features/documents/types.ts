@@ -24,10 +24,14 @@ export interface DocumentDraftSummary {
   title: string;
   createdAt: string;
   updatedAt: string;
+  /** Only the list query selects it; blank drafts are found by it (JEF-506). */
+  plainText?: string;
 }
 
 export interface DocumentDraft extends DocumentDraftSummary {
   contentJson: string;
   plainText: string;
   sourceDocumentId: string | null;
+  /** The last prompt given to the AI helper on this draft. */
+  aiInstructions: string | null;
 }

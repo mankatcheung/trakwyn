@@ -9,6 +9,7 @@ jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn()
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
 jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
+jest.mock('../../hooks/useCreateOrOpenDraft', () => ({ useCreateOrOpenDraft: jest.fn() }));
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
@@ -51,12 +52,15 @@ import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 import { useDocumentDrafts } from '../../hooks/useDocumentDraftQueries';
 import { useDeleteDocumentDraft } from '../../hooks/useDeleteDocumentDraft';
+import { useCreateOrOpenDraft } from '../../hooks/useCreateOrOpenDraft';
 import { DocumentCategoryScreen } from '../DocumentCategoryScreen';
 import type { DocumentCategory } from '../../lib/documentCategory';
 import type { Document } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
+const mockedUseCreateOrOpenDraft = jest.mocked(useCreateOrOpenDraft);
+const createRun = jest.fn();
 const mockedGetDocumentAsync = jest.mocked(DocumentPicker.getDocumentAsync);
 const mockedUseDocuments = jest.mocked(useDocuments);
 const mockedUseDeleteDocument = jest.mocked(useDeleteDocument);
@@ -84,6 +88,10 @@ function renderScreen(push = jest.fn(), category: DocumentCategory = 'other') {
   mockedUseRouter.mockReturnValue({ push } as never);
   return render(<DocumentCategoryScreen category={category} />);
 }
+
+beforeEach(() => {
+  mockedUseCreateOrOpenDraft.mockReturnValue({ run: createRun, pending: false, error: null });
+});
 
 describe('DocumentCategoryScreen', () => {
   beforeEach(() => {
@@ -232,8 +240,7 @@ describe('DocumentCategoryScreen', () => {
     expect(getByTestId('link:./documents/draft-1')).toBeTruthy();
   });
 
-  it('navigates to the new-draft screen when the FAB is pressed', async () => {
-    const push = jest.fn();
+  it('runs create-or-open for the type when the FAB is pressed', async () => {
     mockedUseDocuments.mockReturnValue({
       data: [],
       isLoading: false,
@@ -243,13 +250,31 @@ describe('DocumentCategoryScreen', () => {
     mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
 
-    const { getByTestId } = await renderScreen(push, 'cover_letter');
-
+    const { getByTestId } = await renderScreen(jest.fn(), 'cover_letter');
     await fireEvent.press(getByTestId('new-draft-button'));
 
-    // Its own create screen, so the type is never asked for (JEF-396); a
-    // sibling file route, so the same relative-resolution rule as above holds.
-    expect(push).toHaveBeenCalledWith('./new-cover-letter');
+    // No create screen in between (JEF-508): the editor opens straight away.
+    expect(mockedUseCreateOrOpenDraft).toHaveBeenCalledWith('app-1', 'cover_letter');
+    expect(createRun).toHaveBeenCalled();
+  });
+
+  it('shows why create-or-open failed', async () => {
+    mockedUseCreateOrOpenDraft.mockReturnValue({
+      run: createRun,
+      pending: false,
+      error: 'Draft limit reached',
+    });
+    mockedUseDocuments.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseUploadDocument.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
+
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
+    expect(getByTestId('create-draft-error').props.children).toBe('Draft limit reached');
   });
 });
 
@@ -381,13 +406,13 @@ describe('DocumentCategoryScreen — one category per screen (JEF-396)', () => {
     },
   );
 
-  it('sends Resumes to its own create screen', async () => {
-    const push = jest.fn();
-    const { getByTestId } = await renderScreen(push, 'resume');
+  it('creates or opens a resume from the FAB', async () => {
+    const { getByTestId } = await renderScreen(jest.fn(), 'resume');
 
     await fireEvent.press(getByTestId('new-draft-button'));
 
-    expect(push).toHaveBeenCalledWith('./new-resume');
+    expect(mockedUseCreateOrOpenDraft).toHaveBeenCalledWith('app-1', 'resume');
+    expect(createRun).toHaveBeenCalled();
   });
 
   describe('upload type', () => {

@@ -8,6 +8,8 @@ export interface UpdateDocumentDraftContentInput {
   draftId: string;
   contentJson: string;
   plainText: string;
+  /** The prompt last given to the AI helper; left out by plain autosaves. Max 500 characters. */
+  aiInstructions?: string;
 }
 
 export function useUpdateDocumentDraftContent() {

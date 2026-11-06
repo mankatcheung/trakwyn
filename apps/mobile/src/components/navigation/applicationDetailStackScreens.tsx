@@ -68,16 +68,6 @@ export function applicationDetailStackScreens(t: TFunction<'navigation'>, prefix
       options={{ title: t('screenTitles.otherDocuments') }}
     />,
     <Stack.Screen
-      key="newCoverLetter"
-      name={`${prefix}[id]/new-cover-letter`}
-      options={{ title: t('screenTitles.newCoverLetter') }}
-    />,
-    <Stack.Screen
-      key="newResume"
-      name={`${prefix}[id]/new-resume`}
-      options={{ title: t('screenTitles.newResume') }}
-    />,
-    <Stack.Screen
       key="draft"
       name={`${prefix}[id]/documents/[draftId]`}
       options={{ title: t('screenTitles.draft') }}

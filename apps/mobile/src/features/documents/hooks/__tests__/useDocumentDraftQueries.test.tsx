@@ -24,6 +24,7 @@ const draft: DocumentDraft = {
   contentJson: '{"type":"doc","content":[]}',
   plainText: '',
   sourceDocumentId: null,
+  aiInstructions: null,
 };
 
 function wrapper({ children }: { children: React.ReactNode }) {

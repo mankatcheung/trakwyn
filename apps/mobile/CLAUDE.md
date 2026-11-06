@@ -7,7 +7,7 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 - **Routing:** Expo Router, file-based under `app/`.
   - `app/_layout.tsx` waits for auth to restore, then picks `(app)` or `(auth)` with `Stack.Protected`.
   - `(auth)` holds `login` and `register`.
-  - `(app)` holds `index` (the applications list); `applications/new`, `[id]`, `[id]/edit`, `[id]/notes`, `[id]/cover-letters`, `[id]/resumes`, `[id]/other-documents` (one screen per document category, JEF-396), `[id]/new-cover-letter`, `[id]/new-resume`, `[id]/documents/[draftId]` (the draft editor) and `trash`; `conversations` and `conversations/[id]` (`id` is `new` for an unsaved thread); and `settings/{profile,security,notifications,ai}`.
+  - `(app)` holds `index` (the applications list); `applications/new`, `[id]`, `[id]/edit`, `[id]/notes`, `[id]/cover-letters`, `[id]/resumes`, `[id]/other-documents` (one screen per document category, JEF-396), `[id]/documents/[draftId]` (the draft editor) and `trash`; `conversations` and `conversations/[id]` (`id` is `new` for an unsaved thread); and `settings/{profile,security,notifications,ai}`.
 - **Route files are thin re-exports** of screens in `src/features/*/screens/` or `src/screens/`. Screens use `expo-router` hooks directly rather than navigation props. Static titles are set in `(app)/_layout.tsx`; only screens that need runtime data, such as `ApplicationsListScreen`, set `<Stack.Screen options>` inline.
 - **No path alias:** imports are relative (`../src/...` from `app/`).
 
@@ -26,6 +26,15 @@ Loaded when working under `apps/mobile`. The cross-cutting conventions are in th
 ## Email verification wall (JEF-438)
 
 `app/(app)/_layout.tsx` renders `VerifyEmailRequiredScreen` (`src/features/verification/`) instead of the tabs while `me.emailVerified` is false, and `AccountDeletionScheduledScreen` (cancel or sign out) while `me.deletionScheduledAt` is set (JEF-463); the API refuses everything else for such an account. Danger Zone only _requests_ deletion (type the email, step up, a link is mailed); the confirm and cancel links open the web app. Same rules as web: the app shows while the check is in flight or fails (the API enforces the wall), resend has a 60 s cooldown, and "Use a different email" reuses `useRequestEmailChange`. There is no window focus on a phone, so the check reruns when the app returns to the foreground.
+
+## Resume and cover letter editor (JEF-508)
+
+Create new on the Resumes and Cover letters screens (`useCreateOrOpenDraft`) opens the editor at once and reuses the application's blank draft of that type instead of adding another (the list query selects `plainText` for this). There is no New resume or New cover letter screen. The editor edits plain text with Markdown markers, so Replace and Insert below write the polished Markdown as text.
+
+- **AI helper:** a bottom sheet (`AiHelperSheet`) opened from the editor header. `useDraftAiHelper` runs `generateIntoDocumentDraft` (empty editor) and `polishDocumentDraft` (text in the editor); neither saves, the editor saves through `useDraftSaver`. Polish is a suggestion held until Replace or Insert below. Replace is refused when the text changed since the suggestion was made.
+- **Never overwrite edits:** the editor is read-only while a request runs. Saves are serialised, and a failed one keeps its payload for the Retry button. The debounced autosave reads the text when it fires, not when it was scheduled.
+- **Credits:** `useAiCredits` reads the `llmApiKeys` query (`me.aiCredits.costs`, `me.aiProviderOrder`). The cost and credits-left lines show only when Trakwyn AI answers. Never copy the weights into the app.
+- The old `generateResume` and `generateCoverLetter` mutations are still on the API for older app versions, but this app no longer calls them.
 
 ## Content quotas (JEF-494)
 

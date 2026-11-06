@@ -16,12 +16,14 @@ const DRAFT_FIELDS = `
   contentJson
   plainText
   sourceDocumentId
+  aiInstructions
 `;
 
 export const DOCUMENT_DRAFTS_QUERY = `
   query DocumentDrafts($applicationId: ID!) {
     documentDrafts(applicationId: $applicationId) {
       ${DRAFT_SUMMARY_FIELDS}
+      plainText
     }
   }
 `;
@@ -76,11 +78,31 @@ export const EXPORT_DOCUMENT_DRAFT_TO_PDF_MUTATION = `
   }
 `;
 
-export const GENERATE_RESUME_MUTATION = `
-  mutation GenerateResume($applicationId: ID!) {
-    generateResume(applicationId: $applicationId) {
-      id
-      applicationId
+/** Saves nothing: the editor decides what to do with the suggestion (JEF-506). */
+export const POLISH_DOCUMENT_DRAFT_MUTATION = `
+  mutation PolishDocumentDraft($draftId: ID!, $plainText: String!, $instructions: String) {
+    polishDocumentDraft(draftId: $draftId, plainText: $plainText, instructions: $instructions) {
+      markdown
+    }
+  }
+`;
+
+/** Saves nothing either: the client saves with `updateDocumentDraftContent`. */
+export const GENERATE_INTO_DOCUMENT_DRAFT_MUTATION = `
+  mutation GenerateIntoDocumentDraft(
+    $draftId: ID!
+    $instructions: String
+    $resumeDocumentId: ID
+    $resumeDraftId: ID
+  ) {
+    generateIntoDocumentDraft(
+      draftId: $draftId
+      instructions: $instructions
+      resumeDocumentId: $resumeDocumentId
+      resumeDraftId: $resumeDraftId
+    ) {
+      contentJson
+      plainText
     }
   }
 `;

@@ -8,6 +8,9 @@ jest.mock('../../hooks/useDeleteDocument', () => ({ useDeleteDocument: jest.fn()
 jest.mock('../../hooks/useUploadDocument', () => ({ useUploadDocument: jest.fn() }));
 jest.mock('../../hooks/useDocumentDraftQueries', () => ({ useDocumentDrafts: jest.fn() }));
 jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
+jest.mock('../../hooks/useCreateOrOpenDraft', () => ({
+  useCreateOrOpenDraft: () => ({ run: jest.fn(), pending: false, error: null }),
+}));
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
   return {
@@ -81,7 +84,7 @@ describe('CoverLettersScreen', () => {
     expect(getByText('No cover letters yet.')).toBeTruthy();
   });
 
-  it('does not generate here: generation lives on the create screen, like resumes', async () => {
+  it('does not generate here: generation lives in the AI helper, like resumes', async () => {
     const { queryByTestId } = await render(<CoverLettersScreen />);
 
     expect(queryByTestId('generate-cover-letter-button')).toBeNull();

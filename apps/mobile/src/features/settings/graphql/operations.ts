@@ -167,6 +167,10 @@ export const LLM_API_KEYS_QUERY = `
         limit
         bonusRemaining
         resetsAt
+        costs {
+          feature
+          credits
+        }
       }
     }
   }
