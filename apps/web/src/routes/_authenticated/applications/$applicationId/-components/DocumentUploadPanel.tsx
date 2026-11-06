@@ -52,12 +52,15 @@ interface DocumentUploadPanelProps {
    * button, so the picker has no dropzone of its own taking up the list.
    */
   inputRef: RefObject<HTMLInputElement | null>;
+  /** The list shows the space left in its own toolbar (JEF-510) and turns this off. */
+  showStorage?: boolean;
 }
 
 export function DocumentUploadPanel({
   applicationId,
   category,
   inputRef,
+  showStorage = true,
 }: DocumentUploadPanelProps) {
   const { t } = useLocale();
   const qc = useQueryClient();
@@ -179,7 +182,7 @@ export function DocumentUploadPanel({
             {t('documents.uploading')}
           </p>
         )}
-        {storage && <StorageLeft usage={storage} />}
+        {showStorage && storage && <StorageLeft usage={storage} />}
         {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
       </>
     );
@@ -247,7 +250,7 @@ export function DocumentUploadPanel({
   );
 }
 
-function StorageLeft({ usage }: { usage: StorageUsage }) {
+export function StorageLeft({ usage }: { usage: StorageUsage }) {
   const { t } = useLocale();
   const level = storageLevel(usage);
   if (level === 'full') {

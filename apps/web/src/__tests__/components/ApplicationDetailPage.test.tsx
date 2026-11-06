@@ -390,7 +390,12 @@ describe('ApplicationDetailPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
 
-      const iframe = await screen.findByTitle('resume.pdf');
+      // The file-name button also carries the full name as its title (JEF-510).
+      const iframe = await waitFor(() => {
+        const frame = document.querySelector('iframe[title="resume.pdf"]');
+        expect(frame).not.toBeNull();
+        return frame as HTMLIFrameElement;
+      });
       expect(iframe).toHaveAttribute('src', mockPdfDoc.url);
     });
 
@@ -431,13 +436,14 @@ describe('ApplicationDetailPage', () => {
       );
       await waitFor(() => expect(screen.getByText('resume.pdf')).toBeInTheDocument());
       fireEvent.click(screen.getByRole('button', { name: 'resume.pdf' }));
-      await screen.findByTitle('resume.pdf');
+      const frameSelector = 'iframe[title="resume.pdf"]';
+      await waitFor(() => expect(document.querySelector(frameSelector)).not.toBeNull());
 
-      const dialog = screen.getByTitle('resume.pdf').closest('div')!.parentElement!;
+      const dialog = document.querySelector(frameSelector)!.closest('div')!.parentElement!;
       const closeButton = within(dialog).getAllByRole('button').at(-1)!;
       fireEvent.click(closeButton);
 
-      expect(screen.queryByTitle('resume.pdf')).not.toBeInTheDocument();
+      expect(document.querySelector(frameSelector)).toBeNull();
     });
 
     it('offers Download, not Preview, in the more menu for non-previewable documents (e.g. .docx)', async () => {

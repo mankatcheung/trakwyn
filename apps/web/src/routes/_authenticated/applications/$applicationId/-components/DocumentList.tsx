@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileTextIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
-import { storageUsageQueryKey } from '#/lib/storageUsage';
+import { storageUsageQueryKey, useStorageUsage } from '#/lib/storageUsage';
+import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { useLocale } from '#/lib/i18n';
 import { documentCategory, type DocumentCategory } from '#/lib/documentCategory';
 import {
@@ -16,7 +18,7 @@ import { EmptyState } from '@trakwyn/ui';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import { DraftRow, FileRow } from './DocumentListRow';
 import { CreateDraftButton } from './CreateDraftButton';
-import { DocumentUploadPanel } from './DocumentUploadPanel';
+import { DocumentUploadPanel, StorageLeft } from './DocumentUploadPanel';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import {
   documentDraftsQueryKey,
@@ -106,6 +108,8 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
     });
   };
 
+  const storage = useStorageUsage();
+  const { onTrakwynAi } = useAiCredits();
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<ListFilter>('all');
 
@@ -117,7 +121,14 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        {/* What is left, once, instead of in every row (JEF-510). Under the buttons on a phone. */}
+        <div className="order-last flex min-w-0 flex-col gap-0.5 sm:order-first">
+          {storage && <StorageLeft usage={storage} />}
+          {category === 'resume' && onTrakwynAi && items.length > 0 && (
+            <AiCreditsMeter variant="inline" />
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -164,6 +175,7 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
         applicationId={applicationId}
         category={category}
         inputRef={uploadInputRef}
+        showStorage={false}
       />
 
       {visible.length > 0 && (

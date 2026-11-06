@@ -52,6 +52,23 @@ vi.mock('@vercel/blob/client', () => ({
   put: mockPutBlob,
 }));
 
+const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+
+vi.mock('#/components/AiCreditsMeter', () => ({
+  AiCreditsMeter: () => <p>credits meter</p>,
+}));
+
 vi.mock('#/lib/analytics', () => ({
   ANALYTICS_EVENTS: { DOCUMENT_UPLOADED: 'document_uploaded' },
   captureException: mockCaptureException,
@@ -723,5 +740,90 @@ describe('DocumentList — one unified list (JEF-399)', () => {
     const click = vi.spyOn(input, 'click');
     fireEvent.click(screen.getByRole('button', { name: 'Upload file' }));
     expect(click).toHaveBeenCalled();
+  });
+});
+
+describe('DocumentList toolbar and rows (JEF-510)', () => {
+  const MB = 1024 * 1024;
+  const second = { ...mockDoc, id: 'doc-2', name: 'resume-v2.pdf' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    credits.onTrakwynAi = false;
+  });
+
+  function mockWithStorage(documents: unknown[]) {
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('StorageUsage')) {
+        return Promise.resolve({
+          me: { storageUsedBytes: 30 * MB, storageLimitBytes: 100 * MB },
+        });
+      }
+      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
+      return Promise.resolve({ documents });
+    });
+  }
+
+  it('shows the credits meter once for the whole Resumes list, not in every row', async () => {
+    credits.onTrakwynAi = true;
+    mockResponses({ documents: [mockDoc, second] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByText('resume-v2.pdf');
+    expect(screen.getAllByText('credits meter')).toHaveLength(1);
+    expect(within(screen.getAllByRole('listitem')[0]).queryByText('credits meter')).toBeNull();
+  });
+
+  it.each([
+    ['on the user’s own key', 'resume', false],
+    ['on the Cover letters tab', 'cover_letter', true],
+  ] as const)('shows no credits meter %s', async (_label, category, onTrakwynAi) => {
+    credits.onTrakwynAi = onTrakwynAi;
+    mockResponses({ documents: [{ ...mockDoc, documentType: category }] });
+    render(<DocumentList applicationId="app-1" category={category} />, { wrapper: Wrapper });
+
+    await screen.findByText('resume.pdf');
+    expect(screen.queryByText('credits meter')).not.toBeInTheDocument();
+  });
+
+  it('shows no credits meter before there is a resume to match', async () => {
+    credits.onTrakwynAi = true;
+    mockResponses();
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByText(/no resumes/i);
+    expect(screen.queryByText('credits meter')).not.toBeInTheDocument();
+  });
+
+  it('shows the space left once, in the toolbar, not between the filter and the list', async () => {
+    mockWithStorage([mockDoc]);
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    const left = await screen.findByText('70 MB left');
+    expect(screen.getAllByText('70 MB left')).toHaveLength(1);
+    const toolbar = screen.getByRole('button', { name: 'Upload file' }).parentElement
+      ?.parentElement as HTMLElement;
+    expect(toolbar).toContainElement(left);
+  });
+
+  it('names a file in full on hover, since a phone cuts the visible name short', async () => {
+    mockResponses({ documents: [mockDoc] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    expect(await screen.findByRole('button', { name: 'resume.pdf' })).toHaveAttribute(
+      'title',
+      'resume.pdf',
+    );
+  });
+
+  it('puts the More actions menu in the same cell of every row', async () => {
+    mockResponses({ documents: [mockDoc, second] });
+    render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
+
+    await screen.findByText('resume-v2.pdf');
+    for (const row of screen.getAllByRole('listitem')) {
+      const menu = within(row).getByRole('button', { name: 'More actions' });
+      expect(menu.closest('.col-start-3')).toHaveClass('row-start-1');
+    }
   });
 });
