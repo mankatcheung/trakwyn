@@ -61,7 +61,17 @@ export interface AiCredits {
   costs?: AiFeatureCost[];
 }
 
-export type AiFeature = 'coverLetter' | 'resume' | 'polishDraft';
+export type AiFeature =
+  | 'coverLetter'
+  | 'resume'
+  | 'polishDraft'
+  | 'mockQuestions'
+  | 'mockAnswer'
+  | 'talkingPoints'
+  | 'companyBriefing'
+  | 'resumeMatch'
+  | 'parseJobDescription'
+  | 'parseCv';
 
 export interface AiFeatureCost {
   feature: AiFeature | (string & {});

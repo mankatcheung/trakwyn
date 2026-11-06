@@ -19,6 +19,20 @@ vi.mock('#/graphql/client', () => ({
 import { ResumeMatch as ResumeMatchSlot } from '#/routes/_authenticated/applications/$applicationId/-components/ResumeMatchPanel';
 import type { ResumeMatch } from '#/routes/_authenticated/applications/$applicationId/-resumeMatchQueries';
 
+const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+
 const draftMatch: ResumeMatch = {
   id: 'match-1',
   applicationId: 'app-1',
@@ -76,6 +90,7 @@ const chipName = (name: RegExp | string) => screen.findByRole('button', { name }
 describe('ResumeMatch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    credits.onTrakwynAi = false;
   });
 
   it('offers to generate a match when there is none yet', async () => {
@@ -203,5 +218,24 @@ describe('ResumeMatch', () => {
 
     expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /generate match/i })).toBeEnabled();
+  });
+
+  describe('credit cost (JEF-507)', () => {
+    it('shows what a match costs beside the button on Trakwyn AI', async () => {
+      credits.onTrakwynAi = true;
+      mockApi({});
+      renderPanel({ documentDraftId: 'draft-1' });
+
+      await chipName(/generate match/i);
+      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+    });
+
+    it('shows nothing with the user’s own key', async () => {
+      mockApi({});
+      renderPanel({ documentDraftId: 'draft-1' });
+
+      await chipName(/generate match/i);
+      expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
+    });
   });
 });

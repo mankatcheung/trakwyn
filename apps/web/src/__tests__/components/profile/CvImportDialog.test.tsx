@@ -31,6 +31,20 @@ vi.mock('#/lib/cvImport', async (importOriginal) => ({
 import { CvImportDialog } from '#/routes/_authenticated/profile/-components/CvImportDialog';
 import { CV_IMPORT_MAX_BYTES, CvImportError, type ParsedCvProfile } from '#/lib/cvImport';
 
+const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: credits.onTrakwynAi,
+    needsSetup: false,
+    view: null,
+    costOf: () => (credits.onTrakwynAi ? 1 : null),
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+
 const parsed = (overrides: Partial<ParsedCvProfile> = {}): ParsedCvProfile => ({
   workExperiences: [
     {
@@ -113,6 +127,7 @@ async function openReview(result: ParsedCvProfile = parsed()) {
 describe('CvImportDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    credits.onTrakwynAi = false;
     mockGqlRequest.mockResolvedValue({
       importCvProfile: { workExperiences: 1, educations: 1, skills: 2 },
     });
@@ -570,6 +585,22 @@ describe('CvImportDialog', () => {
 
       await screen.findByRole('button', { name: 'Importing…' });
       expect(mockGqlRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('credit cost (JEF-507)', () => {
+    it('shows what reading a CV costs on Trakwyn AI, with no prompt box', () => {
+      credits.onTrakwynAi = true;
+      renderDialog();
+
+      expect(screen.getByText('Uses 1 credit')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Instructions (optional)')).not.toBeInTheDocument();
+    });
+
+    it('shows nothing with the user’s own key', () => {
+      renderDialog();
+
+      expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
     });
   });
 });

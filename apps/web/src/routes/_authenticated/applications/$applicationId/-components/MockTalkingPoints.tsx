@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { SparklesIcon } from 'lucide-react';
 import { Button } from '@trakwyn/ui';
+import { AiActionBar } from '#/components/ai/AiActionBar';
+import { AiPromptInput } from '#/components/ai/AiPromptInput';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -13,6 +15,12 @@ import {
   type GeneratedTalkingPoints,
   type MockQuestion,
 } from './mockQuestionApi';
+
+const POINTS_EXAMPLES = [
+  'aiHelper.pointsExample1',
+  'aiHelper.pointsExample2',
+  'aiHelper.pointsExample3',
+] as const;
 
 /**
  * Talking points for one practice question (JEF-394): short bullets the user
@@ -36,6 +44,8 @@ export function MockTalkingPoints({
     documentId: null,
   }));
   const [nothingRelevant, setNothingRelevant] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [instructions, setInstructions] = useState('');
 
   const generate = useMutation({
     mutationFn: () =>
@@ -43,6 +53,7 @@ export function MockTalkingPoints({
         GENERATE_MOCK_TALKING_POINTS,
         {
           mockInterviewQuestionId: question.id,
+          prompt: instructions.trim() || null,
           useProfile: background.useProfile,
           documentId: background.documentId,
         },
@@ -107,19 +118,34 @@ export function MockTalkingPoints({
               {getErrorMessage(generate.error)}
             </p>
           )}
-          <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            className="text-xs font-medium text-violet-700 underline dark:text-violet-300"
+            aria-expanded={showInstructions}
+            onClick={() => setShowInstructions((v) => !v)}
+          >
+            {showInstructions ? t('aiHelper.hideInstructions') : t('aiHelper.addInstructions')}
+          </button>
+          <AiActionBar
+            feature="talkingPoints"
+            onRun={() => generate.mutateAsync()}
+            label={t('interviews.generateTalkingPoints')}
+            loadingLabel={t('interviews.generating')}
+            loading={generate.isPending}
+            disabled={!hasSource}
+          >
+            {showInstructions && (
+              <AiPromptInput
+                value={instructions}
+                onChange={setInstructions}
+                disabled={generate.isPending}
+                placeholderExamples={POINTS_EXAMPLES.map((key) => t(key))}
+              />
+            )}
+          </AiActionBar>
+          <div className="flex justify-end">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
               {t('common.cancel')}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={generate.isPending || !hasSource}
-              onClick={() => generate.mutate()}
-            >
-              {generate.isPending
-                ? t('interviews.generating')
-                : t('interviews.generateTalkingPoints')}
             </Button>
           </div>
         </div>

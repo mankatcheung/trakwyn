@@ -32,6 +32,17 @@ vi.mock('#/lib/queryClient', () => ({
 
 import { EditApplicationPage } from '#/routes/_authenticated/applications/$applicationId/-components/EditApplicationPage';
 
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({
+    onTrakwynAi: false,
+    needsSetup: false,
+    view: null,
+    costOf: () => null,
+    canAfford: () => true,
+    refresh: () => Promise.resolve(),
+  }),
+}));
+
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 

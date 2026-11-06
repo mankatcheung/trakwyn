@@ -39,8 +39,8 @@ export const GENERATE_MOCK_ANSWER = `
   }
 `;
 export const GENERATE_MOCK_TALKING_POINTS = `
-  mutation GenerateMockTalkingPoints($mockInterviewQuestionId: ID!, $useProfile: Boolean, $documentId: ID) {
-    generateMockTalkingPoints(mockInterviewQuestionId: $mockInterviewQuestionId, useProfile: $useProfile, documentId: $documentId) {
+  mutation GenerateMockTalkingPoints($mockInterviewQuestionId: ID!, $prompt: String, $useProfile: Boolean, $documentId: ID) {
+    generateMockTalkingPoints(mockInterviewQuestionId: $mockInterviewQuestionId, prompt: $prompt, useProfile: $useProfile, documentId: $documentId) {
       nothingRelevant usedProfile usedDocument
       question { ${MOCK_QUESTION_FIELDS} }
     }
