@@ -1,10 +1,12 @@
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
+import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import { proseToTiptapDoc } from '#src/use-cases/shared/proseToTiptapDoc.js';
+import { buildResumeContact } from '#src/use-cases/shared/buildResumeContact.js';
 import { resumeToTiptapDoc } from '#src/use-cases/shared/resumeToTiptapDoc.js';
 import { resolveResumeText } from '#src/use-cases/documents/resolveResumeText.js';
 
@@ -46,6 +48,7 @@ interface Deps {
   documentRepository: IDocumentRepository;
   extractDocumentTextUseCase: IExtractDocumentTextUseCase;
   applicationRepository: IApplicationRepository;
+  userRepository: IUserRepository;
 }
 
 /**
@@ -72,7 +75,10 @@ export class GenerateIntoDocumentDraftUseCase implements IGenerateIntoDocumentDr
         applicationId: draft.applicationId,
         instructions: input.instructions,
       });
-      return resumeToTiptapDoc(resume);
+      return resumeToTiptapDoc(
+        resume,
+        buildResumeContact(await this.deps.userRepository.findById(input.userId)),
+      );
     }
 
     const resumeText = await resolveResumeText(this.deps, {

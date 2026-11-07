@@ -8,6 +8,7 @@ import { CreateOfferUseCase } from '#src/use-cases/offers/CreateOfferUseCase.js'
 import { CreateDocumentDraftUseCase } from '#src/use-cases/documents/CreateDocumentDraftUseCase.js';
 import { GenerateResumeDraftUseCase } from '#src/use-cases/documents/GenerateResumeDraftUseCase.js';
 import { GenerateCoverLetterDraftUseCase } from '#src/use-cases/documents/GenerateCoverLetterDraftUseCase.js';
+import { makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
 import { makeContact, makeContactRepository } from '#src/__tests__/helpers/mocks/contacts.js';
@@ -262,6 +263,7 @@ describe('per-application caps (JEF-339)', () => {
         generateResumeUseCase,
         documentDraftRepository,
         applicationRepository: ownedApp(),
+        userRepository: makeUserRepository(),
         generateId: () => 'draft-1',
         now: () => new Date('2026-11-02T00:00:00Z'),
       });

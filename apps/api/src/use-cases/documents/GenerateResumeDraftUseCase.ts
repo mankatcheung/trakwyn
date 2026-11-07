@@ -1,8 +1,10 @@
 import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
+import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
+import { buildResumeContact } from '#src/use-cases/shared/buildResumeContact.js';
 import { resumeToTiptapDoc } from '#src/use-cases/shared/resumeToTiptapDoc.js';
 import { assertDraftCapacity } from '#src/use-cases/documents/assertDraftCapacity.js';
 
@@ -23,6 +25,7 @@ interface Deps {
   generateResumeUseCase: GenerateResume;
   documentDraftRepository: IDocumentDraftRepository;
   applicationRepository: IApplicationRepository;
+  userRepository: IUserRepository;
   generateId: () => string;
   now: () => Date;
 }
@@ -52,7 +55,10 @@ export class GenerateResumeDraftUseCase implements IGenerateResumeDraftUseCase {
       userId: command.userId,
       applicationId: command.applicationId,
     });
-    const { contentJson, plainText } = resumeToTiptapDoc(resume);
+    const { contentJson, plainText } = resumeToTiptapDoc(
+      resume,
+      buildResumeContact(await this.deps.userRepository.findById(command.userId)),
+    );
 
     return this.deps.documentDraftRepository.create({
       id: this.deps.generateId(),
