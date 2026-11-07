@@ -665,6 +665,31 @@ describe('UserResolver', () => {
       });
     });
 
+    it('passes phone, location and profileLinks through to the use case (JEF-527)', async () => {
+      const deps = makeDeps();
+      const resolver = new UserResolver(deps);
+
+      await resolver.updateProfile(
+        'user-1',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { phone: '555 0100', location: 'London', profileLinks: ['https://ada.dev'] },
+      );
+
+      expect(deps.updateProfileUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          phone: '555 0100',
+          location: 'London',
+          profileLinks: ['https://ada.dev'],
+        }),
+      );
+    });
+
     it('passes useCrossApplicationContext through to the use case', async () => {
       const deps = makeDeps();
       const resolver = new UserResolver(deps);

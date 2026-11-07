@@ -42,11 +42,16 @@ interface Deps {
 }
 
 const RESUME_DOCUMENT_TYPE = 'resume';
+/** A draft's phone comes from the profile, so the fix is there (JEF-527). */
+const DRAFT_PHONE_HINT =
+  'Add a phone number in Settings → Profile and regenerate, or type it at the top of the draft.';
 const IMAGE_MIME_TYPES: readonly string[] = [MIME_TYPE.PNG, MIME_TYPE.JPEG];
 
 interface ResolvedResume {
   applicationId: string;
   text: string;
+  /** The resume is an editor draft rather than an uploaded file. */
+  isDraft: boolean;
 }
 
 /**
@@ -70,13 +75,13 @@ export class ComputeResumeAtsScoreUseCase {
       throw new RateLimitedError('Too many requests — please wait a moment and try again');
     }
 
-    const { applicationId, text } = await this.resolveResume(input);
+    const { applicationId, text, isDraft } = await this.resolveResume(input);
     const saved = await this.deps.resumeAtsScoreRepository.upsert({
       id: this.deps.generateId(),
       applicationId,
       documentDraftId: input.documentDraftId ?? null,
       documentId: input.documentId ?? null,
-      ...scoreResumeText(text),
+      ...scoreResumeText(text, isDraft ? { phoneHint: DRAFT_PHONE_HINT } : {}),
       generatedAt: this.deps.now(),
       resumeTextHash: hashResumeText(text),
     });
@@ -90,7 +95,7 @@ export class ComputeResumeAtsScoreUseCase {
         throw new NotFoundError('Resume not found');
       }
       await this.assertOwnsApplication(draft.applicationId, input.userId);
-      return { applicationId: draft.applicationId, text: draft.plainText };
+      return { applicationId: draft.applicationId, text: draft.plainText, isDraft: true };
     }
 
     const doc = await this.deps.documentRepository.findById(input.documentId as string);
@@ -104,7 +109,7 @@ export class ComputeResumeAtsScoreUseCase {
     const text = IMAGE_MIME_TYPES.includes(doc.mimeType)
       ? ''
       : await loadDocumentText(this.deps, doc);
-    return { applicationId: doc.applicationId, text };
+    return { applicationId: doc.applicationId, text, isDraft: false };
   }
 
   private async assertOwnsApplication(applicationId: string, userId: string): Promise<void> {

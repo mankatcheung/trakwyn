@@ -1,4 +1,5 @@
-import { ValidationError } from '#src/use-cases/errors/DomainError.js';
+import type { User } from '#src/domain/user/User.js';
+import { NotFoundError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { CONTENT_LIMITS, CV_IMPORT } from '#src/use-cases/constants.js';
 import { assertRoomFor } from '#src/use-cases/shared/assertUnderLimit.js';
 import type {
@@ -6,6 +7,8 @@ import type {
   IEducationRepository,
 } from '#src/use-cases/ports/IEducationRepository.js';
 import type { CreateSkillData, ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import { readLocation, readPhone, readProfileLinks } from '#src/use-cases/shared/profileContact.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
 import type {
   CreateWorkExperienceData,
@@ -14,6 +17,7 @@ import type {
 import type {
   IImportCvProfileUseCase,
   ImportCvEducation,
+  ImportCvContact,
   ImportCvProfileInput,
   ImportCvProfileOutput,
   ImportCvSkill,
@@ -25,6 +29,7 @@ interface Deps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  userRepository: IUserRepository;
   transactionManager?: ITransactionManager;
   generateId: () => string;
 }
@@ -36,6 +41,9 @@ interface Deps {
  * validated here as any other input would be. Every section is checked before
  * the first write, and the writes share one transaction: a CV is imported
  * whole or not at all.
+ *
+ * The CV's contact details (JEF-527) fill only the profile fields that are
+ * still empty: what the user typed is more trustworthy than a parse.
  */
 export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
   constructor(private readonly deps: Deps) {}
@@ -55,7 +63,12 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       this.skill(input.userId, entry),
     );
 
-    if (workExperiences.length + educations.length + skills.length === 0) {
+    const user = await this.deps.userRepository.findById(input.userId);
+    if (!user) throw new NotFoundError('User not found');
+    const contactFill = fillEmptyContact(user, input.contact);
+    const filledContact = Object.keys(contactFill) as ImportCvProfileOutput['filledContact'];
+
+    if (workExperiences.length + educations.length + skills.length + filledContact.length === 0) {
       throw new ValidationError('Select at least one item to import');
     }
 
@@ -83,12 +96,15 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       for (const data of workExperiences) await this.deps.workExperienceRepository.create(data);
       for (const data of educations) await this.deps.educationRepository.create(data);
       for (const data of skills) await this.deps.skillRepository.create(data);
+      if (filledContact.length > 0)
+        await this.deps.userRepository.update(input.userId, contactFill);
     });
 
     return {
       workExperiences: workExperiences.length,
       educations: educations.length,
       skills: skills.length,
+      filledContact,
     };
   }
 
@@ -136,6 +152,22 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       proficiency: optional(entry.proficiency, CV_IMPORT.SHORT_FIELD_MAX_CHARS, 'Proficiency'),
     };
   }
+}
+
+/** The contact fields the CV can fill: only those the profile has empty and the CV gives a usable value for. */
+function fillEmptyContact(
+  user: Pick<User, 'phone' | 'location' | 'profileLinks'>,
+  contact: ImportCvContact | null | undefined,
+): { phone?: string; location?: string; profileLinks?: string[] } {
+  if (!contact) return {};
+  const phone = user.phone ? null : readPhone(contact.phone);
+  const location = user.location ? null : readLocation(contact.location);
+  const links = user.profileLinks?.length ? [] : readProfileLinks(contact.links);
+  return {
+    ...(phone ? { phone } : {}),
+    ...(location ? { location } : {}),
+    ...(links.length > 0 ? { profileLinks: links } : {}),
+  };
 }
 
 function required(value: string, label: string): string {

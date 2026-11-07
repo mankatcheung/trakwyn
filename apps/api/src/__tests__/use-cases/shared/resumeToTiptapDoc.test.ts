@@ -128,6 +128,23 @@ describe('resumeToTiptapDoc', () => {
       expect(out.plainText).toContain('ada@example.com | London');
     });
 
+    it('prints phone, location and links on the contact line (JEF-527)', () => {
+      const details = ['+44 20 7946 0958', 'London', 'https://linkedin.com/in/ada'];
+      const out = resumeToTiptapDoc(RESUME, { ...CONTACT, details });
+
+      expect(out.plainText).toContain(
+        'ada@example.com | +44 20 7946 0958 | London | https://linkedin.com/in/ada',
+      );
+    });
+
+    it('lets the ATS email and phone checks pass for a user with a phone number', () => {
+      const out = resumeToTiptapDoc(RESUME, { ...CONTACT, details: ['+44 20 7946 0958'] });
+      const checks = scoreResumeText(out.plainText).checks;
+
+      expect(checks.find((c) => c.id === 'email')?.passed).toBe(true);
+      expect(checks.find((c) => c.id === 'phone')?.passed).toBe(true);
+    });
+
     it('lets the ATS email check pass on a generated resume', () => {
       const without = scoreResumeText(resumeToTiptapDoc(RESUME).plainText);
       const withHeader = scoreResumeText(resumeToTiptapDoc(RESUME, CONTACT).plainText);

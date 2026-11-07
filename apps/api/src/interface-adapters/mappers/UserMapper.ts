@@ -14,6 +14,9 @@ export interface UserDTO {
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
+  phone: string | null;
+  location: string | null;
+  profileLinks: string[];
   avatarUrl: string | null;
   defaultLlmProvider: string | null;
   customAiPrompt: string | null;
@@ -61,6 +64,9 @@ export class UserMapper {
       name: user.name,
       timezone: user.timezone,
       targetRole: user.targetRole,
+      phone: user.phone,
+      location: user.location,
+      profileLinks: user.profileLinks ?? [],
       avatarUrl,
       defaultLlmProvider: user.defaultLlmProvider,
       customAiPrompt: user.customAiPrompt,

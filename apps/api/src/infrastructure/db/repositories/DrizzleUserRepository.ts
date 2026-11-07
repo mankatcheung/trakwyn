@@ -76,6 +76,9 @@ export class DrizzleUserRepository implements IUserRepository {
       name?: string | null;
       timezone?: string | null;
       targetRole?: string | null;
+      phone?: string | null;
+      location?: string | null;
+      profileLinks?: string[] | null;
       emailVerifiedAt?: Date | null;
       avatarKey?: string | null;
       weeklyDigestEnabled?: boolean;
@@ -155,6 +158,9 @@ export class DrizzleUserRepository implements IUserRepository {
       name: row.name,
       timezone: row.timezone,
       targetRole: row.targetRole,
+      phone: row.phone,
+      location: row.location,
+      profileLinks: row.profileLinks,
       emailVerifiedAt: row.emailVerifiedAt,
       avatarKey: row.avatarKey,
       weeklyDigestEnabled: row.weeklyDigestEnabled,

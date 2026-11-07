@@ -12,12 +12,17 @@ export interface ParseCvPromptInput {
 // `CV_IMPORT_PROMPT_TASK` is what the fake LLM route looks for to answer this
 // prompt with a canned profile (e2e needs no key), so it must stay in the
 // system text.
-const SYSTEM_PROMPT = `You are a CV parser. Your task is to ${CV_IMPORT_PROMPT_TASK} and ${RETURN_ONLY_VALID_JSON}. Copy what the CV says; never invent employers, schools, dates or skills. If a field cannot be determined, use null.`;
+const SYSTEM_PROMPT = `You are a CV parser. Your task is to ${CV_IMPORT_PROMPT_TASK} and ${RETURN_ONLY_VALID_JSON}. Copy what the CV says; never invent employers, schools, dates, skills, phone numbers or links. If a field cannot be determined, use null.`;
 
 const userPrompt = ({
   cvText,
 }: ParseCvPromptInput) => `Extract the following from this CV and return ONLY valid JSON:
 {
+  "contact": {
+    "phone": "the candidate's phone number exactly as written, or null",
+    "location": "the candidate's own city and country as written in the header, or null",
+    "links": ["up to 3 full https URLs of the candidate's LinkedIn, portfolio or GitHub, only if written in the CV"]
+  },
   "workExperiences": [
     {
       "company": "employer name",
@@ -50,7 +55,7 @@ ${wrapUntrustedContent(cvText)}`;
 
 export const parseCvPrompt: PromptDefinition<ParseCvPromptInput> = {
   id: AI_FEATURE.PARSE_CV,
-  version: 1,
+  version: 2,
   build: (input) => [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt(input) },
@@ -65,6 +70,14 @@ const dateField = z.union([z.string(), z.number()]).nullable().optional();
 
 /** The reply `parseCvPrompt` asks for. */
 export const parsedCvResponseSchema = z.object({
+  contact: z
+    .object({
+      phone: textField,
+      location: textField,
+      links: z.array(z.string()).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
   workExperiences: z
     .array(
       z.object({

@@ -315,6 +315,11 @@ export class UserResolver {
     customAiPrompt?: string | null,
     useCrossApplicationContext?: boolean,
     llmFallbackWhenLimited?: boolean,
+    contact: {
+      phone?: string | null;
+      location?: string | null;
+      profileLinks?: string[] | null;
+    } = {},
   ): Promise<void> {
     await this.deps.updateProfileUseCase.execute({
       userId,
@@ -324,6 +329,7 @@ export class UserResolver {
       customAiPrompt,
       useCrossApplicationContext,
       llmFallbackWhenLimited,
+      ...contact,
     });
   }
 

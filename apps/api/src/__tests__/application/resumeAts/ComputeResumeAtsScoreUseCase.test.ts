@@ -155,6 +155,22 @@ describe('ComputeResumeAtsScoreUseCase', () => {
       expect(deps.storageProvider.getObject).not.toHaveBeenCalled();
     });
 
+    it('points a draft with no phone number at Settings → Profile (JEF-527)', async () => {
+      const noPhone = READABLE.replace('+1 415 555 0134', '');
+      const deps = makeDeps({
+        documentDraftRepository: makeDocumentDraftRepository({
+          findById: vi.fn().mockResolvedValue(resumeDraft({ plainText: noPhone })),
+        }),
+      });
+
+      const result = await run(deps);
+
+      expect(result.checks.find((c) => c.id === 'phone')).toMatchObject({
+        passed: false,
+        hint: expect.stringContaining('Settings → Profile'),
+      });
+    });
+
     it("checks ownership through the draft's application", async () => {
       const deps = makeDeps({
         documentDraftRepository: makeDocumentDraftRepository({
@@ -221,6 +237,19 @@ describe('ComputeResumeAtsScoreUseCase', () => {
   });
 
   describe('an uploaded resume', () => {
+    it('keeps the generic phone tip for an uploaded file', async () => {
+      const deps = makeDeps({
+        documentTextExtractor: makeDocumentTextExtractor({
+          extract: vi.fn().mockResolvedValue(READABLE.replace('+1 415 555 0134', '')),
+        }),
+      });
+
+      const result = await run(deps, upload);
+
+      const phone = result.checks.find((c) => c.id === 'phone');
+      expect(phone?.hint).not.toContain('Settings');
+    });
+
     it('reads the file from storage by key and scores the extracted text', async () => {
       const deps = makeDeps();
       const result = await run(deps, upload);

@@ -784,6 +784,17 @@ export const CV_IMPORT_MIME_TYPES = [MIME_TYPE.PDF, MIME_TYPE.DOCX, MIME_TYPE.TE
  * number. The entry and field limits keep a model that rambles, or a CV that
  * lists everything, from filling the review list with noise.
  */
+/** Caps on the contact details a profile holds and a resume header prints (JEF-527). */
+export const PROFILE_CONTACT = {
+  PHONE_MAX_CHARS: 30,
+  LOCATION_MAX_CHARS: 100,
+  /** LinkedIn, portfolio and GitHub: keeps the resume header on one line. */
+  MAX_LINKS: 3,
+  LINK_MAX_CHARS: 200,
+  /** Digits, spaces and the punctuation a phone number is written with. */
+  PHONE_PATTERN: /^\+?[0-9(][0-9 ()./-]*$/,
+} as const;
+
 export const CV_IMPORT = {
   MAX_BYTES: MAX_DOCUMENT_SIZE_BYTES,
   /**

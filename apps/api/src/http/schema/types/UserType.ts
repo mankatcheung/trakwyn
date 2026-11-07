@@ -13,6 +13,9 @@ UserRef.implement({
     name: t.exposeString('name', { nullable: true }),
     timezone: t.exposeString('timezone', { nullable: true }),
     targetRole: t.exposeString('targetRole', { nullable: true }),
+    phone: t.exposeString('phone', { nullable: true }),
+    location: t.exposeString('location', { nullable: true }),
+    profileLinks: t.exposeStringList('profileLinks'),
     avatarUrl: t.exposeString('avatarUrl', { nullable: true }),
     backupEmail: t.exposeString('backupEmail', { nullable: true }),
     backupEmailVerifiedAt: t.field({

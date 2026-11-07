@@ -26,6 +26,9 @@ export interface IUserRepository {
       name?: string | null;
       timezone?: string | null;
       targetRole?: string | null;
+      phone?: string | null;
+      location?: string | null;
+      profileLinks?: string[] | null;
       emailVerifiedAt?: Date | null;
       avatarKey?: string | null;
       weeklyDigestEnabled?: boolean;

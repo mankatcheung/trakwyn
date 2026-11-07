@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImportCvProfileUseCase } from '#src/use-cases/profile/ImportCvProfileUseCase.js';
 import type { ImportCvProfileInput } from '#src/use-cases/profile/IImportCvProfileUseCase.js';
+import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import {
   makeEducationRepository,
@@ -22,6 +23,7 @@ function build() {
     skillRepository: makeSkillRepository({
       create: vi.fn().mockImplementation(async (data) => data),
     }),
+    userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
     transactionManager: makeTransactionManager(),
     generateId: () => `id-${++n}`,
   };
@@ -63,7 +65,7 @@ describe('ImportCvProfileUseCase', () => {
   it('creates every entry for the user and returns the counts', async () => {
     const result = await ctx.useCase.execute(input());
 
-    expect(result).toEqual({ workExperiences: 1, educations: 1, skills: 1 });
+    expect(result).toEqual({ workExperiences: 1, educations: 1, skills: 1, filledContact: [] });
     expect(ctx.deps.workExperienceRepository.create).toHaveBeenCalledWith({
       id: 'id-1',
       userId: 'user-1',
@@ -101,7 +103,7 @@ describe('ImportCvProfileUseCase', () => {
     const result = await ctx.useCase.execute(
       input({ workExperiences: [], educations: [], skills: [{ name: 'Go' }] }),
     );
-    expect(result).toEqual({ workExperiences: 0, educations: 0, skills: 1 });
+    expect(result).toEqual({ workExperiences: 0, educations: 0, skills: 1, filledContact: [] });
     expect(ctx.deps.workExperienceRepository.create).not.toHaveBeenCalled();
   });
 
@@ -228,7 +230,75 @@ describe('ImportCvProfileUseCase', () => {
       workExperiences: 1,
       educations: 1,
       skills: 1,
+      filledContact: [],
     });
     expect(ctx.deps.transactionManager.run).not.toHaveBeenCalled();
+  });
+
+  describe('contact details (JEF-527)', () => {
+    const contact = {
+      phone: '+44 20 7946 0958',
+      location: 'London, UK',
+      links: ['https://www.linkedin.com/in/ada'],
+    };
+
+    it('fills an empty phone, location and links', async () => {
+      const out = await ctx.useCase.execute(input({ contact }));
+
+      expect(ctx.deps.userRepository.update).toHaveBeenCalledWith('user-1', {
+        phone: '+44 20 7946 0958',
+        location: 'London, UK',
+        profileLinks: ['https://www.linkedin.com/in/ada'],
+      });
+      expect(out.filledContact).toEqual(['phone', 'location', 'profileLinks']);
+    });
+
+    it('leaves a filled field alone and fills only the empty ones', async () => {
+      ctx.deps.userRepository.findById = vi
+        .fn()
+        .mockResolvedValue(makeUser({ phone: '555 0100', profileLinks: ['https://a.example'] }));
+
+      const out = await ctx.useCase.execute(input({ contact }));
+
+      expect(ctx.deps.userRepository.update).toHaveBeenCalledWith('user-1', {
+        location: 'London, UK',
+      });
+      expect(out.filledContact).toEqual(['location']);
+    });
+
+    it('writes nothing when every contact field is already set', async () => {
+      ctx.deps.userRepository.findById = vi
+        .fn()
+        .mockResolvedValue(
+          makeUser({ phone: '1', location: 'x', profileLinks: ['https://a.example'] }),
+        );
+
+      await ctx.useCase.execute(input({ contact }));
+
+      expect(ctx.deps.userRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('drops a phone or link that is not usable instead of failing the import', async () => {
+      const out = await ctx.useCase.execute(
+        input({
+          contact: { phone: 'call me', location: null, links: ['javascript:alert(1)', 'nope'] },
+        }),
+      );
+
+      expect(ctx.deps.userRepository.update).not.toHaveBeenCalled();
+      expect(out.filledContact).toEqual([]);
+    });
+
+    it('is not an empty import when only the contact details are given', async () => {
+      await expect(
+        ctx.useCase.execute(input({ contact, workExperiences: [], educations: [], skills: [] })),
+      ).resolves.toMatchObject({ filledContact: ['phone', 'location', 'profileLinks'] });
+    });
+
+    it('rejects an empty import without usable contact details', async () => {
+      await expect(
+        ctx.useCase.execute(input({ workExperiences: [], educations: [], skills: [] })),
+      ).rejects.toBeInstanceOf(ValidationError);
+    });
   });
 });

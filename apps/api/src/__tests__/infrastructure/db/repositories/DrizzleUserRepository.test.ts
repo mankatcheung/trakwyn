@@ -78,6 +78,9 @@ describe('DrizzleUserRepository', () => {
       expect(u.name).toBeNull();
       expect(u.timezone).toBeNull();
       expect(u.targetRole).toBeNull();
+      expect(u.phone).toBeNull();
+      expect(u.location).toBeNull();
+      expect(u.profileLinks).toBeNull();
     });
 
     it('creates a passwordless, pre-verified user for OAuth sign-up', async () => {
@@ -251,6 +254,25 @@ describe('DrizzleUserRepository', () => {
       expect(updated.name).toBe('Jeff Man');
       expect(updated.timezone).toBe('America/Los_Angeles');
       expect(updated.targetRole).toBe('Staff Engineer');
+    });
+
+    it('stores and clears phone, location and profile links (JEF-527)', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+
+      const set = await repo.update('u1', {
+        phone: '+44 20 7946 0958',
+        location: 'London',
+        profileLinks: ['https://linkedin.com/in/ada', 'https://ada.dev'],
+      });
+      expect(set.phone).toBe('+44 20 7946 0958');
+      expect(set.location).toBe('London');
+      expect(set.profileLinks).toEqual(['https://linkedin.com/in/ada', 'https://ada.dev']);
+      expect((await repo.findById('u1'))?.profileLinks).toEqual(set.profileLinks);
+
+      const cleared = await repo.update('u1', { phone: null, location: null, profileLinks: null });
+      expect(cleared.phone).toBeNull();
+      expect(cleared.location).toBeNull();
+      expect(cleared.profileLinks).toBeNull();
     });
 
     it('clears a profile field when given null', async () => {

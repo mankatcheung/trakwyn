@@ -34,8 +34,17 @@ export const ImportCvSkillInput = builder.inputType('ImportCvSkillInput', {
   }),
 });
 
+export const ImportCvContactInput = builder.inputType('ImportCvContactInput', {
+  fields: (t) => ({
+    phone: t.string({ required: false }),
+    location: t.string({ required: false }),
+    links: t.stringList({ required: false }),
+  }),
+});
+
 export const ImportCvProfileInput = builder.inputType('ImportCvProfileInput', {
   fields: (t) => ({
+    contact: t.field({ type: ImportCvContactInput, required: false }),
     workExperiences: t.field({ type: [ImportCvWorkExperienceInput], required: true }),
     educations: t.field({ type: [ImportCvEducationInput], required: true }),
     skills: t.field({ type: [ImportCvSkillInput], required: true }),

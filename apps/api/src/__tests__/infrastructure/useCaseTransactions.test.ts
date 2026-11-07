@@ -514,6 +514,7 @@ describe('repository transaction participation (JEF-427)', () => {
           workExperienceRepository,
           educationRepository,
           skillRepository,
+          userRepository: new DrizzleUserRepository({ db: testDb.db }),
           transactionManager: new DrizzleTransactionManager({ db: testDb.db }),
           generateId: nanoid,
         }),
@@ -543,6 +544,7 @@ describe('repository transaction participation (JEF-427)', () => {
         workExperiences: 1,
         educations: 1,
         skills: 1,
+        filledContact: [],
       });
 
       expect(await workExperienceRepository.findAllByUserId(userId)).toHaveLength(1);

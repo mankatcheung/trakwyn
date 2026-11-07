@@ -145,7 +145,12 @@ function notReadable(): AtsScoreResult {
   };
 }
 
-export function scoreResumeText(text: string): AtsScoreResult {
+export interface ScoreResumeOptions {
+  /** Replaces the phone tip; a draft in the app can point at Settings, an uploaded file cannot. */
+  phoneHint?: string;
+}
+
+export function scoreResumeText(text: string, options: ScoreResumeOptions = {}): AtsScoreResult {
   const words = wordCount(text);
   if (words < ATS_SCORE.MIN_READABLE_WORDS) return notReadable();
 
@@ -167,7 +172,8 @@ export function scoreResumeText(text: string): AtsScoreResult {
       'Phone number',
       hasPhone(text),
       W.PHONE,
-      'Add a phone number near the top, with the country code if you apply abroad.',
+      options.phoneHint ??
+        'Add a phone number near the top, with the country code if you apply abroad.',
     ),
     check(
       'experience_heading',

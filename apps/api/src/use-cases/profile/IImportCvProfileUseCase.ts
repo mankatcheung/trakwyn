@@ -22,8 +22,16 @@ export interface ImportCvSkill {
   proficiency?: string | null;
 }
 
+/** Header details read from the CV; each fills the profile only when that field is empty (JEF-527). */
+export interface ImportCvContact {
+  phone?: string | null;
+  location?: string | null;
+  links?: string[] | null;
+}
+
 export interface ImportCvProfileInput {
   userId: string;
+  contact?: ImportCvContact | null;
   /** The entries the user ticked in the review step, as edited. */
   workExperiences: ImportCvWorkExperience[];
   educations: ImportCvEducation[];
@@ -34,6 +42,8 @@ export interface ImportCvProfileOutput {
   workExperiences: number;
   educations: number;
   skills: number;
+  /** Which empty profile fields the CV's contact details filled. */
+  filledContact: Array<'phone' | 'location' | 'profileLinks'>;
 }
 
 export interface IImportCvProfileUseCase {

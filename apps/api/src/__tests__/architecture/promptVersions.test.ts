@@ -118,7 +118,7 @@ const RECORDED: Record<string, string> = {
   'polishDraft@1': '814195a70b7c682b',
   'resumeMatch@1': '73972db89d3346a5',
   'parseJobDescription@1': 'e357e943306332df',
-  'parseCv@1': '8ec90529a7927086',
+  'parseCv@2': 'ada7635e716f8000',
   'companyBriefing@2': '5712bd78cdde2670',
   'mockQuestions@2': '4d51b8cf709d35c1',
   'mockAnswer@2': 'eee623a9c4491be3',
