@@ -11,6 +11,8 @@ const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
   failures: [],
   promptTokens: 100,
   completionTokens: 20,
+  judgePromptTokens: 0,
+  judgeCompletionTokens: 0,
   latencyMs: 400,
   ...overrides,
 });

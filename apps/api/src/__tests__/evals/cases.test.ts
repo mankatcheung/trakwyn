@@ -17,6 +17,7 @@ import {
   scoreBetween,
 } from '#src/evals/cases/matchers.js';
 import { makeLLMProvider } from '#src/__tests__/helpers/mocks/llm.js';
+import { supportedClaimsJudge } from '#src/__tests__/evals/judgeHelpers.js';
 
 const answering = (reply: string) => makeLLMProvider(reply);
 
@@ -28,11 +29,11 @@ describe('the case list', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('covers both features', () => {
+  it('covers every feature', () => {
     expect(JOB_DESCRIPTION_CASES.length).toBeGreaterThan(0);
     expect(RESUME_MATCH_CASES.length).toBeGreaterThan(0);
     expect(new Set(ALL_CASES.map((evalCase) => evalCase.feature))).toEqual(
-      new Set(['jobDescription', 'resumeMatch']),
+      new Set(['jobDescription', 'resumeMatch', 'resume', 'coverLetter']),
     );
   });
 
@@ -46,7 +47,7 @@ describe('the case list', () => {
 
 describe.each(ALL_CASES)('case $id', (evalCase) => {
   it('passes when the model gives its ideal reply, so the checks can be met', async () => {
-    const failures = await evalCase.run(answering(evalCase.idealReply));
+    const failures = await evalCase.run(answering(evalCase.idealReply), supportedClaimsJudge());
 
     expect(failures).toEqual([]);
   });

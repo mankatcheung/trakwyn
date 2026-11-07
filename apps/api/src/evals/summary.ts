@@ -7,6 +7,8 @@ export interface RunSummary {
   schemaValidRate: number;
   promptTokens: number;
   completionTokens: number;
+  judgePromptTokens: number;
+  judgeCompletionTokens: number;
   meanLatencyMs: number;
   byFeature: Partial<Record<EvalFeature, { total: number; passed: number }>>;
 }
@@ -36,6 +38,8 @@ export function summarise(results: CaseResult[]): RunSummary {
     schemaValidRate: ratio(results.filter((result) => result.schemaValid).length, results.length),
     promptTokens: results.reduce((sum, result) => sum + result.promptTokens, 0),
     completionTokens: results.reduce((sum, result) => sum + result.completionTokens, 0),
+    judgePromptTokens: results.reduce((sum, result) => sum + result.judgePromptTokens, 0),
+    judgeCompletionTokens: results.reduce((sum, result) => sum + result.judgeCompletionTokens, 0),
     meanLatencyMs: ratio(
       results.reduce((sum, result) => sum + result.latencyMs, 0),
       results.length,
@@ -71,6 +75,7 @@ export function formatReport(runs: TargetRun[]): string {
       featureColumn(summary),
       promptColumn(results),
       `${summary.promptTokens}/${summary.completionTokens}`,
+      `${summary.judgePromptTokens}/${summary.judgeCompletionTokens}`,
       `${Math.round(summary.meanLatencyMs)} ms`,
     ];
   });
@@ -81,6 +86,7 @@ export function formatReport(runs: TargetRun[]): string {
     'By feature',
     'Prompts',
     'Tokens in/out',
+    'Judge tokens in/out',
     'Mean latency',
   ];
   const widths = header.map((title, column) =>

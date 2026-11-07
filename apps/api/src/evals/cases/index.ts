@@ -1,8 +1,13 @@
+import { GENERATION_CASES } from '#src/evals/cases/generation.js';
 import { JOB_DESCRIPTION_CASES } from '#src/evals/cases/jobDescription.js';
 import { RESUME_MATCH_CASES } from '#src/evals/cases/resumeMatch.js';
-import type { EvalCase } from '#src/evals/types.js';
+import { JUDGED_FEATURES, type EvalCase } from '#src/evals/types.js';
 
-export const ALL_CASES: EvalCase[] = [...JOB_DESCRIPTION_CASES, ...RESUME_MATCH_CASES];
+export const ALL_CASES: EvalCase[] = [
+  ...JOB_DESCRIPTION_CASES,
+  ...RESUME_MATCH_CASES,
+  ...GENERATION_CASES,
+];
 
 /**
  * The cases named by `--case`, or all of them when none are. An id that
@@ -19,3 +24,7 @@ export function selectCases(cases: EvalCase[], ids: string[]): EvalCase[] {
   }
   return cases.filter((evalCase) => ids.includes(evalCase.id));
 }
+
+/** Whether any of these cases is graded by the judge model, so a run needs one. */
+export const needsJudge = (cases: EvalCase[]): boolean =>
+  cases.some((evalCase) => JUDGED_FEATURES.includes(evalCase.feature));

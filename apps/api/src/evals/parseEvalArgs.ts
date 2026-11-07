@@ -5,7 +5,12 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
 const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate'] as const;
-const SWITCH_FLAGS = ['--cache', '--refresh'] as const;
+const SWITCH_FLAGS = ['--cache', '--refresh', '--validate-judge'] as const;
+const SWITCH_KEYS = {
+  '--cache': 'cache',
+  '--refresh': 'refresh',
+  '--validate-judge': 'validateJudge',
+} as const;
 const PROVIDERS: string[] = Object.values(LLM_PROVIDER);
 
 function isValueFlag(arg: string): arg is (typeof VALUE_FLAGS)[number] {
@@ -22,16 +27,24 @@ interface RawFlags {
   minPassRate: string | null;
   cache: boolean;
   refresh: boolean;
+  validateJudge: boolean;
 }
 
 function readFlags(argv: string[]): RawFlags {
-  let flags: RawFlags = { targets: [], cases: [], minPassRate: null, cache: false, refresh: false };
+  let flags: RawFlags = {
+    targets: [],
+    cases: [],
+    minPassRate: null,
+    cache: false,
+    refresh: false,
+    validateJudge: false,
+  };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] as string;
 
     if (isSwitchFlag(arg)) {
-      flags = { ...flags, [arg === '--cache' ? 'cache' : 'refresh']: true };
+      flags = { ...flags, [SWITCH_KEYS[arg]]: true };
     } else if (isValueFlag(arg)) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith('--')) {
@@ -49,7 +62,10 @@ function readFlags(argv: string[]): RawFlags {
   return flags;
 }
 
-function parseTarget(spec: string, env: Env): EvalTarget {
+/** The variables a grader reads instead of the target's (JEF-470). */
+const JUDGE_KEY_VARIABLES = ['EVAL_JUDGE_API_KEY'];
+
+function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarget {
   // The first colon only: model names such as `anthropic/claude:beta` carry their own.
   const colon = spec.indexOf(':');
   const provider = colon === -1 ? spec : spec.slice(0, colon);
@@ -59,10 +75,10 @@ function parseTarget(spec: string, env: Env): EvalTarget {
     throw new Error(`Unknown provider "${provider}"; expected one of: ${PROVIDERS.join(', ')}`);
   }
 
-  const keyVariable = `EVAL_API_KEY_${provider.toUpperCase()}`;
-  const apiKey = env[keyVariable] || env.EVAL_API_KEY;
+  const variables = keyVariables ?? [`EVAL_API_KEY_${provider.toUpperCase()}`, 'EVAL_API_KEY'];
+  const apiKey = variables.map((name) => env[name]).find(Boolean);
   if (!apiKey) {
-    throw new Error(`No API key for "${provider}": set ${keyVariable} or EVAL_API_KEY`);
+    throw new Error(`No API key for "${provider}": set ${variables.join(' or ')}`);
   }
 
   if (provider !== LLM_PROVIDER.CUSTOM) {
@@ -71,10 +87,25 @@ function parseTarget(spec: string, env: Env): EvalTarget {
   if (!model) {
     throw new Error('The custom provider needs a model: --target custom:<model>');
   }
-  if (!env.EVAL_BASE_URL) {
-    throw new Error('The custom provider needs a base URL: set EVAL_BASE_URL');
+  const baseUrlVariable = keyVariables ? 'EVAL_JUDGE_BASE_URL' : 'EVAL_BASE_URL';
+  const baseUrl = env[baseUrlVariable];
+  if (!baseUrl) {
+    throw new Error(`The custom provider needs a base URL: set ${baseUrlVariable}`);
   }
-  return { provider, model, apiKey, baseUrl: env.EVAL_BASE_URL };
+  return { provider, model, apiKey, baseUrl };
+}
+
+/**
+ * The grader (JEF-470). Only ever from `EVAL_JUDGE_*`: it never borrows the
+ * model under test or its key, because a grader that changes with the target
+ * makes the scores incomparable.
+ */
+function parseJudge(env: Env): EvalTarget | null {
+  if (!env.EVAL_JUDGE_PROVIDER) return null;
+  const spec = env.EVAL_JUDGE_MODEL
+    ? `${env.EVAL_JUDGE_PROVIDER}:${env.EVAL_JUDGE_MODEL}`
+    : env.EVAL_JUDGE_PROVIDER;
+  return parseTarget(spec, env, JUDGE_KEY_VARIABLES);
 }
 
 function parseMinPassRate(raw: string | null | undefined): number {
@@ -99,12 +130,21 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     ? [env.EVAL_MODEL ? `${env.EVAL_PROVIDER}:${env.EVAL_MODEL}` : env.EVAL_PROVIDER]
     : [];
   const specs = flags.targets.length > 0 ? flags.targets : fromEnv;
-  if (specs.length === 0) {
+  if (specs.length === 0 && !flags.validateJudge) {
     throw new Error('No target: pass --target <provider[:model]> or set EVAL_PROVIDER');
+  }
+
+  const judge = parseJudge(env);
+  if (flags.validateJudge && !judge) {
+    throw new Error(
+      '--validate-judge needs a judge: set EVAL_JUDGE_PROVIDER, EVAL_JUDGE_MODEL and EVAL_JUDGE_API_KEY',
+    );
   }
 
   return {
     targets: specs.map((spec) => parseTarget(spec, env)),
+    judge,
+    validateJudge: flags.validateJudge,
     caseIds: flags.cases
       .flatMap((value) => value.split(','))
       .map((id) => id.trim())
