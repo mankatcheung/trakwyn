@@ -24,7 +24,7 @@ name: Release
 # attaches the zip to the GitHub Release and starts clipper-cws.yml, which
 # uploads it to the Chrome Web Store and submits it for review (JEF-429, JEF-480).
 # Approval publishes it to everyone, with no further step (DEFAULT_PUBLISH;
-# apps/extension/CLAUDE.md, "Releasing the Clipper"). A Clipper release also
+# apps/extension/docs/releasing.md, "Releasing the Clipper"). A Clipper release also
 # runs `clipper-firefox-zip` (JEF-437), which
 # builds and checks the Firefox zips from the same tag, with the same
 # nothing-added check, and starts clipper-amo.yml, which submits them to AMO

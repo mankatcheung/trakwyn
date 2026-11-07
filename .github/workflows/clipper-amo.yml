@@ -15,7 +15,7 @@ name: Clipper on Firefox Add-ons
 # The job runs in the `amo` environment so the AMO secrets are readable by
 # this job alone, from the default branch only. Keep the environment.
 #
-# One-time setup (apps/extension/CLAUDE.md, "Firefox"): the FIREFOX_JWT_ISSUER
+# One-time setup (apps/extension/docs/releasing.md, "Releasing to Firefox Add-ons (AMO)"): the FIREFOX_JWT_ISSUER
 # and FIREFOX_JWT_SECRET secrets from AMO's Developer Hub (Manage API Keys), as
 # secrets of the `amo` environment.
 
