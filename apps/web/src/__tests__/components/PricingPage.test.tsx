@@ -184,6 +184,16 @@ describe('PricingPage', () => {
     expect(screen.getByText(/full refund/)).toBeInTheDocument();
   });
 
+  it('puts the short guarantee directly under the Get Pro button and keeps the full policy (JEF-522)', () => {
+    render(<PricingPage />);
+
+    const cta = screen.getAllByRole('link', { name: en['plan.upgradeTitle'] })[0]!;
+    const line = screen.getByTestId('guarantee-short');
+    expect(line).toHaveTextContent(en['pricing.guaranteeShort']);
+    expect(cta.nextElementSibling).toBe(line);
+    expect(screen.getByText(en['plan.refundPolicy'])).toBeInTheDocument();
+  });
+
   it('never mentions the founder price', () => {
     const { container } = render(<PricingPage />);
 
