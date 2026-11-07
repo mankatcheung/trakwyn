@@ -1448,9 +1448,9 @@
   "marketing.footer.pricingLink": "Pricing",
   "pricing.title": "Simple pricing",
   "pricing.subtitle": "Start on the Free plan. Upgrade to Pro when your search needs more room.",
-  "pricing.freeTagline": "Track your search and try the AI tools.",
+  "pricing.freeTagline": "For getting started: track your search and try the AI tools.",
   "pricing.freePrice": "$0",
-  "pricing.proTagline": "No application limit, 2 GB of storage and every feature.",
+  "pricing.proTagline": "For an active search: no application limit, 2 GB of storage and every feature.",
   "pricing.proPrice": "$12",
   "pricing.perMonth": "a month",
   "pricing.optionsTitle": "Three ways to get Pro",
@@ -1636,5 +1636,13 @@
   "aiHelper.pointsExample3": "Prefer my most recent role",
   "aiHelper.briefingExample1": "Focus on remote culture and funding stability",
   "aiHelper.briefingExample2": "What should I ask about the engineering team?",
-  "aiHelper.briefingExample3": "Keep it short, bullet points only"
+  "aiHelper.briefingExample3": "Keep it short, bullet points only",
+  "lockedPreview.badge": "Available on Pro",
+  "lockedPreview.analytics.title": "See what is working in your search",
+  "lockedPreview.analytics.benefit": "Compensation trends, resume outcomes and which channels get replies, built from your own applications.",
+  "lockedPreview.offers.title": "Compare your offers side by side",
+  "lockedPreview.offers.benefit": "Line up salary, bonus and equity across every offer in one place.",
+  "applications.capNotice": "You have used {{used}} of {{limit}} applications on your plan.",
+  "landing.planFraming": "Free is for getting started. Pro is for an active search.",
+  "landing.seePricing": "See pricing"
 }

@@ -252,7 +252,13 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center">
+            <p className="mt-10 text-center text-base text-gray-600 dark:text-gray-400">
+              {t('landing.planFraming')}{' '}
+              <Link to="/pricing" className="font-semibold text-blue-600 hover:text-blue-700">
+                {t('landing.seePricing')}
+              </Link>
+            </p>
+            <div className="mt-8 text-center">
               <Link
                 to="/register"
                 onClick={() => trackCta('get_started_free', 'closing')}

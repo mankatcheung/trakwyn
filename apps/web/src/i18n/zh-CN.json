@@ -1426,9 +1426,9 @@
   "marketing.footer.pricingLink": "价格",
   "pricing.title": "简单透明的价格",
   "pricing.subtitle": "先使用免费方案。当你的求职需要更多空间时，再升级到专业版。",
-  "pricing.freeTagline": "追踪你的求职进度，体验 AI 工具。",
+  "pricing.freeTagline": "适合刚开始求职：追踪你的求职进度，体验 AI 工具。",
   "pricing.freePrice": "$0",
-  "pricing.proTagline": "不限申请数量，2 GB 存储空间，全部功能。",
+  "pricing.proTagline": "适合积极求职：不限申请数量，2 GB 存储空间，全部功能。",
   "pricing.proPrice": "$12",
   "pricing.perMonth": "每月",
   "pricing.optionsTitle": "获取专业版的三种方式",
@@ -1614,5 +1614,13 @@
   "aiHelper.pointsExample3": "优先使用我最近一份工作",
   "aiHelper.briefingExample1": "重点关注远程办公文化和融资稳定性",
   "aiHelper.briefingExample2": "我应该向工程团队问些什么？",
-  "aiHelper.briefingExample3": "简短一些，只用要点列表"
+  "aiHelper.briefingExample3": "简短一些，只用要点列表",
+  "lockedPreview.badge": "专业版可用",
+  "lockedPreview.analytics.title": "看清求职中哪些做法有效",
+  "lockedPreview.analytics.benefit": "薪酬趋势、简历成效，以及哪些渠道更容易得到回复，全部来自你自己的申请记录。",
+  "lockedPreview.offers.title": "并排比较你的录用通知",
+  "lockedPreview.offers.benefit": "在同一处对比所有录用通知的薪资、奖金和股权。",
+  "applications.capNotice": "你的方案已使用 {{used}} / {{limit}} 个申请。",
+  "landing.planFraming": "免费版适合刚开始求职，专业版适合积极求职。",
+  "landing.seePricing": "查看价格"
 }

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ErrorState } from '#/components/ErrorState';
+import { LockedFeaturePreview } from '#/components/LockedFeaturePreview';
+import { useFeatureLocked } from '#/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
@@ -44,6 +46,7 @@ function isoWeek(date: Date): string {
 
 export function AnalyticsPage() {
   const { t } = useLocale();
+  const analyticsLocked = useFeatureLocked('analytics');
   const { data, isLoading, isError, error, refetch } = useQuery(analyticsQueryOptions);
 
   const apps = data?.applications ?? [];
@@ -202,10 +205,16 @@ export function AnalyticsPage() {
         )}
       </Card>
 
-      <DocumentVersionOutcomesPanel />
+      {analyticsLocked ? (
+        <LockedFeaturePreview feature="analytics" />
+      ) : (
+        <>
+          <DocumentVersionOutcomesPanel />
+          <OfferAnalyticsPanel />
+          <ApplicationChannelAnalyticsPanel />
+        </>
+      )}
       <InterviewRoundAnalyticsPanel />
-      <OfferAnalyticsPanel />
-      <ApplicationChannelAnalyticsPanel />
       <ResponseTimeAnalyticsPanel />
     </div>
   );
