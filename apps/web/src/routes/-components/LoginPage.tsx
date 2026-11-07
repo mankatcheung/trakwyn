@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { OAuthButtons } from '#/components/OAuthButtons';
+import { AuthDivider } from '#/components/AuthDivider';
 import { ERROR_CODES } from '#/constants';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode } from '#/lib/graphqlError';
@@ -131,6 +132,10 @@ export function LoginPage() {
 
           {oauthError && <Alert>{t(oauthErrorKey(oauthError))}</Alert>}
 
+          <OAuthButtons label={t('auth.signIn')} returnTo={returnTo} />
+
+          <AuthDivider label={t('auth.orSignInWithEmail')} />
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <FormLabel>{t('auth.email')}</FormLabel>
@@ -189,8 +194,6 @@ export function LoginPage() {
               {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
           </form>
-
-          <OAuthButtons label={t('auth.signIn')} returnTo={returnTo} />
         </div>
         <LegalFooterLinks />
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 import { ERROR_CODES } from '#/constants';
@@ -7,6 +7,7 @@ import { LogoMark } from '#/components/LogoMark';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
+import { useCooldown } from '#/lib/useCooldown';
 import {
   RESEND_COOLDOWN_SECONDS,
   RESEND_VERIFICATION_EMAIL,
@@ -17,24 +18,6 @@ import { REQUEST_EMAIL_CHANGE } from '#/routes/_authenticated/settings/-componen
 const LOGOUT_MUTATION = `mutation { logout }`;
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
-
-/** Seconds left until a deadline, ticking once a second only while there are any. */
-function useCooldown() {
-  const [endsAt, setEndsAt] = useState(0);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (endsAt <= Date.now()) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [endsAt]);
-  const seconds = Math.max(0, Math.ceil((endsAt - now) / 1000));
-  const start = (forSeconds: number) => {
-    const started = Date.now();
-    setNow(started);
-    setEndsAt(started + forSeconds * 1000);
-  };
-  return [seconds, start] as const;
-}
 
 /**
  * The full-page reminder an unverified user gets in place of the app

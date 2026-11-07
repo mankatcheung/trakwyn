@@ -44,6 +44,11 @@ vi.mock('#/lib/i18n', () => ({
         'landing.getStarted': 'Get started',
         'landing.startFree': 'Start for free',
         'landing.getStartedFree': 'Get started for free',
+        'landing.heroTitleLine1': 'Track every application.',
+        'landing.heroTitleLine2': 'Tailor every cover letter.',
+        'landing.heroDescription':
+          'Save jobs from any posting with one click, keep every application on one board, and get cover letters and resumes drafted from your own experience. Free to start.',
+        'landing.heroTrustLine': 'Free plan · No credit card',
         'landing.features': 'Features',
         'landing.tracking': 'Application tracking',
         'landing.assistant': 'AI assistant',
@@ -87,6 +92,18 @@ describe('LandingPage', () => {
       ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
       ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
     ]);
+  });
+
+  it('leads with the track-and-tailor headline and a no-card trust line', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent('Track every application.');
+    expect(heading).toHaveTextContent('Tailor every cover letter.');
+    expect(screen.getByText(/Save jobs from any posting with one click/)).toBeInTheDocument();
+    expect(screen.getByText('Free plan · No credit card')).toBeInTheDocument();
   });
 
   it('keeps sign-in links for logged-out users', () => {

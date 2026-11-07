@@ -36,7 +36,7 @@ describe('RegisterScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('submits email and password to register when passwords match', async () => {
+  it('submits email and password to register', async () => {
     const register = jest.fn().mockResolvedValue(undefined);
     mockedUseAuth.mockReturnValue({
       login: jest.fn(),
@@ -56,19 +56,17 @@ describe('RegisterScreen', () => {
 
     await fireEvent.changeText(getByTestId('register-email-input'), 'user@example.com');
     await fireEvent.changeText(getByTestId('register-password-input'), 'password123');
-    await fireEvent.changeText(getByTestId('register-confirm-password-input'), 'password123');
     await fireEvent.press(getByTestId('register-submit-button'));
 
     await waitFor(() => expect(register).toHaveBeenCalledWith('user@example.com', 'password123'));
   });
 
-  it('shows a validation error instead of calling register when passwords do not match', async () => {
-    const register = jest.fn();
+  it('has no confirm-password field (JEF-520)', async () => {
     mockedUseAuth.mockReturnValue({
       login: jest.fn(),
       loginWithTotp: jest.fn(),
       loginWithOAuth: jest.fn(),
-      register,
+      register: jest.fn(),
       logout: jest.fn(),
       isLoading: false,
       isAuthenticated: false,
@@ -78,15 +76,81 @@ describe('RegisterScreen', () => {
       verifyStepUpCode: jest.fn(),
     });
 
-    const { getByTestId, findByText } = await renderScreen();
+    const { queryByTestId, queryByText } = await renderScreen();
 
-    await fireEvent.changeText(getByTestId('register-email-input'), 'user@example.com');
-    await fireEvent.changeText(getByTestId('register-password-input'), 'password123');
-    await fireEvent.changeText(getByTestId('register-confirm-password-input'), 'password456');
-    await fireEvent.press(getByTestId('register-submit-button'));
+    expect(queryByTestId('register-confirm-password-input')).toBeNull();
+    expect(queryByText('Confirm password')).toBeNull();
+  });
 
-    await findByText('Passwords do not match');
-    expect(register).not.toHaveBeenCalled();
+  it('says the plan is free with no card (JEF-520)', async () => {
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
+    });
+
+    const { findByText } = await renderScreen();
+
+    await findByText('Free plan · No credit card');
+  });
+
+  it('lists the OAuth buttons before the email field, split by an "or" divider (JEF-520)', async () => {
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
+    });
+
+    const { getByTestId, getByText, toJSON } = await renderScreen();
+    const order = JSON.stringify(toJSON());
+
+    expect(getByText('or sign up with email')).toBeTruthy();
+    expect(order.indexOf('oauth-google-button')).toBeLessThan(
+      order.indexOf('or sign up with email'),
+    );
+    expect(order.indexOf('or sign up with email')).toBeLessThan(
+      order.indexOf('register-email-input'),
+    );
+    expect(getByTestId('oauth-github-button')).toBeTruthy();
+  });
+
+  it('toggles the password between hidden and visible (JEF-520)', async () => {
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
+    });
+
+    const { getByTestId, getByText } = await renderScreen();
+
+    expect(getByTestId('register-password-input').props.secureTextEntry).toBe(true);
+    await fireEvent.press(getByTestId('register-show-password'));
+    expect(getByTestId('register-password-input').props.secureTextEntry).toBe(false);
+    getByText('Hide');
   });
 
   it('shows a validation error instead of calling register when the email is invalid', async () => {
@@ -109,7 +173,6 @@ describe('RegisterScreen', () => {
 
     await fireEvent.changeText(getByTestId('register-email-input'), 'not-an-email');
     await fireEvent.changeText(getByTestId('register-password-input'), 'password123');
-    await fireEvent.changeText(getByTestId('register-confirm-password-input'), 'password123');
     await fireEvent.press(getByTestId('register-submit-button'));
 
     await findByText('Enter a valid email address');

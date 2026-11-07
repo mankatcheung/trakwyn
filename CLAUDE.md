@@ -135,6 +135,7 @@ cp apps/web/.env.example apps/web/.env
 
   An unchecked "tests" item means the issue isn't done.
 
+- **Clean up processes you start.** Stop any dev server, watcher, emulator or browser you launched before you finish. Start long-running commands with `run_in_background` so they can be stopped, never with `nohup`, `disown` or a trailing `&`, which detach them from the session.
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
 - **CI security checks (JEF-477):**
   - Actions are referenced by major version (`actions/checkout@v4`). Renovate's `github-actions` manager bumps them in one weekly PR.

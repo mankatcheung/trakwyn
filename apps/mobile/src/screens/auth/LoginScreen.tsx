@@ -170,6 +170,46 @@ export function LoginScreen() {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
+          <View style={styles.oauthRow}>
+            <Pressable
+              style={[styles.oauthButton, oauthProvider !== null && styles.buttonDisabled]}
+              onPress={() => onPressOAuth('google')}
+              disabled={oauthProvider !== null}
+              testID="oauth-google-button"
+            >
+              {oauthProvider === 'google' ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <>
+                  <OAuthProviderLogo provider="google" />
+                  <Text style={styles.oauthButtonText}>{t('auth:login.google')}</Text>
+                </>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={[styles.oauthButton, oauthProvider !== null && styles.buttonDisabled]}
+              onPress={() => onPressOAuth('github')}
+              disabled={oauthProvider !== null}
+              testID="oauth-github-button"
+            >
+              {oauthProvider === 'github' ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <>
+                  <OAuthProviderLogo provider="github" />
+                  <Text style={styles.oauthButtonText}>{t('auth:login.github')}</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('auth:login.orSignInWithEmail')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('auth:login.emailLabel')}</Text>
             <TextInput
@@ -216,46 +256,6 @@ export function LoginScreen() {
               <Text style={styles.buttonText}>{t('auth:login.submit')}</Text>
             )}
           </Pressable>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('auth:orContinueWith')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.oauthRow}>
-            <Pressable
-              style={[styles.oauthButton, oauthProvider !== null && styles.buttonDisabled]}
-              onPress={() => onPressOAuth('google')}
-              disabled={oauthProvider !== null}
-              testID="oauth-google-button"
-            >
-              {oauthProvider === 'google' ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <>
-                  <OAuthProviderLogo provider="google" />
-                  <Text style={styles.oauthButtonText}>{t('auth:login.google')}</Text>
-                </>
-              )}
-            </Pressable>
-
-            <Pressable
-              style={[styles.oauthButton, oauthProvider !== null && styles.buttonDisabled]}
-              onPress={() => onPressOAuth('github')}
-              disabled={oauthProvider !== null}
-              testID="oauth-github-button"
-            >
-              {oauthProvider === 'github' ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <>
-                  <OAuthProviderLogo provider="github" />
-                  <Text style={styles.oauthButtonText}>{t('auth:login.github')}</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
         </View>
 
         <Text style={styles.footer}>{t('auth:footer.termsPrivacy')}</Text>
