@@ -240,6 +240,22 @@ describe('SettingsPlanPage', () => {
       expect(screen.queryByText(/Founder price/)).toBeNull();
     });
 
+    it('shows the short guarantee under the purchase buttons, not to a subscriber (JEF-522)', async () => {
+      serve(freeStatus());
+      const { unmount } = render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      const line = await screen.findByTestId('guarantee-short');
+      expect(line).toHaveTextContent('14-day money-back guarantee · Cancel any time');
+      const buttons = screen.getByRole('button', { name: '3-month pass, $29' }).parentElement!;
+      expect(buttons.nextElementSibling).toBe(line);
+      unmount();
+
+      serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+      await screen.findByRole('button', { name: 'Open billing portal' });
+      expect(screen.queryByTestId('guarantee-short')).toBeNull();
+    });
+
     it('shows only the portal to an active subscriber', async () => {
       serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
       render(<SettingsPlanPage />, { wrapper: Wrapper });

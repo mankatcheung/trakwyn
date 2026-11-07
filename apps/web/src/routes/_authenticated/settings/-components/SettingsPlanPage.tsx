@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 import {
@@ -186,6 +187,13 @@ function PlanActions({ status }: { status: BillingStatus }) {
               </Button>
             ))}
           </div>
+          <p
+            data-testid="guarantee-short"
+            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"
+          >
+            <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-green-600" />
+            {t('pricing.guaranteeShort')}
+          </p>
           {status.planSource === 'pass' && status.plan === 'pro' && (
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.passForfeitNote')}</p>
           )}
