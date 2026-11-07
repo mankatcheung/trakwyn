@@ -6,6 +6,7 @@ import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { AiDemoSection } from '#/components/marketing/AiDemoSection';
 import { ClipperSection } from '#/components/marketing/ClipperSection';
+import { FaqSection, type FaqItem } from '#/components/marketing/FaqSection';
 import { useLocale } from '#/lib/i18n';
 import { marketingHead, SITE_URL } from '#/lib/seo';
 import { statusColor } from '#/lib/statusColors';
@@ -14,6 +15,13 @@ import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'luci
 const OG_TITLE = 'Trakwyn — Track every application. Tailor every cover letter.';
 const OG_DESCRIPTION =
   'Save jobs from any posting with one click, keep every application on one board, and get cover letters and resumes drafted from your own experience. Free to start.';
+
+const LANDING_FAQ: readonly FaqItem[] = [
+  { id: 'free', questionKey: 'faq.free.q', answerKey: 'faq.free.a' },
+  { id: 'privacy', questionKey: 'faq.privacy.q', answerKey: 'faq.privacy.a' },
+  { id: 'clipper', questionKey: 'faq.clipper.q', answerKey: 'faq.clipper.a' },
+  { id: 'mobile', questionKey: 'faq.mobile.q', answerKey: 'faq.mobile.a' },
+];
 
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
@@ -240,6 +248,15 @@ export function LandingPage() {
 
         {/* Browser extension (JEF-424) */}
         <ClipperSection />
+
+        {/* Questions visitors ask before signing up (JEF-519) */}
+        <FaqSection
+          items={LANDING_FAQ.map((item) => ({
+            ...item,
+            values: { applications: t('pricing.freeApplications') },
+          }))}
+          structuredData
+        />
 
         {/* How it works */}
         <section className="bg-gray-100 py-24 sm:py-32 dark:bg-gray-800/30">
