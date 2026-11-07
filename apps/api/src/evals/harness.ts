@@ -1,5 +1,9 @@
 import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
+import { GenerateCoverLetterUseCase } from '#src/use-cases/coverLetter/GenerateCoverLetterUseCase.js';
+import { GenerateResumeUseCase } from '#src/use-cases/resume/GenerateResumeUseCase.js';
 import { ParseJobDescriptionUseCase } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
+import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
+import type { GenerationFixture } from '#src/evals/fixtures/generationFixture.js';
 import type { ResumeMatchView } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import type { ParsedJobDescription } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
@@ -101,5 +105,66 @@ export async function scoreResumeMatch(
     applicationId: EVAL_APPLICATION_ID,
     userId: EVAL_USER_ID,
     documentDraftId: EVAL_DRAFT_ID,
+  });
+}
+
+type ResumeDeps = ConstructorParameters<typeof GenerateResumeUseCase>[0];
+type CoverLetterDeps = ConstructorParameters<typeof GenerateCoverLetterUseCase>[0];
+
+/**
+ * The repositories both generators read, answering from a fixture. Nothing
+ * here is written to, and the cross-application context is off, so the only
+ * inputs are the candidate, the posting and the notes the fixture holds.
+ */
+function generationDeps(provider: ILLMProvider, fixture: GenerationFixture) {
+  return {
+    llmProviderFactory: factoryFor(provider),
+    applicationRepository: {
+      findById: async () => ({ id: EVAL_APPLICATION_ID, userId: EVAL_USER_ID, ...fixture.app }),
+    },
+    workExperienceRepository: { findAllByUserId: async () => fixture.workExperiences },
+    educationRepository: { findAllByUserId: async () => fixture.educations },
+    skillRepository: { findAllByUserId: async () => fixture.skills },
+    userRepository: {
+      findById: async () => ({
+        id: EVAL_USER_ID,
+        useCrossApplicationContext: false,
+        customAiPrompt: null,
+      }),
+    },
+    noteRepository: {
+      findAllByApplicationId: async () =>
+        fixture.notes.map((content, index) => ({
+          id: `eval-note-${index}`,
+          applicationId: EVAL_APPLICATION_ID,
+          content,
+        })),
+    },
+    documentDraftRepository: {},
+    companyBriefingRepository: { findByApplicationId: async () => null },
+    generateResumeRateLimiter: unlimited,
+    generateCoverLetterRateLimiter: unlimited,
+  };
+}
+
+export async function generateResume(
+  provider: ILLMProvider,
+  fixture: GenerationFixture,
+): Promise<ResumeContent> {
+  const deps = generationDeps(provider, fixture) as unknown as ResumeDeps;
+  return new GenerateResumeUseCase(deps).execute({
+    applicationId: EVAL_APPLICATION_ID,
+    userId: EVAL_USER_ID,
+  });
+}
+
+export async function generateCoverLetter(
+  provider: ILLMProvider,
+  fixture: GenerationFixture,
+): Promise<string> {
+  const deps = generationDeps(provider, fixture) as unknown as CoverLetterDeps;
+  return new GenerateCoverLetterUseCase(deps).execute({
+    applicationId: EVAL_APPLICATION_ID,
+    userId: EVAL_USER_ID,
   });
 }

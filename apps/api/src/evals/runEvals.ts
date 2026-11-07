@@ -4,18 +4,27 @@
  * `src/__tests__` imports it and the vitest `include` only matches
  * `*.test.ts`, which is why `pnpm test` and CI never reach a provider.
  *
- * Exit status: 0 when every target met the pass rate, 1 when one fell short,
- * 2 when the arguments were wrong.
+ * Exit status: 0 when every target met the pass rate, 1 when one fell short
+ * (or the judge was not trusted), 2 when the arguments were wrong.
  */
 import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { ALL_CASES, selectCases } from '#src/evals/cases/index.js';
+import { requireJudge } from '#src/evals/judge/requireJudge.js';
+import {
+  formatValidation,
+  JUDGE_MIN_ACCURACY,
+  validateJudge,
+} from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
 import { runSuite } from '#src/evals/runSuite.js';
 import { formatReport, meetsPassRate, summarise, type TargetRun } from '#src/evals/summary.js';
+import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { CaseResult, EvalConfig } from '#src/evals/types.js';
 
 const CACHE_DIR = '.eval-cache';
 const USAGE_ERROR = 2;
+
+type Cache = { dir: string; refresh: boolean } | null;
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -24,16 +33,22 @@ function progressLine(result: CaseResult): string {
   return `  ${result.passed ? 'pass' : 'FAIL'}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)`;
 }
 
-async function runTargets(config: EvalConfig): Promise<TargetRun[]> {
+async function runTargets(
+  config: EvalConfig,
+  judge: ILLMProvider | null,
+  cache: Cache,
+): Promise<TargetRun[]> {
   const cases = selectCases(ALL_CASES, config.caseIds);
-  const cache = config.cache ? { dir: CACHE_DIR, refresh: config.refresh } : null;
   const runs: TargetRun[] = [];
 
   for (const target of config.targets) {
     const label = targetLabel(target);
     console.log(`\n${label}: ${cases.length} cases`);
-    const results = await runSuite(buildProvider(target, cache), cases, (result) =>
-      console.log(progressLine(result)),
+    const results = await runSuite(
+      buildProvider(target, cache),
+      cases,
+      (result) => console.log(progressLine(result)),
+      judge ?? undefined,
     );
     runs.push({ label, results });
   }
@@ -41,12 +56,35 @@ async function runTargets(config: EvalConfig): Promise<TargetRun[]> {
 }
 
 async function main(): Promise<number> {
-  let runs: TargetRun[];
   let config: EvalConfig;
+  let cache: Cache;
+  let judge: ILLMProvider | null;
 
   try {
     config = parseEvalArgs(process.argv.slice(2), process.env);
-    runs = await runTargets(config);
+    cache = config.cache ? { dir: CACHE_DIR, refresh: config.refresh } : null;
+    const judgeTarget = config.validateJudge
+      ? config.judge
+      : requireJudge(config, selectCases(ALL_CASES, config.caseIds));
+    judge = judgeTarget ? buildProvider(judgeTarget, cache) : null;
+  } catch (error: unknown) {
+    console.error(messageOf(error));
+    return USAGE_ERROR;
+  }
+
+  // The judge's scores count only once it has sorted hand-labelled outputs
+  // correctly. This runs before any target is called, so an untrusted judge
+  // costs the grading calls and nothing more.
+  if (judge) {
+    const validation = await validateJudge(judge);
+    console.log(formatValidation(validation, JUDGE_MIN_ACCURACY));
+    if (!validation.meetsThreshold) return 1;
+    if (config.validateJudge) return 0;
+  }
+
+  let runs: TargetRun[];
+  try {
+    runs = await runTargets(config, judge, cache);
   } catch (error: unknown) {
     console.error(messageOf(error));
     return USAGE_ERROR;

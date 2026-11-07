@@ -11,10 +11,11 @@ export async function runSuite(
   provider: ILLMProvider,
   cases: EvalCase[],
   onResult?: (result: CaseResult) => void,
+  judge?: ILLMProvider,
 ): Promise<CaseResult[]> {
   const results: CaseResult[] = [];
   for (const evalCase of cases) {
-    const result = await runCase(evalCase, provider);
+    const result = await runCase(evalCase, provider, judge);
     results.push(result);
     onResult?.(result);
   }

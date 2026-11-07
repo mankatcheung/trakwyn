@@ -1,5 +1,16 @@
-import { parseJobPosting, scoreResumeMatch } from '#src/evals/harness.js';
+import {
+  generateCoverLetter,
+  generateResume,
+  parseJobPosting,
+  scoreResumeMatch,
+} from '#src/evals/harness.js';
 import { failuresOf, isPresent, listsDisjoint, type Check } from '#src/evals/cases/matchers.js';
+import {
+  claimSource,
+  renderResume,
+  type GenerationFixture,
+} from '#src/evals/fixtures/generationFixture.js';
+import { checkClaims, claimFailures } from '#src/evals/judge/claimCheck.js';
 import type { ResumeMatchView } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import type { ParsedJobDescription } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
 import type { EvalCase } from '#src/evals/types.js';
@@ -52,6 +63,37 @@ export function resumeMatchCase(spec: ResumeMatchSpec): EvalCase {
         listsDisjoint(match.matchedKeywords, match.missingKeywords),
         ...spec.expect(match),
       );
+    },
+  };
+}
+
+interface GenerationSpec {
+  id: string;
+  feature: 'resume' | 'coverLetter';
+  fixture: GenerationFixture;
+}
+
+/**
+ * Passes only when the judge finds every claim in the generated document
+ * supported by the fixture (JEF-470). A failure names each unsupported claim.
+ * Writing quality is deliberately not checked.
+ */
+export function generationCase(spec: GenerationSpec): EvalCase {
+  const { fixture, feature } = spec;
+  return {
+    id: spec.id,
+    feature,
+    idealReply:
+      feature === 'resume' ? JSON.stringify(fixture.idealResume) : fixture.idealCoverLetter,
+    run: async (provider, judge) => {
+      if (!judge) {
+        throw new Error(`${spec.id} is graded by a judge model, but none was given`);
+      }
+      const output =
+        feature === 'resume'
+          ? renderResume(await generateResume(provider, fixture))
+          : await generateCoverLetter(provider, fixture);
+      return claimFailures(await checkClaims(judge, { source: claimSource(fixture), output }));
     },
   };
 }
