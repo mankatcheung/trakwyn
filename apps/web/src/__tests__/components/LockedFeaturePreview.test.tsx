@@ -107,24 +107,33 @@ describe('AnalyticsPage plan gating', () => {
     vi.clearAllMocks();
   });
 
-  it('shows a Free user the preview instead of the Pro panels', async () => {
+  it('covers the whole page for a Free user, with a blurred inert sample and no real panels', async () => {
     serve(true);
     render(<AnalyticsPage />, { wrapper: Wrapper });
 
-    expect(await screen.findByTestId('locked-feature-preview')).toBeInTheDocument();
+    const overlay = await screen.findByTestId('locked-feature-overlay');
+    const sample = overlay.querySelector('[aria-hidden="true"]');
+    expect(sample).toHaveAttribute('inert');
+    expect(sample).toHaveClass('blur-md');
+    expect(screen.getByText('Available on Pro')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Analytics' })).toBeInTheDocument();
+
+    // Nothing of the real page sits beside the lock: no real panels, no gated or per-panel requests.
+    expect(screen.queryByText('Interview round outcomes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Time to respond')).not.toBeInTheDocument();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
       expect.stringContaining('offerAnalytics'),
       expect.anything(),
     );
   });
 
-  it('never shows a Pro user the preview', async () => {
+  it('never shows a Pro user the overlay', async () => {
     serve(false);
     render(<AnalyticsPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Analytics')).toBeInTheDocument());
     await waitFor(() => expect(mockGqlRequest).toHaveBeenCalledTimes(7));
-    expect(screen.queryByTestId('locked-feature-preview')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('locked-feature-overlay')).not.toBeInTheDocument();
   });
 });
 

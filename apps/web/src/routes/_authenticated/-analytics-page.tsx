@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ErrorState } from '#/components/ErrorState';
-import { LockedFeaturePreview } from '#/components/LockedFeaturePreview';
+import { LockedAnalyticsSample } from '#/components/LockedAnalyticsSample';
+import { LockedFeatureOverlay } from '#/components/LockedFeaturePreview';
 import { useFeatureLocked } from '#/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
@@ -99,6 +100,21 @@ export function AnalyticsPage() {
     color: '#f9fafb',
     fontSize: '12px',
   };
+
+  // A plan without analytics gets the whole page as a locked sample, not a
+  // partial page: the real numbers would otherwise sit beside the lock (JEF-523).
+  if (analyticsLocked) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-8 p-4 sm:p-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {t('nav.analytics')}
+        </h1>
+        <LockedFeatureOverlay feature="analytics">
+          <LockedAnalyticsSample />
+        </LockedFeatureOverlay>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -205,15 +221,9 @@ export function AnalyticsPage() {
         )}
       </Card>
 
-      {analyticsLocked ? (
-        <LockedFeaturePreview feature="analytics" />
-      ) : (
-        <>
-          <DocumentVersionOutcomesPanel />
-          <OfferAnalyticsPanel />
-          <ApplicationChannelAnalyticsPanel />
-        </>
-      )}
+      <DocumentVersionOutcomesPanel />
+      <OfferAnalyticsPanel />
+      <ApplicationChannelAnalyticsPanel />
       <InterviewRoundAnalyticsPanel />
       <ResponseTimeAnalyticsPanel />
     </div>
