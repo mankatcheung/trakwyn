@@ -31,9 +31,13 @@ const ROWS: ComparisonRow[] = [
     free: { text: 'pricing.freeStorage' },
     pro: { text: 'pricing.proStorage' },
   },
-  { labelKey: 'plan.rowAi', free: { text: 'plan.unlimited' }, pro: { text: 'plan.unlimited' } },
   {
-    labelKey: 'plan.rowAiCredits',
+    labelKey: 'pricing.rowAiByok',
+    free: { text: 'plan.unlimited' },
+    pro: { text: 'plan.unlimited' },
+  },
+  {
+    labelKey: 'pricing.rowAiHosted',
     free: { text: 'plan.notIncluded' },
     pro: { text: 'pricing.proAiCredits' },
   },
@@ -96,7 +100,7 @@ const PRICING_FAQ: readonly FaqItem[] = [
   { id: 'limit', questionKey: 'faq.limit.q', answerKey: 'faq.limit.a' },
   { id: 'cancel', questionKey: 'faq.cancel.q', answerKey: 'faq.cancel.a' },
   { id: 'refund', questionKey: 'faq.refund.q', answerKey: 'plan.refundPolicy' },
-  { id: 'ai-key', questionKey: 'faq.aiKey.q', answerKey: 'pricing.byok' },
+  { id: 'ai-key', questionKey: 'faq.aiKey.q', answerKey: 'faq.aiKey.a' },
   { id: 'passes', questionKey: 'faq.passes.q', answerKey: 'faq.passes.a' },
 ];
 
@@ -209,6 +213,12 @@ export function PricingPage() {
               {t('pricing.guaranteeShort')}
             </p>
           </div>
+          <p
+            data-testid="ai-summary"
+            className="text-center font-medium text-gray-900 sm:col-span-2 dark:text-gray-100"
+          >
+            {t('pricing.aiSummary', { credits: t('pricing.proAiCredits') })}
+          </p>
         </section>
 
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
