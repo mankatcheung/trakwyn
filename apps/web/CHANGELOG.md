@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.12.0...web-v0.13.0) (2026-11-07)
+
+
+### Features
+
+* add an AI helper with user prompts to the resume and cover letter editor (JEF-506) ([#1233](https://github.com/mankatcheung/trakwyn/issues/1233)) ([ae6ec42](https://github.com/mankatcheung/trakwyn/commit/ae6ec428607a9317d9a26e79ac1b702e649ca4ff))
+* add user prompts and AI credit meters to mock interview and company briefing (JEF-507) ([#1239](https://github.com/mankatcheung/trakwyn/issues/1239)) ([1d8b43e](https://github.com/mankatcheung/trakwyn/commit/1d8b43edc39ee1eaa5f4ec282ba787bc74ea6a80))
+* show the AI credits meter by the chat composer on web and mobile (JEF-511) ([#1248](https://github.com/mankatcheung/trakwyn/issues/1248)) ([186e104](https://github.com/mankatcheung/trakwyn/commit/186e104dea8815b8200e06479f0871c67ec48a12))
+
+
+### Bug Fixes
+
+* **web:** lay out document list rows on a grid so the menu and chips stay put on narrow screens (JEF-510) ([#1245](https://github.com/mankatcheung/trakwyn/issues/1245)) ([51a1db3](https://github.com/mankatcheung/trakwyn/commit/51a1db3045c81fe63cc946730a4d6a6252bac378))
+* **web:** stop the draft title field losing the first edit and saving after Escape (JEF-506) ([#1237](https://github.com/mankatcheung/trakwyn/issues/1237)) ([10d2291](https://github.com/mankatcheung/trakwyn/commit/10d229150783292d005d5de803fdc0bab058ed7a))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.11.2...web-v0.12.0) (2026-11-05)
 
 

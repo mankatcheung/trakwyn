@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.12.0...api-v0.13.0) (2026-11-07)
+
+
+### Features
+
+* add an AI helper with user prompts to the resume and cover letter editor (JEF-506) ([#1233](https://github.com/mankatcheung/trakwyn/issues/1233)) ([ae6ec42](https://github.com/mankatcheung/trakwyn/commit/ae6ec428607a9317d9a26e79ac1b702e649ca4ff))
+* add user prompts and AI credit meters to mock interview and company briefing (JEF-507) ([#1239](https://github.com/mankatcheung/trakwyn/issues/1239)) ([1d8b43e](https://github.com/mankatcheung/trakwyn/commit/1d8b43edc39ee1eaa5f4ec282ba787bc74ea6a80))
+* **api:** add a health circuit per hosted AI model so outages fail fast (JEF-504) ([#1229](https://github.com/mankatcheung/trakwyn/issues/1229)) ([d011d13](https://github.com/mankatcheung/trakwyn/commit/d011d13de4941ff2f4b282263fab1ccd685e7a5b))
+* **api:** record neurons, reasoning output and gateway metadata for hosted AI (JEF-497) ([#1225](https://github.com/mankatcheung/trakwyn/issues/1225)) ([c7c2aa1](https://github.com/mankatcheung/trakwyn/commit/c7c2aa1403f81c8e6baaf74224143378708f5ffe))
+* **api:** version every AI prompt and record the version on each LLM call (JEF-505) ([#1230](https://github.com/mankatcheung/trakwyn/issues/1230)) ([9021d95](https://github.com/mankatcheung/trakwyn/commit/9021d9552c9932800d1ad78ebb8ed461f1e03ae2))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.2...api-v0.12.0) (2026-11-05)
 
 
