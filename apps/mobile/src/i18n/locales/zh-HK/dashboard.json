@@ -40,5 +40,17 @@
     "connectMcp": "生成 API 權杖以連接 MCP",
     "addAiKey": "新增 AI 供應商嘅 API 金鑰",
     "addExperience": "新增你嘅工作經驗同技能"
+  },
+  "cvProfile": {
+    "title": "履歷資料",
+    "edit": "編輯履歷",
+    "empty": "填寫你嘅工作經驗同技能，履歷、求職信同 AI 助手先會寫得似你。",
+    "fillIn": "填寫你嘅履歷",
+    "latestRole": "最近嘅工作",
+    "titleAtCompany": "{{title}}，任職於 {{company}}",
+    "roles_other": "{{count}} 份工作",
+    "education_other": "{{count}} 項教育背景",
+    "skills_other": "{{count}} 項技能",
+    "completeness": "履歷已完成 {{percent}}%"
   }
 }

@@ -103,6 +103,15 @@ describe('OnboardingChecklistCard', () => {
     expect(push).toHaveBeenCalledWith('/(tabs)/settings/integrations');
   });
 
+  it('opens the CV profile in the Home stack from the experience item', async () => {
+    const push = jest.fn();
+    const { getByTestId } = await renderCard(baseData, false, push);
+
+    fireEvent.press(getByTestId('onboarding-checklist-item-experience'));
+
+    expect(push).toHaveBeenCalledWith('./profile');
+  });
+
   it('dismisses the checklist via the mutation', async () => {
     const { getByLabelText } = await renderCard();
 

@@ -12,6 +12,7 @@ import { useProfile } from '../../settings/hooks/useProfile';
 import { computeSummaryStats } from '../../analytics/lib/analyticsSummary';
 import { StatCard } from '../components/StatCard';
 import { OnboardingChecklistCard } from '../components/OnboardingChecklistCard';
+import { CvProfileSummaryCard } from '../components/CvProfileSummaryCard';
 import {
   AlertCircleIcon,
   BriefcaseIcon,
@@ -163,6 +164,8 @@ export function DashboardScreen() {
           </View>
         </View>
       )}
+
+      <CvProfileSummaryCard />
 
       <Pressable
         style={styles.offersLinkCard}

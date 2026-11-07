@@ -51,7 +51,7 @@ export function OnboardingChecklistCard({ data, hasApplications }: Props) {
       key: 'experience',
       label: t('onboardingChecklist.addExperience'),
       done: (data.workExperiences ?? []).length > 0,
-      to: '/(tabs)/settings/experience',
+      to: './profile',
     },
   ];
 
