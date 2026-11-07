@@ -11,6 +11,7 @@ import {
   makeDocumentRepository,
   makeExtractDocumentTextUseCase,
 } from '#src/__tests__/helpers/mocks/documents.js';
+import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 const RESUME = {
@@ -44,6 +45,11 @@ function makeUseCase(over?: {
     applicationRepository: makeApplicationRepository({
       findById: vi.fn().mockResolvedValue(makeApplication({ userId: over?.ownerId ?? 'user-1' })),
     }),
+    userRepository: makeUserRepository({
+      findById: vi
+        .fn()
+        .mockResolvedValue(makeUser({ name: 'Ada Lovelace', email: 'ada@example.com' })),
+    }),
   });
   return { useCase, generateCoverLetterUseCase, generateResumeUseCase, documentDraftRepository };
 }
@@ -51,6 +57,26 @@ function makeUseCase(over?: {
 const input = { userId: 'user-1', draftId: 'draft-1' };
 
 describe('GenerateIntoDocumentDraftUseCase', () => {
+  it('adds the name and email header when generating into a resume draft', async () => {
+    const ctx = makeUseCase({ draft: makeDocumentDraft({ type: 'resume' }) });
+
+    const result = await ctx.useCase.execute(input);
+
+    expect(result.plainText.startsWith('Ada Lovelace\nada@example.com\n')).toBe(true);
+    expect(JSON.parse(result.contentJson).content[0]).toMatchObject({
+      type: 'heading',
+      attrs: { level: 1 },
+    });
+  });
+
+  it('adds no header to a cover letter', async () => {
+    const ctx = makeUseCase();
+
+    const result = await ctx.useCase.execute(input);
+
+    expect(result.plainText).not.toContain('ada@example.com');
+  });
+
   it('generates a cover letter with instructions and saves nothing', async () => {
     const ctx = makeUseCase();
 

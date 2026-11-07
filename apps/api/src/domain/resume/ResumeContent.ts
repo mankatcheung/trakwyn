@@ -29,3 +29,17 @@ export interface ResumeContent {
   education: ResumeEducationEntry[];
   skills: ResumeSkillGroup[];
 }
+
+/**
+ * The header at the top of a generated resume: who it is from and how to
+ * reach them (JEF-526).
+ *
+ * Kept out of `ResumeContent` because the model never produces it. It is built
+ * in code from stored user data, so a model can neither invent nor drop it.
+ * `details` is room for more lines (phone, location, links) later.
+ */
+export interface ResumeContact {
+  name: string | null;
+  email: string | null;
+  details: string[];
+}

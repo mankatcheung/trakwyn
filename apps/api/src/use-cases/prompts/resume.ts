@@ -30,6 +30,7 @@ Absolute rules:
 - Never inflate seniority or exaggerate scope. If the background is thin, produce a short resume.
 - Prefer the candidate's own wording where it is already clear.
 - Write bullets as concrete accomplishments drawn from the descriptions provided. If a role has no description, write no bullets for it rather than imagining them.
+- The candidate's name and contact details are added above your resume separately. Do not write a name, email address, phone number or other contact line anywhere in your reply.
 ${USER_INSTRUCTIONS_RULE}
 
 Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
@@ -63,7 +64,7 @@ function userPrompt({
 
 export const resumePrompt: PromptDefinition<ResumePromptInput> = {
   id: AI_FEATURE.RESUME,
-  version: 2,
+  version: 3,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

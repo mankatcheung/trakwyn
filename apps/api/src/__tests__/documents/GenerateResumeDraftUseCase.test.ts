@@ -4,6 +4,7 @@ import {
   makeDocumentDraft,
   makeDocumentDraftRepository,
 } from '#src/__tests__/helpers/mocks/documents.js';
+import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 const RESUME = {
@@ -13,7 +14,19 @@ const RESUME = {
   skills: [{ category: 'Languages', items: ['TypeScript'] }],
 };
 
-function makeUseCase(over?: { generate?: ReturnType<typeof vi.fn> }) {
+function makeUseCase(over?: {
+  generate?: ReturnType<typeof vi.fn>;
+  user?: ReturnType<typeof makeUser> | null;
+}) {
+  const userRepository = makeUserRepository({
+    findById: vi
+      .fn()
+      .mockResolvedValue(
+        over?.user === undefined
+          ? makeUser({ name: 'Ada Lovelace', email: 'ada@example.com' })
+          : over.user,
+      ),
+  });
   const generateResumeUseCase = {
     execute: (over?.generate ?? vi.fn().mockResolvedValue(RESUME)) as unknown as (i: {
       userId: string;
@@ -35,6 +48,7 @@ function makeUseCase(over?: { generate?: ReturnType<typeof vi.fn> }) {
       generateResumeUseCase,
       documentDraftRepository,
       applicationRepository,
+      userRepository,
       generateId: () => 'draft-new',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }),
@@ -65,6 +79,28 @@ describe('GenerateResumeDraftUseCase', () => {
     expect(data.plainText).toContain('Built widgets');
   });
 
+  it('starts the draft with the user name and account email', async () => {
+    const ctx = makeUseCase();
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    const [data] = vi.mocked(ctx.documentDraftRepository.create).mock.calls[0]!;
+    expect(data.plainText!.startsWith('Ada Lovelace\nada@example.com\n')).toBe(true);
+    const doc = JSON.parse(data.contentJson!) as { content: Array<{ type: string }> };
+    expect(doc.content[0]).toMatchObject({ type: 'heading', attrs: { level: 1 } });
+  });
+
+  it('still adds the email line for a user with no name', async () => {
+    const ctx = makeUseCase({ user: makeUser({ name: null, email: 'ada@example.com' }) });
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    const [data] = vi.mocked(ctx.documentDraftRepository.create).mock.calls[0]!;
+    expect(data.plainText!.startsWith('ada@example.com\n')).toBe(true);
+    const doc = JSON.parse(data.contentJson!) as { content: Array<{ type: string }> };
+    expect(doc.content[0]!.type).toBe('paragraph');
+  });
+
   it('names the draft after the application', async () => {
     const ctx = makeUseCase();
 
@@ -92,6 +128,7 @@ describe('GenerateResumeDraftUseCase', () => {
       applicationRepository: makeApplicationRepository({
         findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'someone-else' })),
       }),
+      userRepository: makeUserRepository(),
       generateId: () => 'draft-new',
       now: () => new Date(),
     });

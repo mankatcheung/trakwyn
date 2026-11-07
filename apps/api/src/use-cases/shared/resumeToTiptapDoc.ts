@@ -1,4 +1,4 @@
-import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
+import type { ResumeContact, ResumeContent } from '#src/domain/resume/ResumeContent.js';
 
 type Node = {
   type: string;
@@ -40,12 +40,32 @@ const bullets = (items: string[]): Node[] =>
  * Empty paragraphs carry no `content` array — an empty ProseMirror text node
  * is invalid and makes the editor throw when it loads the draft.
  */
-export function resumeToTiptapDoc(resume: ResumeContent): {
+export function resumeToTiptapDoc(
+  resume: ResumeContent,
+  contact?: ResumeContact,
+): {
   contentJson: string;
   plainText: string;
 } {
   const nodes: Node[] = [];
   const lines: string[] = [];
+
+  // The contact header is built in code, never by the model (JEF-526). Either
+  // part is skipped when empty, so there is never an empty heading or text node.
+  const name = contact?.name?.trim();
+  if (name) {
+    nodes.push(heading(1, name));
+    lines.push(name);
+  }
+  const contactLine = [contact?.email, ...(contact?.details ?? [])]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' | ');
+  if (contactLine) {
+    nodes.push(paragraph(contactLine));
+    lines.push(contactLine);
+  }
+  if (lines.length > 0) lines.push('');
 
   if (resume.summary?.trim()) {
     nodes.push(heading(1, 'Summary'), paragraph(resume.summary));
