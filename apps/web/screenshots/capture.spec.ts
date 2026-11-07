@@ -71,7 +71,8 @@ async function open(page: Page, name: ScreenshotName): Promise<void> {
   switch (name) {
     case 'board':
       await page.goto('/applications/board');
-      await expect(page.getByText(DETAIL_COMPANY).first()).toBeVisible();
+      // The first page load on a cold dev server compiles routes: allow for it.
+      await expect(page.getByText(DETAIL_COMPANY).first()).toBeVisible({ timeout: 30_000 });
       break;
     case 'application-detail':
       await page.goto('/applications/board');

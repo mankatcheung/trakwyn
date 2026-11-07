@@ -1667,5 +1667,10 @@
   "faq.clipper.q": "什麼是 Clipper？",
   "faq.clipper.a": "Trakwyn Clipper 是一款免費的瀏覽器擴充功能。它會讀取你正在瀏覽的職缺並儲存到你的看板，無需再複製貼上。目前適用於 Chrome 與 Chromium 核心瀏覽器（Edge、Brave）。",
   "faq.mobile.q": "有手機應用程式嗎？",
-  "faq.mobile.a": "有。Trakwyn 手機應用程式使用同一個帳號登入，因此你的看板和文件在手機上完全一致。"
+  "faq.mobile.a": "有。Trakwyn 手機應用程式使用同一個帳號登入，因此你的看板和文件在手機上完全一致。",
+  "screenshots.board.alt": "Trakwyn 看板，申請依欄位從草稿排列到已獲 offer",
+  "screenshots.applicationDetail.alt": "申請詳情頁，包含備註與相關文件",
+  "screenshots.assistant.alt": "Trakwyn 助理正在回答關於使用者申請的問題",
+  "screenshots.resume.alt": "履歷編輯器，顯示針對職缺量身打造的履歷",
+  "screenshots.analytics.alt": "分析頁面，包含申請總數、每週圖表與階段漏斗"
 }
