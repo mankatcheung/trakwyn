@@ -138,6 +138,9 @@ export function PricingPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t('plan.badgeFree')}
             </h2>
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t('pricing.freeAudience')}
+            </p>
             <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
               {t('pricing.freePrice')}
             </p>
@@ -156,6 +159,9 @@ export function PricingPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t('plan.badgePro')}
             </h2>
+            <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+              {t('pricing.proAudience')}
+            </p>
             <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
               {t('pricing.proPrice')}{' '}
               <span className="text-base font-medium text-gray-500 dark:text-gray-400">

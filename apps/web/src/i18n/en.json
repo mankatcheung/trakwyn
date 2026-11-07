@@ -1644,5 +1644,15 @@
   "aiHelper.pointsExample3": "Prefer my most recent role",
   "aiHelper.briefingExample1": "Focus on remote culture and funding stability",
   "aiHelper.briefingExample2": "What should I ask about the engineering team?",
-  "aiHelper.briefingExample3": "Keep it short, bullet points only"
+  "aiHelper.briefingExample3": "Keep it short, bullet points only",
+  "lockedPreview.badge": "Available on Pro",
+  "lockedPreview.analytics.title": "See what is working in your search",
+  "lockedPreview.analytics.benefit": "Compensation trends, resume outcomes and which channels get replies, built from your own applications.",
+  "lockedPreview.offers.title": "Compare your offers side by side",
+  "lockedPreview.offers.benefit": "Line up salary, bonus and equity across every offer in one place.",
+  "applications.capNotice": "You have used {{used}} of {{limit}} applications on your plan.",
+  "landing.planFraming": "Free is for getting started. Pro is for an active search.",
+  "landing.seePricing": "See pricing",
+  "pricing.freeAudience": "For getting started",
+  "pricing.proAudience": "For an active search"
 }

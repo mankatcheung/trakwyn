@@ -108,6 +108,12 @@ describe('PricingPage', () => {
       ).toBeInTheDocument();
     });
 
+    it('frames Free as for getting started and Pro as for an active search (JEF-523)', () => {
+      render(<PricingPage />);
+      expect(screen.getByText('For getting started')).toBeInTheDocument();
+      expect(screen.getByText('For an active search')).toBeInTheDocument();
+    });
+
     it('badges exactly one option as best value, the 6-month pass', () => {
       render(<PricingPage />);
       expect(OPTIONS.filter((o) => o.featured)).toHaveLength(1);

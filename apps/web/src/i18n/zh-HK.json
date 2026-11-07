@@ -1622,5 +1622,15 @@
   "aiHelper.pointsExample3": "優先使用我最近一份工作",
   "aiHelper.briefingExample1": "重點關注遠端工作文化和融資穩定性",
   "aiHelper.briefingExample2": "我應該向工程團隊問些什麼？",
-  "aiHelper.briefingExample3": "簡短一些，只用要點列表"
+  "aiHelper.briefingExample3": "簡短一些，只用要點列表",
+  "lockedPreview.badge": "專業版可用",
+  "lockedPreview.analytics.title": "看清求職中哪些做法有效",
+  "lockedPreview.analytics.benefit": "薪酬趨勢、履歷成效，以及哪些渠道更容易得到回覆，全部來自你自己的申請紀錄。",
+  "lockedPreview.offers.title": "並排比較你的聘用通知",
+  "lockedPreview.offers.benefit": "在同一處比較所有聘用通知的薪酬、花紅和股權。",
+  "applications.capNotice": "你的方案已使用 {{used}} / {{limit}} 個申請。",
+  "landing.planFraming": "免費版適合剛開始求職，專業版適合積極求職。",
+  "landing.seePricing": "查看價格",
+  "pricing.freeAudience": "適合剛開始求職",
+  "pricing.proAudience": "適合積極求職"
 }

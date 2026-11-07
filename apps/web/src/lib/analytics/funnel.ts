@@ -20,6 +20,9 @@ export type CtaLocation =
   | 'pricing_free'
   | 'pricing_pro';
 
+/** A Pro feature a Free user was shown a locked preview of (JEF-523). */
+export type LockedPreviewFeature = 'analytics' | 'offers';
+
 export type RegisterMethod = 'password' | 'google' | 'github';
 
 /** Reports a click on a marketing call to action. */
@@ -61,4 +64,9 @@ export function consumeOAuthRegistration(): void {
   } catch {
     // Best-effort, as with every analytics call.
   }
+}
+
+/** Reports a click on the upgrade link of a locked feature preview. */
+export function trackLockedPreviewClick(feature: LockedPreviewFeature): void {
+  captureEvent(ANALYTICS_EVENTS.UPGRADE_CLICKED, { source: 'locked_preview', feature });
 }
