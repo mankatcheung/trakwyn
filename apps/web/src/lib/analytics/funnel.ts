@@ -13,6 +13,7 @@ export type CtaName = 'start_free' | 'get_started' | 'get_started_free' | 'get_p
 export type CtaLocation =
   | 'hero'
   | 'closing'
+  | 'ai_demo'
   | 'header'
   | 'header_mobile'
   | 'feature_hero'
