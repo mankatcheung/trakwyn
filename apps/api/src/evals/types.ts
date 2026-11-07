@@ -1,7 +1,8 @@
+import type { ChatScript } from '#src/evals/chatScript.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 
 /** The AI features the eval covers. Add one here when a new feature gets cases. */
-export type EvalFeature = 'jobDescription' | 'resumeMatch' | 'resume' | 'coverLetter';
+export type EvalFeature = 'jobDescription' | 'resumeMatch' | 'resume' | 'coverLetter' | 'chat';
 
 /** Features whose output is graded by a second model, so a case needs a judge. */
 export const JUDGED_FEATURES: readonly EvalFeature[] = ['resume', 'coverLetter'];
@@ -26,6 +27,17 @@ export interface EvalCase {
   run(provider: ILLMProvider, judge?: ILLMProvider): Promise<string[]>;
 }
 
+/**
+ * A chat case (JEF-471). It is scripted rather than answered with one reply,
+ * so besides the reply it carries what a good model does round by round
+ * (`idealTrace`) and wrong behaviour its checks must catch (`badTraces`).
+ */
+export interface ChatEvalCase extends EvalCase {
+  feature: 'chat';
+  idealTrace: ChatScript;
+  badTraces: ChatScript[];
+}
+
 export interface CaseResult {
   caseId: string;
   feature: EvalFeature;
@@ -41,6 +53,9 @@ export interface CaseResult {
   judgePromptTokens: number;
   judgeCompletionTokens: number;
   latencyMs: number;
+  /** Tool calls the model made, and how many times it was asked (loop iterations). Zero outside chat. */
+  toolCalls: number;
+  iterations: number;
 }
 
 /** One provider/model to run every case against. */
