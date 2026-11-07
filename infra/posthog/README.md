@@ -162,7 +162,7 @@ Everything filters on `$lib = trakwyn-extension`, because web, the web server an
 
 It notifies the same users as the mobile alert (`release_health_alert_user_ids`). The key also needs `dashboard:write`, `insight:write` and `alert:write`, as for mobile release health.
 
-**What to do when it fires.** Open the board's line, then Activity filtered to `parser_result` and that `board`: `missing_fields` says whether `company`, `role` or `description` went missing, and `parser` and `site_parser_failed` say whether the board's own parser ran or fell back to the generic one. Reproduce the page in `apps/extension/src/lib/parsers/__fixtures__`, fix, and ship it by the hotfix path in `apps/extension/CLAUDE.md`.
+**What to do when it fires.** Open the board's line, then Activity filtered to `parser_result` and that `board`: `missing_fields` says whether `company`, `role` or `description` went missing, and `parser` and `site_parser_failed` say whether the board's own parser ran or fell back to the generic one. Reproduce the page in `apps/extension/src/lib/parsers/__fixtures__`, fix, and ship it by the hotfix path in `apps/extension/docs/releasing.md`.
 
 **Checking it.** Apply, open the dashboard, and send a test event the way "Checking it end to end" does with `$lib` set to `trakwyn-extension`, `board` set to `linkedin` and `release` set to `0.0.0-test`; it appears on the `linkedin` line and under its own release. A day's count above the limit makes the alert's next daily check fire.
 

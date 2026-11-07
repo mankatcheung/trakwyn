@@ -17,7 +17,7 @@ name: Clipper on the Chrome Web Store
 # readable by this job alone, from the default branch only. Keep the
 # environment.
 #
-# One-time setup (apps/extension/CLAUDE.md, "Chrome Web Store"): the
+# One-time setup (apps/extension/docs/releasing.md, "Web Store credentials for the upload job"): the
 # CHROME_EXTENSION_ID, CHROME_PUBLISHER_ID, CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL
 # and CHROME_SERVICE_ACCOUNT_PRIVATE_KEY secrets, as secrets of the `chrome`
 # environment.

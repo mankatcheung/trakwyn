@@ -1,6 +1,6 @@
 # infra/axiom: alerting on the API's telemetry
 
-Axiom monitors and their email notifier, as Terraform (JEF-355). The API sends traces, logs and metrics to Axiom, each to its own dataset (see the Observability section of `apps/api/CLAUDE.md`). This root is what makes somebody find out when those signals go bad. It matters most for the fail-open paths: by design, a Redis outage leaves rate limiting and session revocation quietly off while every request still succeeds.
+Axiom monitors and their email notifier, as Terraform (JEF-355). The API sends traces, logs and metrics to Axiom, each to its own dataset (see `apps/api/src/infrastructure/observability/CLAUDE.md`). This root is what makes somebody find out when those signals go bad. It matters most for the fail-open paths: by design, a Redis outage leaves rate limiting and session revocation quietly off while every request still succeeds.
 
 ## Datasets
 

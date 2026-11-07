@@ -3,7 +3,7 @@ import { scrubString } from '#/lib/analytics/scrub';
 /**
  * PostHog's `$exception_list`, built by hand (JEF-374). `posthog-node` would
  * do this, but adding any dependency to `apps/web` re-resolves its
- * `latest`-pinned TanStack packages (apps/web/CLAUDE.md), so the Node stack
+ * `latest`-pinned TanStack packages (apps/web/src/server/CLAUDE.md), so the Node stack
  * parsing is ported here from `@posthog/core`'s `nodeStackLineParser`, cut
  * down to what a V8 stack from this function produces.
  */

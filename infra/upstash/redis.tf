@@ -21,7 +21,7 @@ resource "upstash_redis_database" "this" {
   # and a dropped blocklist key silently un-revokes a session for the rest
   # of its access token's lifetime. Without it, a full database fails
   # writes, which each of those paths already treats as fail-open and
-  # counts (apps/api/CLAUDE.md, Metrics), so infra/axiom's monitors see it.
+  # counts (apps/api/src/infrastructure/observability/CLAUDE.md, Metrics), so infra/axiom's monitors see it.
   eviction = false
 
   # Never moved to a bigger plan automatically: on the free tier, hitting a
