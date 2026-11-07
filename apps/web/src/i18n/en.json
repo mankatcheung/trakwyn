@@ -1700,5 +1700,10 @@
   "faq.clipper.q": "What is the Clipper?",
   "faq.clipper.a": "The Trakwyn Clipper is a free browser extension. It reads the job posting you are viewing and saves it to your board, so you never copy and paste. It works in Chrome and Chromium browsers (Edge, Brave) for now.",
   "faq.mobile.q": "Is there a mobile app?",
-  "faq.mobile.a": "Yes. The Trakwyn mobile app signs in with the same account, so your board and documents are the same on your phone."
+  "faq.mobile.a": "Yes. The Trakwyn mobile app signs in with the same account, so your board and documents are the same on your phone.",
+  "screenshots.board.alt": "The Trakwyn board with applications in columns from Draft to Offered",
+  "screenshots.applicationDetail.alt": "An application's page with its notes and linked documents",
+  "screenshots.assistant.alt": "The Trakwyn assistant answering a question about the user's applications",
+  "screenshots.resume.alt": "The resume editor with a tailored resume for a job posting",
+  "screenshots.analytics.alt": "The analytics page with application totals, a weekly chart and a stage funnel"
 }

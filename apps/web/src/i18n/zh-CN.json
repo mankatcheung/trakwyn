@@ -1678,5 +1678,10 @@
   "faq.clipper.q": "什么是 Clipper？",
   "faq.clipper.a": "Trakwyn Clipper 是一款免费的浏览器扩展。它会读取你正在浏览的职位信息并保存到你的看板，无需再复制粘贴。目前适用于 Chrome 和 Chromium 内核浏览器（Edge、Brave）。",
   "faq.mobile.q": "有手机应用吗？",
-  "faq.mobile.a": "有。Trakwyn 手机应用使用同一个账户登录，因此你的看板和文档在手机上完全一致。"
+  "faq.mobile.a": "有。Trakwyn 手机应用使用同一个账户登录，因此你的看板和文档在手机上完全一致。",
+  "screenshots.board.alt": "Trakwyn 看板，申请按列从草稿排列到已获 offer",
+  "screenshots.applicationDetail.alt": "申请详情页，包含备注和关联文档",
+  "screenshots.assistant.alt": "Trakwyn 助手正在回答关于用户申请的问题",
+  "screenshots.resume.alt": "简历编辑器，显示针对职位定制的简历",
+  "screenshots.analytics.alt": "分析页面，包含申请总数、每周图表和阶段漏斗"
 }
