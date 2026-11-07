@@ -198,6 +198,22 @@ describe('LandingPage', () => {
     expect(clipper.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('answers four questions before the closing steps, with FAQPage JSON-LD (JEF-519)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    const { container } = render(<LandingPage />);
+
+    const ids = ['free', 'privacy', 'clipper', 'mobile'];
+    for (const id of ids) expect(screen.getByTestId(`faq-${id}`)).not.toHaveAttribute('open');
+    const faq = screen.getByRole('region', { name: 'faq.title' });
+    const steps = screen.getByRole('heading', { name: 'landing.getStartedMinutes' });
+    expect(faq.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const faqScript = [...container.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent ?? '{}') as { '@type': string; mainEntity?: unknown[] })
+      .find((d) => d['@type'] === 'FAQPage');
+    expect(faqScript?.mainEntity).toHaveLength(ids.length);
+  });
+
   describe('logged-in landing behaviour (JEF-236)', () => {
     it('never navigates away on mount, even when a session already exists', () => {
       // JEF-213 forced logged-in visitors from `/` over to /dashboard;

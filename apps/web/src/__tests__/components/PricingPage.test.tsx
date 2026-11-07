@@ -182,7 +182,8 @@ describe('PricingPage', () => {
     render(<PricingPage />);
 
     expect(screen.getByText(/include VAT|includes VAT/)).toBeInTheDocument();
-    expect(screen.getByText(/full refund/)).toBeInTheDocument();
+    // The policy text is also the answer to the FAQ's refund question.
+    expect(screen.getAllByText(/full refund/).length).toBeGreaterThan(0);
   });
 
   it('puts the short guarantee directly under the Get Pro button and keeps the full policy (JEF-522)', () => {
@@ -192,7 +193,59 @@ describe('PricingPage', () => {
     const line = screen.getByTestId('guarantee-short');
     expect(line).toHaveTextContent(en['pricing.guaranteeShort']);
     expect(cta.nextElementSibling).toBe(line);
-    expect(screen.getByText(en['plan.refundPolicy'])).toBeInTheDocument();
+    expect(screen.getAllByText(en['plan.refundPolicy']).length).toBeGreaterThan(0);
+  });
+
+  describe('FAQ (JEF-519)', () => {
+    it('answers the six questions, collapsed, with the refund and AI text from the page', () => {
+      render(<PricingPage />);
+
+      for (const id of ['plan', 'limit', 'cancel', 'refund', 'ai-key', 'passes']) {
+        expect(screen.getByTestId(`faq-${id}`)).not.toHaveAttribute('open');
+      }
+      expect(screen.getByTestId('faq-refund')).toHaveTextContent(en['plan.refundPolicy']);
+      expect(screen.getByTestId('faq-ai-key')).toHaveTextContent(en['pricing.byok']);
+    });
+
+    it('emits FAQPage JSON-LD for exactly those questions', () => {
+      const { container } = render(<PricingPage />);
+      const script = container.querySelector('script[type="application/ld+json"]');
+      const data = JSON.parse(script?.textContent ?? '{}') as {
+        '@type': string;
+        mainEntity: { name: string }[];
+      };
+
+      expect(data['@type']).toBe('FAQPage');
+      expect(data.mainEntity).toHaveLength(6);
+      expect(data.mainEntity[1].name).toBe('What happens when I reach the 50-application limit?');
+    });
+
+    it('quotes the limits from PLAN_LIMITS: a changed limit fails here until the FAQ follows', () => {
+      const applications = /APPLICATIONS_PER_USER: (\d+),/.exec(API_CONSTANTS)?.[1];
+      const freeMb = /DOCUMENT_STORAGE_LIMIT_BYTES: (\d+) \* 1024 \* 1024,/.exec(
+        API_CONSTANTS,
+      )?.[1];
+      const proGb = /documentBytes: (\d+) \* 1024 \* 1024 \* 1024,/.exec(API_CONSTANTS)?.[1];
+      const credits = /aiCreditsPerMonth: ([1-9]\d*),/.exec(API_CONSTANTS)?.[1];
+
+      render(<PricingPage />);
+      const plan = screen.getByTestId('faq-plan');
+      expect(plan).toHaveTextContent(`up to ${applications} applications`);
+      expect(plan).toHaveTextContent(`${freeMb} MB of documents`);
+      expect(plan).toHaveTextContent(`raises storage to ${proGb} GB`);
+      expect(plan).toHaveTextContent(`${credits} AI credits/month`);
+      expect(screen.getByTestId('faq-limit')).toHaveTextContent(
+        `${applications}-application limit`,
+      );
+    });
+
+    it('quotes the pass and monthly prices from the pricing keys', () => {
+      render(<PricingPage />);
+      const passes = screen.getByTestId('faq-passes');
+      expect(passes).toHaveTextContent(en['pricing.pass3Price']);
+      expect(passes).toHaveTextContent(en['pricing.pass6Price']);
+      expect(passes).toHaveTextContent(`${en['pricing.monthlyPrice']} a month`);
+    });
   });
 
   it('never mentions the founder price', () => {
@@ -247,10 +300,10 @@ describe('PricingPage', () => {
 
     it('limits neither plan on AI actions, which run on the user’s own key', () => {
       expect(API_CONSTANTS).not.toMatch(/aiActionsPerMonth/);
-      const { container } = render(<PricingPage />);
+      render(<PricingPage />);
       const row = within(screen.getByRole('row', { name: /AI actions/ }));
       expect(row.getAllByText('Unlimited')).toHaveLength(2);
-      expect(container.textContent).not.toMatch(/AI actions.*a month/);
+      expect(screen.getByRole('table').textContent).not.toMatch(/AI actions.*a month/);
     });
 
     it('shows hosted AI as Pro-only: no credits on Free, 300 on Pro (JEF-451)', () => {

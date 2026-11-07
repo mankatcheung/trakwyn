@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { Check, Minus, ShieldCheck } from 'lucide-react';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
+import { FaqSection, type FaqItem } from '#/components/marketing/FaqSection';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/lib/useIsLoggedIn';
 import { ANALYTICS_EVENTS, captureEvent, trackCta } from '#/lib/analytics';
@@ -89,6 +90,16 @@ export function derivePassPricing(price: number, months: number, monthlyPrice: n
   return { perMonth, savePercent: Math.round((1 - perMonth / monthlyPrice) * 100) };
 }
 
+/** The questions under the table. The refund and AI answers are the page's own policy text. */
+const PRICING_FAQ: readonly FaqItem[] = [
+  { id: 'plan', questionKey: 'faq.plan.q', answerKey: 'faq.plan.a' },
+  { id: 'limit', questionKey: 'faq.limit.q', answerKey: 'faq.limit.a' },
+  { id: 'cancel', questionKey: 'faq.cancel.q', answerKey: 'faq.cancel.a' },
+  { id: 'refund', questionKey: 'faq.refund.q', answerKey: 'plan.refundPolicy' },
+  { id: 'ai-key', questionKey: 'faq.aiKey.q', answerKey: 'pricing.byok' },
+  { id: 'passes', questionKey: 'faq.passes.q', answerKey: 'faq.passes.a' },
+];
+
 function CellValue({ cell }: { cell: Cell }) {
   const { t } = useLocale();
   if ('text' in cell) return <span>{t(cell.text)}</span>;
@@ -120,6 +131,18 @@ export function PricingPage() {
   }, []);
 
   const proTo: '/settings/plan' | '/register' = isLoggedIn ? '/settings/plan' : '/register';
+
+  // Every number the answers quote comes from a `pricing.*` key, never a copy (JEF-519).
+  const faqValues = {
+    applications: t('pricing.freeApplications'),
+    storage: t('pricing.freeStorage'),
+    proStorage: t('pricing.proStorage'),
+    credits: t('pricing.proAiCredits'),
+    pass3: t('pricing.pass3Price'),
+    pass6: t('pricing.pass6Price'),
+    monthly: t(MONTHLY_PRICE_KEY),
+  };
+  const faqItems = PRICING_FAQ.map((item) => ({ ...item, values: faqValues }));
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -302,6 +325,8 @@ export function PricingPage() {
             </table>
           </div>
         </section>
+
+        <FaqSection items={faqItems} structuredData />
       </main>
 
       <MarketingFooter />
