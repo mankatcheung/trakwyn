@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "screenshots": "pnpm --filter @trakwyn/api db:seed && playwright test --config playwright.screenshots.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -82,6 +83,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "jest-axe": "^11.0.0",
     "jsdom": "^28.1.0",
+    "sharp": "^0.35.5",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.3.3",
