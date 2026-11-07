@@ -32,6 +32,8 @@ import {
   CHAT_INPUT_MAX_LINES,
   CHAT_MESSAGE_MAX_CHARS,
 } from '../../../constants';
+import { AiCreditsInline } from '../../ai/components/AiCreditsInline';
+import { useRefreshAiCredits } from '../../ai/hooks/useRefreshAiCredits';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -54,6 +56,7 @@ export function ChatScreen() {
   const queryClient = useQueryClient();
   const { data: history, isLoading } = useChatHistory(conversationId);
   const appendOptimistic = useAppendOptimisticMessage();
+  const refreshAiCredits = useRefreshAiCredits();
 
   const [input, setInput] = useState('');
   const [streamingText, setStreamingText] = useState('');
@@ -102,6 +105,8 @@ export function ChatScreen() {
     } finally {
       setIsSending(false);
       setStreamingText('');
+      // A turn on Trakwyn AI spends a credit, and a failed one may have too (JEF-511).
+      void refreshAiCredits();
     }
   };
 
@@ -210,26 +215,29 @@ export function ChatScreen() {
         </Text>
       ) : null}
 
-      <View style={styles.composer}>
-        <TextInput
-          placeholderTextColor={colors.textFaint}
-          style={styles.input}
-          placeholder={t('inputPlaceholder')}
-          value={input}
-          onChangeText={setInput}
-          multiline
-          maxLength={CHAT_MESSAGE_MAX_CHARS}
-          testID="chat-input"
-        />
-        <Pressable
-          style={[styles.sendButton, (isSending || !input.trim()) && styles.sendButtonDisabled]}
-          onPress={handleSend}
-          disabled={isSending || !input.trim()}
-          testID="chat-send-button"
-          accessibilityLabel={t('send')}
-        >
-          <SendIcon color={colors.onPrimary} size={18} />
-        </Pressable>
+      <View style={styles.composerWrap}>
+        <AiCreditsInline testID="chat-credits" style={styles.credits} />
+        <View style={styles.composer}>
+          <TextInput
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+            placeholder={t('inputPlaceholder')}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            maxLength={CHAT_MESSAGE_MAX_CHARS}
+            testID="chat-input"
+          />
+          <Pressable
+            style={[styles.sendButton, (isSending || !input.trim()) && styles.sendButtonDisabled]}
+            onPress={handleSend}
+            disabled={isSending || !input.trim()}
+            testID="chat-send-button"
+            accessibilityLabel={t('send')}
+          >
+            <SendIcon color={colors.onPrimary} size={18} />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -261,13 +269,16 @@ function createStyles(colors: ThemeColors) {
       marginHorizontal: 16,
       fontSize: 13,
     },
+    composerWrap: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    credits: { paddingHorizontal: 16, paddingTop: 8 },
     composer: {
       flexDirection: 'row',
       gap: 10,
       padding: 12,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
       alignItems: 'flex-end',
     },
     input: {
