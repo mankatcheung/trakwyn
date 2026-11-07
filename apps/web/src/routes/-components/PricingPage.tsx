@@ -179,6 +179,7 @@ export function PricingPage() {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {t('pricing.optionsTitle')}
           </h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{t('pricing.optionsSubtitle')}</p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-3">
             {OPTIONS.map(({ nameKey, priceKey, noteKey, months, featured }) => {
               const monthly = priceAmount(t(MONTHLY_PRICE_KEY));
@@ -218,6 +219,14 @@ export function PricingPage() {
                       {' · '}
                       {t('pricing.savePercent', { percent: savings.savePercent })}
                     </p>
+                  )}
+                  {months > 1 && (
+                    <span
+                      data-testid="no-auto-renew-chip"
+                      className="mt-2 inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                    >
+                      {t('pricing.noAutoRenew')}
+                    </span>
                   )}
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t(noteKey)}</p>
                 </li>

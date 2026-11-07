@@ -117,6 +117,29 @@ describe('PricingPage', () => {
       expect(badges[0].closest('li')).toHaveTextContent('6-month pass');
     });
 
+    it('leads the options with the no-renewal benefit', () => {
+      render(<PricingPage />);
+      expect(
+        screen.getByRole('heading', { name: 'Pro for the length of your search' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Pick a pass that ends on its own: no renewal, nothing to cancel when you're hired.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('marks each pass, and only the passes, as not auto-renewing', () => {
+      render(<PricingPage />);
+      const chips = screen.getAllByTestId('no-auto-renew-chip');
+      expect(chips).toHaveLength(2);
+      expect(chips.map((c) => c.closest('li'))).toEqual([
+        screen.getByText('3-month pass').closest('li'),
+        screen.getByText('6-month pass').closest('li'),
+      ]);
+      for (const chip of chips) expect(chip).toHaveTextContent('No auto-renew');
+    });
+
     it('shows each pass its monthly equivalent and saving, derived from the price keys', () => {
       render(<PricingPage />);
       const monthly = price('pricing.monthlyPrice');
