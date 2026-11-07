@@ -29,6 +29,11 @@ const FAKE_POLISHED_DRAFT =
 
 /** What the CV import (JEF-461) reads out of any CV in dev and e2e: two roles, one degree, three skills. */
 const FAKE_CV_PROFILE = {
+  contact: {
+    phone: '+44 20 7946 0958',
+    location: 'London, UK',
+    links: ['https://www.linkedin.com/in/demo-user'],
+  },
   workExperiences: [
     {
       company: 'Acme Corp',

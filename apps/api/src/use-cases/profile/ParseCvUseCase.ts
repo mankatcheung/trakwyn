@@ -36,6 +36,7 @@ import type {
   ParsedCvSkill,
   ParsedCvWorkExperience,
 } from '#src/use-cases/profile/IParseCvUseCase.js';
+import { readLocation, readPhone, readProfileLinks } from '#src/use-cases/shared/profileContact.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { parseCvPrompt, parsedCvResponseSchema } from '#src/use-cases/prompts/parseCv.js';
 import type { ParsedCvReply } from '#src/use-cases/prompts/parseCv.js';
@@ -155,7 +156,13 @@ export class ParseCvUseCase implements IParseCvUseCase {
       .slice(0, CV_IMPORT.MAX_SKILLS)
       .map((s) => ({ ...s, alreadyInProfile: knownSkills.has(matchKey(s.name)) }));
 
-    return { workExperiences, educations, skills };
+    const contact = {
+      phone: readPhone(reply.contact?.phone),
+      location: readLocation(reply.contact?.location),
+      links: readProfileLinks(reply.contact?.links),
+    };
+
+    return { contact, workExperiences, educations, skills };
   }
 
   private workExperience(

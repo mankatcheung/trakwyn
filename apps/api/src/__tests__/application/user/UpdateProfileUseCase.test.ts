@@ -206,4 +206,74 @@ describe('UpdateProfileUseCase', () => {
     expect((err as { code: string }).code).toBe('VALIDATION');
     expect(userRepository.update).not.toHaveBeenCalled();
   });
+
+  describe('contact details (JEF-527)', () => {
+    const setup = () => {
+      const userRepository = makeUserRepository({
+        findById: vi.fn().mockResolvedValue(makeUser({ id: 'user-1' })),
+      });
+      return { userRepository, useCase: new UpdateProfileUseCase({ userRepository }) };
+    };
+
+    it('saves phone, location and links, trimmed', async () => {
+      const { userRepository, useCase } = setup();
+
+      await useCase.execute({
+        userId: 'user-1',
+        phone: ' +44 20 7946 0958 ',
+        location: ' London ',
+        profileLinks: [' https://linkedin.com/in/ada '],
+      });
+
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({
+          phone: '+44 20 7946 0958',
+          location: 'London',
+          profileLinks: ['https://linkedin.com/in/ada'],
+        }),
+      );
+    });
+
+    it('clears them with blank values and an empty list', async () => {
+      const { userRepository, useCase } = setup();
+
+      await useCase.execute({ userId: 'user-1', phone: '', location: null, profileLinks: [] });
+
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ phone: null, location: null, profileLinks: null }),
+      );
+    });
+
+    it('leaves them alone when not sent', async () => {
+      const { userRepository, useCase } = setup();
+
+      await useCase.execute({ userId: 'user-1', name: 'Ada' });
+
+      const data = vi.mocked(userRepository.update).mock.calls[0]![1];
+      expect(data.phone).toBeUndefined();
+      expect(data.location).toBeUndefined();
+      expect(data.profileLinks).toBeUndefined();
+    });
+
+    it.each([
+      [{ phone: 'call me' }, /digits/],
+      [{ phone: '1'.repeat(31) }, /at most 30/],
+      [{ location: 'x'.repeat(101) }, /at most 100/],
+      [{ profileLinks: ['not a url'] }, /not a valid/],
+      [
+        { profileLinks: ['https://a.dev', 'https://b.dev', 'https://c.dev', 'https://d.dev'] },
+        /at most 3/,
+      ],
+    ])('rejects %j with a clear message and writes nothing', async (patch, message) => {
+      const { userRepository, useCase } = setup();
+
+      const err = await useCase.execute({ userId: 'user-1', ...patch }).catch((e) => e);
+
+      expect((err as { code: string }).code).toBe('VALIDATION');
+      expect((err as Error).message).toMatch(message);
+      expect(userRepository.update).not.toHaveBeenCalled();
+    });
+  });
 });

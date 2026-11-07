@@ -23,6 +23,11 @@ import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 const pdfBuffer = Buffer.from('%PDF-1.7\nbody');
 
 const aiReply = {
+  contact: {
+    phone: '+44 20 7946 0958',
+    location: ' London, UK ',
+    links: ['https://www.linkedin.com/in/ada', 'not a url', 'https://www.linkedin.com/in/ada'],
+  },
   workExperiences: [
     {
       company: 'Acme Corp',
@@ -95,6 +100,26 @@ describe('ParseCvUseCase', () => {
       { name: 'TypeScript', category: 'Language', proficiency: 'expert', alreadyInProfile: false },
     ]);
     expect(result.truncated).toBe(false);
+  });
+
+  it('reads the CV header into contact details, dropping what is not usable', async () => {
+    const result = await run(ctx.useCase);
+
+    expect(result.contact).toEqual({
+      phone: '+44 20 7946 0958',
+      location: 'London, UK',
+      links: ['https://www.linkedin.com/in/ada'],
+    });
+  });
+
+  it('returns empty contact details when the CV has none or the model gives junk', async () => {
+    ctx.provider.complete = vi.fn().mockResolvedValue({
+      content: JSON.stringify({ contact: { phone: 'ask me', links: ['ftp://x.example'] } }),
+    });
+
+    const result = await run(ctx.useCase);
+
+    expect(result.contact).toEqual({ phone: null, location: null, links: [] });
   });
 
   it('reads the file with the extractor for its declared type', async () => {

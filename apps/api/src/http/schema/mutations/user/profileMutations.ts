@@ -23,6 +23,9 @@ builder.mutationField('updateProfile', (t) =>
       customAiPrompt: t.arg.string({ required: false }),
       useCrossApplicationContext: t.arg.boolean({ required: false }),
       llmFallbackWhenLimited: t.arg.boolean({ required: false }),
+      phone: t.arg.string({ required: false }),
+      location: t.arg.string({ required: false }),
+      profileLinks: t.arg.stringList({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       if (!ctx.user)
@@ -37,6 +40,7 @@ builder.mutationField('updateProfile', (t) =>
           args.customAiPrompt,
           args.useCrossApplicationContext ?? undefined,
           args.llmFallbackWhenLimited ?? undefined,
+          { phone: args.phone, location: args.location, profileLinks: args.profileLinks },
         );
         return true;
       } catch (err) {

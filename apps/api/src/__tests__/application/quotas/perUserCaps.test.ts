@@ -18,6 +18,7 @@ import {
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 import { makeConversation, makeConversationRepository } from '#src/__tests__/helpers/mocks/chat.js';
+import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeLlmApiKeyRepository } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeShareLink, makeShareLinkRepository } from '#src/__tests__/helpers/mocks/shareLinks.js';
 import { makeApiToken, makeApiTokenRepository } from '#src/__tests__/helpers/mocks/apiTokens.js';
@@ -355,6 +356,7 @@ describe('per-user caps (JEF-339)', () => {
           findAllByUserId: vi.fn().mockResolvedValue(rows(() => makeSkill(), have.skills)),
           create: vi.fn().mockImplementation(async (d) => d),
         }),
+        userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
         generateId: () => 'id',
       };
       return { deps, useCase: new ImportCvProfileUseCase(deps) };

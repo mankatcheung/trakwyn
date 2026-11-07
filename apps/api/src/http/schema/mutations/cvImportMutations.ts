@@ -23,6 +23,7 @@ builder.mutationField('importCvProfile', (t) =>
       try {
         return await importCvProfileUseCase.execute({
           userId: ctx.user.sub,
+          contact: args.input.contact,
           workExperiences: args.input.workExperiences.map((entry) => ({
             company: entry.company,
             title: entry.title,

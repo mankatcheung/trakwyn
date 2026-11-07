@@ -79,12 +79,11 @@ const AccessibilityRoute = AccessibilityRouteImport.update({
   path: '/accessibility',
   getParentRoute: () => rootRouteImport,
 } as any);
-const AccountDeletionScheduledRoute =
-  AccountDeletionScheduledRouteImport.update({
-    id: '/account-deletion-scheduled',
-    path: '/account-deletion-scheduled',
-    getParentRoute: () => rootRouteImport,
-  } as any);
+const AccountDeletionScheduledRoute = AccountDeletionScheduledRouteImport.update({
+  id: '/account-deletion-scheduled',
+  path: '/account-deletion-scheduled',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AiMcpSetupRoute = AiMcpSetupRouteImport.update({
   id: '/ai-mcp-setup',
   path: '/ai-mcp-setup',
@@ -180,23 +179,21 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any);
-const AuthenticatedNotificationsRoute =
-  AuthenticatedNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
+const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
 const AuthenticatedOffersRoute = AuthenticatedOffersRouteImport.update({
   id: '/offers',
   path: '/offers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any);
-const AuthenticatedSettingsRouteRoute =
-  AuthenticatedSettingsRouteRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
+const AuthenticatedSettingsRouteRoute = AuthenticatedSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -217,12 +214,11 @@ const FeaturesAnalyticsRoute = FeaturesAnalyticsRouteImport.update({
   path: '/features/analytics',
   getParentRoute: () => rootRouteImport,
 } as any);
-const FeaturesResumeCoverLetterRoute =
-  FeaturesResumeCoverLetterRouteImport.update({
-    id: '/features/resume-cover-letter',
-    path: '/features/resume-cover-letter',
-    getParentRoute: () => rootRouteImport,
-  } as any);
+const FeaturesResumeCoverLetterRoute = FeaturesResumeCoverLetterRouteImport.update({
+  id: '/features/resume-cover-letter',
+  path: '/features/resume-cover-letter',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const FeaturesTrackingRoute = FeaturesTrackingRouteImport.update({
   id: '/features/tracking',
   path: '/features/tracking',
@@ -233,107 +229,92 @@ const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
   path: '/oauth/authorize',
   getParentRoute: () => rootRouteImport,
 } as any);
-const AuthenticatedApplicationsIndexRoute =
-  AuthenticatedApplicationsIndexRouteImport.update({
-    id: '/applications/',
-    path: '/applications/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedApplicationsBoardRoute =
-  AuthenticatedApplicationsBoardRouteImport.update({
-    id: '/applications/board',
-    path: '/applications/board',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedApplicationsNewRoute =
-  AuthenticatedApplicationsNewRouteImport.update({
-    id: '/applications/new',
-    path: '/applications/new',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedApplicationsTrashRoute =
-  AuthenticatedApplicationsTrashRouteImport.update({
-    id: '/applications/trash',
-    path: '/applications/trash',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedAssistantIndexRoute =
-  AuthenticatedAssistantIndexRouteImport.update({
-    id: '/assistant/',
-    path: '/assistant/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedAssistantHistoryRoute =
-  AuthenticatedAssistantHistoryRouteImport.update({
-    id: '/assistant/history',
-    path: '/assistant/history',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedProfileIndexRoute =
-  AuthenticatedProfileIndexRouteImport.update({
-    id: '/profile/',
-    path: '/profile/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any);
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
+const AuthenticatedApplicationsIndexRoute = AuthenticatedApplicationsIndexRouteImport.update({
+  id: '/applications/',
+  path: '/applications/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedApplicationsBoardRoute = AuthenticatedApplicationsBoardRouteImport.update({
+  id: '/applications/board',
+  path: '/applications/board',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedApplicationsNewRoute = AuthenticatedApplicationsNewRouteImport.update({
+  id: '/applications/new',
+  path: '/applications/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedApplicationsTrashRoute = AuthenticatedApplicationsTrashRouteImport.update({
+  id: '/applications/trash',
+  path: '/applications/trash',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedAssistantIndexRoute = AuthenticatedAssistantIndexRouteImport.update({
+  id: '/assistant/',
+  path: '/assistant/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedAssistantHistoryRoute = AuthenticatedAssistantHistoryRouteImport.update({
+  id: '/assistant/history',
+  path: '/assistant/history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedProfileIndexRoute = AuthenticatedProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any);
+const AuthenticatedSettingsIndexRoute = AuthenticatedSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
 const AuthenticatedSettingsAiRoute = AuthenticatedSettingsAiRouteImport.update({
   id: '/ai',
   path: '/ai',
   getParentRoute: () => AuthenticatedSettingsRouteRoute,
 } as any);
-const AuthenticatedSettingsDangerZoneRoute =
-  AuthenticatedSettingsDangerZoneRouteImport.update({
-    id: '/danger-zone',
-    path: '/danger-zone',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
-const AuthenticatedSettingsDataRoute =
-  AuthenticatedSettingsDataRouteImport.update({
-    id: '/data',
-    path: '/data',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
-const AuthenticatedSettingsExperienceRoute =
-  AuthenticatedSettingsExperienceRouteImport.update({
-    id: '/experience',
-    path: '/experience',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
-const AuthenticatedSettingsIntegrationsRoute =
-  AuthenticatedSettingsIntegrationsRouteImport.update({
-    id: '/integrations',
-    path: '/integrations',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
+const AuthenticatedSettingsDangerZoneRoute = AuthenticatedSettingsDangerZoneRouteImport.update({
+  id: '/danger-zone',
+  path: '/danger-zone',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
+const AuthenticatedSettingsDataRoute = AuthenticatedSettingsDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
+const AuthenticatedSettingsExperienceRoute = AuthenticatedSettingsExperienceRouteImport.update({
+  id: '/experience',
+  path: '/experience',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
+const AuthenticatedSettingsIntegrationsRoute = AuthenticatedSettingsIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any);
-const AuthenticatedSettingsPlanRoute =
-  AuthenticatedSettingsPlanRouteImport.update({
-    id: '/plan',
-    path: '/plan',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
-const AuthenticatedSettingsProfileRoute =
-  AuthenticatedSettingsProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
-const AuthenticatedSettingsSecurityRoute =
-  AuthenticatedSettingsSecurityRouteImport.update({
-    id: '/security',
-    path: '/security',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any);
+const AuthenticatedSettingsPlanRoute = AuthenticatedSettingsPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
+const AuthenticatedSettingsProfileRoute = AuthenticatedSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
+const AuthenticatedSettingsSecurityRoute = AuthenticatedSettingsSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthenticatedSettingsRouteRoute,
+} as any);
 const AuthenticatedApplicationsApplicationIdIndexRoute =
   AuthenticatedApplicationsApplicationIdIndexRouteImport.update({
     id: '/applications/$applicationId/',
@@ -1136,26 +1117,21 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute;
 }
 
-const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
-  {
-    AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
-    AuthenticatedSettingsDangerZoneRoute: AuthenticatedSettingsDangerZoneRoute,
-    AuthenticatedSettingsDataRoute: AuthenticatedSettingsDataRoute,
-    AuthenticatedSettingsExperienceRoute: AuthenticatedSettingsExperienceRoute,
-    AuthenticatedSettingsIntegrationsRoute:
-      AuthenticatedSettingsIntegrationsRoute,
-    AuthenticatedSettingsNotificationsRoute:
-      AuthenticatedSettingsNotificationsRoute,
-    AuthenticatedSettingsPlanRoute: AuthenticatedSettingsPlanRoute,
-    AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
-    AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
-    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-  };
+const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren = {
+  AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
+  AuthenticatedSettingsDangerZoneRoute: AuthenticatedSettingsDangerZoneRoute,
+  AuthenticatedSettingsDataRoute: AuthenticatedSettingsDataRoute,
+  AuthenticatedSettingsExperienceRoute: AuthenticatedSettingsExperienceRoute,
+  AuthenticatedSettingsIntegrationsRoute: AuthenticatedSettingsIntegrationsRoute,
+  AuthenticatedSettingsNotificationsRoute: AuthenticatedSettingsNotificationsRoute,
+  AuthenticatedSettingsPlanRoute: AuthenticatedSettingsPlanRoute,
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+};
 
 const AuthenticatedSettingsRouteRouteWithChildren =
-  AuthenticatedSettingsRouteRoute._addFileChildren(
-    AuthenticatedSettingsRouteRouteChildren,
-  );
+  AuthenticatedSettingsRouteRoute._addFileChildren(AuthenticatedSettingsRouteRouteChildren);
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren;
@@ -1196,8 +1172,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
-  AuthenticatedApplicationsApplicationIdEditRoute:
-    AuthenticatedApplicationsApplicationIdEditRoute,
+  AuthenticatedApplicationsApplicationIdEditRoute: AuthenticatedApplicationsApplicationIdEditRoute,
   AuthenticatedApplicationsApplicationIdIndexRoute:
     AuthenticatedApplicationsApplicationIdIndexRoute,
   AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute:
@@ -1208,8 +1183,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedApplicationsApplicationIdOffersIndexRoute,
 };
 
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren);
+const AuthenticatedRouteRouteWithChildren = AuthenticatedRouteRoute._addFileChildren(
+  AuthenticatedRouteRouteChildren,
+);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,

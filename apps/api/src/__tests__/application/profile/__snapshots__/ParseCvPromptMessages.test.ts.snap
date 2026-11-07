@@ -5,12 +5,17 @@ exports[`ParseCvUseCase prompt messages > sends the CV parser prompt 1`] = `
   "maxTokens": 2048,
   "messages": [
     {
-      "content": "You are a CV parser. Your task is to extract structured data from a CV and return ONLY valid JSON with no markdown, no explanation, and no code fences. Copy what the CV says; never invent employers, schools, dates or skills. If a field cannot be determined, use null.",
+      "content": "You are a CV parser. Your task is to extract structured data from a CV and return ONLY valid JSON with no markdown, no explanation, and no code fences. Copy what the CV says; never invent employers, schools, dates, skills, phone numbers or links. If a field cannot be determined, use null.",
       "role": "system",
     },
     {
       "content": "Extract the following from this CV and return ONLY valid JSON:
 {
+  "contact": {
+    "phone": "the candidate's phone number exactly as written, or null",
+    "location": "the candidate's own city and country as written in the header, or null",
+    "links": ["up to 3 full https URLs of the candidate's LinkedIn, portfolio or GitHub, only if written in the CV"]
+  },
   "workExperiences": [
     {
       "company": "employer name",

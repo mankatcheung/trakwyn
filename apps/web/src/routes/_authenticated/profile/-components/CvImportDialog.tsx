@@ -16,6 +16,7 @@ import {
   uploadCv,
   validateCvFile,
   type CvFileProblem,
+  type ParsedCvContact,
 } from '#/lib/cvImport';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -79,12 +80,13 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [drafts, setDrafts] = useState<CvDrafts | null>(null);
   const [truncated, setTruncated] = useState(false);
+  const [contact, setContact] = useState<ParsedCvContact | undefined>();
   const [dragging, setDragging] = useState(false);
   const reading = useRef<AbortController | null>(null);
 
   const save = useMutation({
     mutationFn: (rows: CvDrafts) =>
-      gqlClient.request<ImportResult>(IMPORT_CV_PROFILE, { input: toImportInput(rows) }),
+      gqlClient.request<ImportResult>(IMPORT_CV_PROFILE, { input: toImportInput(rows, contact) }),
     onSuccess: ({ importCvProfile: added }) => {
       for (const options of [
         workExperiencesQueryOptions,
@@ -154,6 +156,7 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
       }
       setDrafts(rows);
       setTruncated(parsed.truncated);
+      setContact(parsed.contact);
       setPhase('review');
     } catch (error) {
       if (controller.signal.aborted) return;

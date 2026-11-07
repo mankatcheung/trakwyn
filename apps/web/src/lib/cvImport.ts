@@ -93,7 +93,15 @@ export interface ParsedCvSkill {
   alreadyInProfile: boolean;
 }
 
+/** The CV's header details (JEF-527); each fills a profile field only when that is empty. */
+export interface ParsedCvContact {
+  phone: string | null;
+  location: string | null;
+  links: string[];
+}
+
 export interface ParsedCvProfile {
+  contact?: ParsedCvContact;
   workExperiences: ParsedCvWorkExperience[];
   educations: ParsedCvEducation[];
   skills: ParsedCvSkill[];

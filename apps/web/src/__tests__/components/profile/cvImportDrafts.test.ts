@@ -217,6 +217,15 @@ describe('toImportInput', () => {
     expect(input.skills.map((s) => s.name)).toEqual(['TypeScript']);
   });
 
+  it('passes the CV contact details along, leaving blanks out (JEF-527)', () => {
+    const drafts = toDrafts(parsed());
+
+    expect(toImportInput(drafts, { phone: '555 0100', location: null, links: [] }).contact).toEqual(
+      { phone: '555 0100', location: undefined, links: undefined },
+    );
+    expect(toImportInput(drafts).contact).toBeUndefined();
+  });
+
   it('sends what the user edited', () => {
     const drafts = toDrafts(parsed());
     const edited = {

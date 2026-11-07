@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { UserIcon, Trash2Icon } from 'lucide-react';
 import { put as putBlob } from '@vercel/blob/client';
 import { gqlClient } from '#/graphql/client';
-import { Alert, Button, Card, FormLabel, Input, Skeleton } from '@trakwyn/ui';
+import { Alert, Button, Card, FormLabel, Input, Skeleton, Textarea } from '@trakwyn/ui';
 import { useTheme, type Theme } from '#/lib/theme';
 import { LOCALE_OPTIONS, useLocale } from '#/lib/i18n';
 import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
@@ -25,6 +25,7 @@ import {
   CONFIRM_AVATAR,
   REMOVE_AVATAR,
   UPDATE_PROFILE,
+  parseProfileLinks,
   profileSchema,
   type ProfileForm,
   type Me,
@@ -62,14 +63,23 @@ export function SettingsProfilePage() {
       name: me?.name ?? '',
       timezone: me?.timezone ?? '',
       targetRole: me?.targetRole ?? '',
+      phone: me?.phone ?? '',
+      location: me?.location ?? '',
+      profileLinks: (me?.profileLinks ?? []).join('\n'),
     },
   });
+  // Schema messages that are i18n keys are translated; the rest are shown as written.
+  const fieldError = (message: string | undefined) =>
+    message?.startsWith('profile.') ? t(message as Parameters<typeof t>[0]) : message;
   const onUpdateProfile = async (data: ProfileForm) => {
     try {
       await gqlClient.request(UPDATE_PROFILE, {
         name: data.name.trim() || null,
         timezone: data.timezone.trim() || null,
         targetRole: data.targetRole.trim() || null,
+        phone: data.phone.trim() || null,
+        location: data.location.trim() || null,
+        profileLinks: parseProfileLinks(data.profileLinks),
       });
       await qc.invalidateQueries({ queryKey: ['me'] });
     } catch (err) {
@@ -314,6 +324,54 @@ export function SettingsProfilePage() {
             {profileForm.formState.errors.targetRole && (
               <p className="mt-1 text-xs text-red-600">
                 {profileForm.formState.errors.targetRole.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <FormLabel>{t('profile.phoneLabel')}</FormLabel>
+            <Input
+              type="tel"
+              autoComplete="tel"
+              {...profileForm.register('phone')}
+              invalid={!!profileForm.formState.errors.phone}
+              placeholder="+44 20 7946 0958"
+            />
+            {profileForm.formState.errors.phone && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldError(profileForm.formState.errors.phone.message)}
+              </p>
+            )}
+          </div>
+          <div>
+            <FormLabel>{t('profile.locationLabel')}</FormLabel>
+            <Input
+              type="text"
+              autoComplete="address-level2"
+              {...profileForm.register('location')}
+              invalid={!!profileForm.formState.errors.location}
+              placeholder="London, UK"
+            />
+            {profileForm.formState.errors.location && (
+              <p className="mt-1 text-xs text-red-600">
+                {profileForm.formState.errors.location.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <FormLabel>{t('profile.profileLinksLabel')}</FormLabel>
+            <Textarea
+              rows={3}
+              {...profileForm.register('profileLinks')}
+              invalid={!!profileForm.formState.errors.profileLinks}
+              placeholder={'https://www.linkedin.com/in/jane-doe\nhttps://janedoe.dev'}
+              aria-describedby="profile-links-hint"
+            />
+            <p id="profile-links-hint" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t('profile.profileLinksHint')}
+            </p>
+            {profileForm.formState.errors.profileLinks && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldError(profileForm.formState.errors.profileLinks.message)}
               </p>
             )}
           </div>

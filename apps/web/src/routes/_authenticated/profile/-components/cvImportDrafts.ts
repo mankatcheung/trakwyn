@@ -1,4 +1,4 @@
-import type { ParsedCvProfile } from '#/lib/cvImport';
+import type { ParsedCvContact, ParsedCvProfile } from '#/lib/cvImport';
 
 /**
  * The CV import's review step as data (JEF-461): what the API read, as rows the
@@ -48,6 +48,7 @@ export interface CvDrafts {
 
 /** What the `importCvProfile` mutation takes. */
 export interface ImportCvProfileInput {
+  contact?: { phone?: string; location?: string; links?: string[] };
   workExperiences: Array<{
     company: string;
     title: string;
@@ -168,8 +169,15 @@ export function setAllSelected<T>(list: readonly Draft<T>[], selected: boolean):
 }
 
 /** Only the ticked rows, trimmed, with blank optional fields left out. */
-export function toImportInput(drafts: CvDrafts): ImportCvProfileInput {
+export function toImportInput(drafts: CvDrafts, contact?: ParsedCvContact): ImportCvProfileInput {
   return {
+    contact: contact
+      ? {
+          phone: contact.phone ?? undefined,
+          location: contact.location ?? undefined,
+          links: contact.links.length > 0 ? contact.links : undefined,
+        }
+      : undefined,
     workExperiences: drafts.workExperiences
       .filter((draft) => draft.selected)
       .map(({ value }) => ({

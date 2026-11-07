@@ -8,5 +8,6 @@ ImportCvProfileResultRef.implement({
     workExperiences: t.exposeInt('workExperiences'),
     educations: t.exposeInt('educations'),
     skills: t.exposeInt('skills'),
+    filledContact: t.exposeStringList('filledContact'),
   }),
 });

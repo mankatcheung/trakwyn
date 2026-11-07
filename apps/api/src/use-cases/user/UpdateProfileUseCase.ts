@@ -1,4 +1,9 @@
 import { NotFoundError, ValidationError } from '#src/use-cases/errors/DomainError.js';
+import {
+  validateLocation,
+  validatePhone,
+  validateProfileLinks,
+} from '#src/use-cases/shared/profileContact.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type {
   IUpdateProfileUseCase,
@@ -55,10 +60,19 @@ export class UpdateProfileUseCase implements IUpdateProfileUseCase {
       throw new ValidationError('Invalid timezone');
     }
 
+    // Undefined leaves a field alone; null or blank clears it.
+    const phone = input.phone === undefined ? undefined : validatePhone(input.phone);
+    const location = input.location === undefined ? undefined : validateLocation(input.location);
+    const profileLinks =
+      input.profileLinks === undefined ? undefined : validateProfileLinks(input.profileLinks);
+
     await this.deps.userRepository.update(input.userId, {
       name,
       timezone,
       targetRole,
+      phone,
+      location,
+      profileLinks,
       customAiPrompt,
       useCrossApplicationContext: input.useCrossApplicationContext,
       llmFallbackWhenLimited: input.llmFallbackWhenLimited,

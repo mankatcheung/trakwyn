@@ -10,6 +10,11 @@ export interface User {
   name: string | null;
   timezone: string | null;
   targetRole: string | null;
+  /** Contact details for the resume header (JEF-527); null until set. */
+  phone: string | null;
+  location: string | null;
+  /** LinkedIn, portfolio, GitHub and the like, as https URLs; null until set. */
+  profileLinks: string[] | null;
   emailVerifiedAt: Date | null;
   avatarKey: string | null;
   weeklyDigestEnabled: boolean;

@@ -210,6 +210,7 @@ describe('CV import (JEF-461)', () => {
       expect(res.statusCode).toBe(200);
       expect(res.headers['cache-control']).toBe('no-store');
       expect(res.json()).toEqual({
+        contact: { phone: null, location: null, links: [] },
         workExperiences: [
           {
             company: 'Acme Corp',

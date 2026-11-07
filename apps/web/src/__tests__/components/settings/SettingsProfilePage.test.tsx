@@ -112,7 +112,111 @@ describe('SettingsProfilePage', () => {
           name: 'Jeff Man',
           timezone: 'UTC',
           targetRole: 'Staff Engineer',
+          phone: null,
+          location: null,
+          profileLinks: [],
         });
+      });
+    });
+
+    describe('contact details (JEF-527)', () => {
+      const withContact = {
+        me: {
+          ...defaultResponse.me,
+          phone: '+44 20 7946 0958',
+          location: 'London, UK',
+          profileLinks: ['https://linkedin.com/in/ada', 'https://ada.dev'],
+        },
+      };
+
+      it('pre-fills phone, location and links', async () => {
+        mockGqlRequest.mockResolvedValue(withContact);
+        render(<SettingsProfilePage />, { wrapper: Wrapper });
+
+        await waitFor(() =>
+          expect(screen.getByDisplayValue('+44 20 7946 0958')).toBeInTheDocument(),
+        );
+        expect(screen.getByDisplayValue('London, UK')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/linkedin\.com\/in\/jane-doe/)).toHaveValue(
+          'https://linkedin.com/in/ada\nhttps://ada.dev',
+        );
+      });
+
+      it('saves them, one link per line', async () => {
+        render(<SettingsProfilePage />, { wrapper: Wrapper });
+        await waitFor(() =>
+          expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
+        );
+        mockGqlRequest.mockResolvedValue({ updateProfile: true });
+
+        fireEvent.change(screen.getByPlaceholderText('+44 20 7946 0958'), {
+          target: { value: ' 555 0100 ' },
+        });
+        fireEvent.change(screen.getByPlaceholderText('London, UK'), { target: { value: 'Paris' } });
+        fireEvent.change(screen.getByPlaceholderText(/linkedin\.com\/in\/jane-doe/), {
+          target: { value: 'https://github.com/ada\n\n  https://ada.dev  ' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /save profile/i }));
+
+        await waitFor(() =>
+          expect(mockGqlRequest).toHaveBeenCalledWith(
+            expect.stringContaining('UpdateProfile'),
+            expect.objectContaining({
+              phone: '555 0100',
+              location: 'Paris',
+              profileLinks: ['https://github.com/ada', 'https://ada.dev'],
+            }),
+          ),
+        );
+      });
+
+      it('clears them when emptied', async () => {
+        mockGqlRequest.mockResolvedValue(withContact);
+        render(<SettingsProfilePage />, { wrapper: Wrapper });
+        await waitFor(() => expect(screen.getByDisplayValue('London, UK')).toBeInTheDocument());
+        mockGqlRequest.mockResolvedValue({ updateProfile: true });
+
+        fireEvent.change(screen.getByPlaceholderText('+44 20 7946 0958'), {
+          target: { value: '' },
+        });
+        fireEvent.change(screen.getByPlaceholderText('London, UK'), { target: { value: '' } });
+        fireEvent.change(screen.getByPlaceholderText(/linkedin\.com\/in\/jane-doe/), {
+          target: { value: '' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /save profile/i }));
+
+        await waitFor(() =>
+          expect(mockGqlRequest).toHaveBeenCalledWith(
+            expect.stringContaining('UpdateProfile'),
+            expect.objectContaining({ phone: null, location: null, profileLinks: [] }),
+          ),
+        );
+      });
+
+      it.each([
+        ['phone', /^\+44 20 7946 0958$/, 'call me', /valid phone number/i],
+        ['links', /linkedin\.com\/in\/jane-doe/, 'linkedin.com/in/ada', /must start with http/i],
+        [
+          'too many links',
+          /linkedin\.com\/in\/jane-doe/,
+          'https://a.dev\nhttps://b.dev\nhttps://c.dev\nhttps://d.dev',
+          /at most 3 links/i,
+        ],
+      ])('refuses invalid %s without calling the API', async (_n, label, value, message) => {
+        render(<SettingsProfilePage />, { wrapper: Wrapper });
+        await waitFor(() =>
+          expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
+        );
+        mockGqlRequest.mockClear();
+
+        fireEvent.change(screen.getByPlaceholderText(label), { target: { value } });
+        fireEvent.click(screen.getByRole('button', { name: /save profile/i }));
+
+        expect(await screen.findByText(message)).toBeInTheDocument();
+        expect(mockGqlRequest).not.toHaveBeenCalledWith(
+          expect.stringContaining('UpdateProfile'),
+          expect.anything(),
+        );
       });
     });
 
