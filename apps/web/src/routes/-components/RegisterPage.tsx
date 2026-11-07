@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { LogoMark } from '#/components/LogoMark';
 import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
+import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/analytics';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
 const schema = z
@@ -42,6 +43,7 @@ export function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
+  const startedReported = useRef(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   const onSubmit = async ({ email, password }: FormValues) => {
@@ -52,6 +54,7 @@ export function RegisterPage() {
         captchaToken: captcha.token,
       });
       await queryClient.resetQueries();
+      captureEvent(ANALYTICS_EVENTS.REGISTER_COMPLETED, { method: 'password' });
       setRegisteredEmail(email);
     } catch (err: unknown) {
       // A captcha token works once, whatever the outcome of the request.
@@ -59,6 +62,12 @@ export function RegisterPage() {
       const msg = extractGqlError(err) ?? t('registerPage.registrationFailed');
       setError('root', { message: msg });
     }
+  };
+
+  const reportStarted = () => {
+    if (startedReported.current) return;
+    startedReported.current = true;
+    captureEvent(ANALYTICS_EVENTS.REGISTER_STARTED);
   };
 
   if (registeredEmail) {
@@ -132,7 +141,12 @@ export function RegisterPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            // Focus events bubble in React, so this fires on the first field only.
+            onFocus={reportStarted}
+            className="space-y-4"
+          >
             <div>
               <FormLabel>{t('auth.email')}</FormLabel>
               <Input
@@ -179,7 +193,7 @@ export function RegisterPage() {
             </Button>
           </form>
 
-          <OAuthButtons label={t('auth.signUp')} />
+          <OAuthButtons label={t('auth.signUp')} onSelect={markOAuthRegistration} />
 
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             {t('auth.termsAgreementPrefix')}{' '}

@@ -16,6 +16,12 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
+}));
+
 vi.mock('@tanstack/react-start', () => ({
   createServerFn: () => ({ handler: (fn: () => unknown) => fn }),
 }));
@@ -47,6 +53,49 @@ const fillForm = (email: string, password: string, confirm: string) => {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('reports register_started once, on the first field focus', async () => {
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+    expect(mockCapture).not.toHaveBeenCalled();
+
+    await user.click(screen.getByPlaceholderText('you@example.com'));
+    await user.click(screen.getAllByPlaceholderText('••••••••')[0]);
+
+    expect(mockCapture.mock.calls).toEqual([['register_started']]);
+  });
+
+  it('reports register_completed with the password method, and no email', async () => {
+    mockGqlRequest.mockResolvedValue({ register: 'access-token' });
+    render(<RegisterPage />);
+    fillForm('test@example.com', 'password123', 'password123');
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(mockCapture).toHaveBeenCalledWith('register_completed', { method: 'password' });
+    });
+    expect(JSON.stringify(mockCapture.mock.calls)).not.toContain('test@example.com');
+  });
+
+  it('does not report register_completed when the registration fails', async () => {
+    mockGqlRequest.mockRejectedValue(new Error('boom'));
+    render(<RegisterPage />);
+    fillForm('test@example.com', 'password123', 'password123');
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+    expect(mockCapture).not.toHaveBeenCalledWith('register_completed', expect.anything());
+  });
+
+  it('remembers an OAuth sign-up so the app can report it after the round trip', async () => {
+    window.sessionStorage.clear();
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+
+    await user.click(screen.getByRole('link', { name: /sign up with google/i }));
+
+    expect(window.sessionStorage.getItem('trakwyn_oauth_registration')).toBe('google');
   });
 
   it('renders email, password, and confirm password inputs', () => {

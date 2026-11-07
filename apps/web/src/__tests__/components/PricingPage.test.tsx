@@ -2,15 +2,32 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import en from '#/i18n/en.json';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, className }: { children: ReactNode; to: string; className?: string }) => (
-    <a href={to} className={className}>
+  Link: ({
+    children,
+    to,
+    className,
+    onClick,
+  }: {
+    children: ReactNode;
+    to: string;
+    className?: string;
+    onClick?: () => void;
+  }) => (
+    <a href={to} className={className} onClick={onClick}>
       {children}
     </a>
   ),
+}));
+
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
 }));
 
 const isLoggedIn = vi.fn(() => false);
@@ -35,7 +52,29 @@ const API_CONSTANTS = readFileSync(
 );
 
 describe('PricingPage', () => {
-  beforeEach(() => isLoggedIn.mockReturnValue(false));
+  beforeEach(() => {
+    isLoggedIn.mockReturnValue(false);
+    mockCapture.mockClear();
+  });
+
+  it('reports a pricing view once on mount', () => {
+    render(<PricingPage />);
+    expect(mockCapture.mock.calls).toEqual([['pricing_viewed']]);
+  });
+
+  it('reports the Free and Pro CTAs separately', async () => {
+    const user = userEvent.setup();
+    render(<PricingPage />);
+    mockCapture.mockClear();
+
+    await user.click(screen.getByRole('link', { name: 'Start for free' }));
+    await user.click(screen.getByRole('link', { name: 'Get Pro' }));
+
+    expect(mockCapture.mock.calls).toEqual([
+      ['marketing_cta_clicked', { cta: 'start_free', location: 'pricing_free' }],
+      ['marketing_cta_clicked', { cta: 'get_pro', location: 'pricing_pro' }],
+    ]);
+  });
 
   it('renders the three ways to pay for Pro', () => {
     render(<PricingPage />);

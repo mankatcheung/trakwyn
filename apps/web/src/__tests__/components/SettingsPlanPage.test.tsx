@@ -14,6 +14,12 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
+}));
+
 import { SettingsPlanPage } from '#/routes/_authenticated/settings/-components/SettingsPlanPage';
 import type { BillingStatus } from '#/lib/billingStatus';
 
@@ -61,7 +67,38 @@ const serve = (status: BillingStatus) =>
   mockGqlRequest.mockResolvedValue({ billingStatus: status });
 
 describe('SettingsPlanPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('reports upgrade_clicked with the plan option, not a price or a name', async () => {
+    serve(freeStatus());
+    const user = userEvent.setup();
+    render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+    await user.click(await screen.findByRole('button', { name: 'Subscribe, $12 a month' }));
+
+    expect(mockCapture).toHaveBeenCalledWith('upgrade_clicked', { plan_option: 'monthly' });
+  });
+
+  it('reports checkout_completed once on the return from checkout and strips the marker', async () => {
+    serve(freeStatus());
+    window.history.replaceState(null, '', '/settings/plan?checkout=success');
+    render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+    await screen.findByText('Free and Pro');
+    expect(mockCapture.mock.calls).toEqual([['checkout_completed']]);
+    expect(window.location.search).toBe('');
+  });
+
+  it('does not report checkout_completed on an ordinary visit', async () => {
+    serve(freeStatus());
+    render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+    await screen.findByText('Free and Pro');
+    expect(mockCapture).not.toHaveBeenCalledWith('checkout_completed', expect.anything());
+  });
 
   it('shows nothing until the status has loaded', () => {
     mockGqlRequest.mockReturnValue(new Promise(() => undefined));

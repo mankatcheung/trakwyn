@@ -11,7 +11,17 @@ const { mockHasSessionCookie, mockNavigate } = vi.hoisted(() => ({
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: object) => options,
   useNavigate: () => mockNavigate,
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to, onClick }: { children: ReactNode; to: string; onClick?: () => void }) => (
+    <a href={to} onClick={onClick}>
+      {children}
+    </a>
+  ),
+}));
+
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -44,6 +54,7 @@ vi.mock('#/lib/i18n', () => ({
 }));
 
 import { LandingPage } from '#/routes/index';
+import userEvent from '@testing-library/user-event';
 
 describe('LandingPage', () => {
   beforeEach(() => {
@@ -60,6 +71,22 @@ describe('LandingPage', () => {
     screen
       .getAllByRole('link', { name: 'Go to dashboard' })
       .forEach((link) => expect(link).toHaveAttribute('href', '/dashboard'));
+  });
+
+  it('reports which register CTA was clicked and where it sits', async () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    const user = userEvent.setup();
+    render(<LandingPage />);
+
+    await user.click(screen.getByRole('link', { name: 'Get started' }));
+    await user.click(screen.getByRole('link', { name: 'Start for free' }));
+    await user.click(screen.getByRole('link', { name: 'Get started for free' }));
+
+    expect(mockCapture.mock.calls).toEqual([
+      ['marketing_cta_clicked', { cta: 'get_started', location: 'header' }],
+      ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
+      ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
+    ]);
   });
 
   it('keeps sign-in links for logged-out users', () => {
