@@ -67,15 +67,21 @@ describe('SettingsScreen', () => {
     expect(push).toHaveBeenCalledWith('/settings/ai');
   });
 
+  it('no longer lists the CV profile, which lives on the Home tab (JEF-513)', async () => {
+    mockedUseRouter.mockReturnValue({ push: jest.fn() } as never);
+    mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
+
+    const { queryByTestId } = await render(<SettingsScreen />);
+
+    expect(queryByTestId('settings-experience-row')).toBeNull();
+  });
+
   it('navigates to the new settings sections', async () => {
     const push = jest.fn();
     mockedUseRouter.mockReturnValue({ push } as never);
     mockedUseAuth.mockReturnValue({ logout: jest.fn() } as never);
 
     const { getByTestId } = await render(<SettingsScreen />);
-
-    await fireEvent.press(getByTestId('settings-experience-row'));
-    expect(push).toHaveBeenCalledWith('/settings/experience');
 
     await fireEvent.press(getByTestId('settings-integrations-row'));
     expect(push).toHaveBeenCalledWith('/settings/integrations');

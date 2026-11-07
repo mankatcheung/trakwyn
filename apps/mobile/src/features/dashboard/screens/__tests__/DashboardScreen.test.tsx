@@ -13,6 +13,11 @@ jest.mock('../../hooks/useDashboardQueries', () => ({
 }));
 jest.mock('../../../settings/hooks/useProfile', () => ({ useProfile: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('../../components/CvProfileSummaryCard', () => {
+  const { createElement } = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return { CvProfileSummaryCard: () => createElement(View, { testID: 'cv-profile-card-stub' }) };
+});
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useRouter } from 'expo-router';
@@ -110,6 +115,20 @@ describe('DashboardScreen', () => {
     await findByText('Alex Morgan');
     expect(getByTestId('dashboard-avatar')).toBeTruthy();
     await findByText('AM');
+  });
+
+  it('shows the CV profile summary card on the dashboard', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+
+    const { findByTestId } = await renderScreen();
+
+    expect(await findByTestId('cv-profile-card-stub')).toBeTruthy();
   });
 
   it('shows the weekly goal progress when present', async () => {

@@ -80,7 +80,7 @@ There are two because a store's access is fixed when it is created:
 | `uploads`   | public  | avatars, which other users see as `<img src>`                   | `BLOB_PUBLIC_READ_WRITE_TOKEN`  |
 | `documents` | private | documents and exported PDFs, readable only with the store token | `BLOB_PRIVATE_READ_WRITE_TOKEN` |
 
-Which file goes in which is `storageAccessFor(key)` in `apps/api`: an avatar key (`users/<id>/avatar/…`) is public and everything else is private, so a new kind of file is private unless it opts out. A private blob has no URL anyone can open. The API reads it with the store's token and serves it behind a signed, expiring link (`apps/api/CLAUDE.md`, Storage).
+Which file goes in which is `storageAccessFor(key)` in `apps/api`: an avatar key (`users/<id>/avatar/…`) is public and everything else is private, so a new kind of file is private unless it opts out. A private blob has no URL anyone can open. The API reads it with the store's token and serves it behind a signed, expiring link (`apps/api/src/infrastructure/storage/CLAUDE.md`).
 
 - **Neither store may be replaced.** In this provider, `name`, `access` and `region` all force a replacement, and replacing a store deletes everything in it. `access` and `region` have defaults, so `blob.tf` states all three for both, and `lifecycle.prevent_destroy` makes a plan that would replace a store fail instead.
 - **The tokens are not in state.** `infra/gcp/load-secrets.sh` reads `blob_store_id`, `documents_blob_store_id` and `team_id` from this root's outputs, fetches each token from `GET /v1/storage/stores/{id}/secrets`, and pipes it to Secret Manager. Using the `vercel_blob_store_secrets` data source instead would write the tokens into this root's state, and into any root that reads it.

@@ -17,14 +17,12 @@ import {
   PaletteIcon,
   RefreshIcon,
   ShieldIcon,
-  SlidersIcon,
   StarIcon,
   WarningIcon,
   type SettingsIconProps,
 } from '../components/SettingsIcons';
 
 const ROW_COLORS = {
-  blue: { bg: '#eff6ff', fg: '#2563eb' },
   green: { bg: '#dcfce7', fg: '#15803d' },
   purple: { bg: '#f3e8ff', fg: '#7e22ce' },
   slate: { bg: '#f1f5f9', fg: '#475569' },
@@ -57,13 +55,6 @@ export function SettingsScreen() {
   const { data: profile } = useProfile();
 
   const MENU: MenuItem[] = [
-    {
-      label: t('experience'),
-      href: '/settings/experience',
-      testID: 'settings-experience-row',
-      icon: SlidersIcon,
-      iconColor: ROW_COLORS.blue,
-    },
     {
       label: t('security'),
       href: '/settings/security',
