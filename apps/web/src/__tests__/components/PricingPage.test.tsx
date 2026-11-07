@@ -77,7 +77,8 @@ describe('PricingPage', () => {
     render(<PricingPage />);
     mockCapture.mockClear();
 
-    await user.click(screen.getByRole('link', { name: 'Start for free' }));
+    // The header carries the same label (JEF-518); the Free card's CTA comes last.
+    await user.click(screen.getAllByRole('link', { name: 'Start for free' }).at(-1)!);
     await user.click(screen.getByRole('link', { name: 'Get Pro' }));
 
     expect(mockCapture.mock.calls).toEqual([

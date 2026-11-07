@@ -95,13 +95,10 @@ describe('FeaturePageLayout', () => {
       />,
     );
 
-    expect(screen.getByRole('link', { name: 'Start for free' })).toHaveAttribute(
-      'href',
-      '/register',
-    );
-    expect(screen.getByRole('link', { name: 'Get started for free' })).toHaveAttribute(
-      'href',
-      '/register',
-    );
+    // Hero and closing band share one label.
+    const ctas = screen.getAllByRole('link', { name: 'Start for free' });
+    expect(ctas).toHaveLength(2);
+    ctas.forEach((cta) => expect(cta).toHaveAttribute('href', '/register'));
+    expect(screen.queryByRole('link', { name: 'Get started for free' })).not.toBeInTheDocument();
   });
 });

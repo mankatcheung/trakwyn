@@ -267,7 +267,7 @@ export function LandingPage() {
                 onClick={() => trackCta('get_started_free', 'closing')}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
-                {t('landing.getStartedFree')}
+                {t('landing.startFree')}
                 <ArrowRight className="size-4" />
               </Link>
               <p className="mx-auto mt-4 max-w-xl text-sm text-gray-600 dark:text-gray-400">

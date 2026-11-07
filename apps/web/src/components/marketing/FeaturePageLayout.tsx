@@ -105,7 +105,7 @@ export function FeaturePageLayout({
             onClick={() => trackCta('get_started_free', 'feature_closing')}
             className="mt-7 inline-block rounded-lg bg-white px-7 py-3 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
           >
-            {t('landing.getStartedFree')}
+            {t('landing.startFree')}
           </Link>
         </section>
       </main>

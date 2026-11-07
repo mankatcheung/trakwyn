@@ -32,6 +32,8 @@ body,
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Keeps in-page anchors clear of the sticky marketing header (h-16). */
+  scroll-padding-top: 5rem;
 }
 
 /* iOS Safari auto-zooms the whole page when a focused input/select/textarea

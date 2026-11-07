@@ -41,9 +41,7 @@ vi.mock('#/lib/i18n', () => ({
       ({
         'landing.signIn': 'Sign in',
         'landing.goDashboard': 'Go to dashboard',
-        'landing.getStarted': 'Get started',
         'landing.startFree': 'Start for free',
-        'landing.getStartedFree': 'Get started for free',
         'landing.passesNote':
           "Need Pro only for your search? A 3- or 6-month pass ends on its own, so there is nothing to cancel once you're hired.",
         'landing.heroTitleLine1': 'Track every application.',
@@ -85,12 +83,15 @@ describe('LandingPage', () => {
     const user = userEvent.setup();
     render(<LandingPage />);
 
-    await user.click(screen.getByRole('link', { name: 'Get started' }));
-    await user.click(screen.getByRole('link', { name: 'Start for free' }));
-    await user.click(screen.getByRole('link', { name: 'Get started for free' }));
+    // One label everywhere (JEF-518), so the CTAs are told apart by position:
+    // desktop header, mobile header, hero, closing band.
+    const ctas = screen.getAllByRole('link', { name: 'Start for free' });
+    expect(ctas).toHaveLength(4);
+    for (const cta of ctas) await user.click(cta);
 
     expect(mockCapture.mock.calls).toEqual([
       ['marketing_cta_clicked', { cta: 'get_started', location: 'header' }],
+      ['marketing_cta_clicked', { cta: 'get_started', location: 'header_mobile' }],
       ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
       ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
     ]);
