@@ -12,6 +12,8 @@ import { contentQuotaQueryKey, useQuotaState } from '#/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import { Button, Skeleton, Spinner } from '@trakwyn/ui';
 import { Markdown } from '#/components/Markdown';
+import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
 import { ChatComposerInput } from '#/routes/_authenticated/assistant/-components/ChatComposerInput';
 import { ChatProposalCard } from '#/routes/_authenticated/assistant/-components/ChatProposalCard';
 import {
@@ -88,6 +90,8 @@ export function ChatConversationView({
     () => (conversationId ? (historyData?.chatHistory ?? []) : []),
     [conversationId, historyData],
   );
+
+  const { onTrakwynAi, refresh: refreshAiCredits } = useAiCredits();
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -195,6 +199,9 @@ export function ChatConversationView({
       // Error surfaced below via send.isError — the user's message stays visible so they can retry.
     } finally {
       setStreamingText('');
+      // A turn on Trakwyn AI spends a credit, and a failed one may have too,
+      // so the meter is re-read whatever the outcome (JEF-511).
+      void refreshAiCredits();
     }
   };
 
@@ -311,27 +318,29 @@ export function ChatConversationView({
       </div>
 
       {!conversationId && <QuotaHint resource="conversations" className="px-2 pb-1" />}
-      <form
-        onSubmit={onSubmit}
-        className={`flex shrink-0 items-end gap-2 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900 ${compact ? 'p-2' : 'py-3'}`}
-      >
-        <ChatComposerInput
-          value={input}
-          onChange={setInput}
-          onSubmit={() => void handleSend(input)}
-          placeholder={t('chat.inputPlaceholder')}
-          maxLength={CHAT_MESSAGE_MAX_CHARS}
-        />
-        {send.isPending ? (
-          <Button type="button" variant="secondary" onClick={handleCancel}>
-            {t('chat.cancel')}
-          </Button>
-        ) : (
-          <Button type="submit" disabled={!input.trim() || newConversationBlocked}>
-            {t('chat.send')}
-          </Button>
+      <div className="shrink-0 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+        {onTrakwynAi && (
+          <AiCreditsMeter variant="inline" className={compact ? 'px-2 pt-2' : 'pt-2'} />
         )}
-      </form>
+        <form onSubmit={onSubmit} className={`flex items-end gap-2 ${compact ? 'p-2' : 'py-3'}`}>
+          <ChatComposerInput
+            value={input}
+            onChange={setInput}
+            onSubmit={() => void handleSend(input)}
+            placeholder={t('chat.inputPlaceholder')}
+            maxLength={CHAT_MESSAGE_MAX_CHARS}
+          />
+          {send.isPending ? (
+            <Button type="button" variant="secondary" onClick={handleCancel}>
+              {t('chat.cancel')}
+            </Button>
+          ) : (
+            <Button type="submit" disabled={!input.trim() || newConversationBlocked}>
+              {t('chat.send')}
+            </Button>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
