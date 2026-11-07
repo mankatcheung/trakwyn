@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { trackCta } from '#/lib/analytics';
 import { hasSessionCookie } from '#/graphql/client';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
@@ -123,6 +124,7 @@ export function LandingPage() {
             <div className="mt-10 flex items-center justify-center gap-4">
               <Link
                 to="/register"
+                onClick={() => trackCta('start_free', 'hero')}
                 className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 {t('landing.startFree')}
@@ -253,6 +255,7 @@ export function LandingPage() {
             <div className="mt-12 text-center">
               <Link
                 to="/register"
+                onClick={() => trackCta('get_started_free', 'closing')}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 {t('landing.getStartedFree')}

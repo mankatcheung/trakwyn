@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 import {
   planStatus,
@@ -82,7 +84,29 @@ function AiCreditsCard() {
   );
 }
 
+/**
+ * The checkout's success URL carries `?checkout=success` (JEF-514), and the
+ * provider sends the browser there only after a payment. Reported once and
+ * then removed, so a reload or a shared URL does not count it again.
+ */
+function useReportCheckoutReturn(): void {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') !== 'success') return;
+    captureEvent(ANALYTICS_EVENTS.CHECKOUT_COMPLETED);
+    params.delete('checkout');
+    const query = params.toString();
+    const { pathname, hash } = window.location;
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${pathname}${query ? `?${query}` : ''}${hash}`,
+    );
+  }, []);
+}
+
 export function SettingsPlanPage() {
+  useReportCheckoutReturn();
   const status = useBillingStatus();
   if (!status) return null;
 
@@ -153,7 +177,10 @@ function PlanActions({ status }: { status: BillingStatus }) {
                 key={plan}
                 variant={plan === 'monthly' ? 'primary' : 'secondary'}
                 disabled={checkout.isPending}
-                onClick={() => checkout.mutate(plan)}
+                onClick={() => {
+                  captureEvent(ANALYTICS_EVENTS.UPGRADE_CLICKED, { plan_option: plan });
+                  checkout.mutate(plan);
+                }}
               >
                 {t(labelKey)}
               </Button>

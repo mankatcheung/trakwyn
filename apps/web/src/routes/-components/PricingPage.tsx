@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Check, Minus } from 'lucide-react';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/lib/useIsLoggedIn';
+import { ANALYTICS_EVENTS, captureEvent, trackCta } from '#/lib/analytics';
 
 type Cell = { text: string } | { included: boolean };
 
@@ -78,6 +80,10 @@ export function PricingPage() {
   const { t } = useLocale();
   const isLoggedIn = useIsLoggedIn();
 
+  useEffect(() => {
+    captureEvent(ANALYTICS_EVENTS.PRICING_VIEWED);
+  }, []);
+
   const proTo: '/settings/plan' | '/register' = isLoggedIn ? '/settings/plan' : '/register';
 
   return (
@@ -105,6 +111,7 @@ export function PricingPage() {
             </p>
             <Link
               to="/register"
+              onClick={() => trackCta('start_free', 'pricing_free')}
               className="mt-6 rounded-lg border border-gray-300 px-5 py-2.5 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               {t('landing.startFree')}
@@ -125,6 +132,7 @@ export function PricingPage() {
             </p>
             <Link
               to={proTo}
+              onClick={() => trackCta('get_pro', 'pricing_pro')}
               className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
               {t('plan.upgradeTitle')}

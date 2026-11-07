@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { LogoMark } from '#/components/LogoMark';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/lib/useIsLoggedIn';
+import { trackCta } from '#/lib/analytics';
 import { MarketingThemeToggle } from './MarketingThemeToggle';
 import { MarketingLocalePicker } from './MarketingLocalePicker';
 
@@ -84,6 +85,7 @@ export function MarketingHeader({
             </Link>
             <Link
               to="/register"
+              onClick={() => trackCta('get_started', 'header')}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
               {t('landing.getStarted')}
@@ -149,7 +151,10 @@ export function MarketingHeader({
             <Link
               to="/register"
               className="block rounded-lg bg-blue-600 px-3 py-2 text-center text-sm font-medium text-white"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                trackCta('get_started', 'header_mobile');
+                setMobileMenuOpen(false);
+              }}
             >
               {t('landing.getStarted')}
             </Link>

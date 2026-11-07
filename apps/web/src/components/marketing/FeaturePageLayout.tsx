@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { MarketingHeader } from './MarketingHeader';
 import { MarketingFooter } from './MarketingFooter';
 import { useLocale } from '#/lib/i18n';
+import { trackCta } from '#/lib/analytics';
 
 export interface FeatureBenefit {
   title: string;
@@ -61,6 +62,7 @@ export function FeaturePageLayout({
             <p className="mt-4 text-lg/8 text-gray-600 dark:text-gray-400">{description}</p>
             <Link
               to="/register"
+              onClick={() => trackCta('start_free', 'feature_hero')}
               className="mt-8 inline-block rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
             >
               {t('landing.startFree')}
@@ -100,6 +102,7 @@ export function FeaturePageLayout({
           <h2 className="text-3xl font-bold text-white">{ctaHeadline}</h2>
           <Link
             to="/register"
+            onClick={() => trackCta('get_started_free', 'feature_closing')}
             className="mt-7 inline-block rounded-lg bg-white px-7 py-3 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
           >
             {t('landing.getStartedFree')}

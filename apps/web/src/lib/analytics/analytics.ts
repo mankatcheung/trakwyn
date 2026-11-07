@@ -41,6 +41,13 @@ export const ANALYTICS_EVENTS = {
   AI_CREDITS_EXHAUSTED_SHOWN: 'ai_credits_exhausted_shown',
   AI_UPGRADE_CLICKED: 'ai_upgrade_clicked',
   AI_ADD_KEY_CLICKED: 'ai_add_key_clicked',
+  // The marketing → signup → Pro funnel (JEF-514). Properties are string enums only.
+  MARKETING_CTA_CLICKED: 'marketing_cta_clicked',
+  REGISTER_STARTED: 'register_started',
+  REGISTER_COMPLETED: 'register_completed',
+  PRICING_VIEWED: 'pricing_viewed',
+  UPGRADE_CLICKED: 'upgrade_clicked',
+  CHECKOUT_COMPLETED: 'checkout_completed',
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
