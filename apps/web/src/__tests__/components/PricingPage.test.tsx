@@ -204,7 +204,7 @@ describe('PricingPage', () => {
         expect(screen.getByTestId(`faq-${id}`)).not.toHaveAttribute('open');
       }
       expect(screen.getByTestId('faq-refund')).toHaveTextContent(en['plan.refundPolicy']);
-      expect(screen.getByTestId('faq-ai-key')).toHaveTextContent(en['pricing.byok']);
+      expect(screen.getByTestId('faq-ai-key')).toHaveTextContent(en['faq.aiKey.a']);
     });
 
     it('emits FAQPage JSON-LD for exactly those questions', () => {
@@ -301,9 +301,9 @@ describe('PricingPage', () => {
     it('limits neither plan on AI actions, which run on the user’s own key', () => {
       expect(API_CONSTANTS).not.toMatch(/aiActionsPerMonth/);
       render(<PricingPage />);
-      const row = within(screen.getByRole('row', { name: /AI actions/ }));
+      const row = within(screen.getByRole('row', { name: /AI with your own key/ }));
       expect(row.getAllByText('Unlimited')).toHaveLength(2);
-      expect(screen.getByRole('table').textContent).not.toMatch(/AI actions.*a month/);
+      expect(screen.getByRole('table').textContent).not.toMatch(/own key.*a month/);
     });
 
     it('shows hosted AI as Pro-only: no credits on Free, 300 on Pro (JEF-451)', () => {
@@ -311,9 +311,16 @@ describe('PricingPage', () => {
       expect(API_CONSTANTS).toMatch(/aiCreditsPerMonth: 300,/);
       expect(en['pricing.proAiCredits']).toBe('300 AI credits/month, fair use');
       render(<PricingPage />);
-      const row = within(screen.getByRole('row', { name: /Trakwyn AI credits/ }));
+      const row = within(screen.getByRole('row', { name: /Trakwyn AI \(no key needed\)/ }));
       expect(row.getByText('Not included')).toBeInTheDocument();
       expect(row.getByText('300 AI credits/month, fair use')).toBeInTheDocument();
+    });
+
+    it('answers "Is AI free?" and "What does Pro add?" in one sentence, with the credits from the table', () => {
+      render(<PricingPage />);
+      const summary = screen.getByTestId('ai-summary');
+      expect(summary).toHaveTextContent('Use AI free with your own key');
+      expect(summary).toHaveTextContent(`Pro includes ${en['pricing.proAiCredits']}`);
     });
 
     it('lists exactly the features the API gates, with MCP the only one on Free', () => {
