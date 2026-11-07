@@ -255,7 +255,7 @@ export function LandingPage() {
                 to="/register"
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
-                {t('landing.getStartedFree')}
+                {t('landing.startFree')}
                 <ArrowRight className="size-4" />
               </Link>
             </div>

@@ -394,7 +394,7 @@ export function AiMcpSetupPage() {
           to="/register"
           className="mt-6 inline-block rounded-lg bg-white px-7 py-3 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
         >
-          {t('landing.getStartedFree')}
+          {t('landing.startFree')}
         </Link>
       </section>
 

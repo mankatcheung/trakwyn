@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 const { mockHasSessionCookie } = vi.hoisted(() => ({
@@ -32,7 +32,7 @@ vi.mock('#/lib/i18n', () => ({
         'landing.features': 'Features',
         'landing.signIn': 'Sign in',
         'landing.goDashboard': 'Go to dashboard',
-        'landing.getStarted': 'Get started',
+        'landing.startFree': 'Start for free',
         'settings.language': 'Language',
         'guides.aiMcpSetup.eyebrow': 'Setup guide',
       })[key] ?? key,
@@ -101,11 +101,38 @@ describe('MarketingHeader', () => {
     );
   });
 
-  it('links Get started to /register', () => {
+  it('links "Start for free" to /register, in the desktop nav and the mobile bar', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingHeader />);
 
-    expect(screen.getByRole('link', { name: 'Get started' })).toHaveAttribute('href', '/register');
+    const ctas = screen.getAllByRole('link', { name: 'Start for free' });
+    expect(ctas).toHaveLength(2);
+    ctas.forEach((cta) => expect(cta).toHaveAttribute('href', '/register'));
+  });
+
+  it('is sticky, and gains a border and blur only once the page scrolls', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    const { container } = render(<MarketingHeader />);
+    const header = container.querySelector('header')!;
+
+    expect(header.className).toContain('sticky');
+    expect(header.className).toContain('top-0');
+    expect(header.className).toContain('border-transparent');
+    expect(header.className).not.toContain('backdrop-blur');
+
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 40, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
+
+    expect(header.className).toContain('backdrop-blur');
+    expect(header.className).not.toContain('border-transparent');
+
+    act(() => {
+      Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(header.className).toContain('border-transparent');
   });
 
   it('renders a theme toggle button, once for desktop and once for mobile', () => {

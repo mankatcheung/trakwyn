@@ -83,12 +83,11 @@ describe('FeaturesIndexPage', () => {
     expect(tile).toHaveTextContent('LinkedIn, Indeed, Glassdoor, Greenhouse, Lever or Workday');
   });
 
-  it('links the closing CTA to /register', () => {
+  it('links every "Start for free" CTA to /register', () => {
     render(<FeaturesIndexPage />);
 
-    expect(screen.getByRole('link', { name: 'Get started for free' })).toHaveAttribute(
-      'href',
-      '/register',
-    );
+    const ctas = screen.getAllByRole('link', { name: 'Start for free' });
+    expect(ctas.length).toBeGreaterThan(0);
+    ctas.forEach((cta) => expect(cta).toHaveAttribute('href', '/register'));
   });
 });

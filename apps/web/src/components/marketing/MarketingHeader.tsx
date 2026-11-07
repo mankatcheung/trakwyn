@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Menu, X } from 'lucide-react';
 import { LogoMark } from '#/components/LogoMark';
@@ -31,12 +31,28 @@ export function MarketingHeader({
   const { t } = useLocale();
   const isLoggedIn = useIsLoggedIn();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Starts false so server and first client render match; the border is always
+  // present (transparent at the top) so scrolling never shifts the layout.
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 0);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const authLink: '/dashboard' | '/login' = isLoggedIn ? '/dashboard' : '/login';
   const authLabel = isLoggedIn ? t('landing.goDashboard') : t('landing.signIn');
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800">
+    <header
+      className={`sticky top-0 z-40 border-b transition-colors ${
+        scrolled
+          ? 'border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90'
+          : 'border-transparent'
+      }`}
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
@@ -86,7 +102,7 @@ export function MarketingHeader({
               to="/register"
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
-              {t('landing.getStarted')}
+              {t('landing.startFree')}
             </Link>
             <MarketingLocalePicker />
             <MarketingThemeToggle />
@@ -94,6 +110,12 @@ export function MarketingHeader({
           <div className="flex items-center gap-1 sm:hidden">
             <MarketingLocalePicker />
             <MarketingThemeToggle />
+            <Link
+              to="/register"
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              {t('landing.startFree')}
+            </Link>
             <button
               type="button"
               className="p-2 text-gray-600 dark:text-gray-400"
@@ -145,13 +167,6 @@ export function MarketingHeader({
               onClick={() => setMobileMenuOpen(false)}
             >
               {authLabel}
-            </Link>
-            <Link
-              to="/register"
-              className="block rounded-lg bg-blue-600 px-3 py-2 text-center text-sm font-medium text-white"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('landing.getStarted')}
             </Link>
           </div>
         )}

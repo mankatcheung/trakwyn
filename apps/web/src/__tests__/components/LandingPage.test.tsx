@@ -31,9 +31,7 @@ vi.mock('#/lib/i18n', () => ({
       ({
         'landing.signIn': 'Sign in',
         'landing.goDashboard': 'Go to dashboard',
-        'landing.getStarted': 'Get started',
         'landing.startFree': 'Start for free',
-        'landing.getStartedFree': 'Get started for free',
         'landing.features': 'Features',
         'landing.tracking': 'Application tracking',
         'landing.assistant': 'AI assistant',
