@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { OAuthButtons } from '#/components/OAuthButtons';
+import { AuthDivider } from '#/components/AuthDivider';
+import { PasswordField } from '#/components/PasswordField';
+import { ResendVerificationEmail } from '#/components/ResendVerificationEmail';
 import { LogoMark } from '#/components/LogoMark';
 import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
@@ -13,16 +16,10 @@ import { useLocale } from '#/lib/i18n';
 import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/analytics';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
-const schema = z
-  .object({
-    email: z.string().email('Invalid email'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
+const schema = z.object({
+  email: z.string().email('Invalid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
 type FormValues = z.infer<typeof schema>;
 
 const REGISTER_MUTATION = `
@@ -78,7 +75,7 @@ export function RegisterPage() {
             <LogoMark size={28} />
             <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Trakwyn</span>
           </Link>
-          <div className="space-y-6 rounded-xl bg-white p-8 text-center shadow-sm dark:bg-gray-800">
+          <div className="space-y-5 rounded-xl bg-white p-6 text-center shadow-sm sm:p-8 dark:bg-gray-800">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <svg
                 className="size-6 text-green-600 dark:text-green-400"
@@ -105,7 +102,11 @@ export function RegisterPage() {
                 </span>
                 {t('auth.verificationSentSuffix')}
               </p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {t('verifyRequired.spamHint')}
+              </p>
             </div>
+            <ResendVerificationEmail email={registeredEmail} />
             {/* Registering signs the user in, so "back to sign in" would only be
                 bounced to the app by /login. They go straight there; an
                 unverified account lands on the verification reminder. */}
@@ -139,7 +140,14 @@ export function RegisterPage() {
                 {t('auth.signIn')}
               </Link>
             </p>
+            <p className="mt-2 text-sm font-medium text-green-700 dark:text-green-400">
+              {t('registerPage.freeNoCard')}
+            </p>
           </div>
+
+          <OAuthButtons label={t('auth.signUp')} onSelect={markOAuthRegistration} />
+
+          <AuthDivider label={t('registerPage.orSignUpWithEmail')} />
 
           <form
             onSubmit={handleSubmit(onSubmit)}
@@ -160,27 +168,14 @@ export function RegisterPage() {
 
             <div>
               <FormLabel>{t('auth.password')}</FormLabel>
-              <Input
-                type="password"
+              <PasswordField
+                autoComplete="new-password"
                 {...register('password')}
                 invalid={!!errors.password}
                 placeholder="••••••••"
               />
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div>
-              <FormLabel>{t('auth.confirmPassword')}</FormLabel>
-              <Input
-                type="password"
-                {...register('confirmPassword')}
-                invalid={!!errors.confirmPassword}
-                placeholder="••••••••"
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
               )}
             </div>
 
@@ -192,8 +187,6 @@ export function RegisterPage() {
               {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
             </Button>
           </form>
-
-          <OAuthButtons label={t('auth.signUp')} onSelect={markOAuthRegistration} />
 
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             {t('auth.termsAgreementPrefix')}{' '}

@@ -258,6 +258,16 @@ describe('LoginPage', () => {
     expect(github).toHaveAttribute('href', '/auth/oauth/github/start');
   });
 
+  it('puts the OAuth buttons before the email form, split by an "or" divider (JEF-520)', () => {
+    render(<LoginPage />);
+    const google = screen.getByRole('link', { name: /sign in with google/i });
+    const divider = screen.getByText('or sign in with email');
+    const email = screen.getByPlaceholderText('you@example.com');
+
+    expect(google.compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(divider.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('translates the oauthError slug rather than printing it', () => {
     mockUseSearch.mockReturnValue({ oauthError: 'provider_mismatch' });
     render(<LoginPage />);

@@ -30,15 +30,20 @@ test.describe('Authentication flows', () => {
     await expect(page).toHaveURL(/login/);
   });
 
-  test('shows error when register passwords do not match', async ({ page }) => {
+  test('register offers OAuth first and a show-password toggle instead of a confirm field', async ({
+    page,
+  }) => {
     await page.goto('/register');
-    await page.getByPlaceholder('you@example.com').fill(uniqueEmail('mismatch'));
-    const [passwordInput, confirmInput] = await page.getByPlaceholder('••••••••').all();
-    await passwordInput.fill('password123');
-    await confirmInput.fill('different456');
-    await page.getByRole('button', { name: /create account/i }).click();
+    const google = page.getByRole('link', { name: /sign up with google/i });
+    const email = page.getByPlaceholder('you@example.com');
+    await expect(page.getByText('Free plan · No credit card')).toBeVisible();
+    expect((await google.boundingBox())!.y).toBeLessThan((await email.boundingBox())!.y);
 
-    await expect(page.getByText('Passwords do not match')).toBeVisible();
+    const password = page.getByPlaceholder('••••••••');
+    await expect(password).toHaveCount(1);
+    await password.fill('password123');
+    await page.getByRole('button', { name: 'Show password' }).click();
+    await expect(password).toHaveAttribute('type', 'text');
   });
 
   test('authenticated users are redirected away from /login', async ({ page }) => {
