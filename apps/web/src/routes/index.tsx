@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { trackCta } from '#/lib/analytics';
 import { hasSessionCookie } from '#/graphql/client';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
@@ -9,9 +10,9 @@ import { marketingHead, SITE_URL } from '#/lib/seo';
 import { statusColor } from '#/lib/statusColors';
 import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'lucide-react';
 
-const OG_TITLE = 'Trakwyn — Your Job Search, Organized and Powered by AI';
+const OG_TITLE = 'Trakwyn — Track every application. Tailor every cover letter.';
 const OG_DESCRIPTION =
-  'Track applications on a Kanban board, get AI-drafted resumes and cover letters grounded in your real experience, and see the analytics behind your search. Everything you need to land your next role.';
+  'Save jobs from any posting with one click, keep every application on one board, and get cover letters and resumes drafted from your own experience. Free to start.';
 
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
@@ -123,6 +124,7 @@ export function LandingPage() {
             <div className="mt-10 flex items-center justify-center gap-4">
               <Link
                 to="/register"
+                onClick={() => trackCta('start_free', 'hero')}
                 className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 {t('landing.startFree')}
@@ -134,6 +136,9 @@ export function LandingPage() {
                 {authLabel}
               </Link>
             </div>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              {t('landing.heroTrustLine')}
+            </p>
           </div>
         </section>
 
@@ -250,14 +255,24 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center">
+            <p className="mt-10 text-center text-base text-gray-600 dark:text-gray-400">
+              {t('landing.planFraming')}{' '}
+              <Link to="/pricing" className="font-semibold text-blue-600 hover:text-blue-700">
+                {t('landing.seePricing')}
+              </Link>
+            </p>
+            <div className="mt-8 text-center">
               <Link
                 to="/register"
+                onClick={() => trackCta('get_started_free', 'closing')}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 {t('landing.startFree')}
                 <ArrowRight className="size-4" />
               </Link>
+              <p className="mx-auto mt-4 max-w-xl text-sm text-gray-600 dark:text-gray-400">
+                {t('landing.passesNote')}
+              </p>
             </div>
           </div>
         </section>

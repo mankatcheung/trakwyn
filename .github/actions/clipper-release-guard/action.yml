@@ -96,11 +96,11 @@ runs:
           | grep '^clipper-v' | { cat; echo "$TAG"; } | sort -uV \
           | grep -B1 -x "$TAG" | head -n1)
         if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
-          echo "::error::No earlier Clipper release to compare with; $HINT (apps/extension/CLAUDE.md)"; exit 1
+          echo "::error::No earlier Clipper release to compare with; $HINT (apps/extension/docs/releasing.md)"; exit 1
         fi
         mkdir -p "$RUNNER_TEMP/prev"
         gh release download "$prev" --pattern "$ZIP_GLOB" --dir "$RUNNER_TEMP/prev" || {
-          echo "::error::$prev has no $STORE zip to compare with; $HINT (apps/extension/CLAUDE.md)"; exit 1
+          echo "::error::$prev has no $STORE zip to compare with; $HINT (apps/extension/docs/releasing.md)"; exit 1
         }
         old=$(unzip -p "$RUNNER_TEMP"/prev/$ZIP_GLOB manifest.json)
         new=$(unzip -p "$ZIP" manifest.json)
@@ -110,5 +110,5 @@ runs:
             content_script_matches: (($new | hosts) - ($old | hosts)) }
           | with_entries(select(.value | length > 0))')
         if [ "$added" != "{}" ]; then
-          echo "::error::Added since $prev: $added. $HINT, after deciding the re-approval prompt is acceptable (apps/extension/CLAUDE.md)"; exit 1
+          echo "::error::Added since $prev: $added. $HINT, after deciding the re-approval prompt is acceptable (apps/extension/docs/releasing.md)"; exit 1
         fi

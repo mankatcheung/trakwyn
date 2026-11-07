@@ -105,6 +105,17 @@ export function useBillingStatus(): BillingStatus | null {
   return data?.billingStatus ?? null;
 }
 
+/**
+ * True only once the API has said this plan lacks `feature`. False while
+ * billing status loads and wherever plans are not enforced (every feature is
+ * then on), so a locked preview appears only when the API really withholds
+ * the feature (JEF-523) and never flashes for a Pro user.
+ */
+export function useFeatureLocked(feature: keyof PlanFeatures): boolean {
+  const status = useBillingStatus();
+  return status !== null && status.features[feature] === false;
+}
+
 /** `ok` below 80% of the limit, `warning` from 80%, `full` once nothing more fits. */
 export type UsageLevel = 'unlimited' | 'ok' | 'warning' | 'full';
 

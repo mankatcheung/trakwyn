@@ -23,3 +23,11 @@ export {
 } from './traceContext';
 export { REDACTED, scrubEvent, scrubString, scrubValue } from './scrub';
 export { transportFailureProperties, type TransportFailureProperties } from './transportFailure';
+export {
+  consumeOAuthRegistration,
+  markOAuthRegistration,
+  trackCta,
+  type CtaName,
+  type CtaLocation,
+  type RegisterMethod,
+} from './funnel';

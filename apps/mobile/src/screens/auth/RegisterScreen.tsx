@@ -29,14 +29,14 @@ export function RegisterScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oauthProvider, setOAuthProvider] = useState<OAuthProviderName | null>(null);
 
   const onSubmit = async () => {
     setError(null);
-    const parsed = registerSchema.safeParse({ email, password, confirmPassword });
+    const parsed = registerSchema.safeParse({ email, password });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? t('auth:validation.invalidInput'));
       return;
@@ -91,69 +91,11 @@ export function RegisterScreen() {
             </Text>
           </View>
 
+          <Text style={styles.freeNote} testID="register-free-note">
+            {t('auth:register.freeNoCard')}
+          </Text>
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('auth:register.emailLabel')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth:register.emailPlaceholder')}
-              placeholderTextColor={colors.textFaint}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              testID="register-email-input"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('auth:register.passwordLabel')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth:register.passwordPlaceholder')}
-              placeholderTextColor={colors.textFaint}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password-new"
-              testID="register-password-input"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('auth:register.confirmPasswordLabel')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth:register.confirmPasswordPlaceholder')}
-              placeholderTextColor={colors.textFaint}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoComplete="password-new"
-              testID="register-confirm-password-input"
-            />
-          </View>
-
-          <Pressable
-            style={[styles.button, isSubmitting && styles.buttonDisabled]}
-            onPress={onSubmit}
-            disabled={isSubmitting}
-            testID="register-submit-button"
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <Text style={styles.buttonText}>{t('auth:register.submit')}</Text>
-            )}
-          </Pressable>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('auth:orContinueWith')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
           <View style={styles.oauthRow}>
             <Pressable
@@ -188,6 +130,67 @@ export function RegisterScreen() {
               )}
             </Pressable>
           </View>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('auth:register.orSignUpWithEmail')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>{t('auth:register.emailLabel')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth:register.emailPlaceholder')}
+              placeholderTextColor={colors.textFaint}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              testID="register-email-input"
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>{t('auth:register.passwordLabel')}</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder={t('auth:register.passwordPlaceholder')}
+                placeholderTextColor={colors.textFaint}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="password-new"
+                testID="register-password-input"
+              />
+              <Pressable
+                style={styles.showPassword}
+                onPress={() => setShowPassword((v) => !v)}
+                accessibilityRole="button"
+                testID="register-show-password"
+              >
+                <Text style={styles.showPasswordText}>
+                  {showPassword ? t('auth:register.hidePassword') : t('auth:register.showPassword')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <Pressable
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            onPress={onSubmit}
+            disabled={isSubmitting}
+            testID="register-submit-button"
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={colors.onPrimary} />
+            ) : (
+              <Text style={styles.buttonText}>{t('auth:register.submit')}</Text>
+            )}
+          </Pressable>
 
           <Text style={styles.terms}>{t('auth:register.termsAgreement')}</Text>
         </View>
@@ -228,6 +231,18 @@ function createStyles(colors: ThemeColors) {
       marginTop: -8,
     },
     subtitle: { fontSize: 14, color: colors.textSubtle },
+    freeNote: { fontSize: 14, fontWeight: '600', color: colors.success, marginTop: -8 },
+    passwordRow: { justifyContent: 'center' },
+    passwordInput: { paddingRight: 84 },
+    showPassword: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      paddingHorizontal: 14,
+      justifyContent: 'center',
+    },
+    showPasswordText: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
     link: { color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
     field: { gap: 6 },
     fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },

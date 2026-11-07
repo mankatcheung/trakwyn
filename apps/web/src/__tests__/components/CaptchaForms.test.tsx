@@ -66,10 +66,9 @@ describe('captcha on the auth forms', () => {
   describe('RegisterPage', () => {
     const fillForm = () => {
       const [email] = screen.getAllByPlaceholderText('you@example.com');
-      const [password, confirm] = screen.getAllByPlaceholderText('••••••••');
+      const [password] = screen.getAllByPlaceholderText('••••••••');
       fireEvent.change(email, { target: { value: 'new@example.com' } });
       fireEvent.change(password, { target: { value: 'password123' } });
-      fireEvent.change(confirm, { target: { value: 'password123' } });
     };
 
     it('disables sign-up until the captcha is solved, then sends the token', async () => {

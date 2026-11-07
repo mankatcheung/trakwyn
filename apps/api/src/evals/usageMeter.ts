@@ -5,9 +5,19 @@ export interface UsageTotals {
   completionTokens: number;
   latencyMs: number;
   calls: number;
+  /** Tool-calling requests made (chat loop iterations) and the tool calls the model asked for. */
+  streams: number;
+  toolCalls: number;
 }
 
-const EMPTY_TOTALS: UsageTotals = { promptTokens: 0, completionTokens: 0, latencyMs: 0, calls: 0 };
+const EMPTY_TOTALS: UsageTotals = {
+  promptTokens: 0,
+  completionTokens: 0,
+  latencyMs: 0,
+  calls: 0,
+  streams: 0,
+  toolCalls: 0,
+};
 
 /**
  * Wraps a provider to total what its `complete` calls cost: the token counts
@@ -39,8 +49,23 @@ export function meterProvider(inner: ILLMProvider): {
         };
       }
     },
-    completeWithToolsStream: (messages, tools, maxTokens, signal, streamOptions) =>
-      inner.completeWithToolsStream(messages, tools, maxTokens, signal, streamOptions),
+    // Not timed or token-counted (the chat eval reports iterations, not cost); it
+    // only counts the requests and the tool calls so the report can show them.
+    async *completeWithToolsStream(messages, tools, maxTokens, signal, streamOptions) {
+      totals = { ...totals, streams: totals.streams + 1 };
+      for await (const event of inner.completeWithToolsStream(
+        messages,
+        tools,
+        maxTokens,
+        signal,
+        streamOptions,
+      )) {
+        if (event.type === 'done') {
+          totals = { ...totals, toolCalls: totals.toolCalls + event.toolCalls.length };
+        }
+        yield event;
+      }
+    },
   };
 
   return { provider, totals: () => totals };

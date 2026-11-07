@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { ErrorState } from '#/components/ErrorState';
+import { LockedFeaturePreview } from '#/components/LockedFeaturePreview';
+import { useFeatureLocked } from '#/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { GitCompareArrowsIcon, CheckIcon } from 'lucide-react';
 import { Button, EmptyState, Skeleton } from '@trakwyn/ui';
@@ -14,6 +16,7 @@ import {
 
 export function OffersPage() {
   const { t } = useLocale();
+  const offersLocked = useFeatureLocked('offers');
   const { data, isLoading, isError, error, refetch } = useQuery(myOffersQueryOptions);
   const offers = data?.myOffers ?? [];
 
@@ -53,6 +56,15 @@ export function OffersPage() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  if (offersLocked) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-4 px-4 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('offers.title')}</h1>
+        <LockedFeaturePreview feature="offers" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

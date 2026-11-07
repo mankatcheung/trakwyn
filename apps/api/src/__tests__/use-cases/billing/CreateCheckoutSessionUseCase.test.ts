@@ -33,7 +33,7 @@ describe('CreateCheckoutSessionUseCase', () => {
       email: 'a@b.co',
       product: 'pass_3m',
       customerId: null,
-      successUrl: 'https://app.example/settings/plan',
+      successUrl: 'https://app.example/settings/plan?checkout=success',
     });
   });
 

@@ -40,5 +40,17 @@
     "connectMcp": "生成 API 令牌以连接 MCP",
     "addAiKey": "添加 AI 提供商的 API 密钥",
     "addExperience": "添加你的工作经历和技能"
+  },
+  "cvProfile": {
+    "title": "简历资料",
+    "edit": "编辑简历",
+    "empty": "填写你的工作经历和技能，简历、求职信和 AI 助手才能写出属于你的内容。",
+    "fillIn": "填写你的简历",
+    "latestRole": "最近的工作",
+    "titleAtCompany": "{{title}}，就职于 {{company}}",
+    "roles_other": "{{count}} 份工作",
+    "education_other": "{{count}} 项教育经历",
+    "skills_other": "{{count}} 项技能",
+    "completeness": "简历已完成 {{percent}}%"
   }
 }

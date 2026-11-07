@@ -9,13 +9,18 @@ import type { CaseResult, EvalCase } from '#src/evals/types.js';
  * unparseable reply fails that case and the run goes on, since the point is
  * to see how many of the rest the model gets right.
  */
-export async function runCase(evalCase: EvalCase, provider: ILLMProvider): Promise<CaseResult> {
+export async function runCase(
+  evalCase: EvalCase,
+  provider: ILLMProvider,
+  judge?: ILLMProvider,
+): Promise<CaseResult> {
   const meter = meterProvider(provider);
+  const judgeMeter = judge ? meterProvider(judge) : null;
   let failures: string[];
   let schemaValid = true;
 
   try {
-    failures = await evalCase.run(meter.provider);
+    failures = await evalCase.run(meter.provider, judgeMeter?.provider);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     if (error instanceof AiResponseInvalidError) {
@@ -26,7 +31,8 @@ export async function runCase(evalCase: EvalCase, provider: ILLMProvider): Promi
     }
   }
 
-  const { promptTokens, completionTokens, latencyMs } = meter.totals();
+  const { promptTokens, completionTokens, latencyMs, streams, toolCalls } = meter.totals();
+  const judged = judgeMeter?.totals();
   return {
     caseId: evalCase.id,
     feature: evalCase.feature,
@@ -36,6 +42,10 @@ export async function runCase(evalCase: EvalCase, provider: ILLMProvider): Promi
     failures,
     promptTokens,
     completionTokens,
+    judgePromptTokens: judged?.promptTokens ?? 0,
+    judgeCompletionTokens: judged?.completionTokens ?? 0,
     latencyMs,
+    toolCalls,
+    iterations: streams,
   };
 }

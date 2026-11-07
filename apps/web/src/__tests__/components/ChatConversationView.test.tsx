@@ -2,9 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { mockGqlRequest, mockStreamChatMessage } = vi.hoisted(() => ({
-  mockGqlRequest: vi.fn(),
-  mockStreamChatMessage: vi.fn(),
+const { mockGqlRequest, mockStreamChatMessage, mockRefreshAiCredits, aiCredits } = vi.hoisted(
+  () => ({
+    mockGqlRequest: vi.fn(),
+    mockStreamChatMessage: vi.fn(),
+    mockRefreshAiCredits: vi.fn(),
+    aiCredits: { onTrakwynAi: false },
+  }),
+);
+
+vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+  useAiCredits: () => ({ onTrakwynAi: aiCredits.onTrakwynAi, refresh: mockRefreshAiCredits }),
+}));
+vi.mock('#/components/AiCreditsMeter', () => ({
+  AiCreditsMeter: ({ variant }: { variant?: string }) => (
+    <p data-testid="chat-credits" data-variant={variant} />
+  ),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -46,6 +59,65 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 describe('ChatConversationView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    aiCredits.onTrakwynAi = false;
+    mockRefreshAiCredits.mockResolvedValue(undefined);
+  });
+
+  describe('AI credits meter (JEF-511)', () => {
+    const sendHello = () => {
+      fireEvent.change(screen.getByPlaceholderText('Ask a question…'), {
+        target: { value: 'hello' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    };
+
+    it('shows the inline credits line by the composer for a user on Trakwyn AI', async () => {
+      aiCredits.onTrakwynAi = true;
+      mockGqlRequest.mockResolvedValue({ chatHistory: [] });
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+
+      expect(await screen.findByTestId('chat-credits')).toHaveAttribute('data-variant', 'inline');
+    });
+
+    it('shows nothing for a user on their own key', async () => {
+      mockGqlRequest.mockResolvedValue({ chatHistory: [] });
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+
+      await screen.findByPlaceholderText('Ask a question…');
+      expect(screen.queryByTestId('chat-credits')).not.toBeInTheDocument();
+    });
+
+    it('re-reads the credits after a turn is sent', async () => {
+      aiCredits.onTrakwynAi = true;
+      mockGqlRequest.mockResolvedValue({ chatHistory: [] });
+      mockStreamChatMessage.mockResolvedValue(undefined);
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+      sendHello();
+
+      await waitFor(() => expect(mockRefreshAiCredits).toHaveBeenCalledTimes(1));
+    });
+
+    it('re-reads the credits when the turn fails too', async () => {
+      aiCredits.onTrakwynAi = true;
+      mockGqlRequest.mockResolvedValue({ chatHistory: [] });
+      mockStreamChatMessage.mockRejectedValue(new Error('boom'));
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+      sendHello();
+
+      await waitFor(() => expect(mockRefreshAiCredits).toHaveBeenCalledTimes(1));
+    });
   });
 
   it('shows proposal cards under the assistant reply: live while pending, resolved otherwise (JEF-469)', async () => {

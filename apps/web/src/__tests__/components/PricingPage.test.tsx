@@ -2,15 +2,32 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import en from '#/i18n/en.json';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, className }: { children: ReactNode; to: string; className?: string }) => (
-    <a href={to} className={className}>
+  Link: ({
+    children,
+    to,
+    className,
+    onClick,
+  }: {
+    children: ReactNode;
+    to: string;
+    className?: string;
+    onClick?: () => void;
+  }) => (
+    <a href={to} className={className} onClick={onClick}>
       {children}
     </a>
   ),
+}));
+
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
 }));
 
 const isLoggedIn = vi.fn(() => false);
@@ -23,11 +40,21 @@ vi.mock('#/lib/i18n', () => ({
   useLocale: () => ({
     locale: 'en',
     setLocale: vi.fn(),
-    t: (key: string) => (en as Record<string, string>)[key] ?? key,
+    t: (key: string, options?: Record<string, string | number>) =>
+      ((en as Record<string, string>)[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+        String(options?.[name] ?? ''),
+      ),
+    formatNumber: (value: number, options?: Intl.NumberFormatOptions) =>
+      new Intl.NumberFormat('en', options).format(value),
   }),
 }));
 
-import { PricingPage } from '#/routes/-components/PricingPage';
+import {
+  derivePassPricing,
+  OPTIONS,
+  PricingPage,
+  priceAmount,
+} from '#/routes/-components/PricingPage';
 
 const API_CONSTANTS = readFileSync(
   join(import.meta.dirname, '..', '..', '..', '..', 'api', 'src', 'use-cases', 'constants.ts'),
@@ -35,7 +62,30 @@ const API_CONSTANTS = readFileSync(
 );
 
 describe('PricingPage', () => {
-  beforeEach(() => isLoggedIn.mockReturnValue(false));
+  beforeEach(() => {
+    isLoggedIn.mockReturnValue(false);
+    mockCapture.mockClear();
+  });
+
+  it('reports a pricing view once on mount', () => {
+    render(<PricingPage />);
+    expect(mockCapture.mock.calls).toEqual([['pricing_viewed']]);
+  });
+
+  it('reports the Free and Pro CTAs separately', async () => {
+    const user = userEvent.setup();
+    render(<PricingPage />);
+    mockCapture.mockClear();
+
+    // The header carries the same label (JEF-518); the Free card's CTA comes last.
+    await user.click(screen.getAllByRole('link', { name: 'Start for free' }).at(-1)!);
+    await user.click(screen.getByRole('link', { name: 'Get Pro' }));
+
+    expect(mockCapture.mock.calls).toEqual([
+      ['marketing_cta_clicked', { cta: 'start_free', location: 'pricing_free' }],
+      ['marketing_cta_clicked', { cta: 'get_pro', location: 'pricing_pro' }],
+    ]);
+  });
 
   it('renders the three ways to pay for Pro', () => {
     render(<PricingPage />);
@@ -46,6 +96,86 @@ describe('PricingPage', () => {
     expect(screen.getAllByText('$12').length).toBeGreaterThan(0);
     expect(screen.getByText('$29')).toBeInTheDocument();
     expect(screen.getByText('$49')).toBeInTheDocument();
+  });
+
+  describe('outcome, best value and savings (JEF-521)', () => {
+    const strings = en as Record<string, string>;
+    const price = (key: string) => priceAmount(strings[key]);
+
+    it('leads the Pro card with an outcome rather than a list of specs', () => {
+      render(<PricingPage />);
+      expect(
+        screen.getByText('Never hit a limit mid-search. Every tool, unlimited applications.'),
+      ).toBeInTheDocument();
+    });
+
+    it('frames Free as for getting started and Pro as for an active search (JEF-523)', () => {
+      render(<PricingPage />);
+      expect(screen.getByText('For getting started')).toBeInTheDocument();
+      expect(screen.getByText('For an active search')).toBeInTheDocument();
+    });
+
+    it('badges exactly one option as best value, the 6-month pass', () => {
+      render(<PricingPage />);
+      expect(OPTIONS.filter((o) => o.featured)).toHaveLength(1);
+      const badges = screen.getAllByTestId('best-value-badge');
+      expect(badges).toHaveLength(1);
+      expect(badges[0]).toHaveTextContent('Best value');
+      expect(badges[0].closest('li')).toHaveTextContent('6-month pass');
+    });
+
+    it('leads the options with the no-renewal benefit', () => {
+      render(<PricingPage />);
+      expect(
+        screen.getByRole('heading', { name: 'Pro for the length of your search' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Pick a pass that ends on its own: no renewal, nothing to cancel when you're hired.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('marks each pass, and only the passes, as not auto-renewing', () => {
+      render(<PricingPage />);
+      const chips = screen.getAllByTestId('no-auto-renew-chip');
+      expect(chips).toHaveLength(2);
+      expect(chips.map((c) => c.closest('li'))).toEqual([
+        screen.getByText('3-month pass').closest('li'),
+        screen.getByText('6-month pass').closest('li'),
+      ]);
+      for (const chip of chips) expect(chip).toHaveTextContent('No auto-renew');
+    });
+
+    it('shows each pass its monthly equivalent and saving, derived from the price keys', () => {
+      render(<PricingPage />);
+      const monthly = price('pricing.monthlyPrice');
+      for (const option of OPTIONS.filter((o) => o.months > 1)) {
+        const { perMonth, savePercent } = derivePassPricing(
+          price(option.priceKey),
+          option.months,
+          monthly,
+        );
+        const card = screen.getByText(strings[option.nameKey]).closest('li')!;
+        expect(card).toHaveTextContent(`$${perMonth.toFixed(2)} a month`);
+        expect(card).toHaveTextContent(`Save ${savePercent}%`);
+        expect(savePercent).toBeGreaterThan(0);
+      }
+    });
+
+    it('works out to $9.67 / 19% for 3 months and $8.17 / 32% for 6 at the current prices', () => {
+      expect(derivePassPricing(29, 3, 12).savePercent).toBe(19);
+      expect(derivePassPricing(49, 6, 12).savePercent).toBe(32);
+      render(<PricingPage />);
+      expect(screen.getByText(/\$9\.67 a month/)).toBeInTheDocument();
+      expect(screen.getByText(/\$8\.17 a month/)).toBeInTheDocument();
+    });
+
+    it('does not show a saving on the monthly option', () => {
+      render(<PricingPage />);
+      const card = screen.getByText('Monthly subscription').closest('li')!;
+      expect(card).not.toHaveTextContent('Save');
+    });
   });
 
   it('states the tax and refund terms', () => {
@@ -59,7 +189,8 @@ describe('PricingPage', () => {
     const { container } = render(<PricingPage />);
 
     expect(container.textContent).not.toMatch(/founder/i);
-    expect(container.textContent).not.toContain('$9');
+    // A standalone $9 (the founder price), not the $9.67 a month a pass works out to.
+    expect(container.textContent).not.toMatch(/\$9(?![\d.])/);
   });
 
   it('sends signed-out visitors to register and signed-in users to the plan settings', () => {

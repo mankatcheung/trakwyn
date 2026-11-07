@@ -162,9 +162,33 @@ Everything filters on `$lib = trakwyn-extension`, because web, the web server an
 
 It notifies the same users as the mobile alert (`release_health_alert_user_ids`). The key also needs `dashboard:write`, `insight:write` and `alert:write`, as for mobile release health.
 
-**What to do when it fires.** Open the board's line, then Activity filtered to `parser_result` and that `board`: `missing_fields` says whether `company`, `role` or `description` went missing, and `parser` and `site_parser_failed` say whether the board's own parser ran or fell back to the generic one. Reproduce the page in `apps/extension/src/lib/parsers/__fixtures__`, fix, and ship it by the hotfix path in `apps/extension/CLAUDE.md`.
+**What to do when it fires.** Open the board's line, then Activity filtered to `parser_result` and that `board`: `missing_fields` says whether `company`, `role` or `description` went missing, and `parser` and `site_parser_failed` say whether the board's own parser ran or fell back to the generic one. Reproduce the page in `apps/extension/src/lib/parsers/__fixtures__`, fix, and ship it by the hotfix path in `apps/extension/docs/releasing.md`.
 
 **Checking it.** Apply, open the dashboard, and send a test event the way "Checking it end to end" does with `$lib` set to `trakwyn-extension`, `board` set to `linkedin` and `release` set to `0.0.0-test`; it appears on the `linkedin` line and under its own release. A day's count above the limit makes the alert's next daily check fire.
+
+## Marketing → signup → Pro funnel (JEF-514)
+
+The web app sends named events for each step. They are built by hand in the PostHog UI (not Terraform: the funnel is a product question that changes with the pages, not a setting that must not drift). Autocapture stays off, so nothing here is inferred from clicks.
+
+| Step             | Event                                                 | Properties                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Landed           | `$pageview` where `$pathname` is `/` or `/features/…` | `$pathname` (templated), `country`                                                                                                                                                              |
+| Clicked a CTA    | `marketing_cta_clicked`                               | `cta` (`start_free`, `get_started`, `get_started_free`, `get_pro`), `location` (`hero`, `closing`, `header`, `header_mobile`, `feature_hero`, `feature_closing`, `pricing_free`, `pricing_pro`) |
+| Viewed pricing   | `pricing_viewed`                                      | none                                                                                                                                                                                            |
+| Started the form | `register_started`                                    | none (first field focus on `/register`)                                                                                                                                                         |
+| Signed up        | `register_completed`                                  | `method`: `password`, `google` or `github`                                                                                                                                                      |
+| Clicked upgrade  | `upgrade_clicked`                                     | `plan_option`: `monthly`, `pass3Months` or `pass6Months`                                                                                                                                        |
+| Paid             | `checkout_completed`                                  | none (the return to Settings → Plan with `?checkout=success`)                                                                                                                                   |
+
+**Building the insight.** Product analytics → New insight → Funnels, with these steps in order: `$pageview` filtered to `$pathname` = `/`, `register_completed`, `checkout_completed`. Use a 30-day conversion window, and save it to a dashboard called **Signup funnel**. Break it down by `country` to see where visitors drop, or add a second funnel starting at `marketing_cta_clicked` and break that down by `location` and `cta` to see which button produces signups.
+
+**Caveats.**
+
+- Events are sent only after analytics consent, and `person_profiles` is `never`, so a funnel counts anonymous browser ids. A visitor who clears storage between landing and paying, or switches device, drops out; the three steps are therefore a lower bound.
+- OAuth sign-ups are reported when the app first loads after the provider redirect, from a marker the register page leaves in `sessionStorage`. The API's callback does not say whether the account is new, so a returning user who signs in with the buttons on `/register` counts as a sign-up too.
+- `checkout_completed` comes from the browser, which is the consent-gated client. If its count runs well below Polar's order count, move it to the Polar webhook (the open question on JEF-514).
+
+**Checking it.** With a key configured, click through `/` → `/register` → sign up; the events appear under Activity within a minute. Every property is a fixed string from the table, so none carries an email, a name or a query string; `scrub.ts` passes them untouched (`funnel.test.ts`).
 
 ## Mobile release health (JEF-368)
 

@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Check, Minus } from 'lucide-react';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/lib/useIsLoggedIn';
+import { ANALYTICS_EVENTS, captureEvent, trackCta } from '#/lib/analytics';
 
 type Cell = { text: string } | { included: boolean };
 
@@ -42,15 +44,50 @@ const ROWS: ComparisonRow[] = [
   { labelKey: 'plan.rowApiAccess', free: { included: false }, pro: { included: true } },
 ];
 
-const OPTIONS = [
+interface PriceOption {
+  nameKey: string;
+  priceKey: string;
+  noteKey: string;
+  /** How many months of Pro the payment covers. */
+  months: number;
+  /** The best-value option: badge plus highlighted border. Exactly one. */
+  featured?: boolean;
+}
+
+const MONTHLY_PRICE_KEY = 'pricing.monthlyPrice';
+
+export const OPTIONS: PriceOption[] = [
   {
     nameKey: 'pricing.monthlyName',
-    priceKey: 'pricing.monthlyPrice',
+    priceKey: MONTHLY_PRICE_KEY,
     noteKey: 'pricing.monthlyNote',
+    months: 1,
   },
-  { nameKey: 'pricing.pass3Name', priceKey: 'pricing.pass3Price', noteKey: 'pricing.passNote' },
-  { nameKey: 'pricing.pass6Name', priceKey: 'pricing.pass6Price', noteKey: 'pricing.passNote' },
+  {
+    nameKey: 'pricing.pass3Name',
+    priceKey: 'pricing.pass3Price',
+    noteKey: 'pricing.passNote',
+    months: 3,
+  },
+  {
+    nameKey: 'pricing.pass6Name',
+    priceKey: 'pricing.pass6Price',
+    noteKey: 'pricing.passNote',
+    months: 6,
+    featured: true,
+  },
 ];
+
+/** The amount in a display string such as "$29" (the i18n keys stay the single source of prices). */
+export function priceAmount(display: string): number {
+  return Number(display.replace(/[^0-9.]/g, ''));
+}
+
+/** Per-month cost of a payment covering `months`, and the percentage saved against paying monthly. */
+export function derivePassPricing(price: number, months: number, monthlyPrice: number) {
+  const perMonth = price / months;
+  return { perMonth, savePercent: Math.round((1 - perMonth / monthlyPrice) * 100) };
+}
 
 function CellValue({ cell }: { cell: Cell }) {
   const { t } = useLocale();
@@ -75,8 +112,12 @@ function CellValue({ cell }: { cell: Cell }) {
  * @category Pages
  */
 export function PricingPage() {
-  const { t } = useLocale();
+  const { t, formatNumber } = useLocale();
   const isLoggedIn = useIsLoggedIn();
+
+  useEffect(() => {
+    captureEvent(ANALYTICS_EVENTS.PRICING_VIEWED);
+  }, []);
 
   const proTo: '/settings/plan' | '/register' = isLoggedIn ? '/settings/plan' : '/register';
 
@@ -97,6 +138,9 @@ export function PricingPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t('plan.badgeFree')}
             </h2>
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t('pricing.freeAudience')}
+            </p>
             <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
               {t('pricing.freePrice')}
             </p>
@@ -105,6 +149,7 @@ export function PricingPage() {
             </p>
             <Link
               to="/register"
+              onClick={() => trackCta('start_free', 'pricing_free')}
               className="mt-6 rounded-lg border border-gray-300 px-5 py-2.5 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               {t('landing.startFree')}
@@ -114,6 +159,9 @@ export function PricingPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t('plan.badgePro')}
             </h2>
+            <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+              {t('pricing.proAudience')}
+            </p>
             <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
               {t('pricing.proPrice')}{' '}
               <span className="text-base font-medium text-gray-500 dark:text-gray-400">
@@ -125,6 +173,7 @@ export function PricingPage() {
             </p>
             <Link
               to={proTo}
+              onClick={() => trackCta('get_pro', 'pricing_pro')}
               className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
               {t('plan.upgradeTitle')}
@@ -136,19 +185,59 @@ export function PricingPage() {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {t('pricing.optionsTitle')}
           </h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{t('pricing.optionsSubtitle')}</p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-3">
-            {OPTIONS.map(({ nameKey, priceKey, noteKey }) => (
-              <li
-                key={nameKey}
-                className="rounded-lg border border-gray-200 p-4 dark:border-gray-800"
-              >
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t(nameKey)}</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {t(priceKey)}
-                </p>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t(noteKey)}</p>
-              </li>
-            ))}
+            {OPTIONS.map(({ nameKey, priceKey, noteKey, months, featured }) => {
+              const monthly = priceAmount(t(MONTHLY_PRICE_KEY));
+              const savings =
+                months > 1 ? derivePassPricing(priceAmount(t(priceKey)), months, monthly) : null;
+              return (
+                <li
+                  key={nameKey}
+                  className={
+                    featured
+                      ? 'relative rounded-lg border-2 border-blue-600 p-4'
+                      : 'rounded-lg border border-gray-200 p-4 dark:border-gray-800'
+                  }
+                >
+                  {featured && (
+                    <span
+                      data-testid="best-value-badge"
+                      className="absolute -top-3 right-4 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white"
+                    >
+                      {t('pricing.bestValue')}
+                    </span>
+                  )}
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t(nameKey)}
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {t(priceKey)}
+                  </p>
+                  {savings && (
+                    <p className="mt-1 text-sm font-medium text-green-700 dark:text-green-400">
+                      {t('pricing.perMonthEquivalent', {
+                        price: formatNumber(savings.perMonth, {
+                          style: 'currency',
+                          currency: 'USD',
+                        }),
+                      })}
+                      {' · '}
+                      {t('pricing.savePercent', { percent: savings.savePercent })}
+                    </p>
+                  )}
+                  {months > 1 && (
+                    <span
+                      data-testid="no-auto-renew-chip"
+                      className="mt-2 inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                    >
+                      {t('pricing.noAutoRenew')}
+                    </span>
+                  )}
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t(noteKey)}</p>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-6 space-y-2 text-sm text-gray-500 dark:text-gray-400">
             <p>{t('legal.terms.paymentsPrices')}</p>

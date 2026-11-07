@@ -2,9 +2,9 @@
 
 Guidance for Claude Code in this repository. Subsystem detail lives next to the code and loads when you work there:
 
-- `apps/api/CLAUDE.md`: auth cookies, session revocation, MCP, storage, email, billing, database, observability, use-case spans, deployment and testing.
+- `apps/api/CLAUDE.md`: auth cookies, session revocation, database, deployment, client compatibility and testing, plus an index of the nested `CLAUDE.md` files next to the code they describe (billing, AI, MCP, storage, observability and so on). Those load only when you work in their directory.
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
-- `apps/mobile/CLAUDE.md`: routing, token storage and refresh, and PostHog native crashes.
+- `apps/mobile/CLAUDE.md`: routing, token storage and refresh, the four test tiers and Maestro, and PostHog native crashes.
 - `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, OAuth sign-in per browser, and error reporting to PostHog.
 - Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's two Blob stores and moving documents to the private one; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/polar/README.md` (payment provider products, prices, webhook and launch; no Terraform) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
 
@@ -57,7 +57,7 @@ http/                Pothos schema (types/ queries/ mutations/ composed in schem
 
 **Dependency injection:** Awilix (`@fastify/awilix`). Repositories and resolvers are `SINGLETON`; use cases are `TRANSIENT`. `http/di/index.ts` (`buildContainer`) composes the modules in `http/di/*.ts` and `http/di/use-cases/*.ts` (one per domain). The `Cradle` type is in `http/di/types.ts`. Decorators such as `Cached*`, `Blocklisting*` and `Logging*` wrap an inner repository in the DI module.
 
-**Testing (JEF-300):** four tiers, three of them Jest projects declared in `apps/mobile/jest.config.js` and separated by where a suite already lives, so nothing was renamed to create them. `unit` is every `*.test.ts` under a `__tests__` directory (pure logic, no renderer); `component` is every `*.test.tsx` (a screen or hook through `@testing-library/react-native`); `integration` is `src/__integration__/`, which boots `apps/api` from `globalSetup` and talks to it for real. `pnpm test` runs the first two, `test:unit`/`test:component`/`test:integration` run one each, and `test:e2e` runs the Maestro flows in `.maestro/` against a build on a device. `src/__tests__/architecture/tierAssignment.test.ts` asks Jest itself (`--listTests`) which files the next CI run will execute and fails if one belongs to no project — a suite matched by nothing does not fail, it silently stops running. Two things the integration tier exists for: mobile hand-writes its 96 GraphQL documents with no codegen, so `graphqlDocuments.test.ts` validates every one against the live schema (it found `DeleteOffer` declaring `$id: ID!` against a `String!` argument — a mutation that could never have succeeded); and every other suite replaces the transport, so `authRoundTrip.test.tsx` is the only place the auth header, the `User-Agent` the API turns into a session label, and the refresh-and-retry path meet a real server. That tier needs Node's own `fetch`: jest-expo installs Expo's, whose native module is stubbed under Jest, so `src/__integration__/nodeFetchEnvironment.js` hands the sandbox the real one. `src/__tests__/setupAfterEnv.ts` gives every tier a React Query client whose `gcTime` is `Infinity` (no gc timer is armed at all — `0` is not equivalent: it arms a 0 ms eviction that races `act` and empties the cache a mutation test just asserted on) and a synchronous notify scheduler — without them each rendered screen leaves a five-minute gc timer armed, which is what "a worker process has failed to exit gracefully" was. `src/__tests__/architecture/maestroTestIds.test.ts` resolves every `id:` the Maestro flows select against the `testID`s the app declares, so a screen rework that drops one fails at the Jest tier rather than on the emulator; a `testID` on a `<Text>` nested inside another `<Text>` passes that check and is still unfindable on Android (see `.maestro/README.md`).
+**Mobile testing (JEF-300):** four tiers (unit, component, integration against a booted API, Maestro e2e), with a Jest check that no suite belongs to no tier. Details are in `apps/mobile/CLAUDE.md`.
 
 ## Environment Setup
 
@@ -115,8 +115,8 @@ cp apps/web/.env.example apps/web/.env
 - **Plans are decided by `IEntitlementService` (JEF-344), never by a constant in a use case.**
   - A Pro feature calls `assertFeature(userId, feature)` first; a per-user cap is passed to the repository (`applicationLimit`, `storageLimitBytes`) instead of being read from `CONTENT_LIMITS` there.
   - `PLANS_ENFORCED` is off by default, and then every feature is on but the caps that already existed stay. Only `EntitlementService` reads it.
-  - A downgrade never touches data. Details are in `apps/api/CLAUDE.md`. AI actions with the user's own key and MCP access are on for both plans (JEF-442).
-- **Chat writes are proposals the user confirms (JEF-469).** Chat is offered the catalogue's non-destructive writes but never runs one: `executeChatTool` saves a `ChatActionProposal` and tells the model it was **not applied**; `confirmChatAction` applies the saved arguments once, in a transaction, through the same handlers as MCP. No delete is offered. Web and mobile render the cards from `chatHistory`. Details are in `apps/api/CLAUDE.md`.
+  - A downgrade never touches data. Details are in `apps/api/src/use-cases/plans/CLAUDE.md`. AI actions with the user's own key and MCP access are on for both plans (JEF-442).
+- **Chat writes are proposals the user confirms (JEF-469).** Chat is offered the catalogue's non-destructive writes but never runs one: `executeChatTool` saves a `ChatActionProposal` and tells the model it was **not applied**; `confirmChatAction` applies the saved arguments once, in a transaction, through the same handlers as MCP. No delete is offered. Web and mobile render the cards from `chatHistory`. Details are in `apps/api/src/use-cases/chat/CLAUDE.md`.
 - **Chat tool results are shaped before the model sees them.** They pass through `projectChatToolResult` and `compactForModel` (`use-cases/chat/chatToolProjection.ts`) and are fenced in `<tool_result>` as data. History and message size are capped by `CHAT.*`. Anthropic `cacheBreakpoint`s are set in `buildChatMessages`. MCP output is deliberately left unprojected.
 
 ## Workflow
@@ -135,6 +135,7 @@ cp apps/web/.env.example apps/web/.env
 
   An unchecked "tests" item means the issue isn't done.
 
+- **Clean up processes you start.** Stop any dev server, watcher, emulator or browser you launched before you finish. Start long-running commands with `run_in_background` so they can be stopped, never with `nohup`, `disown` or a trailing `&`, which detach them from the session.
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
 - **CI security checks (JEF-477):**
   - Actions are referenced by major version (`actions/checkout@v4`). Renovate's `github-actions` manager bumps them in one weekly PR.

@@ -40,5 +40,20 @@
     "connectMcp": "Connect MCP by generating an API token",
     "addAiKey": "Add an AI provider API key",
     "addExperience": "Add your work experience and skills"
+  },
+  "cvProfile": {
+    "title": "CV profile",
+    "edit": "Edit profile",
+    "empty": "Add your experience and skills so CVs, cover letters and the assistant are written about you.",
+    "fillIn": "Fill in your profile",
+    "latestRole": "Latest role",
+    "titleAtCompany": "{{title}} at {{company}}",
+    "roles_one": "{{count}} role",
+    "roles_other": "{{count}} roles",
+    "education_one": "{{count}} education entry",
+    "education_other": "{{count}} education entries",
+    "skills_one": "{{count}} skill",
+    "skills_other": "{{count}} skills",
+    "completeness": "Profile {{percent}}% complete"
   }
 }

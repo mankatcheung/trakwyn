@@ -58,7 +58,9 @@ export class CreateCheckoutSessionUseCase {
       email: user.email,
       product,
       customerId: user.billingCustomerId,
-      successUrl: `${this.deps.webAppOrigin}/settings/plan`,
+      // The marker lets the Plan page report a completed checkout (JEF-514);
+      // the provider redirects here only after a payment.
+      successUrl: `${this.deps.webAppOrigin}/settings/plan?checkout=success`,
     });
   }
 

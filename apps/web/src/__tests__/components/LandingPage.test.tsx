@@ -11,7 +11,17 @@ const { mockHasSessionCookie, mockNavigate } = vi.hoisted(() => ({
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: object) => options,
   useNavigate: () => mockNavigate,
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to, onClick }: { children: ReactNode; to: string; onClick?: () => void }) => (
+    <a href={to} onClick={onClick}>
+      {children}
+    </a>
+  ),
+}));
+
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/lib/analytics/analytics')>()),
+  captureEvent: mockCapture,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -32,6 +42,13 @@ vi.mock('#/lib/i18n', () => ({
         'landing.signIn': 'Sign in',
         'landing.goDashboard': 'Go to dashboard',
         'landing.startFree': 'Start for free',
+        'landing.passesNote':
+          "Need Pro only for your search? A 3- or 6-month pass ends on its own, so there is nothing to cancel once you're hired.",
+        'landing.heroTitleLine1': 'Track every application.',
+        'landing.heroTitleLine2': 'Tailor every cover letter.',
+        'landing.heroDescription':
+          'Save jobs from any posting with one click, keep every application on one board, and get cover letters and resumes drafted from your own experience. Free to start.',
+        'landing.heroTrustLine': 'Free plan · No credit card',
         'landing.features': 'Features',
         'landing.tracking': 'Application tracking',
         'landing.assistant': 'AI assistant',
@@ -42,6 +59,7 @@ vi.mock('#/lib/i18n', () => ({
 }));
 
 import { LandingPage } from '#/routes/index';
+import userEvent from '@testing-library/user-event';
 
 describe('LandingPage', () => {
   beforeEach(() => {
@@ -58,6 +76,43 @@ describe('LandingPage', () => {
     screen
       .getAllByRole('link', { name: 'Go to dashboard' })
       .forEach((link) => expect(link).toHaveAttribute('href', '/dashboard'));
+  });
+
+  it('reports which register CTA was clicked and where it sits', async () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    const user = userEvent.setup();
+    render(<LandingPage />);
+
+    // One label everywhere (JEF-518), so the CTAs are told apart by position:
+    // desktop header, mobile header, hero, closing band.
+    const ctas = screen.getAllByRole('link', { name: 'Start for free' });
+    expect(ctas).toHaveLength(4);
+    for (const cta of ctas) await user.click(cta);
+
+    expect(mockCapture.mock.calls).toEqual([
+      ['marketing_cta_clicked', { cta: 'get_started', location: 'header' }],
+      ['marketing_cta_clicked', { cta: 'get_started', location: 'header_mobile' }],
+      ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
+      ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
+    ]);
+  });
+
+  it('mentions the self-ending passes once, by the closing CTA', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<LandingPage />);
+    expect(screen.getAllByText(/ends on its own/)).toHaveLength(1);
+  });
+
+  it('leads with the track-and-tailor headline and a no-card trust line', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent('Track every application.');
+    expect(heading).toHaveTextContent('Tailor every cover letter.');
+    expect(screen.getByText(/Save jobs from any posting with one click/)).toBeInTheDocument();
+    expect(screen.getByText('Free plan · No credit card')).toBeInTheDocument();
   });
 
   it('keeps sign-in links for logged-out users', () => {

@@ -47,6 +47,9 @@ vi.mock('sonner', () => ({ toast: mockToast }));
 
 vi.mock('#/graphql/generated/graphql', () => ({}));
 
+// Covered by ApplicationCapNotice.test.tsx; its billing request would take the ordered mock responses below.
+vi.mock('#/components/ApplicationCapNotice', () => ({ ApplicationCapNotice: () => null }));
+
 import { ApplicationsPage } from '#/routes/_authenticated/applications/-components/ApplicationsPage';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });

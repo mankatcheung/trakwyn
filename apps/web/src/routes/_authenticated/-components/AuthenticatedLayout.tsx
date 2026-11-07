@@ -14,6 +14,7 @@ import { ChatDockFloatingWindow } from '../-chat-dock-floating-window';
 import { NotificationInboxButton, NotificationInboxLink } from '../-notification-inbox';
 import { AssistantNavConversations } from './AssistantNavConversations';
 import { useLocale } from '#/lib/i18n';
+import { consumeOAuthRegistration } from '#/lib/analytics';
 import {
   BarChart2Icon,
   BriefcaseIcon,
@@ -62,6 +63,10 @@ const MAIN_NAV = [
 export function AuthenticatedLayout() {
   const { t } = useLocale();
   const navigate = useNavigate();
+  // The OAuth round trip from the register page lands here (JEF-514).
+  useEffect(() => {
+    consumeOAuthRegistration();
+  }, []);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({
     select: (s) => s.location.search as { conversation?: string },

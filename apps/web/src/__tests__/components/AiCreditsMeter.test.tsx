@@ -75,6 +75,12 @@ describe('AiCreditsMeter', () => {
     expect(screen.getByRole('status')).toHaveClass('text-red-600');
   });
 
+  it('inline: keeps its tone when a caller adds a class', () => {
+    withCredits(30);
+    render(<AiCreditsMeter variant="inline" className="pt-2" />);
+    expect(screen.getByRole('status')).toHaveClass('text-red-600', 'pt-2');
+  });
+
   it('inline: renders nothing when the plan has no credits', () => {
     billing.status = {
       aiCredits: { used: 0, limit: 0, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
