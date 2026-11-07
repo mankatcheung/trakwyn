@@ -23,6 +23,11 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
+jest.mock('../../../ai/hooks/useAiCredits', () => ({ useAiCredits: jest.fn() }));
+const mockRefreshAiCredits = jest.fn().mockResolvedValue(undefined);
+jest.mock('../../../ai/hooks/useRefreshAiCredits', () => ({
+  useRefreshAiCredits: () => mockRefreshAiCredits,
+}));
 import { useLocalSearchParams } from 'expo-router';
 import { useAppendOptimisticMessage, useChatHistory } from '../../hooks/useChatHistory';
 import { streamChatMessage } from '../../lib/chatStream';
@@ -30,6 +35,12 @@ import { ChatScreen } from '../ChatScreen';
 import type { ChatMessage } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
+import { useAiCredits } from '../../../ai/hooks/useAiCredits';
+import {
+  exhaustedCredits,
+  ownKeyCredits,
+  trakwynCredits,
+} from '../../../ai/testing/aiCreditsFixture';
 
 const mockedUseChatHistory = jest.mocked(useChatHistory);
 const mockedUseAppendOptimisticMessage = jest.mocked(useAppendOptimisticMessage);
@@ -64,6 +75,7 @@ describe('ChatScreen', () => {
     } as never);
     jest.clearAllMocks();
     mockedUseAppendOptimisticMessage.mockReturnValue(jest.fn());
+    jest.mocked(useAiCredits).mockReturnValue(ownKeyCredits());
   });
 
   it('renders existing messages', async () => {
@@ -106,6 +118,74 @@ describe('ChatScreen', () => {
     expect(getByTestId('chat-proposal-confirm-p1')).toBeTruthy();
     expect(getByText('Done')).toBeTruthy();
     expect(queryByTestId('chat-proposal-confirm-p2')).toBeNull();
+  });
+
+  describe('AI credits meter (JEF-511)', () => {
+    const send = async (screen: Awaited<ReturnType<typeof render>>) => {
+      await fireEvent.changeText(screen.getByTestId('chat-input'), 'Hi');
+      await fireEvent.press(screen.getByTestId('chat-send-button'));
+      await waitFor(() => expect(mockedStreamChatMessage).toHaveBeenCalled());
+    };
+
+    beforeEach(() => {
+      mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
+    });
+
+    it('shows how many credits are left for a user on Trakwyn AI', async () => {
+      jest.mocked(useAiCredits).mockReturnValue(trakwynCredits());
+
+      const { findByTestId } = await renderScreen('conv-1');
+
+      expect(String((await findByTestId('chat-credits')).props.children)).toContain('12');
+    });
+
+    it('shows nothing for a user on their own key', async () => {
+      const { queryByTestId } = await renderScreen('conv-1');
+
+      expect(queryByTestId('chat-credits')).toBeNull();
+    });
+
+    it('turns amber when nearing the end of the credits', async () => {
+      jest.mocked(useAiCredits).mockReturnValue(
+        trakwynCredits({
+          standing: { left: 3, total: 30, ratio: 0.9, nearing: true, exhausted: false },
+        }),
+      );
+
+      const { findByTestId } = await renderScreen('conv-1');
+
+      expect(StyleSheet.flatten((await findByTestId('chat-credits')).props.style).color).toBe(
+        lightColors.warning,
+      );
+    });
+
+    it('turns red when none are left', async () => {
+      jest.mocked(useAiCredits).mockReturnValue(exhaustedCredits());
+
+      const { findByTestId } = await renderScreen('conv-1');
+
+      expect(StyleSheet.flatten((await findByTestId('chat-credits')).props.style).color).toBe(
+        lightColors.danger,
+      );
+    });
+
+    it('re-reads the credits after a turn is sent', async () => {
+      jest.mocked(useAiCredits).mockReturnValue(trakwynCredits());
+      mockedStreamChatMessage.mockResolvedValueOnce(undefined);
+
+      await send(await renderScreen('conv-1'));
+
+      await waitFor(() => expect(mockRefreshAiCredits).toHaveBeenCalledTimes(1));
+    });
+
+    it('re-reads the credits when the turn fails too', async () => {
+      jest.mocked(useAiCredits).mockReturnValue(trakwynCredits());
+      mockedStreamChatMessage.mockRejectedValueOnce(new Error('boom'));
+
+      await send(await renderScreen('conv-1'));
+
+      await waitFor(() => expect(mockRefreshAiCredits).toHaveBeenCalledTimes(1));
+    });
   });
 
   describe('provider fallback (JEF-503)', () => {

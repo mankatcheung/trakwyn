@@ -42,7 +42,7 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
           ? 'text-amber-700 dark:text-amber-400'
           : 'text-gray-500 dark:text-gray-400';
     return (
-      <p className={className ?? `text-xs ${tone}`} role="status" title={resets}>
+      <p className={`text-xs ${tone} ${className ?? ''}`.trim()} role="status" title={resets}>
         {text}
       </p>
     );
