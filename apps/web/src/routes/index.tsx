@@ -10,9 +10,9 @@ import { marketingHead, SITE_URL } from '#/lib/seo';
 import { statusColor } from '#/lib/statusColors';
 import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'lucide-react';
 
-const OG_TITLE = 'Trakwyn — Your Job Search, Organized and Powered by AI';
+const OG_TITLE = 'Trakwyn — Track every application. Tailor every cover letter.';
 const OG_DESCRIPTION =
-  'Track applications on a Kanban board, get AI-drafted resumes and cover letters grounded in your real experience, and see the analytics behind your search. Everything you need to land your next role.';
+  'Save jobs from any posting with one click, keep every application on one board, and get cover letters and resumes drafted from your own experience. Free to start.';
 
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
@@ -136,6 +136,9 @@ export function LandingPage() {
                 {authLabel}
               </Link>
             </div>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              {t('landing.heroTrustLine')}
+            </p>
           </div>
         </section>
 
