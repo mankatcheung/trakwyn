@@ -4,11 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { OAuthButtons } from '#/components/OAuthButtons';
 
 describe('OAuthButtons', () => {
-  it('renders the "or" divider', () => {
-    render(<OAuthButtons label="Sign up" />);
-    expect(screen.getByText('or')).toBeInTheDocument();
-  });
-
   it('renders Google OAuth link with the label', () => {
     render(<OAuthButtons label="Sign up" />);
     const link = screen.getByRole('link', { name: /sign up with google/i });

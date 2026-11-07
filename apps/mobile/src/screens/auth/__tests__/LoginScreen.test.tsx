@@ -145,6 +145,31 @@ describe('LoginScreen', () => {
     );
   });
 
+  it('lists the OAuth buttons before the email field, split by an "or" divider (JEF-520)', async () => {
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
+    });
+
+    const { getByText, toJSON } = await renderScreen();
+    const order = JSON.stringify(toJSON());
+
+    expect(getByText('or sign in with email')).toBeTruthy();
+    expect(order.indexOf('oauth-google-button')).toBeLessThan(
+      order.indexOf('or sign in with email'),
+    );
+    expect(order.indexOf('or sign in with email')).toBeLessThan(order.indexOf('login-email-input'));
+  });
+
   it('starts the Google OAuth flow when its button is pressed', async () => {
     const loginWithOAuth = jest.fn().mockResolvedValue(undefined);
     mockedUseAuth.mockReturnValue({

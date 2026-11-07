@@ -19,9 +19,7 @@ export async function registerToWelcome(
 ): Promise<void> {
   await page.goto('/register');
   await page.getByPlaceholder('you@example.com').fill(email);
-  const [passwordInput, confirmInput] = await page.getByPlaceholder('••••••••').all();
-  await passwordInput.fill(password);
-  await confirmInput.fill(password);
+  await page.getByPlaceholder('••••••••').fill(password);
   await page.getByRole('button', { name: /create account/i }).click();
 
   await expect(page.getByRole('heading', { name: /check your email/i })).toBeVisible();
