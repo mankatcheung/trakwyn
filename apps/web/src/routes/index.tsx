@@ -4,6 +4,7 @@ import { trackCta } from '#/lib/analytics';
 import { hasSessionCookie } from '#/graphql/client';
 import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
+import { AiDemoSection } from '#/components/marketing/AiDemoSection';
 import { ClipperSection } from '#/components/marketing/ClipperSection';
 import { useLocale } from '#/lib/i18n';
 import { marketingHead, SITE_URL } from '#/lib/seo';
@@ -188,6 +189,9 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Static posting → cover letter sample (JEF-517) */}
+        <AiDemoSection />
 
         {/* Features */}
         <section className="py-24 sm:py-32">

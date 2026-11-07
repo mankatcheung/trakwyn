@@ -84,17 +84,30 @@ describe('LandingPage', () => {
     render(<LandingPage />);
 
     // One label everywhere (JEF-518), so the CTAs are told apart by position:
-    // desktop header, mobile header, hero, closing band.
+    // desktop header, mobile header, hero, AI demo, closing band.
     const ctas = screen.getAllByRole('link', { name: 'Start for free' });
-    expect(ctas).toHaveLength(4);
+    expect(ctas).toHaveLength(5);
     for (const cta of ctas) await user.click(cta);
 
     expect(mockCapture.mock.calls).toEqual([
       ['marketing_cta_clicked', { cta: 'get_started', location: 'header' }],
       ['marketing_cta_clicked', { cta: 'get_started', location: 'header_mobile' }],
       ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
+      ['marketing_cta_clicked', { cta: 'start_free', location: 'ai_demo' }],
       ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
     ]);
+  });
+
+  it('shows the posting → cover letter sample after the board and before the feature cards (JEF-517)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const demo = screen.getByRole('region', { name: 'landing.aiDemo.title' });
+    const board = screen.getByText('landing.boardLabel');
+    const features = screen.getByRole('link', { name: /Analytics & insights/ });
+    expect(board.compareDocumentPosition(demo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(demo.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('mentions the self-ending passes once, by the closing CTA', () => {
