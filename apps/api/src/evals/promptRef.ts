@@ -1,3 +1,4 @@
+import { chatPrompt } from '#src/use-cases/prompts/chat.js';
 import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescription.js';
 import { resumePrompt } from '#src/use-cases/prompts/resume.js';
@@ -17,6 +18,7 @@ const EVAL_PROMPTS = {
   resumeMatch: resumeMatchPrompt,
   resume: resumePrompt,
   coverLetter: coverLetterPrompt,
+  chat: chatPrompt,
 } satisfies Record<EvalFeature, PromptDefinition<never>>;
 
 /** `parseJobDescription@1`: the prompt and version a feature's cases run against. */

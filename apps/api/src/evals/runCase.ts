@@ -31,7 +31,7 @@ export async function runCase(
     }
   }
 
-  const { promptTokens, completionTokens, latencyMs } = meter.totals();
+  const { promptTokens, completionTokens, latencyMs, streams, toolCalls } = meter.totals();
   const judged = judgeMeter?.totals();
   return {
     caseId: evalCase.id,
@@ -45,5 +45,7 @@ export async function runCase(
     judgePromptTokens: judged?.promptTokens ?? 0,
     judgeCompletionTokens: judged?.completionTokens ?? 0,
     latencyMs,
+    toolCalls,
+    iterations: streams,
   };
 }

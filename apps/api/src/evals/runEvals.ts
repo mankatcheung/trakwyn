@@ -30,7 +30,9 @@ const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 function progressLine(result: CaseResult): string {
-  return `  ${result.passed ? 'pass' : 'FAIL'}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)`;
+  const toolUse =
+    result.feature === 'chat' ? `  ${result.toolCalls} calls, ${result.iterations} iterations` : '';
+  return `  ${result.passed ? 'pass' : 'FAIL'}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)${toolUse}`;
 }
 
 async function runTargets(

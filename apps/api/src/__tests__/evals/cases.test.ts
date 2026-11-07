@@ -33,7 +33,7 @@ describe('the case list', () => {
     expect(JOB_DESCRIPTION_CASES.length).toBeGreaterThan(0);
     expect(RESUME_MATCH_CASES.length).toBeGreaterThan(0);
     expect(new Set(ALL_CASES.map((evalCase) => evalCase.feature))).toEqual(
-      new Set(['jobDescription', 'resumeMatch', 'resume', 'coverLetter']),
+      new Set(['jobDescription', 'resumeMatch', 'resume', 'coverLetter', 'chat']),
     );
   });
 
@@ -45,13 +45,18 @@ describe('the case list', () => {
   });
 });
 
-describe.each(ALL_CASES)('case $id', (evalCase) => {
-  it('passes when the model gives its ideal reply, so the checks can be met', async () => {
-    const failures = await evalCase.run(answering(evalCase.idealReply), supportedClaimsJudge());
+// Chat cases are scripted over several rounds, so one canned reply cannot satisfy
+// them; `chatCases.test.ts` feeds them their ideal traces instead.
+describe.each(ALL_CASES.filter((evalCase) => evalCase.feature !== 'chat'))(
+  'case $id',
+  (evalCase) => {
+    it('passes when the model gives its ideal reply, so the checks can be met', async () => {
+      const failures = await evalCase.run(answering(evalCase.idealReply), supportedClaimsJudge());
 
-    expect(failures).toEqual([]);
-  });
-});
+      expect(failures).toEqual([]);
+    });
+  },
+);
 
 describe('the job-description checks are not vacuous', () => {
   const allNull = JSON.stringify({

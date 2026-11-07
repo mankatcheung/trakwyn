@@ -64,6 +64,23 @@ function promptColumn(results: CaseResult[]): string {
   return [...new Set(results.map((result) => result.prompt))].sort().join(', ');
 }
 
+/**
+ * Tool calls and loop iterations for every chat case (JEF-471), since a cheaper
+ * model (JEF-448) can pass a case by calling more tools than it should, and a
+ * tighter loop limit shows up as iterations reaching the cap.
+ */
+function toolUseSection(runs: TargetRun[]): string[] {
+  const lines = runs.flatMap(({ label, results }) =>
+    results
+      .filter((result) => result.feature === 'chat')
+      .map(
+        (result) =>
+          `  ${label}  ${result.caseId}: ${result.toolCalls} tool call${result.toolCalls === 1 ? '' : 's'}, ${result.iterations} iteration${result.iterations === 1 ? '' : 's'}`,
+      ),
+  );
+  return lines.length === 0 ? [] : ['', 'Chat tool use:', ...lines];
+}
+
 /** A table with a row per target, then each failing case and why it failed. */
 export function formatReport(runs: TargetRun[]): string {
   const rows = runs.map(({ label, results }) => {
@@ -107,6 +124,7 @@ export function formatReport(runs: TargetRun[]): string {
   return [
     line(header),
     ...rows.map(line),
+    ...toolUseSection(runs),
     '',
     failures.length === 0 ? 'no failures' : `Failures:\n${failures.join('\n')}`,
   ].join('\n');
