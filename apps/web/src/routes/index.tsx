@@ -270,6 +270,9 @@ export function LandingPage() {
                 {t('landing.getStartedFree')}
                 <ArrowRight className="size-4" />
               </Link>
+              <p className="mx-auto mt-4 max-w-xl text-sm text-gray-600 dark:text-gray-400">
+                {t('landing.passesNote')}
+              </p>
             </div>
           </div>
         </section>

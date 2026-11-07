@@ -44,6 +44,8 @@ vi.mock('#/lib/i18n', () => ({
         'landing.getStarted': 'Get started',
         'landing.startFree': 'Start for free',
         'landing.getStartedFree': 'Get started for free',
+        'landing.passesNote':
+          "Need Pro only for your search? A 3- or 6-month pass ends on its own, so there is nothing to cancel once you're hired.",
         'landing.heroTitleLine1': 'Track every application.',
         'landing.heroTitleLine2': 'Tailor every cover letter.',
         'landing.heroDescription':
@@ -92,6 +94,12 @@ describe('LandingPage', () => {
       ['marketing_cta_clicked', { cta: 'start_free', location: 'hero' }],
       ['marketing_cta_clicked', { cta: 'get_started_free', location: 'closing' }],
     ]);
+  });
+
+  it('mentions the self-ending passes once, by the closing CTA', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<LandingPage />);
+    expect(screen.getAllByText(/ends on its own/)).toHaveLength(1);
   });
 
   it('leads with the track-and-tailor headline and a no-card trust line', () => {
