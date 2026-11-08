@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazyRouteComponent } from '@tanstack/react-router';
 import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import { myOffersQueryOptions } from './-offers-queries';
+import { OffersPage } from './-offers-page';
 
 export const Route = createFileRoute('/_authenticated/offers')({
   loader: async ({ context: { queryClient } }) => {
@@ -14,5 +14,5 @@ export const Route = createFileRoute('/_authenticated/offers')({
       if (getGqlErrorCode(error) !== PLAN_REQUIRED_CODE) throw error;
     }
   },
-  component: lazyRouteComponent(() => import('./-offers-page'), 'OffersPage'),
+  component: OffersPage,
 });

@@ -55,7 +55,7 @@ describe('ChatDockFooter', () => {
     render(<ChatDockFooter />, { wrapper: Wrapper });
     fireEvent.click(screen.getByLabelText('Chat with Assistant'));
 
-    expect(screen.getByText('New conversation')).toBeInTheDocument();
+    expect(await screen.findByText('New conversation')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Ghosted applications')).toBeInTheDocument());
   });
 

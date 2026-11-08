@@ -80,7 +80,10 @@ interface ExportedPdf {
   url: string;
 }
 
-export function DocumentDraftEditPage() {
+// Not exported on purpose (JEF-537): TanStack's code splitter leaves a route
+// component alone when the file also exports it, and this one pulls in the whole
+// rich-text editor. Tests reach it through `Route.component`.
+function DocumentDraftEditPage() {
   const { t } = useLocale();
   const { applicationId, draftId } = Route.useParams();
   const navigate = useNavigate();
