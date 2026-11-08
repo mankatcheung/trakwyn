@@ -19,6 +19,14 @@ import { ChatConversationView } from '#/routes/_authenticated/assistant/-compone
  * page the user is working on rather than block it.
  */
 export function ChatDockFloatingWindow() {
+  const dock = useChatDock();
+  // The window's queries (conversations, API keys, billing) belong to the
+  // open window, so nothing is fetched while it is closed (JEF-535).
+  if (!dock.expanded) return null;
+  return <ExpandedChatWindow />;
+}
+
+function ExpandedChatWindow() {
   const { t } = useLocale();
   const dock = useChatDock();
   const navigate = useNavigate();
@@ -27,8 +35,6 @@ export function ChatDockFloatingWindow() {
   const hostedAi = useHostedAiAvailable();
   const { settings } = useChatRunsOn();
   const llmApiKeys = settings?.llmApiKeys ?? [];
-
-  if (!dock.expanded) return null;
 
   const isNew = dock.expanded === 'new';
   const activeConversation = isNew
