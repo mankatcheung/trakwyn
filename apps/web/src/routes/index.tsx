@@ -6,11 +6,12 @@ import { MarketingHeader } from '#/components/marketing/MarketingHeader';
 import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { AiDemoSection } from '#/components/marketing/AiDemoSection';
 import { ClipperSection } from '#/components/marketing/ClipperSection';
+import { FeatureRow, type FeatureRowProps } from '#/components/marketing/FeatureRow';
 import { FaqSection, type FaqItem } from '#/components/marketing/FaqSection';
+import { ArrowRight } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { marketingHead, SITE_URL } from '#/lib/seo';
 import { statusColor } from '#/lib/statusColors';
-import { LayoutDashboard, Sparkles, FileText, BarChart3, ArrowRight } from 'lucide-react';
 
 const OG_TITLE = 'Trakwyn — Track every application. Tailor every cover letter.';
 const OG_DESCRIPTION =
@@ -55,32 +56,33 @@ export const Route = createFileRoute('/')({
  * everywhere they're listed (here, the features index, and the footer's
  * Product column) so a visitor doesn't have to re-learn the lineup.
  */
-const highlightedFeatures = [
+const highlightedFeatures: readonly FeatureRowProps[] = [
   {
-    icon: LayoutDashboard,
     titleKey: 'landing.tracking',
     descriptionKey: 'landing.trackingDescription',
-    to: '/features/tracking' as const,
+    to: '/features/tracking',
+    screenshot: 'board',
   },
   {
-    icon: Sparkles,
     titleKey: 'landing.assistant',
     descriptionKey: 'landing.assistantDescription',
-    to: '/features/ai-assistant' as const,
+    to: '/features/ai-assistant',
+    screenshot: 'assistant',
   },
   {
-    icon: FileText,
     titleKey: 'landing.resumeCoverLetters',
     descriptionKey: 'landing.resumeCoverLettersDescription',
-    to: '/features/resume-cover-letter' as const,
+    to: '/features/resume-cover-letter',
+    screenshot: 'resume',
   },
   {
-    icon: BarChart3,
     titleKey: 'landing.analytics',
     descriptionKey: 'landing.analyticsDescription',
-    to: '/features/analytics' as const,
+    to: '/features/analytics',
+    screenshot: 'analytics',
+    pro: true,
   },
-] as const;
+];
 
 const stepKeys = ['landing.step1', 'landing.step2', 'landing.step3', 'landing.step4'] as const;
 
@@ -212,27 +214,9 @@ export function LandingPage() {
                 {t('landing.everythingDescription')}
               </p>
             </div>
-            <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {highlightedFeatures.map((feature) => (
-                <Link
-                  key={feature.titleKey}
-                  to={feature.to}
-                  className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-blue-300 dark:border-gray-800 dark:bg-gray-800/50 dark:hover:border-blue-800"
-                >
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                    <feature.icon className="size-5 text-blue-600" />
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-gray-100">
-                    {t(feature.titleKey)}
-                  </h3>
-                  <p className="mt-2 text-sm/6 text-gray-600 dark:text-gray-400">
-                    {t(feature.descriptionKey)}
-                  </p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
-                    {t('landing.learnMore')}
-                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
+            <div className="mt-16 flex flex-col gap-20 sm:gap-24">
+              {highlightedFeatures.map((feature, i) => (
+                <FeatureRow key={feature.titleKey} {...feature} reversed={i % 2 === 1} />
               ))}
             </div>
             <div className="mt-10 text-center">

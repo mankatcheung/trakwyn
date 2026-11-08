@@ -105,7 +105,7 @@ describe('LandingPage', () => {
 
     const demo = screen.getByRole('region', { name: 'landing.aiDemo.title' });
     const board = screen.getByText('landing.boardLabel');
-    const features = screen.getByRole('link', { name: /Analytics & insights/ });
+    const features = screen.getAllByTestId('feature-row')[3];
     expect(board.compareDocumentPosition(demo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(demo.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -163,23 +163,39 @@ describe('LandingPage', () => {
     expect(screen.getByRole('link', { name: 'Features' })).toHaveAttribute('href', '/features');
   });
 
-  it('links each of the four highlighted feature cards to its /features/* page (JEF-228)', () => {
+  it('shows the four features as rows in the footer order, each with a screenshot and a /features/* link (JEF-529)', () => {
     mockHasSessionCookie.mockReturnValue(false);
 
     render(<LandingPage />);
 
-    // "Application tracking" etc. also appear as Product links in the
-    // shared footer (MarketingFooter) — every match should agree on the href.
-    const expectEveryLinkNamedToPointAt = (name: RegExp, href: string) => {
-      const links = screen.getAllByRole('link', { name });
-      expect(links.length).toBeGreaterThan(0);
-      links.forEach((link) => expect(link).toHaveAttribute('href', href));
-    };
+    const rows = screen.getAllByTestId('feature-row');
+    expect(rows).toHaveLength(4);
+    const expected = [
+      ['Application tracking', '/features/tracking', 'screenshots.board.alt'],
+      ['AI assistant', '/features/ai-assistant', 'screenshots.assistant.alt'],
+      ['Resume & cover letters', '/features/resume-cover-letter', 'screenshots.resume.alt'],
+      ['Analytics & insights', '/features/analytics', 'screenshots.analytics.alt'],
+    ] as const;
+    expected.forEach(([title, href, alt], i) => {
+      const row = within(rows[i]);
+      expect(row.getByRole('heading', { name: new RegExp(title) })).toBeInTheDocument();
+      expect(row.getByRole('link', { name: /landing\.learnMore/ })).toHaveAttribute('href', href);
+      expect(row.getAllByAltText(alt)).toHaveLength(2);
+    });
+  });
 
-    expectEveryLinkNamedToPointAt(/Application tracking/, '/features/tracking');
-    expectEveryLinkNamedToPointAt(/AI assistant/, '/features/ai-assistant');
-    expectEveryLinkNamedToPointAt(/Resume & cover letters/, '/features/resume-cover-letter');
-    expectEveryLinkNamedToPointAt(/Analytics & insights/, '/features/analytics');
+  it('alternates the side of the screenshot and tags only analytics as Pro (JEF-529)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const rows = screen.getAllByTestId('feature-row');
+    expect(rows[0].querySelector('.lg\\:order-1')).toBeNull();
+    expect(rows[1].querySelector('.lg\\:order-1')).not.toBeNull();
+    expect(rows[2].querySelector('.lg\\:order-1')).toBeNull();
+    expect(rows[3].querySelector('.lg\\:order-1')).not.toBeNull();
+    expect(within(rows[3]).getByText('plan.badgePro')).toBeInTheDocument();
+    expect(within(rows[0]).queryByText('plan.badgePro')).toBeNull();
   });
 
   it('offers the Clipper between the feature cards and the steps (JEF-424)', () => {
@@ -192,7 +208,7 @@ describe('LandingPage', () => {
       'href',
       CLIPPER_WEB_STORE_URL,
     );
-    const features = screen.getByRole('link', { name: /Analytics & insights/ });
+    const features = screen.getAllByTestId('feature-row')[3];
     const steps = screen.getByText('landing.step1');
     expect(features.compareDocumentPosition(clipper)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(clipper.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
