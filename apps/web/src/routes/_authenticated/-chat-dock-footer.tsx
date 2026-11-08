@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircleIcon, XIcon } from 'lucide-react';
 import { useChatDock } from '#/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
 import { conversationsQueryOptions } from '#/routes/_authenticated/assistant/-shared';
-import { ChatDockConversationPicker } from './-chat-dock-picker';
+
+// The picker only shows once the launcher is clicked, so it loads then (JEF-537).
+const ChatDockConversationPicker = lazy(() =>
+  import('./-chat-dock-picker').then((m) => ({ default: m.ChatDockConversationPicker })),
+);
 
 /**
  * Persistent desktop-only footer (JEF-133) present on every authenticated
@@ -42,7 +46,9 @@ export function ChatDockFooter() {
             {/* Invisible click-outside catcher — the popover itself sits above it (z-50 vs z-40). */}
             <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
             <div className="absolute bottom-full left-0 z-50 mb-2">
-              <ChatDockConversationPicker onSelect={() => setPickerOpen(false)} />
+              <Suspense fallback={null}>
+                <ChatDockConversationPicker onSelect={() => setPickerOpen(false)} />
+              </Suspense>
             </div>
           </>
         )}

@@ -94,7 +94,10 @@ const HERO_BOARD_COLUMNS = [
   { status: 'accepted', cards: [] },
 ] as const;
 
-export function LandingPage() {
+// Not exported on purpose (JEF-537): TanStack's code splitter leaves a route
+// component alone when the file also exports it. Tests reach it through
+// `Route.component`.
+function LandingPage() {
   const { t } = useLocale();
   // Starts false so the client's first render matches the SSR'd markup —
   // the server can never see the session cookie (see Route.head comment
