@@ -1652,5 +1652,20 @@
   "screenshots.assistant.alt": "Trakwyn 助手正在回答关于用户申请的问题",
   "screenshots.resume.alt": "简历编辑器，显示针对职位定制的简历",
   "screenshots.coverLetter.alt": "求职信编辑器，显示针对职位定制的求职信",
-  "screenshots.analytics.alt": "分析页面，包含申请总数、每周图表和阶段漏斗"
+  "screenshots.analytics.alt": "分析页面，包含申请总数、每周图表和阶段漏斗",
+  "marketing.nav.guides": "指南",
+  "marketing.footer.guidesLink": "指南",
+  "guides.index.title": "指南",
+  "guides.index.subtitle": "循序渐进的教程，帮你更好地使用 Trakwyn。",
+  "guides.index.filterLabel": "按主题筛选",
+  "guides.index.filterAll": "全部",
+  "guides.index.empty": "暂无指南，敬请期待。",
+  "guides.index.rss": "RSS 订阅",
+  "guides.post.back": "所有指南",
+  "guides.post.published": "发布于 {{date}}",
+  "guides.post.updated": "更新于 {{date}}",
+  "guides.post.relatedFeature": "相关功能",
+  "guides.post.ctaTitle": "准备好试试了吗？",
+  "guides.post.ctaBody": "Trakwyn 可免费开始使用，在一处追踪所有求职申请。",
+  "guides.post.notFound": "找不到这篇指南。"
 }

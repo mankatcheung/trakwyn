@@ -1674,5 +1674,20 @@
   "screenshots.assistant.alt": "The Trakwyn assistant answering a question about the user's applications",
   "screenshots.resume.alt": "The resume editor with a tailored resume for a job posting",
   "screenshots.coverLetter.alt": "The cover letter editor with a letter tailored to a job posting",
-  "screenshots.analytics.alt": "The analytics page with application totals, a weekly chart and a stage funnel"
+  "screenshots.analytics.alt": "The analytics page with application totals, a weekly chart and a stage funnel",
+  "marketing.nav.guides": "Guides",
+  "marketing.footer.guidesLink": "Guides",
+  "guides.index.title": "Guides",
+  "guides.index.subtitle": "Step-by-step how-tos for getting more out of Trakwyn.",
+  "guides.index.filterLabel": "Filter by topic",
+  "guides.index.filterAll": "All",
+  "guides.index.empty": "No guides yet. Check back soon.",
+  "guides.index.rss": "RSS feed",
+  "guides.post.back": "All guides",
+  "guides.post.published": "Published {{date}}",
+  "guides.post.updated": "Updated {{date}}",
+  "guides.post.relatedFeature": "Related feature",
+  "guides.post.ctaTitle": "Ready to try it?",
+  "guides.post.ctaBody": "Trakwyn is free to start. Track your applications in one place.",
+  "guides.post.notFound": "That guide does not exist."
 }

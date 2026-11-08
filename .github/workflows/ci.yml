@@ -85,6 +85,7 @@ on:
       - 'apps/web/**'
       - 'apps/mobile/**'
       - 'packages/**'
+      - 'content/**'
       - 'infra/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -140,6 +141,7 @@ jobs:
             code:
               - 'apps/**'
               - 'packages/**'
+              - 'content/**'
               - 'infra/base-images.txt'
               - '.github/actions/**'
               - '.github/scripts/**'
@@ -165,6 +167,7 @@ jobs:
               - 'apps/web/**'
               - 'apps/api/**'
               - 'packages/**'
+              - 'content/**'
               - 'infra/base-images.txt'
               - '.github/actions/**'
               - '.github/scripts/**'

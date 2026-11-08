@@ -656,6 +656,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.31.3
         version: 3.31.3
+      '@trakwyn/content':
+        specifier: workspace:*
+        version: link:../../content
       '@trakwyn/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -807,6 +810,15 @@ importers:
       vitest:
         specifier: ^4.1.12
         version: 4.1.12(@opentelemetry/api@1.9.1)(@types/node@22.20.2)(@vitest/coverage-v8@4.1.12)(jsdom@28.1.0(@noble/hashes@2.4.0)(supports-color@8.1.1))(vite@8.3.3(@types/node@22.20.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))
+
+  content:
+    dependencies:
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+      zod:
+        specifier: ^4.6.6
+        version: 4.6.6
 
   packages/ui:
     dependencies:

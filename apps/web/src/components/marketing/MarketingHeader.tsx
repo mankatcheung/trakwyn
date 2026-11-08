@@ -13,6 +13,8 @@ interface MarketingHeaderProps {
   activeFeatures?: boolean;
   /** Bolds the setup guide nav item — set on `/ai-mcp-setup`. */
   activeGuide?: boolean;
+  /** Bolds the Guides nav item — set on `/guides` and every `/guides/*` page. */
+  activeGuides?: boolean;
   /** Bolds the Pricing nav item — set on `/pricing`. */
   activePricing?: boolean;
 }
@@ -27,6 +29,7 @@ interface MarketingHeaderProps {
 export function MarketingHeader({
   activeFeatures = false,
   activeGuide = false,
+  activeGuides = false,
   activePricing = false,
 }: MarketingHeaderProps) {
   const { t } = useLocale();
@@ -82,6 +85,16 @@ export function MarketingHeader({
               }
             >
               {t('marketing.nav.pricing')}
+            </Link>
+            <Link
+              to="/guides"
+              className={
+                activeGuides
+                  ? 'text-sm font-semibold text-blue-700 dark:text-blue-400'
+                  : 'text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+              }
+            >
+              {t('marketing.nav.guides')}
             </Link>
             <Link
               to="/ai-mcp-setup"
@@ -152,6 +165,17 @@ export function MarketingHeader({
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('marketing.nav.pricing')}
+            </Link>
+            <Link
+              to="/guides"
+              className={
+                activeGuides
+                  ? 'block rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+              }
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t('marketing.nav.guides')}
             </Link>
             <Link
               to="/ai-mcp-setup"

@@ -35,6 +35,7 @@ vi.mock('#/lib/i18n', () => ({
         'landing.startFree': 'Start for free',
         'settings.language': 'Language',
         'guides.aiMcpSetup.eyebrow': 'Setup guide',
+        'marketing.nav.guides': 'Guides',
       })[key] ?? key,
   }),
 }));
@@ -51,6 +52,19 @@ describe('MarketingHeader', () => {
     render(<MarketingHeader />);
 
     expect(screen.getByRole('link', { name: 'Features' })).toHaveAttribute('href', '/features');
+  });
+
+  it('links Guides to /guides and bolds it only when activeGuides is set (JEF-531)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    const { unmount } = render(<MarketingHeader />);
+    expect(screen.getAllByRole('link', { name: 'Guides' })[0]).toHaveAttribute('href', '/guides');
+    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).not.toContain(
+      'font-semibold',
+    );
+    unmount();
+
+    render(<MarketingHeader activeGuides />);
+    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).toContain('font-semibold');
   });
 
   it('bolds the Features link when activeFeatures is set', () => {

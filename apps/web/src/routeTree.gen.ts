@@ -25,6 +25,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy';
 import { Route as RegisterRouteImport } from './routes/register';
 import { Route as ResetPasswordRouteImport } from './routes/reset-password';
 import { Route as ShareRouteImport } from './routes/share';
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml';
 import { Route as TermsRouteImport } from './routes/terms';
 import { Route as VerifyEmailRouteImport } from './routes/verify-email';
 import { Route as VerifyEmailRequiredRouteImport } from './routes/verify-email-required';
@@ -41,6 +42,9 @@ import { Route as FeaturesAiAssistantRouteImport } from './routes/features/ai-as
 import { Route as FeaturesAnalyticsRouteImport } from './routes/features/analytics';
 import { Route as FeaturesResumeCoverLetterRouteImport } from './routes/features/resume-cover-letter';
 import { Route as FeaturesTrackingRouteImport } from './routes/features/tracking';
+import { Route as GuidesIndexRouteImport } from './routes/guides/index';
+import { Route as GuidesSlugRouteImport } from './routes/guides/$slug';
+import { Route as GuidesRssDotxmlRouteImport } from './routes/guides/rss[.]xml';
 import { Route as OauthAuthorizeRouteImport } from './routes/oauth/authorize';
 import { Route as AuthenticatedApplicationsIndexRouteImport } from './routes/_authenticated/applications/index';
 import { Route as AuthenticatedApplicationsBoardRouteImport } from './routes/_authenticated/applications/board';
@@ -79,11 +83,12 @@ const AccessibilityRoute = AccessibilityRouteImport.update({
   path: '/accessibility',
   getParentRoute: () => rootRouteImport,
 } as any);
-const AccountDeletionScheduledRoute = AccountDeletionScheduledRouteImport.update({
-  id: '/account-deletion-scheduled',
-  path: '/account-deletion-scheduled',
-  getParentRoute: () => rootRouteImport,
-} as any);
+const AccountDeletionScheduledRoute =
+  AccountDeletionScheduledRouteImport.update({
+    id: '/account-deletion-scheduled',
+    path: '/account-deletion-scheduled',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const AiMcpSetupRoute = AiMcpSetupRouteImport.update({
   id: '/ai-mcp-setup',
   path: '/ai-mcp-setup',
@@ -144,6 +149,11 @@ const ShareRoute = ShareRouteImport.update({
   path: '/share',
   getParentRoute: () => rootRouteImport,
 } as any);
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -179,21 +189,23 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any);
-const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
 const AuthenticatedOffersRoute = AuthenticatedOffersRouteImport.update({
   id: '/offers',
   path: '/offers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any);
-const AuthenticatedSettingsRouteRoute = AuthenticatedSettingsRouteRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
+const AuthenticatedSettingsRouteRoute =
+  AuthenticatedSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -214,14 +226,30 @@ const FeaturesAnalyticsRoute = FeaturesAnalyticsRouteImport.update({
   path: '/features/analytics',
   getParentRoute: () => rootRouteImport,
 } as any);
-const FeaturesResumeCoverLetterRoute = FeaturesResumeCoverLetterRouteImport.update({
-  id: '/features/resume-cover-letter',
-  path: '/features/resume-cover-letter',
-  getParentRoute: () => rootRouteImport,
-} as any);
+const FeaturesResumeCoverLetterRoute =
+  FeaturesResumeCoverLetterRouteImport.update({
+    id: '/features/resume-cover-letter',
+    path: '/features/resume-cover-letter',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const FeaturesTrackingRoute = FeaturesTrackingRouteImport.update({
   id: '/features/tracking',
   path: '/features/tracking',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const GuidesRssDotxmlRoute = GuidesRssDotxmlRouteImport.update({
+  id: '/guides/rss.xml',
+  path: '/guides/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any);
 const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
@@ -229,92 +257,107 @@ const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
   path: '/oauth/authorize',
   getParentRoute: () => rootRouteImport,
 } as any);
-const AuthenticatedApplicationsIndexRoute = AuthenticatedApplicationsIndexRouteImport.update({
-  id: '/applications/',
-  path: '/applications/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedApplicationsBoardRoute = AuthenticatedApplicationsBoardRouteImport.update({
-  id: '/applications/board',
-  path: '/applications/board',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedApplicationsNewRoute = AuthenticatedApplicationsNewRouteImport.update({
-  id: '/applications/new',
-  path: '/applications/new',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedApplicationsTrashRoute = AuthenticatedApplicationsTrashRouteImport.update({
-  id: '/applications/trash',
-  path: '/applications/trash',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedAssistantIndexRoute = AuthenticatedAssistantIndexRouteImport.update({
-  id: '/assistant/',
-  path: '/assistant/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedAssistantHistoryRoute = AuthenticatedAssistantHistoryRouteImport.update({
-  id: '/assistant/history',
-  path: '/assistant/history',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedProfileIndexRoute = AuthenticatedProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any);
-const AuthenticatedSettingsIndexRoute = AuthenticatedSettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
+const AuthenticatedApplicationsIndexRoute =
+  AuthenticatedApplicationsIndexRouteImport.update({
+    id: '/applications/',
+    path: '/applications/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedApplicationsBoardRoute =
+  AuthenticatedApplicationsBoardRouteImport.update({
+    id: '/applications/board',
+    path: '/applications/board',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedApplicationsNewRoute =
+  AuthenticatedApplicationsNewRouteImport.update({
+    id: '/applications/new',
+    path: '/applications/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedApplicationsTrashRoute =
+  AuthenticatedApplicationsTrashRouteImport.update({
+    id: '/applications/trash',
+    path: '/applications/trash',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedAssistantIndexRoute =
+  AuthenticatedAssistantIndexRouteImport.update({
+    id: '/assistant/',
+    path: '/assistant/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedAssistantHistoryRoute =
+  AuthenticatedAssistantHistoryRouteImport.update({
+    id: '/assistant/history',
+    path: '/assistant/history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any);
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
 const AuthenticatedSettingsAiRoute = AuthenticatedSettingsAiRouteImport.update({
   id: '/ai',
   path: '/ai',
   getParentRoute: () => AuthenticatedSettingsRouteRoute,
 } as any);
-const AuthenticatedSettingsDangerZoneRoute = AuthenticatedSettingsDangerZoneRouteImport.update({
-  id: '/danger-zone',
-  path: '/danger-zone',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
-const AuthenticatedSettingsDataRoute = AuthenticatedSettingsDataRouteImport.update({
-  id: '/data',
-  path: '/data',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
-const AuthenticatedSettingsExperienceRoute = AuthenticatedSettingsExperienceRouteImport.update({
-  id: '/experience',
-  path: '/experience',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
-const AuthenticatedSettingsIntegrationsRoute = AuthenticatedSettingsIntegrationsRouteImport.update({
-  id: '/integrations',
-  path: '/integrations',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
+const AuthenticatedSettingsDangerZoneRoute =
+  AuthenticatedSettingsDangerZoneRouteImport.update({
+    id: '/danger-zone',
+    path: '/danger-zone',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
+const AuthenticatedSettingsDataRoute =
+  AuthenticatedSettingsDataRouteImport.update({
+    id: '/data',
+    path: '/data',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
+const AuthenticatedSettingsExperienceRoute =
+  AuthenticatedSettingsExperienceRouteImport.update({
+    id: '/experience',
+    path: '/experience',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
+const AuthenticatedSettingsIntegrationsRoute =
+  AuthenticatedSettingsIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any);
-const AuthenticatedSettingsPlanRoute = AuthenticatedSettingsPlanRouteImport.update({
-  id: '/plan',
-  path: '/plan',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
-const AuthenticatedSettingsProfileRoute = AuthenticatedSettingsProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
-const AuthenticatedSettingsSecurityRoute = AuthenticatedSettingsSecurityRouteImport.update({
-  id: '/security',
-  path: '/security',
-  getParentRoute: () => AuthenticatedSettingsRouteRoute,
-} as any);
+const AuthenticatedSettingsPlanRoute =
+  AuthenticatedSettingsPlanRouteImport.update({
+    id: '/plan',
+    path: '/plan',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
+const AuthenticatedSettingsSecurityRoute =
+  AuthenticatedSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any);
 const AuthenticatedApplicationsApplicationIdIndexRoute =
   AuthenticatedApplicationsApplicationIdIndexRouteImport.update({
     id: '/applications/$applicationId/',
@@ -362,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
   '/share': typeof ShareRoute;
+  '/sitemap.xml': typeof SitemapDotxmlRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
   '/verify-email-required': typeof VerifyEmailRequiredRoute;
@@ -377,8 +421,11 @@ export interface FileRoutesByFullPath {
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
   '/features/tracking': typeof FeaturesTrackingRoute;
+  '/guides/$slug': typeof GuidesSlugRoute;
+  '/guides/rss.xml': typeof GuidesRssDotxmlRoute;
   '/oauth/authorize': typeof OauthAuthorizeRoute;
   '/features/': typeof FeaturesIndexRoute;
+  '/guides/': typeof GuidesIndexRoute;
   '/applications/board': typeof AuthenticatedApplicationsBoardRoute;
   '/applications/new': typeof AuthenticatedApplicationsNewRoute;
   '/applications/trash': typeof AuthenticatedApplicationsTrashRoute;
@@ -418,6 +465,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
   '/share': typeof ShareRoute;
+  '/sitemap.xml': typeof SitemapDotxmlRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
   '/verify-email-required': typeof VerifyEmailRequiredRoute;
@@ -432,8 +480,11 @@ export interface FileRoutesByTo {
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
   '/features/tracking': typeof FeaturesTrackingRoute;
+  '/guides/$slug': typeof GuidesSlugRoute;
+  '/guides/rss.xml': typeof GuidesRssDotxmlRoute;
   '/oauth/authorize': typeof OauthAuthorizeRoute;
   '/features': typeof FeaturesIndexRoute;
+  '/guides': typeof GuidesIndexRoute;
   '/applications/board': typeof AuthenticatedApplicationsBoardRoute;
   '/applications/new': typeof AuthenticatedApplicationsNewRoute;
   '/applications/trash': typeof AuthenticatedApplicationsTrashRoute;
@@ -475,6 +526,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute;
   '/reset-password': typeof ResetPasswordRoute;
   '/share': typeof ShareRoute;
+  '/sitemap.xml': typeof SitemapDotxmlRoute;
   '/terms': typeof TermsRoute;
   '/verify-email': typeof VerifyEmailRoute;
   '/verify-email-required': typeof VerifyEmailRequiredRoute;
@@ -490,8 +542,11 @@ export interface FileRoutesById {
   '/features/analytics': typeof FeaturesAnalyticsRoute;
   '/features/resume-cover-letter': typeof FeaturesResumeCoverLetterRoute;
   '/features/tracking': typeof FeaturesTrackingRoute;
+  '/guides/$slug': typeof GuidesSlugRoute;
+  '/guides/rss.xml': typeof GuidesRssDotxmlRoute;
   '/oauth/authorize': typeof OauthAuthorizeRoute;
   '/features/': typeof FeaturesIndexRoute;
+  '/guides/': typeof GuidesIndexRoute;
   '/_authenticated/applications/board': typeof AuthenticatedApplicationsBoardRoute;
   '/_authenticated/applications/new': typeof AuthenticatedApplicationsNewRoute;
   '/_authenticated/applications/trash': typeof AuthenticatedApplicationsTrashRoute;
@@ -533,6 +588,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/share'
+    | '/sitemap.xml'
     | '/terms'
     | '/verify-email'
     | '/verify-email-required'
@@ -548,8 +604,11 @@ export interface FileRouteTypes {
     | '/features/analytics'
     | '/features/resume-cover-letter'
     | '/features/tracking'
+    | '/guides/$slug'
+    | '/guides/rss.xml'
     | '/oauth/authorize'
     | '/features/'
+    | '/guides/'
     | '/applications/board'
     | '/applications/new'
     | '/applications/trash'
@@ -589,6 +648,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/share'
+    | '/sitemap.xml'
     | '/terms'
     | '/verify-email'
     | '/verify-email-required'
@@ -603,8 +663,11 @@ export interface FileRouteTypes {
     | '/features/analytics'
     | '/features/resume-cover-letter'
     | '/features/tracking'
+    | '/guides/$slug'
+    | '/guides/rss.xml'
     | '/oauth/authorize'
     | '/features'
+    | '/guides'
     | '/applications/board'
     | '/applications/new'
     | '/applications/trash'
@@ -645,6 +708,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/share'
+    | '/sitemap.xml'
     | '/terms'
     | '/verify-email'
     | '/verify-email-required'
@@ -660,8 +724,11 @@ export interface FileRouteTypes {
     | '/features/analytics'
     | '/features/resume-cover-letter'
     | '/features/tracking'
+    | '/guides/$slug'
+    | '/guides/rss.xml'
     | '/oauth/authorize'
     | '/features/'
+    | '/guides/'
     | '/_authenticated/applications/board'
     | '/_authenticated/applications/new'
     | '/_authenticated/applications/trash'
@@ -703,6 +770,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute;
   ResetPasswordRoute: typeof ResetPasswordRoute;
   ShareRoute: typeof ShareRoute;
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute;
   TermsRoute: typeof TermsRoute;
   VerifyEmailRoute: typeof VerifyEmailRoute;
   VerifyEmailRequiredRoute: typeof VerifyEmailRequiredRoute;
@@ -710,8 +778,11 @@ export interface RootRouteChildren {
   FeaturesAnalyticsRoute: typeof FeaturesAnalyticsRoute;
   FeaturesResumeCoverLetterRoute: typeof FeaturesResumeCoverLetterRoute;
   FeaturesTrackingRoute: typeof FeaturesTrackingRoute;
+  GuidesSlugRoute: typeof GuidesSlugRoute;
+  GuidesRssDotxmlRoute: typeof GuidesRssDotxmlRoute;
   OauthAuthorizeRoute: typeof OauthAuthorizeRoute;
   FeaturesIndexRoute: typeof FeaturesIndexRoute;
+  GuidesIndexRoute: typeof GuidesIndexRoute;
 }
 
 declare module '@tanstack/react-router' {
@@ -828,6 +899,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/sitemap.xml': {
+      id: '/sitemap.xml';
+      path: '/sitemap.xml';
+      fullPath: '/sitemap.xml';
+      preLoaderRoute: typeof SitemapDotxmlRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/terms': {
       id: '/terms';
       path: '/terms';
@@ -938,6 +1016,27 @@ declare module '@tanstack/react-router' {
       path: '/features/tracking';
       fullPath: '/features/tracking';
       preLoaderRoute: typeof FeaturesTrackingRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/guides/': {
+      id: '/guides/';
+      path: '/guides';
+      fullPath: '/guides/';
+      preLoaderRoute: typeof GuidesIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/guides/$slug': {
+      id: '/guides/$slug';
+      path: '/guides/$slug';
+      fullPath: '/guides/$slug';
+      preLoaderRoute: typeof GuidesSlugRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/guides/rss.xml': {
+      id: '/guides/rss.xml';
+      path: '/guides/rss.xml';
+      fullPath: '/guides/rss.xml';
+      preLoaderRoute: typeof GuidesRssDotxmlRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/oauth/authorize': {
@@ -1117,21 +1216,26 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute;
 }
 
-const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren = {
-  AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
-  AuthenticatedSettingsDangerZoneRoute: AuthenticatedSettingsDangerZoneRoute,
-  AuthenticatedSettingsDataRoute: AuthenticatedSettingsDataRoute,
-  AuthenticatedSettingsExperienceRoute: AuthenticatedSettingsExperienceRoute,
-  AuthenticatedSettingsIntegrationsRoute: AuthenticatedSettingsIntegrationsRoute,
-  AuthenticatedSettingsNotificationsRoute: AuthenticatedSettingsNotificationsRoute,
-  AuthenticatedSettingsPlanRoute: AuthenticatedSettingsPlanRoute,
-  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
-  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-};
+const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
+  {
+    AuthenticatedSettingsAiRoute: AuthenticatedSettingsAiRoute,
+    AuthenticatedSettingsDangerZoneRoute: AuthenticatedSettingsDangerZoneRoute,
+    AuthenticatedSettingsDataRoute: AuthenticatedSettingsDataRoute,
+    AuthenticatedSettingsExperienceRoute: AuthenticatedSettingsExperienceRoute,
+    AuthenticatedSettingsIntegrationsRoute:
+      AuthenticatedSettingsIntegrationsRoute,
+    AuthenticatedSettingsNotificationsRoute:
+      AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsPlanRoute: AuthenticatedSettingsPlanRoute,
+    AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+    AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
+    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  };
 
 const AuthenticatedSettingsRouteRouteWithChildren =
-  AuthenticatedSettingsRouteRoute._addFileChildren(AuthenticatedSettingsRouteRouteChildren);
+  AuthenticatedSettingsRouteRoute._addFileChildren(
+    AuthenticatedSettingsRouteRouteChildren,
+  );
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren;
@@ -1172,7 +1276,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
-  AuthenticatedApplicationsApplicationIdEditRoute: AuthenticatedApplicationsApplicationIdEditRoute,
+  AuthenticatedApplicationsApplicationIdEditRoute:
+    AuthenticatedApplicationsApplicationIdEditRoute,
   AuthenticatedApplicationsApplicationIdIndexRoute:
     AuthenticatedApplicationsApplicationIdIndexRoute,
   AuthenticatedApplicationsApplicationIdDocumentsDraftIdRoute:
@@ -1183,9 +1288,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedApplicationsApplicationIdOffersIndexRoute,
 };
 
-const AuthenticatedRouteRouteWithChildren = AuthenticatedRouteRoute._addFileChildren(
-  AuthenticatedRouteRouteChildren,
-);
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1204,6 +1308,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShareRoute: ShareRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VerifyEmailRequiredRoute: VerifyEmailRequiredRoute,
@@ -1211,8 +1316,11 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesAnalyticsRoute: FeaturesAnalyticsRoute,
   FeaturesResumeCoverLetterRoute: FeaturesResumeCoverLetterRoute,
   FeaturesTrackingRoute: FeaturesTrackingRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
+  GuidesRssDotxmlRoute: GuidesRssDotxmlRoute,
   OauthAuthorizeRoute: OauthAuthorizeRoute,
   FeaturesIndexRoute: FeaturesIndexRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
