@@ -17,6 +17,15 @@ conventions and PR rules; this skill sequences them. Where they differ, follow
    (`get_issue`, then `list_comments`), and restate the scope in one paragraph.
    Ask before expanding scope. If the ticket is still in Backlog, Planned or
    Todo, that is expected; step 2 moves it.
+   - **Name the session.** The agent cannot run `/rename` (it is a
+     user-typed command), so right after fetching the issue, and before
+     anything else in the reply, print one line in this exact form:
+     `Session name: <KEY>-<brief-feature>`, for example
+     `Session name: JEF-208-dark-mode-toggle`. Use the uppercase issue key and
+     a 2–5 word lowercase kebab-case summary of the feature (not the full
+     title; drop filler words), matching the brief name in the branch. Follow
+     it with the ready-to-paste `/rename <KEY>-<brief-feature>`. Start the
+     narration after that line with the same name, so the job list picks it up.
 
 2. **Set it to In Progress** before any code. Never code while the issue is in
    Backlog, Planned or Todo.
