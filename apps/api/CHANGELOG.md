@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.12.0...api-v0.13.0) (2026-11-08)
+
+
+### Features
+
+* add an AI helper with user prompts to the resume and cover letter editor (JEF-506) ([#1233](https://github.com/mankatcheung/trakwyn/issues/1233)) ([ae6ec42](https://github.com/mankatcheung/trakwyn/commit/ae6ec428607a9317d9a26e79ac1b702e649ca4ff))
+* add user prompts and AI credit meters to mock interview and company briefing (JEF-507) ([#1239](https://github.com/mankatcheung/trakwyn/issues/1239)) ([1d8b43e](https://github.com/mankatcheung/trakwyn/commit/1d8b43edc39ee1eaa5f4ec282ba787bc74ea6a80))
+* **api:** add a health circuit per hosted AI model so outages fail fast (JEF-504) ([#1229](https://github.com/mankatcheung/trakwyn/issues/1229)) ([d011d13](https://github.com/mankatcheung/trakwyn/commit/d011d13de4941ff2f4b282263fab1ccd685e7a5b))
+* **api:** add a name and email contact header to generated resumes (JEF-526) ([#1281](https://github.com/mankatcheung/trakwyn/issues/1281)) ([6ed06c2](https://github.com/mankatcheung/trakwyn/commit/6ed06c2836e67421e582d04589ea708c02d01e47))
+* **api:** eval chat assistant tool selection (JEF-471) ([#1265](https://github.com/mankatcheung/trakwyn/issues/1265)) ([4283025](https://github.com/mankatcheung/trakwyn/commit/4283025cd7a6fd720a604e89a84d8a4d15afee96))
+* **api:** eval resumes and cover letters for invented content (JEF-470) ([#1251](https://github.com/mankatcheung/trakwyn/issues/1251)) ([eeef608](https://github.com/mankatcheung/trakwyn/commit/eeef608fcde30b9f07fe79d38edd7c1f155b5689))
+* **api:** record neurons, reasoning output and gateway metadata for hosted AI (JEF-497) ([#1225](https://github.com/mankatcheung/trakwyn/issues/1225)) ([c7c2aa1](https://github.com/mankatcheung/trakwyn/commit/c7c2aa1403f81c8e6baaf74224143378708f5ffe))
+* **api:** version every AI prompt and record the version on each LLM call (JEF-505) ([#1230](https://github.com/mankatcheung/trakwyn/issues/1230)) ([9021d95](https://github.com/mankatcheung/trakwyn/commit/9021d9552c9932800d1ad78ebb8ed461f1e03ae2))
+* store phone, location and profile links and add them to generated resumes (JEF-527) ([#1285](https://github.com/mankatcheung/trakwyn/issues/1285)) ([b1ee75c](https://github.com/mankatcheung/trakwyn/commit/b1ee75c29ef0f8d0cdea28731e4a973462cf3519))
+* **web:** replace the hero and feature-page mockups with real screenshots (JEF-530) ([#1292](https://github.com/mankatcheung/trakwyn/issues/1292)) ([7711f8e](https://github.com/mankatcheung/trakwyn/commit/7711f8e74b079b09ed0740bfc29338bff2e68917))
+* **web:** track the marketing → signup → Pro funnel with named PostHog events (JEF-514) ([#1266](https://github.com/mankatcheung/trakwyn/issues/1266)) ([6b6be60](https://github.com/mankatcheung/trakwyn/commit/6b6be60e7b4cf4fc500e975a37ef7613a4144309))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.11.2...api-v0.12.0) (2026-11-05)
 
 
