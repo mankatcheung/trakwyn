@@ -81,8 +81,6 @@ jobs:
     outputs:
       clipper_released: ${{ steps.release.outputs['apps/extension--release_created'] }}
       clipper_tag: ${{ steps.release.outputs['apps/extension--tag_name'] }}
-      web_released: ${{ steps.release.outputs['apps/web--release_created'] }}
-      web_tag: ${{ steps.release.outputs['apps/web--tag_name'] }}
       prs_created: ${{ steps.release.outputs.prs_created }}
       prs: ${{ steps.release.outputs.prs }}
     steps:
@@ -292,19 +290,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run clipper-amo.yml --ref "${{ github.event.repository.default_branch }}" -f tag="$TAG"
-
-  # When the web app is released, Claude drafts at most one guide as a draft PR
-  # (JEF-533). It is called from here because a release tagged with
-  # GITHUB_TOKEN does not start other workflows, so `on: release` in
-  # guides-draft.yml would never fire. That workflow opens its PR with a GitHub
-  # App token, so ci.yml runs on it, and a person always merges.
-  draft-guide:
-    name: Draft a guide
-    needs: release-please
-    if: needs.release-please.outputs.web_released == 'true'
-    permissions:
-      contents: read
-    uses: ./.github/workflows/guides-draft.yml
-    with:
-      tag: ${{ needs.release-please.outputs.web_tag }}
-    secrets: inherit
