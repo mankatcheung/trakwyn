@@ -43,10 +43,28 @@ export function parseGuide(raw: string): ParsedGuide {
 
 /** Relative image references (`./x.webp`) in a Markdown body, with alt text. */
 export function extractImages(body: string): { alt: string; src: string }[] {
-  return [...body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)].map((m) => ({
-    alt: m[1],
-    src: m[2],
-  }));
+  // A linear scan, not one regex: `![` repeated many times would make a regex
+  // with `[^\]]*` followed by `\](` run in polynomial time (CodeQL, JEF-531).
+  // Every `![` before the same `]` shares that `]`, so a failed match skips
+  // past it and nothing is scanned twice.
+  const images: { alt: string; src: string }[] = [];
+  const target = /^(\S+)(?:\s+"[^"]*")?$/;
+  let pos = 0;
+  for (;;) {
+    const start = body.indexOf('![', pos);
+    if (start < 0) break;
+    const altEnd = body.indexOf(']', start + 2);
+    if (altEnd < 0) break;
+    pos = altEnd + 1;
+    if (body[pos] !== '(') continue;
+    const close = body.indexOf(')', pos + 1);
+    if (close < 0) break;
+    const parts = target.exec(body.slice(pos + 1, close));
+    if (!parts) continue;
+    images.push({ alt: body.slice(start + 2, altEnd), src: parts[1] });
+    pos = close + 1;
+  }
+  return images;
 }
 
 export interface Guide extends ParsedGuide {

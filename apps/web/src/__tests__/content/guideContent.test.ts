@@ -77,6 +77,27 @@ describe('extractImages', () => {
       { alt: '', src: './b.webp' },
     ]);
   });
+
+  it('skips links, unclosed images and images with no source', () => {
+    expect(
+      extractImages('[link](./a.webp) ![open](./b.webp ![](x y z) ![no paren]\n![ok](./c.webp)'),
+    ).toEqual([{ alt: 'ok', src: './c.webp' }]);
+    expect(extractImages('![alt](')).toEqual([]);
+    expect(extractImages('![alt')).toEqual([]);
+  });
+
+  it('keeps an image whose alt text contains an opening ![', () => {
+    expect(extractImages('![a ![b](./x.webp)')).toEqual([{ alt: 'a ![b', src: './x.webp' }]);
+  });
+
+  it('stays linear on the repetitive input CodeQL flagged', () => {
+    const started = performance.now();
+    extractImages('!['.repeat(200_000));
+    extractImages('![\\'.repeat(100_000));
+    extractImages('![](!'.repeat(100_000));
+    extractImages('![](![](!'.repeat(50_000));
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });
 
 describe('listGuides', () => {
