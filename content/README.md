@@ -50,7 +50,7 @@ Two weekly Claude Code scheduled tasks on the maintainer's Mac draft new guides 
 | Draft one guide  | `content/prompts/draft-guide.md`  | Weekly, e.g. Monday morning |
 | Check the guides | `content/prompts/check-guides.md` | Weekly, e.g. Sunday evening |
 
-The Mac must be awake and signed in to `gh` when a task runs. Both tasks depend on `pnpm guides:capture <slug>` and `pnpm guides:verify <slug>` from JEF-532, and on a working `pnpm setup:worktree`.
+The Mac must be awake and signed in to `gh` when a task runs. Both tasks depend on `pnpm guides:capture` and `pnpm guides:verify` from JEF-532 (they run every guide, take no slug, and need ports 3000 and 3001 free), and on a working `pnpm setup:worktree`.
 
 **Draft one guide.** Claude reads what shipped in `apps/web` since the newest guide, and either drafts **at most one** guide or stops with "no guide this week". With nothing worth a guide it may take the first topic in `guides/backlog.yml`; it never invents one. It writes the guide's Playwright script (`guide.ts`) first and runs it against the seeded demo account, and a draft whose steps cannot run is never opened. It then opens a draft PR on `chore/guide-<slug>` labelled `guide-draft` and `content`, with `draft: true` in the guide. It skips when two or more `guide-draft` PRs are already open. Because `gh` opens the PR as you, `ci.yml` (gitleaks, `guides-verify`) runs on it.
 

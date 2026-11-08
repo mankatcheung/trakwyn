@@ -27,8 +27,12 @@ describe('draft-guide.md', () => {
   });
 
   it('only opens a draft whose steps run, marked draft: true', () => {
-    expect(draft).toContain('pnpm guides:capture <slug>');
-    expect(draft).toContain('pnpm guides:verify <slug>');
+    expect(draft).toContain('pnpm guides:capture');
+    expect(draft).toContain('pnpm guides:verify');
+    // JEF-532's scripts run every guide and take no slug.
+    expect(draft).not.toMatch(/guides:(capture|verify) <slug>/);
+    expect(check).not.toMatch(/guides:(capture|verify) <slug>/);
+    expect(draft).toContain('ports 3000 and 3001');
     expect(draft).toContain('Never open a draft whose steps do not run');
     expect(draft).toContain('`draft: true`');
     expect(draft).toContain('gh pr create --draft --label guide-draft --label content');
