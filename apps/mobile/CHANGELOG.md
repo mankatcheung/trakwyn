@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.7.0...mobile-v0.8.0) (2026-11-08)
+
+
+### Features
+
+* **mobile:** add user prompts and AI credit meters to mock interview, talking points and company briefing (JEF-509) ([#1240](https://github.com/mankatcheung/trakwyn/issues/1240)) ([bd2a401](https://github.com/mankatcheung/trakwyn/commit/bd2a4013905e7dd30e1c63304a411b3abeb12ea6))
+* **mobile:** move the CV profile to the Home tab with a dashboard summary card (JEF-513) ([#1252](https://github.com/mankatcheung/trakwyn/issues/1252)) ([ef5ee7a](https://github.com/mankatcheung/trakwyn/commit/ef5ee7ae41a5dfea374121afc11d58b9b2ce28ee))
+* show the AI credits meter by the chat composer on web and mobile (JEF-511) ([#1248](https://github.com/mankatcheung/trakwyn/issues/1248)) ([186e104](https://github.com/mankatcheung/trakwyn/commit/186e104dea8815b8200e06479f0871c67ec48a12))
+* **web:** OAuth first on register and login, clearer check-your-email step (JEF-520) ([#1268](https://github.com/mankatcheung/trakwyn/issues/1268)) ([a7db303](https://github.com/mankatcheung/trakwyn/commit/a7db303fcc5346e58b13a377c8d24ffa5fd940de))
+
+
+### Bug Fixes
+
+* **mobile:** stop the "maximum update depth exceeded" loop on launch after the Expo 58 upgrade ([#1244](https://github.com/mankatcheung/trakwyn/issues/1244)) ([3c2e206](https://github.com/mankatcheung/trakwyn/commit/3c2e20667cd43dddd8dfb3e8ad28337fccfbef55))
+
 ## [0.7.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.6.0...mobile-v0.7.0) (2026-11-06)
 
 
