@@ -44,6 +44,13 @@ describe('ChatDockFooter', () => {
     expect(screen.queryByLabelText('Close conversation')).not.toBeInTheDocument();
   });
 
+  it('fetches nothing until a pill needs a title (JEF-535)', async () => {
+    render(<ChatDockFooter />, { wrapper: Wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(mockGqlRequest).not.toHaveBeenCalled();
+  });
+
   it('opens the picker on click, showing New conversation and recent conversations', async () => {
     render(<ChatDockFooter />, { wrapper: Wrapper });
     fireEvent.click(screen.getByLabelText('Chat with Assistant'));

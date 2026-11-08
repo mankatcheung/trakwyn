@@ -66,6 +66,13 @@ describe('ChatDockFloatingWindow', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('fetches nothing while closed: no conversations, API keys or billing (JEF-535)', async () => {
+    render(<ChatDockFloatingWindow />, { wrapper: Wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(mockGqlRequest).not.toHaveBeenCalled();
+  });
+
   it('shows "New conversation" with maximize disabled for a not-yet-created draft', async () => {
     mockDock.expanded = 'new';
     render(<ChatDockFloatingWindow />, { wrapper: Wrapper });
