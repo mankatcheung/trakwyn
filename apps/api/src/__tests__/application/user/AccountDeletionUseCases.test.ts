@@ -5,6 +5,7 @@ import { CancelAccountDeletionUseCase } from '#src/use-cases/user/CancelAccountD
 import { PurgeScheduledAccountsUseCase } from '#src/use-cases/user/PurgeScheduledAccountsUseCase.js';
 import { AssertAccountActiveUseCase } from '#src/use-cases/auth/AssertAccountActiveUseCase.js';
 import {
+  makePasswordHasher,
   makeSecurityEventRepository,
   makeUserActionToken,
   makeUserActionTokenRepository,
@@ -38,6 +39,7 @@ describe('RequestAccountDeletionUseCase', () => {
     overrides: Partial<ConstructorParameters<typeof RequestAccountDeletionUseCase>[0]> = {},
   ) => {
     const deps = {
+      passwordHasher: makePasswordHasher(),
       userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
       userActionTokenRepository: makeUserActionTokenRepository(),
       emailService: makeEmailService(),

@@ -20,6 +20,7 @@ import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStoragePr
 import { VercelBlobStorageProvider } from '#src/infrastructure/storage/VercelBlobStorageProvider.js';
 import { JwtTokenService } from '#src/infrastructure/auth/JwtTokenService.js';
 import { TotpProvider } from '#src/infrastructure/auth/TotpProvider.js';
+import { NodeRsPasswordHasher } from '#src/infrastructure/auth/NodeRsPasswordHasher.js';
 import { GoogleOAuthProvider } from '#src/infrastructure/auth/GoogleOAuthProvider.js';
 import { GitHubOAuthProvider } from '#src/infrastructure/auth/GitHubOAuthProvider.js';
 import {
@@ -132,6 +133,7 @@ export const infrastructure = {
   sessionBlocklist: asValue(buildSessionBlocklist()),
   transactionManager: asClass(DrizzleTransactionManager, { lifetime: Lifetime.SINGLETON }),
   totpProvider: asClass(TotpProvider, { lifetime: Lifetime.SINGLETON }),
+  passwordHasher: asClass(NodeRsPasswordHasher, { lifetime: Lifetime.SINGLETON }),
   googleOAuthProvider: asClass(GoogleOAuthProviderImpl, { lifetime: Lifetime.SINGLETON }),
   gitHubOAuthProvider: asClass(GitHubOAuthProviderImpl, { lifetime: Lifetime.SINGLETON }),
   oauthProviderRegistry: asClass(OAuthProviderRegistry, { lifetime: Lifetime.SINGLETON }),

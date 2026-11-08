@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { RateLimitedError } from '#src/use-cases/errors/DomainError.js';
 import { RegisterUseCase } from '#src/use-cases/auth/RegisterUseCase.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
@@ -8,12 +9,7 @@ import {
 } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { ISendEmailVerificationUseCase } from '#src/use-cases/auth/ISendEmailVerificationUseCase.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue('hashed-pw'),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher({ hash: vi.fn().mockResolvedValue('hashed-pw') });
 
 const makeSendEmailVerificationUseCase = (
   overrides?: Partial<ISendEmailVerificationUseCase>,
@@ -41,6 +37,7 @@ describe('RegisterUseCase', () => {
       });
       const sendEmailVerificationUseCase = makeSendEmailVerificationUseCase();
       await new RegisterUseCase({
+        passwordHasher,
         ...makeCaptchaDeps(),
         userRepository,
         generateId: vi.fn().mockReturnValue('user-1'),
@@ -77,6 +74,7 @@ describe('RegisterUseCase', () => {
     const generateId = vi.fn().mockReturnValue('user-1');
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId,
@@ -105,6 +103,7 @@ describe('RegisterUseCase', () => {
     const generateId = vi.fn().mockReturnValue('custom-id');
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId,
@@ -129,6 +128,7 @@ describe('RegisterUseCase', () => {
     });
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId: vi.fn(),
@@ -150,6 +150,7 @@ describe('RegisterUseCase', () => {
     });
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId: vi.fn(),
@@ -174,6 +175,7 @@ describe('RegisterUseCase', () => {
     const sendEmailVerificationUseCase = makeSendEmailVerificationUseCase();
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId: vi.fn().mockReturnValue('user-1'),
@@ -200,6 +202,7 @@ describe('RegisterUseCase', () => {
     });
 
     const useCase = new RegisterUseCase({
+      passwordHasher,
       ...makeCaptchaDeps(),
       userRepository,
       generateId: vi.fn().mockReturnValue('user-1'),
@@ -225,6 +228,7 @@ describe('RegisterUseCase', () => {
     const code = (err: unknown) => (err as { code: string }).code;
     const makeUseCase = (captcha: ReturnType<typeof makeCaptchaDeps>) =>
       new RegisterUseCase({
+        passwordHasher,
         ...captcha,
         userRepository: makeUserRepository({
           findByEmail: vi.fn().mockResolvedValue(null),
@@ -248,6 +252,7 @@ describe('RegisterUseCase', () => {
       const sendEmailVerificationUseCase = makeSendEmailVerificationUseCase();
       const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(null) });
       const useCase = new RegisterUseCase({
+        passwordHasher,
         ...captcha,
         userRepository,
         generateId: vi.fn(),
@@ -324,6 +329,7 @@ describe('RegisterUseCase', () => {
       const registerRateLimiter = makeRateLimiter({ consume: vi.fn().mockResolvedValue(false) });
 
       const useCase = new RegisterUseCase({
+        passwordHasher,
         ...makeCaptchaDeps(),
         userRepository,
         generateId: vi.fn(),
@@ -351,6 +357,7 @@ describe('RegisterUseCase', () => {
       const registerRateLimiter = makeRateLimiter();
 
       const useCase = new RegisterUseCase({
+        passwordHasher,
         ...makeCaptchaDeps(),
         userRepository: makeUserRepository({
           findByEmail: vi.fn().mockResolvedValue(null),
@@ -374,6 +381,7 @@ describe('RegisterUseCase', () => {
     it('still creates the account when the verification mail is throttled', async () => {
       const user = makeUser({ id: 'user-1' });
       const useCase = new RegisterUseCase({
+        passwordHasher,
         ...makeCaptchaDeps(),
         userRepository: makeUserRepository({
           findByEmail: vi.fn().mockResolvedValue(null),

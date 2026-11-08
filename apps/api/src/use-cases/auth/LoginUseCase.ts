@@ -3,7 +3,7 @@ import {
   UnauthorizedError,
   UserNotFoundError,
 } from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ILoginEventRepository } from '#src/use-cases/ports/ILoginEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
@@ -16,6 +16,7 @@ import { logAuthFailure } from '#src/use-cases/auth/logAuthFailure.js';
 import { AUTH_FAILURE_EVENTS } from '#src/use-cases/constants.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   loginEventRepository: ILoginEventRepository;
   generateId: () => string;
@@ -43,7 +44,7 @@ export class LoginUseCase implements ILoginUseCase {
     if (user.passwordHash === null) this.logFailure('no_password');
     assertHasPassword(user.passwordHash);
 
-    const valid = await bcrypt.compare(input.password, user.passwordHash);
+    const valid = await this.deps.passwordHasher.compare(input.password, user.passwordHash);
     if (!valid) {
       await this.recordFailure(failureKeys, 'invalid_credentials');
       throw new UnauthorizedError('Invalid credentials');

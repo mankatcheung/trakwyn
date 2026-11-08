@@ -4,7 +4,7 @@ import {
   UnauthorizedError,
 } from '#src/use-cases/errors/DomainError.js';
 import QRCode from 'qrcode';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import { assertHasPassword } from '#src/use-cases/auth/passwordHashGuard.js';
@@ -15,6 +15,7 @@ import type {
 } from '#src/use-cases/user/IGenerateTotpSecretUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   totpProvider: ITotpProvider;
 }
@@ -31,7 +32,7 @@ export class GenerateTotpSecretUseCase implements IGenerateTotpSecretUseCase {
     }
 
     assertHasPassword(user.passwordHash);
-    const validPassword = await bcrypt.compare(input.password, user.passwordHash);
+    const validPassword = await this.deps.passwordHasher.compare(input.password, user.passwordHash);
     if (!validPassword) {
       throw new UnauthorizedError('Invalid password');
     }

@@ -112,6 +112,9 @@ export const PASSWORD_RESET_TOKEN = {
   TTL_MS: 60 * 60 * 1000, // 1 hour
 } as const;
 
+/** bcrypt cost factor for password hashes (JEF-534). Raising it only affects new hashes. */
+export const PASSWORD_HASH_COST = 12;
+
 /** Minimum length enforced server-side for any newly-set password. */
 export const PASSWORD_MIN_LENGTH = 8;
 

@@ -13,6 +13,7 @@ import type { ILoginEventRepository } from '#src/use-cases/ports/ILoginEventRepo
 import type { IPasswordResetTokenRepository } from '#src/use-cases/ports/IPasswordResetTokenRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
 import type { ITotpBackupCodeRepository } from '#src/use-cases/ports/ITotpBackupCodeRepository.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
 import type { LoginEvent } from '#src/domain/loginEvent/LoginEvent.js';
 import type { PasswordResetToken } from '#src/domain/passwordResetToken/PasswordResetToken.js';
@@ -154,3 +155,10 @@ export const makeTotpProvider = (overrides?: Partial<ITotpProvider>): ITotpProvi
     ...overrides,
   };
 };
+
+/** Resolves a match and a fixed hash unless overridden; the hash cost is never paid in tests. */
+export const makePasswordHasher = (overrides?: Partial<IPasswordHasher>): IPasswordHasher => ({
+  hash: vi.fn().mockResolvedValue('hashed-password'),
+  compare: vi.fn().mockResolvedValue(true),
+  ...overrides,
+});

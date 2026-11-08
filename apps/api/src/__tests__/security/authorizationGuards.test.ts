@@ -6,12 +6,12 @@
  * never silently succeed or leak data.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
 import { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
 import { RequestAccountDeletionUseCase } from '#src/use-cases/user/RequestAccountDeletionUseCase.js';
 import {
   makeEmailVerificationTokenRepository,
+  makePasswordHasher,
   makeSecurityEventRepository,
   makeUserActionTokenRepository,
 } from '#src/__tests__/helpers/mocks/auth.js';
@@ -19,12 +19,7 @@ import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infras
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 const WRONG_PW = false as never;
 const RIGHT_PW = true as never;
@@ -47,6 +42,7 @@ const emailVerificationTokenRepository = makeEmailVerificationTokenRepository();
 const makeEmailChangeDeps = (overrides?: {
   userRepository: ReturnType<typeof makeUserRepository>;
 }) => ({
+  passwordHasher,
   userRepository: makeUserRepository(),
   emailVerificationTokenRepository,
   emailService,
@@ -59,6 +55,7 @@ const makeEmailChangeDeps = (overrides?: {
 const makeUpdatePasswordDeps = (overrides?: {
   userRepository: ReturnType<typeof makeUserRepository>;
 }) => ({
+  passwordHasher,
   userRepository: makeUserRepository(),
   updatePasswordRateLimiter: makeRateLimiter(),
   securityEventRepository: makeSecurityEventRepository(),
@@ -69,6 +66,7 @@ const makeUpdatePasswordDeps = (overrides?: {
 const makeDeleteAccountDeps = (overrides?: {
   userRepository: ReturnType<typeof makeUserRepository>;
 }) => ({
+  passwordHasher,
   userRepository: makeUserRepository(),
   userActionTokenRepository: makeUserActionTokenRepository(),
   emailService,
@@ -120,7 +118,7 @@ describe('Authorization guards', () => {
     const repo = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
 
     beforeEach(() => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(WRONG_PW);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(WRONG_PW);
     });
 
     it('RequestEmailChangeUseCase does not send a confirmation on wrong password', async () => {
@@ -138,7 +136,7 @@ describe('Authorization guards', () => {
         .catch((e) => e);
 
       expect((err as { code: string }).code).toBe('UNAUTHORIZED');
-      expect(bcrypt.hash).not.toHaveBeenCalled();
+      expect(passwordHasher.hash).not.toHaveBeenCalled();
       expect(repo.update).not.toHaveBeenCalled();
     });
 
@@ -161,7 +159,7 @@ describe('Authorization guards', () => {
         findById: vi.fn().mockResolvedValue(user),
         findByEmail: vi.fn().mockResolvedValue(null),
       });
-      vi.mocked(bcrypt.compare).mockResolvedValue(RIGHT_PW);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(RIGHT_PW);
 
       await expect(
         new RequestEmailChangeUseCase(makeEmailChangeDeps({ userRepository: repo })).execute({
@@ -179,7 +177,7 @@ describe('Authorization guards', () => {
     it('RequestAccountDeletionUseCase mails a link, and deletes nothing, on correct password', async () => {
       const user = makeUser();
       const repo = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-      vi.mocked(bcrypt.compare).mockResolvedValue(RIGHT_PW);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(RIGHT_PW);
 
       await expect(
         new RequestAccountDeletionUseCase(makeDeleteAccountDeps({ userRepository: repo })).execute({

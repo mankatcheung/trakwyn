@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { createHash } from 'crypto';
 import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
-import bcrypt from 'bcryptjs';
 import { ReauthenticateUseCase } from '#src/use-cases/auth/ReauthenticateUseCase.js';
 import {
   makeTotpBackupCode,
@@ -11,12 +11,7 @@ import {
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 // Test-only fixture helper — see LoginWithTotpUseCase.test.ts for rationale.
 const fixtureCrypto = new NobleCryptoPlugin();
@@ -38,6 +33,7 @@ describe('ReauthenticateUseCase', () => {
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(null) });
 
     const err = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter: makeRateLimiter(),
@@ -52,9 +48,10 @@ describe('ReauthenticateUseCase', () => {
   it('throws UNAUTHORIZED when the password is wrong', async () => {
     const user = makeUser({ id: 'user-1' });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const err = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter: makeRateLimiter(),
@@ -69,9 +66,10 @@ describe('ReauthenticateUseCase', () => {
   it('returns totpRequired: false for a valid password when 2FA is not enabled', async () => {
     const user = makeUser({ id: 'user-1', totpEnabled: false });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const result = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter: makeRateLimiter(),
@@ -85,10 +83,11 @@ describe('ReauthenticateUseCase', () => {
     const secret = totpProvider.generateSecret();
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
     const totpRateLimiter = makeRateLimiter();
 
     const result = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter,
@@ -104,9 +103,10 @@ describe('ReauthenticateUseCase', () => {
     const validCode = await generateValidCode(secret);
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const result = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter: makeRateLimiter(),
@@ -126,9 +126,10 @@ describe('ReauthenticateUseCase', () => {
     const totpBackupCodeRepository = makeTotpBackupCodeRepository({
       findByCodeHash: vi.fn().mockResolvedValue(backupCode),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const result = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter: makeRateLimiter(),
@@ -143,9 +144,10 @@ describe('ReauthenticateUseCase', () => {
     const secret = totpProvider.generateSecret();
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter: makeRateLimiter(),
@@ -161,10 +163,11 @@ describe('ReauthenticateUseCase', () => {
     const secret = totpProvider.generateSecret();
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
     const totpRateLimiter = makeRateLimiter({ consume: vi.fn().mockReturnValue(false) });
 
     const err = await new ReauthenticateUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository: makeTotpBackupCodeRepository(),
       totpRateLimiter,
