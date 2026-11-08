@@ -5,7 +5,7 @@ import {
   UnauthorizedError,
 } from '#src/use-cases/errors/DomainError.js';
 import { createHash, randomBytes } from 'crypto';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ITotpBackupCodeRepository } from '#src/use-cases/ports/ITotpBackupCodeRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
@@ -21,6 +21,7 @@ import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManag
 import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   totpBackupCodeRepository: ITotpBackupCodeRepository;
   securityEventRepository: ISecurityEventRepository;
@@ -39,7 +40,7 @@ export class RegenerateTotpBackupCodesUseCase implements IRegenerateTotpBackupCo
     }
     assertHasPassword(user.passwordHash);
 
-    if (!(await bcrypt.compare(input.currentPassword, user.passwordHash))) {
+    if (!(await this.deps.passwordHasher.compare(input.currentPassword, user.passwordHash))) {
       throw new UnauthorizedError('Invalid password');
     }
     if (!isSessionFresh(input.authTime)) {

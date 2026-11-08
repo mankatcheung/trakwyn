@@ -1,5 +1,5 @@
 import { RateLimitedError, UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { User } from '#src/domain/user/User.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ITotpBackupCodeRepository } from '#src/use-cases/ports/ITotpBackupCodeRepository.js';
@@ -16,6 +16,7 @@ import type {
 } from '#src/use-cases/auth/ILoginWithTotpUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   totpBackupCodeRepository: ITotpBackupCodeRepository;
   totpRateLimiter: IRateLimiter;
@@ -35,7 +36,7 @@ export class LoginWithTotpUseCase implements ILoginWithTotpUseCase {
 
     if (user.passwordHash === null) this.logFailure('no_password');
     assertHasPassword(user.passwordHash);
-    const validPassword = await bcrypt.compare(input.password, user.passwordHash);
+    const validPassword = await this.deps.passwordHasher.compare(input.password, user.passwordHash);
     if (!validPassword) {
       this.logFailure('invalid_credentials');
       throw new UnauthorizedError('Invalid credentials');

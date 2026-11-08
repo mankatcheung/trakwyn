@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { User } from '#src/domain/user/User.js';
 import {
   ForbiddenError,
@@ -26,6 +26,7 @@ export interface IdentityProof {
  *   way in with no proof at all.
  */
 export async function confirmIdentity(
+  passwordHasher: IPasswordHasher,
   user: Pick<User, 'passwordHash' | 'totpEnabled'>,
   proof: IdentityProof,
 ): Promise<void> {
@@ -39,7 +40,10 @@ export async function confirmIdentity(
     return;
   }
 
-  if (!proof.currentPassword || !(await bcrypt.compare(proof.currentPassword, user.passwordHash))) {
+  if (
+    !proof.currentPassword ||
+    !(await passwordHasher.compare(proof.currentPassword, user.passwordHash))
+  ) {
     throw new UnauthorizedError('Invalid password');
   }
   if (user.totpEnabled && !isSessionFresh(proof.authTime)) {

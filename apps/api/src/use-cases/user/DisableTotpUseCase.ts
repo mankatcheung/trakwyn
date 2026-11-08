@@ -1,5 +1,5 @@
 import { NotFoundError, UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ITotpBackupCodeRepository } from '#src/use-cases/ports/ITotpBackupCodeRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
@@ -12,6 +12,7 @@ import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManag
 import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   totpBackupCodeRepository: ITotpBackupCodeRepository;
   securityEventRepository: ISecurityEventRepository;
@@ -27,7 +28,7 @@ export class DisableTotpUseCase implements IDisableTotpUseCase {
     if (!user) throw new NotFoundError('User not found');
     assertHasPassword(user.passwordHash);
 
-    const valid = await bcrypt.compare(input.password, user.passwordHash);
+    const valid = await this.deps.passwordHasher.compare(input.password, user.passwordHash);
     if (!valid) throw new UnauthorizedError('Invalid password');
 
     await runInTransaction(this.deps.transactionManager, async () => {

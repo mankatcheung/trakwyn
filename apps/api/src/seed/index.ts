@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import { NodeRsPasswordHasher } from '../infrastructure/auth/NodeRsPasswordHasher.js';
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
 import type { DrizzleDb } from '../infrastructure/db/client.js';
@@ -34,7 +34,7 @@ export async function runSeed(db: DrizzleDb): Promise<void> {
   }
 
   const userId = nanoid();
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+  const passwordHash = await new NodeRsPasswordHasher().hash(DEMO_PASSWORD);
 
   await db.insert(user).values({
     id: userId,

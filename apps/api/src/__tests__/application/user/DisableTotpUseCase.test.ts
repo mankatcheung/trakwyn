@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { DisableTotpUseCase } from '#src/use-cases/user/DisableTotpUseCase.js';
 import {
   makeSecurityEventRepository,
@@ -7,12 +7,7 @@ import {
 } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 function securityDeps() {
   return { securityEventRepository: makeSecurityEventRepository(), generateId: () => 'evt-1' };
@@ -30,6 +25,7 @@ describe('DisableTotpUseCase', () => {
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
 
     const err = await new DisableTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       ...securityDeps(),
@@ -44,9 +40,10 @@ describe('DisableTotpUseCase', () => {
     const user = makeUser({ totpEnabled: true, totpSecret: 'ABCD1234' });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const err = await new DisableTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       ...securityDeps(),
@@ -63,9 +60,10 @@ describe('DisableTotpUseCase', () => {
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: 'ABCD1234' });
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     await new DisableTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       ...securityDeps(),
@@ -83,9 +81,10 @@ describe('DisableTotpUseCase', () => {
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const securityEventRepository = makeSecurityEventRepository();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     await new DisableTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       securityEventRepository,

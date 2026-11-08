@@ -11,6 +11,7 @@ import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { IUserActionTokenRepository } from '#src/use-cases/ports/IUserActionTokenRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import { isSessionFresh } from '#src/use-cases/auth/sessionFreshness.js';
 import { ACCOUNT_DELETION } from '#src/use-cases/constants.js';
@@ -29,6 +30,7 @@ export interface RequestAccountDeletionInput {
 }
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   userActionTokenRepository: IUserActionTokenRepository;
   emailService: IEmailService;
@@ -61,7 +63,7 @@ export class RequestAccountDeletionUseCase {
     }
 
     if (input.legacyPassword !== undefined) {
-      await confirmIdentity(user, {
+      await confirmIdentity(this.deps.passwordHasher, user, {
         currentPassword: input.legacyPassword,
         authTime: input.authTime,
       });

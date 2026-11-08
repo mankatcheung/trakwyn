@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { createHash } from 'crypto';
 import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
-import bcrypt from 'bcryptjs';
 import { LoginWithTotpUseCase } from '#src/use-cases/auth/LoginWithTotpUseCase.js';
 import {
   makeTotpBackupCode,
@@ -11,12 +11,7 @@ import {
 import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 // Test-only fixture helper: production code only ever verifies codes (a real
 // authenticator app generates them), so "generate a currently-valid code" has
@@ -52,6 +47,7 @@ describe('LoginWithTotpUseCase', () => {
     const totpRateLimiter = makeRateLimiter();
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -74,9 +70,10 @@ describe('LoginWithTotpUseCase', () => {
     const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -101,9 +98,10 @@ describe('LoginWithTotpUseCase', () => {
     const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -122,9 +120,10 @@ describe('LoginWithTotpUseCase', () => {
     const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const totpRateLimiter = makeRateLimiter({ consume: vi.fn().mockReturnValue(false) });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -143,9 +142,10 @@ describe('LoginWithTotpUseCase', () => {
     const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -172,9 +172,10 @@ describe('LoginWithTotpUseCase', () => {
     const userRepository = makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) });
     const totpBackupCodeRepository = makeTotpBackupCodeRepository();
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const result = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -200,9 +201,10 @@ describe('LoginWithTotpUseCase', () => {
       findByCodeHash: vi.fn().mockResolvedValue(backupCode),
     });
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const result = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,
@@ -230,9 +232,10 @@ describe('LoginWithTotpUseCase', () => {
       findByCodeHash: vi.fn().mockResolvedValue(backupCode),
     });
     const totpRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new LoginWithTotpUseCase({
+      passwordHasher,
       userRepository,
       totpBackupCodeRepository,
       totpRateLimiter,

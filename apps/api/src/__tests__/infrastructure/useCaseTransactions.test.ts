@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { createHash } from 'node:crypto';
 import { nanoid } from 'nanoid';
-import bcrypt from 'bcryptjs';
 import { createTestDb, type TestDb } from '#src/__tests__/helpers/createTestDb.js';
 import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransactionManager.js';
 import { DrizzleUserRepository } from '#src/infrastructure/db/repositories/DrizzleUserRepository.js';
@@ -33,6 +33,8 @@ import { RegenerateTotpBackupCodesUseCase } from '#src/use-cases/user/Regenerate
 import { ExchangeMcpOAuthAuthorizationCodeUseCase } from '#src/use-cases/mcpOAuth/ExchangeMcpOAuthAuthorizationCodeUseCase.js';
 import { RotateMcpOAuthRefreshTokenUseCase } from '#src/use-cases/mcpOAuth/RotateMcpOAuthRefreshTokenUseCase.js';
 import { MCP_OAUTH } from '#src/use-cases/constants.js';
+
+const passwordHasher = makePasswordHasher();
 
 /**
  * JEF-427: use cases that write through several repositories must commit or
@@ -110,6 +112,7 @@ describe('use-case transactions (JEF-427)', () => {
     it('rolls the password change back when revoking sessions fails', async () => {
       const { userId, raw } = await seed();
       const useCase = new ResetPasswordUseCase({
+        passwordHasher,
         userRepository: users,
         passwordResetTokenRepository: resetTokens,
         sessionRepository: failing(sessions, 'revokeAllForUser') as never,
@@ -127,6 +130,7 @@ describe('use-case transactions (JEF-427)', () => {
     it('commits all three writes on success', async () => {
       const { userId, raw } = await seed();
       const useCase = new ResetPasswordUseCase({
+        passwordHasher,
         userRepository: users,
         passwordResetTokenRepository: resetTokens,
         sessionRepository: sessions,
@@ -232,12 +236,13 @@ describe('use-case transactions (JEF-427)', () => {
 
   describe('RegenerateTotpBackupCodesUseCase', () => {
     it('keeps the old backup codes when creating the new ones fails', async () => {
-      const passwordHash = await bcrypt.hash('Current-Passw0rd!', 4);
+      const passwordHash = 'stored-hash';
       const userId = await makeUser(passwordHash);
       await users.update(userId, { totpEnabled: true });
       await backupCodes.create({ id: nanoid(), userId, codeHash: sha256('old-code') });
 
       const useCase = new RegenerateTotpBackupCodesUseCase({
+        passwordHasher,
         userRepository: users,
         totpBackupCodeRepository: failing(backupCodes, 'create'),
         securityEventRepository: securityEvents,
