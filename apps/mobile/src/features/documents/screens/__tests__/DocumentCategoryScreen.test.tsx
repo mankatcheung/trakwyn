@@ -107,6 +107,10 @@ describe('DocumentCategoryScreen', () => {
     mockedUseDocumentDrafts.mockReturnValue({ data: [], isLoading: false } as never);
   });
 
+  // The first render in this file loads the screen's whole module graph
+  // cold, which took 16 s locally and over the 20 s default on a CI runner
+  // with a cold Turbo cache (any PR that changes pnpm-lock.yaml). The rest of
+  // the file runs in milliseconds.
   it('renders existing documents', async () => {
     mockedUseDocuments.mockReturnValue({
       data: [document],
@@ -119,7 +123,7 @@ describe('DocumentCategoryScreen', () => {
     const { getByText } = await renderScreen(jest.fn(), 'resume');
 
     await waitFor(() => expect(getByText('resume.pdf')).toBeTruthy());
-  });
+  }, 60_000);
 
   it('picks a file and uploads it with the type chosen on Other documents', async () => {
     const mutate = jest.fn();
