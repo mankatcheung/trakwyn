@@ -30,7 +30,9 @@ export async function seedApplications(db: DrizzleDb, userId: string, now: Date)
       appliedAt: app.appliedAt,
       starred: app.starred,
       source: app.source,
-      createdAt: now,
+      // An application is created when it is applied to, so analytics'
+      // "Applications per week" spreads over the weeks instead of one bar.
+      createdAt: app.appliedAt ?? now,
       updatedAt: now,
     });
 

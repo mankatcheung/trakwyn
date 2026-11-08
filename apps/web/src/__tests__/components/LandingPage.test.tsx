@@ -108,10 +108,26 @@ describe('LandingPage', () => {
     render(<LandingPage />);
 
     const demo = screen.getByRole('region', { name: 'landing.aiDemo.title' });
-    const board = screen.getByText('landing.boardLabel');
+    // The hero board screenshot comes first; the feature rows repeat it later.
+    const board = screen.getAllByAltText('screenshots.board.alt')[0];
     const features = screen.getAllByTestId('feature-row')[3];
     expect(board.compareDocumentPosition(demo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(demo.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('loads the hero board screenshot eagerly at high priority, with its size set (JEF-530)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const [light, dark] = screen.getAllByAltText('screenshots.board.alt');
+    expect(light).toHaveAttribute('loading', 'eager');
+    expect(dark).toHaveAttribute('loading', 'lazy');
+    for (const img of [light, dark]) {
+      expect(img).toHaveAttribute('fetchpriority', 'high');
+      expect(img).toHaveAttribute('width');
+      expect(img).toHaveAttribute('height');
+    }
   });
 
   it('mentions the self-ending passes once, by the closing CTA', () => {

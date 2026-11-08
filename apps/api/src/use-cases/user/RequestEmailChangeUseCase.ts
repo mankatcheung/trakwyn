@@ -9,6 +9,7 @@ import type { IEmailVerificationTokenRepository } from '#src/use-cases/ports/IEm
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { EMAIL_VERIFICATION_TOKEN } from '#src/use-cases/constants.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import type {
   IRequestEmailChangeUseCase,
@@ -16,6 +17,7 @@ import type {
 } from '#src/use-cases/user/IRequestEmailChangeUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   emailVerificationTokenRepository: IEmailVerificationTokenRepository;
   emailService: IEmailService;
@@ -38,7 +40,7 @@ export class RequestEmailChangeUseCase implements IRequestEmailChangeUseCase {
 
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
-    await confirmIdentity(user, input);
+    await confirmIdentity(this.deps.passwordHasher, user, input);
 
     const existing = await this.deps.userRepository.findByEmail(input.newEmail);
     if (existing && existing.id !== input.userId) {

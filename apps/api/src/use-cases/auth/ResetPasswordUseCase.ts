@@ -1,6 +1,6 @@
 import { UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
 import { createHash } from 'crypto';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IPasswordResetTokenRepository } from '#src/use-cases/ports/IPasswordResetTokenRepository.js';
 import type { ISessionRepository } from '#src/use-cases/ports/ISessionRepository.js';
@@ -13,6 +13,7 @@ import type {
 } from '#src/use-cases/auth/IResetPasswordUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   passwordResetTokenRepository: IPasswordResetTokenRepository;
   sessionRepository: ISessionRepository;
@@ -32,7 +33,7 @@ export class ResetPasswordUseCase implements IResetPasswordUseCase {
       throw new UnauthorizedError('Invalid or expired reset link');
     }
 
-    const passwordHash = await bcrypt.hash(input.newPassword, 12);
+    const passwordHash = await this.deps.passwordHasher.hash(input.newPassword);
     // One transaction: a failure after the password changes must not leave the
     // reset link reusable or the old sessions alive.
     await runInTransaction(this.deps.transactionManager, async () => {

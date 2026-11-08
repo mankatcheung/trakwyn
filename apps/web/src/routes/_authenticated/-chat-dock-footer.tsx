@@ -20,7 +20,12 @@ export function ChatDockFooter() {
   const { t } = useLocale();
   const dock = useChatDock();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const { data } = useQuery(conversationsQueryOptions);
+  // Titles are only needed for the pills; the picker loads its own list when
+  // opened, so an empty dock fetches nothing on first paint (JEF-535).
+  const { data } = useQuery({
+    ...conversationsQueryOptions,
+    enabled: dock.sections.length > 0,
+  });
   const titleById = new Map((data?.conversations ?? []).map((c) => [c.id, c.title]));
 
   const togglePill = (id: string) => {

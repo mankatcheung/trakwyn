@@ -1,17 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { RequestEmailChangeUseCase } from '#src/use-cases/user/RequestEmailChangeUseCase.js';
 import { makeEmailVerificationTokenRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 const makeEmailService = (overrides?: Partial<IEmailService>): IEmailService => ({
   sendFollowUpReminder: vi.fn().mockResolvedValue(undefined),
@@ -42,6 +37,7 @@ describe('RequestEmailChangeUseCase', () => {
     const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(null) });
 
     const err = await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService: makeEmailService(),
@@ -59,9 +55,10 @@ describe('RequestEmailChangeUseCase', () => {
     const userRepository = makeUserRepository({
       findById: vi.fn().mockResolvedValue(makeUser({ id: 'user-1' })),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const err = await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService: makeEmailService(),
@@ -80,9 +77,10 @@ describe('RequestEmailChangeUseCase', () => {
       findById: vi.fn().mockResolvedValue(makeUser({ id: 'user-1' })),
       findByEmail: vi.fn().mockResolvedValue(makeUser({ id: 'user-2', email: input.newEmail })),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const err = await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService: makeEmailService(),
@@ -102,9 +100,10 @@ describe('RequestEmailChangeUseCase', () => {
       findById: vi.fn().mockResolvedValue(user),
       findByEmail: vi.fn().mockResolvedValue(null),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService: makeEmailService(),
@@ -122,10 +121,11 @@ describe('RequestEmailChangeUseCase', () => {
       findById: vi.fn().mockResolvedValue(user),
       findByEmail: vi.fn().mockResolvedValue(null),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
     const emailVerificationTokenRepository = makeEmailVerificationTokenRepository();
 
     await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository,
       emailService: makeEmailService(),
@@ -150,10 +150,11 @@ describe('RequestEmailChangeUseCase', () => {
       findById: vi.fn().mockResolvedValue(user),
       findByEmail: vi.fn().mockResolvedValue(null),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
     const emailService = makeEmailService();
 
     await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService,
@@ -174,7 +175,7 @@ describe('RequestEmailChangeUseCase', () => {
       findById: vi.fn().mockResolvedValue(user),
       findByEmail: vi.fn().mockResolvedValue(null),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
     const emailService = makeEmailService({
       sendEmailVerification: vi.fn().mockRejectedValue(new Error('Brevo is down')),
       sendBackupEmailVerification: vi.fn().mockResolvedValue(undefined),
@@ -182,6 +183,7 @@ describe('RequestEmailChangeUseCase', () => {
 
     await expect(
       new RequestEmailChangeUseCase({
+        passwordHasher,
         userRepository,
         emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
         emailService,
@@ -201,6 +203,7 @@ describe('RequestEmailChangeUseCase', () => {
     });
 
     const err = await new RequestEmailChangeUseCase({
+      passwordHasher,
       userRepository,
       emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
       emailService: makeEmailService(),
@@ -222,9 +225,10 @@ describe('RequestEmailChangeUseCase', () => {
     it('throws STEP_UP_REQUIRED for a 2FA-enabled user with a stale session', async () => {
       const user = makeUser({ id: 'user-1', totpEnabled: true });
       const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
       const err = await new RequestEmailChangeUseCase({
+        passwordHasher,
         userRepository,
         emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
         emailService: makeEmailService(),
@@ -244,10 +248,11 @@ describe('RequestEmailChangeUseCase', () => {
         findById: vi.fn().mockResolvedValue(user),
         findByEmail: vi.fn().mockResolvedValue(null),
       });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
       const emailService = makeEmailService();
 
       await new RequestEmailChangeUseCase({
+        passwordHasher,
         userRepository,
         emailVerificationTokenRepository: makeEmailVerificationTokenRepository(),
         emailService,

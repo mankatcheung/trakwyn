@@ -4,7 +4,7 @@ import {
   StepUpRequiredError,
   UnauthorizedError,
 } from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
@@ -19,6 +19,7 @@ import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManag
 import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   updatePasswordRateLimiter: IRateLimiter;
   securityEventRepository: ISecurityEventRepository;
@@ -44,14 +45,14 @@ export class UpdatePasswordUseCase implements IUpdatePasswordUseCase {
     if (!user) throw new NotFoundError('User not found');
     assertHasPassword(user.passwordHash);
 
-    const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+    const valid = await this.deps.passwordHasher.compare(input.currentPassword, user.passwordHash);
     if (!valid) throw new UnauthorizedError('Invalid password');
 
     if (user.totpEnabled && !isSessionFresh(input.authTime)) {
       throw new StepUpRequiredError('Please verify your identity again to continue.');
     }
 
-    const passwordHash = await bcrypt.hash(input.newPassword, 12);
+    const passwordHash = await this.deps.passwordHasher.hash(input.newPassword);
     await runInTransaction(this.deps.transactionManager, async () => {
       await this.deps.userRepository.update(input.userId, { passwordHash });
 

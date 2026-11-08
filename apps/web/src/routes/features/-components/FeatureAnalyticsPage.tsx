@@ -1,83 +1,7 @@
 import { BarChart3, Bell } from 'lucide-react';
 import { FeaturePageLayout } from '#/components/marketing/FeaturePageLayout';
 import { useLocale } from '#/lib/i18n';
-
-const FUNNEL = [
-  { statusKey: 'status.draft', value: 34, color: 'bg-gray-400' },
-  { statusKey: 'status.applied', value: 21, color: 'bg-blue-500' },
-  { statusKey: 'status.interviewing', value: 9, color: 'bg-purple-500' },
-  { statusKey: 'status.offered', value: 3, color: 'bg-orange-500' },
-  { statusKey: 'status.accepted', value: 1, color: 'bg-green-500' },
-] as const;
-
-function AnalyticsMockup() {
-  const { t } = useLocale();
-  const max = FUNNEL[0].value;
-  return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-800/50">
-      <div className="border-b border-gray-200 px-5 py-3.5 text-base font-bold text-gray-900 dark:border-gray-800 dark:text-gray-100">
-        {t('features.analytics.panelTitle')}
-      </div>
-      <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-4">
-        {[
-          {
-            value: '34',
-            labelKey: 'features.analytics.statTotal',
-            color: 'text-gray-900 dark:text-gray-100',
-          },
-          {
-            value: '9',
-            labelKey: 'features.analytics.statActive',
-            color: 'text-gray-900 dark:text-gray-100',
-          },
-          { value: '47%', labelKey: 'features.analytics.statResponseRate', color: 'text-blue-600' },
-          { value: '18%', labelKey: 'features.analytics.statGhosted', color: 'text-orange-600' },
-        ].map((stat) => (
-          <div
-            key={stat.labelKey}
-            className="rounded-lg border border-gray-200 p-3.5 dark:border-gray-700"
-          >
-            <div className={`text-xl font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-[11px] text-gray-500 dark:text-gray-400">{t(stat.labelKey)}</div>
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-3 px-5 pb-5 sm:grid-cols-[1.3fr_1fr]">
-        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-          <div className="mb-3 text-xs font-bold text-gray-700 dark:text-gray-300">
-            {t('features.analytics.funnelTitle')}
-          </div>
-          <div className="flex h-24 items-end gap-2.5">
-            {FUNNEL.map((stage) => (
-              <div key={stage.statusKey} className="flex flex-1 flex-col items-center gap-1">
-                <div
-                  className={`w-full rounded-t ${stage.color}`}
-                  style={{ height: `${(stage.value / max) * 100}%` }}
-                />
-                <span className="text-[9px] text-gray-400">{t(stage.statusKey)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-          <div className="mb-3 text-xs font-bold text-gray-700 dark:text-gray-300">
-            {t('features.analytics.responseTimeTitle')}
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            6.2
-            <span className="text-sm font-medium text-gray-400">
-              {' '}
-              {t('features.analytics.daysUnit')}
-            </span>
-          </div>
-          <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            {t('features.analytics.medianFirstResponse')}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ThemedScreenshot } from '#/components/marketing/ThemedScreenshot';
 
 export function FeatureAnalyticsPage() {
   const { t } = useLocale();
@@ -87,7 +11,7 @@ export function FeatureAnalyticsPage() {
       eyebrowLabel={t('features.analytics.eyebrow')}
       title={t('features.analytics.title')}
       description={t('features.analytics.description')}
-      heroVisual={<AnalyticsMockup />}
+      heroVisual={<ThemedScreenshot name="analytics" />}
       benefits={[
         {
           title: t('features.analytics.benefit1.title'),

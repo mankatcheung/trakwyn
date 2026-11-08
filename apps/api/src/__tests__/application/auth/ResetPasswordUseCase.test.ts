@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
 import { ResetPasswordUseCase } from '#src/use-cases/auth/ResetPasswordUseCase.js';
 import {
   makePasswordResetToken,
@@ -9,17 +9,13 @@ import {
 import { makeSessionRepository } from '#src/__tests__/helpers/mocks/sessions.js';
 import { makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 const RAW_TOKEN = 'raw-reset-token';
 const TOKEN_HASH = createHash('sha256').update(RAW_TOKEN).digest('hex');
 
 const makeDeps = (overrides?: object) => ({
+  passwordHasher,
   userRepository: makeUserRepository(),
   passwordResetTokenRepository: makePasswordResetTokenRepository(),
   sessionRepository: makeSessionRepository(),
@@ -110,7 +106,7 @@ describe('ResetPasswordUseCase', () => {
     });
     const userRepository = makeUserRepository();
     const sessionRepository = makeSessionRepository();
-    vi.mocked(bcrypt.hash).mockResolvedValue('new-hashed-password' as never);
+    vi.mocked(passwordHasher.hash).mockResolvedValue('new-hashed-password' as never);
 
     await new ResetPasswordUseCase(
       makeDeps({ userRepository, passwordResetTokenRepository, sessionRepository }),
@@ -119,7 +115,7 @@ describe('ResetPasswordUseCase', () => {
       newPassword: 'newPassword123',
     });
 
-    expect(bcrypt.hash).toHaveBeenCalledWith('newPassword123', 12);
+    expect(passwordHasher.hash).toHaveBeenCalledWith('newPassword123');
     expect(userRepository.update).toHaveBeenCalledWith('user-1', {
       passwordHash: 'new-hashed-password',
     });

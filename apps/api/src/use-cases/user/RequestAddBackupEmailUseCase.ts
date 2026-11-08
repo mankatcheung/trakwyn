@@ -9,6 +9,7 @@ import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/por
 import type { IEmailService } from '#src/use-cases/ports/IEmailService.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { BACKUP_EMAIL_VERIFICATION_TOKEN } from '#src/use-cases/constants.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import type {
   IRequestAddBackupEmailUseCase,
@@ -16,6 +17,7 @@ import type {
 } from '#src/use-cases/user/IRequestAddBackupEmailUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   backupEmailVerificationTokenRepository: IBackupEmailVerificationTokenRepository;
   emailService: IEmailService;
@@ -44,7 +46,7 @@ export class RequestAddBackupEmailUseCase implements IRequestAddBackupEmailUseCa
 
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
-    await confirmIdentity(user, input);
+    await confirmIdentity(this.deps.passwordHasher, user, input);
 
     if (input.backupEmail === user.email) {
       throw new ValidationError('Backup email must be different from your current email');

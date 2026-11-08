@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
+import { guideRouteRules } from '../../content/src/node';
 import { devtools } from '@tanstack/devtools-vite';
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -78,6 +79,11 @@ const config = defineConfig(({ command }) => ({
               '/terms': { prerender: true },
               '/accessibility': { prerender: true },
               '/ai-mcp-setup': { prerender: true },
+              '/guides': { prerender: true },
+              '/guides/rss.xml': { prerender: true },
+              '/sitemap.xml': { prerender: true },
+              // One entry per published guide, read from content/ (JEF-531).
+              ...guideRouteRules(),
             },
           }),
         ]
@@ -101,6 +107,8 @@ const config = defineConfig(({ command }) => ({
       : []),
   ],
   server: {
+    // content/ sits at the repo root, outside apps/web (JEF-531).
+    fs: { allow: [searchForWorkspaceRoot(process.cwd())] },
     proxy: {
       '/graphql': { target: 'http://localhost:3001', changeOrigin: true },
       '/auth': { target: 'http://localhost:3001', changeOrigin: true },

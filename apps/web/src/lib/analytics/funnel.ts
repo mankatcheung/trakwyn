@@ -18,6 +18,7 @@ export type CtaLocation =
   | 'header_mobile'
   | 'feature_hero'
   | 'feature_closing'
+  | 'guide'
   | 'pricing_free'
   | 'pricing_pro';
 

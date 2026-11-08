@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { LoginUseCase } from '#src/use-cases/auth/LoginUseCase.js';
 import { makeLoginEventRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
@@ -10,12 +10,7 @@ import {
 } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 describe('LoginUseCase', () => {
   beforeEach(() => {
@@ -23,6 +18,7 @@ describe('LoginUseCase', () => {
   });
 
   const makeDeps = (overrides?: object) => ({
+    passwordHasher,
     userRepository: makeUserRepository(),
     loginEventRepository: makeLoginEventRepository(),
     generateId: vi.fn().mockReturnValue('event-1'),
@@ -42,7 +38,7 @@ describe('LoginUseCase', () => {
       userRepository: makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) }),
       loginEventRepository,
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const useCase = new LoginUseCase(deps);
     const result = await useCase.execute({
@@ -55,7 +51,10 @@ describe('LoginUseCase', () => {
 
     expect(result).toEqual(user);
     expect(deps.logger.warn).not.toHaveBeenCalled();
-    expect(vi.mocked(bcrypt.compare)).toHaveBeenCalledWith('password123', user.passwordHash);
+    expect(vi.mocked(passwordHasher.compare)).toHaveBeenCalledWith(
+      'password123',
+      user.passwordHash,
+    );
     expect(loginEventRepository.create).toHaveBeenCalledWith({
       id: 'event-1',
       userId: user.id,
@@ -71,7 +70,7 @@ describe('LoginUseCase', () => {
       userRepository: makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) }),
       loginEventRepository,
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
     const useCase = new LoginUseCase(deps);
     await useCase.execute({
@@ -102,7 +101,7 @@ describe('LoginUseCase', () => {
 
     expect(err).toBeInstanceOf(Error);
     expect((err as { code: string }).code).toBe('USER_NOT_FOUND');
-    expect(vi.mocked(bcrypt.compare)).not.toHaveBeenCalled();
+    expect(vi.mocked(passwordHasher.compare)).not.toHaveBeenCalled();
     expect(loginEventRepository.create).not.toHaveBeenCalled();
     expect(warnFields(deps.logger)).toEqual([
       { event: 'auth.login.failed', reason: 'invalid_credentials', userId: undefined },
@@ -115,7 +114,7 @@ describe('LoginUseCase', () => {
       userRepository: makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(makeUser()) }),
       loginEventRepository,
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const useCase = new LoginUseCase(deps);
     const err = await useCase
@@ -156,7 +155,7 @@ describe('LoginUseCase', () => {
       .catch((e) => e);
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
-    expect(vi.mocked(bcrypt.compare)).not.toHaveBeenCalled();
+    expect(vi.mocked(passwordHasher.compare)).not.toHaveBeenCalled();
     expect(loginEventRepository.create).not.toHaveBeenCalled();
     expect(warnFields(deps.logger)).toEqual([
       { event: 'auth.login.failed', reason: 'no_password', userId: undefined },
@@ -175,7 +174,7 @@ describe('LoginUseCase', () => {
 
     it('asks for no captcha while there are few failures', async () => {
       const captchaVerifier = makeCaptchaVerifier();
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
       const useCase = new LoginUseCase(makeDeps({ userRepository: validUser(), captchaVerifier }));
 
       await useCase.execute(credentials);
@@ -195,7 +194,7 @@ describe('LoginUseCase', () => {
       const err = await useCase.execute(credentials).catch((e) => e);
 
       expect(code(err)).toBe('CAPTCHA_REQUIRED');
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(passwordHasher.compare).not.toHaveBeenCalled();
     });
 
     it('requires a captcha once the IP has repeated failures', async () => {
@@ -229,7 +228,7 @@ describe('LoginUseCase', () => {
     });
 
     it('logs in when a valid captcha accompanies repeated failures', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
       const useCase = new LoginUseCase(
         makeDeps({
           userRepository: validUser(),
@@ -241,7 +240,7 @@ describe('LoginUseCase', () => {
     });
 
     it('never asks a client that cannot show a captcha', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
       const captchaVerifier = makeCaptchaVerifier({ verify: vi.fn().mockResolvedValue(false) });
       const useCase = new LoginUseCase(
         makeDeps({
@@ -258,7 +257,7 @@ describe('LoginUseCase', () => {
     });
 
     it('counts a wrong password against the email and the IP', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
       const loginFailureRateLimiter = makeRateLimiter();
       const useCase = new LoginUseCase(
         makeDeps({ userRepository: validUser(), loginFailureRateLimiter }),
@@ -289,7 +288,7 @@ describe('LoginUseCase', () => {
     });
 
     it('does not count a successful login as a failure', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
       const loginFailureRateLimiter = makeRateLimiter();
       const useCase = new LoginUseCase(
         makeDeps({ userRepository: validUser(), loginFailureRateLimiter }),

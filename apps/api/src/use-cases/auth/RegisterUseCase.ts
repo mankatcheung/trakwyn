@@ -1,5 +1,5 @@
 import { ConflictError, RateLimitedError } from '#src/use-cases/errors/DomainError.js';
-import bcrypt from 'bcryptjs';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { assertCaptcha } from '#src/use-cases/auth/assertCaptcha.js';
@@ -13,6 +13,7 @@ import type {
 } from '#src/use-cases/auth/IRegisterUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   generateId: () => string;
   sendEmailVerificationUseCase: ISendEmailVerificationUseCase;
@@ -37,7 +38,7 @@ export class RegisterUseCase implements IRegisterUseCase {
     }
 
     const autoVerify = this.deps.autoVerifyEmail === true;
-    const passwordHash = await bcrypt.hash(input.password, 12);
+    const passwordHash = await this.deps.passwordHasher.hash(input.password);
     const user = await this.deps.userRepository.create({
       id: this.deps.generateId(),
       email: input.email,

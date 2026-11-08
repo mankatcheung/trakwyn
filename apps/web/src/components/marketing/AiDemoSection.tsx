@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowRight, ArrowUpRight, Shield, Sparkles } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { ThemedScreenshot } from '#/components/marketing/ThemedScreenshot';
 import { trackCta } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 
@@ -66,26 +67,13 @@ function LetterPanel() {
   return (
     <div className="flex flex-col gap-3">
       <PanelLabel>{t('landing.aiDemo.letterLabel')}</PanelLabel>
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-800/50">
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {t('landing.aiDemo.letterGreeting')}
+      <ThemedScreenshot name="cover-letter" />
+      <div className="flex items-start gap-2 text-xs/relaxed text-green-800 dark:text-green-500">
+        <Shield className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+        <p>
+          <span className="font-bold">{t('landing.aiDemo.groundedBadge')}.</span>{' '}
+          {t('landing.aiDemo.groundedNote')}
         </p>
-        <p className="mt-3 text-sm/7 text-gray-700 dark:text-gray-300">
-          {t('landing.aiDemo.letterBody')}
-        </p>
-        <div className="mt-4 space-y-2" aria-hidden="true">
-          <div className="h-1.5 w-full rounded-sm bg-gray-200 dark:bg-gray-700" />
-          <div className="h-1.5 w-4/5 rounded-sm bg-gray-200 dark:bg-gray-700" />
-        </div>
-        <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-900/20">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 dark:text-green-400">
-            <Shield className="size-3.5" aria-hidden="true" />
-            {t('landing.aiDemo.groundedBadge')}
-          </div>
-          <p className="mt-1.5 text-xs/relaxed text-green-800 dark:text-green-500">
-            {t('landing.aiDemo.groundedNote')}
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -93,8 +81,9 @@ function LetterPanel() {
 
 /**
  * Static, illustrative "job posting → tailored cover letter" section for the
- * landing page (JEF-517). Pure markup with fictional names: no API call, so it
- * server-renders, and an anonymous visitor can never run up AI cost.
+ * landing page (JEF-517): a mock posting beside a real screenshot of the letter
+ * editor (JEF-530). No API call, so it server-renders, and an anonymous visitor
+ * can never run up AI cost.
  *
  * @category Marketing
  */

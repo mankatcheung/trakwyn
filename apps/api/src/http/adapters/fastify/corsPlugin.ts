@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import cors from '@fastify/cors';
 import type { FastifyInstance } from 'fastify';
 import { ENV } from '#src/infrastructure/config/constants.js';
-import { EXTENSION_ORIGIN_SCHEMES } from '#src/http/constants.js';
+import { CORS_PREFLIGHT_MAX_AGE_S, EXTENSION_ORIGIN_SCHEMES } from '#src/http/constants.js';
 
 export default fp(async function corsPlugin(fastify: FastifyInstance) {
   const allowedOrigins = process.env[ENV.CORS_ORIGIN]
@@ -37,5 +37,7 @@ export default fp(async function corsPlugin(fastify: FastifyInstance) {
     // explicitly or its preflight response omits PUT and the browser drops
     // the real request before it's ever sent.
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
+    // Lets the browser skip the OPTIONS round trip on repeat calls (JEF-536).
+    maxAge: CORS_PREFLIGHT_MAX_AGE_S,
   });
 });

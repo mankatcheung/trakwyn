@@ -2,6 +2,7 @@ import { NotFoundError, RateLimitedError } from '#src/use-cases/errors/DomainErr
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/ports/IBackupEmailVerificationTokenRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import { confirmIdentity } from '#src/use-cases/auth/confirmIdentity.js';
 import type {
   IRemoveBackupEmailUseCase,
@@ -9,6 +10,7 @@ import type {
 } from '#src/use-cases/user/IRemoveBackupEmailUseCase.js';
 
 interface Deps {
+  passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   backupEmailVerificationTokenRepository: IBackupEmailVerificationTokenRepository;
   removeBackupEmailRateLimiter: IRateLimiter;
@@ -27,7 +29,7 @@ export class RemoveBackupEmailUseCase implements IRemoveBackupEmailUseCase {
 
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
-    await confirmIdentity(user, input);
+    await confirmIdentity(this.deps.passwordHasher, user, input);
 
     await this.deps.userRepository.update(input.userId, {
       backupEmail: null,

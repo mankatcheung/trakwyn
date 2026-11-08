@@ -1,16 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import bcrypt from 'bcryptjs';
+import { makePasswordHasher } from '#src/__tests__/helpers/mocks/auth.js';
 import { UpdatePasswordUseCase } from '#src/use-cases/user/UpdatePasswordUseCase.js';
 import { makeSecurityEventRepository } from '#src/__tests__/helpers/mocks/auth.js';
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-}));
+const passwordHasher = makePasswordHasher();
 
 function securityDeps() {
   return { securityEventRepository: makeSecurityEventRepository(), generateId: () => 'evt-1' };
@@ -34,18 +29,19 @@ describe('UpdatePasswordUseCase', () => {
       update: vi.fn().mockResolvedValue(user),
     });
     const updatePasswordRateLimiter = makeRateLimiter();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-    vi.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.hash).mockResolvedValue('new-hash' as never);
 
     await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter,
       ...securityDeps(),
     }).execute(input);
 
     expect(updatePasswordRateLimiter.consume).toHaveBeenCalledWith('update-password:user:user-1');
-    expect(bcrypt.compare).toHaveBeenCalledWith(input.currentPassword, user.passwordHash);
-    expect(bcrypt.hash).toHaveBeenCalledWith(input.newPassword, 12);
+    expect(passwordHasher.compare).toHaveBeenCalledWith(input.currentPassword, user.passwordHash);
+    expect(passwordHasher.hash).toHaveBeenCalledWith(input.newPassword);
     expect(userRepository.update).toHaveBeenCalledWith('user-1', { passwordHash: 'new-hash' });
   });
 
@@ -56,10 +52,11 @@ describe('UpdatePasswordUseCase', () => {
       update: vi.fn().mockResolvedValue(user),
     });
     const securityEventRepository = makeSecurityEventRepository();
-    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-    vi.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+    vi.mocked(passwordHasher.hash).mockResolvedValue('new-hash' as never);
 
     await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter: makeRateLimiter(),
       securityEventRepository,
@@ -81,6 +78,7 @@ describe('UpdatePasswordUseCase', () => {
     });
 
     const err = await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter: makeRateLimiter(),
       ...securityDeps(),
@@ -97,9 +95,10 @@ describe('UpdatePasswordUseCase', () => {
     const userRepository = makeUserRepository({
       findById: vi.fn().mockResolvedValue(user),
     });
-    vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+    vi.mocked(passwordHasher.compare).mockResolvedValue(false as never);
 
     const err = await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter: makeRateLimiter(),
       ...securityDeps(),
@@ -109,13 +108,14 @@ describe('UpdatePasswordUseCase', () => {
 
     expect((err as { code: string }).code).toBe('UNAUTHORIZED');
     expect(userRepository.update).not.toHaveBeenCalled();
-    expect(bcrypt.hash).not.toHaveBeenCalled();
+    expect(passwordHasher.hash).not.toHaveBeenCalled();
   });
 
   it('throws VALIDATION when the new password is too short', async () => {
     const userRepository = makeUserRepository();
 
     const err = await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter: makeRateLimiter(),
       ...securityDeps(),
@@ -137,6 +137,7 @@ describe('UpdatePasswordUseCase', () => {
     });
 
     const err = await new UpdatePasswordUseCase({
+      passwordHasher,
       userRepository,
       updatePasswordRateLimiter,
       ...securityDeps(),
@@ -154,9 +155,10 @@ describe('UpdatePasswordUseCase', () => {
     it('throws STEP_UP_REQUIRED for a 2FA-enabled user with a stale session', async () => {
       const user = makeUser({ id: 'user-1', totpEnabled: true });
       const userRepository = makeUserRepository({ findById: vi.fn().mockResolvedValue(user) });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
 
       const err = await new UpdatePasswordUseCase({
+        passwordHasher,
         userRepository,
         updatePasswordRateLimiter: makeRateLimiter(),
         ...securityDeps(),
@@ -174,10 +176,11 @@ describe('UpdatePasswordUseCase', () => {
         findById: vi.fn().mockResolvedValue(user),
         update: vi.fn().mockResolvedValue(user),
       });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-      vi.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.hash).mockResolvedValue('new-hash' as never);
 
       await new UpdatePasswordUseCase({
+        passwordHasher,
         userRepository,
         updatePasswordRateLimiter: makeRateLimiter(),
         ...securityDeps(),
@@ -192,10 +195,11 @@ describe('UpdatePasswordUseCase', () => {
         findById: vi.fn().mockResolvedValue(user),
         update: vi.fn().mockResolvedValue(user),
       });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-      vi.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.hash).mockResolvedValue('new-hash' as never);
 
       await new UpdatePasswordUseCase({
+        passwordHasher,
         userRepository,
         updatePasswordRateLimiter: makeRateLimiter(),
         ...securityDeps(),
@@ -210,10 +214,11 @@ describe('UpdatePasswordUseCase', () => {
         findById: vi.fn().mockResolvedValue(user),
         update: vi.fn().mockResolvedValue(user),
       });
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-      vi.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+      vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+      vi.mocked(passwordHasher.hash).mockResolvedValue('new-hash' as never);
 
       await new UpdatePasswordUseCase({
+        passwordHasher,
         userRepository,
         updatePasswordRateLimiter: makeRateLimiter(),
         ...securityDeps(),

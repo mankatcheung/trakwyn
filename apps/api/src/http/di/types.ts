@@ -64,6 +64,7 @@ import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import type { HostedAiCircuits } from '#src/infrastructure/llm/HostedAiCircuits.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ITotpProvider } from '#src/use-cases/ports/ITotpProvider.js';
+import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { OAuthProviderRegistry } from '#src/infrastructure/auth/OAuthProviderRegistry.js';
 import type { McpOAuthConsentService } from '#src/infrastructure/auth/McpOAuthConsentService.js';
 import type { DocumentFileLinkService } from '#src/infrastructure/auth/DocumentFileLinkService.js';
@@ -481,6 +482,7 @@ export interface Cradle {
   mcpToolCallWriteRateLimiter: IRateLimiter;
   mcpToolCallRetryAfterS: number;
   totpProvider: ITotpProvider;
+  passwordHasher: IPasswordHasher;
   oauthAccountRepository: DrizzleOAuthAccountRepository;
   googleOAuthProvider: IOAuthProvider;
   gitHubOAuthProvider: IOAuthProvider;

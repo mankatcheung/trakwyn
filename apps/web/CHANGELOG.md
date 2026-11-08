@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.12.0...web-v0.13.0) (2026-11-08)
+
+
+### Features
+
+* add an AI helper with user prompts to the resume and cover letter editor (JEF-506) ([#1233](https://github.com/mankatcheung/trakwyn/issues/1233)) ([ae6ec42](https://github.com/mankatcheung/trakwyn/commit/ae6ec428607a9317d9a26e79ac1b702e649ca4ff))
+* add user prompts and AI credit meters to mock interview and company briefing (JEF-507) ([#1239](https://github.com/mankatcheung/trakwyn/issues/1239)) ([1d8b43e](https://github.com/mankatcheung/trakwyn/commit/1d8b43edc39ee1eaa5f4ec282ba787bc74ea6a80))
+* show the AI credits meter by the chat composer on web and mobile (JEF-511) ([#1248](https://github.com/mankatcheung/trakwyn/issues/1248)) ([186e104](https://github.com/mankatcheung/trakwyn/commit/186e104dea8815b8200e06479f0871c67ec48a12))
+* store phone, location and profile links and add them to generated resumes (JEF-527) ([#1285](https://github.com/mankatcheung/trakwyn/issues/1285)) ([b1ee75c](https://github.com/mankatcheung/trakwyn/commit/b1ee75c29ef0f8d0cdea28731e4a973462cf3519))
+* **web:** add a Markdown-based Guides section to the marketing site (JEF-531) ([#1293](https://github.com/mankatcheung/trakwyn/issues/1293)) ([46ec8c8](https://github.com/mankatcheung/trakwyn/commit/46ec8c8ae729426e9187d6d2b945e45cc6ca6745))
+* **web:** add a script that captures app screenshots from the seeded demo account (JEF-528) ([#1287](https://github.com/mankatcheung/trakwyn/issues/1287)) ([fd8b096](https://github.com/mankatcheung/trakwyn/commit/fd8b0969f77f5d22160da7eb49a41ec469291638))
+* **web:** add an FAQ section with FAQPage structured data to the landing and pricing pages (JEF-519) ([#1277](https://github.com/mankatcheung/trakwyn/issues/1277)) ([be7f4d5](https://github.com/mankatcheung/trakwyn/commit/be7f4d55a997df6bc4921103dbfeb55a1c9ba2b3))
+* **web:** lead the Pro card with its outcome, badge the best-value pass and show the savings (JEF-521) ([#1269](https://github.com/mankatcheung/trakwyn/issues/1269)) ([3a3fa50](https://github.com/mankatcheung/trakwyn/commit/3a3fa50c57386ab92396a9f2ae4e9d6a19cdd228))
+* **web:** locked previews of Pro features for Free users (JEF-523) ([#1270](https://github.com/mankatcheung/trakwyn/issues/1270)) ([9cc1b59](https://github.com/mankatcheung/trakwyn/commit/9cc1b591b3285febd49e9973f7e962d262633b03))
+* **web:** make bring-your-own-key vs Trakwyn AI credits clear in one line on the pricing page (JEF-524) ([#1278](https://github.com/mankatcheung/trakwyn/issues/1278)) ([de4df59](https://github.com/mankatcheung/trakwyn/commit/de4df5994c5ef2231b91a597d677c08a3b0d4fef))
+* **web:** make the marketing header sticky and use one "Start for free" CTA label (JEF-518) ([#1273](https://github.com/mankatcheung/trakwyn/issues/1273)) ([bcc9bef](https://github.com/mankatcheung/trakwyn/commit/bcc9bef2a7d1516864e6bf59f98dc92f3bfe76f3))
+* **web:** market the 3- and 6-month passes as Pro with no renewal (JEF-525) ([#1272](https://github.com/mankatcheung/trakwyn/issues/1272)) ([eb5b553](https://github.com/mankatcheung/trakwyn/commit/eb5b553bb1d3917dd9987d8205e0270419baa01a))
+* **web:** OAuth first on register and login, clearer check-your-email step (JEF-520) ([#1268](https://github.com/mankatcheung/trakwyn/issues/1268)) ([a7db303](https://github.com/mankatcheung/trakwyn/commit/a7db303fcc5346e58b13a377c8d24ffa5fd940de))
+* **web:** replace the hero and feature-page mockups with real screenshots (JEF-530) ([#1292](https://github.com/mankatcheung/trakwyn/issues/1292)) ([7711f8e](https://github.com/mankatcheung/trakwyn/commit/7711f8e74b079b09ed0740bfc29338bff2e68917))
+* **web:** rewrite the landing hero as "Track every application. Tailor every cover letter." with a no-card trust line (JEF-515) ([#1267](https://github.com/mankatcheung/trakwyn/issues/1267)) ([c50edea](https://github.com/mankatcheung/trakwyn/commit/c50edeac77ca6dd300e119b1ad15c02c534b3e15))
+* **web:** show a job posting to tailored cover letter sample on the landing page (JEF-517) ([#1275](https://github.com/mankatcheung/trakwyn/issues/1275)) ([8f11cef](https://github.com/mankatcheung/trakwyn/commit/8f11cef57ffadd105f34f32948f2ad2b39cdc7aa))
+* **web:** show the 14-day guarantee next to the Pro purchase buttons (JEF-522) ([#1274](https://github.com/mankatcheung/trakwyn/issues/1274)) ([5f7ade6](https://github.com/mankatcheung/trakwyn/commit/5f7ade64653b70a94357e1a5b43ecdc84a1d6f4e))
+* **web:** track the marketing → signup → Pro funnel with named PostHog events (JEF-514) ([#1266](https://github.com/mankatcheung/trakwyn/issues/1266)) ([6b6be60](https://github.com/mankatcheung/trakwyn/commit/6b6be60e7b4cf4fc500e975a37ef7613a4144309))
+* **web:** turn the landing feature cards into rows with real screenshots (JEF-529) ([#1291](https://github.com/mankatcheung/trakwyn/issues/1291)) ([a33fb2b](https://github.com/mankatcheung/trakwyn/commit/a33fb2b4d2f075314ed36bf8684d2f0fe1e743a6))
+
+
+### Bug Fixes
+
+* **web:** lay out document list rows on a grid so the menu and chips stay put on narrow screens (JEF-510) ([#1245](https://github.com/mankatcheung/trakwyn/issues/1245)) ([51a1db3](https://github.com/mankatcheung/trakwyn/commit/51a1db3045c81fe63cc946730a4d6a6252bac378))
+* **web:** stop the draft title field losing the first edit and saving after Escape (JEF-506) ([#1237](https://github.com/mankatcheung/trakwyn/issues/1237)) ([10d2291](https://github.com/mankatcheung/trakwyn/commit/10d229150783292d005d5de803fdc0bab058ed7a))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.11.2...web-v0.12.0) (2026-11-05)
 
 

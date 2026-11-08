@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { guideRouteRules, listGuides } from '@trakwyn/content/node';
 
 /**
  * Guards the marketing-pages SSR/prerender setup (JEF-169 follow-up):
@@ -36,7 +37,25 @@ const PRERENDERED_MARKETING: Record<string, string> = {
   '/terms': 'terms.tsx',
   '/accessibility': 'accessibility.tsx',
   '/ai-mcp-setup': 'ai-mcp-setup.tsx',
+  '/guides': 'guides/index.tsx',
 };
+
+/**
+ * Prerendered XML feeds (JEF-531). Server routes, not pages, so they are not
+ * checked for SSR or a social card; they are listed so a stale entry in
+ * vite.config.ts is caught.
+ */
+const PRERENDERED_FEEDS: Record<string, string> = {
+  '/guides/rss.xml': 'guides/rss[.]xml.ts',
+  '/sitemap.xml': 'sitemap[.]xml.ts',
+};
+
+/**
+ * `/guides/$slug` is one route file for every guide. vite.config.ts prerenders
+ * one entry per published guide, generated from `content/` by
+ * `guideRouteRules()`, so a new guide needs no config change.
+ */
+const GUIDE_ROUTE_FILE = 'guides/$slug.tsx';
 
 /**
  * Every other route file outside `_authenticated/`, with the reason it is
@@ -80,7 +99,7 @@ function discoverRouteFiles(dir: string): string[] {
     if (entry.startsWith('-') || entry.startsWith('_')) continue;
     if (statSync(full).isDirectory()) {
       found.push(...discoverRouteFiles(full));
-    } else if (entry.endsWith('.tsx')) {
+    } else if (entry.endsWith('.tsx') || entry.endsWith('.ts')) {
       found.push(relative(ROUTES_DIR, full));
     }
   }
@@ -122,13 +141,34 @@ describe('marketing page SSR/prerender invariant', () => {
 
   it('vite.config prerenders exactly the marketing routes', () => {
     expect(parsePrerenderedPaths(VITE_CONFIG).sort()).toEqual(
-      Object.keys(PRERENDERED_MARKETING).sort(),
+      [...Object.keys(PRERENDERED_MARKETING), ...Object.keys(PRERENDERED_FEEDS)].sort(),
     );
+  });
+
+  it('vite.config prerenders every published guide and no draft (JEF-531)', () => {
+    expect(VITE_CONFIG).toContain('...guideRouteRules()');
+    const rules = guideRouteRules();
+    const published = listGuides().map((g) => `/guides/${g.slug}`);
+    expect(published.length).toBeGreaterThan(0);
+    expect(Object.keys(rules).sort()).toEqual(published.sort());
+    for (const rule of Object.values(rules)) expect(rule).toEqual({ prerender: true });
+    const drafts = listGuides({ includeDrafts: true }).filter((g) => g.frontmatter.draft);
+    for (const draft of drafts) expect(rules).not.toHaveProperty(`/guides/${draft.slug}`);
+  });
+
+  it('the guide page route SSRs and builds its head with marketingHead', () => {
+    const source = withoutComments(readFileSync(join(ROUTES_DIR, GUIDE_ROUTE_FILE), 'utf8'));
+    expect(source).not.toMatch(/ssr:\s*false/);
+    expect(source).toMatch(/marketingHead\(/);
   });
 
   it('every public route file is classified as marketing or exempt', () => {
     const files = discoverRouteFiles(ROUTES_DIR);
-    const marketingFiles = new Set(Object.values(PRERENDERED_MARKETING));
+    const marketingFiles = new Set([
+      ...Object.values(PRERENDERED_MARKETING),
+      ...Object.values(PRERENDERED_FEEDS),
+      GUIDE_ROUTE_FILE,
+    ]);
 
     for (const file of files) {
       if (marketingFiles.has(file)) continue;
@@ -142,8 +182,12 @@ describe('marketing page SSR/prerender invariant', () => {
     for (const file of Object.keys(EXCEPTIONS)) {
       expect(files, `stale exception ${file}`).toContain(file);
     }
-    for (const file of Object.values(PRERENDERED_MARKETING)) {
-      expect(files, `PRERENDERED_MARKETING points at missing file ${file}`).toContain(file);
+    for (const file of [
+      ...Object.values(PRERENDERED_MARKETING),
+      ...Object.values(PRERENDERED_FEEDS),
+      GUIDE_ROUTE_FILE,
+    ]) {
+      expect(files, `classified route points at missing file ${file}`).toContain(file);
     }
   });
 });

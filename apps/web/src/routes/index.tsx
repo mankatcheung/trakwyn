@@ -7,11 +7,11 @@ import { MarketingFooter } from '#/components/marketing/MarketingFooter';
 import { AiDemoSection } from '#/components/marketing/AiDemoSection';
 import { ClipperSection } from '#/components/marketing/ClipperSection';
 import { FeatureRow, type FeatureRowProps } from '#/components/marketing/FeatureRow';
+import { ThemedScreenshot } from '#/components/marketing/ThemedScreenshot';
 import { FaqSection, type FaqItem } from '#/components/marketing/FaqSection';
 import { ArrowRight } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { marketingHead, SITE_URL } from '#/lib/seo';
-import { statusColor } from '#/lib/statusColors';
 
 const OG_TITLE = 'Trakwyn — Track every application. Tailor every cover letter.';
 const OG_DESCRIPTION =
@@ -86,14 +86,6 @@ const highlightedFeatures: readonly FeatureRowProps[] = [
 
 const stepKeys = ['landing.step1', 'landing.step2', 'landing.step3', 'landing.step4'] as const;
 
-/** Sample data for the hero board preview — not live, just illustrative (JEF-228). */
-const HERO_BOARD_COLUMNS = [
-  { status: 'applied', cards: ['Northwind Labs', 'Halcyon Data', 'Fernbridge'] },
-  { status: 'interviewing', cards: ['Verdant Systems', 'Solace Group'] },
-  { status: 'offered', cards: ['Mosaic & Co'] },
-  { status: 'accepted', cards: [] },
-] as const;
-
 // Not exported on purpose (JEF-537): TanStack's code splitter leaves a route
 // component alone when the file also exports it. Tests reach it through
 // `Route.component`.
@@ -156,50 +148,10 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* Hero board preview — a taste of the product on the very first fold (JEF-228) */}
+        {/* Hero screenshot: the board, on the first fold. Likely the LCP element (JEF-530). */}
         <section className="px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-800/50">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-800">
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t('landing.boardLabel')}
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {t('landing.everyApplicationOneView')}
-              </span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto bg-gray-50 p-5 dark:bg-gray-900/40">
-              {HERO_BOARD_COLUMNS.map((column) => {
-                const colors = statusColor(column.status);
-                return (
-                  <div
-                    key={column.status}
-                    className={`w-48 shrink-0 rounded-xl border border-t-4 border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 ${colors.columnBorder}`}
-                  >
-                    <div className="flex items-center justify-between px-3 py-2.5">
-                      <span className="flex items-center gap-1.5">
-                        <span className={`size-2 rounded-full ${colors.dot}`} aria-hidden="true" />
-                        <span className={`text-xs font-semibold ${colors.columnHeading}`}>
-                          {t(`status.${column.status}`)}
-                        </span>
-                      </span>
-                      <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                        {column.cards.length}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1.5 px-2 pb-2">
-                      {column.cards.map((card) => (
-                        <div
-                          key={card}
-                          className="rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
-                        >
-                          {card}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="mx-auto max-w-4xl">
+            <ThemedScreenshot name="board" priority />
           </div>
         </section>
 

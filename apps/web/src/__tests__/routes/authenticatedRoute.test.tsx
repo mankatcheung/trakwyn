@@ -1,21 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockHasSessionCookie, mockCheckEmailVerification, mockCheckOnboarding } = vi.hoisted(
-  () => ({
-    mockHasSessionCookie: vi.fn().mockReturnValue(false),
-    mockCheckEmailVerification: vi.fn(),
-    mockCheckOnboarding: vi.fn(),
-  }),
-);
-
-vi.mock('#/lib/emailVerification', () => ({
-  checkEmailVerification: mockCheckEmailVerification,
+const { mockHasSessionCookie, mockCheckSessionGate, mockPrefetchDashboard } = vi.hoisted(() => ({
+  mockHasSessionCookie: vi.fn().mockReturnValue(false),
+  mockCheckSessionGate: vi.fn(),
+  mockPrefetchDashboard: vi.fn(),
 }));
 
 // Only the network read is replaced; which paths are exempt is the real rule.
-vi.mock('#/lib/onboarding', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#/lib/onboarding')>()),
-  checkOnboarding: mockCheckOnboarding,
+vi.mock('#/lib/sessionGate', () => ({ checkSessionGate: mockCheckSessionGate }));
+
+vi.mock('#/routes/_authenticated/-dashboardQueries', () => ({
+  prefetchDashboard: mockPrefetchDashboard,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -46,6 +41,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 
 interface BeforeLoadOpts {
   location: { href: string; pathname?: string };
+  context?: { queryClient: unknown };
 }
 
 async function loadGuard(): Promise<(opts: BeforeLoadOpts) => unknown> {
@@ -58,15 +54,26 @@ async function loadGuard(): Promise<(opts: BeforeLoadOpts) => unknown> {
   return (opts) => beforeLoad(opts);
 }
 
+const FINISHED = { onboardingCompletedAt: '2026-10-01T00:00:00.000Z', onboardingGoals: [] };
+
+interface GateOverrides {
+  verification?: Record<string, unknown> | null;
+  onboarding?: Record<string, unknown> | null;
+}
+
+function gate({ verification, onboarding }: GateOverrides = {}) {
+  return {
+    verification:
+      verification === undefined ? { email: 'a@b.c', emailVerified: true } : verification,
+    onboarding: onboarding === undefined ? FINISHED : onboarding,
+  };
+}
+
 describe('_authenticated route guard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockHasSessionCookie.mockReturnValue(false);
-    mockCheckEmailVerification.mockResolvedValue({ email: 'a@b.c', emailVerified: true });
-    mockCheckOnboarding.mockResolvedValue({
-      onboardingCompletedAt: '2026-10-01T00:00:00.000Z',
-      onboardingGoals: [],
-    });
+    mockCheckSessionGate.mockResolvedValue(gate());
   });
 
   it('redirects unauthenticated visitors to /login carrying where they were headed', async () => {
@@ -96,10 +103,9 @@ describe('_authenticated route guard', () => {
   describe('email verification (JEF-438)', () => {
     it('sends an unverified account to the full-page reminder before any child route loads', async () => {
       mockHasSessionCookie.mockReturnValue(true);
-      mockCheckEmailVerification.mockResolvedValue({
-        email: 'new@example.com',
-        emailVerified: false,
-      });
+      mockCheckSessionGate.mockResolvedValue(
+        gate({ verification: { email: 'new@example.com', emailVerified: false } }),
+      );
       const guard = await loadGuard();
 
       const caught = await Promise.resolve(guard({ location: { href: '/dashboard' } })).catch(
@@ -111,7 +117,7 @@ describe('_authenticated route guard', () => {
 
     it('lets the visitor through when the check could not be made (the API still enforces the wall)', async () => {
       mockHasSessionCookie.mockReturnValue(true);
-      mockCheckEmailVerification.mockResolvedValue(null);
+      mockCheckSessionGate.mockResolvedValue(gate({ verification: null, onboarding: null }));
       const guard = await loadGuard();
 
       await expect(guard({ location: { href: '/dashboard' } })).resolves.toBeUndefined();
@@ -126,12 +132,69 @@ describe('_authenticated route guard', () => {
         // the redirect to /login
       }
 
-      expect(mockCheckEmailVerification).not.toHaveBeenCalled();
+      expect(mockCheckSessionGate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('account deletion (JEF-463)', () => {
+    it('sends an account scheduled for deletion to its own page', async () => {
+      mockHasSessionCookie.mockReturnValue(true);
+      mockCheckSessionGate.mockResolvedValue(
+        gate({
+          verification: {
+            email: 'a@b.c',
+            emailVerified: true,
+            deletionScheduledAt: '2026-12-01T00:00:00.000Z',
+          },
+        }),
+      );
+      const guard = await loadGuard();
+
+      const caught = await Promise.resolve(guard({ location: { href: '/dashboard' } })).catch(
+        (err: RedirectError) => err,
+      );
+
+      expect((caught as RedirectError).redirectOpts).toEqual({
+        to: '/account-deletion-scheduled',
+      });
+    });
+  });
+
+  describe('one wave (JEF-535)', () => {
+    it('asks the gate once and starts the dashboard queries without waiting for it', async () => {
+      mockHasSessionCookie.mockReturnValue(true);
+      const queryClient = {};
+      let release: (value: unknown) => void = () => {};
+      mockCheckSessionGate.mockReturnValue(new Promise((resolve) => (release = resolve)));
+      const guard = await loadGuard();
+
+      const pending = guard({
+        location: { href: '/dashboard', pathname: '/dashboard' },
+        context: { queryClient },
+      } as BeforeLoadOpts);
+
+      expect(mockCheckSessionGate).toHaveBeenCalledTimes(1);
+      expect(mockPrefetchDashboard).toHaveBeenCalledWith(queryClient, { speculative: true });
+      release(gate());
+      await pending;
+    });
+
+    it('does not prefetch the dashboard for other pages', async () => {
+      mockHasSessionCookie.mockReturnValue(true);
+      const guard = await loadGuard();
+
+      await guard({
+        location: { href: '/calendar', pathname: '/calendar' },
+        context: { queryClient: {} },
+      } as BeforeLoadOpts);
+
+      expect(mockPrefetchDashboard).not.toHaveBeenCalled();
     });
   });
 
   describe('first-run welcome flow (JEF-460)', () => {
     const notOnboarded = { onboardingCompletedAt: null, onboardingGoals: [] };
+    const notOnboardedGate = gate({ onboarding: notOnboarded });
 
     const attempt = async (pathname: string) => {
       const guard = await loadGuard();
@@ -145,7 +208,7 @@ describe('_authenticated route guard', () => {
     });
 
     it('sends a user who has never finished or skipped it to /welcome', async () => {
-      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+      mockCheckSessionGate.mockResolvedValue(notOnboardedGate);
 
       const caught = await attempt('/dashboard');
 
@@ -159,14 +222,14 @@ describe('_authenticated route guard', () => {
     it.each(['/welcome', '/settings', '/settings/ai', '/profile', '/oauth/consent'])(
       'leaves %s alone, so the flow and the pages it links to load',
       async (pathname) => {
-        mockCheckOnboarding.mockResolvedValue(notOnboarded);
+        mockCheckSessionGate.mockResolvedValue(notOnboardedGate);
 
         await expect(attempt(pathname)).resolves.toBeUndefined();
       },
     );
 
     it('does not treat a path that only starts with an exempt word as exempt', async () => {
-      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+      mockCheckSessionGate.mockResolvedValue(notOnboardedGate);
 
       const caught = await attempt('/settingsfoo');
 
@@ -174,19 +237,19 @@ describe('_authenticated route guard', () => {
     });
 
     it('lets the user through when the check could not be made', async () => {
-      mockCheckOnboarding.mockResolvedValue(null);
+      mockCheckSessionGate.mockResolvedValue(gate({ onboarding: null }));
 
       await expect(attempt('/dashboard')).resolves.toBeUndefined();
     });
 
-    it('asks only once the email wall is passed, so an unverified user goes to the wall', async () => {
-      mockCheckEmailVerification.mockResolvedValue({ email: 'a@b.c', emailVerified: false });
-      mockCheckOnboarding.mockResolvedValue(notOnboarded);
+    it('sends an unverified user to the wall even when the welcome flow is also pending', async () => {
+      mockCheckSessionGate.mockResolvedValue(
+        gate({ verification: { email: 'a@b.c', emailVerified: false }, onboarding: notOnboarded }),
+      );
 
       const caught = await attempt('/dashboard');
 
       expect((caught as RedirectError).redirectOpts).toEqual({ to: '/verify-email-required' });
-      expect(mockCheckOnboarding).not.toHaveBeenCalled();
     });
   });
 });

@@ -9,7 +9,19 @@ import { useLocale } from '#/lib/i18n';
  * fetched, so only the visible theme downloads. Width and height come from
  * the manifest so the space is reserved and nothing shifts.
  */
-export function ThemedScreenshot({ name }: { name: ScreenshotName }) {
+export function ThemedScreenshot({
+  name,
+  priority = false,
+}: {
+  name: ScreenshotName;
+  /**
+   * An above-the-fold image (the likely LCP): high priority, and the light
+   * image is eager. The dark image stays lazy, because a hidden eager image is
+   * still fetched and most visitors would download it for nothing; in dark mode
+   * it is visible and loads as soon as layout is known, at high priority.
+   */
+  priority?: boolean;
+}) {
   const { t } = useLocale();
   const light = getScreenshot(name, 'light');
   const dark = getScreenshot(name, 'dark');
@@ -23,7 +35,8 @@ export function ThemedScreenshot({ name }: { name: ScreenshotName }) {
         width={light.width}
         height={light.height}
         alt={alt}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         decoding="async"
         className={`${shared} dark:hidden`}
       />
@@ -33,6 +46,7 @@ export function ThemedScreenshot({ name }: { name: ScreenshotName }) {
         height={dark.height}
         alt={alt}
         loading="lazy"
+        fetchPriority={priority ? 'high' : undefined}
         decoding="async"
         className={`${shared} hidden dark:block`}
       />
