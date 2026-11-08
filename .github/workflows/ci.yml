@@ -488,6 +488,107 @@ jobs:
             apps/web/test-results/
           if-no-files-found: ignore
 
+  # Walks each guide's steps in a browser and fails when one no longer works
+  # (JEF-532): a renamed button, or a screenshot the Markdown names that the
+  # script never takes. Verify mode writes nothing. It follows the `e2e` filter,
+  # which covers `content/**` and `apps/web/**`, and builds the same way.
+  guides-verify:
+    name: Guide scripts
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/base-images
+        with:
+          project-id: ${{ vars.GCP_PROJECT_ID }}
+          workload-identity-provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service-account: ${{ vars.GCP_CI_READER_SA }}
+          preload: postgres
+
+      - name: Start Postgres
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_USER=trakwyn -e POSTGRES_PASSWORD=trakwyn -e POSTGRES_DB=trakwyn_e2e \
+            -p 5432:5432 "$POSTGRES_IMAGE"
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Chromium
+        run: pnpm --filter @trakwyn/web exec playwright install --with-deps chromium
+
+      - name: Configure ephemeral environment
+        run: |
+          cat > apps/api/.env <<'EOF'
+          PORT=3001
+          NODE_ENV=development
+          DATABASE_URL=postgres://trakwyn:trakwyn@localhost:5432/trakwyn_e2e
+          JWT_SECRET=e2e-only-jwt-secret
+          JWT_REFRESH_SECRET=e2e-only-refresh-secret
+          TOTP_ENCRYPTION_KEY=e2e-only-totp-encryption-key
+          LLM_API_KEY_ENCRYPTION_KEY=e2e-only-llm-encryption-key
+          STORAGE_PROVIDER=local
+          CACHE_PROVIDER=memory
+          EMAIL_PROVIDER=console
+          CORS_ORIGIN=http://localhost:3000
+          WEB_APP_ORIGIN=http://localhost:3000
+          API_ORIGIN=http://localhost:3001
+          COOKIE_DOMAIN=
+          GOOGLE_OAUTH_CLIENT_ID=e2e-fake-google-client-id
+          GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
+          OAUTH_PROVIDER_MODE=fake
+          LLM_PROVIDER_MODE=fake
+          EOF
+
+          cat > apps/web/.env <<'EOF'
+          VITE_API_URL=/graphql
+          EOF
+
+      - name: Wait for Postgres
+        run: |
+          for _ in $(seq 1 30); do
+            docker exec postgres pg_isready -U trakwyn -d trakwyn_e2e && exit 0
+            sleep 2
+          done
+          docker logs postgres
+          echo "::error::Postgres did not become ready"
+          exit 1
+
+      - name: Run database migrations
+        run: pnpm --filter @trakwyn/api db:migrate:apply
+
+      - name: Build API and web
+        run: |
+          pnpm --filter @trakwyn/api build
+          pnpm --filter @trakwyn/web build
+        env:
+          E2E_PLAIN_BUILD: '1'
+
+      # Seeds the demo account, then runs every guide.ts in verify mode.
+      - name: Verify the guide scripts
+        run: pnpm guides:verify
+
+      - name: Upload Playwright trace
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: guides-trace
+          path: apps/web/test-results/guides/
+          if-no-files-found: ignore
+
   # Supply-chain and secret checks on a pull request (JEF-477). They read the
   # PR's own changes, so a push to main skips them (`ci-ok` counts a skip as a
   # pass); CodeQL has its own workflow (codeql.yml).
@@ -537,6 +638,7 @@ jobs:
         terraform,
         api-image,
         e2e,
+        guides-verify,
         dependency-review,
         secret-scan,
       ]

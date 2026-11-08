@@ -119,16 +119,16 @@ describe('listGuides', () => {
 describe('content budget', () => {
   const files = walk(CONTENT_ROOT).filter((f) => !f.includes('node_modules'));
   const guideFiles = files.filter((f) => f.startsWith(GUIDES_DIR));
-  const images = guideFiles.filter((f) => !f.endsWith('index.md'));
+  const images = guideFiles.filter((f) => f.endsWith('.webp'));
 
   it('keeps content/ within the repo budget', () => {
     const total = files.reduce((sum, f) => sum + statSync(f).size, 0);
     expect(total).toBeLessThanOrEqual(MAX_CONTENT_BYTES);
   });
 
-  it('holds only index.md and .webp images inside a guide folder', () => {
+  it('holds only index.md, guide.ts and .webp images inside a guide folder', () => {
     for (const file of guideFiles) {
-      expect(file, relative(CONTENT_ROOT, file)).toMatch(/\/(index\.md|[^/]+\.webp)$/);
+      expect(file, relative(CONTENT_ROOT, file)).toMatch(/\/(index\.md|guide\.ts|[^/]+\.webp)$/);
     }
   });
 

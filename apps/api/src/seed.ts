@@ -24,9 +24,17 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
+// SEED_NOW (an ISO instant) pins the dates the seed is relative to (JEF-532).
+const seedNow = process.env[ENV.SEED_NOW];
+const now = seedNow ? new Date(seedNow) : new Date();
+if (Number.isNaN(now.getTime())) {
+  console.error(`${ENV.SEED_NOW} must be an ISO date, got "${seedNow}"`);
+  process.exit(1);
+}
+
 const { db, close } = await createDb(databaseUrl);
 try {
-  await runSeed(db);
+  await runSeed(db, now);
 } finally {
   await close();
 }

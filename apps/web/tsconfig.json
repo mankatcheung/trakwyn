@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "../../content/guides/**/guide.ts"],
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "ESNext",

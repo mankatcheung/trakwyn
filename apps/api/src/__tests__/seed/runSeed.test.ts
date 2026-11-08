@@ -67,4 +67,27 @@ describe('runSeed', () => {
       Math.ceil(CONTENT_LIMITS.NOTES_PER_APPLICATION * 0.8),
     );
   });
+
+  it('dates the demo account from the instant it is given (JEF-532)', async () => {
+    const pinned = new Date('2026-11-08T12:00:00.000Z');
+
+    await runSeed(db.db, pinned);
+
+    const [demo] = await db.db.select().from(user);
+    expect(demo.createdAt).toEqual(pinned);
+  });
+
+  it('gives the same applications the same ids on every run (JEF-532)', async () => {
+    await runSeed(db.db);
+    const first = (await db.db.select({ id: jobApplication.id }).from(jobApplication))
+      .map((a) => a.id)
+      .sort();
+
+    await runSeed(db.db);
+    const second = (await db.db.select({ id: jobApplication.id }).from(jobApplication))
+      .map((a) => a.id)
+      .sort();
+
+    expect(second).toEqual(first);
+  });
 });
