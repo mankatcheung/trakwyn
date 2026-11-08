@@ -41,8 +41,17 @@ describe('AiDemoSection (JEF-517)', () => {
     const section = screen.getByRole('region', { name: en['landing.aiDemo.title'] });
     expect(within(section).getByText(en['landing.aiDemo.postingRole'])).toBeVisible();
     expect(within(section).getByText(en['landing.aiDemo.postingReq1'])).toBeVisible();
-    expect(within(section).getByText(en['landing.aiDemo.letterBody'])).toBeVisible();
-    expect(within(section).getByText(en['landing.aiDemo.groundedBadge'])).toBeVisible();
+    expect(
+      within(section).getAllByAltText(en['screenshots.coverLetter.alt']).length,
+    ).toBeGreaterThan(0);
+    expect(within(section).getByText(new RegExp(en['landing.aiDemo.groundedBadge']))).toBeVisible();
+  });
+
+  it('shows the letter as a real screenshot in both themes, not hand-built markup', () => {
+    render(<AiDemoSection />);
+
+    expect(screen.getAllByAltText(en['screenshots.coverLetter.alt'])).toHaveLength(2);
+    expect(screen.queryByText(/Dear Northwind Labs/)).not.toBeInTheDocument();
   });
 
   it('uses fictional names only', () => {

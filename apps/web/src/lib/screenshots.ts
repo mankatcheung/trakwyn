@@ -35,6 +35,11 @@ export const SCREENSHOT_SCREENS = [
   },
   { name: 'resume', viewport: { width: 1100, height: 760 }, altKey: 'screenshots.resume.alt' },
   {
+    name: 'cover-letter',
+    viewport: { width: 1100, height: 760 },
+    altKey: 'screenshots.coverLetter.alt',
+  },
+  {
     name: 'analytics',
     viewport: { width: 1100, height: 760 },
     altKey: 'screenshots.analytics.alt',

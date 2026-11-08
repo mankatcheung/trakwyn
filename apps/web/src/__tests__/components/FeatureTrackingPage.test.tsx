@@ -28,18 +28,13 @@ vi.mock('#/lib/i18n', () => ({
 import { FeatureTrackingPage } from '#/routes/features/-components/FeatureTrackingPage';
 
 describe('FeatureTrackingPage', () => {
-  it('renders the headline and every board status column', () => {
+  it('renders the headline and the real board screenshot in both themes', () => {
     render(<FeatureTrackingPage />);
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Every application, one board' }),
     ).toBeInTheDocument();
-    // Board column headers render the localized status labels now.
-    ['Draft', 'Applied', 'Interviewing', 'Offered', 'Accepted', 'Rejected', 'Withdrawn'].forEach(
-      (label) => {
-        expect(screen.getByText(label)).toBeInTheDocument();
-      },
-    );
+    expect(screen.getAllByAltText(en['screenshots.board.alt'])).toHaveLength(2);
   });
 
   it('renders the three benefit sections', () => {
