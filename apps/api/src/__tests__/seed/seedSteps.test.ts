@@ -76,6 +76,19 @@ describe('seed steps', () => {
     expect(orphanOffers).toHaveLength(0);
   });
 
+  it('creates each application when it was applied to, so the analytics weekly chart has several bars (JEF-530)', async () => {
+    const apps = await db.db.select().from(jobApplication);
+
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const weeks = new Set(apps.map((a) => Math.floor(a.createdAt.getTime() / weekMs)));
+    expect(weeks.size).toBeGreaterThanOrEqual(5);
+
+    for (const a of apps) {
+      // A draft has no applied date, so it is created now.
+      expect(a.createdAt.getTime()).toBe((a.appliedAt ?? now).getTime());
+    }
+  });
+
   it('seeds work experience, education, and skills', async () => {
     await seedWorkExperiences(db.db, userId, now);
     await seedEducations(db.db, userId, now);
