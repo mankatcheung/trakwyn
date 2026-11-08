@@ -26,9 +26,21 @@ const DETAIL_COMPANY = 'TechCorp';
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'screenshots');
 const WEBP_QUALITY = 80;
 
+/**
+ * The TanStack devtools in the dev server: the floating toggle button
+ * (`aria-label="Open TanStack Devtools"`) and its panel (`#tanstack_devtools`,
+ * with an underscore). `settle` fails if any of them is still visible.
+ */
+const DEVTOOLS_SELECTOR = [
+  'button[aria-label="Open TanStack Devtools"]',
+  '#tanstack_devtools',
+  '[id^="plugin-container-tanstack"]',
+  '.TanStackRouterDevtoolsPanel',
+  '.tsqd-parent-container',
+].join(', ');
+
 const HIDE_NOISE_CSS = `
-  [data-sonner-toaster], #tanstack-devtools,
-  .tsqd-parent-container, [aria-label="Open TanStack Router Devtools"] { display: none !important; }
+  [data-sonner-toaster], ${DEVTOOLS_SELECTOR} { display: none !important; }
   *, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
 `;
 
@@ -65,6 +77,8 @@ async function settle(page: Page): Promise<void> {
   await page.evaluate(() => document.fonts.ready);
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(400);
+  // The devtools mount after hydration; never photograph them.
+  await expect(page.locator(DEVTOOLS_SELECTOR).locator('visible=true')).toHaveCount(0);
 }
 
 async function open(page: Page, name: ScreenshotName): Promise<void> {
