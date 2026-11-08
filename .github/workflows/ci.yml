@@ -551,6 +551,46 @@ jobs:
             exit 1
           fi
 
+  # Pushes an ntfy notification when a pull request's CI finishes. Pull
+  # requests only: a run on main is not announced. It reads `ci-ok`'s result,
+  # so it reports the same pass/fail that branch protection sees, and it never
+  # fails the run (a missing topic or an ntfy outage is not a CI failure).
+  # Needs the NTFY_TOPIC secret (an unguessable topic name); NTFY_SERVER is an
+  # optional repository variable for a self-hosted server.
+  notify-pr:
+    name: Notify PR result (ntfy)
+    needs: [ci-ok]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send the ntfy notification
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ vars.NTFY_SERVER || 'https://ntfy.sh' }}
+          RESULT: ${{ needs.ci-ok.result }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "NTFY_TOPIC is not set (fork PR or secret missing); skipping."
+            exit 0
+          fi
+          if [ "$RESULT" = "success" ]; then
+            status="passed"; tags="white_check_mark"; priority=3
+          else
+            status="failed"; tags="x"; priority=4
+          fi
+          curl --silent --show-error --fail --max-time 20 \
+            -H "Title: CI $status: PR #$PR_NUMBER" \
+            -H "Tags: $tags" \
+            -H "Priority: $priority" \
+            -H "Click: $PR_URL" \
+            -d "$PR_TITLE" \
+            "$NTFY_SERVER/$NTFY_TOPIC" \
+            || echo "::warning::ntfy notification failed"
+
   migrate-db:
     name: Run database migrations
     needs: [quality, build, test, mobile-integration, e2e]
