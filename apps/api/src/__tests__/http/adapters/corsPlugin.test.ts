@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import corsPlugin from '#src/http/adapters/fastify/corsPlugin.js';
 import { ENV } from '#src/infrastructure/config/constants.js';
+import { CORS_PREFLIGHT_MAX_AGE_S } from '#src/http/constants.js';
 
 async function buildApp(corsOrigin: string): Promise<FastifyInstance> {
   process.env[ENV.CORS_ORIGIN] = corsOrigin;
@@ -115,6 +116,46 @@ describe('corsPlugin', () => {
     });
 
     expect(res.headers['access-control-allow-methods']).toContain('PUT');
+  });
+
+  it('lets the browser cache an allowed preflight (JEF-536)', async () => {
+    app = await buildApp('https://www.trakwyn.com');
+
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/probe',
+      headers: {
+        origin: 'https://www.trakwyn.com',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+
+    // Without it browsers fall back to a ~5 s default and repeat the OPTIONS
+    // round trip to Cloud Run before nearly every GraphQL POST.
+    expect(res.headers['access-control-max-age']).toBe(String(CORS_PREFLIGHT_MAX_AGE_S));
+  });
+
+  it('does not advertise a max age to a refused origin', async () => {
+    app = await buildApp('https://www.trakwyn.com');
+
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/probe',
+      headers: {
+        origin: 'https://claude.ai',
+        'access-control-request-method': 'POST',
+      },
+    });
+
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    expect(res.headers['access-control-max-age']).toBeUndefined();
+  });
+
+  it('caps the preflight cache at 2 hours, the longest Chrome honours', () => {
+    // Above this Chrome silently clamps it, and Firefox's longer window would
+    // only delay a tightened CORS_ORIGIN reaching browsers that cached it.
+    expect(CORS_PREFLIGHT_MAX_AGE_S).toBe(7200);
   });
 
   it('tolerates spaces after the commas in CORS_ORIGIN', async () => {

@@ -387,6 +387,15 @@ export const EXTENSION_ORIGIN_SCHEMES = [
 ] as const;
 
 /**
+ * How long a browser may reuse a CORS preflight answer, in seconds (JEF-536).
+ * The web app is cross-origin to the API, so without it nearly every GraphQL
+ * POST is preceded by an OPTIONS round trip. 7200 is the most Chrome honours
+ * (Firefox allows a day, but a tightened `CORS_ORIGIN` would then take that
+ * long to reach browsers that cached the old answer).
+ */
+export const CORS_PREFLIGHT_MAX_AGE_S = 7200;
+
+/**
  * The page a tab-based extension login lands on (JEF-386). The extension
  * reads the handoff code from its URL and closes the tab, so the page is only
  * seen if that fails. It is static: nothing from the query is echoed back.
