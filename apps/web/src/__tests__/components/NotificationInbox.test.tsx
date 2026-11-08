@@ -124,6 +124,20 @@ describe('NotificationInboxButton (desktop popover)', () => {
     });
   });
 
+  it('keeps the popover (and its notifications request) out until the bell is clicked', async () => {
+    render(<NotificationInboxButton />, { wrapper: Wrapper });
+    await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockGqlRequest).not.toHaveBeenCalledWith(
+      expect.stringContaining('NotificationsPage'),
+      expect.anything(),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
   it('opens a popover listing notifications on click, capped at 5', async () => {
     render(<NotificationInboxButton />, { wrapper: Wrapper });
     await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());

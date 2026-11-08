@@ -7,6 +7,7 @@ import { nitro } from 'nitro/vite';
 
 import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // PostHog tags every event with `release` (lib/analytics). Vite only exposes
 // VITE_-prefixed vars to the client, and Vercel does not expand
@@ -88,6 +89,22 @@ const config = defineConfig(({ command }) => ({
         ]
       : []),
     viteReact(),
+    // `ANALYZE=1 pnpm build` writes dist/stats.html (JEF-537): a treemap of
+    // what lands in each chunk, to check what the dashboard's first paint pulls.
+    // `ANALYZE=json` writes the raw data (dist/stats.json) instead. Dev-only and
+    // opt-in, so a normal or CI build never emits it.
+    ...(command === 'build' && process.env.ANALYZE
+      ? [
+          {
+            ...(process.env.ANALYZE === 'json'
+              ? visualizer({ filename: 'dist/stats.json', gzipSize: true, template: 'raw-data' })
+              : visualizer({ filename: 'dist/stats.html', gzipSize: true, template: 'treemap' })),
+            // Start builds a client and a server bundle; only the client one
+            // is what a browser downloads (and the server run would overwrite it).
+            applyToEnvironment: (env: { name: string }) => env.name === 'client',
+          },
+        ]
+      : []),
   ],
   server: {
     // content/ sits at the repo root, outside apps/web (JEF-531).

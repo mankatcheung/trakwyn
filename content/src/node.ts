@@ -1,13 +1,25 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GUIDE_SLUG_PATTERN, parseGuide, type Guide } from './index';
+import {
+  GUIDE_SLUG_PATTERN,
+  parseBacklog,
+  parseGuide,
+  type BacklogEntry,
+  type Guide,
+} from './index';
 
 /** Node-only: the repo's `content/` folder. Browser code uses import.meta.glob. */
 // `import.meta.dirname` first: under jsdom (Vitest) `import.meta.url` is not a file URL.
 const SRC_DIR = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 export const CONTENT_ROOT = join(SRC_DIR, '..');
 export const GUIDES_DIR = join(CONTENT_ROOT, 'guides', 'en');
+export const BACKLOG_FILE = join(CONTENT_ROOT, 'guides', 'backlog.yml');
+
+/** The curated topic backlog (JEF-533). Throws on a bad entry or a repeated slug. */
+export function listBacklog(): BacklogEntry[] {
+  return existsSync(BACKLOG_FILE) ? parseBacklog(readFileSync(BACKLOG_FILE, 'utf8')) : [];
+}
 
 /**
  * Every guide under `guides/en/<slug>/index.md`, sorted newest first. Drafts

@@ -4,13 +4,16 @@ import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import { useHotkeys, getKeyModifier } from '#/hooks/useHotkeys';
-import { CommandPalette } from '#/components/CommandPalette';
-import { ShortcutCheatSheet } from '#/components/ShortcutCheatSheet';
+import { LazyCommandPalette } from '#/components/LazyCommandPalette';
+import {
+  LazyShortcutCheatSheet,
+  preloadShortcutCheatSheet,
+} from '#/components/LazyShortcutCheatSheet';
 import { LogoMark } from '#/components/LogoMark';
 import { LegalFooterLinks } from '#/components/LegalFooterLinks';
 import { ChatDockProvider } from '#/lib/chatDock';
 import { ChatDockFooter } from '../-chat-dock-footer';
-import { ChatDockFloatingWindow } from '../-chat-dock-floating-window';
+import { LazyChatDockFloatingWindow } from './LazyChatDockFloatingWindow';
 import { NotificationInboxButton, NotificationInboxLink } from '../-notification-inbox';
 import { AssistantNavConversations } from './AssistantNavConversations';
 import { useLocale } from '#/lib/i18n';
@@ -175,8 +178,8 @@ export function AuthenticatedLayout() {
           h-dvh lets a page say "fill the space" instead of computing its
           own total to subtract chrome from. */}
       <div className="flex h-dvh bg-gray-50 dark:bg-gray-900">
-        <CommandPalette />
-        <ShortcutCheatSheet isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+        <LazyCommandPalette />
+        <LazyShortcutCheatSheet isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
         {/* Mobile sidebar drawer backdrop */}
         {sidebarVisible && (
@@ -304,6 +307,8 @@ export function AuthenticatedLayout() {
           <div className="mt-auto shrink-0 space-y-1 border-t border-gray-200 px-3 py-4 dark:border-gray-700">
             <button
               onClick={() => setShortcutsOpen(true)}
+              onMouseEnter={preloadShortcutCheatSheet}
+              onFocus={preloadShortcutCheatSheet}
               className="sidebar-entrance-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
               style={{ animationDelay: `${(MAIN_NAV.length + 1) * 50}ms` }}
               title={t('shortcuts.showShortcuts')}
@@ -384,7 +389,7 @@ export function AuthenticatedLayout() {
         </nav>
 
         <ChatDockFooter />
-        <ChatDockFloatingWindow />
+        <LazyChatDockFloatingWindow />
       </div>
     </ChatDockProvider>
   );

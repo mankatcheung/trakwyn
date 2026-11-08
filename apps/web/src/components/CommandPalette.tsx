@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
+import { isCommandPaletteShortcut } from '#/lib/commandPaletteShortcut';
 import {
   SearchIcon,
   BriefcaseIcon,
@@ -19,9 +20,13 @@ interface CommandItem {
   action: () => void;
 }
 
-export function CommandPalette() {
+/**
+ * `initialOpen` is for the shell's lazy wrapper, which mounts the palette in
+ * response to the shortcut press that should also open it.
+ */
+export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean }) {
   const { t } = useLocale();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +86,7 @@ export function CommandPalette() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
+      if (isCommandPaletteShortcut(e)) {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }

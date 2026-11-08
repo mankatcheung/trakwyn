@@ -72,7 +72,12 @@ vi.mock(
   }),
 );
 
-import { DocumentDraftEditPage } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
+import { Route } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
+
+// The route file does not export its component (see the note there), so the
+// mocked `createFileRoute` hands it back through the route options.
+const DocumentDraftEditPage = (Route as unknown as { component: () => React.JSX.Element })
+  .component;
 
 const DRAFT = {
   id: 'draft-1',
