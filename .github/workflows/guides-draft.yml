@@ -1,0 +1,199 @@
+name: Draft guide
+
+# When the web app ships a release, Claude reads what shipped and drafts at most
+# one guide as a draft pull request, or decides none is needed (JEF-533). It
+# never merges: a person checks the facts, edits the text, removes `draft: true`
+# and merges.
+#
+# Called from release.yml (`draft-guide`), because a release tagged with
+# GITHUB_TOKEN does not start other workflows, so `on: release` here would never
+# fire. Run it by hand with workflow_dispatch to draft for any web tag.
+#
+# Safety limits:
+# - Claude only edits files in the checkout, with a short list of allowed tools
+#   and a capped number of turns. It holds a read-only GITHUB_TOKEN and no push
+#   credential; this workflow commits and pushes, and only under content/guides.
+# - The steps must run: `pnpm guides:verify` is run again here, outside Claude,
+#   and a draft that fails it is never opened.
+# - The PR is opened with a GitHub App token (GUIDES_APP_ID and
+#   GUIDES_APP_PRIVATE_KEY), because a PR opened with GITHUB_TOKEN does not start
+#   ci.yml, so `ci-ok` (gitleaks, guides-verify) would never run on it.
+# - It skips when two or more guide draft PRs are already open.
+# - It pushes only a `chore/guide-<slug>` branch, never main.
+# - Guides are captured only from the seeded demo account.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The web release tag that shipped, e.g. web-v1.4.0
+        type: string
+        required: true
+      since_tag:
+        description: Previous web tag to compare against (default is the one before `tag`)
+        type: string
+        required: false
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+      GUIDES_APP_ID:
+        required: true
+      GUIDES_APP_PRIVATE_KEY:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Web release tag to draft for, e.g. web-v1.4.0 (default is the latest)
+        type: string
+        required: false
+      since_tag:
+        description: Previous web tag to compare against (default is the one before `tag`)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guides-draft
+  cancel-in-progress: false
+
+env:
+  # Claude Sonnet 5.5 and a turn cap keep one run to a few dollars (JEF-533).
+  CLAUDE_MODEL: claude-sonnet-5-5
+  CLAUDE_MAX_TURNS: '40'
+  MAX_OPEN_DRAFTS: '2'
+
+jobs:
+  draft:
+    name: Draft a guide
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Mint a GitHub App token
+        id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GUIDES_APP_ID }}
+          private-key: ${{ secrets.GUIDES_APP_PRIVATE_KEY }}
+
+      - name: Count open guide drafts
+        id: open
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          count=$(gh pr list --repo "$GITHUB_REPOSITORY" --label guide-draft --state open --json number --jq length)
+          if [ "$count" -ge "$MAX_OPEN_DRAFTS" ]; then
+            echo "::notice::$count guide draft PRs are open (limit $MAX_OPEN_DRAFTS); skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.open.outputs.skip != 'true'
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+          # Claude runs in this checkout and must not find a push credential in it.
+          persist-credentials: false
+
+      - name: Pick the release range
+        id: range
+        if: steps.open.outputs.skip != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+          SINCE_TAG: ${{ inputs.since_tag }}
+        run: |
+          tags=$(git tag --list 'web-v*' --sort=-v:refname)
+          tag="${TAG:-$(head -n1 <<<"$tags")}"
+          since="${SINCE_TAG:-$(grep -A1 -Fx "$tag" <<<"$tags" | tail -n1)}"
+          [ "$since" = "$tag" ] && since=""
+          # Tags are release-please's own; refuse anything else before it reaches a prompt.
+          for t in "$tag" "$since"; do
+            [ -z "$t" ] || [[ "$t" =~ ^web-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Not a web release tag: $t"; exit 1; }
+          done
+          git rev-parse --verify "$tag^{commit}" >/dev/null
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "since=$since" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup-project
+        if: steps.open.outputs.skip != 'true'
+
+      - uses: ./.github/actions/guide-env
+        if: steps.open.outputs.skip != 'true'
+
+      # Claude writes content/guides/en/<slug>/ and the outcome file, nothing
+      # else. Commit messages and diffs are untrusted text: the prompt says to
+      # treat them as data, and the tool list has no network, no git push and no
+      # way to run arbitrary commands.
+      - name: Draft the guide
+        id: claude
+        if: steps.open.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          GUIDE_OUTCOME_FILE: ${{ runner.temp }}/guide-outcome.json
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Follow .github/prompts/draft-guide.md exactly.
+
+            Web release tag: ${{ steps.range.outputs.tag }}
+            Previous web release tag: ${{ steps.range.outputs.since || '(none: this is the first web release)' }}
+            Outcome file: ${{ runner.temp }}/guide-outcome.json
+          claude_args: >-
+            --model ${{ env.CLAUDE_MODEL }}
+            --max-turns ${{ env.CLAUDE_MAX_TURNS }}
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git log:*),Bash(git diff:*),Bash(git show:*),Bash(pnpm guides:capture:*),Bash(pnpm guides:verify:*)"
+
+      # Never trust the outcome file or Claude's own verify run: check the
+      # result again, and commit only what is under content/guides.
+      - name: Check the draft
+        id: check
+        if: steps.open.outputs.skip != 'true'
+        env:
+          OUTCOME_FILE: ${{ runner.temp }}/guide-outcome.json
+        run: |
+          if [ ! -f "$OUTCOME_FILE" ] || [ "$(jq -r .outcome "$OUTCOME_FILE")" != "draft" ]; then
+            echo "::notice::No guide drafted: $(jq -r '.reason // "no outcome file"' "$OUTCOME_FILE" 2>/dev/null || echo 'no outcome file')"
+            echo "draft=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          slug=$(jq -r .slug "$OUTCOME_FILE")
+          [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo "::error::Bad slug: $slug"; exit 1; }
+          guide="content/guides/en/$slug/index.md"
+          test -f "$guide" || { echo "::error::$guide was not written"; exit 1; }
+          grep -Eq '^draft: true[[:space:]]*$' "$guide" || { echo "::error::$guide is not marked draft: true"; exit 1; }
+          # Only content/guides is committed below; the build also rewrites
+          # generated files (routeTree.gen.ts), which are left behind.
+          pnpm guides:verify "$slug"
+          echo "draft=true" >> "$GITHUB_OUTPUT"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Open the draft pull request
+        if: steps.check.outputs.draft == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.check.outputs.slug }}
+          TAG: ${{ steps.range.outputs.tag }}
+          OUTCOME_FILE: ${{ runner.temp }}/guide-outcome.json
+        run: |
+          branch="chore/guide-$SLUG"
+          git config user.name "trakwyn-guides[bot]"
+          git config user.email "trakwyn-guides[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add content/guides
+          git commit -m "chore(content): draft guide $SLUG for $TAG"
+          # Only this branch, never main. The App token is used for this push
+          # and the PR below so ci.yml runs on it.
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          jq -r .pr_body "$OUTCOME_FILE" > "$RUNNER_TEMP/pr-body.md"
+          title=$(jq -r .title "$OUTCOME_FILE")
+          for label in guide-draft content; do
+            gh label create "$label" --repo "$GITHUB_REPOSITORY" --force >/dev/null
+          done
+          gh pr create --repo "$GITHUB_REPOSITORY" --draft --base "${{ github.event.repository.default_branch }}" \
+            --head "$branch" --title "chore(content): draft guide: $title" \
+            --body-file "$RUNNER_TEMP/pr-body.md" --label guide-draft --label content

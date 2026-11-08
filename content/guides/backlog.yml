@@ -1,0 +1,46 @@
+# Topics worth a guide, curated by a person (JEF-533). When a web release has
+# nothing worth a guide of its own, the drafting job may take the next topic
+# here; it never invents one. Remove a topic once its guide is merged.
+# Schema: backlogEntrySchema in content/src/index.ts.
+- slug: save-a-job-with-the-clipper
+  title: Save a job from any job board with the Clipper
+  feature: The Trakwyn Clipper browser extension
+  notes: Install, sign in, clip a posting, and find it in Applications.
+- slug: use-ai-with-your-own-api-key
+  title: Use Trakwyn's AI with your own API key
+  feature: AI actions with a bring-your-own LLM key
+  notes: Add a key in settings and run one AI action. Do not recommend a provider.
+- slug: connect-an-mcp-client
+  title: Connect an AI assistant to Trakwyn with MCP
+  feature: MCP access
+  notes: Follow the MCP setup page. Name no client the app does not document.
+- slug: read-your-funnel-in-analytics
+  title: Read your job search funnel in Analytics
+  feature: Analytics
+  notes: What each chart counts, using the demo data only.
+- slug: prepare-for-interviews
+  title: Prepare for an interview with your notes and contacts
+  feature: Interviews on an application
+- slug: compare-offers
+  title: Compare job offers side by side
+  feature: Offers
+- slug: restore-from-trash
+  title: Restore a deleted application from Trash
+  feature: Trash
+  notes: Deleted applications are purged after 30 days.
+- slug: build-a-tailored-resume
+  title: Build a resume tailored to a job posting
+  feature: Resume generation
+- slug: chat-with-your-job-search
+  title: Ask the assistant about your job search
+  feature: Chat assistant
+  notes: Writes are proposals the user confirms; show the confirm step.
+- slug: plan-your-week-with-the-calendar
+  title: Plan your week with the calendar
+  feature: Calendar
+- slug: stay-on-top-of-follow-ups
+  title: Stay on top of follow-ups with notifications
+  feature: Notifications
+- slug: use-the-mobile-app
+  title: Track your search from your phone
+  feature: The Trakwyn mobile app
