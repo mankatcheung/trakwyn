@@ -1683,5 +1683,20 @@
   "screenshots.applicationDetail.alt": "申請詳情頁，包含備註與相關文件",
   "screenshots.assistant.alt": "Trakwyn 助理正在回答關於使用者申請的問題",
   "screenshots.resume.alt": "履歷編輯器，顯示針對職缺量身打造的履歷",
-  "screenshots.analytics.alt": "分析頁面，包含申請總數、每週圖表與階段漏斗"
+  "screenshots.analytics.alt": "分析頁面，包含申請總數、每週圖表與階段漏斗",
+  "marketing.nav.guides": "指南",
+  "marketing.footer.guidesLink": "指南",
+  "guides.index.title": "指南",
+  "guides.index.subtitle": "循序漸進的教學，幫你更善用 Trakwyn。",
+  "guides.index.filterLabel": "依主題篩選",
+  "guides.index.filterAll": "全部",
+  "guides.index.empty": "暫無指南，敬請期待。",
+  "guides.index.rss": "RSS 訂閱",
+  "guides.post.back": "所有指南",
+  "guides.post.published": "發佈於 {{date}}",
+  "guides.post.updated": "更新於 {{date}}",
+  "guides.post.relatedFeature": "相關功能",
+  "guides.post.ctaTitle": "準備好試試了嗎？",
+  "guides.post.ctaBody": "Trakwyn 可免費開始使用，在一處追蹤所有求職申請。",
+  "guides.post.notFound": "找不到這篇指南。"
 }
