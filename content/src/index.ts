@@ -70,3 +70,31 @@ export function extractImages(body: string): { alt: string; src: string }[] {
 export interface Guide extends ParsedGuide {
   slug: string;
 }
+
+/**
+ * One topic in `guides/backlog.yml` (JEF-533): a guide worth writing that the
+ * drafting job may take when a release has nothing better. A person curates the
+ * list; the job never adds to it.
+ */
+export const backlogEntrySchema = z.strictObject({
+  /** The folder the guide will live in, so it must be a valid slug. */
+  slug: z.string().regex(GUIDE_SLUG_PATTERN, 'lowercase words joined by single hyphens'),
+  title: z.string().min(1).max(100),
+  /** The product feature the guide shows, in plain words. */
+  feature: z.string().min(1).max(100),
+  /** What to cover and what to avoid. Optional. */
+  notes: z.string().min(1).max(500).optional(),
+});
+
+export type BacklogEntry = z.infer<typeof backlogEntrySchema>;
+
+/** Parses `backlog.yml`: a list of entries with no repeated slug. */
+export function parseBacklog(raw: string): BacklogEntry[] {
+  const entries = z.array(backlogEntrySchema).parse(parseYaml(raw) ?? []);
+  const seen = new Set<string>();
+  for (const { slug } of entries) {
+    if (seen.has(slug)) throw new Error(`Backlog slug "${slug}" appears twice`);
+    seen.add(slug);
+  }
+  return entries;
+}
