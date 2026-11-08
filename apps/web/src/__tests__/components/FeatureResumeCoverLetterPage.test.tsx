@@ -28,13 +28,13 @@ vi.mock('#/lib/i18n', () => ({
 import { FeatureResumeCoverLetterPage } from '#/routes/features/-components/FeatureResumeCoverLetterPage';
 
 describe('FeatureResumeCoverLetterPage', () => {
-  it('renders the headline and the grounding guarantee', () => {
+  it('renders the headline and the real resume screenshot', () => {
     render(<FeatureResumeCoverLetterPage />);
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Tailored to the job — not invented' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Grounded, not invented')).toBeInTheDocument();
+    expect(screen.getAllByAltText(en['screenshots.resume.alt'])).toHaveLength(2);
   });
 
   it('renders the three benefit sections', () => {
