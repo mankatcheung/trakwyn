@@ -28,13 +28,13 @@ vi.mock('#/lib/i18n', () => ({
 import { FeatureAiAssistantPage } from '#/routes/features/-components/FeatureAiAssistantPage';
 
 describe('FeatureAiAssistantPage', () => {
-  it('renders the headline and the sample conversation', () => {
+  it('renders the headline and the real assistant screenshot', () => {
     render(<FeatureAiAssistantPage />);
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'An assistant that knows your job search' }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/haven.?t heard back in 2 weeks/i)).toBeInTheDocument();
+    expect(screen.getAllByAltText(en['screenshots.assistant.alt'])).toHaveLength(2);
   });
 
   it('renders the three benefit sections', () => {

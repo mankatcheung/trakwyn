@@ -28,15 +28,13 @@ vi.mock('#/lib/i18n', () => ({
 import { FeatureAnalyticsPage } from '#/routes/features/-components/FeatureAnalyticsPage';
 
 describe('FeatureAnalyticsPage', () => {
-  it('renders the headline and the funnel stat cards', () => {
+  it('renders the headline and the real analytics screenshot', () => {
     render(<FeatureAnalyticsPage />);
 
     expect(
       screen.getByRole('heading', { level: 1, name: "See what's actually working" }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Response rate')).toBeInTheDocument();
-    // Appears twice: the stat card and the benefit-2 callout.
-    expect(screen.getAllByText('Likely ghosted').length).toBeGreaterThan(0);
+    expect(screen.getAllByAltText(en['screenshots.analytics.alt'])).toHaveLength(2);
   });
 
   it('renders the three benefit sections', () => {

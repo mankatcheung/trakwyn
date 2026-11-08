@@ -22,6 +22,8 @@ const THEME_STORAGE_KEY = 'theme';
 const COOKIE_CONSENT_KEY = 'trakwyn_cookie_consent';
 /** An interviewing application in the seed with notes and a tailored resume. */
 const DETAIL_COMPANY = 'TechCorp';
+/** The application the seeded "Cover letter (Acme)" draft belongs to. */
+const COVER_LETTER_COMPANY = 'Acme Corp';
 
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'screenshots');
 const WEBP_QUALITY = 80;
@@ -110,6 +112,19 @@ async function open(page: Page, name: ScreenshotName): Promise<void> {
         .click();
       await page
         .getByRole('link', { name: /resume/i })
+        .first()
+        .click();
+      await expect(page).toHaveURL(/\/documents\//);
+      break;
+    case 'cover-letter':
+      await page.goto('/applications/board');
+      await page.getByText(COVER_LETTER_COMPANY).first().click();
+      await page
+        .getByRole('navigation', { name: 'Section navigation' })
+        .getByRole('button', { name: /^cover letters/i })
+        .click();
+      await page
+        .getByRole('link', { name: /cover letter/i })
         .first()
         .click();
       await expect(page).toHaveURL(/\/documents\//);

@@ -1,44 +1,10 @@
 import { Sparkles, Check } from 'lucide-react';
 import { FeaturePageLayout } from '#/components/marketing/FeaturePageLayout';
 import { useLocale } from '#/lib/i18n';
+import { ThemedScreenshot } from '#/components/marketing/ThemedScreenshot';
 
-const SAMPLE_COMPANY_A = 'Northwind Labs';
-const SAMPLE_COMPANY_B = 'Fernbridge';
+/** A provider name, not translated. */
 const PROVIDER_OPENAI = 'OpenAI';
-
-function ChatMockup() {
-  const { t } = useLocale();
-  return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-800/50">
-      <div className="border-b border-gray-200 px-5 py-3.5 text-base font-bold text-gray-900 dark:border-gray-800 dark:text-gray-100">
-        {t('features.aiAssistant.panelTitle')}
-      </div>
-      <div className="flex flex-col gap-3 p-5">
-        <div className="max-w-[80%] self-end rounded-xl bg-blue-600 px-4 py-2 text-sm text-white">
-          {t('features.aiAssistant.bubbleQuestion1')}
-        </div>
-        <div className="max-w-[85%] self-start rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
-          {t('features.aiAssistant.bubbleAnswer1Lead')}{' '}
-          <strong className="font-semibold">{SAMPLE_COMPANY_A}</strong>{' '}
-          {t('features.aiAssistant.bubbleAnswer1Mid')}{' '}
-          <strong className="font-semibold">{SAMPLE_COMPANY_B}</strong>{' '}
-          {t('features.aiAssistant.bubbleAnswer1Tail')}
-        </div>
-        <div className="max-w-[80%] self-end rounded-xl bg-blue-600 px-4 py-2 text-sm text-white">
-          {t('features.aiAssistant.bubbleQuestion2')}
-        </div>
-        <div className="max-w-[85%] self-start rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
-          {t('features.aiAssistant.bubbleAnswer2')}
-        </div>
-      </div>
-      <div className="px-5 pb-5">
-        <div className="rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-400 dark:border-gray-600">
-          {t('features.aiAssistant.inputPlaceholder')}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function FeatureAiAssistantPage() {
   const { t } = useLocale();
@@ -48,7 +14,7 @@ export function FeatureAiAssistantPage() {
       eyebrowLabel={t('features.aiAssistant.eyebrow')}
       title={t('features.aiAssistant.title')}
       description={t('features.aiAssistant.description')}
-      heroVisual={<ChatMockup />}
+      heroVisual={<ThemedScreenshot name="assistant" />}
       heroVisualMaxWidth="max-w-2xl"
       benefits={[
         {
