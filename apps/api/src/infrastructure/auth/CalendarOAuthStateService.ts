@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from 'crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { CalendarProvider } from '#src/domain/calendarConnection/CalendarConnection.js';
 import { ENV, CALENDAR_OAUTH } from '#src/infrastructure/config/constants.js';
 
@@ -37,8 +37,7 @@ export class CalendarOAuthStateService {
       exp: Date.now() + CALENDAR_OAUTH.STATE_TTL_MS,
     };
     const encodedPayload = base64url(JSON.stringify(payload));
-    const signature = createHmac('sha256', this.secret).update(encodedPayload).digest('base64url');
-    return { state: `${encodedPayload}.${signature}`, nonce };
+    return { state: `${encodedPayload}.${this.signature(encodedPayload)}`, nonce };
   }
 
   verify(state: string): CalendarOAuthState {
@@ -46,10 +45,11 @@ export class CalendarOAuthStateService {
     if (!encodedPayload || !signature) {
       throw new Error('Malformed calendar OAuth state');
     }
-    const expectedSignature = createHmac('sha256', this.secret)
-      .update(encodedPayload)
-      .digest('base64url');
-    if (signature !== expectedSignature) {
+    // Constant-time, like `OAuthStateService`: a plain `!==` leaks how many
+    // leading characters of a forged signature were right.
+    const given = Buffer.from(signature);
+    const expected = Buffer.from(this.signature(encodedPayload));
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
       throw new Error('Invalid calendar OAuth state signature');
     }
     const payload = JSON.parse(
@@ -59,5 +59,9 @@ export class CalendarOAuthStateService {
       throw new Error('Calendar OAuth state expired');
     }
     return payload;
+  }
+
+  private signature(encodedPayload: string): string {
+    return createHmac('sha256', this.secret).update(encodedPayload).digest('base64url');
   }
 }

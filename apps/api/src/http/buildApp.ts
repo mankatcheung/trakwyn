@@ -295,6 +295,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'GET',
     url: ROUTES.CALENDAR_OAUTH_START,
+    preHandler: ipRateLimit('oauthRateLimiter', 'oauth'),
     handler: async (request, reply) => {
       const route = calendarOAuthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.CALENDAR_OAUTH_START,
@@ -305,6 +306,7 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
   fastify.route({
     method: 'GET',
     url: ROUTES.CALENDAR_OAUTH_CALLBACK,
+    preHandler: ipRateLimit('oauthRateLimiter', 'oauth'),
     handler: async (request, reply) => {
       const route = calendarOAuthRoutes(() => diScopeOf(request).cradle).find(
         (r) => r.path === ROUTES.CALENDAR_OAUTH_CALLBACK,

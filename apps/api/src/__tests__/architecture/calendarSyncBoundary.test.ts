@@ -81,4 +81,16 @@ describe('calendar sync boundary (JEF-331)', () => {
       'use-cases/jobs/PermanentlyDeleteApplicationUseCase.ts',
     ]);
   });
+
+  it('rate-limits both calendar OAuth routes like every other OAuth route', () => {
+    const source = read(join(SRC, 'http', 'buildApp.ts'));
+    for (const route of ['CALENDAR_OAUTH_START', 'CALENDAR_OAUTH_CALLBACK']) {
+      const at = source.indexOf(`url: ROUTES.${route},`);
+      expect(at, `${route} is not registered in buildApp.ts`).toBeGreaterThan(-1);
+      const nextLine = source.slice(at).split('\n')[1];
+      expect(nextLine, `${route} has no rate limiter`).toContain(
+        "ipRateLimit('oauthRateLimiter', 'oauth')",
+      );
+    }
+  });
 });

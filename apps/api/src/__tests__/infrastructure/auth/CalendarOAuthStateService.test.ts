@@ -40,6 +40,15 @@ describe('CalendarOAuthStateService', () => {
     expect(() => service.verify(tampered)).toThrow('Invalid calendar OAuth state signature');
   });
 
+  it('throws on a forged signature of the right length, not only a short one', () => {
+    const service = new CalendarOAuthStateService();
+    const { state } = service.issue('google', 'user-1');
+    const [payload, signature] = state.split('.');
+    const forged = `${payload}.${'A'.repeat(signature.length)}`;
+
+    expect(() => service.verify(forged)).toThrow('Invalid calendar OAuth state signature');
+  });
+
   it('throws on a malformed state', () => {
     const service = new CalendarOAuthStateService();
     expect(() => service.verify('not-a-valid-state')).toThrow('Malformed calendar OAuth state');
