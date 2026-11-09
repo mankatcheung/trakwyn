@@ -17,10 +17,11 @@ export const DEMO_PASSWORD = 'demo1234';
 /**
  * Takes the database rather than importing the process-wide client: that
  * client is never closed, and an open PGlite handle keeps the CLI from exiting.
+ *
+ * Every date is relative to `now`. The guide screenshots pin it (JEF-532) so
+ * the dates they show do not change with the calendar.
  */
-export async function runSeed(db: DrizzleDb): Promise<void> {
-  const now = new Date();
-
+export async function runSeed(db: DrizzleDb, now: Date = new Date()): Promise<void> {
   // Remove any previous demo user (cascading deletes handle related rows).
   const existing = await db
     .select({ id: user.id })

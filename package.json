@@ -11,6 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
+    "guides:verify": "pnpm --filter @trakwyn/web guides:verify",
+    "guides:capture": "pnpm --filter @trakwyn/web guides:capture",
     "db:generate": "turbo run db:generate --filter=@trakwyn/api",
     "db:migrate": "turbo run db:migrate --filter=@trakwyn/api",
     "setup:worktree": "bash scripts/setup-worktree.sh",

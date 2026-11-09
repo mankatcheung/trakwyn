@@ -72,6 +72,56 @@ export interface Guide extends ParsedGuide {
 }
 
 /**
+ * The names passed to `shot(page, '<name>')` in a guide's `guide.ts` (JEF-532).
+ * Only a literal name counts: the script and the Markdown are matched by text,
+ * so a computed name would hide a screenshot from the cross-check.
+ */
+export function extractShotNames(script: string): string[] {
+  const names: string[] = [];
+  const call = /\bshot\(\s*page\s*,\s*(['"])([a-z0-9]+(?:-[a-z0-9]+)*)\1/g;
+  for (const match of script.matchAll(call)) names.push(match[2]);
+  return names;
+}
+
+/** The image names (`./name.webp` without the extension) a guide's Markdown shows. */
+export function imageNamesIn(body: string): string[] {
+  return extractImages(body).flatMap(({ src }) => {
+    const match = /^\.\/([^/]+)\.webp$/.exec(src);
+    return match ? [match[1]] : [];
+  });
+}
+
+export interface ShotMismatch {
+  /** In `index.md` but never taken by the script. */
+  missingFromScript: string[];
+  /** Taken by the script but not shown in `index.md`. */
+  missingFromMarkdown: string[];
+  /** Taken more than once, so the later one overwrites the earlier. */
+  duplicated: string[];
+}
+
+/** Compares a guide's Markdown images with the shots its script takes. */
+export function compareShots(markdownNames: string[], scriptNames: string[]): ShotMismatch {
+  const inMarkdown = new Set(markdownNames);
+  const inScript = new Set(scriptNames);
+  const seen = new Set<string>();
+  const duplicated = new Set<string>();
+  for (const name of scriptNames) {
+    if (seen.has(name)) duplicated.add(name);
+    seen.add(name);
+  }
+  return {
+    missingFromScript: [...inMarkdown].filter((n) => !inScript.has(n)),
+    missingFromMarkdown: [...inScript].filter((n) => !inMarkdown.has(n)),
+    duplicated: [...duplicated],
+  };
+}
+
+export function hasShotMismatch(m: ShotMismatch): boolean {
+  return m.missingFromScript.length + m.missingFromMarkdown.length + m.duplicated.length > 0;
+}
+
+/**
  * One topic in `guides/backlog.yml` (JEF-533): a guide worth writing that the
  * drafting job may take when a release has nothing better. A person curates the
  * list; the job never adds to it.

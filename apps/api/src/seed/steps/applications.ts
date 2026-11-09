@@ -14,8 +14,11 @@ import {
 import { applications } from '../data/applications/index.js';
 
 export async function seedApplications(db: DrizzleDb, userId: string, now: Date): Promise<void> {
-  for (const app of applications) {
-    const appId = nanoid();
+  for (const [index, app] of applications.entries()) {
+    // Not random: lists sort ties on `id`, and rows seeded in one instant tie,
+    // so random ids would reorder them on every seed and change the guides'
+    // screenshots (JEF-532). The demo user is deleted first, so none collide.
+    const appId = `demo-app-${String(index).padStart(2, '0')}`;
 
     await db.insert(jobApplication).values({
       id: appId,
