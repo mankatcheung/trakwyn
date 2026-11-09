@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.14.0...api-v0.15.0) (2026-11-09)
+
+
+### Features
+
+* add a workersai eval target that builds the provider the way hosted AI does (JEF-540) ([#1318](https://github.com/mankatcheung/trakwyn/issues/1318)) ([d1476d6](https://github.com/mankatcheung/trakwyn/commit/d1476d654063445052f9b15c0ac629d45ecc9759))
+* **api:** eval runner saves its report, shows provider errors and cache counts (JEF-542) ([#1316](https://github.com/mankatcheung/trakwyn/issues/1316)) ([83bb3bd](https://github.com/mankatcheung/trakwyn/commit/83bb3bdb00c180c247d3e25d83c4c71588271a85))
+
+
+### Bug Fixes
+
+* send an empty string, not null, as replayed tool-call content (JEF-539) ([#1315](https://github.com/mankatcheung/trakwyn/issues/1315)) ([c81298f](https://github.com/mankatcheung/trakwyn/commit/c81298fa1a98a979a5436a79f3d2a0268a5a093a))
+
 ## [0.14.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.13.0...api-v0.14.0) (2026-11-09)
 
 
