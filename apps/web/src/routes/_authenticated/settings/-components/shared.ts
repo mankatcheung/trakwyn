@@ -299,6 +299,21 @@ export const UNLINK_OAUTH_ACCOUNT = `
   }
 `;
 
+export const CALENDAR_CONNECTIONS_QUERY = `
+  query CalendarConnections {
+    calendarConnections {
+      provider
+      createdAt
+    }
+  }
+`;
+
+export const DISCONNECT_CALENDAR = `
+  mutation DisconnectCalendar($provider: CalendarProvider!) {
+    disconnectCalendar(provider: $provider)
+  }
+`;
+
 export const API_TOKENS_QUERY = `
   query ApiTokens {
     apiTokens {
@@ -695,6 +710,14 @@ export type NotificationPreferences = {
 export type LinkedOAuthAccount = {
   provider: 'google' | 'github';
   email: string | null;
+  createdAt: string;
+};
+
+// Google-only for now (JEF-331) — Outlook/Microsoft support is deferred to a follow-up ticket.
+export type CalendarProvider = 'google';
+
+export type CalendarConnection = {
+  provider: CalendarProvider;
   createdAt: string;
 };
 

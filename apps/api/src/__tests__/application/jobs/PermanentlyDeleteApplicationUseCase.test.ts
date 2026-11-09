@@ -7,6 +7,11 @@ import {
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import {
+  makeInterviewRound,
+  makeInterviewRoundRepository,
+} from '#src/__tests__/helpers/mocks/interviews.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 const makeUseCase = (over: Record<string, unknown> = {}) => {
   const applicationRepository = makeApplicationRepository({
@@ -16,7 +21,18 @@ const makeUseCase = (over: Record<string, unknown> = {}) => {
     findAllByApplicationId: vi.fn().mockResolvedValue([]),
   });
   const storageProvider = makeStorageProvider();
-  const deps = { applicationRepository, documentRepository, storageProvider, ...over };
+  const interviewRoundRepository = makeInterviewRoundRepository({
+    findAllByApplicationId: vi.fn().mockResolvedValue([]),
+  });
+  const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+  const deps = {
+    applicationRepository,
+    documentRepository,
+    storageProvider,
+    interviewRoundRepository,
+    syncCalendarEventUseCase,
+    ...over,
+  };
   return { useCase: new PermanentlyDeleteApplicationUseCase(deps as never), ...deps };
 };
 
@@ -92,5 +108,55 @@ describe('PermanentlyDeleteApplicationUseCase', () => {
     await expect(
       ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' }),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('PermanentlyDeleteApplicationUseCase calendar cleanup (JEF-331)', () => {
+  it("removes the application's interview events after the delete, using ids read before it", async () => {
+    const order: string[] = [];
+    const ctx = makeUseCase({
+      applicationRepository: makeApplicationRepository({
+        findByIdIncludingTrashed: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        delete: vi.fn().mockImplementation(() => {
+          order.push('delete');
+          return Promise.resolve();
+        }),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        findAllByApplicationId: vi.fn().mockImplementation(() => {
+          order.push('read-rounds');
+          return Promise.resolve([
+            makeInterviewRound({ id: 'round-1' }),
+            makeInterviewRound({ id: 'round-2' }),
+          ]);
+        }),
+      }),
+      syncCalendarEventUseCase: makeSyncCalendarEventUseCase({
+        removeMany: vi.fn().mockImplementation(() => {
+          order.push('calendar');
+          return Promise.resolve();
+        }),
+      }),
+    });
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(ctx.syncCalendarEventUseCase.removeMany).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceIds: ['round-1', 'round-2'],
+    });
+    expect(order).toEqual(['read-rounds', 'delete', 'calendar']);
+  });
+
+  it('makes no calendar call when ownership is refused', async () => {
+    const ctx = makeUseCase();
+
+    await expect(
+      ctx.useCase.execute({ userId: 'someone-else', applicationId: 'app-1' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    expect(ctx.syncCalendarEventUseCase.removeMany).not.toHaveBeenCalled();
+    expect(ctx.applicationRepository.delete).not.toHaveBeenCalled();
   });
 });

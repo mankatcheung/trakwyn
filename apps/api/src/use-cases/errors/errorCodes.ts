@@ -42,4 +42,6 @@ export const ERROR_CODES = {
   EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
   /** The account is scheduled for deletion (JEF-463) — the client shows the "cancel deletion" screen rather than a failure. */
   ACCOUNT_DELETION_SCHEDULED: 'ACCOUNT_DELETION_SCHEDULED',
+  /** A Google Calendar call failed (expired/revoked token, API error) — surfaced from the explicit connect/disconnect flow, not from inline sync, which is fail-open by design. */
+  CALENDAR_PROVIDER_ERROR: 'CALENDAR_PROVIDER_ERROR',
 } as const;

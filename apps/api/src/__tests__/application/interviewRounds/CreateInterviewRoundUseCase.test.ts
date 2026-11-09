@@ -6,6 +6,7 @@ import {
   makeInterviewRoundRepository,
 } from '#src/__tests__/helpers/mocks/interviews.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('CreateInterviewRoundUseCase', () => {
   it('throws NOT_FOUND when the application does not exist', async () => {
@@ -172,5 +173,50 @@ describe('CreateInterviewRoundUseCase', () => {
         payload: JSON.stringify({ roundId: 'round-1', type: 'phone', ...actor }),
       }),
     );
+  });
+});
+
+describe('CreateInterviewRoundUseCase calendar sync (JEF-331)', () => {
+  const setup = (scheduledAt: Date | null) => {
+    const round = makeInterviewRound({ id: 'round-1', scheduledAt, notes: 'Bring a laptop' });
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+    const useCase = new CreateInterviewRoundUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(makeApplication({ company: 'Acme', role: 'Engineer' })),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        create: vi.fn().mockResolvedValue(round),
+      }),
+      syncCalendarEventUseCase,
+      generateId: vi.fn().mockReturnValue('id'),
+    });
+    return { useCase, syncCalendarEventUseCase };
+  };
+
+  it('syncs a round that has a scheduled time as a one-hour event', async () => {
+    const start = new Date('2030-05-01T10:00:00.000Z');
+    const { useCase, syncCalendarEventUseCase } = setup(start);
+
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1', scheduledAt: start });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: {
+        title: 'Interview: Acme — Engineer',
+        description: 'Bring a laptop',
+        startAt: start,
+        endAt: new Date('2030-05-01T11:00:00.000Z'),
+      },
+    });
+  });
+
+  it('does not touch the calendar for a round with no scheduled time', async () => {
+    const { useCase, syncCalendarEventUseCase } = setup(null);
+
+    await useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(syncCalendarEventUseCase.execute).not.toHaveBeenCalled();
   });
 });
