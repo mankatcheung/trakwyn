@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.14.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.13.0...api-v0.14.0) (2026-11-09)
+
+
+### Features
+
+* add Tavily web search to company briefings for Pro users (JEF-538) ([#1310](https://github.com/mankatcheung/trakwyn/issues/1310)) ([98112ae](https://github.com/mankatcheung/trakwyn/commit/98112ae1aaffd8be3b129d63fb9b8a4035f6a027))
+* ground company briefings in the company's own site and show sources (JEF-475) ([#1308](https://github.com/mankatcheung/trakwyn/issues/1308)) ([a6b2352](https://github.com/mankatcheung/trakwyn/commit/a6b235284a03ed978e82a6d81a7820a241cff276))
+* **web:** run each guide as a Playwright script that checks its steps and takes its screenshots (JEF-532) ([#1306](https://github.com/mankatcheung/trakwyn/issues/1306)) ([3c85963](https://github.com/mankatcheung/trakwyn/commit/3c859630e2bacc09e3e96e433f1820b8f218ec93))
+
+
+### Performance Improvements
+
+* **api:** cache CORS preflights for two hours (JEF-536) ([#1303](https://github.com/mankatcheung/trakwyn/issues/1303)) ([cd0e58d](https://github.com/mankatcheung/trakwyn/commit/cd0e58dc914e36ca447be5c4d0b4d87007164d03))
+* **api:** replace bcryptjs with native @node-rs/bcrypt (JEF-534) ([#1299](https://github.com/mankatcheung/trakwyn/issues/1299)) ([45571fa](https://github.com/mankatcheung/trakwyn/commit/45571fa51948eae6d8266b3abd31fb89f7e3fe85))
+
 ## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.12.0...api-v0.13.0) (2026-11-08)
 
 

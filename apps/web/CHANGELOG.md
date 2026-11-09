@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.14.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.13.0...web-v0.14.0) (2026-11-09)
+
+
+### Features
+
+* add Tavily web search to company briefings for Pro users (JEF-538) ([#1310](https://github.com/mankatcheung/trakwyn/issues/1310)) ([98112ae](https://github.com/mankatcheung/trakwyn/commit/98112ae1aaffd8be3b129d63fb9b8a4035f6a027))
+* draft guides and check them weekly with Claude Code scheduled tasks (JEF-533) ([#1305](https://github.com/mankatcheung/trakwyn/issues/1305)) ([898bc19](https://github.com/mankatcheung/trakwyn/commit/898bc19ecf424e23e91e363b974253f2c6a4f3b9))
+* ground company briefings in the company's own site and show sources (JEF-475) ([#1308](https://github.com/mankatcheung/trakwyn/issues/1308)) ([a6b2352](https://github.com/mankatcheung/trakwyn/commit/a6b235284a03ed978e82a6d81a7820a241cff276))
+* **web:** run each guide as a Playwright script that checks its steps and takes its screenshots (JEF-532) ([#1306](https://github.com/mankatcheung/trakwyn/issues/1306)) ([3c85963](https://github.com/mankatcheung/trakwyn/commit/3c859630e2bacc09e3e96e433f1820b8f218ec93))
+
+
+### Performance Improvements
+
+* **web:** cut the dashboard's API waves after sign-in from four to two (JEF-535) ([#1300](https://github.com/mankatcheung/trakwyn/issues/1300)) ([2d7141e](https://github.com/mankatcheung/trakwyn/commit/2d7141e87804839271b791b536e3bf4b30c88af2))
+* **web:** lazy-load the app shell's on-demand UI and unblock route code splitting (JEF-537) ([#1304](https://github.com/mankatcheung/trakwyn/issues/1304)) ([2683cad](https://github.com/mankatcheung/trakwyn/commit/2683cad4e79d35845d3adf3b182ac781134f6348))
+
 ## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.12.0...web-v0.13.0) (2026-11-08)
 
 
