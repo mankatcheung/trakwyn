@@ -1,5 +1,6 @@
 import { LLM_PROVIDER } from '#src/use-cases/constants.js';
-import type { EvalConfig, EvalTarget } from '#src/evals/types.js';
+import { PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
+import { WORKERS_AI_PROVIDER, type EvalConfig, type EvalTarget } from '#src/evals/types.js';
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -11,7 +12,7 @@ const SWITCH_KEYS = {
   '--refresh': 'refresh',
   '--validate-judge': 'validateJudge',
 } as const;
-const PROVIDERS: string[] = Object.values(LLM_PROVIDER);
+const PROVIDERS: string[] = [...Object.values(LLM_PROVIDER), WORKERS_AI_PROVIDER];
 
 function isValueFlag(arg: string): arg is (typeof VALUE_FLAGS)[number] {
   return (VALUE_FLAGS as readonly string[]).includes(arg);
@@ -68,6 +69,33 @@ function readFlags(argv: string[]): RawFlags {
 /** The variables a grader reads instead of the target's (JEF-470). */
 const JUDGE_KEY_VARIABLES = ['EVAL_JUDGE_API_KEY'];
 
+/** Cloudflare credentials for `workersai`, kept apart from the production `PLATFORM_CLOUDFLARE_*` ones (JEF-540). */
+const WORKERS_AI_VARIABLES = {
+  target: { accountId: 'EVAL_CLOUDFLARE_ACCOUNT_ID', token: 'EVAL_CLOUDFLARE_API_TOKEN' },
+  judge: {
+    accountId: 'EVAL_JUDGE_CLOUDFLARE_ACCOUNT_ID',
+    token: 'EVAL_JUDGE_CLOUDFLARE_API_TOKEN',
+  },
+} as const;
+
+function parseWorkersAiTarget(model: string, env: Env, isJudge: boolean): EvalTarget {
+  if (!model) {
+    throw new Error('The workersai provider needs a model: --target workersai:<model>');
+  }
+  const names = WORKERS_AI_VARIABLES[isJudge ? 'judge' : 'target'];
+  const accountId = env[names.accountId]?.trim();
+  const token = env[names.token]?.trim();
+  if (!accountId)
+    throw new Error(`The workersai provider needs an account id: set ${names.accountId}`);
+  if (!token) throw new Error(`The workersai provider needs an API token: set ${names.token}`);
+  return {
+    provider: WORKERS_AI_PROVIDER,
+    model,
+    apiKey: token,
+    baseUrl: `${PLATFORM_LLM.REST_BASE}/${encodeURIComponent(accountId)}/${PLATFORM_LLM.REST_PATH}`,
+  };
+}
+
 function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarget {
   // The first colon only: model names such as `anthropic/claude:beta` carry their own.
   const colon = spec.indexOf(':');
@@ -76,6 +104,10 @@ function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarge
 
   if (!PROVIDERS.includes(provider)) {
     throw new Error(`Unknown provider "${provider}"; expected one of: ${PROVIDERS.join(', ')}`);
+  }
+
+  if (provider === WORKERS_AI_PROVIDER) {
+    return parseWorkersAiTarget(model, env, keyVariables !== undefined);
   }
 
   const variables = keyVariables ?? [`EVAL_API_KEY_${provider.toUpperCase()}`, 'EVAL_API_KEY'];

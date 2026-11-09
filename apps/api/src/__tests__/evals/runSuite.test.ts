@@ -102,4 +102,68 @@ describe('buildProvider', () => {
     expect(result.content).toBe('stored');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+  describe('workersai target (JEF-540)', () => {
+    const workersAi = (model: string): EvalTarget => ({
+      provider: 'workersai',
+      model,
+      apiKey: 'cf-tok',
+      baseUrl: 'https://api.cloudflare.com/client/v4/accounts/acct-1/ai/v1/chat/completions',
+    });
+    const okReply = {
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          choices: [{ message: { content: 'hi' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+    } as unknown as Response;
+
+    async function requestFor(
+      model: string,
+    ): Promise<{ headers: Record<string, string>; body: Record<string, unknown>; url: string }> {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okReply);
+      await buildProvider(workersAi(model), null).complete(
+        [{ role: 'user', content: 'x' }],
+        100,
+        undefined,
+        { reasoning: 'off' },
+      );
+      const [url, init] = fetchSpy.mock.calls[0]!;
+      const request = init as RequestInit;
+      return {
+        url: String(url),
+        headers: request.headers as Record<string, string>,
+        body: JSON.parse(String(request.body)) as Record<string, unknown>,
+      };
+    }
+
+    it('sends reasoning_effort=low to gpt-oss, as hosted AI does', async () => {
+      const { body, url } = await requestFor('@cf/openai/gpt-oss-120b');
+
+      expect(url).toContain('/accounts/acct-1/ai/v1/chat/completions');
+      expect(body.reasoning_effort).toBe('low');
+      expect(body).not.toHaveProperty('chat_template_kwargs');
+    });
+
+    it('sends chat_template_kwargs to Gemma, as hosted AI does', async () => {
+      const { body } = await requestFor('@cf/google/gemma-4-26b-a4b-it');
+
+      expect(body.chat_template_kwargs).toEqual({ enable_thinking: false });
+      expect(body).not.toHaveProperty('reasoning_effort');
+    });
+
+    it('adds no gateway headers', async () => {
+      const { headers } = await requestFor('@cf/openai/gpt-oss-120b');
+
+      expect(Object.keys(headers).filter((name) => name.startsWith('cf-aig'))).toEqual([]);
+      expect(headers.Authorization).toBe('Bearer cf-tok');
+    });
+
+    it('labels the target by provider and model for the cache', () => {
+      expect(targetLabel(workersAi('@cf/openai/gpt-oss-120b'))).toBe(
+        'workersai:@cf/openai/gpt-oss-120b',
+      );
+    });
+  });
 });

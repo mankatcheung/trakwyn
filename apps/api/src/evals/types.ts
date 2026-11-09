@@ -59,6 +59,13 @@ export interface CaseResult {
   iterations: number;
 }
 
+/**
+ * Workers AI built the way hosted AI builds it (JEF-540): same adapter, same
+ * reasoning fields, direct to Cloudflare with no gateway headers. Not a user
+ * provider, so it is not in `LLM_PROVIDER`.
+ */
+export const WORKERS_AI_PROVIDER = 'workersai';
+
 /** One provider/model to run every case against. */
 export interface EvalTarget {
   provider: string;
