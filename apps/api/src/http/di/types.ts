@@ -464,6 +464,8 @@ export interface Cradle {
   computeResumeMatchScoreRateLimiter: IRateLimiter;
   computeResumeAtsScoreRateLimiter: IRateLimiter;
   generateCompanyBriefingRateLimiter: IRateLimiter;
+  /** Per user per day, on the searches Trakwyn pays for (JEF-538). */
+  companyWebSearchRateLimiter: IRateLimiter;
   generateMockQuestionsRateLimiter: IRateLimiter;
   generateMockAnswerRateLimiter: IRateLimiter;
   polishDocumentDraftRateLimiter: IRateLimiter;
@@ -722,6 +724,8 @@ export interface Cradle {
   jobPostingSourceResolver: IJobPostingSourceResolver;
   parsedPostingCache: IParsedPostingCache;
   companyResearchSource: ICompanyResearchSource;
+  /** The paid web search (JEF-538); `null` when `SEARCH_PROVIDER` names none. */
+  companySearchSource: ICompanyResearchSource | null;
   parseJobDescriptionUseCase: ParseJobDescriptionUseCase;
   generateCoverLetterUseCase: GenerateCoverLetterUseCase;
   generateCompanyBriefingUseCase: GenerateCompanyBriefingUseCase;

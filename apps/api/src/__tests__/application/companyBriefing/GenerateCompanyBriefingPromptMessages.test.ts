@@ -5,6 +5,7 @@ import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpe
 import {
   makeCompanyBriefingRepository,
   makeCompanyResearchSource,
+  makeCompanySearchDeps,
   makeLLMProvider,
   makeLLMProviderFactory,
 } from '#src/__tests__/helpers/mocks/llm.js';
@@ -36,6 +37,7 @@ describe('GenerateCompanyBriefingUseCase prompt messages', () => {
         generateCompanyBriefingRateLimiter: makeRateLimiter(),
         companyBriefingRepository: makeCompanyBriefingRepository(),
         companyResearchSource: makeCompanyResearchSource(),
+        ...makeCompanySearchDeps(),
         generateId: () => 'briefing-1',
         now: () => new Date('2026-08-21T00:00:00.000Z'),
       }).execute({ applicationId: 'app-1', userId: 'user-1' });

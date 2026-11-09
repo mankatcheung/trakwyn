@@ -473,6 +473,8 @@ export const AI_PROMPT_INPUT = {
   COMPANY_BRIEFING_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** GenerateCompanyBriefingUseCase — text read from the company's own pages, all sources together (JEF-475). */
   COMPANY_BRIEFING_RESEARCH_MAX_CHARS: 6000,
+  /** GenerateCompanyBriefingUseCase — web search snippets, all results together; a budget apart from the company's own pages so search never pushes them out (JEF-538). */
+  COMPANY_BRIEFING_SEARCH_MAX_CHARS: 3000,
   /** ComputeResumeMatchScoreUseCase — the application's job description field. */
   RESUME_MATCH_JOB_DESCRIPTION_MAX_CHARS: 6000,
   /** Cover letter + resume generation — the user's notes on the application (JEF-205). */
@@ -674,6 +676,7 @@ export const PLAN_FEATURES = {
     shareLinks: false,
     apiAccess: false,
     mcpAccess: true,
+    companyWebResearch: false,
   },
   pro: {
     notifications: true,
@@ -682,6 +685,7 @@ export const PLAN_FEATURES = {
     shareLinks: true,
     apiAccess: true,
     mcpAccess: true,
+    companyWebResearch: true,
   },
 } as const;
 

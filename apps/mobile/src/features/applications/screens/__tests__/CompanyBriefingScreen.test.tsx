@@ -170,7 +170,9 @@ describe('CompanyBriefingScreen', () => {
   });
 
   describe('sources (JEF-475)', () => {
-    const briefingWith = (sources: { url: string; title: string }[] | undefined) =>
+    const briefingWith = (
+      sources: { url: string; title: string; publishedAt?: string | null }[] | undefined,
+    ) =>
       mockedUseCompanyBriefing.mockReturnValue({
         data: {
           id: 'b1',
@@ -201,6 +203,24 @@ describe('CompanyBriefingScreen', () => {
       expect(getByText('Sources')).toBeTruthy();
       expect(getByText('[1] Acme | Payroll')).toBeTruthy();
       expect(getByText('[2] About Acme')).toBeTruthy();
+    });
+
+    it('shows when a web search source was published, and nothing for one with no date', async () => {
+      const published = '2026-03-12T00:00:00.000Z';
+      briefingWith([
+        { url: 'https://acme.com', title: 'Acme | Payroll', publishedAt: null },
+        { url: 'https://news.example/acme', title: 'Acme raises Series B', publishedAt: published },
+        { url: 'https://reviews.example/acme', title: 'Acme reviews' },
+      ]);
+
+      const { getByTestId } = await renderScreen();
+      const rendered = (id: string) => JSON.stringify(getByTestId(id).children);
+
+      expect(rendered('company-briefing-source-2')).toContain(
+        new Date(published).toLocaleDateString(),
+      );
+      expect(rendered('company-briefing-source-1')).not.toContain(' · ');
+      expect(rendered('company-briefing-source-3')).not.toContain(' · ');
     });
 
     it('opens a source in the browser', async () => {

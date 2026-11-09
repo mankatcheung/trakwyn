@@ -9,6 +9,10 @@ CompanySourceRef.implement({
   fields: (t) => ({
     url: t.exposeString('url'),
     title: t.exposeString('title'),
+    // When a web search result was published (JEF-538); null for the
+    // company's own pages. Optional output, so a client built before it never
+    // asks for it.
+    publishedAt: t.exposeString('publishedAt', { nullable: true }),
   }),
 });
 

@@ -85,6 +85,18 @@ describe('PrivacyPage', () => {
       screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
     ).toBeInTheDocument();
   });
+  it('names Tavily as the web search sub-processor and says only the company name and site domain are sent (JEF-538)', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Web search in company briefings' }),
+    ).toBeInTheDocument();
+    const body = screen.getByText(/The search is run by Tavily, our sub-processor/);
+    expect(body).toHaveTextContent(/only the company name from your application/);
+    expect(body).toHaveTextContent(/nothing else about you or your application/);
+    expect(body).toHaveTextContent(/up to three days/);
+  });
+
   it('names Cloudflare as the only AI sub-processor, with purpose, region and its terms', () => {
     render(<PrivacyPage />);
 

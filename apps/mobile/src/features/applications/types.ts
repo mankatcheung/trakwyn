@@ -141,13 +141,15 @@ export interface AtsScore {
 export interface CompanySource {
   url: string;
   title: string;
+  /** ISO 8601. Set for a web search result, null for a page from the company's own site. */
+  publishedAt?: string | null;
 }
 
 export interface CompanyBriefing {
   id: string;
   applicationId: string;
   content: string;
-  /** The pages the briefing cites as [1], [2]…, in that order. Empty when none could be read. */
+  /** The sources the briefing cites as [1], [2]…, in that order. Empty when none could be read. */
   sources: CompanySource[];
   generatedAt: string;
 }

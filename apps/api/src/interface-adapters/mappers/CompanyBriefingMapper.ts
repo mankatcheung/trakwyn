@@ -3,6 +3,8 @@ import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefin
 export interface CompanySourceDTO {
   url: string;
   title: string;
+  /** ISO 8601; null for the company's own pages and for briefings saved before search existed. */
+  publishedAt: string | null;
 }
 
 export interface CompanyBriefingDTO {
@@ -19,7 +21,11 @@ export class CompanyBriefingMapper {
       id: briefing.id,
       applicationId: briefing.applicationId,
       content: briefing.content,
-      sources: briefing.sources.map(({ url, title }) => ({ url, title })),
+      sources: briefing.sources.map(({ url, title, publishedAt }) => ({
+        url,
+        title,
+        publishedAt: publishedAt ?? null,
+      })),
       generatedAt: briefing.generatedAt.toISOString(),
     };
   }

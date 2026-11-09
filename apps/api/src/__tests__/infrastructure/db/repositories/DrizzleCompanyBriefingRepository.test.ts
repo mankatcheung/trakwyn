@@ -58,6 +58,27 @@ describe('DrizzleCompanyBriefingRepository', () => {
     expect((await repo.findByApplicationId('app-1'))?.sources).toEqual(sources);
   });
 
+  it('keeps when a search source was published, and leaves a page without a date as it was', async () => {
+    const sources = [
+      { url: 'https://acme.com', title: 'Acme | Payroll' },
+      {
+        url: 'https://news.example/acme',
+        title: 'Acme raises Series B',
+        publishedAt: '2026-03-12T00:00:00.000Z',
+      },
+      { url: 'https://reviews.example/acme', title: 'Acme reviews', publishedAt: null },
+    ];
+    await repo.upsert({
+      id: 'b1',
+      applicationId: 'app-1',
+      content: 'Overview [1] [2] [3]',
+      sources,
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+
+    expect((await repo.findByApplicationId('app-1'))?.sources).toEqual(sources);
+  });
+
   it('regenerating replaces the sources too, so a briefing never keeps the last one’s pages', async () => {
     await repo.upsert({
       id: 'b1',

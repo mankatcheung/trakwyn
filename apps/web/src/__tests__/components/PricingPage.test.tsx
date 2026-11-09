@@ -325,7 +325,12 @@ describe('PricingPage', () => {
 
     it('lists exactly the features the API gates, with MCP the only one on Free', () => {
       const free = /PLAN_FEATURES = \{\s*free: \{([^}]*)\}/.exec(API_CONSTANTS)?.[1] ?? '';
-      expect(free.match(/: false/g)).toHaveLength(5);
+      // `companyWebResearch` (JEF-538) adds web search to a company briefing; it
+      // is not a pricing row, and a Free user still gets the briefing itself.
+      const gatedOnFree = [...free.matchAll(/(\w+): false/g)]
+        .map((match) => match[1])
+        .filter((feature) => feature !== 'companyWebResearch');
+      expect(gatedOnFree).toHaveLength(5);
       expect(free.match(/(\w+): true/g)).toEqual(['mcpAccess: true']);
     });
   });

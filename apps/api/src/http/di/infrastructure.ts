@@ -58,6 +58,9 @@ import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTex
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
 import { CachedCompanyResearchSource } from '#src/infrastructure/companyResearch/CachedCompanyResearchSource.js';
 import { FetchCompanySiteResearchSource } from '#src/infrastructure/companyResearch/FetchCompanySiteResearchSource.js';
+import { CachedCompanySearchSource } from '#src/infrastructure/companyResearch/CachedCompanySearchSource.js';
+import { SearchCompanyResearchSource } from '#src/infrastructure/companyResearch/SearchCompanyResearchSource.js';
+import { buildWebSearchProvider } from '#src/infrastructure/search/buildWebSearchProvider.js';
 import { CachedParsedPostingStore } from '#src/infrastructure/jobDescription/CachedParsedPostingStore.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
 import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
@@ -275,6 +278,21 @@ export const infrastructure = {
         cache,
         inner: new FetchCompanySiteResearchSource({ outboundUrlPolicy }),
       }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
+  // The paid search beside it (JEF-538): news, funding and reviews. `null`
+  // when `SEARCH_PROVIDER` names none, so the use case can tell "not
+  // configured" from "found nothing" and spends no rate limit on the former.
+  companySearchSource: asFunction(
+    ({ cache }: Cradle) => {
+      const searchProvider = buildWebSearchProvider();
+      return searchProvider
+        ? new CachedCompanySearchSource({
+            cache,
+            inner: new SearchCompanyResearchSource({ searchProvider }),
+          })
+        : null;
+    },
     { lifetime: Lifetime.SINGLETON },
   ),
 } satisfies NameAndRegistrationPair<Cradle>;

@@ -21,7 +21,7 @@ const BRIEFING_QUERY = `
       id
       applicationId
       content
-      sources { url title }
+      sources { url title publishedAt }
       generatedAt
     }
   }
@@ -42,7 +42,7 @@ type Briefing = {
   id: string;
   applicationId: string;
   content: string;
-  sources: Array<{ url: string; title: string }>;
+  sources: Array<{ url: string; title: string; publishedAt: string | null }>;
   generatedAt: string;
 } | null;
 
@@ -144,7 +144,41 @@ describe('company briefing integration', () => {
     const body = res.json() as GraphQLResponse<{ companyBriefing: Briefing }>;
 
     expect(body.errors).toBeUndefined();
-    expect(body.data!.companyBriefing!.sources).toEqual(sources);
+    // The company's own pages have no date, so a client reads null (JEF-538).
+    expect(body.data!.companyBriefing!.sources).toEqual(
+      sources.map((source) => ({ ...source, publishedAt: null })),
+    );
+  });
+
+  it('serves when a web search source was published, and null for one with no date', async () => {
+    const token = await registerAndLogin();
+    const applicationId = await createApplication(token);
+
+    await briefingRepository().upsert({
+      id: randomUUID(),
+      applicationId,
+      content: 'Acme raised a Series B, reported March 2026 [2].',
+      sources: [
+        { url: 'https://acme.com', title: 'Acme | Payroll' },
+        {
+          url: 'https://news.example/acme',
+          title: 'Acme raises Series B',
+          publishedAt: '2026-03-12T00:00:00.000Z',
+        },
+        { url: 'https://reviews.example/acme', title: 'Acme reviews', publishedAt: null },
+      ],
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+
+    const res = await authedInject(token, BRIEFING_QUERY, { applicationId });
+    const body = res.json() as GraphQLResponse<{ companyBriefing: Briefing }>;
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data!.companyBriefing!.sources.map((s) => s.publishedAt)).toEqual([
+      null,
+      '2026-03-12T00:00:00.000Z',
+      null,
+    ]);
   });
 
   it('serves an empty list, not null, for a briefing with no sources', async () => {

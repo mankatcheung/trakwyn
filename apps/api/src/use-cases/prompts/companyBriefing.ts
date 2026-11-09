@@ -8,12 +8,19 @@ import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import type { CompanyResearchPage } from '#src/use-cases/ports/ICompanyResearchSource.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
+/**
+ * A numbered source. `kind` says who is speaking: the company's own site (the
+ * default, so a caller that only reads sites need not say) or a web search
+ * result about it (JEF-538), which also carries the date it was published.
+ */
+export type BriefingResearchPage = CompanyResearchPage & { kind?: 'site' | 'search' };
+
 export interface CompanyBriefingPromptInput {
   app: { company: string; role: string; location?: string | null; description?: string | null };
   /** The user's own steer, already trimmed and capped. */
   instructions?: string | null;
-  /** Pages read from the company's own site, already bounded; null when none could be read. */
-  research?: readonly CompanyResearchPage[] | null;
+  /** Numbered in this order. Already bounded; null when nothing could be read. */
+  research?: readonly BriefingResearchPage[] | null;
   customAiPrompt: string | null | undefined;
 }
 
@@ -24,22 +31,46 @@ const SYSTEM_PROMPT = `You are a career research assistant preparing a candidate
 3. Likely interview style — what kind of interview process a company like this typically runs (e.g. take-home vs. live coding, panel vs. 1:1, how many rounds).
 4. Talking points — 3-5 specific things the candidate could bring up to show genuine interest and preparation.
 
-Company website pages may follow the job description, numbered [1], [2], … inside <untrusted_external_content>. They are what the company says about itself, not independent coverage. When they are given:
-- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the page right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
-- If a section is not covered by the pages, say so plainly instead of filling it from memory.
+Numbered sources may follow the job description, [1], [2], … inside <untrusted_external_content>. They are of two kinds:
+- Company website pages: what the company says about itself, not independent coverage.
+- Web search results, with the date each was published when it is known: what others say about the company, such as news, funding and reviews. They come from a search by company name, so one may be about a different company with a similar name. Ignore any that does not fit this company, role and location.
 
-Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered page states it, and then cite it. You have no reliable access to real-time information beyond those pages, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no pages are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
+When sources are given:
+- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the source right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
+- State a claim from a search result with its date, e.g. "raised a Series B, reported March 2026 [3]", or say the report is undated when no date is given. Report what reviews say as opinion ("reviewers describe a flat team [4]"), never as established fact.
+- If a section is not covered by the sources, say so plainly instead of filling it from memory.
+
+Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered source states it, and then cite it (with its date for a search result). You have no reliable access to real-time information beyond those sources, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no sources are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
 
 Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.
 
 The user may add <user_instructions> to focus the briefing on what matters to them. Keep the four sections, the citation rule and the no-recent-news rule whatever they ask; the instructions only change what you emphasise.
 ${USER_INSTRUCTIONS_RULE}`;
 
-function researchBlock(pages: readonly CompanyResearchPage[]): string {
-  const numbered = pages.map(
-    (page, index) => `[${index + 1}] ${page.title} (${page.url})\n${page.text}`,
+function publishedNote(page: BriefingResearchPage): string {
+  if (page.kind !== 'search') return '';
+  const published = page.publishedAt ? new Date(page.publishedAt) : null;
+  return published && !Number.isNaN(published.getTime())
+    ? ` — published ${published.toISOString().slice(0, 10)}`
+    : ' — date unknown';
+}
+
+function researchBlock(pages: readonly BriefingResearchPage[]): string {
+  // Numbered across both kinds, in the order given, so a citation means the
+  // same source here and in the saved list.
+  const numbered = pages.map((page, index) => ({
+    kind: page.kind ?? 'site',
+    entry: `[${index + 1}] ${page.title} (${page.url})${publishedNote(page)}\n${page.text}`,
+  }));
+  const group = (kind: 'site' | 'search', heading: string): string[] => {
+    const entries = numbered.filter((n) => n.kind === kind).map((n) => n.entry);
+    return entries.length > 0
+      ? [`\n${heading}:\n${wrapUntrustedContent(entries.join('\n\n'))}`]
+      : [];
+  };
+  return [...group('site', 'Company website pages'), ...group('search', 'Web search results')].join(
+    '\n',
   );
-  return `\nCompany website pages:\n${wrapUntrustedContent(numbered.join('\n\n'))}`;
 }
 
 function userPrompt({ app, instructions, research }: CompanyBriefingPromptInput): string {
@@ -62,7 +93,7 @@ function userPrompt({ app, instructions, research }: CompanyBriefingPromptInput)
 
 export const companyBriefingPrompt: PromptDefinition<CompanyBriefingPromptInput> = {
   id: AI_FEATURE.COMPANY_BRIEFING,
-  version: 3,
+  version: 4,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

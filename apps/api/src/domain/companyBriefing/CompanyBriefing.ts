@@ -2,6 +2,12 @@
 export interface CompanySource {
   url: string;
   title: string;
+  /**
+   * When a search result was published (ISO 8601), so a dated claim can be
+   * told from an old one (JEF-538). Absent for the company's own pages and
+   * for briefings saved before search existed, so old rows need no migration.
+   */
+  publishedAt?: string | null;
 }
 
 export interface CompanyBriefing {

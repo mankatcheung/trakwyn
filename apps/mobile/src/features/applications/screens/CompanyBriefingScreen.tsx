@@ -86,6 +86,12 @@ export function CompanyBriefingScreen() {
                 >
                   <Text style={styles.source} numberOfLines={1}>
                     [{index + 1}] {source.title}
+                    {source.publishedAt ? (
+                      <Text style={styles.sourceDate}>
+                        {' · '}
+                        {new Date(source.publishedAt).toLocaleDateString()}
+                      </Text>
+                    ) : null}
                   </Text>
                 </Pressable>
               ))}
@@ -114,5 +120,6 @@ function createStyles(colors: ThemeColors) {
     sources: { gap: 4, paddingTop: 4 },
     sourcesTitle: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
     source: { fontSize: 14, color: colors.primary },
+    sourceDate: { fontSize: 12, color: colors.textFaint },
   });
 }

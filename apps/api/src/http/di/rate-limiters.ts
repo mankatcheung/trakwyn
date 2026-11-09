@@ -129,6 +129,10 @@ export const rateLimiters = {
     'generateCompanyBriefingRateLimiter',
     RATE_LIMIT.GENERATE_COMPANY_BRIEFING,
   ),
+  companyWebSearchRateLimiter: limiter(
+    'companyWebSearchRateLimiter',
+    RATE_LIMIT.COMPANY_WEB_SEARCH,
+  ),
   generateMockQuestionsRateLimiter: limiter(
     'generateMockQuestionsRateLimiter',
     RATE_LIMIT.GENERATE_MOCK_QUESTIONS,

@@ -35,6 +35,9 @@ export const ENV = {
   UPSTASH_REDIS_REST_URL: 'UPSTASH_REDIS_REST_URL',
   UPSTASH_REDIS_REST_TOKEN: 'UPSTASH_REDIS_REST_TOKEN',
   EMAIL_PROVIDER: 'EMAIL_PROVIDER',
+  /** `tavily`, `fake` or `none` (JEF-538). Unset, or `tavily` without a key, is `none`. */
+  SEARCH_PROVIDER: 'SEARCH_PROVIDER',
+  TAVILY_API_KEY: 'TAVILY_API_KEY',
   BREVO_API_KEY: 'BREVO_API_KEY',
   FROM_EMAIL: 'FROM_EMAIL',
   FROM_NAME: 'FROM_NAME',
@@ -420,6 +423,25 @@ export const EMAIL_PROVIDER = {
   CONSOLE: 'console',
 } as const;
 
+/** `SEARCH_PROVIDER` values (JEF-538). */
+export const SEARCH_PROVIDER = {
+  TAVILY: 'tavily',
+  /** Fixed results, no network: local dev, CI and e2e. */
+  FAKE: 'fake',
+  /** No search; a briefing is written from the company's own site alone. */
+  NONE: 'none',
+} as const;
+
+/** The Tavily search API (JEF-538). */
+export const TAVILY = {
+  SEARCH_URL: 'https://api.tavily.com/search',
+  TIMEOUT_MS: 8_000,
+  /** `basic` costs 1 credit a call; snippets are enough for a short briefing. */
+  SEARCH_DEPTH: 'basic',
+  /** A search response is small; anything bigger is not one. */
+  MAX_RESPONSE_BYTES: 256 * 1024,
+} as const;
+
 /** `OAUTH_PROVIDER_MODE` values. */
 export const OAUTH_PROVIDER_MODE = {
   REAL: 'real',
@@ -585,6 +607,27 @@ export const COMPANY_RESEARCH = {
   VERSION: 'v1',
   /** A company's about page changes rarely; a week keeps a briefing roughly current. */
   TTL_MS: 7 * 24 * 60 * 60 * 1000,
+} as const;
+
+/**
+ * Searching the web for what others say about a company (JEF-538): news,
+ * funding, layoffs and reviews. Shared between users, keyed on the company.
+ */
+export const COMPANY_SEARCH = {
+  /** Results kept per query, before de-duplication. */
+  MAX_RESULTS: 5,
+  /** How far back a news result may be dated. */
+  NEWS_DAYS: 365,
+  /** Per snippet, after trimming; the use case caps the total again. */
+  MAX_SNIPPET_CHARS: 500,
+  MAX_TITLE_CHARS: 120,
+  /** A company name longer than this is not one; it is cut before it reaches a query or a key. */
+  MAX_COMPANY_CHARS: 80,
+  KEY_PREFIX: 'company-search',
+  /** Bump when the queries or how results are cleaned change, so old entries are not served. */
+  VERSION: 'v1',
+  /** News ages faster than an about page, so this is shorter than `COMPANY_RESEARCH.TTL_MS`. */
+  TTL_MS: 3 * 24 * 60 * 60 * 1000,
 } as const;
 
 /** Parsed postings shared between users, keyed on the fetched page's text (JEF-450). */

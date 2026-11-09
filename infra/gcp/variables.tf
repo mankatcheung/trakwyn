@@ -67,6 +67,12 @@ variable "hosted_ai" {
   default     = false
 }
 
+variable "web_search" {
+  description = "Turn on web search in company briefings (JEF-538): sets SEARCH_PROVIDER=tavily and serves TAVILY_API_KEY from Secret Manager. Searches are paid for by Trakwyn and only run for Pro users, within a per-user daily limit. The secret needs a version before the apply, or Cloud Run refuses to start the revision (README.md, 'Web search'). Off by default; set false again as the kill switch."
+  type        = bool
+  default     = false
+}
+
 variable "hosted_ai_rollout_percent" {
   description = "Share of users (0-100) who get hosted AI while hosted_ai is true (JEF-453), by a stable hash of the user id. 0 by default so turning hosted_ai on reaches nobody but the allowlist; raise it per rollout stage (README.md, 'Hosted AI rollout'). Set 0 to roll back without a gateway change."
   type        = number

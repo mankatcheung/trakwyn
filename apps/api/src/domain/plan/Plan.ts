@@ -13,7 +13,15 @@ export type PlanSource = 'subscription' | 'pass' | 'trial' | 'grant';
  * `apiAccess` is the rest of the API, with a token, and stays Pro.
  */
 export type PlanFeature =
-  'notifications' | 'analytics' | 'offers' | 'shareLinks' | 'apiAccess' | 'mcpAccess';
+  | 'notifications'
+  | 'analytics'
+  | 'offers'
+  | 'shareLinks'
+  | 'apiAccess'
+  | 'mcpAccess'
+  // A search paid for by Trakwyn, added to a company briefing (JEF-538). Not
+  // exposed to clients and never asserted: a Free user still gets a briefing.
+  | 'companyWebResearch';
 
 /**
  * Everything a plan allows, resolved for one user at one instant.
