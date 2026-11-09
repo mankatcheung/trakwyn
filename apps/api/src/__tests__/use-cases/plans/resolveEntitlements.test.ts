@@ -42,6 +42,7 @@ describe('resolveEntitlements', () => {
       shareLinks: false,
       apiAccess: false,
       mcpAccess: true,
+      companyWebResearch: false,
     });
   });
 

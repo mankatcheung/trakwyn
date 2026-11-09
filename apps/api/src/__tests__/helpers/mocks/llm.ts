@@ -9,6 +9,11 @@
 import { vi } from 'vitest';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
 import type { ICompanyResearchSource } from '#src/use-cases/ports/ICompanyResearchSource.js';
+import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
+import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
@@ -81,6 +86,29 @@ export const makeCompanyBriefingRepository = (
 ): ICompanyBriefingRepository => ({
   findByApplicationId: vi.fn().mockResolvedValue(null),
   upsert: vi.fn().mockImplementation((data) => Promise.resolve({ ...data })),
+  ...overrides,
+});
+
+/**
+ * The briefing's web-search dependencies (JEF-538), with search switched off:
+ * no source, so a test that is not about search sees the briefing as it was
+ * before search existed. A search test passes `companySearchSource`.
+ */
+export const makeCompanySearchDeps = (overrides?: {
+  companySearchSource?: ICompanyResearchSource | null;
+  companyWebSearchRateLimiter?: IRateLimiter;
+  entitlementService?: IEntitlementService;
+  logger?: ILogger;
+}): {
+  companySearchSource: ICompanyResearchSource | null;
+  companyWebSearchRateLimiter: IRateLimiter;
+  entitlementService: IEntitlementService;
+  logger: ILogger;
+} => ({
+  companySearchSource: null,
+  companyWebSearchRateLimiter: makeRateLimiter(),
+  entitlementService: makeEntitlementService(),
+  logger: makeLogger(),
   ...overrides,
 });
 

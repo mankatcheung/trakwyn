@@ -11,7 +11,7 @@ import { Button, Card } from '@trakwyn/ui';
 import { AiActionBar } from '#/components/ai/AiActionBar';
 import { AiPromptInput } from '#/components/ai/AiPromptInput';
 
-const BRIEFING_FIELDS = `id applicationId content sources { url title } generatedAt`;
+const BRIEFING_FIELDS = `id applicationId content sources { url title publishedAt } generatedAt`;
 
 const COMPANY_BRIEFING_QUERY = `
   query CompanyBriefing($applicationId: ID!) {
@@ -35,7 +35,7 @@ type Briefing = {
   id: string;
   applicationId: string;
   content: string;
-  sources: Array<{ url: string; title: string }>;
+  sources: Array<{ url: string; title: string; publishedAt?: string | null }>;
   generatedAt: string;
 };
 
@@ -186,6 +186,15 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
                     ) : (
                       <span className="truncate">{source.title}</span>
                     )}
+                    {/* Only a web search result has a date: it says how old the claim is. */}
+                    {source.publishedAt ? (
+                      <time
+                        dateTime={source.publishedAt}
+                        className="shrink-0 text-xs/5 text-gray-400"
+                      >
+                        {formatDate(new Date(source.publishedAt), { dateStyle: 'medium' })}
+                      </time>
+                    ) : null}
                   </li>
                 ))}
               </ol>

@@ -106,6 +106,7 @@ Secret IDs are the env var names in lower-kebab-case:
 | `polar-access-token`            | Polar organization access token for the environment `POLAR_SERVER` names. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`) |
 | `polar-webhook-secret`          | the `whsec_…` secret of that environment's Polar webhook endpoint. Added by hand, not by `load-secrets.sh` (`infra/polar/README.md`)        |
 | `platform-cloudflare-api-token` | hosted AI only (`hosted_ai = true`): the Cloudflare API token with AI Gateway Run and Workers AI (`infra/cloudflare/README.md`). By hand    |
+| `tavily-api-key`                | web search only (`web_search = true`): the Tavily API key (`tvly-…`). By hand                                                               |
 | `cron-secret`                   | a new random value (`openssl rand -hex 32`); only for triggering the admin routes by hand                                                   |
 | `digest-admin-secret`           | a new random value                                                                                                                          |
 | `google-oauth-client-secret`    | Google OAuth client secret                                                                                                                  |
@@ -256,6 +257,23 @@ gcloud iam service-accounts keys delete <old-key-id> --iam-account="$SA"
 
 3. **Apply** (in full) with `hosted_ai = true` and, in `plain_env`, `PLATFORM_CLOUDFLARE_ACCOUNT_ID` (the account id) and `PLATFORM_CLOUDFLARE_GATEWAY_ID` (`terraform -chdir=../cloudflare output -raw ai_gateway_id`; it defaults to `trakwyn`).
 4. **Verify:** a Pro user with no key and `aiSource` `auto` gets an AI reply, and `LlmUsageEvent.source` is `platform` with `provider` `workersai` for it. A missing token or account id does not stop the API starting: it fails the first Trakwyn AI call with `AI_NOT_CONFIGURED`. If every call fails with an authentication error on a gateway that Terraform created, check the gateway's authentication setting in the dashboard.
+
+### Web search (JEF-538)
+
+A company briefing can add what others say about the company (news, funding, reviews) from a web search that Trakwyn pays for, through [Tavily](https://tavily.com). It runs for Pro users only (or everyone on an instance that does not enforce plans), at most `RATE_LIMIT.COMPANY_WEB_SEARCH` (30) times a day per user, and results are cached per company for three days, so a popular company costs one search (two Tavily credits) every three days. Off by default; with `web_search` false nothing about the API changes and briefings use the company's own site alone. To switch it on:
+
+1. **Tavily:** create an API key at tavily.com and set the plan's usage cap to what you are willing to spend: it is the hard ceiling, and the API treats its refusal (HTTP 432 or 433) as "no search this time". `basic` depth costs 1 credit a call, a briefing's search costs 2.
+2. **Secret:** as for hosted AI, create the container on its own first: set `web_search = true`, then `terraform apply -target='google_secret_manager_secret.api' -target='google_secret_manager_secret_iam_member.api_runtime'`, then add a version by hand:
+
+   ```bash
+   printf '%s' "<key>" | gcloud secrets versions add tavily-api-key --data-file=-
+   ```
+
+3. **Apply** (in full) with `web_search = true`. It sets `SEARCH_PROVIDER=tavily` and serves the key as `TAVILY_API_KEY`.
+4. **Privacy policy:** it names Tavily as a sub-processor of the company name and site host sent in a query (`PrivacyPage.tsx`, all five locale files). Nothing else about the user or the application is sent. Ship that text before this step.
+5. **Verify:** as a Pro user, generate a briefing for an application whose posting link is a company site: the sources list shows dated results below the company's pages. The API logs `Company briefing research` with `searchOutcome` (`hit`, `miss`, `failed`, `skipped-plan`, `skipped-limit` or `skipped-unconfigured`) and no company name.
+
+**Kill switch:** `web_search = false` and apply (a new revision, allow a minute); briefings go back to the company's own site alone. Lowering Tavily's usage cap works at once.
 
 ### Hosted AI spend budgets (JEF-449)
 

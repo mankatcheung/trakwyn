@@ -437,6 +437,7 @@ jobs:
           GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
           OAUTH_PROVIDER_MODE=fake
           LLM_PROVIDER_MODE=fake
+          SEARCH_PROVIDER=fake
           EOF
 
           cat > apps/web/.env <<'EOF'
@@ -551,6 +552,7 @@ jobs:
           GITHUB_OAUTH_CLIENT_ID=e2e-fake-github-client-id
           OAUTH_PROVIDER_MODE=fake
           LLM_PROVIDER_MODE=fake
+          SEARCH_PROVIDER=fake
           EOF
 
           cat > apps/web/.env <<'EOF'

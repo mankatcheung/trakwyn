@@ -119,7 +119,7 @@ const RECORDED: Record<string, string> = {
   'resumeMatch@1': '73972db89d3346a5',
   'parseJobDescription@1': 'e357e943306332df',
   'parseCv@2': 'ada7635e716f8000',
-  'companyBriefing@3': 'e5fe8e7f82d1fc9d',
+  'companyBriefing@4': '52f5ede5b037b548',
   'mockQuestions@2': '4d51b8cf709d35c1',
   'mockAnswer@2': 'eee623a9c4491be3',
   'talkingPoints@2': '938bd643a9771d75',

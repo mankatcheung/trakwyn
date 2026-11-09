@@ -322,6 +322,12 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  // Genuine shared-resource protection, unlike the BYOK limits around it:
+  // each search is paid for by Trakwyn (JEF-538). Counted per user per day.
+  COMPANY_WEB_SEARCH: {
+    MAX_ATTEMPTS: 30,
+    WINDOW_MS: 24 * 60 * 60 * 1000, // 1 day
+  },
   GENERATE_MOCK_QUESTIONS: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

@@ -12,11 +12,16 @@ exports[`GenerateCompanyBriefingUseCase prompt messages > sends the research ass
 3. Likely interview style — what kind of interview process a company like this typically runs (e.g. take-home vs. live coding, panel vs. 1:1, how many rounds).
 4. Talking points — 3-5 specific things the candidate could bring up to show genuine interest and preparation.
 
-Company website pages may follow the job description, numbered [1], [2], … inside <untrusted_external_content>. They are what the company says about itself, not independent coverage. When they are given:
-- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the page right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
-- If a section is not covered by the pages, say so plainly instead of filling it from memory.
+Numbered sources may follow the job description, [1], [2], … inside <untrusted_external_content>. They are of two kinds:
+- Company website pages: what the company says about itself, not independent coverage.
+- Web search results, with the date each was published when it is known: what others say about the company, such as news, funding and reviews. They come from a search by company name, so one may be about a different company with a similar name. Ignore any that does not fit this company, role and location.
 
-Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered page states it, and then cite it. You have no reliable access to real-time information beyond those pages, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no pages are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
+When sources are given:
+- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the source right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
+- State a claim from a search result with its date, e.g. "raised a Series B, reported March 2026 [3]", or say the report is undated when no date is given. Report what reviews say as opinion ("reviewers describe a flat team [4]"), never as established fact.
+- If a section is not covered by the sources, say so plainly instead of filling it from memory.
+
+Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered source states it, and then cite it (with its date for a search result). You have no reliable access to real-time information beyond those sources, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no sources are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
 
 Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.
 
@@ -62,11 +67,16 @@ exports[`GenerateCompanyBriefingUseCase prompt messages > sends the research ass
 3. Likely interview style — what kind of interview process a company like this typically runs (e.g. take-home vs. live coding, panel vs. 1:1, how many rounds).
 4. Talking points — 3-5 specific things the candidate could bring up to show genuine interest and preparation.
 
-Company website pages may follow the job description, numbered [1], [2], … inside <untrusted_external_content>. They are what the company says about itself, not independent coverage. When they are given:
-- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the page right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
-- If a section is not covered by the pages, say so plainly instead of filling it from memory.
+Numbered sources may follow the job description, [1], [2], … inside <untrusted_external_content>. They are of two kinds:
+- Company website pages: what the company says about itself, not independent coverage.
+- Web search results, with the date each was published when it is known: what others say about the company, such as news, funding and reviews. They come from a search by company name, so one may be about a different company with a similar name. Ignore any that does not fit this company, role and location.
 
-Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered page states it, and then cite it. You have no reliable access to real-time information beyond those pages, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no pages are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
+When sources are given:
+- Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the source right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
+- State a claim from a search result with its date, e.g. "raised a Series B, reported March 2026 [3]", or say the report is undated when no date is given. Report what reviews say as opinion ("reviewers describe a flat team [4]"), never as established fact.
+- If a section is not covered by the sources, say so plainly instead of filling it from memory.
+
+Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered source states it, and then cite it (with its date for a search result). You have no reliable access to real-time information beyond those sources, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no sources are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
 
 Format the briefing as markdown: one "## " heading per section, bullet lists for the talking points and any other lists, and bold for key facts. Do not wrap the response in a code block.
 

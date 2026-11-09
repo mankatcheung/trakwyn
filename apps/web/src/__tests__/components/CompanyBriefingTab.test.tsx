@@ -39,7 +39,7 @@ const stored = {
   id: 'b1',
   applicationId: 'app-1',
   content: 'Company overview:\nAcme builds widgets.',
-  sources: [] as Array<{ url: string; title: string }>,
+  sources: [] as Array<{ url: string; title: string; publishedAt?: string | null }>,
   generatedAt: '2026-08-01T09:00:00.000Z',
 };
 
@@ -113,7 +113,7 @@ describe('CompanyBriefingTab', () => {
 
       await waitFor(() =>
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('sources { url title }'),
+          expect.stringContaining('sources { url title publishedAt }'),
           { applicationId: 'app-1' },
         ),
       );
@@ -149,12 +149,56 @@ describe('CompanyBriefingTab', () => {
       expect(screen.queryByRole('link', { name: 'Sneaky' })).not.toBeInTheDocument();
     });
 
-    it('says the briefing used the company’s website when it has sources', async () => {
+    it('says the briefing used the listed sources when it has some', async () => {
       respondWith(withSources);
       render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
 
-      expect(await screen.findByText(/company's own website/)).toBeInTheDocument();
+      expect(await screen.findByText(/sources listed below/)).toBeInTheDocument();
       expect(screen.queryByText(/not live data/)).not.toBeInTheDocument();
+    });
+
+    describe('web search sources (JEF-538)', () => {
+      const withSearch = {
+        ...withSources,
+        content: 'Acme raised a Series B, reported March 2026 [3].',
+        sources: [
+          ...withSources.sources,
+          {
+            url: 'https://news.example/acme',
+            title: 'Acme raises Series B',
+            publishedAt: '2026-03-12T00:00:00.000Z',
+          },
+          { url: 'https://reviews.example/acme', title: 'Acme reviews', publishedAt: null },
+        ],
+      };
+
+      it('shows when a search source was published, beside its title', async () => {
+        respondWith(withSearch);
+        render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+        const list = await screen.findByTestId('briefing-sources');
+        const item = Array.from(list.querySelectorAll('li'))[2];
+        const date = item.querySelector('time');
+
+        expect(item.textContent).toContain('Acme raises Series B');
+        expect(date).toHaveAttribute('datetime', '2026-03-12T00:00:00.000Z');
+        expect(date?.textContent).toMatch(/2026/);
+      });
+
+      it('shows no date for a page from the company’s site, or a search result with none', async () => {
+        respondWith(withSearch);
+        render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+        const list = await screen.findByTestId('briefing-sources');
+        const items = Array.from(list.querySelectorAll('li'));
+
+        expect(items.map((li) => li.querySelector('time') !== null)).toEqual([
+          false,
+          false,
+          true,
+          false,
+        ]);
+      });
     });
 
     it('keeps the general-knowledge disclaimer and shows no list when there are none', async () => {

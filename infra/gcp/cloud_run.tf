@@ -7,7 +7,16 @@ locals {
   hosted_ai_secret_env_vars = [
     "PLATFORM_CLOUDFLARE_API_TOKEN",
   ]
-  secret_env_vars = var.hosted_ai ? setunion(var.secret_env_vars, local.hosted_ai_secret_env_vars) : var.secret_env_vars
+  # The key web search in company briefings calls Tavily with (JEF-538). Like
+  # the hosted AI token it is added out of band and never enters state.
+  web_search_secret_env_vars = [
+    "TAVILY_API_KEY",
+  ]
+  secret_env_vars = setunion(
+    var.secret_env_vars,
+    var.hosted_ai ? local.hosted_ai_secret_env_vars : [],
+    var.web_search ? local.web_search_secret_env_vars : [],
+  )
 
   # Config that is the same for every install, plus the per-install values
   # from variables. PORT is deliberately absent: Cloud Run reserves it and
@@ -31,6 +40,7 @@ locals {
       HOSTED_AI_ROLLOUT_PERCENT = tostring(var.hosted_ai_rollout_percent)
       HOSTED_AI_ALLOWLIST       = join(",", var.hosted_ai_allowlist)
     } : {},
+    var.web_search ? { SEARCH_PROVIDER = "tavily" } : {},
     var.plain_env,
   )
 }

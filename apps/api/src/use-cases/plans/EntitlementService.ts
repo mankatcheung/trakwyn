@@ -40,6 +40,7 @@ const FEATURE_LABEL: Record<PlanFeature, string> = {
   shareLinks: 'Share links',
   apiAccess: 'API access with a token',
   mcpAccess: 'MCP access',
+  companyWebResearch: 'Web search in company briefings',
 };
 
 export class EntitlementService implements IEntitlementService {

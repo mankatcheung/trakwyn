@@ -10,6 +10,12 @@ export interface CompanyResearchPage {
   title: string;
   /** Plain text, already bounded. */
   text: string;
+  /**
+   * When a search result was published (ISO 8601 text, not a `Date`: the
+   * shared cache round-trips these through JSON). Null or absent for a page
+   * read from the company's own site (JEF-538).
+   */
+  publishedAt?: string | null;
 }
 
 export interface CompanyResearch {

@@ -8,6 +8,7 @@ const BRIEFING_FIELDS = `
   sources {
     url
     title
+    publishedAt
   }
   generatedAt
 `;

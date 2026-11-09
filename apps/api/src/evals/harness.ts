@@ -195,6 +195,13 @@ export async function generateBriefing(
     companyResearchSource: {
       research: async () => (fixture.pages.length > 0 ? { pages: fixture.pages } : null),
     },
+    // A Pro user on an instance with search (JEF-538), or none when the case has no results.
+    companySearchSource: fixture.searchPages?.length
+      ? { research: async () => ({ pages: fixture.searchPages }) }
+      : null,
+    entitlementService: { forUserId: async () => ({ features: { companyWebResearch: true } }) },
+    companyWebSearchRateLimiter: unlimited,
+    logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
     generateId: () => 'eval-briefing',
     now: () => new Date(),
   } as unknown as BriefingDeps;
