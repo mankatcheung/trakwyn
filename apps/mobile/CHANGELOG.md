@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.8.0...mobile-v0.9.0) (2026-11-09)
+
+
+### Features
+
+* add Tavily web search to company briefings for Pro users (JEF-538) ([#1310](https://github.com/mankatcheung/trakwyn/issues/1310)) ([98112ae](https://github.com/mankatcheung/trakwyn/commit/98112ae1aaffd8be3b129d63fb9b8a4035f6a027))
+* ground company briefings in the company's own site and show sources (JEF-475) ([#1308](https://github.com/mankatcheung/trakwyn/issues/1308)) ([a6b2352](https://github.com/mankatcheung/trakwyn/commit/a6b235284a03ed978e82a6d81a7820a241cff276))
+
+
+### Performance Improvements
+
+* **api:** replace bcryptjs with native @node-rs/bcrypt (JEF-534) ([#1299](https://github.com/mankatcheung/trakwyn/issues/1299)) ([45571fa](https://github.com/mankatcheung/trakwyn/commit/45571fa51948eae6d8266b3abd31fb89f7e3fe85))
+
 ## [0.8.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.7.0...mobile-v0.8.0) (2026-11-08)
 
 
