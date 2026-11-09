@@ -102,6 +102,70 @@ describe('parseEvalArgs', () => {
       /--case/,
     );
   });
+  describe('workersai (JEF-540)', () => {
+    const cloudflare = {
+      EVAL_CLOUDFLARE_ACCOUNT_ID: 'acct-1',
+      EVAL_CLOUDFLARE_API_TOKEN: 'cf-tok',
+    };
+
+    it('builds the REST endpoint from the account id and takes the token as the key', () => {
+      const config = parse(['--target', 'workersai:@cf/openai/gpt-oss-120b'], cloudflare);
+
+      expect(config.targets).toEqual([
+        {
+          provider: 'workersai',
+          model: '@cf/openai/gpt-oss-120b',
+          apiKey: 'cf-tok',
+          baseUrl: 'https://api.cloudflare.com/client/v4/accounts/acct-1/ai/v1/chat/completions',
+        },
+      ]);
+    });
+
+    it('needs no EVAL_API_KEY, and names the missing Cloudflare variable (not the production one)', () => {
+      expect(() =>
+        parse(['--target', 'workersai:m'], { EVAL_CLOUDFLARE_API_TOKEN: 'cf-tok' }),
+      ).toThrow(/EVAL_CLOUDFLARE_ACCOUNT_ID/);
+      expect(() =>
+        parse(['--target', 'workersai:m'], { EVAL_CLOUDFLARE_ACCOUNT_ID: 'acct-1' }),
+      ).toThrow(/EVAL_CLOUDFLARE_API_TOKEN/);
+    });
+
+    it('ignores the production PLATFORM_CLOUDFLARE_* variables', () => {
+      expect(() =>
+        parse(['--target', 'workersai:m'], {
+          PLATFORM_CLOUDFLARE_ACCOUNT_ID: 'prod',
+          PLATFORM_CLOUDFLARE_API_TOKEN: 'prod-tok',
+        }),
+      ).toThrow(/EVAL_CLOUDFLARE_ACCOUNT_ID/);
+    });
+
+    it('requires a model', () => {
+      expect(() => parse(['--target', 'workersai'], cloudflare)).toThrow(/model/);
+    });
+
+    it('works as the judge, from its own EVAL_JUDGE_CLOUDFLARE_* variables', () => {
+      const env = {
+        ...cloudflare,
+        EVAL_PROVIDER: 'openai',
+        EVAL_API_KEY: 'k',
+        EVAL_JUDGE_PROVIDER: 'workersai',
+        EVAL_JUDGE_MODEL: '@cf/openai/gpt-oss-120b',
+      };
+
+      expect(() => parse([], env)).toThrow(/EVAL_JUDGE_CLOUDFLARE_ACCOUNT_ID/);
+      expect(
+        parse([], {
+          ...env,
+          EVAL_JUDGE_CLOUDFLARE_ACCOUNT_ID: 'acct-2',
+          EVAL_JUDGE_CLOUDFLARE_API_TOKEN: 'judge-tok',
+        }).judge,
+      ).toMatchObject({
+        provider: 'workersai',
+        apiKey: 'judge-tok',
+        baseUrl: expect.stringContaining('/accounts/acct-2/'),
+      });
+    });
+  });
 });
 
 describe('parseEvalArgs --out', () => {
