@@ -103,3 +103,17 @@ describe('parseEvalArgs', () => {
     );
   });
 });
+
+describe('parseEvalArgs --out', () => {
+  const env = { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k' };
+
+  it('reads the report file, and has none by default', () => {
+    expect(parseEvalArgs(['--out', 'reports/run.txt'], env).reportFile).toBe('reports/run.txt');
+    expect(parseEvalArgs([], env).reportFile).toBeNull();
+  });
+
+  it('needs a value', () => {
+    expect(() => parseEvalArgs(['--out'], env)).toThrow('--out needs a value');
+    expect(() => parseEvalArgs(['--out', '--cache'], env)).toThrow('--out needs a value');
+  });
+});

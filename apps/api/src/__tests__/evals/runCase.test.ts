@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runCase } from '#src/evals/runCase.js';
-import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import { AiResponseInvalidError, LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescription.js';
 import { resumeMatchPrompt } from '#src/use-cases/prompts/resumeMatch.js';
 import type { EvalCase } from '#src/evals/types.js';
@@ -87,5 +87,44 @@ describe('runCase', () => {
 
     expect(result).toMatchObject({ passed: false, schemaValid: true });
     expect(result.failures[0]).toContain('provider returned 429');
+  });
+});
+
+describe('runCase provider errors (JEF-542)', () => {
+  const failing = (error: Error) =>
+    runCase(
+      evalCase(async () => {
+        throw error;
+      }),
+      makeLLMProvider(),
+    );
+
+  it('adds the status and the response body to the failure', async () => {
+    const result = await failing(
+      new LlmProviderError('bad_request', {
+        provider: 'Custom',
+        status: 400,
+        detail: '{"error":"content must be a string"}',
+      }),
+    );
+
+    expect(result.failures[0]).toContain('check the model name in Settings');
+    expect(result.failures[0]).toContain('[HTTP 400, body: {"error":"content must be a string"}]');
+  });
+
+  it('shows only what it has when the body or the status is missing', async () => {
+    const noBody = await failing(new LlmProviderError('bad_request', { status: 404 }));
+    const nothing = await failing(new LlmProviderError('unreachable'));
+
+    expect(noBody.failures[0]).toContain('[HTTP 404]');
+    expect(nothing.failures[0]).not.toContain('[');
+  });
+
+  it('leaves the error message itself alone', async () => {
+    const error = new LlmProviderError('auth', { provider: 'Custom', status: 401, detail: 'nope' });
+
+    await failing(error);
+
+    expect(error.message).not.toContain('nope');
   });
 });

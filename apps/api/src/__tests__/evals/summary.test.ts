@@ -102,3 +102,41 @@ describe('formatReport', () => {
     expect(formatReport([{ label: 't', results: [result()] }])).toContain('no failures');
   });
 });
+
+describe('formatReport cache counts (JEF-542)', () => {
+  it('adds no cache column when the run did not use the cache', () => {
+    expect(formatReport([{ label: 'openai:m', results: [result()] }])).not.toContain('Cache');
+  });
+
+  it('shows hits/misses per target and the latency when some replies were fresh', () => {
+    const report = formatReport([
+      { label: 'openai:m', results: [result()], cache: { hits: 3, misses: 2 } },
+    ]);
+
+    expect(report).toContain('Cache hit/miss');
+    expect(report).toContain('3/2');
+    expect(report).toContain('400 ms');
+  });
+
+  it('says cached, not 0 ms, when every reply came from disk', () => {
+    const report = formatReport([
+      {
+        label: 'openai:m',
+        results: [result({ latencyMs: 0 })],
+        cache: { hits: 5, misses: 0 },
+      },
+    ]);
+
+    expect(report).toContain('5/0');
+    expect(report).toContain('cached');
+    expect(report).not.toContain('0 ms');
+  });
+
+  it('keeps the latency when the cache was on but nothing was looked up', () => {
+    const report = formatReport([
+      { label: 'openai:m', results: [result()], cache: { hits: 0, misses: 0 } },
+    ]);
+
+    expect(report).toContain('400 ms');
+  });
+});

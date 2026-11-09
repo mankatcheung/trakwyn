@@ -16,8 +16,15 @@ import {
   validateJudge,
 } from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
+import { writeReportFile } from '#src/evals/reportFile.js';
 import { runSuite } from '#src/evals/runSuite.js';
-import { formatReport, meetsPassRate, summarise, type TargetRun } from '#src/evals/summary.js';
+import {
+  formatReport,
+  meetsPassRate,
+  summarise,
+  type CacheCounts,
+  type TargetRun,
+} from '#src/evals/summary.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { CaseResult, EvalConfig } from '#src/evals/types.js';
 
@@ -46,13 +53,24 @@ async function runTargets(
   for (const target of config.targets) {
     const label = targetLabel(target);
     console.log(`\n${label}: ${cases.length} cases`);
+    let counts: CacheCounts = { hits: 0, misses: 0 };
+    const targetCache = cache
+      ? {
+          ...cache,
+          onLookup: (hit: boolean) => {
+            counts = hit
+              ? { ...counts, hits: counts.hits + 1 }
+              : { ...counts, misses: counts.misses + 1 };
+          },
+        }
+      : null;
     const results = await runSuite(
-      buildProvider(target, cache),
+      buildProvider(target, targetCache),
       cases,
       (result) => console.log(progressLine(result)),
       judge ?? undefined,
     );
-    runs.push({ label, results });
+    runs.push(cache ? { label, results, cache: counts } : { label, results });
   }
   return runs;
 }
@@ -92,7 +110,16 @@ async function main(): Promise<number> {
     return USAGE_ERROR;
   }
 
-  console.log(`\n${formatReport(runs)}`);
+  const report = formatReport(runs);
+  console.log(`\n${report}`);
+  if (config.reportFile) {
+    try {
+      writeReportFile(config.reportFile, report);
+      console.log(`\nReport written to ${config.reportFile}`);
+    } catch (error: unknown) {
+      console.error(`Could not write the report to ${config.reportFile}: ${messageOf(error)}`);
+    }
+  }
 
   const short = runs.filter((run) => !meetsPassRate(summarise(run.results), config.minPassRate));
   if (short.length > 0) {

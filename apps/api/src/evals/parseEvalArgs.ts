@@ -4,7 +4,7 @@ import type { EvalConfig, EvalTarget } from '#src/evals/types.js';
 type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
-const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate'] as const;
+const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate', '--out'] as const;
 const SWITCH_FLAGS = ['--cache', '--refresh', '--validate-judge'] as const;
 const SWITCH_KEYS = {
   '--cache': 'cache',
@@ -25,6 +25,7 @@ interface RawFlags {
   targets: string[];
   cases: string[];
   minPassRate: string | null;
+  out: string | null;
   cache: boolean;
   refresh: boolean;
   validateJudge: boolean;
@@ -35,6 +36,7 @@ function readFlags(argv: string[]): RawFlags {
     targets: [],
     cases: [],
     minPassRate: null,
+    out: null,
     cache: false,
     refresh: false,
     validateJudge: false,
@@ -53,6 +55,7 @@ function readFlags(argv: string[]): RawFlags {
       index += 1;
       if (arg === '--target') flags = { ...flags, targets: [...flags.targets, value] };
       else if (arg === '--case') flags = { ...flags, cases: [...flags.cases, value] };
+      else if (arg === '--out') flags = { ...flags, out: value };
       else flags = { ...flags, minPassRate: value };
     } else {
       throw new Error(`Unknown option ${arg}`);
@@ -152,5 +155,6 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     cache: flags.cache || flags.refresh,
     refresh: flags.refresh,
     minPassRate: parseMinPassRate(flags.minPassRate ?? env.EVAL_MIN_PASS_RATE),
+    reportFile: flags.out,
   };
 }

@@ -14,6 +14,8 @@ export interface CachingOptions {
   namespace: string;
   /** Skip reading what is stored; the fresh reply still overwrites it. */
   refresh: boolean;
+  /** Told once per lookup, `true` for a reply served from disk; lets a run count hits and misses. */
+  onLookup?: (hit: boolean) => void;
 }
 
 /**
@@ -66,8 +68,12 @@ export function cachingProvider(inner: ILLMProvider, options: CachingOptions): I
 
       if (!options.refresh) {
         const hit = readEntry(file);
-        if (hit) return hit;
+        if (hit) {
+          options.onLookup?.(true);
+          return hit;
+        }
       }
+      options.onLookup?.(false);
 
       const result = await inner.complete(messages, maxTokens, signal, completeOptions);
       mkdirSync(options.dir, { recursive: true });

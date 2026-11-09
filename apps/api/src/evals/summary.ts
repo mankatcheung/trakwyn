@@ -13,9 +13,16 @@ export interface RunSummary {
   byFeature: Partial<Record<EvalFeature, { total: number; passed: number }>>;
 }
 
+export interface CacheCounts {
+  hits: number;
+  misses: number;
+}
+
 export interface TargetRun {
   label: string;
   results: CaseResult[];
+  /** Present only when the run used `--cache`. */
+  cache?: CacheCounts;
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole);
@@ -81,9 +88,16 @@ function toolUseSection(runs: TargetRun[]): string[] {
   return lines.length === 0 ? [] : ['', 'Chat tool use:', ...lines];
 }
 
+/** `cached` when every reply came from disk: a replay's `0 ms` is not a fast model. */
+function latencyColumn(summary: RunSummary, cache: CacheCounts | undefined): string {
+  if (cache && cache.hits > 0 && cache.misses === 0) return 'cached';
+  return `${Math.round(summary.meanLatencyMs)} ms`;
+}
+
 /** A table with a row per target, then each failing case and why it failed. */
 export function formatReport(runs: TargetRun[]): string {
-  const rows = runs.map(({ label, results }) => {
+  const showCache = runs.some((run) => run.cache !== undefined);
+  const rows = runs.map(({ label, results, cache }) => {
     const summary = summarise(results);
     return [
       label,
@@ -93,7 +107,8 @@ export function formatReport(runs: TargetRun[]): string {
       promptColumn(results),
       `${summary.promptTokens}/${summary.completionTokens}`,
       `${summary.judgePromptTokens}/${summary.judgeCompletionTokens}`,
-      `${Math.round(summary.meanLatencyMs)} ms`,
+      ...(showCache ? [cache ? `${cache.hits}/${cache.misses}` : '-'] : []),
+      latencyColumn(summary, cache),
     ];
   });
   const header = [
@@ -104,6 +119,7 @@ export function formatReport(runs: TargetRun[]): string {
     'Prompts',
     'Tokens in/out',
     'Judge tokens in/out',
+    ...(showCache ? ['Cache hit/miss'] : []),
     'Mean latency',
   ];
   const widths = header.map((title, column) =>

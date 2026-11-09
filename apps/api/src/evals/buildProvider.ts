@@ -16,7 +16,7 @@ export const targetLabel = (target: EvalTarget): string =>
  */
 export function buildProvider(
   target: EvalTarget,
-  cache: { dir: string; refresh: boolean } | null,
+  cache: { dir: string; refresh: boolean; onLookup?: (hit: boolean) => void } | null,
 ): ILLMProvider {
   const entry = PROVIDER_REGISTRY[target.provider];
   if (!entry) {
