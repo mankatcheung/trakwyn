@@ -452,6 +452,69 @@ describe('OpenAICompatibleLLMProvider', () => {
     });
   });
 
+  describe('replayed tool-call messages (JEF-539)', () => {
+    const history: LLMMessage[] = [
+      { role: 'user', content: 'what applications do I have?' },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [{ id: 'call_1', name: 'list_applications', arguments: { status: 'applied' } }],
+      },
+      { role: 'tool', toolCallId: 'call_1', content: '[]' },
+    ];
+    const sentMessages = () =>
+      JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string).messages;
+    const expected = [
+      { role: 'user', content: 'what applications do I have?' },
+      {
+        role: 'assistant',
+        content: '',
+        tool_calls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'list_applications', arguments: '{"status":"applied"}' },
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: 'call_1', content: '[]' },
+    ];
+
+    it('sends an empty string, not null, as the content of a tool-call-only assistant message (complete)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ choices: [{ message: { content: 'none' } }] }) as never,
+      );
+      await new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL).complete(history);
+
+      expect(sentMessages()).toEqual(expected);
+    });
+
+    it('sends an empty string, not null, as the content of a tool-call-only assistant message (stream)', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        streamResponse(
+          'data: {"choices":[{"delta":{"content":"none"}}]}\n\ndata: [DONE]\n\n',
+        ) as never,
+      );
+      await collectStream(new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL), history, []);
+
+      expect(sentMessages()).toEqual(expected);
+    });
+
+    it('keeps the text when the assistant message has both text and tool calls', async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        jsonResponse({ choices: [{ message: { content: 'ok' } }] }) as never,
+      );
+      const withText: LLMMessage[] = [
+        history[0],
+        { ...history[1], content: 'Let me look.' },
+        history[2],
+      ];
+      await new OpenAICompatibleLLMProvider('k', BASE_URL, MODEL).complete(withText);
+
+      expect(sentMessages()[1].content).toBe('Let me look.');
+    });
+  });
+
   describe('reasoning (JEF-445)', () => {
     const okResponse = () => jsonResponse({ choices: [{ message: { content: 'ok' } }] }) as never;
     const body = () =>
