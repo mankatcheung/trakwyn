@@ -107,3 +107,22 @@ describe('cachingProvider', () => {
     expect(inner.complete).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('cachingProvider onLookup (JEF-542)', () => {
+  it('reports a miss, then a hit, then a miss again under refresh', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'eval-cache-'));
+    try {
+      const lookups: boolean[] = [];
+      const base = { dir, namespace: 'n', onLookup: (hit: boolean) => lookups.push(hit) };
+      const inner = makeLLMProvider('x');
+
+      await cachingProvider(inner, { ...base, refresh: false }).complete(messages);
+      await cachingProvider(inner, { ...base, refresh: false }).complete(messages);
+      await cachingProvider(inner, { ...base, refresh: true }).complete(messages);
+
+      expect(lookups).toEqual([false, true, false]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

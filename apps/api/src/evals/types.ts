@@ -84,4 +84,6 @@ export interface EvalConfig {
   refresh: boolean;
   /** Share of cases that must pass, per target, for the run to exit 0. */
   minPassRate: number;
+  /** Where to also write the final report, or null to only print it. */
+  reportFile: string | null;
 }
