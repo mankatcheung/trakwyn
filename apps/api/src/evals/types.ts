@@ -2,7 +2,8 @@ import type { ChatScript } from '#src/evals/chatScript.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 
 /** The AI features the eval covers. Add one here when a new feature gets cases. */
-export type EvalFeature = 'jobDescription' | 'resumeMatch' | 'resume' | 'coverLetter' | 'chat';
+export type EvalFeature =
+  'jobDescription' | 'resumeMatch' | 'resume' | 'coverLetter' | 'chat' | 'briefing';
 
 /** Features whose output is graded by a second model, so a case needs a judge. */
 export const JUDGED_FEATURES: readonly EvalFeature[] = ['resume', 'coverLetter'];

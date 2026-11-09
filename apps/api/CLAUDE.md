@@ -22,6 +22,7 @@ Each of these loads on its own when you work in its directory. Paths are under `
 | `infrastructure/llm/`               | hosted AI provider, reasoning tokens, spend guards, model circuits, model tiers               |
 | `use-cases/user/`                   | AI provider order                                                                             |
 | `use-cases/jobDescription/`         | cheaper AI calls: JSON-LD, posting cache, match reuse                                         |
+| `use-cases/companyBriefing/`        | company briefing: reading the company's own site, sources, the research cache                 |
 | `use-cases/prompts/`                | prompt modules and versions                                                                   |
 | `evals/`                            | running and extending the AI evals                                                            |
 

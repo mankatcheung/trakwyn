@@ -56,6 +56,8 @@ import { MemoryAiSpendCounter } from '#src/infrastructure/cache/MemoryAiSpendCou
 import { LimitEnforcingLLMProviderFactory } from '#src/infrastructure/llm/LimitEnforcingLLMProviderFactory.js';
 import { DocumentTextExtractor } from '#src/infrastructure/documents/DocumentTextExtractor.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
+import { CachedCompanyResearchSource } from '#src/infrastructure/companyResearch/CachedCompanyResearchSource.js';
+import { FetchCompanySiteResearchSource } from '#src/infrastructure/companyResearch/FetchCompanySiteResearchSource.js';
 import { CachedParsedPostingStore } from '#src/infrastructure/jobDescription/CachedParsedPostingStore.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
 import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
@@ -262,4 +264,17 @@ export const infrastructure = {
     lifetime: Lifetime.SINGLETON,
   }),
   parsedPostingCache: asClass(CachedParsedPostingStore, { lifetime: Lifetime.SINGLETON }),
+  // The briefing's research reads the company's own site (JEF-475). The cache
+  // wraps the fetcher here, inner/outer like the Cached*Repository family, so
+  // a caller cannot reach the fetch without the cache. asFunction, not
+  // asClass: the decorator takes the fetcher as `inner`, which is not a
+  // container registration.
+  companyResearchSource: asFunction(
+    ({ cache, outboundUrlPolicy }: Cradle) =>
+      new CachedCompanyResearchSource({
+        cache,
+        inner: new FetchCompanySiteResearchSource({ outboundUrlPolicy }),
+      }),
+    { lifetime: Lifetime.SINGLETON },
+  ),
 } satisfies NameAndRegistrationPair<Cradle>;

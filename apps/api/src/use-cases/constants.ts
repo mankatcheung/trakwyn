@@ -471,6 +471,8 @@ export const AI_PROMPT_INPUT = {
   COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** GenerateCompanyBriefingUseCase — the application's job description field. */
   COMPANY_BRIEFING_JOB_DESCRIPTION_MAX_CHARS: 3000,
+  /** GenerateCompanyBriefingUseCase — text read from the company's own pages, all sources together (JEF-475). */
+  COMPANY_BRIEFING_RESEARCH_MAX_CHARS: 6000,
   /** ComputeResumeMatchScoreUseCase — the application's job description field. */
   RESUME_MATCH_JOB_DESCRIPTION_MAX_CHARS: 6000,
   /** Cover letter + resume generation — the user's notes on the application (JEF-205). */

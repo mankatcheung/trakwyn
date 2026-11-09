@@ -12,7 +12,12 @@ import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBr
 import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
 import { companyBriefingPrompt } from '#src/use-cases/prompts/companyBriefing.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
-import { AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { AI_FEATURE, AI_PROMPT_INPUT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import type {
+  CompanyResearchPage,
+  ICompanyResearchSource,
+} from '#src/use-cases/ports/ICompanyResearchSource.js';
+import { fitResearch } from '#src/use-cases/companyBriefing/fitResearch.js';
 
 export interface GenerateCompanyBriefingInput {
   applicationId: string;
@@ -27,6 +32,7 @@ interface Deps {
   userRepository: IUserRepository;
   generateCompanyBriefingRateLimiter: IRateLimiter;
   companyBriefingRepository: ICompanyBriefingRepository;
+  companyResearchSource: ICompanyResearchSource;
   generateId: () => string;
   now: () => Date;
 }
@@ -61,9 +67,11 @@ export class GenerateCompanyBriefingUseCase {
     }
 
     const user = await this.deps.userRepository.findById(input.userId);
+    const research = await this.readCompanySite(app);
     const messages = companyBriefingPrompt.build({
       app,
       instructions,
+      research,
       customAiPrompt: user?.customAiPrompt,
     });
 
@@ -79,7 +87,32 @@ export class GenerateCompanyBriefingUseCase {
       id: this.deps.generateId(),
       applicationId: input.applicationId,
       content,
+      sources: (research ?? []).map(({ url, title }) => ({ url, title })),
       generatedAt: this.deps.now(),
     });
+  }
+
+  /**
+   * What the company's own site says, or `null` to brief from the model's
+   * general knowledge as before. Research is an improvement, not a
+   * precondition: a source that throws is treated like one with nothing, so
+   * an unreachable site never costs the user a briefing.
+   */
+  private async readCompanySite(app: {
+    company: string;
+    jobUrl: string | null;
+  }): Promise<CompanyResearchPage[] | null> {
+    try {
+      const found = await this.deps.companyResearchSource.research({
+        company: app.company,
+        jobUrl: app.jobUrl,
+      });
+      const pages = found
+        ? fitResearch(found.pages, AI_PROMPT_INPUT.COMPANY_BRIEFING_RESEARCH_MAX_CHARS)
+        : [];
+      return pages.length > 0 ? pages : null;
+    } catch {
+      return null;
+    }
   }
 }

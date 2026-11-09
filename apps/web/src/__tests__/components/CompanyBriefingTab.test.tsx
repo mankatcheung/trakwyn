@@ -39,6 +39,7 @@ const stored = {
   id: 'b1',
   applicationId: 'app-1',
   content: 'Company overview:\nAcme builds widgets.',
+  sources: [] as Array<{ url: string; title: string }>,
   generatedAt: '2026-08-01T09:00:00.000Z',
 };
 
@@ -94,6 +95,87 @@ describe('CompanyBriefingTab', () => {
     const paragraph = (await screen.findByText(/Acme builds widgets/)).closest('p')!;
     expect(paragraph.textContent).toBe('Company overview:\nAcme builds widgets.');
     expect(paragraph.parentElement?.parentElement?.className).toContain('whitespace-pre-line');
+  });
+
+  describe('sources (JEF-475)', () => {
+    const withSources = {
+      ...stored,
+      content: 'Acme sells payroll software [1].',
+      sources: [
+        { url: 'https://acme.com', title: 'Acme | Payroll' },
+        { url: 'https://acme.com/about', title: 'About Acme' },
+      ],
+    };
+
+    it('asks the API for the sources', async () => {
+      respondWith(null);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      await waitFor(() =>
+        expect(mockGqlRequest).toHaveBeenCalledWith(
+          expect.stringContaining('sources { url title }'),
+          { applicationId: 'app-1' },
+        ),
+      );
+    });
+
+    it('lists the pages the briefing was written from, numbered to match its citations', async () => {
+      respondWith(withSources);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      const list = await screen.findByTestId('briefing-sources');
+      const items = Array.from(list.querySelectorAll('li')).map((li) => li.textContent);
+      expect(items).toEqual(['[1]Acme | Payroll', '[2]About Acme']);
+    });
+
+    it('opens each source in a new tab without handing over the opener', async () => {
+      respondWith(withSources);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      const link = await screen.findByRole('link', { name: 'Acme | Payroll' });
+      expect(link).toHaveAttribute('href', 'https://acme.com');
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link.getAttribute('rel')).toContain('noopener');
+    });
+
+    it('does not turn a stored value that is not a web address into a link', async () => {
+      respondWith({
+        ...withSources,
+        sources: [{ url: 'javascript:alert(1)', title: 'Sneaky' }],
+      });
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      expect(await screen.findByText('Sneaky')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Sneaky' })).not.toBeInTheDocument();
+    });
+
+    it('says the briefing used the company’s website when it has sources', async () => {
+      respondWith(withSources);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      expect(await screen.findByText(/company's own website/)).toBeInTheDocument();
+      expect(screen.queryByText(/not live data/)).not.toBeInTheDocument();
+    });
+
+    it('keeps the general-knowledge disclaimer and shows no list when there are none', async () => {
+      respondWith(stored);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      expect(await screen.findByText(/not live data/)).toBeInTheDocument();
+      expect(screen.queryByTestId('briefing-sources')).not.toBeInTheDocument();
+    });
+
+    it('shows the sources of a freshly generated briefing', async () => {
+      respondWith(null, withSources);
+      render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
+
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /generate briefing/i })).toBeEnabled(),
+      );
+      fireEvent.click(screen.getByRole('button', { name: /generate briefing/i }));
+
+      expect(await screen.findByTestId('briefing-sources')).toBeInTheDocument();
+    });
   });
 
   it('says when the briefing was generated, so a stale one looks stale', async () => {

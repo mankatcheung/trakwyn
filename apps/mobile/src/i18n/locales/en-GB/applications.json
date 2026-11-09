@@ -102,6 +102,7 @@
     "regenerateConfirmTitle": "Regenerate briefing",
     "regenerateConfirm": "This will replace the current briefing. This cannot be undone.",
     "generatedAt": "Generated {{date}}",
+    "sources": "Sources",
     "couldNotGenerateTitle": "Could not generate"
   },
   "form": {

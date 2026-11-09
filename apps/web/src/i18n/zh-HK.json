@@ -801,6 +801,8 @@
   "companyBriefing.title": "公司簡報",
   "companyBriefing.copied": "✓ 已複製",
   "companyBriefing.disclaimer": "由 AI 根據通用知識生成——並非即時資料。面試前請核實任何具時效性嘅資訊。",
+  "companyBriefing.disclaimerWithSources": "由 AI 根據公司官網同通用知識生成。請查閱來源，面試前請核實任何具時效性嘅資訊。",
+  "companyBriefing.sources": "來源",
   "companyBriefing.generatedAt": "{{date}} 產生",
   "companyBriefing.regenerateConfirm": "確定重新產生？現有的簡報會被覆蓋。",
   "jdImport.autoFillTitle": "從職位自動填入",

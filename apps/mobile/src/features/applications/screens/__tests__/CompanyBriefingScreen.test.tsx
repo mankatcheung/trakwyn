@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import '../../../../i18n';
 
@@ -167,5 +167,69 @@ describe('CompanyBriefingScreen', () => {
     await fireEvent.press(getByTestId('generate-company-briefing-button'));
 
     expect(mutate).toHaveBeenCalled();
+  });
+
+  describe('sources (JEF-475)', () => {
+    const briefingWith = (sources: { url: string; title: string }[] | undefined) =>
+      mockedUseCompanyBriefing.mockReturnValue({
+        data: {
+          id: 'b1',
+          applicationId: 'app-1',
+          content: 'Acme sells payroll software [1].',
+          sources,
+          generatedAt: '2026-01-01T00:00:00.000Z',
+        },
+        isLoading: false,
+      } as never);
+
+    beforeEach(() => {
+      mockedUseGenerateCompanyBriefing.mockReturnValue({
+        mutate: jest.fn(),
+        isPending: false,
+      } as never);
+    });
+
+    it('lists the pages the briefing was written from, numbered to match its citations', async () => {
+      briefingWith([
+        { url: 'https://acme.com', title: 'Acme | Payroll' },
+        { url: 'https://acme.com/about', title: 'About Acme' },
+      ]);
+
+      const { getByText, getByTestId } = await renderScreen();
+
+      expect(getByTestId('company-briefing-sources')).toBeTruthy();
+      expect(getByText('Sources')).toBeTruthy();
+      expect(getByText('[1] Acme | Payroll')).toBeTruthy();
+      expect(getByText('[2] About Acme')).toBeTruthy();
+    });
+
+    it('opens a source in the browser', async () => {
+      const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+      briefingWith([{ url: 'https://acme.com', title: 'Acme | Payroll' }]);
+
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('company-briefing-source-1'));
+
+      expect(openURL).toHaveBeenCalledWith('https://acme.com');
+    });
+
+    it('does not open a stored value that is not a web address', async () => {
+      const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+      briefingWith([{ url: 'javascript:alert(1)', title: 'Sneaky' }]);
+
+      const { getByTestId } = await renderScreen();
+      await fireEvent.press(getByTestId('company-briefing-source-1'));
+
+      expect(openURL).not.toHaveBeenCalled();
+    });
+
+    it.each([[[]], [undefined]])('shows no sources section for %j', async (sources) => {
+      briefingWith(sources);
+
+      const { queryByTestId, getByText } = await renderScreen();
+
+      expect(getByText(/Acme sells payroll software/)).toBeTruthy();
+      expect(queryByTestId('company-briefing-sources')).toBeNull();
+    });
   });
 });

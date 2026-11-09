@@ -5,6 +5,10 @@ const BRIEFING_FIELDS = `
   id
   applicationId
   content
+  sources {
+    url
+    title
+  }
   generatedAt
 `;
 

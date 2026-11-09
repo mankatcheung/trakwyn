@@ -11,7 +11,7 @@ import { Button, Card } from '@trakwyn/ui';
 import { AiActionBar } from '#/components/ai/AiActionBar';
 import { AiPromptInput } from '#/components/ai/AiPromptInput';
 
-const BRIEFING_FIELDS = `id applicationId content generatedAt`;
+const BRIEFING_FIELDS = `id applicationId content sources { url title } generatedAt`;
 
 const COMPANY_BRIEFING_QUERY = `
   query CompanyBriefing($applicationId: ID!) {
@@ -31,7 +31,16 @@ const BRIEFING_EXAMPLES = [
   'aiHelper.briefingExample3',
 ] as const;
 
-type Briefing = { id: string; applicationId: string; content: string; generatedAt: string };
+type Briefing = {
+  id: string;
+  applicationId: string;
+  content: string;
+  sources: Array<{ url: string; title: string }>;
+  generatedAt: string;
+};
+
+/** Only a web address becomes a link: a stored value is never trusted to be a safe `href`. */
+const isWebUrl = (url: string) => /^https?:\/\//i.test(url);
 
 export function CompanyBriefingTab({ applicationId }: { applicationId: string }) {
   const { t, formatDate } = useLocale();
@@ -52,6 +61,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
       }),
   });
   const briefing = data?.companyBriefing ?? null;
+  const sources = briefing?.sources ?? [];
 
   const generate = useMutation({
     mutationFn: () =>
@@ -142,12 +152,45 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
               </span>
             </Button>
           </div>
-          <p className="text-xs text-gray-400">{t('companyBriefing.disclaimer')}</p>
+          <p className="text-xs text-gray-400">
+            {t(
+              sources.length > 0
+                ? 'companyBriefing.disclaimerWithSources'
+                : 'companyBriefing.disclaimer',
+            )}
+          </p>
           {/* Briefings stored before markdown were "Header:\nbody" with single
               newlines, which markdown folds into one run-on line. */}
           <div className="text-gray-800 dark:text-gray-200 [&_p]:whitespace-pre-line">
             <Markdown content={briefing.content} />
           </div>
+          {sources.length > 0 && (
+            <div data-testid="briefing-sources">
+              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {t('companyBriefing.sources')}
+              </h4>
+              {/* Numbered to match the [1], [2] the briefing cites. */}
+              <ol className="mt-1 space-y-0.5 text-sm">
+                {sources.map((source, index) => (
+                  <li key={source.url} className="flex gap-1.5">
+                    <span className="text-gray-400">[{index + 1}]</span>
+                    {isWebUrl(source.url) ? (
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {source.title}
+                      </a>
+                    ) : (
+                      <span className="truncate">{source.title}</span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </Card>
       )}
     </div>

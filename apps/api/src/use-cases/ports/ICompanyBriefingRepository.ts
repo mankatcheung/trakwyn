@@ -1,9 +1,13 @@
-import type { CompanyBriefing } from '#src/domain/companyBriefing/CompanyBriefing.js';
+import type {
+  CompanyBriefing,
+  CompanySource,
+} from '#src/domain/companyBriefing/CompanyBriefing.js';
 
 export interface UpsertCompanyBriefingData {
   id: string;
   applicationId: string;
   content: string;
+  sources: CompanySource[];
   generatedAt: Date;
 }
 

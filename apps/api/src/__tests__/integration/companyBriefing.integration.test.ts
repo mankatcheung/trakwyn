@@ -21,6 +21,7 @@ const BRIEFING_QUERY = `
       id
       applicationId
       content
+      sources { url title }
       generatedAt
     }
   }
@@ -37,7 +38,13 @@ interface GraphQLResponse<T> {
   errors?: Array<{ message: string; extensions?: { code?: string } }>;
 }
 
-type Briefing = { id: string; applicationId: string; content: string; generatedAt: string } | null;
+type Briefing = {
+  id: string;
+  applicationId: string;
+  content: string;
+  sources: Array<{ url: string; title: string }>;
+  generatedAt: string;
+} | null;
 
 /**
  * The model call itself is not exercised here — there is no provider to call
@@ -105,6 +112,7 @@ describe('company briefing integration', () => {
       id: randomUUID(),
       applicationId,
       content: 'Company overview…',
+      sources: [],
       generatedAt: new Date('2026-08-01T00:00:00.000Z'),
     });
 
@@ -116,6 +124,48 @@ describe('company briefing integration', () => {
     expect(briefing!.generatedAt).toBe('2026-08-01T00:00:00.000Z');
   });
 
+  it('serves the sources a briefing was written from, in the order they are cited', async () => {
+    const token = await registerAndLogin();
+    const applicationId = await createApplication(token);
+    const sources = [
+      { url: 'https://acme.com', title: 'Acme | Payroll' },
+      { url: 'https://acme.com/about', title: 'About Acme' },
+    ];
+
+    await briefingRepository().upsert({
+      id: randomUUID(),
+      applicationId,
+      content: 'Acme sells payroll software [1].',
+      sources,
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+
+    const res = await authedInject(token, BRIEFING_QUERY, { applicationId });
+    const body = res.json() as GraphQLResponse<{ companyBriefing: Briefing }>;
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data!.companyBriefing!.sources).toEqual(sources);
+  });
+
+  it('serves an empty list, not null, for a briefing with no sources', async () => {
+    const token = await registerAndLogin();
+    const applicationId = await createApplication(token);
+
+    await briefingRepository().upsert({
+      id: randomUUID(),
+      applicationId,
+      content: 'From general knowledge.',
+      sources: [],
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+
+    const res = await authedInject(token, BRIEFING_QUERY, { applicationId });
+    const body = res.json() as GraphQLResponse<{ companyBriefing: Briefing }>;
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data!.companyBriefing!.sources).toEqual([]);
+  });
+
   it('regenerating replaces the briefing rather than adding a second', async () => {
     const token = await registerAndLogin();
     const applicationId = await createApplication(token);
@@ -124,12 +174,14 @@ describe('company briefing integration', () => {
       id: randomUUID(),
       applicationId,
       content: 'First',
+      sources: [],
       generatedAt: new Date('2026-08-01T00:00:00.000Z'),
     });
     await briefingRepository().upsert({
       id: randomUUID(),
       applicationId,
       content: 'Second',
+      sources: [],
       generatedAt: new Date('2026-08-02T00:00:00.000Z'),
     });
 
@@ -148,6 +200,7 @@ describe('company briefing integration', () => {
       id: randomUUID(),
       applicationId,
       content: 'Private research',
+      sources: [],
       generatedAt: new Date(),
     });
 
@@ -166,6 +219,7 @@ describe('company briefing integration', () => {
       id: randomUUID(),
       applicationId,
       content: 'Overview',
+      sources: [],
       generatedAt: new Date(),
     });
 

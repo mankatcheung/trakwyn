@@ -33,7 +33,7 @@ describe('the case list', () => {
     expect(JOB_DESCRIPTION_CASES.length).toBeGreaterThan(0);
     expect(RESUME_MATCH_CASES.length).toBeGreaterThan(0);
     expect(new Set(ALL_CASES.map((evalCase) => evalCase.feature))).toEqual(
-      new Set(['jobDescription', 'resumeMatch', 'resume', 'coverLetter', 'chat']),
+      new Set(['jobDescription', 'resumeMatch', 'resume', 'coverLetter', 'chat', 'briefing']),
     );
   });
 

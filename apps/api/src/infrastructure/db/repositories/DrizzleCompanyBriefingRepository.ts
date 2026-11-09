@@ -26,6 +26,7 @@ export class DrizzleCompanyBriefingRepository implements ICompanyBriefingReposit
       id: row.id,
       applicationId: row.applicationId,
       content: row.content,
+      sources: row.sources,
       generatedAt: row.generatedAt,
     };
   }
@@ -47,7 +48,7 @@ export class DrizzleCompanyBriefingRepository implements ICompanyBriefingReposit
       .values(data)
       .onConflictDoUpdate({
         target: companyBriefing.applicationId,
-        set: { content: data.content, generatedAt: data.generatedAt },
+        set: { content: data.content, sources: data.sources, generatedAt: data.generatedAt },
       })
       .returning();
     return this.toEntity(row);
