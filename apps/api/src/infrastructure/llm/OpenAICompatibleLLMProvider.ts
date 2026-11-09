@@ -290,7 +290,9 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
       if (m.role === 'assistant' && m.toolCalls?.length) {
         return {
           role: 'assistant',
-          content: m.content || null,
+          // An empty string, not null: Workers AI rejects null with a 400
+          // (code 5006), and OpenAI-compatible APIs accept "" (JEF-539).
+          content: m.content || '',
           tool_calls: m.toolCalls.map((tc) => ({
             id: tc.id,
             type: 'function',
