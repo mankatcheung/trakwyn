@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
+import type { ICompanyResearchSource } from '#src/use-cases/ports/ICompanyResearchSource.js';
 import { GenerateCompanyBriefingUseCase } from '#src/use-cases/companyBriefing/GenerateCompanyBriefingUseCase.js';
 import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import {
   makeCompanyBriefingRepository,
+  makeCompanyResearchSource,
   makeLLMProvider,
   makeLLMProviderFactory,
 } from '#src/__tests__/helpers/mocks/llm.js';
@@ -30,6 +32,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -60,6 +63,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -92,6 +96,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -123,6 +128,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -152,6 +158,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -188,6 +195,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -221,6 +229,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({
@@ -250,6 +259,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     })
@@ -275,6 +285,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     })
@@ -299,6 +310,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     })
@@ -322,6 +334,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository,
       generateCompanyBriefingRateLimiter,
       companyBriefingRepository: makeCompanyBriefingRepository(),
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     })
@@ -347,6 +360,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
       generateCompanyBriefingRateLimiter: makeRateLimiter(),
       companyBriefingRepository,
+      companyResearchSource: makeCompanyResearchSource(),
       generateId: () => 'briefing-1',
       now: () => new Date('2026-08-21T00:00:00.000Z'),
     }).execute({ applicationId: 'app-1', userId: 'user-1' });
@@ -355,6 +369,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
       id: 'briefing-1',
       applicationId: 'app-1',
       content: BRIEFING,
+      sources: [],
       generatedAt: new Date('2026-08-21T00:00:00.000Z'),
     });
   });
@@ -375,12 +390,176 @@ describe('GenerateCompanyBriefingUseCase', () => {
         userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
         generateCompanyBriefingRateLimiter: makeRateLimiter(),
         companyBriefingRepository,
+        companyResearchSource: makeCompanyResearchSource(),
         generateId: () => 'briefing-1',
         now: () => new Date(),
       }).execute({ applicationId: 'app-1', userId: 'user-1' }),
     ).rejects.toThrow();
 
     expect(companyBriefingRepository.upsert).not.toHaveBeenCalled();
+  });
+
+  describe('company site research (JEF-475)', () => {
+    const PAGES = [
+      { url: 'https://acme.com', title: 'Acme | Payroll', text: 'Acme sells payroll software.' },
+      { url: 'https://acme.com/about', title: 'About Acme', text: 'Founded in Leeds in 2015.' },
+    ];
+
+    function build(research: ICompanyResearchSource) {
+      const llmProvider = makeLLMProvider(BRIEFING);
+      const companyBriefingRepository = makeCompanyBriefingRepository();
+      const useCase = new GenerateCompanyBriefingUseCase({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(
+            makeApplication({
+              userId: 'user-1',
+              company: 'Acme',
+              jobUrl: 'https://careers.acme.com/jobs/42',
+            }),
+          ),
+        }),
+        llmProviderFactory: makeLLMProviderFactory({
+          forUser: vi.fn().mockResolvedValue(llmProvider),
+        }),
+        userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
+        generateCompanyBriefingRateLimiter: makeRateLimiter(),
+        companyBriefingRepository,
+        companyResearchSource: research,
+        generateId: () => 'briefing-1',
+        now: () => new Date('2026-08-21T00:00:00.000Z'),
+      });
+      return { useCase, llmProvider, companyBriefingRepository };
+    }
+    const userMessage = (llmProvider: ReturnType<typeof makeLLMProvider>) => {
+      const [messages] = (llmProvider.complete as ReturnType<typeof vi.fn>).mock.calls[0] as [
+        Array<{ role: string; content: string }>,
+      ];
+      return messages.find((m) => m.role === 'user')!.content;
+    };
+
+    it('asks for the company named on the application and its posting link', async () => {
+      const research = makeCompanyResearchSource();
+      const { useCase } = build(research);
+
+      await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(research.research).toHaveBeenCalledWith({
+        company: 'Acme',
+        jobUrl: 'https://careers.acme.com/jobs/42',
+      });
+    });
+
+    it('sends the pages to the model numbered and fenced as untrusted content', async () => {
+      const { useCase, llmProvider } = build(
+        makeCompanyResearchSource({ research: vi.fn().mockResolvedValue({ pages: PAGES }) }),
+      );
+
+      await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      const content = userMessage(llmProvider);
+      expect(content).toContain('[1] Acme | Payroll (https://acme.com)');
+      expect(content).toContain('[2] About Acme (https://acme.com/about)');
+      expect(content).toContain('Acme sells payroll software.');
+      expect(content.indexOf('<untrusted_external_content>')).toBeLessThan(
+        content.indexOf('Acme sells payroll software.'),
+      );
+    });
+
+    it('saves the pages it sent as the briefing sources, in the order numbered', async () => {
+      const { useCase, companyBriefingRepository } = build(
+        makeCompanyResearchSource({ research: vi.fn().mockResolvedValue({ pages: PAGES }) }),
+      );
+
+      const result = await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(result.sources).toEqual([
+        { url: 'https://acme.com', title: 'Acme | Payroll' },
+        { url: 'https://acme.com/about', title: 'About Acme' },
+      ]);
+      expect(companyBriefingRepository.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ sources: result.sources }),
+      );
+    });
+
+    it('does not save page text with the sources', async () => {
+      const { useCase } = build(
+        makeCompanyResearchSource({ research: vi.fn().mockResolvedValue({ pages: PAGES }) }),
+      );
+
+      const result = await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(JSON.stringify(result.sources)).not.toContain('payroll software');
+    });
+
+    it('lists only the sources that fit the budget, so none is cited that the model never saw', async () => {
+      const big = (n: number) => ({
+        url: `https://acme.com/${n}`,
+        title: `Page ${n}`,
+        text: 'x'.repeat(AI_PROMPT_INPUT.COMPANY_BRIEFING_RESEARCH_MAX_CHARS),
+      });
+      const { useCase, llmProvider } = build(
+        makeCompanyResearchSource({
+          research: vi.fn().mockResolvedValue({ pages: [big(1), big(2)] }),
+        }),
+      );
+
+      const result = await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(result.sources).toEqual([{ url: 'https://acme.com/1', title: 'Page 1' }]);
+      expect(userMessage(llmProvider)).not.toContain('[2]');
+    });
+
+    it('briefs from general knowledge with no sources when nothing could be read', async () => {
+      const { useCase, llmProvider } = build(makeCompanyResearchSource());
+
+      const result = await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(result.sources).toEqual([]);
+      expect(userMessage(llmProvider)).not.toContain('Company website pages');
+    });
+
+    it('still produces a briefing when the research source throws', async () => {
+      const { useCase, llmProvider } = build(
+        makeCompanyResearchSource({ research: vi.fn().mockRejectedValue(new Error('cache down')) }),
+      );
+
+      const result = await useCase.execute({ applicationId: 'app-1', userId: 'user-1' });
+
+      expect(result.content).toBe(BRIEFING);
+      expect(result.sources).toEqual([]);
+      expect(llmProvider.complete).toHaveBeenCalledOnce();
+    });
+
+    it('does not read the site for someone else’s application', async () => {
+      const research = makeCompanyResearchSource();
+      const { useCase } = build(research);
+
+      await expect(
+        useCase.execute({ applicationId: 'app-1', userId: 'someone-else' }),
+      ).rejects.toThrow();
+
+      expect(research.research).not.toHaveBeenCalled();
+    });
+
+    it('does not read the site when no AI key is set', async () => {
+      const research = makeCompanyResearchSource();
+      const noKey = new GenerateCompanyBriefingUseCase({
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        }),
+        llmProviderFactory: makeLLMProviderFactory({ forUser: vi.fn().mockResolvedValue(null) }),
+        userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
+        generateCompanyBriefingRateLimiter: makeRateLimiter(),
+        companyBriefingRepository: makeCompanyBriefingRepository(),
+        companyResearchSource: research,
+        generateId: () => 'briefing-1',
+        now: () => new Date(),
+      });
+
+      await expect(noKey.execute({ applicationId: 'app-1', userId: 'user-1' })).rejects.toThrow();
+
+      expect(research.research).not.toHaveBeenCalled();
+    });
   });
 
   describe('user instructions (JEF-507)', () => {
@@ -396,6 +575,7 @@ describe('GenerateCompanyBriefingUseCase', () => {
         userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
         generateCompanyBriefingRateLimiter: makeRateLimiter(),
         companyBriefingRepository: makeCompanyBriefingRepository(),
+        companyResearchSource: makeCompanyResearchSource(),
         generateId: () => 'briefing-1',
         now: () => new Date('2026-08-21T00:00:00.000Z'),
       });

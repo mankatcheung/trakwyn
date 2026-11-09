@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AiActionBar } from '../../ai/components/AiActionBar';
@@ -10,6 +10,9 @@ import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
+/** Only a web address is openable: a stored value is never trusted to be a safe link. */
+const isWebUrl = (url: string) => /^https?:\/\//i.test(url);
+
 export function CompanyBriefingScreen() {
   const { t } = useTranslation('applications');
   const { colors } = useTheme();
@@ -19,6 +22,7 @@ export function CompanyBriefingScreen() {
   const generate = useGenerateCompanyBriefing(applicationId);
 
   const [instructions, setInstructions] = useState('');
+  const sources = briefing?.sources ?? [];
 
   const onGenerate = () => {
     const proceed = () =>
@@ -69,6 +73,24 @@ export function CompanyBriefingScreen() {
             })}
           </Text>
           <Markdown content={briefing.content} />
+          {sources.length > 0 ? (
+            <View style={styles.sources} testID="company-briefing-sources">
+              <Text style={styles.sourcesTitle}>{t('companyBriefing.sources')}</Text>
+              {sources.map((source, index) => (
+                <Pressable
+                  key={source.url}
+                  accessibilityRole="link"
+                  disabled={!isWebUrl(source.url)}
+                  onPress={() => void Linking.openURL(source.url)}
+                  testID={`company-briefing-source-${index + 1}`}
+                >
+                  <Text style={styles.source} numberOfLines={1}>
+                    [{index + 1}] {source.title}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
       ) : null}
     </ScrollView>
@@ -89,5 +111,8 @@ function createStyles(colors: ThemeColors) {
     },
     description: { fontSize: 14, color: colors.textMuted },
     generatedAt: { fontSize: 12, color: colors.textFaint },
+    sources: { gap: 4, paddingTop: 4 },
+    sourcesTitle: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+    source: { fontSize: 14, color: colors.primary },
   });
 }

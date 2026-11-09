@@ -353,27 +353,6 @@ export const resumeAtsScore = pgTable(
   ],
 );
 
-export const companyBriefing = pgTable(
-  'CompanyBriefing',
-  {
-    id: text('id').primaryKey(),
-    // Unique, not just indexed: one briefing per application is the rule, and
-    // regenerating replaces it. Enforced here so no code path can create a
-    // second one by forgetting to delete the first.
-    applicationId: text('applicationId')
-      .notNull()
-      .unique()
-      .references(() => jobApplication.id, { onDelete: 'cascade' }),
-    content: text('content').notNull(),
-    generatedAt: timestamp('generatedAt', TIMESTAMP)
-      .notNull()
-      .$defaultFn(() => new Date()),
-  },
-  // No separate index: `.unique()` on applicationId already creates one, and
-  // every read here is a lookup by that column.
-  () => [],
-);
-
 export const contact = pgTable(
   'Contact',
   {

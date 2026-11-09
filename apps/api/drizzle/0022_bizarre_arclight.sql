@@ -1,0 +1,1 @@
+ALTER TABLE "CompanyBriefing" ADD COLUMN "sources" jsonb DEFAULT '[]'::jsonb NOT NULL;

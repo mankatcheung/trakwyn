@@ -801,6 +801,8 @@
   "companyBriefing.title": "公司简报",
   "companyBriefing.copied": "✓ 已复制",
   "companyBriefing.disclaimer": "由 AI 基于通用知识生成——并非实时数据。面试前请核实任何具有时效性的信息。",
+  "companyBriefing.disclaimerWithSources": "由 AI 根据公司官网和通用知识生成。请查看来源，面试前请核实任何具有时效性的信息。",
+  "companyBriefing.sources": "来源",
   "companyBriefing.generatedAt": "{{date}} 生成",
   "companyBriefing.regenerateConfirm": "确定重新生成？现有的简报会被覆盖。",
   "jdImport.autoFillTitle": "从职位发布自动填充",

@@ -3,7 +3,7 @@
  * for an LLM endpoint (every AI feature will keep POSTing there, with a
  * credential attached) than for a one-off job-posting fetch.
  */
-export type OutboundUrlPurpose = 'llm-provider' | 'job-posting';
+export type OutboundUrlPurpose = 'llm-provider' | 'job-posting' | 'company-research';
 
 /**
  * Decides whether the API server may open a connection to a URL a user

@@ -33,6 +33,7 @@ describe('DrizzleCompanyBriefingRepository', () => {
       id: 'b1',
       applicationId: 'app-1',
       content: 'Overview…',
+      sources: [],
       generatedAt: new Date('2026-08-01T00:00:00.000Z'),
     });
 
@@ -41,11 +42,59 @@ describe('DrizzleCompanyBriefingRepository', () => {
     expect(found?.generatedAt).toEqual(new Date('2026-08-01T00:00:00.000Z'));
   });
 
+  it('stores the sources with the briefing and reads them back in order', async () => {
+    const sources = [
+      { url: 'https://acme.com', title: 'Acme | Payroll' },
+      { url: 'https://acme.com/about', title: 'About Acme' },
+    ];
+    await repo.upsert({
+      id: 'b1',
+      applicationId: 'app-1',
+      content: 'Overview [1] [2]',
+      sources,
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+
+    expect((await repo.findByApplicationId('app-1'))?.sources).toEqual(sources);
+  });
+
+  it('regenerating replaces the sources too, so a briefing never keeps the last one’s pages', async () => {
+    await repo.upsert({
+      id: 'b1',
+      applicationId: 'app-1',
+      content: 'First',
+      sources: [{ url: 'https://acme.com', title: 'Acme' }],
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
+    await repo.upsert({
+      id: 'b2',
+      applicationId: 'app-1',
+      content: 'Second',
+      sources: [],
+      generatedAt: new Date('2026-08-02T00:00:00.000Z'),
+    });
+
+    expect((await repo.findByApplicationId('app-1'))?.sources).toEqual([]);
+  });
+
+  it('reads a briefing saved before sources existed as having none', async () => {
+    // The column default is what a row written before the migration gets.
+    await db.db.insert(companyBriefing).values({
+      id: 'old',
+      applicationId: 'app-1',
+      content: 'Written before research',
+      generatedAt: new Date('2026-07-01T00:00:00.000Z'),
+    });
+
+    expect((await repo.findByApplicationId('app-1'))?.sources).toEqual([]);
+  });
+
   it('regenerating replaces the row instead of adding a second one', async () => {
     await repo.upsert({
       id: 'b1',
       applicationId: 'app-1',
       content: 'First',
+      sources: [],
       generatedAt: new Date('2026-08-01T00:00:00.000Z'),
     });
     // A regenerate arrives with a fresh id — the conflict target is
@@ -54,6 +103,7 @@ describe('DrizzleCompanyBriefingRepository', () => {
       id: 'b2',
       applicationId: 'app-1',
       content: 'Second',
+      sources: [],
       generatedAt: new Date('2026-08-02T00:00:00.000Z'),
     });
 
@@ -67,12 +117,14 @@ describe('DrizzleCompanyBriefingRepository', () => {
       id: 'b1',
       applicationId: 'app-1',
       content: 'Acme',
+      sources: [],
       generatedAt: new Date(),
     });
     await repo.upsert({
       id: 'b2',
       applicationId: 'app-2',
       content: 'Globex',
+      sources: [],
       generatedAt: new Date(),
     });
 
@@ -85,6 +137,7 @@ describe('DrizzleCompanyBriefingRepository', () => {
       id: 'b1',
       applicationId: 'app-2',
       content: 'Globex',
+      sources: [],
       generatedAt: new Date(),
     });
 

@@ -829,6 +829,8 @@
   "companyBriefing.title": "Company briefing",
   "companyBriefing.copied": "✓ Copied",
   "companyBriefing.disclaimer": "AI-generated from general knowledge — not live data. Verify anything time-sensitive before your interview.",
+  "companyBriefing.disclaimerWithSources": "AI-written from the company's own website and general knowledge. Check the sources, and verify anything time-sensitive before your interview.",
+  "companyBriefing.sources": "Sources",
   "companyBriefing.generatedAt": "Generated {{date}}",
   "companyBriefing.regenerateConfirm": "Replace the existing briefing? The current one will be overwritten.",
   "jdImport.autoFillTitle": "Auto-fill from job posting",

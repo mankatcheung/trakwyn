@@ -102,6 +102,7 @@
     "regenerateConfirmTitle": "重新產生簡報",
     "regenerateConfirm": "這將取代目前的簡報，且無法復原。",
     "generatedAt": "產生於 {{date}}",
+    "sources": "來源",
     "couldNotGenerateTitle": "無法產生"
   },
   "form": {

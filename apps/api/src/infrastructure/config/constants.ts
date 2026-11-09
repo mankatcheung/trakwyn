@@ -537,6 +537,56 @@ export const JOB_POSTING_FETCH = {
   MIN_CONTENT_REGION_CHARS: 200,
 } as const;
 
+/** Reading the company's own site for a briefing (JEF-475). Shared between users, keyed on the site's host. */
+export const COMPANY_RESEARCH = {
+  USER_AGENT: JOB_POSTING_FETCH.USER_AGENT,
+  TIMEOUT_MS: 8_000,
+  MAX_BYTES: 512 * 1024,
+  /** Each hop is re-checked against the outbound URL policy. */
+  MAX_REDIRECTS: 3,
+  /** Per page, after tags are removed; the use case caps the total again. */
+  MAX_CHARS_PER_PAGE: 3_000,
+  /** A page with less text than this is a shell (a script-rendered homepage), not something to cite. */
+  MIN_PAGE_CHARS: 200,
+  /** Tried in order after the homepage; the first that answers with text is kept. */
+  ABOUT_PATHS: ['/about', '/about-us', '/company', '/our-story'],
+  /** Subdomains a company hosts its hiring on; the company's site is the domain beneath. */
+  HIRING_SUBDOMAINS: ['careers', 'jobs', 'work', 'join', 'apply', 'hire', 'www'],
+  /**
+   * Hosts that carry many companies' postings, so the posting link says
+   * nothing about the company's own site. Matched on the host or any parent.
+   */
+  JOB_BOARD_HOSTS: [
+    'linkedin.com',
+    'indeed.com',
+    'glassdoor.com',
+    'greenhouse.io',
+    'lever.co',
+    'ashbyhq.com',
+    'workable.com',
+    'smartrecruiters.com',
+    'myworkdayjobs.com',
+    'bamboohr.com',
+    'recruitee.com',
+    'jobvite.com',
+    'icims.com',
+    'ziprecruiter.com',
+    'monster.com',
+    'reed.co.uk',
+    'totaljobs.com',
+    'wellfound.com',
+    'angel.co',
+    'ycombinator.com',
+    'dice.com',
+    'welcometothejungle.com',
+  ],
+  KEY_PREFIX: 'company-research',
+  /** Bump when what is read or how it is cleaned changes, so old entries are not served. */
+  VERSION: 'v1',
+  /** A company's about page changes rarely; a week keeps a briefing roughly current. */
+  TTL_MS: 7 * 24 * 60 * 60 * 1000,
+} as const;
+
 /** Parsed postings shared between users, keyed on the fetched page's text (JEF-450). */
 export const PARSED_POSTING_CACHE = {
   KEY_PREFIX: 'parsed-posting',

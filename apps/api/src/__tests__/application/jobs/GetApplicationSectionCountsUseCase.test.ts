@@ -16,6 +16,7 @@ const BRIEFING: CompanyBriefing = {
   id: 'briefing-1',
   applicationId: 'app-1',
   content: 'About the company',
+  sources: [],
   generatedAt: new Date('2024-01-01'),
 };
 

@@ -1,8 +1,10 @@
 import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
+import { GenerateCompanyBriefingUseCase } from '#src/use-cases/companyBriefing/GenerateCompanyBriefingUseCase.js';
 import { GenerateCoverLetterUseCase } from '#src/use-cases/coverLetter/GenerateCoverLetterUseCase.js';
 import { GenerateResumeUseCase } from '#src/use-cases/resume/GenerateResumeUseCase.js';
 import { ParseJobDescriptionUseCase } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
+import type { BriefingFixture } from '#src/evals/fixtures/briefingFixtures.js';
 import type { GenerationFixture } from '#src/evals/fixtures/generationFixture.js';
 import type { ResumeMatchView } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import type { ParsedJobDescription } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
@@ -167,4 +169,39 @@ export async function generateCoverLetter(
     applicationId: EVAL_APPLICATION_ID,
     userId: EVAL_USER_ID,
   });
+}
+
+type BriefingDeps = ConstructorParameters<typeof GenerateCompanyBriefingUseCase>[0];
+
+/**
+ * The real briefing use case and prompt, with the company's pages handed in
+ * as the research source does (JEF-475). Nothing is stored; the reply is the
+ * briefing the user would read.
+ */
+export async function generateBriefing(
+  provider: ILLMProvider,
+  fixture: BriefingFixture,
+): Promise<string> {
+  const deps = {
+    llmProviderFactory: factoryFor(provider),
+    applicationRepository: {
+      findById: async () => ({ id: EVAL_APPLICATION_ID, userId: EVAL_USER_ID, ...fixture.app }),
+    },
+    userRepository: {
+      findById: async () => ({ id: EVAL_USER_ID, customAiPrompt: null }),
+    },
+    generateCompanyBriefingRateLimiter: unlimited,
+    companyBriefingRepository: { upsert: async <T>(briefing: T): Promise<T> => briefing },
+    companyResearchSource: {
+      research: async () => (fixture.pages.length > 0 ? { pages: fixture.pages } : null),
+    },
+    generateId: () => 'eval-briefing',
+    now: () => new Date(),
+  } as unknown as BriefingDeps;
+
+  const briefing = await new GenerateCompanyBriefingUseCase(deps).execute({
+    applicationId: EVAL_APPLICATION_ID,
+    userId: EVAL_USER_ID,
+  });
+  return briefing.content;
 }

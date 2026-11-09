@@ -293,6 +293,7 @@ import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEve
 import type { ParseJobDescriptionUseCase } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
 import type { IJobPostingSourceResolver } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
 import type { IParsedPostingCache } from '#src/use-cases/ports/IParsedPostingCache.js';
+import type { ICompanyResearchSource } from '#src/use-cases/ports/ICompanyResearchSource.js';
 import type { GenerateCoverLetterUseCase } from '#src/use-cases/coverLetter/GenerateCoverLetterUseCase.js';
 import type { GenerateCompanyBriefingUseCase } from '#src/use-cases/companyBriefing/GenerateCompanyBriefingUseCase.js';
 import type { GetCompanyBriefingUseCase } from '#src/use-cases/companyBriefing/GetCompanyBriefingUseCase.js';
@@ -720,6 +721,7 @@ export interface Cradle {
   pdfRenderer: IPdfRenderer;
   jobPostingSourceResolver: IJobPostingSourceResolver;
   parsedPostingCache: IParsedPostingCache;
+  companyResearchSource: ICompanyResearchSource;
   parseJobDescriptionUseCase: ParseJobDescriptionUseCase;
   generateCoverLetterUseCase: GenerateCoverLetterUseCase;
   generateCompanyBriefingUseCase: GenerateCompanyBriefingUseCase;

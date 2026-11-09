@@ -1,3 +1,4 @@
+import { BRIEFING_CASES } from '#src/evals/cases/briefing.js';
 import { CHAT_CASES } from '#src/evals/cases/chat.js';
 import { GENERATION_CASES } from '#src/evals/cases/generation.js';
 import { JOB_DESCRIPTION_CASES } from '#src/evals/cases/jobDescription.js';
@@ -9,6 +10,7 @@ export const ALL_CASES: EvalCase[] = [
   ...RESUME_MATCH_CASES,
   ...GENERATION_CASES,
   ...CHAT_CASES,
+  ...BRIEFING_CASES,
 ];
 
 /**

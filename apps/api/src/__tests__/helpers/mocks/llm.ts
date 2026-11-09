@@ -8,6 +8,7 @@
 
 import { vi } from 'vitest';
 import type { ICompanyBriefingRepository } from '#src/use-cases/ports/ICompanyBriefingRepository.js';
+import type { ICompanyResearchSource } from '#src/use-cases/ports/ICompanyResearchSource.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js';
@@ -80,5 +81,13 @@ export const makeCompanyBriefingRepository = (
 ): ICompanyBriefingRepository => ({
   findByApplicationId: vi.fn().mockResolvedValue(null),
   upsert: vi.fn().mockImplementation((data) => Promise.resolve({ ...data })),
+  ...overrides,
+});
+
+/** Reads nothing by default, which is how a briefing behaved before research existed. */
+export const makeCompanyResearchSource = (
+  overrides?: Partial<ICompanyResearchSource>,
+): ICompanyResearchSource => ({
+  research: vi.fn().mockResolvedValue(null),
   ...overrides,
 });
