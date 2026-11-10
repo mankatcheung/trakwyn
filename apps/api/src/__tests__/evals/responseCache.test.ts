@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -92,6 +92,49 @@ describe('cachingProvider', () => {
     const retry = await cached.complete(messages);
 
     expect(retry.content).toBe('ok');
+  });
+
+  it('writes each entry as indented JSON so a person can read the file', async () => {
+    const inner = makeLLMProvider('{}');
+    vi.mocked(inner.complete).mockResolvedValue({
+      content: 'answer',
+      usage: { promptTokens: 7, completionTokens: 3 },
+      truncated: false,
+    });
+    await cachingProvider(inner, { dir, namespace: 'n', refresh: false }).complete(messages);
+    const [file] = readdirSync(dir);
+
+    const text = readFileSync(join(dir, file as string), 'utf8');
+
+    expect(text).toBe(
+      [
+        '{',
+        '  "content": "answer",',
+        '  "usage": {',
+        '    "promptTokens": 7,',
+        '    "completionTokens": 3',
+        '  },',
+        '  "truncated": false',
+        '}',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('still serves an entry stored on one line by an earlier version', async () => {
+    const inner = makeLLMProvider('fresh');
+    const cached = cachingProvider(inner, { dir, namespace: 'n', refresh: false });
+    await cached.complete(messages);
+    const [file] = readdirSync(dir);
+    writeFileSync(
+      join(dir, file as string),
+      JSON.stringify({ content: 'old', usage: null, truncated: false }),
+    );
+
+    const result = await cached.complete(messages);
+
+    expect(result.content).toBe('old');
+    expect(inner.complete).toHaveBeenCalledTimes(1);
   });
 
   it('treats an unreadable cache file as a miss rather than failing the run', async () => {

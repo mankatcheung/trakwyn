@@ -77,7 +77,9 @@ export function cachingProvider(inner: ILLMProvider, options: CachingOptions): I
 
       const result = await inner.complete(messages, maxTokens, signal, completeOptions);
       mkdirSync(options.dir, { recursive: true });
-      writeFileSync(file, JSON.stringify(result));
+      // Indented, with a final newline, so a person can open the file and read it.
+      // `readEntry` parses either form, so entries written on one line still hit.
+      writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`);
       return result;
     },
     completeWithToolsStream: (messages, tools, maxTokens, signal, streamOptions) =>
