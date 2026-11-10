@@ -38,6 +38,7 @@ Numbered sources may follow the job description, [1], [2], … inside <untrusted
 When sources are given:
 - Base the overview, and any specific fact about the company (products, customers, size, locations, values), on them, and cite the source right after the claim, e.g. "Acme sells payroll software to small firms [1]". Never cite a number that was not given.
 - State a claim from a search result with its date, e.g. "raised a Series B, reported March 2026 [3]", or say the report is undated when no date is given. Report what reviews say as opinion ("reviewers describe a flat team [4]"), never as established fact.
+- When a search result about this company reports notable news (funding, expansion, an acquisition), mention it briefly in the company overview with its date and citation, e.g. "raised a £12m Series B, reported March 2026 [3]". Do not skip it because other sources cover the same topic.
 - If a section is not covered by the sources, say so plainly instead of filling it from memory.
 
 Do NOT include a "recent news" section or reference specific current events, funding rounds, layoffs, leadership changes, or anything else time-sensitive unless a numbered source states it, and then cite it (with its date for a search result). You have no reliable access to real-time information beyond those sources, and presenting stale or fabricated "recent" facts as current would be actively misleading. When no sources are given, do not cite anything, and if you don't have confident general knowledge of the company, say so plainly rather than guessing specifics.
@@ -93,7 +94,7 @@ function userPrompt({ app, instructions, research }: CompanyBriefingPromptInput)
 
 export const companyBriefingPrompt: PromptDefinition<CompanyBriefingPromptInput> = {
   id: AI_FEATURE.COMPANY_BRIEFING,
-  version: 4,
+  version: 5,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,
