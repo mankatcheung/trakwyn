@@ -68,6 +68,9 @@ export const ENV = {
    */
   EXTENSION_OAUTH_IDS: 'EXTENSION_OAUTH_IDS',
   OAUTH_PROVIDER_MODE: 'OAUTH_PROVIDER_MODE',
+  GOOGLE_CALENDAR_CLIENT_ID: 'GOOGLE_CALENDAR_CLIENT_ID',
+  GOOGLE_CALENDAR_CLIENT_SECRET: 'GOOGLE_CALENDAR_CLIENT_SECRET',
+  CALENDAR_PROVIDER_MODE: 'CALENDAR_PROVIDER_MODE',
   LLM_PROVIDER_MODE: 'LLM_PROVIDER_MODE',
   OUTBOUND_URL_POLICY: 'OUTBOUND_URL_POLICY',
   /** `'true'` turns on the platform-owned LLM path (Hosted AI, JEF-446). Unset, nothing changes. */
@@ -298,7 +301,7 @@ export const OAUTH = {
 } as const;
 
 /**
- * Chrome's `chrome.identity.launchWebAuthFlow` redirect target (JEF-383).
+Chrome's `chrome.identity.launchWebAuthFlow` redirect target (JEF-383).
  * Chrome intercepts navigations to this host and hands the URL back to the
  * extension with that ID, so a handoff code sent here reaches only it.
  */
@@ -306,6 +309,38 @@ export const EXTENSION_OAUTH = {
   /** A Chrome extension ID: 32 characters from `a` to `p`. */
   ID_PATTERN: /^[a-p]{32}$/,
   redirectUrl: (extensionId: string) => `https://${extensionId}.chromiumapp.org/`,
+} as const;
+
+/**
+ * Google Calendar settings — a separate OAuth app (and broader scope) from
+ * `OAUTH`'s Google sign-in above, since granting calendar write access is a
+ * distinct consent from "sign in with Google". Google-only for now
+ * (JEF-331); Outlook is JEF-543.
+ */
+export const CALENDAR_OAUTH = {
+  GOOGLE_AUTHORIZATION_URL: 'https://accounts.google.com/o/oauth2/v2/auth',
+  GOOGLE_TOKEN_URL: 'https://oauth2.googleapis.com/token',
+  GOOGLE_SCOPE: 'https://www.googleapis.com/auth/calendar.events',
+  GOOGLE_EVENTS_URL: 'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+  /** Google treats the signed-in user's default calendar as "primary" — no separate calendar id to discover. */
+  PRIMARY_CALENDAR_ID: 'primary',
+  STATE_TTL_MS: 5 * 60 * 1000, // 5 minutes
+  callbackPath: (provider: string) => `/auth/calendar/${provider}/callback`,
+} as const;
+
+/** `CALENDAR_PROVIDER_MODE` values — mirrors `OAUTH_PROVIDER_MODE`. */
+export const CALENDAR_PROVIDER_MODE = {
+  REAL: 'real',
+  /** Same-origin stand-in, no live Google calls — dev/CI until a real OAuth app is registered (JEF-331). */
+  FAKE: 'fake',
+} as const;
+
+/**
+ * The same-origin stand-in calendar-connect provider (`CALENDAR_PROVIDER_MODE=fake`).
+ * See `FAKE_OAUTH` above for why this lives here rather than in the route table.
+ */
+export const FAKE_CALENDAR = {
+  CONSENT_PATH: '/auth/calendar/fake-provider/authorize',
 } as const;
 
 /** TOTP (RFC 6238) two-factor authentication settings. */

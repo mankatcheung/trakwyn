@@ -1,10 +1,12 @@
-import { Trash2Icon, CopyIcon, CheckIcon, PlugIcon, PlusIcon } from 'lucide-react';
+import { Trash2Icon, CopyIcon, CheckIcon, PlugIcon, PlusIcon, CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useBillingStatus } from '#/lib/billingStatus';
+import { API_ORIGIN } from '#/lib/apiOrigin';
+import { calendarErrorKey } from '#/lib/calendarError';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select, Skeleton } from '@trakwyn/ui';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { QuotaHint } from '#/components/QuotaHint';
@@ -19,12 +21,16 @@ import {
   SHARE_LINKS_QUERY,
   CREATE_SHARE_LINK,
   DELETE_SHARE_LINK,
+  CALENDAR_CONNECTIONS_QUERY,
+  DISCONNECT_CALENDAR,
   type ApiToken,
   type ApiTokenScope,
   type CreateApiTokenPayload,
   type McpOAuthGrant,
   type ShareLink,
   type CreateShareLinkPayload,
+  type CalendarConnection,
+  type CalendarProvider,
   extractGqlError,
   extractGqlErrorCode,
 } from './shared';
@@ -34,11 +40,39 @@ function FormMessage({ message, needsPro }: { message: string; needsPro: boolean
   return needsPro ? <UpgradePrompt message={message} /> : <Alert>{message}</Alert>;
 }
 
+const CALENDAR_PROVIDERS: CalendarProvider[] = ['google'];
+
 export function SettingsIntegrationsPage() {
   const { t } = useLocale();
   const qc = useQueryClient();
 
   const billingStatus = useBillingStatus();
+  // Calendar sync
+  const { calendarConnected, calendarError } = useSearch({
+    from: '/_authenticated/settings/integrations',
+  });
+  const { data: calendarConnectionsData, isLoading: calendarConnectionsLoading } = useQuery({
+    queryKey: ['calendarConnections'],
+    queryFn: () =>
+      gqlClient.request<{ calendarConnections: CalendarConnection[] }>(CALENDAR_CONNECTIONS_QUERY),
+  });
+  const calendarConnections = calendarConnectionsData?.calendarConnections ?? [];
+  const [disconnectingProvider, setDisconnectingProvider] = useState<CalendarProvider | null>(null);
+  const [calendarDisconnectError, setCalendarDisconnectError] = useState<string | null>(null);
+  const onDisconnectCalendar = async (provider: CalendarProvider) => {
+    setDisconnectingProvider(provider);
+    setCalendarDisconnectError(null);
+    try {
+      await gqlClient.request(DISCONNECT_CALENDAR, { provider });
+      await qc.invalidateQueries({ queryKey: ['calendarConnections'] });
+    } catch (err) {
+      setCalendarDisconnectError(
+        extractGqlError(err) ?? t('integrations.calendarDisconnectFailed'),
+      );
+    } finally {
+      setDisconnectingProvider(null);
+    }
+  };
 
   // API tokens
   const { data: apiTokensData } = useQuery({
@@ -549,6 +583,83 @@ export function SettingsIntegrationsPage() {
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      {/* ── Calendar sync ── */}
+      <Card className="space-y-4 p-5">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('integrations.calendarSyncTitle')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('integrations.calendarSyncDescription')}
+          </p>
+        </div>
+        {calendarDisconnectError && <Alert>{calendarDisconnectError}</Alert>}
+        {calendarConnected && (
+          <Alert tone="success">
+            {t('integrations.calendarConnectedSuccess', {
+              provider: t('integrations.calendarGoogle'),
+            })}
+          </Alert>
+        )}
+        {calendarError && <Alert>{t(calendarErrorKey(calendarError))}</Alert>}
+        {calendarConnectionsLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-14 rounded-lg" />
+            <Skeleton className="h-14 rounded-lg" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {CALENDAR_PROVIDERS.map((provider) => {
+              const connected = calendarConnections.find((c) => c.provider === provider);
+              const providerLabel = t('integrations.calendarGoogle');
+              return (
+                <div
+                  key={provider}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <CalendarIcon className="size-5 shrink-0 text-gray-500 dark:text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {providerLabel}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {connected
+                          ? t('integrations.calendarConnected')
+                          : t('integrations.calendarNotConnected')}
+                      </p>
+                    </div>
+                  </div>
+                  {connected ? (
+                    <button
+                      type="button"
+                      onClick={() => onDisconnectCalendar(provider)}
+                      disabled={disconnectingProvider === provider}
+                      aria-label={t('integrations.calendarDisconnect')}
+                      className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:text-red-400"
+                    >
+                      <Trash2Icon size={14} />{' '}
+                      <span className="hidden sm:inline">
+                        {disconnectingProvider === provider
+                          ? t('integrations.calendarDisconnecting')
+                          : t('integrations.calendarDisconnect')}
+                      </span>
+                    </button>
+                  ) : (
+                    <a
+                      href={`${API_ORIGIN}/auth/calendar/${provider}/start`}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {t('integrations.calendarConnect')}
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </Card>
     </div>

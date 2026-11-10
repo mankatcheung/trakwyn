@@ -11,6 +11,7 @@
 
 import {
   DOCUMENT_FILE_ROUTE,
+  FAKE_CALENDAR,
   FAKE_OAUTH,
   PLATFORM_LLM,
   TRACING,
@@ -29,6 +30,8 @@ export const COOKIES = {
    * does not match (JEF-198).
    */
   OAUTH_STATE: 'trakwyn_oauth_state',
+  /** Same role as OAUTH_STATE, for the separate calendar-connect redirect (`/auth/calendar/*`). */
+  CALENDAR_OAUTH_STATE: 'trakwyn_calendar_oauth_state',
 } as const;
 
 /** Shared cookie options. */
@@ -77,6 +80,10 @@ export const ROUTES = {
   EXTENSION_OAUTH_DONE: '/auth/oauth/extension/done',
   /** Stand-in "provider" consent screen, registered only when OAUTH_PROVIDER_MODE=fake — see FakeOAuthProvider. */
   OAUTH_FAKE_CONSENT: FAKE_OAUTH.CONSENT_PATH,
+  CALENDAR_OAUTH_START: '/auth/calendar/:provider/start',
+  CALENDAR_OAUTH_CALLBACK: '/auth/calendar/:provider/callback',
+  /** Stand-in "provider" consent screen, registered only when CALENDAR_PROVIDER_MODE=fake — see FakeCalendarProvider. */
+  CALENDAR_OAUTH_FAKE_CONSENT: FAKE_CALENDAR.CONSENT_PATH,
   /**
    * Stand-in OpenAI-compatible /chat/completions endpoint, registered only
    * when LLM_PROVIDER_MODE=fake. Not a new provider type — a user (or an e2e
@@ -360,6 +367,11 @@ export const RATE_LIMIT = {
 export const OAUTH_PROVIDER = {
   GOOGLE: 'google',
   GITHUB: 'github',
+} as const;
+
+/** Calendar provider names (mirrors the `CalendarProvider` domain union). Google-only for now (JEF-331). */
+export const CALENDAR_PROVIDER = {
+  GOOGLE: 'google',
 } as const;
 
 /**

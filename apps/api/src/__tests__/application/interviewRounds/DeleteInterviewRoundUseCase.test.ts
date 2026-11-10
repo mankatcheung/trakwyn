@@ -5,6 +5,7 @@ import {
   makeInterviewRoundRepository,
 } from '#src/__tests__/helpers/mocks/interviews.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('DeleteInterviewRoundUseCase', () => {
   it('throws NOT_FOUND when the round does not exist', async () => {
@@ -75,5 +76,46 @@ describe('DeleteInterviewRoundUseCase', () => {
     await useCase.execute({ userId: 'user-1', roundId: 'round-1' });
 
     expect(interviewRoundRepository.delete).toHaveBeenCalledWith('round-1', 'app-1');
+  });
+});
+
+describe('DeleteInterviewRoundUseCase calendar sync (JEF-331)', () => {
+  it('removes the synced event after the round is deleted', async () => {
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+    const useCase = new DeleteInterviewRoundUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        findById: vi.fn().mockResolvedValue(makeInterviewRound({ id: 'round-1' })),
+      }),
+      syncCalendarEventUseCase,
+    });
+
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1' });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: null,
+    });
+  });
+
+  it('makes no calendar call when the caller does not own the round', async () => {
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+    const useCase = new DeleteInterviewRoundUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'other-user' })),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        findById: vi.fn().mockResolvedValue(makeInterviewRound()),
+      }),
+      syncCalendarEventUseCase,
+    });
+
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1' }).catch(() => undefined);
+
+    expect(syncCalendarEventUseCase.execute).not.toHaveBeenCalled();
   });
 });

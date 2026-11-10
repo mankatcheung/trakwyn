@@ -1,6 +1,8 @@
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
+import { interviewCalendarEvent } from '#src/use-cases/calendar/interviewCalendarEvent.js';
 import type {
   IUpdateInterviewRoundUseCase,
   UpdateInterviewRoundInput,
@@ -10,6 +12,7 @@ import type {
 interface Deps {
   applicationRepository: IApplicationRepository;
   interviewRoundRepository: IInterviewRoundRepository;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
 }
 
 export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase {
@@ -22,7 +25,7 @@ export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase
     const app = await this.deps.applicationRepository.findById(round.applicationId);
     if (!app || app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
-    return this.deps.interviewRoundRepository.update(input.roundId, {
+    const updated = await this.deps.interviewRoundRepository.update(input.roundId, {
       type: input.type,
       scheduledAt: input.scheduledAt,
       completedAt: input.completedAt,
@@ -30,5 +33,15 @@ export class UpdateInterviewRoundUseCase implements IUpdateInterviewRoundUseCase
       notes: input.notes,
       outcome: input.outcome,
     });
+
+    // `null` when the date was cleared, which removes the Google event.
+    await this.deps.syncCalendarEventUseCase?.execute({
+      userId: input.userId,
+      sourceType: 'interview',
+      sourceId: updated.id,
+      event: interviewCalendarEvent(app, updated),
+    });
+
+    return updated;
   }
 }

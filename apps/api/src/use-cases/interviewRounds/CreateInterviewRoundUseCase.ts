@@ -3,6 +3,8 @@ import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
+import type { ISyncCalendarEventUseCase } from '#src/use-cases/calendar/ISyncCalendarEventUseCase.js';
+import { interviewCalendarEvent } from '#src/use-cases/calendar/interviewCalendarEvent.js';
 import { CONTENT_LIMITS, DEFAULTS } from '#src/use-cases/constants.js';
 import { assertUnderLimit } from '#src/use-cases/shared/assertUnderLimit.js';
 import type {
@@ -15,6 +17,7 @@ interface Deps {
   applicationRepository: IApplicationRepository;
   interviewRoundRepository: IInterviewRoundRepository;
   activityLogRepository?: IActivityLogRepository;
+  syncCalendarEventUseCase?: ISyncCalendarEventUseCase;
   generateId: () => string;
 }
 
@@ -54,6 +57,17 @@ export class CreateInterviewRoundUseCase implements ICreateInterviewRoundUseCase
         ...actorPayload(input.actor),
       }),
     });
+
+    // After the write, and fail-open: a calendar outage never fails the save.
+    const event = interviewCalendarEvent(app, round);
+    if (event) {
+      await this.deps.syncCalendarEventUseCase?.execute({
+        userId: input.userId,
+        sourceType: 'interview',
+        sourceId: round.id,
+        event,
+      });
+    }
 
     return round;
   }

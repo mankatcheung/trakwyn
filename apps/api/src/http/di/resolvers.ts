@@ -28,6 +28,7 @@ import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.j
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
 import { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.js';
 import { RATE_LIMIT } from '#src/http/constants.js';
+import { CalendarResolver } from '#src/interface-adapters/resolvers/CalendarResolver.js';
 import { McpController } from '#src/interface-adapters/mcp/McpController.js';
 
 import type { Cradle } from './types.js';
@@ -61,6 +62,7 @@ export const resolvers = {
   educationResolver: asClass(EducationResolver, { lifetime: Lifetime.SINGLETON }),
   skillResolver: asClass(SkillResolver, { lifetime: Lifetime.SINGLETON }),
   offerResolver: asClass(OfferResolver, { lifetime: Lifetime.SINGLETON }),
+  calendarResolver: asClass(CalendarResolver, { lifetime: Lifetime.SINGLETON }),
   mcpController: asClass(McpController, { lifetime: Lifetime.SINGLETON }),
   // The chat assistant's write tools (JEF-469): the same handlers as MCP,
   // reached through a proposal the user confirms. An adapter, not a use case,

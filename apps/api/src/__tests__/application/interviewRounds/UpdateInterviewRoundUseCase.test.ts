@@ -5,6 +5,7 @@ import {
   makeInterviewRoundRepository,
 } from '#src/__tests__/helpers/mocks/interviews.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import { makeSyncCalendarEventUseCase } from '#src/__tests__/helpers/mocks/calendar.js';
 
 describe('UpdateInterviewRoundUseCase', () => {
   it('throws NOT_FOUND when the round does not exist', async () => {
@@ -90,5 +91,57 @@ describe('UpdateInterviewRoundUseCase', () => {
       notes: undefined,
       outcome: 'passed',
     });
+  });
+});
+
+describe('UpdateInterviewRoundUseCase calendar sync (JEF-331)', () => {
+  const setup = (updated: ReturnType<typeof makeInterviewRound>) => {
+    const syncCalendarEventUseCase = makeSyncCalendarEventUseCase();
+    const useCase = new UpdateInterviewRoundUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi
+          .fn()
+          .mockResolvedValue(makeApplication({ userId: 'user-1', company: 'Acme', role: 'SWE' })),
+      }),
+      interviewRoundRepository: makeInterviewRoundRepository({
+        findById: vi.fn().mockResolvedValue(makeInterviewRound({ id: 'round-1' })),
+        update: vi.fn().mockResolvedValue(updated),
+      }),
+      syncCalendarEventUseCase,
+    });
+    return { useCase, syncCalendarEventUseCase };
+  };
+
+  it('pushes the new time to the calendar', async () => {
+    const start = new Date('2030-06-01T14:00:00.000Z');
+    const { useCase, syncCalendarEventUseCase } = setup(
+      makeInterviewRound({ id: 'round-1', scheduledAt: start, notes: null }),
+    );
+
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1', scheduledAt: start });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      sourceType: 'interview',
+      sourceId: 'round-1',
+      event: {
+        title: 'Interview: Acme — SWE',
+        description: null,
+        startAt: start,
+        endAt: new Date('2030-06-01T15:00:00.000Z'),
+      },
+    });
+  });
+
+  it('removes the calendar event when the scheduled time is cleared', async () => {
+    const { useCase, syncCalendarEventUseCase } = setup(
+      makeInterviewRound({ id: 'round-1', scheduledAt: null }),
+    );
+
+    await useCase.execute({ userId: 'user-1', roundId: 'round-1', scheduledAt: null });
+
+    expect(syncCalendarEventUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceId: 'round-1', event: null }),
+    );
   });
 });

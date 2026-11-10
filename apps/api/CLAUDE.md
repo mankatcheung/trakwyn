@@ -23,6 +23,7 @@ Each of these loads on its own when you work in its directory. Paths are under `
 | `use-cases/user/`                   | AI provider order                                                                             |
 | `use-cases/jobDescription/`         | cheaper AI calls: JSON-LD, posting cache, match reuse                                         |
 | `use-cases/companyBriefing/`        | company briefing: the company's own site, web search, sources, the research caches            |
+| `use-cases/calendar/`               | Google Calendar sync of interviews: fail-open, where it hooks in, tokens, fake mode           |
 | `use-cases/prompts/`                | prompt modules and versions                                                                   |
 | `evals/`                            | running and extending the AI evals                                                            |
 
