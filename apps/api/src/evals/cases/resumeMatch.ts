@@ -58,7 +58,11 @@ export const RESUME_MATCH_CASES: EvalCase[] = [
     id: 'match-partial-backend',
     jobDescription: input.JD_BACKEND,
     resume: input.RESUME_BACKEND_PARTIAL,
-    idealReply: reply(40, ['AWS', 'REST'], ['TypeScript', 'GraphQL', 'PostgreSQL']),
+    idealReply: reply(
+      45,
+      ['PostgreSQL', 'AWS', 'Node.js', 'CI/CD'],
+      ['GraphQL', 'Kubernetes', 'Infrastructure as code', '5+ years'],
+    ),
     expect: (match) => [
       scoreBetween(match.score, 20, 70),
       listMentionsAny('missingKeywords', match.missingKeywords, [
