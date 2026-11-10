@@ -13,6 +13,11 @@ import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy
 import { LLM } from '#src/use-cases/constants.js';
 import { AUTH_HEADER, REASONING_CONTROL } from '#src/infrastructure/config/constants.js';
 import {
+  assertNoLeakedToolCall,
+  hasChannelMarkers,
+  looksLikeLeakedToolCall,
+} from '#src/infrastructure/llm/leakedToolCall.js';
+import {
   fetchWithRetry,
   createIdleAbortController,
 } from '#src/infrastructure/llm/fetchWithRetry.js';
@@ -215,6 +220,7 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     );
 
     let content = '';
+    let pending = '';
     const toolCalls = new Map<number, { id: string; name: string; arguments: string }>();
     let usage: LLMUsage | null = null;
     let wireUsage: OpenAIWireUsage | null = null;
@@ -235,7 +241,14 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
 
         if (delta.content) {
           content += delta.content;
-          yield { type: 'text_delta', text: delta.content };
+          // A leaked tool call (JEF-541) is never shown: hold text back while
+          // it looks like one, and fail the leg at the end if it was.
+          if (looksLikeLeakedToolCall(content)) {
+            pending += delta.content;
+          } else {
+            yield { type: 'text_delta', text: pending + delta.content };
+            pending = '';
+          }
         }
 
         for (const tc of delta.tool_calls ?? []) {
@@ -250,6 +263,10 @@ export class OpenAICompatibleLLMProvider implements ILLMProvider {
     } finally {
       dispose();
     }
+
+    assertNoLeakedToolCall(content, toolCalls.size);
+    // Text held back for starting like a leak ("analysis…") that was not one.
+    if (pending && !hasChannelMarkers(content)) yield { type: 'text_delta', text: pending };
 
     // The usage chunk arrives after the deltas, so the reasoning flag is only
     // known once the stream has ended.
