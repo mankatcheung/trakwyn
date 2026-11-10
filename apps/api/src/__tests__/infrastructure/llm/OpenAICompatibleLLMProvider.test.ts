@@ -377,6 +377,73 @@ describe('OpenAICompatibleLLMProvider', () => {
       ]);
     });
 
+    describe('leaked tool call (JEF-541)', () => {
+      const frame = (delta: object) => `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
+      const run = (frames: string[]) => {
+        vi.mocked(fetch).mockResolvedValue(
+          streamResponse(`${frames.join('')}data: [DONE]\n\n`) as never,
+        );
+        const provider = new OpenAICompatibleLLMProvider('secret-key', BASE_URL, MODEL);
+        const events: unknown[] = [];
+        const done = (async () => {
+          for await (const e of provider.completeWithToolsStream(
+            [{ role: 'user', content: 'hi' }],
+            [],
+          ))
+            events.push(e);
+        })();
+        return { events, done };
+      };
+
+      it('shows nothing and throws a failover-eligible error when channel markers arrive with no tool call', async () => {
+        const { events, done } = run([
+          frame({ content: 'analysis: user wants to delete F. ' }),
+          frame({ content: '<|end|><|start|>assistant to=functions.list_app<|call|>' }),
+        ]);
+
+        await expect(done).rejects.toMatchObject({ kind: 'unavailable' });
+        await expect(done).rejects.toBeInstanceOf(LlmProviderError);
+        expect(events).toEqual([]);
+      });
+
+      it('still delivers text that merely starts with "analysis"', async () => {
+        const { events, done } = run([
+          frame({ content: 'Analysis of your pipeline: ' }),
+          frame({ content: 'three interviews.' }),
+        ]);
+
+        await done;
+
+        expect(events).toEqual([
+          { type: 'text_delta', text: 'Analysis of your pipeline: three interviews.' },
+          {
+            type: 'done',
+            content: 'Analysis of your pipeline: three interviews.',
+            toolCalls: [],
+            usage: null,
+          },
+        ]);
+      });
+
+      it('does not throw when a real tool call accompanies the markers', async () => {
+        const { events, done } = run([
+          frame({ content: '<|channel|>' }),
+          frame({
+            tool_calls: [
+              { index: 0, id: 'c1', function: { name: 'list_applications', arguments: '{}' } },
+            ],
+          }),
+        ]);
+
+        await done;
+
+        expect(events[events.length - 1]).toMatchObject({
+          type: 'done',
+          toolCalls: [{ id: 'c1', name: 'list_applications' }],
+        });
+      });
+    });
+
     it('sends stream_options.include_usage in the request body (JEF-250)', async () => {
       vi.mocked(fetch).mockResolvedValue(streamResponse('data: [DONE]\n\n') as never);
       const provider = new OpenAICompatibleLLMProvider('secret-key', BASE_URL, MODEL);

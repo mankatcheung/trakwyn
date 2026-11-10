@@ -744,6 +744,17 @@ export const DOCUMENT_FILE_ROUTE = {
 } as const;
 
 /**
+ * gpt-oss on Workers AI sometimes returns its reasoning and tool call as plain
+ * `message.content` with the model's raw channel markers and no `tool_calls`
+ * (JEF-541). `MARKER` finds those markers; `TEXT_PREFIX` is how the leaked
+ * reasoning opens, so a stream holds back text that starts that way.
+ */
+export const LEAKED_TOOL_CALL = {
+  MARKER: /<\|(?:start|end|call|channel|message|return|constrain)\|>/,
+  TEXT_PREFIX: 'analysis',
+} as const;
+
+/**
  * Which models take a reasoning switch, and what "off" and "low" mean for
  * each (JEF-445). A pattern list, because providers do not say reliably.
  * A model matching nothing here never gets the parameter: an unknown field
