@@ -57,10 +57,11 @@ export const RESUME_BACKEND_SENIOR = `Priya Raman — Senior Software Engineer
 
 export const RESUME_BACKEND_PARTIAL = `Daniel Okoye — Software Developer
 
-3 years at a digital agency building websites and internal tools in Python and Django, backed by MySQL.
-- Deployed apps to a single AWS EC2 server by hand
-- Wrote REST endpoints and unit tests with pytest
-- Some JavaScript for admin pages`;
+4 years building web services, the first two at a digital agency in Python and Django on MySQL, the last two at a logistics startup.
+- Moved the startup's order service to PostgreSQL, adding indexes and rewriting its slowest queries
+- Built one internal API in TypeScript and Node.js (Express), the rest of the stack being Django
+- Ran services on AWS EC2 and RDS, with a GitHub Actions pipeline running pytest and Jest
+- Wrote REST endpoints and unit tests; no GraphQL, Kubernetes or infrastructure as code`;
 
 export const RESUME_JUNIOR = `Mei Tanaka — Junior Developer
 
