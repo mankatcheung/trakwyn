@@ -1,6 +1,6 @@
 # apps/api/src/evals - subsystem notes
 
-Loaded when working under `apps/api/src/evals`. The rest of the API notes are in `apps/api/CLAUDE.md` and the layer map is in the root `CLAUDE.md`. Paths below are relative to `apps/api/src/` unless stated.
+Loaded when working under `apps/api/src/evals`. The rest of the API notes are in `apps/api/CLAUDE.md` and the layer map is in the root `CLAUDE.md`. Paths below are relative to `apps/api/src/` unless stated. How to run the evals (every flag and variable, secrets, example commands) is in `evals/README.md`; these notes are about how they are built.
 
 ## AI evals
 
