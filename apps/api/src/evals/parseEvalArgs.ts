@@ -1,15 +1,21 @@
 import { LLM_PROVIDER } from '#src/use-cases/constants.js';
-import { PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
-import { WORKERS_AI_PROVIDER, type EvalConfig, type EvalTarget } from '#src/evals/types.js';
+import { LANGFUSE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
+import {
+  WORKERS_AI_PROVIDER,
+  type EvalConfig,
+  type EvalTarget,
+  type LangfuseConfig,
+} from '#src/evals/types.js';
 
 type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
 const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate', '--out'] as const;
-const SWITCH_FLAGS = ['--cache', '--refresh', '--validate-judge'] as const;
+const SWITCH_FLAGS = ['--cache', '--refresh', '--validate-judge', '--publish'] as const;
 const SWITCH_KEYS = {
   '--cache': 'cache',
   '--refresh': 'refresh',
+  '--publish': 'publish',
   '--validate-judge': 'validateJudge',
 } as const;
 const PROVIDERS: string[] = [...Object.values(LLM_PROVIDER), WORKERS_AI_PROVIDER];
@@ -30,6 +36,7 @@ interface RawFlags {
   cache: boolean;
   refresh: boolean;
   validateJudge: boolean;
+  publish: boolean;
 }
 
 function readFlags(argv: string[]): RawFlags {
@@ -41,6 +48,7 @@ function readFlags(argv: string[]): RawFlags {
     cache: false,
     refresh: false,
     validateJudge: false,
+    publish: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -143,6 +151,27 @@ function parseJudge(env: Env): EvalTarget | null {
   return parseTarget(spec, env, JUDGE_KEY_VARIABLES);
 }
 
+/**
+ * The Langfuse project the run is uploaded to (JEF-550). Read only for
+ * `--publish`, and only from `EVAL_LANGFUSE_*`: these are their own
+ * credentials, so a leaked eval key reaches the eval project and nothing else.
+ * A missing one fails here, before the first paid call.
+ */
+function parseLangfuse(env: Env): LangfuseConfig {
+  const publicKey = env.EVAL_LANGFUSE_PUBLIC_KEY?.trim();
+  const secretKey = env.EVAL_LANGFUSE_SECRET_KEY?.trim();
+  if (!publicKey)
+    throw new Error('--publish needs a Langfuse public key: set EVAL_LANGFUSE_PUBLIC_KEY');
+  if (!secretKey)
+    throw new Error('--publish needs a Langfuse secret key: set EVAL_LANGFUSE_SECRET_KEY');
+
+  const baseUrl = env.EVAL_LANGFUSE_BASE_URL?.trim() || LANGFUSE.DEFAULT_BASE_URL;
+  if (!/^https?:\/\//i.test(baseUrl)) {
+    throw new Error(`EVAL_LANGFUSE_BASE_URL must start with http:// or https://, got "${baseUrl}"`);
+  }
+  return { publicKey, secretKey, baseUrl: baseUrl.replace(/\/+$/, '') };
+}
+
 function parseMinPassRate(raw: string | null | undefined): number {
   if (raw === null || raw === undefined) return DEFAULT_MIN_PASS_RATE;
   const value = raw.trim() === '' ? Number.NaN : Number(raw);
@@ -188,5 +217,7 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     refresh: flags.refresh,
     minPassRate: parseMinPassRate(flags.minPassRate ?? env.EVAL_MIN_PASS_RATE),
     reportFile: flags.out,
+    // A judge validation run has no targets to upload (JEF-550: not in this cut).
+    publish: flags.publish && !flags.validateJudge ? parseLangfuse(env) : null,
   };
 }

@@ -73,7 +73,7 @@ function userPrompt(input: CoverLetterPromptInput): string {
 
 export const coverLetterPrompt: PromptDefinition<CoverLetterPromptInput> = {
   id: AI_FEATURE.COVER_LETTER,
-  version: 3,
+  version: 4,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

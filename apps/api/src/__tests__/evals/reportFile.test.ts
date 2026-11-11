@@ -20,6 +20,8 @@ const failed: CaseResult = {
   latencyMs: 10,
   toolCalls: 0,
   iterations: 0,
+  calls: [],
+  judgeCalls: [],
 };
 
 describe('writeReportFile (JEF-542)', () => {

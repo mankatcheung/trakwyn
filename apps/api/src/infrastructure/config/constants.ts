@@ -486,6 +486,17 @@ export const HOSTED_AI_CIRCUIT = {
   COOLDOWN_MS: 30_000,
 } as const;
 
+/**
+ * Langfuse, used only by `pnpm eval --publish` (JEF-550); no request path
+ * reaches it. The EU cloud is the default; the US one is
+ * `https://us.cloud.langfuse.com`, set with `EVAL_LANGFUSE_BASE_URL`.
+ */
+export const LANGFUSE = {
+  DEFAULT_BASE_URL: 'https://cloud.langfuse.com',
+  /** The dataset every eval case lives in, so runs of different targets and prompts compare. */
+  DATASET_NAME: 'trakwyn-evals',
+} as const;
+
 export const PLATFORM_LLM = {
   /** The provider id recorded on `LlmUsageEvent` and the metrics. */
   PROVIDER_ID: 'workersai',

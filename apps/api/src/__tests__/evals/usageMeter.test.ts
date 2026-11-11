@@ -44,4 +44,84 @@ describe('meterProvider', () => {
 
     expect(inner.complete).toHaveBeenCalledWith(messages, 99, undefined, { json: true });
   });
+
+  describe('transcript (JEF-550)', () => {
+    it('records the messages, reply, usage and timing of each complete call', async () => {
+      const inner = makeLLMProvider('{}');
+      vi.mocked(inner.complete).mockResolvedValue({
+        content: 'hello',
+        usage: { promptTokens: 7, completionTokens: 2 },
+      });
+      const meter = meterProvider(inner);
+      const messages = [{ role: 'user' as const, content: 'hi' }];
+
+      await meter.provider.complete(messages, 50, undefined, { json: true });
+
+      const [call] = meter.calls();
+      expect(meter.calls()).toHaveLength(1);
+      expect(call).toMatchObject({
+        kind: 'complete',
+        messages,
+        output: 'hello',
+        toolCalls: [],
+        promptTokens: 7,
+        completionTokens: 2,
+        error: null,
+      });
+      expect(call?.latencyMs).toBeGreaterThanOrEqual(0);
+      expect(call?.startedAt).toBeGreaterThan(0);
+    });
+
+    it('records a call that throws, with the error message', async () => {
+      const inner = makeLLMProvider('{}');
+      vi.mocked(inner.complete).mockRejectedValue(new Error('boom'));
+      const meter = meterProvider(inner);
+
+      await expect(meter.provider.complete([{ role: 'user', content: 'x' }])).rejects.toThrow(
+        'boom',
+      );
+
+      expect(meter.calls()).toMatchObject([{ kind: 'complete', output: null, error: 'boom' }]);
+    });
+
+    it('records each stream iteration as one call with the tool calls it asked for', async () => {
+      const inner = makeLLMProvider('{}');
+      const toolCalls = [{ id: 't1', name: 'list_applications', arguments: {} }];
+      vi.mocked(inner.completeWithToolsStream).mockImplementation(async function* () {
+        yield { type: 'text_delta', text: 'partial' };
+        yield {
+          type: 'done',
+          content: null,
+          toolCalls,
+          usage: { promptTokens: 30, completionTokens: 4 },
+        };
+      });
+      const meter = meterProvider(inner);
+      const messages = [{ role: 'user' as const, content: 'list' }];
+
+      for await (const event of meter.provider.completeWithToolsStream(messages, [])) {
+        void event;
+      }
+
+      expect(meter.calls()).toMatchObject([
+        {
+          kind: 'stream',
+          messages,
+          output: null,
+          toolCalls,
+          promptTokens: 30,
+          completionTokens: 4,
+        },
+      ]);
+    });
+
+    it('does not change the totals the report already uses', async () => {
+      const inner = makeLLMProvider('{}');
+      const meter = meterProvider(inner);
+
+      await meter.provider.complete([{ role: 'user', content: 'x' }]);
+
+      expect(meter.totals()).toMatchObject({ calls: 1, streams: 0, toolCalls: 0 });
+    });
+  });
 });

@@ -38,7 +38,7 @@ Respond with ONLY a JSON object: {"questions": ["...", "..."]}. No markdown and 
 
 export const mockQuestionsPrompt: PromptDefinition<MockQuestionsPromptInput> = {
   id: AI_FEATURE.MOCK_QUESTIONS,
-  version: 2,
+  version: 3,
   build: ({ count, contextText, backgroundText, focus, customAiPrompt }) =>
     promptMessages({
       system: SYSTEM_PROMPT,

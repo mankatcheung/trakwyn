@@ -19,10 +19,11 @@ For the design notes behind each group of cases (why they exist, how to add one)
 7. [Example commands](#example-commands)
 8. [Comparing models](#comparing-models)
 9. [Reading the report](#reading-the-report)
-10. [The cache](#the-cache)
-11. [What is covered](#what-is-covered)
-12. [Where model text is rendered](#where-model-text-is-rendered)
-13. [Troubleshooting](#troubleshooting)
+10. [Publishing to Langfuse](#publishing-to-langfuse)
+11. [The cache](#the-cache)
+12. [What is covered](#what-is-covered)
+13. [Where model text is rendered](#where-model-text-is-rendered)
+14. [Troubleshooting](#troubleshooting)
 
 ## Quick start
 
@@ -103,6 +104,16 @@ Needed only when the selected cases include the graded ones (resume and cover le
 | `EVAL_JUDGE_CLOUDFLARE_ACCOUNT_ID` | `workersai` judge only.                                                                            |
 | `EVAL_JUDGE_CLOUDFLARE_API_TOKEN`  | `workersai` judge only.                                                                            |
 
+### Langfuse (`--publish`)
+
+Read only when you pass `--publish` (see [Publishing to Langfuse](#publishing-to-langfuse)). They are the eval project's own keys, never the app's.
+
+| Variable                   | When it is used                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `EVAL_LANGFUSE_PUBLIC_KEY` | The project's public key (`pk-lf-…`). Required with `--publish`.                                                        |
+| `EVAL_LANGFUSE_SECRET_KEY` | The project's secret key (`sk-lf-…`). Required with `--publish`. Secret.                                                |
+| `EVAL_LANGFUSE_BASE_URL`   | Optional. Defaults to the EU cloud, `https://cloud.langfuse.com`. For a US project use `https://us.cloud.langfuse.com`. |
+
 ### Behaviour
 
 | Variable             | Meaning                                                                                                     |
@@ -138,15 +149,16 @@ Two generation features, **resume** and **cover letter**, write text a user migh
 
 Flags that take a value need one (`--out` with nothing after it is an error). An unknown flag is an error. Everything is checked before the first model call.
 
-| Flag                        | Meaning                                                                                                                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--target provider[:model]` | A model to test. **Repeat it** to compare models in one table. If you pass none, `EVAL_PROVIDER` and `EVAL_MODEL` are used. With neither, the run stops (except with `--validate-judge`).                        |
-| `--case <id>[,<id>]`        | Run only these cases. Repeat the flag or separate ids with commas. Without it, all cases run.                                                                                                                    |
-| `--min-pass-rate <0-1>`     | The pass rate a target must reach for the run to succeed. Default `0.8`. Outside 0 to 1 is an error.                                                                                                             |
-| `--cache`                   | Store each reply on disk and reuse it on the next run. See [The cache](#the-cache).                                                                                                                              |
-| `--refresh`                 | Ask the model again and overwrite what is stored. **Implies `--cache`**, so you do not need both.                                                                                                                |
-| `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                              |
-| `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Without it nothing is written, and the table is gone when the terminal closes. |
+| Flag                        | Meaning                                                                                                                                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--target provider[:model]` | A model to test. **Repeat it** to compare models in one table. If you pass none, `EVAL_PROVIDER` and `EVAL_MODEL` are used. With neither, the run stops (except with `--validate-judge`).                         |
+| `--case <id>[,<id>]`        | Run only these cases. Repeat the flag or separate ids with commas. Without it, all cases run.                                                                                                                     |
+| `--min-pass-rate <0-1>`     | The pass rate a target must reach for the run to succeed. Default `0.8`. Outside 0 to 1 is an error.                                                                                                              |
+| `--cache`                   | Store each reply on disk and reuse it on the next run. See [The cache](#the-cache).                                                                                                                               |
+| `--refresh`                 | Ask the model again and overwrite what is stored. **Implies `--cache`**, so you do not need both.                                                                                                                 |
+| `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                               |
+| `--publish`                 | After the run, upload it to Langfuse so you can browse and compare it. Needs the `EVAL_LANGFUSE_*` keys. See [Publishing to Langfuse](#publishing-to-langfuse). Off by default; not used with `--validate-judge`. |
+| `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Without it nothing is written, and the table is gone when the terminal closes.  |
 
 ## Example commands
 
@@ -234,6 +246,43 @@ Below the table:
 | `1`  | A target fell short, or the judge scored under 90% and was not trusted. |
 | `2`  | Bad arguments or missing configuration. Nothing was called.             |
 
+## Publishing to Langfuse
+
+The table says which cases failed, not what a case sent, what it got back or how two runs differ. `--publish` uploads the run to [Langfuse](https://langfuse.com) so you can browse every case and compare runs side by side. It is optional: without the flag nothing changes and nothing calls Langfuse. The printed report and `--out` work the same either way.
+
+**Only evals go there.** The fixtures are invented, so sending prompts and replies to a third party is fine. Production traffic never goes to Langfuse, and nothing outside `src/evals/` imports its SDK.
+
+**Set up (once):**
+
+1. Create a free account at [cloud.langfuse.com](https://cloud.langfuse.com) (or the US cloud) and a project, for example `trakwyn-evals`.
+2. In the project's settings, create an API key pair.
+3. Add the keys to `apps/api/.env` (see [Langfuse variables](#langfuse---publish)). If you signed up on the US cloud, set `EVAL_LANGFUSE_BASE_URL` too.
+
+**Use it:**
+
+```bash
+pnpm --filter @trakwyn/api eval --target openai:gpt-4o-mini --cache --publish
+```
+
+A missing `EVAL_LANGFUSE_*` key stops the run with exit code 2 **before any paid call**. After the report is printed, the runner prints a link for each target. If Langfuse is down or rejects the keys, it prints why and carries on: the exit code still reflects the pass rate only.
+
+**What you get:**
+
+- **One dataset**, `trakwyn-evals`, with an item per case. The item id is the case id, and its metadata holds the `feature` and the `prompt` (`id@version`).
+- **One dataset run per target per invocation**, named `<target> @ <commit> @ <timestamp>`. Its metadata holds the target, the judge, the commit and the cache counts.
+- **A trace per case**, linked to its dataset item, with one generation per model call (messages in, reply out, tokens, latency) and one per judge call.
+- **Scores per case:** `passed` and `schema_valid` (true or false), plus `tool_calls` and `iterations` for chat. The failure reasons are the comment on `passed`.
+
+**Comparing two runs:** open the dataset in Langfuse, select two runs, and use Compare. Two `--target`s in one command give two runs you can compare; so do a run before and after a prompt edit. Run both on the same dataset and judge, as in [Comparing models](#comparing-models).
+
+**Limits of the free Hobby plan** (check [langfuse.com/pricing](https://langfuse.com/pricing) for the current numbers): 50k units a month, 30 days of data and 2 users. A case costs a few units, so a full run of about 60 cases is a small fraction of the month. Runs older than 30 days disappear from Langfuse, so keep a copy with `--out` if you need it. Self-hosting is possible later: only `EVAL_LANGFUSE_BASE_URL` changes.
+
+**Notes:**
+
+- A cache hit is uploaded like a live reply. The run's metadata carries the hit and miss counts, and the latency of a replayed call says nothing about the model.
+- Running the same command twice makes two runs (the timestamp differs). The dataset and its items are updated in place.
+- `--validate-judge` runs are not uploaded.
+
 ## The cache
 
 `--cache` (and `--refresh`) store each model reply in `apps/api/.eval-cache/` as one indented JSON file named by a hash of the request.
@@ -289,6 +338,8 @@ The render side is not an eval (the evals only ask whether a model _writes_ a li
 | "The AI ran out of room before finishing its reply"                     | The reply hit the token limit. On Cloudflare, make sure you used `workersai`, not `custom`, so reasoning is turned down.                                                                                                                                                                                                  |
 | "The provider rejected the request … [HTTP 400, body: …]"               | The body after `body:` is the provider's own message. Read it; it names the field it did not accept.                                                                                                                                                                                                                      |
 | A chat case fails with a provider error mentioning an unavailable model | gpt-oss sometimes returns its tool call as plain text with internal markers (JEF-541). The adapter treats that as an unavailable reply and throws instead of showing the text. Hosted AI then tries its other model; an eval has one model, so the case fails. Re-run the case with `--refresh`, and compare across runs. |
+| `--publish needs a Langfuse public key / secret key`                    | Set `EVAL_LANGFUSE_PUBLIC_KEY` and `EVAL_LANGFUSE_SECRET_KEY` from the project's API keys, or drop `--publish`.                                                                                                                                                                                                           |
+| `Could not publish to Langfuse: …` after the report                     | The run itself is fine and the exit code is unchanged. A 401 means the keys or the region are wrong (set `EVAL_LANGFUSE_BASE_URL` for a US project); otherwise Langfuse was unreachable. Re-run with `--cache` to publish again for free.                                                                                 |
 | Latency says `cached`                                                   | Every reply came from the cache. Use `--refresh` for real timings.                                                                                                                                                                                                                                                        |
 | The table is gone                                                       | Re-run the same command with `--cache` to rebuild it for free. Next time add `--out <file>`.                                                                                                                                                                                                                              |
 

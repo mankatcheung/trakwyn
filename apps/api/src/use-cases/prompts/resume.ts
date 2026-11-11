@@ -64,7 +64,7 @@ function userPrompt({
 
 export const resumePrompt: PromptDefinition<ResumePromptInput> = {
   id: AI_FEATURE.RESUME,
-  version: 3,
+  version: 4,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,

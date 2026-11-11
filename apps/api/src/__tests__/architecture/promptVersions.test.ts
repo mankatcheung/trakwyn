@@ -113,16 +113,16 @@ const hashOf = ({ messages }: Rendered) =>
 
 /** `id@version` to the first 16 hex characters of the sha256 of the rendered messages. */
 const RECORDED: Record<string, string> = {
-  'coverLetter@3': '21554b1113ce1d0f',
-  'resume@3': '137a2c2306b8a12b',
+  'coverLetter@4': '21554b1113ce1d0f',
+  'resume@4': '137a2c2306b8a12b',
   'polishDraft@1': '814195a70b7c682b',
   'resumeMatch@2': 'e26dd139ad360cb0',
   'parseJobDescription@1': 'e357e943306332df',
   'parseCv@2': 'ada7635e716f8000',
   'companyBriefing@5': '59f49539fb648d09',
-  'mockQuestions@2': '4d51b8cf709d35c1',
-  'mockAnswer@2': 'eee623a9c4491be3',
-  'talkingPoints@2': '938bd643a9771d75',
+  'mockQuestions@3': '4d51b8cf709d35c1',
+  'mockAnswer@3': 'eee623a9c4491be3',
+  'talkingPoints@3': '938bd643a9771d75',
   'chat@1': '7b62802d0559f33f',
 };
 
