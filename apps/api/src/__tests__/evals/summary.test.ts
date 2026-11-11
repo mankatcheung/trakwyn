@@ -16,6 +16,8 @@ const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
   latencyMs: 400,
   toolCalls: 0,
   iterations: 0,
+  calls: [],
+  judgeCalls: [],
   ...overrides,
 });
 

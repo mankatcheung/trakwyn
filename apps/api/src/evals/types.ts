@@ -1,5 +1,5 @@
 import type { ChatScript } from '#src/evals/chatScript.js';
-import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
+import type { ILLMProvider, LLMMessage, LLMToolCall } from '#src/use-cases/ports/ILLMProvider.js';
 
 /** The AI features the eval covers. Add one here when a new feature gets cases. */
 export type EvalFeature =
@@ -39,6 +39,27 @@ export interface ChatEvalCase extends EvalCase {
   badTraces: ChatScript[];
 }
 
+/**
+ * One call the model (or the judge) received during a case (JEF-550): what it
+ * was sent, what it answered, and what that cost. Kept so a run can be
+ * published to Langfuse and read there; the printed report does not use it.
+ */
+export interface RecordedCall {
+  /** `complete` is one request and reply; `stream` is one iteration of the chat tool loop. */
+  kind: 'complete' | 'stream';
+  messages: LLMMessage[];
+  /** The reply text, or null when the model only asked for tools, or the call failed. */
+  output: string | null;
+  toolCalls: LLMToolCall[];
+  promptTokens: number;
+  completionTokens: number;
+  latencyMs: number;
+  /** Epoch milliseconds when the call began. */
+  startedAt: number;
+  /** The error message when the call threw, otherwise null. */
+  error: string | null;
+}
+
 export interface CaseResult {
   caseId: string;
   feature: EvalFeature;
@@ -57,6 +78,10 @@ export interface CaseResult {
   /** Tool calls the model made, and how many times it was asked (loop iterations). Zero outside chat. */
   toolCalls: number;
   iterations: number;
+  /** Every call the model under test received, in order (JEF-550). */
+  calls: RecordedCall[];
+  /** Every call the judge received, in order (JEF-550). */
+  judgeCalls: RecordedCall[];
 }
 
 /**
@@ -72,6 +97,16 @@ export interface EvalTarget {
   model: string | null;
   apiKey: string;
   baseUrl: string | null;
+}
+
+/**
+ * Where `--publish` sends a run (JEF-550). The keys are the project's own and
+ * read only from `EVAL_LANGFUSE_*`, never from a variable the app uses.
+ */
+export interface LangfuseConfig {
+  publicKey: string;
+  secretKey: string;
+  baseUrl: string;
 }
 
 export interface EvalConfig {
@@ -93,4 +128,6 @@ export interface EvalConfig {
   minPassRate: number;
   /** Where to also write the final report, or null to only print it. */
   reportFile: string | null;
+  /** Where to upload the run once it finishes (`--publish`), or null to not upload. */
+  publish: LangfuseConfig | null;
 }

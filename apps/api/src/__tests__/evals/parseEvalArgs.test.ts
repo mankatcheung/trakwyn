@@ -181,3 +181,64 @@ describe('parseEvalArgs --out', () => {
     expect(() => parseEvalArgs(['--out', '--cache'], env)).toThrow('--out needs a value');
   });
 });
+
+describe('parseEvalArgs --publish (JEF-550)', () => {
+  const env = { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k' };
+  const langfuse = {
+    EVAL_LANGFUSE_PUBLIC_KEY: 'pk-lf-test',
+    EVAL_LANGFUSE_SECRET_KEY: 'sk-lf-test',
+  };
+
+  it('publishes nowhere by default, and reads no Langfuse variable', () => {
+    expect(parseEvalArgs([], env).publish).toBeNull();
+    expect(parseEvalArgs([], { ...env, ...langfuse }).publish).toBeNull();
+  });
+
+  it('reads the keys and defaults the base URL to Langfuse Cloud (EU)', () => {
+    expect(parseEvalArgs(['--publish'], { ...env, ...langfuse }).publish).toEqual({
+      publicKey: 'pk-lf-test',
+      secretKey: 'sk-lf-test',
+      baseUrl: 'https://cloud.langfuse.com',
+    });
+  });
+
+  it('takes the base URL from EVAL_LANGFUSE_BASE_URL', () => {
+    const config = parseEvalArgs(['--publish'], {
+      ...env,
+      ...langfuse,
+      EVAL_LANGFUSE_BASE_URL: 'https://us.cloud.langfuse.com',
+    });
+
+    expect(config.publish?.baseUrl).toBe('https://us.cloud.langfuse.com');
+  });
+
+  it.each(['EVAL_LANGFUSE_PUBLIC_KEY', 'EVAL_LANGFUSE_SECRET_KEY'])(
+    'refuses --publish without %s, before any model call',
+    (missing) => {
+      const partial = { ...env, ...langfuse, [missing]: '  ' };
+
+      expect(() => parseEvalArgs(['--publish'], partial)).toThrow(missing);
+    },
+  );
+
+  it('does not let a target key stand in for the Langfuse keys', () => {
+    expect(() => parseEvalArgs(['--publish'], env)).toThrow(/EVAL_LANGFUSE_PUBLIC_KEY/);
+  });
+
+  it('refuses a base URL that is not http(s)', () => {
+    expect(() =>
+      parseEvalArgs(['--publish'], { ...env, ...langfuse, EVAL_LANGFUSE_BASE_URL: 'ftp://x' }),
+    ).toThrow('EVAL_LANGFUSE_BASE_URL');
+  });
+
+  it('does not publish a judge validation run (--validate-judge)', () => {
+    const judgeEnv = {
+      EVAL_JUDGE_PROVIDER: 'openai',
+      EVAL_JUDGE_MODEL: 'm',
+      EVAL_JUDGE_API_KEY: 'jk',
+      ...langfuse,
+    };
+
+    expect(parseEvalArgs(['--validate-judge', '--publish'], judgeEnv).publish).toBeNull();
+  });
+});
