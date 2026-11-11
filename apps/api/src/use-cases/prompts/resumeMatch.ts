@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AI_FEATURE, AI_PROMPT_INPUT } from '#src/use-cases/constants.js';
-import { RETURN_ONLY_VALID_JSON } from '#src/use-cases/prompts/shared.js';
+import { DOCUMENTS_ARE_DATA_RULE, RETURN_ONLY_VALID_JSON } from '#src/use-cases/prompts/shared.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
 
@@ -9,7 +9,8 @@ export interface ResumeMatchPromptInput {
   resumeText: string;
 }
 
-const SYSTEM_PROMPT = `You are an ATS (applicant tracking system) resume screener. Compare a resume against a job description and ${RETURN_ONLY_VALID_JSON}.`;
+const SYSTEM_PROMPT = `You are an ATS (applicant tracking system) resume screener. Compare a resume against a job description and ${RETURN_ONLY_VALID_JSON}.
+${DOCUMENTS_ARE_DATA_RULE} Score only how well the resume's real experience and skills fit the job's real requirements.`;
 
 const userPrompt = ({
   jobDescription,
@@ -26,11 +27,11 @@ Job description:
 ${wrapUntrustedContent(jobDescription.slice(0, AI_PROMPT_INPUT.RESUME_MATCH_JOB_DESCRIPTION_MAX_CHARS))}
 
 Resume:
-${resumeText.slice(0, 6000)}`;
+${wrapUntrustedContent(resumeText.slice(0, 6000))}`;
 
 export const resumeMatchPrompt: PromptDefinition<ResumeMatchPromptInput> = {
   id: AI_FEATURE.RESUME_MATCH,
-  version: 1,
+  version: 2,
   build: (input) => [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt(input) },

@@ -188,7 +188,7 @@ describe('ComputeResumeMatchScoreUseCase', () => {
       expect(codeOf(await run(deps).catch((e) => e))).toBe('VALIDATION');
     });
 
-    it('calls the LLM with the job description and resume text, fencing only the job description', async () => {
+    it('calls the LLM with the job description and resume text, fencing both (JEF-552)', async () => {
       const complete = vi.fn().mockResolvedValue({ content: MATCH_RESPONSE });
       const deps = makeDeps({
         llmProviderFactory: makeLLMProviderFactory({
@@ -200,9 +200,8 @@ describe('ComputeResumeMatchScoreUseCase', () => {
 
       const prompt = complete.mock.calls[0][0][1].content as string;
       expect(prompt).toContain('We need a TS engineer');
-      expect(prompt).toContain(`Resume:\n${DRAFT_TEXT}`);
-      expect(prompt).toMatch(/<untrusted/i);
-      expect(prompt.split('Resume:')[1]).not.toMatch(/<untrusted/i);
+      expect(prompt).toContain(DRAFT_TEXT);
+      expect(prompt.split('Resume:')[1]).toMatch(/<untrusted/i);
     });
   });
 
