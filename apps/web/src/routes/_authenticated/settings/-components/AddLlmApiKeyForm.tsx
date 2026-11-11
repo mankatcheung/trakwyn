@@ -11,7 +11,9 @@ import {
   SAVE_LLM_API_KEY,
   TEST_LLM_API_KEY,
   extractGqlError,
+  LLM_PROVIDER_LABEL,
   llmApiKeySchema,
+  llmProviderDataUseUrl,
   type LlmApiKeyForm,
   type TestLlmApiKeyResult,
 } from './shared';
@@ -54,6 +56,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
   });
   const provider = form.watch('provider');
   const isCustomProvider = provider === CUSTOM_LLM_PROVIDER;
+  const dataUseUrl = llmProviderDataUseUrl(provider);
   const providerValues = providerOptions.map((o) => o.value).join(',');
 
   useEffect(() => {
@@ -127,6 +130,22 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
             </option>
           ))}
         </Select>
+        {dataUseUrl ? (
+          <a
+            href={dataUseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-xs text-gray-500 underline"
+          >
+            {t('integrations.dataUseLink', {
+              provider: LLM_PROVIDER_LABEL[provider] ?? provider,
+            })}
+          </a>
+        ) : (
+          isCustomProvider && (
+            <p className="mt-1 text-xs text-gray-500">{t('integrations.customDataUseHint')}</p>
+          )
+        )}
       </div>
       <div>
         <FormLabel>{t('integrations.apiKeyLabel')}</FormLabel>

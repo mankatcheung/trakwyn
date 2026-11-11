@@ -87,6 +87,35 @@ export const LLM_PROVIDER_LABEL: Record<string, string> = {
   custom: 'Custom (OpenAI-compatible)',
 };
 
+/**
+ * Where each provider says how it handles API content (JEF-549). Shown under the
+ * provider picker so a user can read the policy that governs their own key.
+ * `custom` has none: the endpoint's operator decides. Last checked: see
+ * `docs/ai-data-handling.md`.
+ */
+export const LLM_PROVIDER_DATA_USE_URL: Record<string, string> = {
+  openai: 'https://platform.openai.com/docs/guides/your-data',
+  anthropic: 'https://www.anthropic.com/legal/privacy',
+  googleai: 'https://ai.google.dev/gemini-api/terms',
+  openrouter: 'https://openrouter.ai/docs/guides/privacy/logging',
+  mistral: 'https://legal.mistral.ai/terms/privacy-policy',
+  groq: 'https://groq.com/privacy-policy',
+  xai: 'https://x.ai/legal/privacy-policy',
+  deepseek: 'https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html',
+  nvidia: 'https://www.nvidia.com/en-us/about-nvidia/privacy-policy/',
+};
+
+/** The data-use link for a provider, or null when it has none or is not an `https:` URL. */
+export function llmProviderDataUseUrl(provider: string): string | null {
+  const raw = LLM_PROVIDER_DATA_USE_URL[provider];
+  if (!raw) return null;
+  try {
+    return new URL(raw).protocol === 'https:' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface ImportSummary {
   applicationsImported: number;
   applicationsSkipped: number;
