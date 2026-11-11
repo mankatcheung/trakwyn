@@ -40,7 +40,7 @@ Respond with ONLY a JSON object: {"points": [{"point": "...", "source": "..."}]}
 
 export const talkingPointsPrompt: PromptDefinition<TalkingPointsPromptInput> = {
   id: AI_FEATURE.TALKING_POINTS,
-  version: 2,
+  version: 3,
   build: ({ contextText, backgroundText, question, request, customAiPrompt }) =>
     promptMessages({
       system: SYSTEM_PROMPT,
