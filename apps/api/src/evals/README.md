@@ -21,7 +21,8 @@ For the design notes behind each group of cases (why they exist, how to add one)
 9. [Reading the report](#reading-the-report)
 10. [The cache](#the-cache)
 11. [What is covered](#what-is-covered)
-12. [Troubleshooting](#troubleshooting)
+12. [Where model text is rendered](#where-model-text-is-rendered)
+13. [Troubleshooting](#troubleshooting)
 
 ## Quick start
 
@@ -244,22 +245,36 @@ Below the table:
 
 ## What is covered
 
-The suite has **54 cases** over six features:
+The suite has **65 cases** over six features:
 
-| Feature (prompt)        | Cases | What they check                                                                                                                                                                        |
-| ----------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Job description parsing | 12    | Clean ads, a page with its navigation attached, German, a recruiter blurb, a prompt injection, a long posting that must be summarised. Ids start `jd-`.                                |
-| Resume match score      | 10    | Strong, partial, junior for senior, adjacent field, zero overlap both ways, an injection in the resume and one in the job description. Ids start `match-`.                             |
-| Resume                  | 5     | A posting that asks for skills the user lacks, a thin profile, an empty skills list, an instruction hidden in the posting and in a note. **Graded by the judge.** Ids start `resume-`. |
-| Cover letter            | 5     | The same five situations. **Graded by the judge.** Ids start `cover-letter-`.                                                                                                          |
-| Chat tool selection     | 15    | Whether the assistant picks the right tool with the right arguments. Writes are proposals, never applied; a delete is refused. Ids start `chat-`.                                      |
-| Company briefing        | 7     | A briefing grounded in the pages it was given, not inventing sources, and ignoring orders hidden in a page. Ids start `briefing-`.                                                     |
+| Feature (prompt)        | Cases | What they check                                                                                                                                                                                                                                    |
+| ----------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Job description parsing | 13    | Clean ads, a page with its navigation attached, German, a recruiter blurb, a prompt injection, one that plants an image and a link, a long posting that must be summarised. Ids start `jd-`.                                                       |
+| Resume match score      | 10    | Strong, partial, junior for senior, adjacent field, zero overlap both ways, an injection in the resume and one in the job description. Ids start `match-`.                                                                                         |
+| Resume                  | 7     | A posting that asks for skills the user lacks, a thin profile, an empty skills list, an instruction hidden in the posting and in a note, and two that order a link and an address into the document. **Graded by the judge.** Ids start `resume-`. |
+| Cover letter            | 7     | The same seven situations. **Graded by the judge.** Ids start `cover-letter-`.                                                                                                                                                                     |
+| Chat tool selection     | 20    | Whether the assistant picks the right tool with the right arguments. Writes are proposals, never applied; a delete is refused. Ids start `chat-`.                                                                                                  |
+| Company briefing        | 8     | A briefing grounded in the pages it was given, not inventing sources, and ignoring orders hidden in a page, including one to send the reader to another site. Ids start `briefing-`.                                                               |
 
 Checks are ranges and "mentions" tests, not exact wording, because every model phrases a correct answer differently. Fixtures are invented. Tone and helpfulness are not judged.
 
 ### Cost
 
-A full run is about 22 short requests for the plain features, 15 chat turns (each may make several model calls), and for the resume and cover letter, 10 generations and 10 judge calls. Add 11 judge calls for validation. The report shows tokens for the target and the judge separately. With `--cache`, a repeat is free.
+A full run is about 22 short requests for the plain features, 20 chat turns (each may make several model calls), and for the resume and cover letter, 14 generations and 14 judge calls. Add 11 judge calls for validation. The report shows tokens for the target and the judge separately. With `--cache`, a repeat is free.
+
+## Where model text is rendered
+
+The render side is not an eval (the evals only ask whether a model _writes_ a link or image; JEF-464 and the tests below cover whether the app _shows_ one). Every place the app shows model text, and how it is protected:
+
+| Surface                                                                                                   | Protection                                                                                                                                                          | Test                                                            |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Chat, web (`ChatConversationView` through `Markdown.tsx`); the floating chat window renders the same view | `safeMarkdownUrl`: images become their alt text, only `http`, `https` and `mailto` links survive                                                                    | `Markdown.test.tsx`, `ChatConversationView.test.tsx`            |
+| Chat, mobile (`ChatScreen` through `Markdown.tsx`)                                                        | `isSafeMarkdownUrl`, no `Image` rule                                                                                                                                | `Markdown.test.tsx`, `ChatScreen.test.tsx`                      |
+| Company briefing, web and mobile                                                                          | The same `Markdown`                                                                                                                                                 | `CompanyBriefingTab.test.tsx`, `CompanyBriefingScreen.test.tsx` |
+| Polish preview, web and mobile                                                                            | The same `Markdown`                                                                                                                                                 | `PolishPreview.test.tsx` (web and mobile)                       |
+| Draft editor, web (`DocumentDraftEditor`, TipTap `StarterKit`)                                            | `markdownToTiptapDoc` keeps links and images as plain text, and the Link extension in `StarterKit` v3 does not link loaded text (it links only what the user types) | `draftEditorLinks.test.ts` runs the real extensions             |
+| PDF export (`infrastructure/pdf`)                                                                         | `ReactPdfDocumentRenderer` draws only `Text`; link marks and image nodes are dropped                                                                                | `ReactPdfDocumentRenderer.test.ts`                              |
+| Parsed job description, match summary, mock-interview answers and talking points                          | Shown as plain text in a field or a paragraph                                                                                                                       | none needed: nothing is parsed as Markdown or HTML              |
 
 ## Troubleshooting
 
