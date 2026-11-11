@@ -2,13 +2,15 @@ import { LegalPageLayout } from '#/components/LegalPageLayout';
 import { CONTACT_EMAIL } from '#/constants';
 import { useLocale } from '#/lib/i18n';
 
-const LAST_UPDATED = 'November 4, 2026';
+const LAST_UPDATED = 'November 11, 2026';
 
 /**
  * AI sub-processors behind Trakwyn AI (JEF-452, JEF-453). Hosted AI runs on
  * Cloudflare Workers AI through AI Gateway, so Cloudflare is the only one; no
  * content goes to Google or OpenAI (a user's own key is a separate path, below).
- * Names are not translated.
+ * Names are not translated. Every claim made about these flows is mapped to the
+ * code that makes it true in docs/ai-data-handling.md (JEF-549); the
+ * architecture test aiDataHandling.test.ts fails when one of them drifts.
  */
 const AI_SUBPROCESSORS = [
   {

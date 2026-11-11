@@ -12,6 +12,8 @@
     "couldNotDelete": "Could not delete",
     "addProvider": "Add a provider",
     "providerLabel": "Provider",
+    "dataUseLink": "How {{provider}} handles your data",
+    "customDataUseHint": "The company running your endpoint decides how it handles your data. Check its policy before you add a key.",
     "allProvidersConfigured": "All supported providers are configured.",
     "apiKeyRequired": "API key is required",
     "apiKeyPlaceholder": "API key",
