@@ -20,6 +20,7 @@ import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
 export interface GenerateCoverLetterInput {
   applicationId: string;
@@ -27,6 +28,11 @@ export interface GenerateCoverLetterInput {
   resumeText?: string | null;
   /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
   instructions?: string | null;
+  /**
+   * Told which provider and model answered (JEF-547), so a caller that saves the
+   * output can snapshot it. Not called when the call is not usage-tracked.
+   */
+  onAnswered?: (answeredBy: LLMAnsweredBy | undefined) => void;
 }
 
 interface Deps {
@@ -109,10 +115,10 @@ export class GenerateCoverLetterUseCase {
       instructions,
     });
 
-    return (
-      await llmProvider.complete(messages, 1024, undefined, {
-        reasoning: AI_REASONING_DEFAULTS.COVER_LETTER,
-      })
-    ).content;
+    const result = await llmProvider.complete(messages, 1024, undefined, {
+      reasoning: AI_REASONING_DEFAULTS.COVER_LETTER,
+    });
+    input.onAnswered?.(result.answeredBy);
+    return result.content;
   }
 }

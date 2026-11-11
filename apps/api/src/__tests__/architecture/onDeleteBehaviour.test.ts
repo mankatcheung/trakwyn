@@ -18,6 +18,7 @@ import * as schema from '#src/infrastructure/db/schema.js';
  * anywhere", missing both of the ones below.
  */
 const DECLARED_ON_DELETE: Record<string, string> = {
+  'AiFeedback -> User': 'cascade', // erasure removes the rating; `targetId` is deliberately not a foreign key, so trimming a message keeps the signal (JEF-547)
   'ActivityLog -> JobApplication': 'cascade', // an application's history is part of the application; see the note below
   'ApiToken -> User': 'cascade',
   'ApplicationTag -> JobApplication': 'cascade',

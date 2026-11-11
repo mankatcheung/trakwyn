@@ -265,6 +265,16 @@ export const documentDraft = pgTable(
       onDelete: 'set null',
     }),
     aiInstructions: text('aiInstructions'),
+    /**
+     * Which model and prompt wrote this (JEF-547), snapshotted when the last
+     * generation is written so a rating can name them after a failover. All null on
+     * output from before the snapshot, and on a draft that was never generated.
+     */
+    aiProvider: text('aiProvider'),
+    aiModel: text('aiModel'),
+    aiPromptVersion: integer('aiPromptVersion'),
+    aiSource: text('aiSource'),
+    aiTier: text('aiTier'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),

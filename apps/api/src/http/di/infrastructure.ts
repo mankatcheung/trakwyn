@@ -63,6 +63,7 @@ import { SearchCompanyResearchSource } from '#src/infrastructure/companyResearch
 import { buildWebSearchProvider } from '#src/infrastructure/search/buildWebSearchProvider.js';
 import { CachedParsedPostingStore } from '#src/infrastructure/jobDescription/CachedParsedPostingStore.js';
 import { FetchJobPostingSourceResolver } from '#src/infrastructure/jobDescription/FetchJobPostingSourceResolver.js';
+import { AiFeedbackObserver } from '#src/infrastructure/observability/AiFeedbackObserver.js';
 import { ToolCallObserver } from '#src/infrastructure/observability/ToolCallObserver.js';
 import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
 
@@ -194,6 +195,9 @@ export const infrastructure = {
       new ToolCallObserver({ tools: TOOL_CATALOGUE, logger, tracing: isObservabilityEnabled }),
     { lifetime: Lifetime.SINGLETON },
   ),
+  aiFeedbackObserver: asFunction(({ logger }: Cradle) => new AiFeedbackObserver({ logger }), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   // Fails closed, unlike the cache and rate limiter that share this Redis (JEF-449).
   aiSpendGuard: asFunction(

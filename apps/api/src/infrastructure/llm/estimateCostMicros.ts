@@ -18,8 +18,17 @@ const DEFAULT_MODEL: Readonly<Record<string, string>> = {
   [LLM_PROVIDER.NVIDIA]: LLM.NVIDIA_DEFAULT_MODEL,
 };
 
+/**
+ * The model a call really ran on: the one the key names, else the provider's
+ * default. Null for a provider with no table entry (a custom endpoint), where
+ * no model is known.
+ */
+export function resolveModelName(provider: string, model: string | null): string | null {
+  return model ?? DEFAULT_MODEL[provider] ?? null;
+}
+
 export function findLlmPrice(provider: string, model: string | null): LlmPrice | null {
-  const resolvedModel = model ?? DEFAULT_MODEL[provider];
+  const resolvedModel = resolveModelName(provider, model);
   if (!resolvedModel) return null;
   return LLM_PRICES[provider]?.[resolvedModel] ?? null;
 }

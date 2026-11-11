@@ -15,3 +15,22 @@ Every prompt Trakwyn sends a model is a typed module in `use-cases/prompts/`, no
 - **Evals** print each case's `id@version` and a "Prompts" column in the report (`evals/promptRef.ts`), so two runs on either side of a wording change can be told apart. A new `EvalFeature` must say which prompt it exercises.
 - **Two caches key on the wording.** Bump `PARSED_POSTING_CACHE.VERSION` (JEF-450) in the same change as `parseJobDescriptionPrompt.version`.
 - **A new AI feature** adds its `AI_FEATURE` entry, a prompt module, its `RECORDED` line and a `*PromptMessages` snapshot test, and passes `promptVersion` where it resolves a provider.
+
+## Reading AI feedback (JEF-547)
+
+A thumbs up/down on an assistant reply (web and mobile) or on a generated resume or cover letter (web) says which feature, model and prompt version to write eval cases for. It is stored without any text.
+
+- **What is stored.** `AiFeedback` (one row per user per target; `targetId` is not a foreign key, so trimming a message keeps the signal) holds `feature`, `rating` (`up`/`down`), an optional `reason` from `AI_FEEDBACK_REASON` (no free text, on purpose) and the generation's `provider`, `model`, `promptVersion`, `source` and `tier`. Those come from `Message.ai*` and `DocumentDraft.ai*`, snapshotted when the output is written: `UsageTrackingLLMProvider` stamps `answeredBy` on each completion, so after a failover it names the leg that answered. A draft's snapshot is written at generate time (`GenerateIntoDocumentDraftUseCase`) because the editor saves the text later; generating again overwrites it. A key that names no model records the provider's default.
+- **Emitted.** `RateAiOutputUseCase` calls `IAiFeedbackObserver` (`infrastructure/observability/AiFeedbackObserver.ts`), which counts `trakwyn.ai.feedback` (`feature`, `rating`, `reason`, `model`, `prompt_version`, `source`; `none`, `unknown` and `0` where absent) and logs `ai.feedback.rated` at `info` with the same fields plus `provider` and `tier`. No monitor reads them yet.
+- **Down-votes by feature, model and prompt version.** On the logs dataset (`AXIOM_LOGS_DATASET`) the fields are `attributes.*`:
+
+  ```
+  ['<logs dataset>']
+  | where ['attributes.event'] == "ai.feedback.rated" and ['attributes.rating'] == "down"
+  | summarize downs = count() by ['attributes.feature'], ['attributes.model'], ['attributes.prompt_version'], ['attributes.reason']
+  | order by downs desc
+  ```
+
+  The counter in the metrics dataset answers the same question. Look monthly, find the feature and prompt version with the most down-votes, then write a new eval case by hand: fixtures must stay invented, so a rating never becomes a case automatically.
+
+- **Up-votes alone say little.** Compare against `trakwyn.llm.calls` for the same feature to get a rate.

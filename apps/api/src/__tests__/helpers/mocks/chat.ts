@@ -19,6 +19,7 @@ export const makeMessageRepository = (
   overrides?: Partial<IMessageRepository>,
 ): IMessageRepository => ({
   create: vi.fn().mockImplementation(async (data) => makeMessage(data)),
+  findById: vi.fn().mockResolvedValue(null),
   findAllByConversationId: vi.fn().mockResolvedValue([]),
   trimToLatest: vi.fn().mockResolvedValue(undefined),
   ...overrides,
@@ -30,6 +31,7 @@ export const makeMessage = (overrides?: Partial<Message>): Message => ({
   role: 'user',
   content: 'hi',
   toolTrace: null,
+  generation: null,
   createdAt: new Date('2024-01-01'),
   ...overrides,
 });

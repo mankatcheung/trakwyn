@@ -8,3 +8,4 @@ export * from './schema/notification.js';
 export * from './schema/profile.js';
 export * from './schema/consent.js';
 export * from './schema/billing.js';
+export * from './schema/aiFeedback.js';

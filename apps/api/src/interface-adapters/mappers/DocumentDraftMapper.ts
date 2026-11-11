@@ -9,6 +9,8 @@ export interface DocumentDraftDTO {
   plainText: string;
   sourceDocumentId: string | null;
   aiInstructions: string | null;
+  /** The draft has an AI generation behind it, so it can be rated (JEF-547). */
+  aiGenerated: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +26,7 @@ export class DocumentDraftMapper {
       plainText: draft.plainText,
       sourceDocumentId: draft.sourceDocumentId,
       aiInstructions: draft.aiInstructions,
+      aiGenerated: draft.generation !== null,
       createdAt: draft.createdAt.toISOString(),
       updatedAt: draft.updatedAt.toISOString(),
     };

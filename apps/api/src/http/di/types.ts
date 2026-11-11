@@ -41,6 +41,11 @@ import type { ISessionBlocklist } from '#src/use-cases/ports/ISessionBlocklist.j
 import type { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import type { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import type { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import type { DrizzleAiFeedbackRepository } from '#src/infrastructure/db/repositories/DrizzleAiFeedbackRepository.js';
+import type { IAiFeedbackObserver } from '#src/use-cases/ports/IAiFeedbackObserver.js';
+import type { RateAiOutputUseCase } from '#src/use-cases/aiFeedback/RateAiOutputUseCase.js';
+import type { GetAiOutputRatingsUseCase } from '#src/use-cases/aiFeedback/GetAiOutputRatingsUseCase.js';
+import type { ClearAiOutputRatingUseCase } from '#src/use-cases/aiFeedback/ClearAiOutputRatingUseCase.js';
 import type { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
 import type { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.js';
 import type { ConfirmChatActionUseCase } from '#src/use-cases/chat/ConfirmChatActionUseCase.js';
@@ -441,6 +446,7 @@ export interface Cradle {
   cookieConsentRepository: DrizzleCookieConsentRepository;
   drizzleMessageRepository: DrizzleMessageRepository;
   messageRepository: TrimmingMessageRepository;
+  aiFeedbackRepository: DrizzleAiFeedbackRepository;
   chatActionProposalRepository: DrizzleChatActionProposalRepository;
   conversationRepository: DrizzleConversationRepository;
   llmApiKeyRepository: ILlmApiKeyRepository;
@@ -458,6 +464,7 @@ export interface Cradle {
   oauthRateLimiter: IRateLimiter;
   documentFileRateLimiter: IRateLimiter;
   chatRateLimiter: IRateLimiter;
+  aiFeedbackRateLimiter: IRateLimiter;
   generateCoverLetterRateLimiter: IRateLimiter;
   parseJobDescriptionRateLimiter: IRateLimiter;
   parseCvRateLimiter: IRateLimiter;
@@ -714,6 +721,7 @@ export interface Cradle {
   transactionManager: DrizzleTransactionManager;
   outboundUrlPolicy: IOutboundUrlPolicy;
   toolCallObserver: IToolCallObserver;
+  aiFeedbackObserver: IAiFeedbackObserver;
   oidcTokenVerifier: IOidcTokenVerifier;
   llmApiKeyCipher: ILlmApiKeyCipher;
   platformLlmProviderFactory: IPlatformLLMProviderFactory;
@@ -737,6 +745,9 @@ export interface Cradle {
   chatTools: LLMToolDefinition[];
   chatWriteTools: ChatWriteTools;
   confirmChatActionUseCase: ConfirmChatActionUseCase;
+  rateAiOutputUseCase: RateAiOutputUseCase;
+  getAiOutputRatingsUseCase: GetAiOutputRatingsUseCase;
+  clearAiOutputRatingUseCase: ClearAiOutputRatingUseCase;
   dismissChatActionUseCase: DismissChatActionUseCase;
   streamChatWithAssistantUseCase: StreamChatWithAssistantUseCase;
   computeResumeMatchScoreUseCase: ComputeResumeMatchScoreUseCase;

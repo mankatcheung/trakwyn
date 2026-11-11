@@ -5,6 +5,7 @@ import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { LlmProviderErrorKind } from '#src/use-cases/errors/DomainError.js';
+import type { AiFeedbackEvent } from '#src/use-cases/ports/IAiFeedbackObserver.js';
 
 /**
  * OpenTelemetry metric names (JEF-129). Dot-separated per OTel naming
@@ -65,6 +66,8 @@ export const METRICS = {
   HOSTED_AI_CIRCUIT_TRANSITIONS: 'trakwyn.hosted_ai.circuit_transitions',
   /** A hosted call refused because its model's circuit is open — attribute: model (JEF-504). */
   HOSTED_AI_CIRCUIT_SHORT_CIRCUITS: 'trakwyn.hosted_ai.circuit_short_circuits',
+  /** A user rated AI output (JEF-547) — attributes: feature, rating, reason, model, prompt_version, source. No text, only bounded labels. */
+  AI_FEEDBACK: 'trakwyn.ai.feedback',
   /** One LLM call through `forUser` — attributes: provider, model, operation, outcome, error_kind (JEF-113). */
   LLM_CALLS: 'trakwyn.llm.calls',
   /** Tokens an LLM call used — attributes: provider, direction (JEF-113). */
@@ -223,6 +226,8 @@ export interface IMetrics {
   /** Tokens one LLM call used in one direction (JEF-113). */
   recordLlmTokens(provider: string, direction: LlmTokenDirection, count: number): void;
   recordLlmCost(cost: LlmCostMetric): void;
+  /** A user rated AI output (JEF-547). */
+  recordAiFeedback(event: AiFeedbackEvent): void;
   /** What Workers AI's neurons say a platform call cost (JEF-497). */
   recordLlmNeuronCost(model: string | null, feature: string, costMicros: number): void;
   /** The estimate is `over` or `under` the neurons-based cost beyond tolerance (JEF-497). */
@@ -254,6 +259,7 @@ export const noopMetrics: IMetrics = {
   recordLlmCall: () => {},
   recordLlmTokens: () => {},
   recordLlmCost: () => {},
+  recordAiFeedback: () => {},
   recordLlmNeuronCost: () => {},
   recordLlmCostMismatch: () => {},
   recordHostedAiBreakerOpen: () => {},
@@ -289,6 +295,7 @@ class OtelMetrics implements IMetrics {
   private llmCalls?: Counter;
   private llmTokens?: Counter;
   private llmCost?: Counter;
+  private aiFeedback?: Counter;
   private llmNeuronCost?: Counter;
   private llmCostMismatch?: Counter;
   private hostedAiBreakerOpen?: Counter;
@@ -469,6 +476,20 @@ class OtelMetrics implements IMetrics {
       description: "Cost of platform LLM calls from Workers AI's neurons, in micro-USD",
     });
     this.llmNeuronCost.add(costMicros, { model: model ?? 'unknown', feature });
+  }
+
+  recordAiFeedback({ feature, rating, reason, generation }: AiFeedbackEvent): void {
+    this.aiFeedback ??= this.meter.createCounter(METRICS.AI_FEEDBACK, {
+      description: 'Thumbs up and down on AI output, by feature, model and prompt version',
+    });
+    this.aiFeedback.add(1, {
+      feature,
+      rating,
+      reason: reason ?? 'none',
+      model: generation?.model ?? 'unknown',
+      prompt_version: generation?.promptVersion ?? 0,
+      source: generation?.source ?? 'unknown',
+    });
   }
 
   recordLlmCostMismatch(model: string | null, direction: CostMismatchDirection): void {

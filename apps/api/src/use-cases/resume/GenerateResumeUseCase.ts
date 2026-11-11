@@ -26,12 +26,18 @@ import {
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
 export interface GenerateResumeInput {
   applicationId: string;
   userId: string;
   /** The user's own steer (JEF-506): tone, focus, length. Never the format. */
   instructions?: string | null;
+  /**
+   * Told which provider and model answered (JEF-547), so a caller that saves the
+   * output can snapshot it. Not called when the call is not usage-tracked.
+   */
+  onAnswered?: (answeredBy: LLMAnsweredBy | undefined) => void;
 }
 
 interface Deps extends UserProfileRepositories {
@@ -140,6 +146,7 @@ export class GenerateResumeUseCase {
       json: true,
       reasoning: AI_REASONING_DEFAULTS.RESUME,
     });
+    input.onAnswered?.(result.answeredBy);
     assertNotTruncated(result);
     const resume = parseAiJson<ResumeContent>(result.content, resumeResponseSchema);
     assertGrounded(resume, profile);
