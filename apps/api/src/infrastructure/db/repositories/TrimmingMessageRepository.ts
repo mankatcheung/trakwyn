@@ -37,6 +37,10 @@ export class TrimmingMessageRepository implements IMessageRepository {
     return created;
   }
 
+  findById(id: string): Promise<Message | null> {
+    return this.inner.findById(id);
+  }
+
   findAllByConversationId(conversationId: string): Promise<Message[]> {
     return this.inner.findAllByConversationId(conversationId);
   }

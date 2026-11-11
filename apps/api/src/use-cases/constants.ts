@@ -216,6 +216,36 @@ export const AI_PROVIDER_ORDER = {
 export type LlmUsageSource = (typeof LLM_USAGE_SOURCE)[keyof typeof LLM_USAGE_SOURCE];
 
 /**
+ * Feedback on AI output (JEF-547). One row per user per output, holding which
+ * model and prompt version wrote it and never the text. The reasons are a
+ * fixed list on purpose: free text would carry the user's own content.
+ */
+export const AI_FEEDBACK_RATING = {
+  UP: 'up',
+  DOWN: 'down',
+} as const;
+
+export type AiFeedbackRating = (typeof AI_FEEDBACK_RATING)[keyof typeof AI_FEEDBACK_RATING];
+
+export const AI_FEEDBACK_REASON = {
+  WRONG_OR_MADE_UP: 'wrong_or_made_up',
+  IGNORED_MY_REQUEST: 'ignored_my_request',
+  UNSAFE_OR_INAPPROPRIATE: 'unsafe_or_inappropriate',
+  NOT_USEFUL: 'not_useful',
+  OTHER: 'other',
+} as const;
+
+export type AiFeedbackReason = (typeof AI_FEEDBACK_REASON)[keyof typeof AI_FEEDBACK_REASON];
+
+/** What a rating is attached to: an assistant chat message, or a generated resume or cover letter draft. */
+export const AI_FEEDBACK_TARGET = {
+  CHAT_MESSAGE: 'chat_message',
+  DOCUMENT_DRAFT: 'document_draft',
+} as const;
+
+export type AiFeedbackTarget = (typeof AI_FEEDBACK_TARGET)[keyof typeof AI_FEEDBACK_TARGET];
+
+/**
  * Hosted AI credits (JEF-447). A call on the platform's key costs the weight
  * of its feature; a call on the user's own key costs nothing. A chat turn is
  * one resolve, so it is one charge however many tools the model calls.

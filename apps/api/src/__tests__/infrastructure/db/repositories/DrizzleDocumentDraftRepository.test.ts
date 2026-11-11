@@ -222,4 +222,38 @@ describe('DrizzleDocumentDraftRepository', () => {
       ).toBeNull();
     });
   });
+
+  describe('recordGeneration (JEF-547)', () => {
+    const generation = {
+      provider: 'google',
+      model: 'gemini-test',
+      promptVersion: 2,
+      source: 'byok',
+      tier: null,
+    };
+
+    it('notes the model and prompt, and a later generation overwrites them', async () => {
+      await create();
+      expect((await repo.findById('draft-1'))?.generation).toBeNull();
+
+      await repo.recordGeneration('draft-1', generation);
+      expect((await repo.findById('draft-1'))?.generation).toEqual(generation);
+
+      await repo.recordGeneration('draft-1', { ...generation, model: 'other', promptVersion: 3 });
+      expect((await repo.findById('draft-1'))?.generation).toEqual({
+        ...generation,
+        model: 'other',
+        promptVersion: 3,
+      });
+    });
+
+    it('survives the user saving edits to the draft', async () => {
+      await create();
+      await repo.recordGeneration('draft-1', generation);
+
+      await repo.updateContent('draft-1', { contentJson: '{"type":"doc"}', plainText: 'edited' });
+
+      expect((await repo.findById('draft-1'))?.generation).toEqual(generation);
+    });
+  });
 });

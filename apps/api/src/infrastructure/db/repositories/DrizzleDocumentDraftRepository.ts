@@ -8,6 +8,8 @@ import type {
   UpdateDocumentDraftContentData,
 } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import { getClient } from '../transactionContext.js';
+import type { AiGeneration } from '#src/domain/aiFeedback/AiFeedback.js';
+import { generationFromColumns, generationToColumns } from './aiGenerationColumns.js';
 
 export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository {
   private readonly database: DrizzleDb;
@@ -101,6 +103,13 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
     return this.toEntity(row);
   }
 
+  async recordGeneration(id: string, generation: AiGeneration): Promise<void> {
+    await this.db
+      .update(documentDraft)
+      .set(generationToColumns(generation))
+      .where(eq(documentDraft.id, id));
+  }
+
   async delete(id: string): Promise<void> {
     await this.db.delete(documentDraft).where(eq(documentDraft.id, id));
   }
@@ -137,6 +146,7 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
       plainText: row.plainText,
       sourceDocumentId: row.sourceDocumentId,
       aiInstructions: row.aiInstructions,
+      generation: generationFromColumns(row),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

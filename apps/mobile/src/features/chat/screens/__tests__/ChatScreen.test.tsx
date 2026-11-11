@@ -120,6 +120,47 @@ describe('ChatScreen', () => {
     expect(queryByTestId('chat-proposal-confirm-p2')).toBeNull();
   });
 
+  describe('rating a reply (JEF-547)', () => {
+    const userMessage: ChatMessage = { ...message, id: 'u1', role: 'user', content: 'Hi' };
+
+    it('offers thumbs under the assistant reply and not under the user’s own message', async () => {
+      mockedUseChatHistory.mockReturnValue({
+        data: [userMessage, message],
+        isLoading: false,
+      } as never);
+
+      const { getByTestId, queryByTestId } = await renderScreen('conv-1');
+
+      await waitFor(() => expect(getByTestId('ai-feedback-up-1')).toBeTruthy());
+      expect(getByTestId('ai-feedback-down-1')).toBeTruthy();
+      expect(queryByTestId('ai-feedback-up-u1')).toBeNull();
+    });
+
+    it('shows the rating stored for a reply', async () => {
+      mockedUseChatHistory.mockReturnValue({
+        data: [{ ...message, myRating: { rating: 'UP', reason: null } }],
+        isLoading: false,
+      } as never);
+
+      const { getByTestId } = await renderScreen('conv-1');
+
+      await waitFor(() =>
+        expect(getByTestId('ai-feedback-up-1').props.accessibilityState.selected).toBe(true),
+      );
+    });
+
+    it('offers no thumbs under a reply that has no stored id yet', async () => {
+      mockedUseChatHistory.mockReturnValue({
+        data: [{ ...message, id: 'optimistic-123' }],
+        isLoading: false,
+      } as never);
+
+      const { queryByTestId } = await renderScreen('conv-1');
+
+      expect(queryByTestId('ai-feedback-up-optimistic-123')).toBeNull();
+    });
+  });
+
   describe('AI credits meter (JEF-511)', () => {
     const send = async (screen: Awaited<ReturnType<typeof render>>) => {
       await fireEvent.changeText(screen.getByTestId('chat-input'), 'Hi');

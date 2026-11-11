@@ -1,6 +1,8 @@
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import type { IAiFeedbackRepository } from '#src/use-cases/ports/IAiFeedbackRepository.js';
+import { AI_FEEDBACK_TARGET } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
@@ -9,6 +11,10 @@ import { proseToTiptapDoc } from '#src/use-cases/shared/proseToTiptapDoc.js';
 import { buildResumeContact } from '#src/use-cases/shared/buildResumeContact.js';
 import { resumeToTiptapDoc } from '#src/use-cases/shared/resumeToTiptapDoc.js';
 import { resolveResumeText } from '#src/use-cases/documents/resolveResumeText.js';
+import { toAiGeneration } from '#src/use-cases/aiFeedback/toAiGeneration.js';
+import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
+import { resumePrompt } from '#src/use-cases/prompts/resume.js';
+import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
 export interface GenerateIntoDocumentDraftInput {
   userId: string;
@@ -35,6 +41,7 @@ interface Deps {
       applicationId: string;
       resumeText?: string | null;
       instructions?: string | null;
+      onAnswered?: (answeredBy: LLMAnsweredBy | undefined) => void;
     }): Promise<string>;
   };
   generateResumeUseCase: {
@@ -42,9 +49,11 @@ interface Deps {
       userId: string;
       applicationId: string;
       instructions?: string | null;
+      onAnswered?: (answeredBy: LLMAnsweredBy | undefined) => void;
     }): Promise<ResumeContent>;
   };
   documentDraftRepository: IDocumentDraftRepository;
+  aiFeedbackRepository: IAiFeedbackRepository;
   documentRepository: IDocumentRepository;
   extractDocumentTextUseCase: IExtractDocumentTextUseCase;
   applicationRepository: IApplicationRepository;
@@ -69,12 +78,33 @@ export class GenerateIntoDocumentDraftUseCase implements IGenerateIntoDocumentDr
     if (!app) throw new NotFoundError('Application not found');
     if (app.userId !== input.userId) throw new ForbiddenError('Forbidden');
 
+    let answeredBy: LLMAnsweredBy | undefined;
+    const onAnswered = (a: LLMAnsweredBy | undefined) => {
+      answeredBy = a;
+    };
+    // The draft is saved later by the editor, so what a rating needs to know
+    // (who wrote this generation, JEF-547) is noted on the draft now. A new
+    // generation is new output, so the caller's rating of the last one goes:
+    // it would otherwise be filed under a model and prompt that never wrote it.
+    const recordGeneration = async (promptVersion: number) => {
+      const generation = toAiGeneration(answeredBy, promptVersion);
+      if (!generation) return;
+      await this.deps.documentDraftRepository.recordGeneration(draft.id, generation);
+      await this.deps.aiFeedbackRepository.clear(
+        input.userId,
+        AI_FEEDBACK_TARGET.DOCUMENT_DRAFT,
+        draft.id,
+      );
+    };
+
     if (draft.type === 'resume') {
       const resume = await this.deps.generateResumeUseCase.execute({
         userId: input.userId,
         applicationId: draft.applicationId,
         instructions: input.instructions,
+        onAnswered,
       });
+      await recordGeneration(resumePrompt.version);
       return resumeToTiptapDoc(
         resume,
         buildResumeContact(await this.deps.userRepository.findById(input.userId)),
@@ -92,7 +122,9 @@ export class GenerateIntoDocumentDraftUseCase implements IGenerateIntoDocumentDr
       applicationId: draft.applicationId,
       resumeText,
       instructions: input.instructions,
+      onAnswered,
     });
+    await recordGeneration(coverLetterPrompt.version);
     return proseToTiptapDoc(letter);
   }
 }

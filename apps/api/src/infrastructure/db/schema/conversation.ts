@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, index, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, index, jsonb } from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 import { user } from './user.js';
 
@@ -46,6 +46,16 @@ export const message = pgTable(
      * messages and on replies that needed no tools.
      */
     toolTrace: text('toolTrace'),
+    /**
+     * Which model and prompt wrote this (JEF-547), snapshotted when the output
+     * is written so a rating can name them after a failover. All null on
+     * output from before the snapshot, and on rows nobody rates.
+     */
+    aiProvider: text('aiProvider'),
+    aiModel: text('aiModel'),
+    aiPromptVersion: integer('aiPromptVersion'),
+    aiSource: text('aiSource'),
+    aiTier: text('aiTier'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),

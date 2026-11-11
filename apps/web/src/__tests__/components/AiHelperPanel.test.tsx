@@ -86,11 +86,15 @@ function setup({
   plainText = '',
   editorText = plainText,
   instructions = null,
+  aiGenerated = false,
+  rating = null,
 }: {
   type?: 'resume' | 'cover_letter';
   plainText?: string;
   editorText?: string;
   instructions?: string | null;
+  aiGenerated?: boolean;
+  rating?: { rating: 'UP' | 'DOWN'; reason: string | null } | null;
 } = {}) {
   const editor = makeEditor(editorText);
   const onSave = vi.fn().mockResolvedValue(true);
@@ -103,6 +107,8 @@ function setup({
         type={type}
         plainText={text}
         initialInstructions={instructions}
+        initialAiGenerated={aiGenerated}
+        initialRating={rating as never}
         editorRef={{ current: editor }}
         onSave={onSave}
       />
@@ -382,5 +388,78 @@ describe('AiHelperPanel — edits during and after a request (JEF-506)', () => {
 
     expect(editor.replaceContent).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();
+  });
+});
+
+describe('AiHelperPanel — rating the generation (JEF-547)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    m.profileEmpty = false;
+    api();
+  });
+
+  it('offers no rating on a draft the AI never wrote', () => {
+    setup({ plainText: 'My own words' });
+    expect(screen.queryByRole('button', { name: 'Good response' })).not.toBeInTheDocument();
+  });
+
+  it('shows the rating of an earlier generation after a reload', () => {
+    setup({
+      plainText: 'Generated text',
+      aiGenerated: true,
+      rating: { rating: 'DOWN', reason: 'NOT_USEFUL' },
+    });
+    expect(screen.getByRole('button', { name: 'Bad response' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByText('How is this draft?')).toBeInTheDocument();
+  });
+
+  it('shows the control once a generation has landed, with nothing chosen', async () => {
+    setup();
+    expect(screen.queryByRole('button', { name: 'Good response' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+
+    const up = await screen.findByRole('button', { name: 'Good response' });
+    expect(up).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('rates the draft by id, as a document draft', async () => {
+    setup({ plainText: 'Generated text', aiGenerated: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Good response' }));
+
+    await waitFor(() => expect(calls('RateAiOutput')).toHaveLength(1));
+    expect(calls('RateAiOutput')[0][1]).toEqual({
+      targetKind: 'DOCUMENT_DRAFT',
+      targetId: 'draft-1',
+      rating: 'UP',
+      reason: null,
+    });
+  });
+
+  it('starts a fresh rating when the draft is generated again', async () => {
+    setup({
+      plainText: 'Generated text',
+      editorText: '',
+      aiGenerated: true,
+      rating: { rating: 'UP', reason: null },
+    });
+    expect(screen.getByRole('button', { name: 'Good response' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /regenerate from scratch/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Replace with a new draft' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Good response' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      ),
+    );
   });
 });

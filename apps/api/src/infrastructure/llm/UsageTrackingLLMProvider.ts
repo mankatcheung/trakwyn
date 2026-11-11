@@ -7,6 +7,7 @@ import type {
   LLMStreamOptions,
   LLMCompleteResult,
   LLMUsage,
+  LLMAnsweredBy,
 } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
@@ -19,6 +20,7 @@ import {
 import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import {
   estimateCostMicros,
+  resolveModelName,
   warnPriceUnknownOnce,
 } from '#src/infrastructure/llm/estimateCostMicros.js';
 import type { IMetrics } from '#src/infrastructure/observability/metrics.js';
@@ -79,7 +81,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
   ): Promise<LLMCompleteResult> {
     const result = await this.deps.inner.complete(messages, maxTokens, signal, options);
     await this.record(result.usage);
-    return result;
+    return { ...result, answeredBy: this.answeredBy() };
   }
 
   async *completeWithToolsStream(
@@ -107,6 +109,8 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         if (event.type === 'done') {
           recorded = true;
           await this.record(event.usage);
+          yield { ...event, answeredBy: this.answeredBy() };
+          continue;
         }
         yield event;
       }
@@ -122,6 +126,17 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         }
       }
     }
+  }
+
+  private answeredBy(): LLMAnsweredBy {
+    const { provider, model, source, tier } = this.deps;
+    // A key that names no model runs the provider's default; a rating needs to say which.
+    return {
+      provider,
+      model: resolveModelName(provider, model),
+      source,
+      ...(tier ? { tier } : {}),
+    };
   }
 
   private async record(

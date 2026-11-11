@@ -5,6 +5,8 @@ import { gqlClient } from '#/graphql/client';
 import { AiErrorMessage } from '#/components/AiErrorMessage';
 import { AiActionBar } from '#/components/ai/AiActionBar';
 import { AiPromptInput } from '#/components/ai/AiPromptInput';
+import { AiFeedbackControl } from '#/components/AiFeedbackControl';
+import type { AiRating } from '#/lib/aiFeedback';
 import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode } from '#/lib/graphqlError';
@@ -53,6 +55,10 @@ interface AiHelperPanelProps {
   plainText: string;
   /** The last prompt used on this draft. */
   initialInstructions: string | null;
+  /** The draft has an AI generation behind it, so it can be rated (JEF-547). */
+  initialAiGenerated: boolean;
+  /** The caller's rating of that generation, if any. */
+  initialRating: AiRating | null;
   editorRef: RefObject<DocumentEditorHandle | null>;
   /** Saves the editor's content and the prompt. Resolves to whether it was saved. */
   onSave: (contentJson: string, plainText: string, aiInstructions: string) => Promise<boolean>;
@@ -89,6 +95,8 @@ export function AiHelperPanel({
   type,
   plainText,
   initialInstructions,
+  initialAiGenerated,
+  initialRating,
   editorRef,
   onSave,
 }: AiHelperPanelProps) {
@@ -102,6 +110,13 @@ export function AiHelperPanel({
   const [failure, setFailure] = useState<Failure | null>(null);
   const [askAboutProfile, setAskAboutProfile] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  // Rating belongs to the latest generation: generating again starts a fresh one (the API
+  // clears the old rating), so `version` remounts the control with nothing chosen.
+  const [feedback, setFeedback] = useState({
+    generated: initialAiGenerated,
+    rating: initialRating,
+    version: 0,
+  });
 
   const hasText = plainText.trim().length > 0;
   const generateFeature: AiFeature = type === 'resume' ? 'resume' : 'coverLetter';
@@ -139,6 +154,7 @@ export function AiHelperPanel({
         return;
       }
       editorRef.current.replaceContent(nodes);
+      setFeedback((f) => ({ generated: true, rating: null, version: f.version + 1 }));
       await saveFromEditor();
     } catch (err) {
       fail(err);
@@ -254,6 +270,19 @@ export function AiHelperPanel({
           onInsert={() => void applyPreview('insert')}
           onDiscard={() => setPreview(null)}
         />
+      )}
+
+      {feedback.generated && (
+        <div className="border-t border-blue-200 pt-3 dark:border-blue-800">
+          <AiFeedbackControl
+            key={feedback.version}
+            targetKind="DOCUMENT_DRAFT"
+            targetId={draftId}
+            rating={feedback.rating}
+            caption={t('aiFeedback.draftPrompt')}
+            onChange={(next) => setFeedback((f) => ({ ...f, rating: next }))}
+          />
+        </div>
       )}
 
       {(hasText || confirmRegenerate) && (

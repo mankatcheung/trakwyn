@@ -2,6 +2,7 @@ import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { contentQuotaQueryKey } from '#/lib/contentQuota';
+import type { AiRating } from '#/lib/aiFeedback';
 import { toast } from 'sonner';
 
 // ── GraphQL queries & mutations ────────────────────────────────────────────
@@ -57,6 +58,10 @@ export const CHAT_HISTORY_QUERY = `
       role
       content
       createdAt
+      myRating {
+        rating
+        reason
+      }
       proposals {
         id
         toolName
@@ -138,6 +143,8 @@ export interface ChatMessage {
   createdAt: string;
   /** Absent on optimistic messages, which have no reply to propose anything yet. */
   proposals?: ChatProposal[];
+  /** The caller's own thumbs up/down on an assistant reply (JEF-547); null when unrated. */
+  myRating?: AiRating | null;
 }
 
 export interface ChatHistoryResult {

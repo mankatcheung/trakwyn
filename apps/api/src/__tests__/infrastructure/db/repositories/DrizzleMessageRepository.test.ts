@@ -151,4 +151,42 @@ describe('DrizzleMessageRepository', () => {
       expect(await repo.findAllByConversationId('conv-2')).toHaveLength(4);
     });
   });
+
+  describe('generation (JEF-547)', () => {
+    const generation = {
+      provider: 'openai',
+      model: 'gpt-test',
+      promptVersion: 4,
+      source: 'platform',
+      tier: 'lite',
+    };
+
+    it('stores which model and prompt wrote a reply and reads it back', async () => {
+      const created = await repo.create({
+        id: 'msg-gen',
+        conversationId: 'conv-1',
+        role: 'assistant',
+        content: 'hello',
+        generation,
+      });
+
+      expect(created.generation).toEqual(generation);
+      expect((await repo.findById('msg-gen'))?.generation).toEqual(generation);
+    });
+
+    it('reads null for a message with no snapshot', async () => {
+      const created = await repo.create({
+        id: 'msg-old',
+        conversationId: 'conv-1',
+        role: 'assistant',
+        content: 'hello',
+      });
+
+      expect(created.generation).toBeNull();
+    });
+
+    it('findById answers null for an unknown id', async () => {
+      expect(await repo.findById('nope')).toBeNull();
+    });
+  });
 });

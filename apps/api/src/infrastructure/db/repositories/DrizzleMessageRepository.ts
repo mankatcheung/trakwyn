@@ -7,6 +7,7 @@ import type {
   CreateMessageData,
 } from '#src/use-cases/ports/IMessageRepository.js';
 import { getClient } from '../transactionContext.js';
+import { generationFromColumns, generationToColumns } from './aiGenerationColumns.js';
 
 export class DrizzleMessageRepository implements IMessageRepository {
   private readonly database: DrizzleDb;
@@ -20,8 +21,17 @@ export class DrizzleMessageRepository implements IMessageRepository {
   }
 
   async create(data: CreateMessageData): Promise<Message> {
-    const [row] = await this.db.insert(message).values(data).returning();
+    const { generation, ...rest } = data;
+    const [row] = await this.db
+      .insert(message)
+      .values({ ...rest, ...generationToColumns(generation) })
+      .returning();
     return this.toEntity(row);
+  }
+
+  async findById(id: string): Promise<Message | null> {
+    const [row] = await this.db.select().from(message).where(eq(message.id, id));
+    return row ? this.toEntity(row) : null;
   }
 
   async findAllByConversationId(conversationId: string): Promise<Message[]> {
@@ -53,6 +63,7 @@ export class DrizzleMessageRepository implements IMessageRepository {
       role: row.role,
       content: row.content,
       toolTrace: row.toolTrace,
+      generation: generationFromColumns(row),
       createdAt: row.createdAt,
     };
   }

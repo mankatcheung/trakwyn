@@ -67,9 +67,25 @@ export interface LLMUsage {
   reasoningReturned?: boolean;
 }
 
+/**
+ * Which provider and model produced a reply (JEF-547), stamped by the usage
+ * tracker that wraps each leg of a failover. Because every leg carries its own,
+ * the value a caller sees names the leg that answered, not the one tried first.
+ * Absent when the call is not usage-tracked (a key test).
+ */
+export interface LLMAnsweredBy {
+  provider: string;
+  model: string | null;
+  /** `LlmUsageSource`. */
+  source: string;
+  /** The hosted model tier; absent on the user's own key. */
+  tier?: string;
+}
+
 export interface LLMCompleteResult {
   content: string;
   usage: LLMUsage | null;
+  answeredBy?: LLMAnsweredBy;
   /**
    * The provider stopped because the output budget ran out (Anthropic
    * `stop_reason: max_tokens`, OpenAI `finish_reason: length`, Gemini
@@ -121,7 +137,13 @@ export type LLMStreamEvent =
    * `from` and `to` are order entries: `trakwyn` or the id of one of the user's keys.
    */
   | { type: 'fallback'; from: string; to: string }
-  | { type: 'done'; content: string | null; toolCalls: LLMToolCall[]; usage: LLMUsage | null };
+  | {
+      type: 'done';
+      content: string | null;
+      toolCalls: LLMToolCall[];
+      usage: LLMUsage | null;
+      answeredBy?: LLMAnsweredBy;
+    };
 
 /**
  * Per-call switches for `complete()` (F6). `json` asks the provider to

@@ -1,4 +1,5 @@
 import { builder } from '#src/http/schema/builder.js';
+import { AiRatingRef } from '#src/http/schema/types/AiRatingType.js';
 import type {
   ChatActionProposalDTO,
   MessageDTO,
@@ -30,5 +31,6 @@ builder.objectType(MessageRef, {
     content: t.exposeString('content'),
     createdAt: t.exposeString('createdAt'),
     proposals: t.field({ type: [ChatActionProposalRef], resolve: (m) => m.proposals }),
+    myRating: t.field({ type: AiRatingRef, nullable: true, resolve: (m) => m.myRating }),
   }),
 });

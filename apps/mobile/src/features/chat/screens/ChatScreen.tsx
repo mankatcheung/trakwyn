@@ -23,6 +23,7 @@ import { ChatStreamError, streamChatMessage } from '../lib/chatStream';
 import { SendIcon } from '../components/SendIcon';
 import { providerEntryLabel } from '../../settings/lib/aiProviderOrder';
 import { ChatProposalCard } from '../components/ChatProposalCard';
+import { AiFeedbackControl } from '../components/AiFeedbackControl';
 import { Markdown } from '../../../components/Markdown';
 import type { ChatMessage } from '../types';
 import { codedErrorMessage, getErrorCode, getErrorMessage } from '../../../lib/errors';
@@ -163,6 +164,13 @@ export function ChatScreen() {
                   )}
                 </View>
               </View>
+              {item.role === 'assistant' && !item.id.startsWith('optimistic-') ? (
+                <AiFeedbackControl
+                  messageId={item.id}
+                  conversationId={conversationId}
+                  rating={item.myRating ?? null}
+                />
+              ) : null}
               {item.proposals?.map((proposal) => (
                 <ChatProposalCard
                   key={proposal.id}

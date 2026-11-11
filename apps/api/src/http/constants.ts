@@ -234,6 +234,11 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  // Thumbs up/down on AI output (JEF-547): a discrete tap, far cheaper than a chat turn.
+  AI_FEEDBACK: {
+    MAX_ATTEMPTS: 60,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   UPDATE_PASSWORD: {
     MAX_ATTEMPTS: 5,
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes

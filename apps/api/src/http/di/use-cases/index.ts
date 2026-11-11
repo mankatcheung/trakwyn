@@ -10,6 +10,7 @@ import { interviews } from './interviews.js';
 import { mockInterviews } from './mockInterviews.js';
 import { activity } from './activity.js';
 import { chat } from './chat.js';
+import { aiFeedback } from './aiFeedback.js';
 import { apiTokens } from './apiTokens.js';
 import { shareLinks } from './shareLinks.js';
 import { notifications } from './notifications.js';
@@ -38,6 +39,7 @@ export const useCases = {
   ...mockInterviews,
   ...activity,
   ...chat,
+  ...aiFeedback,
   ...apiTokens,
   ...shareLinks,
   ...notifications,

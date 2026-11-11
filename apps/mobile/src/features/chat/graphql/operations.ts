@@ -25,6 +25,10 @@ export const CHAT_HISTORY_QUERY = `
       role
       content
       createdAt
+      myRating {
+        rating
+        reason
+      }
       proposals {
         id
         toolName
@@ -58,6 +62,27 @@ export const DISMISS_CHAT_ACTION_MUTATION = `
     dismissChatAction(id: $id) {
       ${PROPOSAL_FIELDS}
     }
+  }
+`;
+
+/** Thumbs up/down on an assistant reply (JEF-547). The API stores which model wrote it, never the text. */
+export const RATE_AI_OUTPUT_MUTATION = `
+  mutation RateAiOutput(
+    $targetKind: AiFeedbackTarget!
+    $targetId: ID!
+    $rating: AiFeedbackRating!
+    $reason: AiFeedbackReason
+  ) {
+    rateAiOutput(targetKind: $targetKind, targetId: $targetId, rating: $rating, reason: $reason) {
+      rating
+      reason
+    }
+  }
+`;
+
+export const CLEAR_AI_OUTPUT_RATING_MUTATION = `
+  mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {
+    clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)
   }
 `;
 

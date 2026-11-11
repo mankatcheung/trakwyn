@@ -38,6 +38,7 @@ import { BlocklistingSessionRepository } from '#src/infrastructure/db/repositori
 import { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import { DrizzleAiFeedbackRepository } from '#src/infrastructure/db/repositories/DrizzleAiFeedbackRepository.js';
 import { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
 import { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
 import { TrimmingMessageRepository } from '#src/infrastructure/db/repositories/TrimmingMessageRepository.js';
@@ -190,6 +191,7 @@ export const repositories = {
       }),
     { lifetime: Lifetime.SINGLETON },
   ),
+  aiFeedbackRepository: asClass(DrizzleAiFeedbackRepository, { lifetime: Lifetime.SINGLETON }),
   chatActionProposalRepository: asClass(DrizzleChatActionProposalRepository, {
     lifetime: Lifetime.SINGLETON,
   }),

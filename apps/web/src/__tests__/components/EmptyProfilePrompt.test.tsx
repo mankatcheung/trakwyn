@@ -79,6 +79,8 @@ function renderPanel(type: 'cover_letter' | 'resume') {
         type={type}
         plainText=""
         initialInstructions={null}
+        initialAiGenerated={false}
+        initialRating={null}
         editorRef={{ current: editor }}
         onSave={vi.fn().mockResolvedValue(true)}
       />

@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { GetChatHistoryUseCase } from '#src/use-cases/chat/GetChatHistoryUseCase.js';
 import {
+  makeAiFeedback,
+  makeAiFeedbackRepository,
+} from '#src/__tests__/helpers/mocks/aiFeedback.js';
+import {
   makeChatActionProposal,
   makeChatActionProposalRepository,
   makeConversation,
@@ -13,6 +17,7 @@ function makeUseCase(overrides?: {
   messages?: ReturnType<typeof makeMessage>[];
   proposals?: ReturnType<typeof makeChatActionProposal>[];
   conversationUserId?: string | null;
+  ratings?: ReturnType<typeof makeAiFeedback>[];
 }) {
   const conversationUserId =
     overrides && 'conversationUserId' in overrides ? overrides.conversationUserId : 'user-1';
@@ -32,6 +37,9 @@ function makeUseCase(overrides?: {
     chatActionProposalRepository: makeChatActionProposalRepository({
       findAllByConversationId: vi.fn().mockResolvedValue(overrides?.proposals ?? []),
     }),
+    aiFeedbackRepository: makeAiFeedbackRepository({
+      findForTargets: vi.fn().mockResolvedValue(overrides?.ratings ?? []),
+    }),
   });
 }
 
@@ -44,7 +52,7 @@ describe('GetChatHistoryUseCase', () => {
 
     const result = await run(makeUseCase({ messages }));
 
-    expect(result).toEqual(messages.map((m) => ({ ...m, proposals: [] })));
+    expect(result).toEqual(messages.map((m) => ({ ...m, proposals: [], myRating: null })));
   });
 
   it('returns an empty array when the conversation has no messages', async () => {
@@ -81,6 +89,55 @@ describe('GetChatHistoryUseCase', () => {
     );
 
     expect(message.proposals[0].status).toBe('expired');
+  });
+
+  it("attaches the caller's own rating to each assistant reply (JEF-547)", async () => {
+    const rating = makeAiFeedback({
+      targetId: 'msg-2',
+      rating: 'down',
+      reason: 'not_useful',
+    });
+
+    const result = await run(
+      makeUseCase({
+        messages: [
+          makeMessage({ id: 'msg-1', role: 'user' }),
+          makeMessage({ id: 'msg-2', role: 'assistant' }),
+        ],
+        ratings: [rating],
+      }),
+    );
+
+    expect(result[0].myRating).toBeNull();
+    expect(result[1].myRating).toEqual(rating);
+  });
+
+  it('loads every rating in one query, not one per message (JEF-547)', async () => {
+    const aiFeedbackRepository = makeAiFeedbackRepository();
+    const useCase = new GetChatHistoryUseCase({
+      messageRepository: makeMessageRepository({
+        findAllByConversationId: vi
+          .fn()
+          .mockResolvedValue([
+            makeMessage({ id: 'a1', role: 'assistant' }),
+            makeMessage({ id: 'u1', role: 'user' }),
+            makeMessage({ id: 'a2', role: 'assistant' }),
+          ]),
+      }),
+      conversationRepository: makeConversationRepository({
+        findById: vi.fn().mockResolvedValue(makeConversation({ id: 'conv-1', userId: 'user-1' })),
+      }),
+      chatActionProposalRepository: makeChatActionProposalRepository(),
+      aiFeedbackRepository,
+    });
+
+    await run(useCase);
+
+    expect(aiFeedbackRepository.findForTargets).toHaveBeenCalledTimes(1);
+    expect(aiFeedbackRepository.findForTargets).toHaveBeenCalledWith('user-1', 'chat_message', [
+      'a1',
+      'a2',
+    ]);
   });
 
   it('never returns the system notes written for the model', async () => {

@@ -25,5 +25,19 @@
     "cancel": "Cancel",
     "couldNotDeleteTitle": "Could not delete"
   },
-  "fallbackNotice": "{{from}} could not answer, so {{to}} did."
+  "fallbackNotice": "{{from}} could not answer, so {{to}} did.",
+  "feedback": {
+    "up": "Good response",
+    "down": "Bad response",
+    "reasonPrompt": "What went wrong? (optional)",
+    "skip": "Skip",
+    "error": "Couldn't save your feedback.",
+    "reason": {
+      "WRONG_OR_MADE_UP": "Wrong or made up",
+      "IGNORED_MY_REQUEST": "Ignored my request",
+      "UNSAFE_OR_INAPPROPRIATE": "Unsafe or inappropriate",
+      "NOT_USEFUL": "Not useful",
+      "OTHER": "Something else"
+    }
+  }
 }

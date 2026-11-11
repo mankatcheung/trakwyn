@@ -107,6 +107,7 @@ export const rateLimiters = {
   ),
   hostedAiRateLimiter: limiter('hostedAiRateLimiter', RATE_LIMIT.HOSTED_AI),
   chatRateLimiter: limiter('chatRateLimiter', RATE_LIMIT.CHAT_MESSAGE),
+  aiFeedbackRateLimiter: limiter('aiFeedbackRateLimiter', RATE_LIMIT.AI_FEEDBACK),
   generateResumeRateLimiter: limiter('generateResumeRateLimiter', RATE_LIMIT.GENERATE_RESUME),
   generateCoverLetterRateLimiter: limiter(
     'generateCoverLetterRateLimiter',

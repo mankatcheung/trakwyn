@@ -973,3 +973,103 @@ describe('StreamChatWithAssistantUseCase', () => {
     );
   });
 });
+
+describe('StreamChatWithAssistantUseCase generation snapshot (JEF-547)', () => {
+  const answeredBy = (model: string) => ({
+    provider: 'google',
+    model,
+    source: 'byok',
+  });
+
+  /** Each round's `done` event reports who answered it, as the usage tracker does. */
+  function providerAnswering(
+    ...rounds: { content: string | null; toolCalls: LLMToolCall[]; model: string | null }[]
+  ): ILLMProvider {
+    let call = 0;
+    return {
+      complete: vi.fn(),
+      completeWithToolsStream: vi.fn(function (): AsyncGenerator<LLMStreamEvent> {
+        const round = rounds[call++];
+        async function* gen() {
+          yield {
+            type: 'done' as const,
+            content: round.content,
+            toolCalls: round.toolCalls,
+            usage: null,
+            ...(round.model ? { answeredBy: answeredBy(round.model) } : {}),
+          };
+        }
+        return gen();
+      }),
+    };
+  }
+
+  function depsFor(llmProvider: ILLMProvider) {
+    return makeDeps({
+      llmProviderFactory: makeLLMProviderFactory({
+        resolveForUser: vi.fn().mockResolvedValue({
+          provider: llmProvider,
+          providerId: 'google',
+          fellBackFrom: null,
+          source: 'byok',
+        }),
+      }),
+    });
+  }
+
+  const storedAssistantReply = (deps: ReturnType<typeof makeDeps>) =>
+    vi
+      .mocked(deps.messageRepository.create)
+      .mock.calls.map(([data]) => data)
+      .find((d) => d.role === 'assistant');
+
+  it('stores the model and prompt version that wrote the reply, and no text beside it', async () => {
+    const deps = depsFor(
+      providerAnswering({ content: 'All good.', toolCalls: [], model: 'gem-1' }),
+    );
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'hi',
+    });
+
+    expect(storedAssistantReply(deps)?.generation).toEqual({
+      provider: 'google',
+      model: 'gem-1',
+      promptVersion: chatPrompt.version,
+      source: 'byok',
+      tier: null,
+    });
+  });
+
+  it('records the round that wrote the reply, so a failover mid-turn names the leg that answered', async () => {
+    const deps = depsFor(
+      providerAnswering(
+        {
+          content: null,
+          toolCalls: [{ id: 'call_1', name: 'list_applications', arguments: {} }],
+          model: 'primary-model',
+        },
+        { content: 'You have none.', toolCalls: [], model: 'fallback-model' },
+      ),
+    );
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'what do I have?',
+    });
+
+    expect(storedAssistantReply(deps)?.generation?.model).toBe('fallback-model');
+  });
+
+  it('stores no snapshot when the provider reports none', async () => {
+    const deps = depsFor(providerAnswering({ content: 'Hi.', toolCalls: [], model: null }));
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'hi',
+    });
+
+    expect(storedAssistantReply(deps)?.generation).toBeNull();
+  });
+});

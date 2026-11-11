@@ -16,6 +16,8 @@ import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
 import { ChatComposerInput } from '#/routes/_authenticated/assistant/-components/ChatComposerInput';
 import { ChatProposalCard } from '#/routes/_authenticated/assistant/-components/ChatProposalCard';
+import { AiFeedbackControl } from '#/components/AiFeedbackControl';
+import type { AiRating } from '#/lib/aiFeedback';
 import {
   CREATE_CONVERSATION,
   chatHistoryQueryOptions,
@@ -143,6 +145,23 @@ export function ChatConversationView({
     );
   };
 
+  // Keeps a rating in the cached history, so it is still there when the list re-renders (JEF-547).
+  const setMessageRating = (
+    targetConversationId: string,
+    messageId: string,
+    next: AiRating | null,
+  ) => {
+    qc.setQueryData<ChatHistoryResult>(
+      chatHistoryQueryOptions(targetConversationId).queryKey,
+      (prev) =>
+        prev && {
+          chatHistory: prev.chatHistory.map((m) =>
+            m.id === messageId ? { ...m, myRating: next } : m,
+          ),
+        },
+    );
+  };
+
   // Starting a conversation is what the cap blocks; writing in one that exists is not.
   const conversationsFull = useQuotaState('conversations')?.level === 'full';
   const newConversationBlocked = !conversationId && conversationsFull;
@@ -256,6 +275,15 @@ export function ChatConversationView({
                     {m.role === 'assistant' ? <Markdown content={m.content} /> : m.content}
                   </div>
                 </div>
+                {conversationId && m.role === 'assistant' && (
+                  <AiFeedbackControl
+                    className="pl-1"
+                    targetKind="CHAT_MESSAGE"
+                    targetId={m.id}
+                    rating={m.myRating ?? null}
+                    onChange={(next) => setMessageRating(conversationId, m.id, next)}
+                  />
+                )}
                 {conversationId &&
                   m.proposals?.map((p) => (
                     <div key={p.id} className="flex justify-start">

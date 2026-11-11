@@ -1,3 +1,4 @@
+import type { AiGeneration } from '#src/domain/aiFeedback/AiFeedback.js';
 import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
 
 export interface CreateDocumentDraftData {
@@ -28,6 +29,11 @@ export interface IDocumentDraftRepository {
   create(data: CreateDocumentDraftData): Promise<DocumentDraft>;
   updateContent(id: string, data: UpdateDocumentDraftContentData): Promise<DocumentDraft>;
   rename(id: string, title: string): Promise<DocumentDraft>;
+  /**
+   * Notes which model and prompt wrote the draft's latest AI generation
+   * (JEF-547). Generating again overwrites it; saving edits leaves it alone.
+   */
+  recordGeneration(id: string, generation: AiGeneration): Promise<void>;
   delete(id: string): Promise<void>;
   /**
    * The user's most recent cover letter drafts on applications *other than*

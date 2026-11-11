@@ -457,4 +457,97 @@ describe('ChatConversationView', () => {
       expect(screen.queryByText(/could not answer/)).not.toBeInTheDocument();
     });
   });
+
+  describe('rating a reply (JEF-547)', () => {
+    const history = (assistantRating: unknown = null) => ({
+      chatHistory: [
+        { id: 'm1', role: 'user', content: 'hi', createdAt: '', proposals: [], myRating: null },
+        {
+          id: 'm2',
+          role: 'assistant',
+          content: 'hello there',
+          createdAt: '',
+          proposals: [],
+          myRating: assistantRating,
+        },
+      ],
+    });
+    const rateCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => documentOf(q).includes('RateAiOutput'));
+
+    it('offers thumbs under the assistant reply and not under the user’s own message', async () => {
+      mockGqlRequest.mockResolvedValue(history());
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+
+      await screen.findByText('hello there');
+      expect(screen.getAllByRole('button', { name: 'Good response' })).toHaveLength(1);
+      expect(screen.getAllByRole('button', { name: 'Bad response' })).toHaveLength(1);
+    });
+
+    it('shows a stored rating again after a reload', async () => {
+      mockGqlRequest.mockResolvedValue(history({ rating: 'DOWN', reason: 'NOT_USEFUL' }));
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+
+      expect(await screen.findByRole('button', { name: 'Bad response' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+
+    it('rates the reply by its id', async () => {
+      mockGqlRequest.mockImplementation((q: unknown) =>
+        Promise.resolve(documentOf(q).includes('RateAiOutput') ? {} : history()),
+      );
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+      fireEvent.click(await screen.findByRole('button', { name: 'Good response' }));
+
+      await waitFor(() => expect(rateCalls()).toHaveLength(1));
+      expect(rateCalls()[0][1]).toEqual({
+        targetKind: 'CHAT_MESSAGE',
+        targetId: 'm2',
+        rating: 'UP',
+        reason: null,
+      });
+    });
+
+    it('keeps the rating on screen when the list re-renders', async () => {
+      mockGqlRequest.mockImplementation((q: unknown) =>
+        Promise.resolve(documentOf(q).includes('RateAiOutput') ? {} : history()),
+      );
+
+      render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+      fireEvent.click(await screen.findByRole('button', { name: 'Good response' }));
+      await waitFor(() => expect(rateCalls()).toHaveLength(1));
+
+      // Typing re-renders the whole list; the choice must not fall back to the stored one.
+      fireEvent.change(screen.getByPlaceholderText('Ask a question…'), {
+        target: { value: 'next' },
+      });
+
+      expect(screen.getByRole('button', { name: 'Good response' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+
+    it('offers no rating in a conversation that has not been started', async () => {
+      render(<ChatConversationView conversationId={null} onConversationCreated={vi.fn()} />, {
+        wrapper: Wrapper,
+      });
+
+      await screen.findByPlaceholderText('Ask a question…');
+      expect(screen.queryByRole('button', { name: 'Good response' })).not.toBeInTheDocument();
+    });
+  });
 });

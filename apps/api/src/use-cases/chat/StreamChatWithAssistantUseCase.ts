@@ -10,7 +10,12 @@ import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { IMessageRepository } from '#src/use-cases/ports/IMessageRepository.js';
 import type { IConversationRepository } from '#src/use-cases/ports/IConversationRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
-import type { LLMToolCall, LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
+import type {
+  LLMAnsweredBy,
+  LLMToolCall,
+  LLMToolDefinition,
+} from '#src/use-cases/ports/ILLMProvider.js';
+import { toAiGeneration } from '#src/use-cases/aiFeedback/toAiGeneration.js';
 import { AI_FEATURE, CHAT, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { chatLimitsFor } from '#src/use-cases/chat/chatLimits.js';
 import { chatPrompt } from '#src/use-cases/prompts/chat.js';
@@ -153,6 +158,8 @@ export class StreamChatWithAssistantUseCase {
       'That took more steps than I could complete — try asking something more specific.';
     const toolTrace: string[] = [];
     const proposalIds: string[] = [];
+    // Who wrote the reply (JEF-547): the last round's answerer, so a failover mid-turn is honest.
+    let generatedBy: LLMAnsweredBy | undefined;
 
     for (let i = 0; i < limits.maxToolIterations; i++) {
       let content = '';
@@ -170,6 +177,7 @@ export class StreamChatWithAssistantUseCase {
         } else if (event.type === 'done') {
           content = event.content ?? '';
           toolCalls = event.toolCalls;
+          generatedBy = event.answeredBy ?? generatedBy;
         } else if (event.type === 'fallback') {
           // The provider answering failed before any output and the next one in the order took over.
           yield { type: 'fallback', from: event.from, to: event.to };
@@ -230,6 +238,7 @@ export class StreamChatWithAssistantUseCase {
       role: 'assistant',
       content: finalReply,
       toolTrace: toolTrace.length ? toolTrace.join('; ') : null,
+      generation: toAiGeneration(generatedBy, chatPrompt.version),
     });
     await this.deps.chatActionProposalRepository.attachToMessage(proposalIds, assistantMessage.id);
 
