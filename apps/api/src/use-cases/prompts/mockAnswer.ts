@@ -32,7 +32,7 @@ ${USER_INSTRUCTIONS_RULE}
 
 export const mockAnswerPrompt: PromptDefinition<MockAnswerPromptInput> = {
   id: AI_FEATURE.MOCK_ANSWER,
-  version: 2,
+  version: 3,
   build: ({ contextText, backgroundText, question, request, customAiPrompt }) =>
     promptMessages({
       system: SYSTEM_PROMPT,

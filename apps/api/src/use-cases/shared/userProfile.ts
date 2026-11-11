@@ -49,6 +49,21 @@ export function isUserProfileEmpty(profile: UserProfile): boolean {
   );
 }
 
+const PROFILE_MONTH_FORMAT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/**
+ * A profile date as "Mar 2021": fixed locale, UTC, month and year only (JEF-553).
+ * `toLocaleDateString()` gave "1/3/2021", which a model cannot read as 1 March
+ * or 3 January, and shifted a midnight-UTC date a day back west of UTC.
+ */
+export function formatProfileMonth(date: string | Date): string {
+  return PROFILE_MONTH_FORMAT.format(new Date(date));
+}
+
 /** The prompt-facing rendering. Empty profile → empty string, as before. */
 export function formatUserProfile(profile: UserProfile): string {
   const { workExperiences, educations, skills } = profile;
@@ -57,10 +72,8 @@ export function formatUserProfile(profile: UserProfile): string {
   if (workExperiences.length > 0) {
     lines.push('Work Experience:');
     for (const we of workExperiences) {
-      const end = we.endDate ? new Date(we.endDate).toLocaleDateString() : 'Present';
-      lines.push(
-        `- ${we.title} at ${we.company} (${new Date(we.startDate).toLocaleDateString()} – ${end})`,
-      );
+      const end = we.endDate ? formatProfileMonth(we.endDate) : 'Present';
+      lines.push(`- ${we.title} at ${we.company} (${formatProfileMonth(we.startDate)} – ${end})`);
       if (we.description) lines.push(`  ${we.description.slice(0, 200)}`);
     }
   }
@@ -68,9 +81,9 @@ export function formatUserProfile(profile: UserProfile): string {
   if (educations.length > 0) {
     lines.push('\nEducation:');
     for (const edu of educations) {
-      const end = edu.endDate ? new Date(edu.endDate).toLocaleDateString() : 'Present';
+      const end = edu.endDate ? formatProfileMonth(edu.endDate) : 'Present';
       lines.push(
-        `- ${edu.degree ?? ''} ${edu.field ?? ''} at ${edu.institution} (${new Date(edu.startDate).toLocaleDateString()} – ${end})`,
+        `- ${edu.degree ?? ''} ${edu.field ?? ''} at ${edu.institution} (${formatProfileMonth(edu.startDate)} – ${end})`,
       );
       if (edu.description) lines.push(`  ${edu.description.slice(0, 200)}`);
     }
