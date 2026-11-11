@@ -2,12 +2,27 @@
  * Each matcher returns the reason a value is wrong, or null when it is fine,
  * so a case lists its expectations and `failuresOf` keeps the ones that
  * failed. Text is compared case-insensitively: "Remote (Europe)" and
- * "remote, europe" are the same answer.
+ * "remote, europe" are the same answer. Models also write typographic
+ * spaces and hyphens (a narrow no-break space in "Series B", a non-breaking
+ * hyphen in "pair-programming"), so both sides go through `normaliseText`.
  */
 
 export type Check = string | null;
 
-const lower = (value: string | null): string => (value ?? '').toLowerCase();
+/**
+ * NFKC, every Unicode space separator as one plain space, hyphen and dash
+ * variants (U+2010 to U+2014) as "-", then lowercase. Used on the text and the
+ * needle alike, so a phrase matches however the model spaced or hyphenated it.
+ */
+export const normaliseText = (value: string | null): string =>
+  (value ?? '')
+    .normalize('NFKC')
+    .replace(/\p{Zs}+/gu, ' ')
+    .replace(/[\u2010-\u2014]/g, '-')
+    .toLowerCase();
+
+const includesText = (value: string | null, needle: string): boolean =>
+  normaliseText(value).includes(normaliseText(needle));
 const quoted = (value: string | null): string => (value === null ? 'null' : JSON.stringify(value));
 
 export const failuresOf = (...checks: Check[]): string[] =>
@@ -15,7 +30,7 @@ export const failuresOf = (...checks: Check[]): string[] =>
 
 /** Every needle appears in the value. */
 export function mentions(label: string, value: string | null, ...needles: string[]): Check {
-  const missing = needles.filter((needle) => !lower(value).includes(needle.toLowerCase()));
+  const missing = needles.filter((needle) => !includesText(value, needle));
   return missing.length === 0
     ? null
     : `${label} was ${quoted(value)}, expected it to mention ${missing.map((n) => `"${n}"`).join(', ')}`;
@@ -23,14 +38,14 @@ export function mentions(label: string, value: string | null, ...needles: string
 
 /** At least one needle appears in the value. */
 export function mentionsAny(label: string, value: string | null, needles: string[]): Check {
-  return needles.some((needle) => lower(value).includes(needle.toLowerCase()))
+  return needles.some((needle) => includesText(value, needle))
     ? null
     : `${label} was ${quoted(value)}, expected one of ${needles.map((n) => `"${n}"`).join(', ')}`;
 }
 
 /** No needle appears in the value. */
 export function excludes(label: string, value: string | null, ...needles: string[]): Check {
-  const found = needles.filter((needle) => lower(value).includes(needle.toLowerCase()));
+  const found = needles.filter((needle) => includesText(value, needle));
   return found.length === 0
     ? null
     : `${label} was ${quoted(value)}, which must not mention ${found.map((n) => `"${n}"`).join(', ')}`;
@@ -63,9 +78,7 @@ export function scoreBetween(score: number, min: number, max: number): Check {
 
 /** At least one keyword in the list contains one of the needles. */
 export function listMentionsAny(label: string, list: string[], needles: string[]): Check {
-  const hit = list.some((item) =>
-    needles.some((needle) => lower(item).includes(needle.toLowerCase())),
-  );
+  const hit = list.some((item) => needles.some((needle) => includesText(item, needle)));
   return hit
     ? null
     : `${label} was ${JSON.stringify(list)}, expected one to mention ${needles.map((n) => `"${n}"`).join(' or ')}`;
@@ -77,8 +90,8 @@ export function atMostItems(label: string, list: string[], max: number): Check {
 
 /** A keyword the resume both has and lacks is a contradiction whatever the score. */
 export function listsDisjoint(matched: string[], missing: string[]): Check {
-  const matchedSet = new Set(matched.map((item) => item.trim().toLowerCase()));
-  const overlap = missing.filter((item) => matchedSet.has(item.trim().toLowerCase()));
+  const matchedSet = new Set(matched.map((item) => normaliseText(item).trim()));
+  const overlap = missing.filter((item) => matchedSet.has(normaliseText(item).trim()));
   return overlap.length === 0
     ? null
     : `${overlap.map((n) => `"${n}"`).join(', ')} listed as both matched and missing`;
