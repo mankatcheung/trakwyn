@@ -28,7 +28,7 @@ Loaded when working under `apps/api/src/infrastructure/observability`. The rest 
 - **Logged events:** `oidc.jwks_unavailable` (as distinct from a forged token) and `cron.auth.rejected` with `reason`.
 - **Security events (JEF-354):** `LoggingSecurityEventRepository`, a decorator over `DrizzleSecurityEventRepository`, emits one `security.<eventType>` line and increments `trakwyn.security.events`. The level is `warn` for `SUSPICIOUS_SECURITY_EVENT_TYPES`. Lines carry `userId` and `eventType` only, **never the IP or user agent**.
 - **Failed sign-ins:** logged as `auth.login.failed`/`auth.totp.failed` (`logAuthFailure.ts`). An unknown email and a wrong password are both `invalid_credentials` with no user id, so the log can't be used to enumerate accounts.
-- **Alerting** is Terraform in `infra/axiom/` (JEF-355; see its `README.md`). **Renaming a `METRICS.*` name, an `ADMIN_JOBS` entry or a log line's `event` field means updating `infra/axiom/monitors.tf` in the same PR.**
+- **Alerting** is Terraform in `infra/axiom/` (JEF-355; see its `README.md`). **Renaming a `METRICS.*` name, an `ADMIN_JOBS` entry or a log line's `event` field means updating `infra/axiom/monitors.tf` in the same PR.** That covers the dashboards too: `axiom_dashboard.llm_cost` reads `trakwyn.llm.*`, and `axiom_dashboard.ai_feedback` reads `trakwyn.ai.feedback`, its labels (`feature`, `rating`, `reason`, `model`, `prompt_version`) and the `ai.feedback.rated` event.
 
 ## Use-case spans
 
