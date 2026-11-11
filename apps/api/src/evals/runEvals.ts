@@ -16,6 +16,7 @@ import {
   validateJudge,
 } from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
+import { publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
 import { writeReportFile } from '#src/evals/reportFile.js';
 import { runSuite } from '#src/evals/runSuite.js';
 import {
@@ -119,6 +120,12 @@ async function main(): Promise<number> {
     } catch (error: unknown) {
       console.error(`Could not write the report to ${config.reportFile}: ${messageOf(error)}`);
     }
+  }
+
+  // After the report is printed and written: a Langfuse failure is logged by
+  // `publishToLangfuse` and never changes the exit code, which is the pass rate's.
+  if (config.publish) {
+    await publishToLangfuse(config.publish, runs, config.judge ? targetLabel(config.judge) : null);
   }
 
   const short = runs.filter((run) => !meetsPassRate(summarise(run.results), config.minPassRate));

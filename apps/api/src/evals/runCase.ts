@@ -62,5 +62,7 @@ export async function runCase(
     latencyMs,
     toolCalls,
     iterations: streams,
+    calls: meter.calls(),
+    judgeCalls: judgeMeter?.calls() ?? [],
   };
 }

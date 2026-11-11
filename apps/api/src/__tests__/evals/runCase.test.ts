@@ -127,4 +127,36 @@ describe('runCase provider errors (JEF-542)', () => {
 
     expect(error.message).not.toContain('nope');
   });
+
+  it('keeps the transcript of the model and judge calls (JEF-550)', async () => {
+    const provider = makeLLMProvider('{}');
+    const judge = makeLLMProvider('{}');
+    vi.mocked(provider.complete).mockResolvedValue({ content: 'reply', usage: null });
+    vi.mocked(judge.complete).mockResolvedValue({ content: 'verdict', usage: null });
+
+    const result = await runCase(
+      evalCase(async (p, j) => {
+        await p.complete([{ role: 'user', content: 'in' }]);
+        await j?.complete([{ role: 'user', content: 'check' }]);
+        return [];
+      }),
+      provider,
+      judge,
+    );
+
+    expect(result.calls).toMatchObject([{ messages: [{ content: 'in' }], output: 'reply' }]);
+    expect(result.judgeCalls).toMatchObject([
+      { messages: [{ content: 'check' }], output: 'verdict' },
+    ]);
+  });
+
+  it('has empty transcripts when nothing was called', async () => {
+    const result = await runCase(
+      evalCase(async () => []),
+      makeLLMProvider(),
+    );
+
+    expect(result.calls).toEqual([]);
+    expect(result.judgeCalls).toEqual([]);
+  });
 });
