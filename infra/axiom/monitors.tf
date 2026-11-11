@@ -485,3 +485,133 @@ resource "axiom_dashboard" "llm_cost" {
     ]
   })
 }
+
+# --- AI output feedback (metrics + logs datasets; JEF-551) -------------------
+#
+# Not a monitor: volume is too low to set a down-vote threshold yet. The time
+# series read the `trakwyn.ai.feedback` counter (MPL, `increase` for the same
+# Cloud Run restart reason as above). The tables read the `ai.feedback.rated`
+# log line (APL), which also carries `provider` and `tier`, and let the share
+# per feature be computed in one place. The counter and the log line have no
+# user id and no text. Renaming either, or their labels, means updating this
+# dashboard in the same PR. Same "open it after the first apply" rule as
+# `llm_cost`: the chart JSON is opaque to the provider.
+resource "axiom_dashboard" "ai_feedback" {
+  uid = "trakwyn-ai-feedback"
+  dashboard = jsonencode({
+    name            = "Trakwyn AI feedback"
+    description     = "Thumbs up/down on AI output (METRICS.AI_FEEDBACK, event ai.feedback.rated): which feature, model and prompt version gets down-voted, and why."
+    owner           = "X-AXIOM-EVERYONE"
+    schemaVersion   = 2
+    refreshTime     = 300
+    timeWindowStart = "qr-now-30d"
+    timeWindowEnd   = "qr-now"
+    charts = [
+      {
+        id   = "ratings-per-day"
+        name = "Ratings per day, by rating"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.ai.feedback`
+            | map increase
+            | align to 1d using sum
+            | group by rating using sum
+          MPL
+        }
+      },
+      {
+        id   = "downs-per-feature-per-day"
+        name = "Down-votes per day, by feature"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.ai.feedback`
+            | filter rating == "down"
+            | map increase
+            | align to 1d using sum
+            | group by feature using sum
+          MPL
+        }
+      },
+      {
+        id   = "downs-per-model-per-day"
+        name = "Down-votes per day, by model"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.ai.feedback`
+            | filter rating == "down"
+            | map increase
+            | align to 1d using sum
+            | group by model using sum
+          MPL
+        }
+      },
+      {
+        id   = "downs-per-prompt-version-per-day"
+        name = "Down-votes per day, by prompt version"
+        type = "TimeSeries"
+        query = {
+          mpl = <<-MPL
+            `${var.metrics_dataset}`:`trakwyn.ai.feedback`
+            | filter rating == "down"
+            | map increase
+            | align to 1d using sum
+            | group by prompt_version using sum
+          MPL
+        }
+      },
+      {
+        id   = "downs-by-reason"
+        name = "Down-votes by reason (all features)"
+        type = "Table"
+        query = {
+          apl = <<-APL
+            ['${var.logs_dataset}']
+            | where ['attributes.event'] == "ai.feedback.rated" and ['attributes.rating'] == "down"
+            | summarize downs = count() by reason = tostring(['attributes.reason'])
+            | order by downs desc
+          APL
+        }
+      },
+      {
+        id   = "downvote-share-per-feature"
+        name = "Down-vote share per feature"
+        type = "Table"
+        query = {
+          apl = <<-APL
+            ['${var.logs_dataset}']
+            | where ['attributes.event'] == "ai.feedback.rated"
+            | summarize ups = countif(['attributes.rating'] == "up"), downs = countif(['attributes.rating'] == "down") by feature = tostring(['attributes.feature'])
+            | extend down_percent = round(100.0 * downs / (ups + downs), 1)
+            | order by downs desc
+          APL
+        }
+      },
+      {
+        id   = "top-downvote-combinations"
+        name = "Top down-voted feature, model, prompt version and reason"
+        type = "Table"
+        query = {
+          apl = <<-APL
+            ['${var.logs_dataset}']
+            | where ['attributes.event'] == "ai.feedback.rated" and ['attributes.rating'] == "down"
+            | summarize downs = count() by feature = tostring(['attributes.feature']), model = tostring(['attributes.model']), prompt_version = tostring(['attributes.prompt_version']), reason = tostring(['attributes.reason']), provider = tostring(['attributes.provider']), tier = tostring(['attributes.tier'])
+            | order by downs desc
+            | take 50
+          APL
+        }
+      },
+    ]
+    layout = [
+      { i = "ratings-per-day", x = 0, y = 0, w = 6, h = 6 },
+      { i = "downs-per-feature-per-day", x = 6, y = 0, w = 6, h = 6 },
+      { i = "downs-per-model-per-day", x = 0, y = 6, w = 6, h = 6 },
+      { i = "downs-per-prompt-version-per-day", x = 6, y = 6, w = 6, h = 6 },
+      { i = "downs-by-reason", x = 0, y = 12, w = 6, h = 6 },
+      { i = "downvote-share-per-feature", x = 6, y = 12, w = 6, h = 6 },
+      { i = "top-downvote-combinations", x = 0, y = 18, w = 12, h = 10 },
+    ]
+  })
+}
