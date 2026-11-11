@@ -11,6 +11,7 @@ import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/D
 import { AiHelperPanel } from '../-components/AiHelperPanel';
 import { DraftTitleField } from '../-components/DraftTitleField';
 import { ImportDocumentAction } from '../-components/ImportDocumentAction';
+import type { AiRating } from '#/lib/aiFeedback';
 import { documentDraftsQueryKey } from '../-documentQueries';
 import { resumeAtsScoresQueryKey } from '../-resumeAtsQueries';
 import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
@@ -28,6 +29,11 @@ const DRAFT_QUERY = `
       plainText
       sourceDocumentId
       aiInstructions
+      aiGenerated
+      myRating {
+        rating
+        reason
+      }
       createdAt
       updatedAt
     }
@@ -111,6 +117,9 @@ function DocumentDraftEditPage() {
     contentJson: string;
     plainText: string;
     aiInstructions: string | null;
+    /** The draft has an AI generation behind it, so it can be rated (JEF-547). */
+    aiGenerated: boolean;
+    myRating: AiRating | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -382,6 +391,8 @@ function DocumentDraftEditPage() {
             type={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
             plainText={liveText}
             initialInstructions={draft.aiInstructions}
+            initialAiGenerated={draft.aiGenerated}
+            initialRating={draft.myRating}
             editorRef={editorRef}
             onSave={handleAiSave}
           />

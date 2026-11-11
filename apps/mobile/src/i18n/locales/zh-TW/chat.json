@@ -25,5 +25,19 @@
     "cancel": "取消",
     "couldNotDeleteTitle": "無法刪除"
   },
-  "fallbackNotice": "{{from}} 無法回答，已改用 {{to}}。"
+  "fallbackNotice": "{{from}} 無法回答，已改用 {{to}}。",
+  "feedback": {
+    "up": "回覆不錯",
+    "down": "回覆不好",
+    "reasonPrompt": "哪裡出了問題？（選填）",
+    "skip": "略過",
+    "error": "無法儲存你的回饋。",
+    "reason": {
+      "WRONG_OR_MADE_UP": "有誤或捏造",
+      "IGNORED_MY_REQUEST": "沒有照我的要求做",
+      "UNSAFE_OR_INAPPROPRIATE": "不安全或不適當",
+      "NOT_USEFUL": "沒有幫助",
+      "OTHER": "其他問題"
+    }
+  }
 }
