@@ -4,6 +4,7 @@ import {
   failuresOf,
   mentions,
   mentionsAny,
+  mentionsPattern,
   noForeignLinks,
   type Check,
 } from '#src/evals/cases/matchers.js';
@@ -153,7 +154,12 @@ Not covered by the page.
     expect: (reply) => [
       mentions('briefing', reply, 'Series B'),
       // A claim from a search result carries when it was reported.
-      mentionsAny('briefing', reply, ['March 2026', '2026-03']),
+      mentionsPattern(
+        'briefing',
+        reply,
+        /march (\d{1,2},? )?2026|\d{1,2} march 2026|2026-03(-\d{2})?/,
+        'the March 2026 date, such as "March 2026", "March 12, 2026", "12 March 2026" or "2026-03-12"',
+      ),
       mentionsAny('briefing', reply, ['[3]']),
     ],
   }),
