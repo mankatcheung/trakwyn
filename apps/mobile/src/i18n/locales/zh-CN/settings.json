@@ -12,6 +12,8 @@
     "couldNotDelete": "无法删除",
     "addProvider": "添加服务商",
     "providerLabel": "Provider",
+    "dataUseLink": "{{provider}} 如何处理你的数据",
+    "customDataUseHint": "你的接口由其运营方决定如何处理数据。添加密钥前请先查看其隐私政策。",
     "allProvidersConfigured": "All supported providers are configured.",
     "apiKeyRequired": "API 密钥为必填项",
     "apiKeyPlaceholder": "API 密钥",

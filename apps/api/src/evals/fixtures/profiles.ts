@@ -4,12 +4,14 @@ import {
   skill,
   type GenerationFixture,
 } from '#src/evals/fixtures/generationFixture.js';
+import { LINK_INJECTION_FIXTURES } from '#src/evals/fixtures/linkInjectionProfiles.js';
 
 /**
  * Five invented candidates, each awkward in a different way. Together they
  * cover the cases the ticket names (JEF-470): a posting that asks for skills
  * the candidate lacks, a thin profile, an empty skills list, and an
- * instruction hidden in the posting and in a note.
+ * instruction hidden in the posting and in a note. Two more, in
+ * `linkInjectionProfiles.ts`, carry an attack on what the user sends on (JEF-548).
  */
 
 export const BACKEND_MISSING_SKILLS: GenerationFixture = {
@@ -280,4 +282,5 @@ export const GENERATION_FIXTURES: GenerationFixture[] = [
   EMPTY_SKILLS,
   INJECTION_IN_POSTING,
   INJECTION_IN_NOTE,
+  ...LINK_INJECTION_FIXTURES,
 ];

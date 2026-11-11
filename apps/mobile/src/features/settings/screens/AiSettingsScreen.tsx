@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -26,7 +27,13 @@ import {
   useToggleCrossApplicationContext,
   useUpdateCustomAiPrompt,
 } from '../hooks/useLlmApiKeys';
-import { LLM_PROVIDER_LABEL, LLM_PROVIDERS, type LlmApiKey, type LlmUsageSummary } from '../types';
+import {
+  LLM_PROVIDER_LABEL,
+  LLM_PROVIDERS,
+  llmProviderDataUseUrl,
+  type LlmApiKey,
+  type LlmUsageSummary,
+} from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -123,6 +130,29 @@ function ProviderPicker({ value, onChange }: ProviderPickerProps) {
         </Modal>
       )}
     </>
+  );
+}
+
+/** Link to how the chosen provider handles API content, or a hint for `custom` (JEF-549). */
+function ProviderDataUse({ provider }: { provider: string }) {
+  const { t } = useTranslation('settings');
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const url = llmProviderDataUseUrl(provider);
+  if (url) {
+    return (
+      <Pressable onPress={() => void Linking.openURL(url)} testID="provider-data-use-link">
+        <Text style={styles.dataUseLink}>
+          {t('ai.dataUseLink', { provider: LLM_PROVIDER_LABEL[provider] ?? provider })}
+        </Text>
+      </Pressable>
+    );
+  }
+  if (provider !== 'custom') return null;
+  return (
+    <Text style={styles.dataUseHint} testID="provider-data-use-hint">
+      {t('ai.customDataUseHint')}
+    </Text>
   );
 }
 
@@ -446,6 +476,7 @@ function AddProviderModal({
 
               <Text style={styles.fieldLabel}>{t('ai.providerLabel')}</Text>
               <ProviderPicker value={provider} onChange={onChangeProvider} />
+              <ProviderDataUse provider={provider} />
 
               <TextInput
                 placeholderTextColor={colors.textFaint}
@@ -906,6 +937,8 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    dataUseLink: { fontSize: 12, color: colors.textMuted, textDecorationLine: 'underline' },
+    dataUseHint: { fontSize: 12, color: colors.textMuted },
     fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 4 },
     pickerField: {
       flexDirection: 'row',

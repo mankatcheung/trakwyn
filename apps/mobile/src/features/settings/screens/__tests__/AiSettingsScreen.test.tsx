@@ -1,4 +1,5 @@
 import React from 'react';
+import { Linking } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
@@ -28,7 +29,7 @@ import {
   useUpdateCustomAiPrompt,
 } from '../../hooks/useLlmApiKeys';
 import { AiSettingsScreen } from '../AiSettingsScreen';
-import type { LlmApiKey } from '../../types';
+import { LLM_PROVIDER_DATA_USE_URL, type LlmApiKey } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { lightColors } from '../../../../theme/colors';
 
@@ -144,6 +145,29 @@ describe('AiSettingsScreen', () => {
       expect.objectContaining({ provider: 'anthropic', apiKey: 'sk-ant-test' }),
       expect.any(Object),
     );
+  });
+
+  it('links to the chosen provider’s data-use policy, and hints for custom (JEF-549)', async () => {
+    loaded(llmApiKeysData({ keys: [], aiProviderOrder: [] }));
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+
+    const { getByTestId, queryByTestId } = await render(<AiSettingsScreen />);
+
+    await fireEvent.press(getByTestId('open-add-provider-button'));
+    await fireEvent.press(getByTestId('provider-picker-field'));
+    await fireEvent.press(getByTestId('provider-option-anthropic'));
+
+    await fireEvent.press(getByTestId('provider-data-use-link'));
+    expect(openURL).toHaveBeenCalledWith(LLM_PROVIDER_DATA_USE_URL.anthropic);
+    expect(openURL.mock.calls[0][0]).toMatch(/^https:\/\//);
+    expect(queryByTestId('provider-data-use-hint')).toBeNull();
+
+    await fireEvent.press(getByTestId('provider-picker-field'));
+    await fireEvent.press(getByTestId('provider-option-custom'));
+
+    expect(queryByTestId('provider-data-use-link')).toBeNull();
+    expect(getByTestId('provider-data-use-hint')).toBeTruthy();
+    openURL.mockRestore();
   });
 
   it('opens the actions sheet for a key, with no make-default action (JEF-503)', async () => {

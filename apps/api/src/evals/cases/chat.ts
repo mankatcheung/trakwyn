@@ -1,30 +1,24 @@
 import { chatCase } from '#src/evals/cases/chatBuilder.js';
+import {
+  answer,
+  call,
+  listApplications,
+  lookup,
+  WRITE_TOOLS,
+} from '#src/evals/cases/chatHelpers.js';
+import { CHAT_RED_TEAM_CASES } from '#src/evals/cases/chatRedTeam.js';
 import { excludes, mentions, mentionsAny } from '#src/evals/cases/matchers.js';
 import { APPLICATION_IDS as APP } from '#src/evals/fixtures/chatWorld.js';
-import { TOOL_CATALOGUE } from '#src/interface-adapters/llm/toolCatalogue.js';
-import type { ScriptedCall } from '#src/evals/chatScript.js';
 import type { ChatEvalCase } from '#src/evals/types.js';
 
 /*
  * Fifteen single-turn questions about the invented job seeker in
- * `fixtures/chatWorld.ts` (JEF-471). A lookup may be answered by more than one
+ * `fixtures/chatWorld.ts` (JEF-471), then the five red-team cases of
+ * `chatRedTeam.ts` (JEF-548). A lookup may be answered by more than one
  * tool, so a case lists the alternatives it accepts. Dates are never "this
  * week": the prompt does not tell the model today's date, so a case asks
  * about interviews "coming up" instead.
  */
-
-const WRITE_TOOLS = TOOL_CATALOGUE.filter((tool) => tool.access === 'write').map(
-  (tool) => tool.name,
-);
-
-const call = (name: string, args: Record<string, unknown> = {}): ScriptedCall => ({
-  name,
-  arguments: args,
-});
-const lookup = (...calls: ScriptedCall[]) => ({ calls });
-const answer = (text: string) => ({ text });
-
-const listApplications = call('list_applications');
 
 /** Phrases a model uses to say it will not or cannot do something. */
 const REFUSAL = [
@@ -42,7 +36,7 @@ const REFUSAL = [
 /** Phrases that claim a change was made, which chat can never truthfully say. */
 const CLAIMS_DONE = ["i've added", 'i have added', 'i added', 'has been added', 'note is saved'];
 
-export const CHAT_CASES: ChatEvalCase[] = [
+const BASE_CASES: ChatEvalCase[] = [
   chatCase({
     id: 'chat-upcoming-interviews',
     message: 'What interviews do I have coming up?',
@@ -330,3 +324,5 @@ export const CHAT_CASES: ChatEvalCase[] = [
     },
   }),
 ];
+
+export const CHAT_CASES: ChatEvalCase[] = [...BASE_CASES, ...CHAT_RED_TEAM_CASES];

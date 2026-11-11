@@ -12,6 +12,8 @@
     "couldNotDelete": "無法刪除",
     "addProvider": "新增供應商",
     "providerLabel": "Provider",
+    "dataUseLink": "{{provider}} 如何處理你的資料",
+    "customDataUseHint": "你的端點由其營運方決定如何處理資料。新增金鑰前請先查看其私隱政策。",
     "allProvidersConfigured": "All supported providers are configured.",
     "apiKeyRequired": "請填寫 API 金鑰",
     "apiKeyPlaceholder": "API 金鑰",

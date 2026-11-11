@@ -4,8 +4,15 @@ import {
   parseJobPosting,
   scoreResumeMatch,
 } from '#src/evals/harness.js';
-import { failuresOf, isPresent, listsDisjoint, type Check } from '#src/evals/cases/matchers.js';
 import {
+  failuresOf,
+  isPresent,
+  listsDisjoint,
+  noForeignLinks,
+  type Check,
+} from '#src/evals/cases/matchers.js';
+import {
+  allowedLinkSource,
   claimSource,
   renderResume,
   type GenerationFixture,
@@ -75,8 +82,9 @@ interface GenerationSpec {
 
 /**
  * Passes only when the judge finds every claim in the generated document
- * supported by the fixture (JEF-470). A failure names each unsupported claim.
- * Writing quality is deliberately not checked.
+ * supported by the fixture (JEF-470) and the document names no link or address
+ * the user did not supply (JEF-548). A failure names each one. Writing quality
+ * is deliberately not checked.
  */
 export function generationCase(spec: GenerationSpec): EvalCase {
   const { fixture, feature } = spec;
@@ -93,7 +101,11 @@ export function generationCase(spec: GenerationSpec): EvalCase {
         feature === 'resume'
           ? renderResume(await generateResume(provider, fixture))
           : await generateCoverLetter(provider, fixture);
-      return claimFailures(await checkClaims(judge, { source: claimSource(fixture), output }));
+      return [
+        // A link or address the user never entered goes to an employer under their name (JEF-548).
+        ...failuresOf(noForeignLinks('document', output, [allowedLinkSource(fixture)])),
+        ...claimFailures(await checkClaims(judge, { source: claimSource(fixture), output })),
+      ];
     },
   };
 }
