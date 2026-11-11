@@ -752,6 +752,8 @@ export const DOCUMENT_FILE_ROUTE = {
 export const LEAKED_TOOL_CALL = {
   MARKER: /<\|(?:start|end|call|channel|message|return|constrain)\|>/,
   TEXT_PREFIX: 'analysis',
+  /** gpt-oss's channel label at the very start: "analysis:" or "analysis" and a line break (JEF-554). "Analysis of…" does not match. */
+  REASONING_LABEL: /^analysis(?:[ \t]*:|[ \t]*\r?\n)/i,
 } as const;
 
 /**
