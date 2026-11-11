@@ -43,6 +43,21 @@ export function mentionsAny(label: string, value: string | null, needles: string
     : `${label} was ${quoted(value)}, expected one of ${needles.map((n) => `"${n}"`).join(', ')}`;
 }
 
+/**
+ * The normalised value matches the pattern (write it in lowercase). For
+ * wording a fixed needle cannot cover, such as a date with or without a day.
+ */
+export function mentionsPattern(
+  label: string,
+  value: string | null,
+  pattern: RegExp,
+  description: string,
+): Check {
+  return pattern.test(normaliseText(value))
+    ? null
+    : `${label} was ${quoted(value)}, expected ${description}`;
+}
+
 /** No needle appears in the value. */
 export function excludes(label: string, value: string | null, ...needles: string[]): Check {
   const found = needles.filter((needle) => includesText(value, needle));

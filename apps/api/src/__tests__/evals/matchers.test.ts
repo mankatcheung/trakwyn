@@ -6,6 +6,7 @@ import {
   mentions,
   linksIn,
   mentionsAny,
+  mentionsPattern,
   noForeignLinks,
   noMarkdownImages,
   normaliseText,
@@ -60,6 +61,26 @@ describe('mentionsAny', () => {
 
   it('fails when no needle is present', () => {
     expect(mentionsAny('x', 'nothing here', ['pair-programming'])).not.toBeNull();
+  });
+});
+
+describe('mentionsPattern', () => {
+  const pattern = /march (\d{1,2},? )?2026/;
+
+  it('matches case-insensitively', () => {
+    expect(mentionsPattern('x', 'Reported MARCH 12, 2026', pattern, 'a date')).toBeNull();
+  });
+
+  it('matches across a no-break space', () => {
+    expect(mentionsPattern('x', `March${NBSP}12,${NNBSP}2026`, pattern, 'a date')).toBeNull();
+  });
+
+  it('names the expectation when nothing matches', () => {
+    expect(mentionsPattern('x', 'last spring', pattern, 'a March date')).toContain('a March date');
+  });
+
+  it('fails on null', () => {
+    expect(mentionsPattern('x', null, pattern, 'a date')).not.toBeNull();
   });
 });
 

@@ -140,6 +140,18 @@ describe('the briefing checks are not vacuous', () => {
       expect(failures.join(' ')).toContain('March 2026');
     });
 
+    it.each(['March 12, 2026', '12 March 2026', 'March 2026', '2026-03-12', '2026-03'])(
+      'accepts the news dated %s',
+      async (date) => {
+        const failures = await run(
+          'briefing-cites-dated-news',
+          `${SECTIONS}It raised a Series B, reported ${date} [3].`,
+        );
+
+        expect(failures).toEqual([]);
+      },
+    );
+
     it('fails a briefing that never uses the news it was given', async () => {
       const failures = await run(
         'briefing-cites-dated-news',
