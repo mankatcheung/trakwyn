@@ -14,6 +14,7 @@ import {
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
+import { makeAiFeedbackRepository } from '#src/__tests__/helpers/mocks/aiFeedback.js';
 import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 import { resumePrompt } from '#src/use-cases/prompts/resume.js';
 import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
@@ -44,6 +45,7 @@ function makeUseCase(over?: {
     generateCoverLetterUseCase,
     generateResumeUseCase,
     documentDraftRepository,
+    aiFeedbackRepository: makeAiFeedbackRepository(),
     documentRepository: makeDocumentRepository(),
     extractDocumentTextUseCase: makeExtractDocumentTextUseCase(),
     applicationRepository: makeApplicationRepository({
@@ -162,6 +164,7 @@ describe('GenerateIntoDocumentDraftUseCase generation snapshot (JEF-547)', () =>
 
   function setup(draftType: 'resume' | 'cover_letter', answeredBy: Answered) {
     const draft = makeDocumentDraft({ id: 'draft-1', type: draftType });
+    const aiFeedbackRepository = makeAiFeedbackRepository();
     const documentDraftRepository = makeDocumentDraftRepository({
       findById: vi.fn().mockResolvedValue(draft),
     });
@@ -181,6 +184,7 @@ describe('GenerateIntoDocumentDraftUseCase generation snapshot (JEF-547)', () =>
         }),
       },
       documentDraftRepository,
+      aiFeedbackRepository,
       documentRepository: makeDocumentRepository(),
       extractDocumentTextUseCase: makeExtractDocumentTextUseCase(),
       applicationRepository: makeApplicationRepository({
@@ -190,7 +194,7 @@ describe('GenerateIntoDocumentDraftUseCase generation snapshot (JEF-547)', () =>
         findById: vi.fn().mockResolvedValue(makeUser({ name: 'Ada', email: 'ada@example.com' })),
       }),
     });
-    return { useCase, documentDraftRepository };
+    return { useCase, documentDraftRepository, aiFeedbackRepository };
   }
 
   it('notes on the draft which model and prompt wrote a resume', async () => {
@@ -237,5 +241,25 @@ describe('GenerateIntoDocumentDraftUseCase generation snapshot (JEF-547)', () =>
     await useCase.execute(input);
 
     expect(documentDraftRepository.recordGeneration).not.toHaveBeenCalled();
+  });
+
+  it("clears the caller's rating of the draft, since the new output is not what was rated", async () => {
+    const { useCase, aiFeedbackRepository } = setup('resume', {
+      provider: 'google',
+      model: 'gem-1',
+      source: 'byok',
+    });
+
+    await useCase.execute(input);
+
+    expect(aiFeedbackRepository.clear).toHaveBeenCalledWith('user-1', 'document_draft', 'draft-1');
+  });
+
+  it('keeps the rating when nothing new was recorded', async () => {
+    const { useCase, aiFeedbackRepository } = setup('resume', undefined);
+
+    await useCase.execute(input);
+
+    expect(aiFeedbackRepository.clear).not.toHaveBeenCalled();
   });
 });

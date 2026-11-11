@@ -1,6 +1,8 @@
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
+import type { IAiFeedbackRepository } from '#src/use-cases/ports/IAiFeedbackRepository.js';
+import { AI_FEEDBACK_TARGET } from '#src/use-cases/constants.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IExtractDocumentTextUseCase } from '#src/use-cases/documents/ExtractDocumentTextUseCase.js';
@@ -51,6 +53,7 @@ interface Deps {
     }): Promise<ResumeContent>;
   };
   documentDraftRepository: IDocumentDraftRepository;
+  aiFeedbackRepository: IAiFeedbackRepository;
   documentRepository: IDocumentRepository;
   extractDocumentTextUseCase: IExtractDocumentTextUseCase;
   applicationRepository: IApplicationRepository;
@@ -80,11 +83,18 @@ export class GenerateIntoDocumentDraftUseCase implements IGenerateIntoDocumentDr
       answeredBy = a;
     };
     // The draft is saved later by the editor, so what a rating needs to know
-    // (who wrote this generation, JEF-547) is noted on the draft now.
+    // (who wrote this generation, JEF-547) is noted on the draft now. A new
+    // generation is new output, so the caller's rating of the last one goes:
+    // it would otherwise be filed under a model and prompt that never wrote it.
     const recordGeneration = async (promptVersion: number) => {
       const generation = toAiGeneration(answeredBy, promptVersion);
-      if (generation)
-        await this.deps.documentDraftRepository.recordGeneration(draft.id, generation);
+      if (!generation) return;
+      await this.deps.documentDraftRepository.recordGeneration(draft.id, generation);
+      await this.deps.aiFeedbackRepository.clear(
+        input.userId,
+        AI_FEEDBACK_TARGET.DOCUMENT_DRAFT,
+        draft.id,
+      );
     };
 
     if (draft.type === 'resume') {
