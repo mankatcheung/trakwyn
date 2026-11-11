@@ -18,14 +18,26 @@ export function looksLikeLeakedToolCall(content: string): boolean {
   );
 }
 
+/** Content is gpt-oss's reasoning channel shown as the answer (JEF-554). */
+export function looksLikeReasoningText(content: string): boolean {
+  return LEAKED_TOOL_CALL.REASONING_LABEL.test(content.trimStart());
+}
+
 /**
- * Throws when a finished completion is a leak: markers and no tool call.
- * `unavailable` is a kind `FailoverLLMProvider` moves to the next leg on.
+ * Throws when a finished completion is a leak: markers, or reasoning text
+ * labelled "analysis", and no tool call. `unavailable` is a kind
+ * `FailoverLLMProvider` moves to the next leg on.
  */
 export function assertNoLeakedToolCall(content: string, toolCallCount: number): void {
-  if (toolCallCount === 0 && hasChannelMarkers(content)) {
+  if (toolCallCount !== 0) return;
+  if (hasChannelMarkers(content)) {
     throw new LlmProviderError('unavailable', {
       detail: 'Completion carried channel markers and no tool calls',
+    });
+  }
+  if (looksLikeReasoningText(content)) {
+    throw new LlmProviderError('unavailable', {
+      detail: 'Completion was reasoning text labelled "analysis" and no tool calls',
     });
   }
 }

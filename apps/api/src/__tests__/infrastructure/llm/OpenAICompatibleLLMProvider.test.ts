@@ -406,6 +406,79 @@ describe('OpenAICompatibleLLMProvider', () => {
         expect(events).toEqual([]);
       });
 
+      it.each([
+        ['a colon', 'analysis: The user wants to delete their Figma application. '],
+        ['a line break', 'analysis\nThe user wants to delete their Figma application. '],
+        ['a leading space and capital', '  Analysis: The user wants to delete it. '],
+      ])(
+        'shows nothing and throws a failover-eligible error for reasoning text labelled with %s and no markers (JEF-554)',
+        async (_label, text) => {
+          const { events, done } = run([
+            frame({ content: text }),
+            frame({ content: 'F figure? F figure? ' }),
+          ]);
+
+          await expect(done).rejects.toMatchObject({ kind: 'unavailable' });
+          await expect(done).rejects.toBeInstanceOf(LlmProviderError);
+          expect(events).toEqual([]);
+        },
+      );
+
+      it('delivers a reply that mentions "analysis" later on (JEF-554)', async () => {
+        const { events, done } = run([
+          frame({ content: 'Here is my analysis: ' }),
+          frame({ content: 'three interviews.' }),
+        ]);
+
+        await done;
+
+        expect(events[0]).toEqual({
+          type: 'text_delta',
+          text: 'Here is my analysis: ',
+        });
+        expect(events[events.length - 1]).toMatchObject({
+          type: 'done',
+          content: 'Here is my analysis: three interviews.',
+        });
+      });
+
+      it('delivers an answer starting "Analysis of…" or "Analysis shows…" (JEF-554)', async () => {
+        const { events, done } = run([
+          frame({ content: 'Analysis shows ' }),
+          frame({ content: 'three interviews.' }),
+        ]);
+
+        await done;
+
+        expect(events).toEqual([
+          { type: 'text_delta', text: 'Analysis shows three interviews.' },
+          {
+            type: 'done',
+            content: 'Analysis shows three interviews.',
+            toolCalls: [],
+            usage: null,
+          },
+        ]);
+      });
+
+      it('does not throw for analysis-labelled text when a tool call came (JEF-554)', async () => {
+        const { events, done } = run([
+          frame({ content: 'analysis: need the list. ' }),
+          frame({
+            tool_calls: [
+              { index: 0, id: 'c1', function: { name: 'list_applications', arguments: '{}' } },
+            ],
+          }),
+        ]);
+
+        await done;
+
+        expect(events[events.length - 1]).toMatchObject({
+          type: 'done',
+          toolCalls: [{ id: 'c1', name: 'list_applications' }],
+        });
+      });
+
       it('still delivers text that merely starts with "analysis"', async () => {
         const { events, done } = run([
           frame({ content: 'Analysis of your pipeline: ' }),
