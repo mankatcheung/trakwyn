@@ -17,8 +17,9 @@ import {
   validateJudge,
 } from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
-import { publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
+import { gitShortSha, publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
 import { writeReportFile } from '#src/evals/reportFile.js';
+import { saveRunFolder } from '#src/evals/runFolder.js';
 import { runSuite } from '#src/evals/runSuite.js';
 import {
   formatReport,
@@ -32,6 +33,7 @@ import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { CaseResult, EvalConfig } from '#src/evals/types.js';
 
 const CACHE_DIR = '.eval-cache';
+const RUNS_DIR = '.eval-runs';
 const USAGE_ERROR = 2;
 const QUOTA_STOP = 3;
 
@@ -85,6 +87,50 @@ async function runTargets(
   return runs;
 }
 
+/** Prints why the run failed, if it did, and returns the exit status. */
+function exitCodeFor(runs: TargetRun[], minPassRate: number): number {
+  if (runs.some(stoppedOnQuota)) {
+    console.error(
+      '\nStopped on a provider quota, so this run is not a score. See the lines above.',
+    );
+    return QUOTA_STOP;
+  }
+
+  const short = runs.filter((run) => !meetsPassRate(summarise(run.results), minPassRate));
+  if (short.length > 0) {
+    console.error(
+      `\nBelow the ${Math.round(minPassRate * 100)}% pass rate: ${short.map((run) => run.label).join(', ')}`,
+    );
+    return 1;
+  }
+  return 0;
+}
+
+/** Keeps the run in its own folder (JEF-560). A write failure is reported and never changes the exit code. */
+function saveRun(
+  config: EvalConfig,
+  runs: TargetRun[],
+  report: string,
+  startedAt: Date,
+  exitCode: number,
+): void {
+  try {
+    const dir = saveRunFolder(RUNS_DIR, {
+      config,
+      runs,
+      report,
+      caseIds: selectCases(ALL_CASES, config.caseIds).map((evalCase) => evalCase.id),
+      commit: gitShortSha(),
+      startedAt,
+      finishedAt: new Date(),
+      exitCode,
+    });
+    console.log(`\nRun saved to ${dir}`);
+  } catch (error: unknown) {
+    console.error(`Could not save the run to ${RUNS_DIR}: ${messageOf(error)}`);
+  }
+}
+
 async function main(): Promise<number> {
   let config: EvalConfig;
   let cache: Cache;
@@ -112,6 +158,7 @@ async function main(): Promise<number> {
     if (config.validateJudge) return 0;
   }
 
+  const startedAt = new Date();
   let runs: TargetRun[];
   try {
     runs = await runTargets(config, judge, cache);
@@ -137,21 +184,11 @@ async function main(): Promise<number> {
     await publishToLangfuse(config.publish, runs, config.judge ? targetLabel(config.judge) : null);
   }
 
-  if (runs.some(stoppedOnQuota)) {
-    console.error(
-      '\nStopped on a provider quota, so this run is not a score. See the lines above.',
-    );
-    return QUOTA_STOP;
+  const exitCode = exitCodeFor(runs, config.minPassRate);
+  if (config.save) {
+    saveRun(config, runs, report, startedAt, exitCode);
   }
-
-  const short = runs.filter((run) => !meetsPassRate(summarise(run.results), config.minPassRate));
-  if (short.length > 0) {
-    console.error(
-      `\nBelow the ${Math.round(config.minPassRate * 100)}% pass rate: ${short.map((run) => run.label).join(', ')}`,
-    );
-    return 1;
-  }
-  return 0;
+  return exitCode;
 }
 
 process.exitCode = await main();

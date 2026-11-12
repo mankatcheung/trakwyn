@@ -214,6 +214,8 @@ describe('judge configuration', () => {
     minPassRate: 0.8,
     reportFile: null,
     publish: null,
+    label: null,
+    save: true,
   });
 
   it('refuses to start graded cases without a judge', () => {

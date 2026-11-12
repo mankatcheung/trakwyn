@@ -135,4 +135,8 @@ export interface EvalConfig {
   reportFile: string | null;
   /** Where to upload the run once it finishes (`--publish`), or null to not upload. */
   publish: LangfuseConfig | null;
+  /** A name added to the run folder (`--label`), or null. */
+  label: string | null;
+  /** Keep the run in its own folder (JEF-560); `--no-save` turns it off. */
+  save: boolean;
 }
