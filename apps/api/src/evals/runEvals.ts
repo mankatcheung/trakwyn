@@ -5,7 +5,8 @@
  * `*.test.ts`, which is why `pnpm test` and CI never reach a provider.
  *
  * Exit status: 0 when every target met the pass rate, 1 when one fell short
- * (or the judge was not trusted), 2 when the arguments were wrong.
+ * (or the judge was not trusted), 2 when the arguments were wrong, 3 when a
+ * target stopped on its provider's daily quota (JEF-556), which is no score.
  */
 import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { ALL_CASES, selectCases } from '#src/evals/cases/index.js';
@@ -22,6 +23,7 @@ import { runSuite } from '#src/evals/runSuite.js';
 import {
   formatReport,
   meetsPassRate,
+  stoppedOnQuota,
   summarise,
   type CacheCounts,
   type TargetRun,
@@ -31,6 +33,7 @@ import type { CaseResult, EvalConfig } from '#src/evals/types.js';
 
 const CACHE_DIR = '.eval-cache';
 const USAGE_ERROR = 2;
+const QUOTA_STOP = 3;
 
 type Cache = { dir: string; refresh: boolean } | null;
 
@@ -71,7 +74,13 @@ async function runTargets(
       (result) => console.log(progressLine(result)),
       judge ?? undefined,
     );
-    runs.push(cache ? { label, results, cache: counts } : { label, results });
+    const skipped = cases.length - results.length;
+    runs.push({
+      label,
+      results,
+      ...(cache ? { cache: counts } : {}),
+      ...(skipped > 0 ? { skipped } : {}),
+    });
   }
   return runs;
 }
@@ -126,6 +135,13 @@ async function main(): Promise<number> {
   // `publishToLangfuse` and never changes the exit code, which is the pass rate's.
   if (config.publish) {
     await publishToLangfuse(config.publish, runs, config.judge ? targetLabel(config.judge) : null);
+  }
+
+  if (runs.some(stoppedOnQuota)) {
+    console.error(
+      '\nStopped on a provider quota, so this run is not a score. See the lines above.',
+    );
+    return QUOTA_STOP;
   }
 
   const short = runs.filter((run) => !meetsPassRate(summarise(run.results), config.minPassRate));

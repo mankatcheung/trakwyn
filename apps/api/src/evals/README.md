@@ -240,11 +240,12 @@ Below the table:
 
 **Exit codes**
 
-| Code | Meaning                                                                 |
-| ---- | ----------------------------------------------------------------------- |
-| `0`  | Every target reached the pass rate (or `--validate-judge` passed).      |
-| `1`  | A target fell short, or the judge scored under 90% and was not trusted. |
-| `2`  | Bad arguments or missing configuration. Nothing was called.             |
+| Code | Meaning                                                                                                                                                                                                                                                                                                              |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | Every target reached the pass rate (or `--validate-judge` passed).                                                                                                                                                                                                                                                   |
+| `1`  | A target fell short, or the judge scored under 90% and was not trusted.                                                                                                                                                                                                                                              |
+| `2`  | Bad arguments or missing configuration. Nothing was called.                                                                                                                                                                                                                                                          |
+| `3`  | A target stopped on its provider's daily quota (for example Cloudflare's free allocation, which resets at 00:00 UTC). Its remaining cases were skipped and its row reads `stopped (quota)`, not a pass rate. Other targets in the run still ran. Re-run after the reset, with `--cache` to reuse the answered cases. |
 
 ## Publishing to Langfuse
 

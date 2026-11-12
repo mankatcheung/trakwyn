@@ -160,3 +160,49 @@ describe('runCase provider errors (JEF-542)', () => {
     expect(result.judgeCalls).toEqual([]);
   });
 });
+
+describe('runCase quota stops (JEF-556)', () => {
+  const failing = (error: Error) =>
+    runCase(
+      evalCase(async () => {
+        throw error;
+      }),
+      makeLLMProvider(),
+    );
+  const cloudflare = (kind: 'rate_limited' | 'quota', detail: string | null) =>
+    new LlmProviderError(kind, { provider: 'Workers AI', status: 429, detail });
+
+  it('marks Cloudflare’s daily allocation (code 4006) as a quota stop', async () => {
+    const result = await failing(
+      cloudflare(
+        'rate_limited',
+        '{"errors":[{"code":4006,"message":"you have used up your daily free allocation of 10,000 neurons"}]}',
+      ),
+    );
+
+    expect(result.quotaStop).toBe(true);
+    expect(result.passed).toBe(false);
+  });
+
+  it('matches on the phrase alone, ignoring case', async () => {
+    const result = await failing(cloudflare('rate_limited', 'Daily Free Allocation used'));
+
+    expect(result.quotaStop).toBe(true);
+  });
+
+  it('marks a quota-kind error as a quota stop', async () => {
+    expect((await failing(cloudflare('quota', null))).quotaStop).toBe(true);
+  });
+
+  it('leaves an ordinary 429 as a failure of its own case', async () => {
+    const plain = await failing(cloudflare('rate_limited', '{"error":"slow down"}'));
+    const noBody = await failing(cloudflare('rate_limited', null));
+
+    expect(plain.quotaStop).toBeUndefined();
+    expect(noBody.quotaStop).toBeUndefined();
+  });
+
+  it('does not treat other errors as a quota stop', async () => {
+    expect((await failing(new Error('boom'))).quotaStop).toBeUndefined();
+  });
+});
