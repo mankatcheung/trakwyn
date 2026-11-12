@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
+import { DEFAULT_MAX_ERROR_RATE } from '#src/evals/parseEvalArgs.js';
 import { transcriptNames } from '#src/evals/runFolder.js';
 import type { TargetRun } from '#src/evals/summary.js';
 import type { CaseResult } from '#src/evals/types.js';
@@ -13,6 +14,8 @@ export interface LoadedRun {
   judge: string | null;
   commit: string;
   startedAt: Date;
+  /** The error share the run was judged against (JEF-559), or the default for a folder without it. */
+  maxErrorRate: number;
   /** When it was uploaded before, or null. */
   publishedAt: string | null;
 }
@@ -91,6 +94,11 @@ function readTranscript(path: string): CaseResult[] {
     });
 }
 
+function maxErrorRateOf(record: Record<string, unknown>): number {
+  const rate = isRecord(record.flags) ? record.flags.maxErrorRate : undefined;
+  return typeof rate === 'number' && rate >= 0 && rate <= 1 ? rate : DEFAULT_MAX_ERROR_RATE;
+}
+
 /**
  * Reads a run folder written by `saveRunFolder` (JEF-560) into the shapes the
  * Langfuse publisher takes. Throws a message naming the path that is missing
@@ -121,6 +129,7 @@ export function loadRunFolder(dir: string): LoadedRun {
     judge: typeof record.judge === 'string' ? record.judge : null,
     commit: record.commit,
     startedAt,
+    maxErrorRate: maxErrorRateOf(record),
     publishedAt: typeof record.publishedAt === 'string' ? record.publishedAt : null,
   };
 }
