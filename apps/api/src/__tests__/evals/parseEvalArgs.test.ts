@@ -352,3 +352,42 @@ describe('parseEvalArgs --publish-from (JEF-562)', () => {
     ).toThrow(/--force only goes with --publish-from/);
   });
 });
+
+describe('parseEvalArgs --show', () => {
+  it('needs no target, judge, key or Langfuse variable', () => {
+    const config = parseEvalArgs(['--show', '.eval-runs/x'], {});
+
+    expect(config.show).toBe('.eval-runs/x');
+    expect(config.caseIds).toEqual([]);
+    expect(config.targets).toEqual([]);
+    expect(config.publishFrom).toBeNull();
+    expect(config.save).toBe(false);
+  });
+
+  it('keeps --case, repeated or comma separated, to pick the cases to print', () => {
+    const config = parseEvalArgs(['--show', 'd', '--case', 'a,b', '--case', 'c'], {});
+
+    expect(config.caseIds).toEqual(['a', 'b', 'c']);
+  });
+
+  it('ignores provider and judge variables that are broken', () => {
+    expect(() =>
+      parseEvalArgs(['--show', 'd'], { EVAL_PROVIDER: 'nonsense', EVAL_JUDGE_PROVIDER: 'openai' }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    [['--target', 'openai:gpt-x'], '--target'],
+    [['--cache'], '--cache'],
+    [['--out', 'f.txt'], '--out'],
+    [['--publish'], '--publish'],
+    [['--publish-from', 'e'], '--publish-from'],
+    [['--force'], '--force'],
+  ])('rejects --show with %s', (extra, flag) => {
+    expect(() => parseEvalArgs(['--show', 'd', ...extra], {})).toThrow(flag);
+  });
+
+  it('needs a directory', () => {
+    expect(() => parseEvalArgs(['--show'], {})).toThrow(/needs a value/);
+  });
+});

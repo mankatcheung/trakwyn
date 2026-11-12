@@ -61,6 +61,7 @@ const config = (overrides: Partial<EvalConfig> = {}): EvalConfig => ({
   reportFile: null,
   publish: null,
   publishFrom: null,
+  show: null,
   label: null,
   save: true,
   ...overrides,

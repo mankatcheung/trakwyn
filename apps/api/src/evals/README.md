@@ -163,6 +163,7 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 | `--publish`                 | After the run, upload it to Langfuse so you can browse and compare it. Needs the `EVAL_LANGFUSE_*` keys. See [Publishing to Langfuse](#publishing-to-langfuse). Off by default; not used with `--validate-judge`. |
 | `--label <name>`            | Add a name to the run's folder, for example `baseline`. See [Saved runs](#saved-runs).                                                                                                                            |
 | `--publish-from <run-dir>`  | Upload a [saved run](#saved-runs) to Langfuse without calling any model. Needs only the `EVAL_LANGFUSE_*` keys; cannot be combined with run flags. See [Publishing to Langfuse](#publishing-to-langfuse).         |
+| `--show <run-dir>`          | Print a [saved run](#saved-runs)'s transcripts as readable text, with `--case` to pick cases. Calls no model and reads no key; cannot be combined with other run flags.                                           |
 | `--force`                   | With `--publish-from`: upload even though the folder was already published.                                                                                                                                       |
 | `--no-save`                 | Do not keep this run in a folder. Without it every run is saved.                                                                                                                                                  |
 | `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Separate from the [saved run](#saved-runs) folder, which is kept either way.    |
@@ -328,6 +329,15 @@ Every run is kept in a new folder under the gitignored `apps/api/.eval-runs/`, s
 | `summary.md`                    | The report, as `--out` writes it.                                                                                                                                                                               |
 | `summary.json`                  | The summary per target: totals, pass rate, tokens and results by feature.                                                                                                                                       |
 | `transcripts/<target>.jsonl.gz` | One case result per line, with every model call and judge call (messages, reply, tokens, timing). Read one with `gzip -dc file \| jq`.                                                                          |
+
+**Reading a transcript.** The `.jsonl.gz` files are compressed, so an editor shows noise. Print one as text instead:
+
+```bash
+pnpm --filter @trakwyn/api eval --show .eval-runs/2026-11-12T1030Z-ab12cd3-baseline
+pnpm --filter @trakwyn/api eval --show .eval-runs/2026-11-12T1030Z-ab12cd3-baseline --case jd-standard
+```
+
+Each case prints its outcome, prompt version, tokens, failures or errors, then every model call and every judge call in order: the messages sent, tool calls, the reply and any error. It calls no model and needs no key. Without `--case` it prints every case (pipe it to `less`). A `--case` id that no target ran, or an unreadable folder, exits `2`. For raw JSON, `gzip -dc <file> | jq` still works.
 
 No file holds an API key or a base URL: targets are recorded by their `provider:model` label only. A failed save is reported and never changes the exit code.
 

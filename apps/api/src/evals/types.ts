@@ -157,6 +157,8 @@ export interface EvalConfig {
   publish: LangfuseConfig | null;
   /** Set by `--publish-from`: the run is read from a folder and nothing else is configured. */
   publishFrom: PublishFromConfig | null;
+  /** Set by `--show`: print the saved run in this folder and stop (`caseIds` picks the cases). */
+  show: string | null;
   /** A name added to the run folder (`--label`), or null. */
   label: string | null;
   /** Keep the run in its own folder (JEF-560); `--no-save` turns it off. */
