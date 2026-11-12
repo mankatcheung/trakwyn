@@ -19,6 +19,7 @@ const VALUE_FLAGS = [
   '--out',
   '--label',
   '--publish-from',
+  '--show',
 ] as const;
 const SWITCH_FLAGS = [
   '--cache',
@@ -60,6 +61,7 @@ interface RawFlags {
   noSave: boolean;
   force: boolean;
   publishFrom: string | null;
+  show: string | null;
 }
 
 function readFlags(argv: string[]): RawFlags {
@@ -77,6 +79,7 @@ function readFlags(argv: string[]): RawFlags {
     noSave: false,
     force: false,
     publishFrom: null,
+    show: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -95,6 +98,7 @@ function readFlags(argv: string[]): RawFlags {
       else if (arg === '--out') flags = { ...flags, out: value };
       else if (arg === '--label') flags = { ...flags, label: value };
       else if (arg === '--publish-from') flags = { ...flags, publishFrom: value };
+      else if (arg === '--show') flags = { ...flags, show: value };
       else if (arg === '--max-error-rate') flags = { ...flags, maxErrorRate: value };
       else flags = { ...flags, minPassRate: value };
     } else {
@@ -216,11 +220,15 @@ function parseRate(
   return value;
 }
 
-/** What `--publish-from` cannot be combined with: it runs nothing, so each of these would be ignored. */
-function conflictsWithPublishFrom(flags: RawFlags): string[] {
+/**
+ * What `--publish-from` and `--show` cannot be combined with: they run
+ * nothing, so each of these would be ignored. `--show` keeps `--case`, which
+ * picks the cases to print.
+ */
+function conflictsWithSavedRun(flags: RawFlags, keepCase: boolean): string[] {
   return [
     flags.targets.length > 0 && '--target',
-    flags.cases.length > 0 && '--case',
+    !keepCase && flags.cases.length > 0 && '--case',
     flags.cache && '--cache',
     flags.refresh && '--refresh',
     flags.publish && '--publish',
@@ -239,7 +247,7 @@ function conflictsWithPublishFrom(flags: RawFlags): string[] {
  * model credentials on the machine.
  */
 function parsePublishFrom(flags: RawFlags, env: Env): EvalConfig {
-  const conflicts = conflictsWithPublishFrom(flags);
+  const conflicts = conflictsWithSavedRun(flags, false);
   if (conflicts.length > 0) {
     throw new Error(`--publish-from cannot be used with ${conflicts.join(', ')}`);
   }
@@ -259,9 +267,45 @@ function parsePublishFrom(flags: RawFlags, env: Env): EvalConfig {
       langfuse: parseLangfuse(env, '--publish-from'),
       force: flags.force,
     },
+    show: null,
     label: null,
     save: false,
   };
+}
+
+/** `--show <run-dir>`: prints a saved run's transcripts. Reads no credential at all. */
+function parseShow(flags: RawFlags): EvalConfig {
+  const conflicts = [
+    ...(flags.publishFrom !== null ? ['--publish-from'] : []),
+    ...(flags.force ? ['--force'] : []),
+    ...conflictsWithSavedRun(flags, true),
+  ];
+  if (conflicts.length > 0) {
+    throw new Error(`--show cannot be used with ${conflicts.join(', ')}`);
+  }
+  return {
+    targets: [],
+    judge: null,
+    validateJudge: false,
+    caseIds: splitCaseIds(flags.cases),
+    cache: false,
+    refresh: false,
+    minPassRate: DEFAULT_MIN_PASS_RATE,
+    maxErrorRate: DEFAULT_MAX_ERROR_RATE,
+    reportFile: null,
+    publish: null,
+    publishFrom: null,
+    show: flags.show as string,
+    label: null,
+    save: false,
+  };
+}
+
+function splitCaseIds(values: string[]): string[] {
+  return values
+    .flatMap((value) => value.split(','))
+    .map((id) => id.trim())
+    .filter((id) => id !== '');
 }
 
 /**
@@ -273,6 +317,7 @@ function parsePublishFrom(flags: RawFlags, env: Env): EvalConfig {
 export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
   const flags = readFlags(argv);
 
+  if (flags.show !== null) return parseShow(flags);
   if (flags.publishFrom !== null) return parsePublishFrom(flags, env);
   if (flags.force) throw new Error('--force only goes with --publish-from');
 
@@ -295,10 +340,7 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     targets: specs.map((spec) => parseTarget(spec, env)),
     judge,
     validateJudge: flags.validateJudge,
-    caseIds: flags.cases
-      .flatMap((value) => value.split(','))
-      .map((id) => id.trim())
-      .filter((id) => id !== ''),
+    caseIds: splitCaseIds(flags.cases),
     cache: flags.cache || flags.refresh,
     refresh: flags.refresh,
     minPassRate: parseRate(
@@ -315,6 +357,7 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     // A judge validation run has no targets to upload (JEF-550: not in this cut).
     publish: flags.publish && !flags.validateJudge ? parseLangfuse(env) : null,
     publishFrom: null,
+    show: null,
     label: flags.label?.trim() || null,
     save: !flags.noSave,
   };

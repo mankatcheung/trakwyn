@@ -216,6 +216,7 @@ describe('judge configuration', () => {
     reportFile: null,
     publish: null,
     publishFrom: null,
+    show: null,
     label: null,
     save: true,
   });
