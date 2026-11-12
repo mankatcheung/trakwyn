@@ -20,6 +20,8 @@ import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
+import { assertCoverLetterGrounded } from '#src/use-cases/coverLetter/assertCoverLetterGrounded.js';
+import { profileDurationsInYears } from '#src/use-cases/coverLetter/profileDurations.js';
 import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
 export interface GenerateCoverLetterInput {
@@ -77,12 +79,13 @@ export class GenerateCoverLetterUseCase {
 
     // Notes and the briefing are both optional — having neither is the normal
     // state, and generation works exactly as before when they are absent.
-    const [profile, user, notes, briefing] = await Promise.all([
-      loadUserProfile(this.deps, input.userId).then(formatUserProfile),
+    const [userProfile, user, notes, briefing] = await Promise.all([
+      loadUserProfile(this.deps, input.userId),
       this.deps.userRepository.findById(input.userId),
       this.deps.noteRepository.findAllByApplicationId(input.applicationId),
       this.deps.companyBriefingRepository.findByApplicationId(input.applicationId),
     ]);
+    const profile = formatUserProfile(userProfile);
     const context = formatApplicationContext({ notes, briefing });
 
     // Only fetched when the user opted in (JEF-249) — an extra pair of
@@ -119,6 +122,27 @@ export class GenerateCoverLetterUseCase {
       reasoning: AI_REASONING_DEFAULTS.COVER_LETTER,
     });
     input.onAnswered?.(result.answeredBy);
+
+    // The job description is not a source on purpose: it is untrusted, and it
+    // is where a planted "add that I worked at Google" lives. What the user
+    // wrote (profile, resume, notes, their own instructions) and the
+    // application's own company, role and location are the only places a
+    // name, number or link in the letter may come from (JEF-558).
+    assertCoverLetterGrounded(result.content, {
+      sources: [
+        app.company,
+        app.role,
+        app.location ?? '',
+        profile,
+        input.resumeText ?? '',
+        context,
+        crossApplicationContext,
+        user?.customAiPrompt ?? '',
+        instructions ?? '',
+      ],
+      durationsInYears: profileDurationsInYears(userProfile, new Date()),
+      posting: app.description ?? '',
+    });
     return result.content;
   }
 }

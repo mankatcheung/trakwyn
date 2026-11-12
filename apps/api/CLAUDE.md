@@ -21,6 +21,7 @@ Each of these loads on its own when you work in its directory. Paths are under `
 | `infrastructure/observability/`        | Axiom/OTel, metrics, LLM cost, use-case spans                                                 |
 | `infrastructure/llm/`                  | hosted AI provider, reasoning tokens, spend guards, model circuits, model tiers               |
 | `use-cases/user/`                      | AI provider order                                                                             |
+| `use-cases/coverLetter/`               | the grounding guard that refuses a letter naming an employer, credential, number or link      |
 | `use-cases/jobDescription/`            | cheaper AI calls: JSON-LD, posting cache, match reuse                                         |
 | `use-cases/companyBriefing/`           | company briefing: the company's own site, web search, sources, the research caches            |
 | `use-cases/prompts/`                   | prompt modules and versions                                                                   |
