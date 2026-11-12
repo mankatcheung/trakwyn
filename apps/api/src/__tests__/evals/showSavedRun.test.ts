@@ -153,6 +153,7 @@ describe('showSavedRun', () => {
         judge: 'openai:judge-1',
         commit: 'ab12cd3',
         startedAt: new Date(START),
+        maxErrorRate: 0.1,
         publishedAt: null,
       }),
       log: (message) => out.push(message),
