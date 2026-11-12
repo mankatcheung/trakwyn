@@ -52,6 +52,7 @@ export async function publishToLangfuse(
   config: LangfuseConfig,
   runs: TargetRun[],
   judge: string | null,
+  maxErrorRate: number,
   deps: PublishDeps = defaultDeps,
 ): Promise<boolean> {
   let session: Awaited<ReturnType<PublishDeps['createSession']>>;
@@ -68,6 +69,7 @@ export async function publishToLangfuse(
       commit: deps.commit(),
       startedAt: deps.now(),
       judge,
+      maxErrorRate,
     });
     for (const run of published) {
       deps.log(`Published ${run.label} to Langfuse${run.url ? `: ${run.url}` : ''}`);

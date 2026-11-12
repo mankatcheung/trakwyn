@@ -1,5 +1,5 @@
 import { LANGFUSE } from '#src/infrastructure/config/constants.js';
-import type { TargetRun } from '#src/evals/summary.js';
+import { summarise, tooManyErrors, type TargetRun } from '#src/evals/summary.js';
 import type { CaseResult, RecordedCall } from '#src/evals/types.js';
 
 /**
@@ -20,8 +20,8 @@ export interface DatasetItemInput {
 
 export interface ScoreInput {
   name: string;
-  value: number | boolean;
-  dataType: 'BOOLEAN' | 'NUMERIC';
+  value: number | boolean | string;
+  dataType: 'BOOLEAN' | 'NUMERIC' | 'CATEGORICAL';
   comment?: string | undefined;
 }
 
@@ -59,6 +59,8 @@ export interface RunMetadata {
   startedAt: Date;
   /** The judge's label (`provider:model`), or null when the run used none. */
   judge: string | null;
+  /** The share of errored cases above which a target is untrusted (JEF-559). */
+  maxErrorRate: number;
 }
 
 export interface PublishedRun {
@@ -83,9 +85,17 @@ function lastReply(calls: RecordedCall[]): string | null {
   return replied[replied.length - 1]?.output ?? null;
 }
 
+/**
+ * Every case gets an `outcome`. Only a case that ran (`pass` or `fail`) gets
+ * `passed` and `schema_valid`, so Langfuse's averages leave out provider errors
+ * and skipped cases (JEF-561), as the printed report does.
+ */
 function scoresFor(result: CaseResult): ScoreInput[] {
+  const outcome: ScoreInput = { name: 'outcome', value: result.outcome, dataType: 'CATEGORICAL' };
+  if (result.outcome === 'error' || result.outcome === 'skipped') return [outcome];
   const failures = result.failures.join('\n');
   const base: ScoreInput[] = [
+    outcome,
     {
       name: 'passed',
       value: result.passed,
@@ -116,6 +126,7 @@ function itemsOf(runs: TargetRun[]): DatasetItemInput[] {
 }
 
 function runInput(run: TargetRun, meta: RunMetadata): RunInput {
+  const summary = summarise(run.results, run.skipped ?? 0);
   return {
     datasetName: LANGFUSE.DATASET_NAME,
     runName: buildRunName(run.label, meta),
@@ -129,6 +140,9 @@ function runInput(run: TargetRun, meta: RunMetadata): RunInput {
       // Cache hits are replays, so their latency says nothing about the model.
       cacheHits: run.cache?.hits ?? null,
       cacheMisses: run.cache?.misses ?? null,
+      errors: summary.errors,
+      skipped: summary.skipped,
+      untrusted: tooManyErrors(run, meta.maxErrorRate) ? 'true' : 'false',
     },
     items: run.results.map((result) => ({
       caseId: result.caseId,

@@ -45,6 +45,7 @@ const meta: RunMetadata = {
   commit: 'abc1234',
   startedAt: new Date('2026-11-11T22:30:00.000Z'),
   judge: 'openai:judge-x',
+  maxErrorRate: 0.1,
 };
 
 const fakeGateway = () => {
@@ -145,6 +146,7 @@ describe('publishRuns (JEF-550)', () => {
       [
         'job-clean',
         [
+          { name: 'outcome', value: 'pass', dataType: 'CATEGORICAL' },
           { name: 'passed', value: true, dataType: 'BOOLEAN', comment: undefined },
           { name: 'schema_valid', value: true, dataType: 'BOOLEAN' },
         ],
@@ -152,6 +154,7 @@ describe('publishRuns (JEF-550)', () => {
       [
         'job-bad',
         [
+          { name: 'outcome', value: 'fail', dataType: 'CATEGORICAL' },
           {
             name: 'passed',
             value: false,
@@ -162,6 +165,52 @@ describe('publishRuns (JEF-550)', () => {
         ],
       ],
     ]);
+  });
+
+  it('sends only the outcome for an error or a skipped case, so no passed score counts it', async () => {
+    const gateway = fakeGateway();
+    const errored = result({
+      caseId: 'job-429',
+      outcome: 'error',
+      passed: false,
+      schemaValid: false,
+      failures: ['HTTP 429'],
+    });
+    const skipped = result({ caseId: 'job-skip', outcome: 'skipped', passed: false });
+
+    await publishRuns(gateway, [{ label: 't:m', results: [result(), errored, skipped] }], meta);
+
+    const items = vi.mocked(gateway.runExperiment).mock.calls[0]?.[0].items ?? [];
+    expect(items.map((item) => item.scores.map((score) => score.name))).toEqual([
+      ['outcome', 'passed', 'schema_valid'],
+      ['outcome'],
+      ['outcome'],
+    ]);
+    expect(items[1]?.scores).toEqual([
+      { name: 'outcome', value: 'error', dataType: 'CATEGORICAL' },
+    ]);
+    expect(items[2]?.scores).toEqual([
+      { name: 'outcome', value: 'skipped', dataType: 'CATEGORICAL' },
+    ]);
+  });
+
+  it('puts the error and skipped counts and the untrusted flag in the run metadata', async () => {
+    const gateway = fakeGateway();
+    const errored = (caseId: string) => result({ caseId, outcome: 'error', passed: false });
+    const runs: TargetRun[] = [
+      { label: 'ok:one', results: [result(), result({ caseId: 'b' })] },
+      {
+        label: 'bad:two',
+        results: [result(), errored('c'), errored('d')],
+        skipped: 4,
+      },
+    ];
+
+    await publishRuns(gateway, runs, meta);
+
+    const [first, second] = vi.mocked(gateway.runExperiment).mock.calls.map(([run]) => run);
+    expect(first?.metadata).toMatchObject({ errors: 0, skipped: 0, untrusted: 'false' });
+    expect(second?.metadata).toMatchObject({ errors: 2, skipped: 4, untrusted: 'true' });
   });
 
   it('adds tool_calls and iterations for chat cases only', async () => {
@@ -178,9 +227,15 @@ describe('publishRuns (JEF-550)', () => {
     const items = vi.mocked(gateway.runExperiment).mock.calls[0]?.[0].items ?? [];
     const names = (caseId: string) =>
       items.find((item) => item.caseId === caseId)?.scores.map((score) => score.name);
-    expect(names('job-clean')).toEqual(['passed', 'schema_valid']);
-    expect(names('chat-lookup')).toEqual(['passed', 'schema_valid', 'tool_calls', 'iterations']);
-    expect(items[1]?.scores.slice(2)).toEqual([
+    expect(names('job-clean')).toEqual(['outcome', 'passed', 'schema_valid']);
+    expect(names('chat-lookup')).toEqual([
+      'outcome',
+      'passed',
+      'schema_valid',
+      'tool_calls',
+      'iterations',
+    ]);
+    expect(items[1]?.scores.slice(3)).toEqual([
       { name: 'tool_calls', value: 3, dataType: 'NUMERIC' },
       { name: 'iterations', value: 2, dataType: 'NUMERIC' },
     ]);
