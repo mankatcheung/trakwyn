@@ -1,3 +1,4 @@
+import { CLOUDFLARE_DAILY_QUOTA } from '#src/evals/quotaStop.js';
 import type { CaseResult, EvalFeature } from '#src/evals/types.js';
 
 export interface RunSummary {
@@ -23,6 +24,24 @@ export interface TargetRun {
   results: CaseResult[];
   /** Present only when the run used `--cache`. */
   cache?: CacheCounts;
+  /** Set when the run stopped on the provider's quota: how many cases were never run (JEF-556). */
+  skipped?: number;
+}
+
+/** The target stopped on a quota: its cases are not a score. */
+export const stoppedOnQuota = (run: TargetRun): boolean =>
+  run.results.some((result) => result.quotaStop === true);
+
+/** One line per target that stopped on a quota, saying why and when it resets. */
+export function formatQuotaStops(runs: TargetRun[]): string[] {
+  return runs
+    .filter(stoppedOnQuota)
+    .map(
+      (run) =>
+        `${run.label} stopped: daily quota used up after ${run.results.length} case${run.results.length === 1 ? '' : 's'}; ${run.skipped ?? 0} skipped. ` +
+        `Cloudflare resets its free allocation at ${CLOUDFLARE_DAILY_QUOTA.resetsAt}; other providers reset on their own schedule. ` +
+        'Cases already answered are cached with --cache.',
+    );
 }
 
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole);
@@ -101,7 +120,9 @@ export function formatReport(runs: TargetRun[]): string {
     const summary = summarise(results);
     return [
       label,
-      `${summary.passed}/${summary.total} (${percent(summary.passRate)})`,
+      stoppedOnQuota({ label, results })
+        ? 'stopped (quota)'
+        : `${summary.passed}/${summary.total} (${percent(summary.passRate)})`,
       percent(summary.schemaValidRate),
       featureColumn(summary),
       promptColumn(results),
@@ -141,6 +162,7 @@ export function formatReport(runs: TargetRun[]): string {
     line(header),
     ...rows.map(line),
     ...toolUseSection(runs),
+    ...(formatQuotaStops(runs).length > 0 ? ['', ...formatQuotaStops(runs)] : []),
     '',
     failures.length === 0 ? 'no failures' : `Failures:\n${failures.join('\n')}`,
   ].join('\n');

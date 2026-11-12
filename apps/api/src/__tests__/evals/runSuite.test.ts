@@ -6,6 +6,7 @@ import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { cacheKey } from '#src/evals/responseCache.js';
 import { runSuite } from '#src/evals/runSuite.js';
 import type { EvalCase, EvalTarget } from '#src/evals/types.js';
+import { LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 import { makeLLMProvider } from '#src/__tests__/helpers/mocks/llm.js';
 
 const stubCase = (id: string, failures: string[] = []): EvalCase => ({
@@ -57,6 +58,53 @@ describe('runSuite', () => {
     const results = await runSuite(makeLLMProvider(), [boom, stubCase('after')]);
 
     expect(results.map((r) => r.passed)).toEqual([false, true]);
+  });
+});
+
+describe('runSuite quota stop (JEF-556)', () => {
+  const throwing = (id: string, detail: string | null): EvalCase => ({
+    ...stubCase(id),
+    run: async () => {
+      throw new LlmProviderError('rate_limited', { provider: 'Workers AI', status: 429, detail });
+    },
+  });
+  const quota =
+    '{"errors":[{"code":4006,"message":"you have used up your daily free allocation"}]}';
+
+  it('stops at the first quota error and leaves the rest unrun', async () => {
+    const ran: string[] = [];
+    const tracked = (id: string): EvalCase => ({
+      ...stubCase(id),
+      run: async () => {
+        ran.push(id);
+        return [];
+      },
+    });
+    const second = throwing('b', quota);
+
+    const results = await runSuite(makeLLMProvider(), [
+      tracked('a'),
+      second,
+      tracked('c'),
+      tracked('d'),
+    ]);
+
+    expect(results.map((r) => r.caseId)).toEqual(['a', 'b']);
+    expect(results[1]?.quotaStop).toBe(true);
+    expect(ran).toEqual(['a']);
+  });
+
+  it('keeps going after an ordinary 429, failing only that case', async () => {
+    const results = await runSuite(makeLLMProvider(), [
+      throwing('a', '{"error":"slow down"}'),
+      stubCase('b'),
+    ]);
+
+    expect(results.map((r) => [r.caseId, r.passed])).toEqual([
+      ['a', false],
+      ['b', true],
+    ]);
+    expect(results.some((r) => r.quotaStop)).toBe(false);
   });
 });
 

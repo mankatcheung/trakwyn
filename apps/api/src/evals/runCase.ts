@@ -1,4 +1,5 @@
 import { AiResponseInvalidError, LlmProviderError } from '#src/use-cases/errors/DomainError.js';
+import { isQuotaStop } from '#src/evals/quotaStop.js';
 import { promptRefOf } from '#src/evals/promptRef.js';
 import { meterProvider } from '#src/evals/usageMeter.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
@@ -31,6 +32,7 @@ export async function runCase(
   const judgeMeter = judge ? meterProvider(judge) : null;
   let failures: string[];
   let schemaValid = true;
+  let quotaStop = false;
 
   try {
     failures = await evalCase.run(meter.provider, judgeMeter?.provider);
@@ -40,6 +42,7 @@ export async function runCase(
       schemaValid = false;
       failures = [`reply was not valid: ${message}`];
     } else if (error instanceof LlmProviderError) {
+      quotaStop = isQuotaStop(error);
       failures = [`error: ${message}${providerDetail(error)}`];
     } else {
       failures = [`error: ${message}`];
@@ -55,6 +58,7 @@ export async function runCase(
     passed: failures.length === 0,
     schemaValid,
     failures,
+    ...(quotaStop ? { quotaStop } : {}),
     promptTokens,
     completionTokens,
     judgePromptTokens: judged?.promptTokens ?? 0,

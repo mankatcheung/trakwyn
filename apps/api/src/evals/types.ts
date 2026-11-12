@@ -69,6 +69,11 @@ export interface CaseResult {
   /** False only when the reply could not be read as the JSON the prompt asks for. */
   schemaValid: boolean;
   failures: string[];
+  /**
+   * True when the provider's daily quota ran out on this case (JEF-556). The
+   * rest of that target's cases are not run, and the result is no score.
+   */
+  quotaStop?: boolean;
   promptTokens: number;
   completionTokens: number;
   /** What the grader spent on this case, apart from the model under test (JEF-470). */

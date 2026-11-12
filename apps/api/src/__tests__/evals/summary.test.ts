@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatReport, meetsPassRate, summarise } from '#src/evals/summary.js';
+import {
+  formatQuotaStops,
+  formatReport,
+  meetsPassRate,
+  stoppedOnQuota,
+  summarise,
+} from '#src/evals/summary.js';
 import type { CaseResult } from '#src/evals/types.js';
 
 const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
@@ -140,5 +146,34 @@ describe('formatReport cache counts (JEF-542)', () => {
     ]);
 
     expect(report).toContain('400 ms');
+  });
+});
+
+describe('quota stops (JEF-556)', () => {
+  const stopped = {
+    label: 'workersai:@cf/google/gemma-4-26b-a4b-it',
+    results: [result(), result({ passed: false, quotaStop: true, failures: ['error: 429'] })],
+    skipped: 52,
+  };
+
+  it('recognises a stopped target', () => {
+    expect(stoppedOnQuota(stopped)).toBe(true);
+    expect(stoppedOnQuota({ label: 't', results: [result()] })).toBe(false);
+  });
+
+  it('says how many ran, how many were skipped and when it resets', () => {
+    const [line] = formatQuotaStops([stopped, { label: 'ok', results: [result()] }]);
+
+    expect(line).toContain('workersai:@cf/google/gemma-4-26b-a4b-it stopped');
+    expect(line).toContain('after 2 cases; 52 skipped');
+    expect(line).toContain('00:00 UTC');
+  });
+
+  it('shows the row as stopped instead of a pass rate', () => {
+    const report = formatReport([stopped]);
+
+    expect(report).toContain('stopped (quota)');
+    expect(report).not.toContain('(50%)');
+    expect(report).toContain('daily quota used up');
   });
 });
