@@ -162,6 +162,8 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 | `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                               |
 | `--publish`                 | After the run, upload it to Langfuse so you can browse and compare it. Needs the `EVAL_LANGFUSE_*` keys. See [Publishing to Langfuse](#publishing-to-langfuse). Off by default; not used with `--validate-judge`. |
 | `--label <name>`            | Add a name to the run's folder, for example `baseline`. See [Saved runs](#saved-runs).                                                                                                                            |
+| `--publish-from <run-dir>`  | Upload a [saved run](#saved-runs) to Langfuse without calling any model. Needs only the `EVAL_LANGFUSE_*` keys; cannot be combined with run flags. See [Publishing to Langfuse](#publishing-to-langfuse).         |
+| `--force`                   | With `--publish-from`: upload even though the folder was already published.                                                                                                                                       |
 | `--no-save`                 | Do not keep this run in a folder. Without it every run is saved.                                                                                                                                                  |
 | `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Separate from the [saved run](#saved-runs) folder, which is kept either way.    |
 
@@ -306,6 +308,16 @@ A missing `EVAL_LANGFUSE_*` key stops the run with exit code 2 **before any paid
 - Running the same command twice makes two runs (the timestamp differs). The dataset and its items are updated in place.
 - `--validate-judge` runs are not uploaded.
 
+**Publishing a saved run afterwards (`--publish-from`):** every run is [saved](#saved-runs), so you can upload one later, or upload it again after an outage:
+
+```bash
+pnpm --filter @trakwyn/api eval --publish-from .eval-runs/2026-11-12T1030Z-ab12cd3-baseline
+```
+
+It reads the folder and calls no model and no judge, so it needs no target, judge or provider variable, only the `EVAL_LANGFUSE_*` keys. Langfuse shows the run as it happened: the folder's commit and start time, and each call's real start and duration (the folder keeps the recorded calls, not the cache's instant replays). `--target`, `--case`, `--cache`, `--refresh`, `--publish`, `--validate-judge`, `--out`, `--label` and `--no-save` cannot be combined with it (exit 2).
+
+After a successful upload the folder's `run.json` gets `publishedAt` and the Langfuse run names. Publishing the same folder again stops with exit 2 and a warning, because Langfuse would hold two identical runs; add `--force` to do it anyway. An unreadable folder also exits 2, naming the file. If Langfuse rejects the upload the exit code is 1 and the folder is left unmarked.
+
 ## Saved runs
 
 Every run is kept in a new folder under the gitignored `apps/api/.eval-runs/`, so it is still there after the terminal closes. The folder is named `<UTC time>-<short commit>[-<label>]`, for example `2026-11-12T1030Z-ab12cd3-baseline`. A name that already exists gets a `-2`, `-3` suffix: an earlier run is never overwritten. Add `--label` to name a run, or `--no-save` to keep nothing. `--out` works as before and is separate.
@@ -375,7 +387,7 @@ The render side is not an eval (the evals only ask whether a model _writes_ a li
 | "The provider rejected the request … [HTTP 400, body: …]"               | The body after `body:` is the provider's own message. Read it; it names the field it did not accept.                                                                                                                                                                                                                      |
 | A chat case fails with a provider error mentioning an unavailable model | gpt-oss sometimes returns its tool call as plain text with internal markers (JEF-541). The adapter treats that as an unavailable reply and throws instead of showing the text. Hosted AI then tries its other model; an eval has one model, so the case fails. Re-run the case with `--refresh`, and compare across runs. |
 | `--publish needs a Langfuse public key / secret key`                    | Set `EVAL_LANGFUSE_PUBLIC_KEY` and `EVAL_LANGFUSE_SECRET_KEY` from the project's API keys, or drop `--publish`.                                                                                                                                                                                                           |
-| `Could not publish to Langfuse: …` after the report                     | The run itself is fine and the exit code is unchanged. A 401 means the keys or the region are wrong (set `EVAL_LANGFUSE_BASE_URL` for a US project); otherwise Langfuse was unreachable. Re-run with `--cache` to publish again for free.                                                                                 |
+| `Could not publish to Langfuse: …` after the report                     | The run itself is fine and the exit code is unchanged. A 401 means the keys or the region are wrong (set `EVAL_LANGFUSE_BASE_URL` for a US project); otherwise Langfuse was unreachable. Publish the saved run again with `--publish-from` (no model is called).                                                          |
 | Latency says `cached`                                                   | Every reply came from the cache. Use `--refresh` for real timings.                                                                                                                                                                                                                                                        |
 | The table is gone                                                       | Re-run the same command with `--cache` to rebuild it for free. Next time add `--out <file>`.                                                                                                                                                                                                                              |
 

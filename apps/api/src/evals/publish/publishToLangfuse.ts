@@ -54,6 +54,8 @@ export async function publishToLangfuse(
   judge: string | null,
   maxErrorRate: number,
   deps: PublishDeps = defaultDeps,
+  /** The commit and start time of a run made earlier (`--publish-from`, JEF-562); otherwise now. */
+  recorded?: { commit: string; startedAt: Date },
 ): Promise<boolean> {
   let session: Awaited<ReturnType<PublishDeps['createSession']>>;
   try {
@@ -66,8 +68,8 @@ export async function publishToLangfuse(
   let ok = true;
   try {
     const published = await publishRuns(session.gateway, runs, {
-      commit: deps.commit(),
-      startedAt: deps.now(),
+      commit: recorded?.commit ?? deps.commit(),
+      startedAt: recorded?.startedAt ?? deps.now(),
       judge,
       maxErrorRate,
     });

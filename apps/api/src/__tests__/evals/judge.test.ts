@@ -215,6 +215,7 @@ describe('judge configuration', () => {
     maxErrorRate: 0.1,
     reportFile: null,
     publish: null,
+    publishFrom: null,
     label: null,
     save: true,
   });

@@ -18,6 +18,7 @@ const VALUE_FLAGS = [
   '--max-error-rate',
   '--out',
   '--label',
+  '--publish-from',
 ] as const;
 const SWITCH_FLAGS = [
   '--cache',
@@ -25,6 +26,7 @@ const SWITCH_FLAGS = [
   '--validate-judge',
   '--publish',
   '--no-save',
+  '--force',
 ] as const;
 const SWITCH_KEYS = {
   '--cache': 'cache',
@@ -32,6 +34,7 @@ const SWITCH_KEYS = {
   '--publish': 'publish',
   '--validate-judge': 'validateJudge',
   '--no-save': 'noSave',
+  '--force': 'force',
 } as const;
 const PROVIDERS: string[] = [...Object.values(LLM_PROVIDER), WORKERS_AI_PROVIDER];
 
@@ -55,6 +58,8 @@ interface RawFlags {
   validateJudge: boolean;
   publish: boolean;
   noSave: boolean;
+  force: boolean;
+  publishFrom: string | null;
 }
 
 function readFlags(argv: string[]): RawFlags {
@@ -70,6 +75,8 @@ function readFlags(argv: string[]): RawFlags {
     validateJudge: false,
     publish: false,
     noSave: false,
+    force: false,
+    publishFrom: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -87,6 +94,7 @@ function readFlags(argv: string[]): RawFlags {
       else if (arg === '--case') flags = { ...flags, cases: [...flags.cases, value] };
       else if (arg === '--out') flags = { ...flags, out: value };
       else if (arg === '--label') flags = { ...flags, label: value };
+      else if (arg === '--publish-from') flags = { ...flags, publishFrom: value };
       else if (arg === '--max-error-rate') flags = { ...flags, maxErrorRate: value };
       else flags = { ...flags, minPassRate: value };
     } else {
@@ -180,13 +188,13 @@ function parseJudge(env: Env): EvalTarget | null {
  * credentials, so a leaked eval key reaches the eval project and nothing else.
  * A missing one fails here, before the first paid call.
  */
-function parseLangfuse(env: Env): LangfuseConfig {
+function parseLangfuse(env: Env, flag = '--publish'): LangfuseConfig {
   const publicKey = env.EVAL_LANGFUSE_PUBLIC_KEY?.trim();
   const secretKey = env.EVAL_LANGFUSE_SECRET_KEY?.trim();
   if (!publicKey)
-    throw new Error('--publish needs a Langfuse public key: set EVAL_LANGFUSE_PUBLIC_KEY');
+    throw new Error(`${flag} needs a Langfuse public key: set EVAL_LANGFUSE_PUBLIC_KEY`);
   if (!secretKey)
-    throw new Error('--publish needs a Langfuse secret key: set EVAL_LANGFUSE_SECRET_KEY');
+    throw new Error(`${flag} needs a Langfuse secret key: set EVAL_LANGFUSE_SECRET_KEY`);
 
   const baseUrl = env.EVAL_LANGFUSE_BASE_URL?.trim() || LANGFUSE.DEFAULT_BASE_URL;
   if (!/^https?:\/\//i.test(baseUrl)) {
@@ -208,6 +216,54 @@ function parseRate(
   return value;
 }
 
+/** What `--publish-from` cannot be combined with: it runs nothing, so each of these would be ignored. */
+function conflictsWithPublishFrom(flags: RawFlags): string[] {
+  return [
+    flags.targets.length > 0 && '--target',
+    flags.cases.length > 0 && '--case',
+    flags.cache && '--cache',
+    flags.refresh && '--refresh',
+    flags.publish && '--publish',
+    flags.validateJudge && '--validate-judge',
+    flags.out !== null && '--out',
+    flags.label !== null && '--label',
+    flags.noSave && '--no-save',
+    flags.minPassRate !== null && '--min-pass-rate',
+    flags.maxErrorRate !== null && '--max-error-rate',
+  ].filter((flag): flag is string => flag !== false);
+}
+
+/**
+ * `--publish-from <run-dir>` (JEF-562): no target, judge or provider variable
+ * is read, only the Langfuse keys, so a saved run can be uploaded without any
+ * model credentials on the machine.
+ */
+function parsePublishFrom(flags: RawFlags, env: Env): EvalConfig {
+  const conflicts = conflictsWithPublishFrom(flags);
+  if (conflicts.length > 0) {
+    throw new Error(`--publish-from cannot be used with ${conflicts.join(', ')}`);
+  }
+  return {
+    targets: [],
+    judge: null,
+    validateJudge: false,
+    caseIds: [],
+    cache: false,
+    refresh: false,
+    minPassRate: DEFAULT_MIN_PASS_RATE,
+    maxErrorRate: DEFAULT_MAX_ERROR_RATE,
+    reportFile: null,
+    publish: null,
+    publishFrom: {
+      dir: flags.publishFrom as string,
+      langfuse: parseLangfuse(env, '--publish-from'),
+      force: flags.force,
+    },
+    label: null,
+    save: false,
+  };
+}
+
 /**
  * Reads the command line and environment into a run configuration, or throws
  * a message that says what to change. Everything is checked before the first
@@ -216,6 +272,9 @@ function parseRate(
  */
 export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
   const flags = readFlags(argv);
+
+  if (flags.publishFrom !== null) return parsePublishFrom(flags, env);
+  if (flags.force) throw new Error('--force only goes with --publish-from');
 
   const fromEnv = env.EVAL_PROVIDER
     ? [env.EVAL_MODEL ? `${env.EVAL_PROVIDER}:${env.EVAL_MODEL}` : env.EVAL_PROVIDER]
@@ -255,6 +314,7 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     reportFile: flags.out,
     // A judge validation run has no targets to upload (JEF-550: not in this cut).
     publish: flags.publish && !flags.validateJudge ? parseLangfuse(env) : null,
+    publishFrom: null,
     label: flags.label?.trim() || null,
     save: !flags.noSave,
   };

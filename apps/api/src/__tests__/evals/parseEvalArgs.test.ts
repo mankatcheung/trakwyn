@@ -290,3 +290,65 @@ describe('parseEvalArgs --label and --no-save', () => {
     expect(() => parseEvalArgs(['--label'], env)).toThrow('--label needs a value');
   });
 });
+
+describe('parseEvalArgs --publish-from (JEF-562)', () => {
+  const langfuse = { EVAL_LANGFUSE_PUBLIC_KEY: 'pk-lf-1', EVAL_LANGFUSE_SECRET_KEY: 'sk-lf-1' };
+
+  it('needs no target, judge or provider variable, only the Langfuse keys', () => {
+    const config = parseEvalArgs(['--publish-from', '.eval-runs/x'], langfuse);
+
+    expect(config.publishFrom).toEqual({
+      dir: '.eval-runs/x',
+      langfuse: {
+        publicKey: 'pk-lf-1',
+        secretKey: 'sk-lf-1',
+        baseUrl: 'https://cloud.langfuse.com',
+      },
+      force: false,
+    });
+    expect(config.targets).toEqual([]);
+    expect(config.judge).toBeNull();
+    expect(config.save).toBe(false);
+  });
+
+  it('ignores provider and judge variables that are broken', () => {
+    expect(() =>
+      parseEvalArgs(['--publish-from', 'd'], {
+        ...langfuse,
+        EVAL_PROVIDER: 'nonsense',
+        EVAL_JUDGE_PROVIDER: 'openai',
+      }),
+    ).not.toThrow();
+  });
+
+  it('passes --force through', () => {
+    expect(parseEvalArgs(['--publish-from', 'd', '--force'], langfuse).publishFrom?.force).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    [['--target', 'openai:gpt-x'], '--target'],
+    [['--case', 'a'], '--case'],
+    [['--cache'], '--cache'],
+    [['--refresh'], '--refresh'],
+    [['--publish'], '--publish'],
+  ])('rejects --publish-from with %s', (extra, flag) => {
+    expect(() => parseEvalArgs(['--publish-from', 'd', ...extra], langfuse)).toThrow(flag);
+  });
+
+  it('refuses a missing Langfuse key', () => {
+    expect(() => parseEvalArgs(['--publish-from', 'd'], {})).toThrow(
+      /--publish-from needs a Langfuse public key/,
+    );
+  });
+
+  it('needs a directory, and --force needs --publish-from', () => {
+    expect(() => parseEvalArgs(['--publish-from'], langfuse)).toThrow(/needs a value/);
+    expect(() =>
+      parseEvalArgs(['--force', '--target', 'openai:gpt-x'], {
+        EVAL_API_KEY: 'k',
+      }),
+    ).toThrow(/--force only goes with --publish-from/);
+  });
+});
