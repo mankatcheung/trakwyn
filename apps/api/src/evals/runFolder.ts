@@ -87,7 +87,7 @@ function runRecord(input: RunFolderInput) {
 const json = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 
 /** One file name per target, even when two labels sanitise to the same text. */
-function transcriptNames(runs: TargetRun[]): string[] {
+export function transcriptNames(runs: ReadonlyArray<{ label: string }>): string[] {
   const seen = new Map<string, number>();
   return runs.map((run) => {
     const base = safeName(run.label);

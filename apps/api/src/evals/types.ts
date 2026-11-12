@@ -124,6 +124,14 @@ export interface LangfuseConfig {
   baseUrl: string;
 }
 
+/** `--publish-from` (JEF-562): upload a saved run folder, with no target, judge or provider. */
+export interface PublishFromConfig {
+  dir: string;
+  langfuse: LangfuseConfig;
+  /** Upload even though the folder says it was already published. */
+  force: boolean;
+}
+
 export interface EvalConfig {
   targets: EvalTarget[];
   /**
@@ -147,6 +155,8 @@ export interface EvalConfig {
   reportFile: string | null;
   /** Where to upload the run once it finishes (`--publish`), or null to not upload. */
   publish: LangfuseConfig | null;
+  /** Set by `--publish-from`: the run is read from a folder and nothing else is configured. */
+  publishFrom: PublishFromConfig | null;
   /** A name added to the run folder (`--label`), or null. */
   label: string | null;
   /** Keep the run in its own folder (JEF-560); `--no-save` turns it off. */

@@ -19,6 +19,7 @@ import {
 } from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
 import { gitShortSha, publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
+import { publishSavedRun } from '#src/evals/publish/publishSavedRun.js';
 import { writeReportFile } from '#src/evals/reportFile.js';
 import { saveRunFolder } from '#src/evals/runFolder.js';
 import { runSuite } from '#src/evals/runSuite.js';
@@ -150,6 +151,8 @@ async function main(): Promise<number> {
 
   try {
     config = parseEvalArgs(process.argv.slice(2), process.env);
+    // JEF-562: upload a saved run and stop, before any provider is built.
+    if (config.publishFrom) return await publishSavedRun(config.publishFrom);
     cache = config.cache ? { dir: CACHE_DIR, refresh: config.refresh } : null;
     const judgeTarget = config.validateJudge
       ? config.judge
