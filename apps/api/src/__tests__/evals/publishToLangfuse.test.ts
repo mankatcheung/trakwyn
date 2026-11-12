@@ -14,6 +14,7 @@ const result: CaseResult = {
   caseId: 'job-clean',
   feature: 'jobDescription',
   prompt: 'parseJobDescription@3',
+  outcome: 'pass',
   passed: true,
   schemaValid: true,
   failures: [],

@@ -212,6 +212,7 @@ describe('judge configuration', () => {
     cache: false,
     refresh: false,
     minPassRate: 0.8,
+    maxErrorRate: 0.1,
     reportFile: null,
     publish: null,
     label: null,

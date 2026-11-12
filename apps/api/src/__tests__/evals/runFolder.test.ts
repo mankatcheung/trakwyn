@@ -26,6 +26,7 @@ const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
   caseId: 'job-clean',
   feature: 'jobDescription',
   prompt: 'parseJobDescription@3',
+  outcome: 'pass',
   passed: true,
   schemaValid: true,
   failures: [],
@@ -56,6 +57,7 @@ const config = (overrides: Partial<EvalConfig> = {}): EvalConfig => ({
   cache: true,
   refresh: false,
   minPassRate: 0.8,
+  maxErrorRate: 0.1,
   reportFile: null,
   publish: null,
   label: null,
@@ -66,7 +68,10 @@ const config = (overrides: Partial<EvalConfig> = {}): EvalConfig => ({
 const runs = (extra: Partial<TargetRun> = {}): TargetRun[] => [
   {
     label: 'custom:org/model@v1',
-    results: [result(), result({ caseId: 'job-2', passed: false, failures: ['no title'] })],
+    results: [
+      result(),
+      result({ caseId: 'job-2', outcome: 'fail', passed: false, failures: ['no title'] }),
+    ],
     cache: { hits: 1, misses: 1 },
     ...extra,
   },
@@ -117,7 +122,7 @@ describe('saveRunFolder', () => {
       partial: false,
       judge: 'openai:judge-1',
       caseIds: ['job-clean', 'job-2'],
-      flags: { cache: true, refresh: false, minPassRate: 0.8, publish: false },
+      flags: { cache: true, refresh: false, minPassRate: 0.8, maxErrorRate: 0.1, publish: false },
       targets: [
         {
           label: 'custom:org/model@v1',
@@ -188,7 +193,7 @@ describe('saveRunFolder', () => {
 
   it('marks the run partial when a target stopped on its quota', () => {
     const stopped = runs({
-      results: [result({ passed: false, quotaStop: true })],
+      results: [result({ outcome: 'error', passed: false, quotaStop: true })],
       skipped: 4,
     });
     const dir = saveRunFolder(base, input({ runs: stopped, exitCode: 3 }));

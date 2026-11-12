@@ -6,7 +6,8 @@
  *
  * Exit status: 0 when every target met the pass rate, 1 when one fell short
  * (or the judge was not trusted), 2 when the arguments were wrong, 3 when a
- * target stopped on its provider's daily quota (JEF-556), which is no score.
+ * target stopped on its provider's daily quota (JEF-556), which is no score,
+ * 4 when a target had more errors than `--max-error-rate` allows (JEF-559).
  */
 import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { ALL_CASES, selectCases } from '#src/evals/cases/index.js';
@@ -26,6 +27,7 @@ import {
   meetsPassRate,
   stoppedOnQuota,
   summarise,
+  tooManyErrors,
   type CacheCounts,
   type TargetRun,
 } from '#src/evals/summary.js';
@@ -36,6 +38,7 @@ const CACHE_DIR = '.eval-cache';
 const RUNS_DIR = '.eval-runs';
 const USAGE_ERROR = 2;
 const QUOTA_STOP = 3;
+const TOO_MANY_ERRORS = 4;
 
 type Cache = { dir: string; refresh: boolean } | null;
 
@@ -45,7 +48,8 @@ const messageOf = (error: unknown): string =>
 function progressLine(result: CaseResult): string {
   const toolUse =
     result.feature === 'chat' ? `  ${result.toolCalls} calls, ${result.iterations} iterations` : '';
-  return `  ${result.passed ? 'pass' : 'FAIL'}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)${toolUse}`;
+  const label = { pass: 'pass', fail: 'FAIL', error: 'ERROR', skipped: 'skip' }[result.outcome];
+  return `  ${label}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)${toolUse}`;
 }
 
 async function runTargets(
@@ -88,12 +92,20 @@ async function runTargets(
 }
 
 /** Prints why the run failed, if it did, and returns the exit status. */
-function exitCodeFor(runs: TargetRun[], minPassRate: number): number {
+function exitCodeFor(runs: TargetRun[], minPassRate: number, maxErrorRate: number): number {
   if (runs.some(stoppedOnQuota)) {
     console.error(
       '\nStopped on a provider quota, so this run is not a score. See the lines above.',
     );
     return QUOTA_STOP;
+  }
+
+  const untrusted = runs.filter((run) => tooManyErrors(run, maxErrorRate));
+  if (untrusted.length > 0) {
+    console.error(
+      `\nMore than ${Math.round(maxErrorRate * 100)}% of the cases errored: ${untrusted.map((run) => run.label).join(', ')}. The pass rate is not trusted. See the lines above.`,
+    );
+    return TOO_MANY_ERRORS;
   }
 
   const short = runs.filter((run) => !meetsPassRate(summarise(run.results), minPassRate));
@@ -167,7 +179,7 @@ async function main(): Promise<number> {
     return USAGE_ERROR;
   }
 
-  const report = formatReport(runs);
+  const report = formatReport(runs, config.maxErrorRate);
   console.log(`\n${report}`);
   if (config.reportFile) {
     try {
@@ -184,7 +196,7 @@ async function main(): Promise<number> {
     await publishToLangfuse(config.publish, runs, config.judge ? targetLabel(config.judge) : null);
   }
 
-  const exitCode = exitCodeFor(runs, config.minPassRate);
+  const exitCode = exitCodeFor(runs, config.minPassRate, config.maxErrorRate);
   if (config.save) {
     saveRun(config, runs, report, startedAt, exitCode);
   }

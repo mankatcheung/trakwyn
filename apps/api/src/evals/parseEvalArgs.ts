@@ -10,7 +10,15 @@ import {
 type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
-const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate', '--out', '--label'] as const;
+const DEFAULT_MAX_ERROR_RATE = 0.1;
+const VALUE_FLAGS = [
+  '--target',
+  '--case',
+  '--min-pass-rate',
+  '--max-error-rate',
+  '--out',
+  '--label',
+] as const;
 const SWITCH_FLAGS = [
   '--cache',
   '--refresh',
@@ -39,6 +47,7 @@ interface RawFlags {
   targets: string[];
   cases: string[];
   minPassRate: string | null;
+  maxErrorRate: string | null;
   out: string | null;
   label: string | null;
   cache: boolean;
@@ -53,6 +62,7 @@ function readFlags(argv: string[]): RawFlags {
     targets: [],
     cases: [],
     minPassRate: null,
+    maxErrorRate: null,
     out: null,
     label: null,
     cache: false,
@@ -77,6 +87,7 @@ function readFlags(argv: string[]): RawFlags {
       else if (arg === '--case') flags = { ...flags, cases: [...flags.cases, value] };
       else if (arg === '--out') flags = { ...flags, out: value };
       else if (arg === '--label') flags = { ...flags, label: value };
+      else if (arg === '--max-error-rate') flags = { ...flags, maxErrorRate: value };
       else flags = { ...flags, minPassRate: value };
     } else {
       throw new Error(`Unknown option ${arg}`);
@@ -184,11 +195,15 @@ function parseLangfuse(env: Env): LangfuseConfig {
   return { publicKey, secretKey, baseUrl: baseUrl.replace(/\/+$/, '') };
 }
 
-function parseMinPassRate(raw: string | null | undefined): number {
-  if (raw === null || raw === undefined) return DEFAULT_MIN_PASS_RATE;
+function parseRate(
+  raw: string | null | undefined,
+  fallback: number,
+  name: '--min-pass-rate' | '--max-error-rate',
+): number {
+  if (raw === null || raw === undefined) return fallback;
   const value = raw.trim() === '' ? Number.NaN : Number(raw);
   if (!Number.isFinite(value) || value < 0 || value > 1) {
-    throw new Error(`--min-pass-rate must be a number from 0 to 1, got "${raw}"`);
+    throw new Error(`${name} must be a number from 0 to 1, got "${raw}"`);
   }
   return value;
 }
@@ -227,7 +242,16 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
       .filter((id) => id !== ''),
     cache: flags.cache || flags.refresh,
     refresh: flags.refresh,
-    minPassRate: parseMinPassRate(flags.minPassRate ?? env.EVAL_MIN_PASS_RATE),
+    minPassRate: parseRate(
+      flags.minPassRate ?? env.EVAL_MIN_PASS_RATE,
+      DEFAULT_MIN_PASS_RATE,
+      '--min-pass-rate',
+    ),
+    maxErrorRate: parseRate(
+      flags.maxErrorRate ?? env.EVAL_MAX_ERROR_RATE,
+      DEFAULT_MAX_ERROR_RATE,
+      '--max-error-rate',
+    ),
     reportFile: flags.out,
     // A judge validation run has no targets to upload (JEF-550: not in this cut).
     publish: flags.publish && !flags.validateJudge ? parseLangfuse(env) : null,

@@ -25,6 +25,7 @@ const result = (overrides: Partial<CaseResult> = {}): CaseResult => ({
   caseId: 'job-clean',
   feature: 'jobDescription',
   prompt: 'parseJobDescription@3',
+  outcome: 'pass',
   passed: true,
   schemaValid: true,
   failures: [],
@@ -95,7 +96,7 @@ describe('publishRuns (JEF-550)', () => {
     const gateway = fakeGateway();
     const runs: TargetRun[] = [
       { label: 'a:one', results: [result()] },
-      { label: 'b:two', results: [result({ passed: false, failures: ['x'] })] },
+      { label: 'b:two', results: [result({ outcome: 'fail', passed: false, failures: ['x'] })] },
     ];
 
     await publishRuns(gateway, runs, meta);
@@ -131,6 +132,7 @@ describe('publishRuns (JEF-550)', () => {
     const gateway = fakeGateway();
     const failed = result({
       caseId: 'job-bad',
+      outcome: 'fail',
       passed: false,
       schemaValid: false,
       failures: ['title missing', 'reply was not valid: nope'],

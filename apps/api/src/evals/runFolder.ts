@@ -66,6 +66,7 @@ function runRecord(input: RunFolderInput) {
       cache: config.cache,
       refresh: config.refresh,
       minPassRate: config.minPassRate,
+      maxErrorRate: config.maxErrorRate,
       reportFile: config.reportFile,
       publish: config.publish !== null,
       validateJudge: config.validateJudge,

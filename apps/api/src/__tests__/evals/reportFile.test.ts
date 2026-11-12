@@ -10,6 +10,7 @@ const failed: CaseResult = {
   caseId: 'bad-case',
   feature: 'jobDescription',
   prompt: 'parseJobDescription@1',
+  outcome: 'fail',
   passed: false,
   schemaValid: true,
   failures: ['error: boom [HTTP 400, body: nope]'],
