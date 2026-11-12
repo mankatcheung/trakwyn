@@ -55,7 +55,7 @@ describe('publishToLangfuse (JEF-550)', () => {
   it('uploads the runs, prints each run URL and closes the session', async () => {
     const { gateway, close, log, deps } = setup();
 
-    const ok = await publishToLangfuse(config, runs, 'openai:judge-x', deps);
+    const ok = await publishToLangfuse(config, runs, 'openai:judge-x', 0.1, deps);
 
     expect(ok).toBe(true);
     expect(gateway.runExperiment).toHaveBeenCalledOnce();
@@ -69,7 +69,7 @@ describe('publishToLangfuse (JEF-550)', () => {
   it('records the commit and judge on the runs', async () => {
     const { gateway, deps } = setup();
 
-    await publishToLangfuse(config, runs, 'openai:judge-x', deps);
+    await publishToLangfuse(config, runs, 'openai:judge-x', 0.1, deps);
 
     expect(vi.mocked(gateway.runExperiment).mock.calls[0]?.[0]).toMatchObject({
       runName: 'openai:gpt-x @ abc1234 @ 2026-11-11T22-30-00Z',
@@ -84,7 +84,7 @@ describe('publishToLangfuse (JEF-550)', () => {
       }),
     });
 
-    const ok = await publishToLangfuse(config, runs, null, deps);
+    const ok = await publishToLangfuse(config, runs, null, 0.1, deps);
 
     expect(ok).toBe(false);
     expect(logError).toHaveBeenCalledWith(expect.stringContaining('401 unauthorized'));
@@ -95,7 +95,7 @@ describe('publishToLangfuse (JEF-550)', () => {
     const { logError, deps } = setup();
     deps.createSession.mockRejectedValue(new Error('cannot load the SDK'));
 
-    const ok = await publishToLangfuse(config, runs, null, deps);
+    const ok = await publishToLangfuse(config, runs, null, 0.1, deps);
 
     expect(ok).toBe(false);
     expect(logError).toHaveBeenCalledWith(expect.stringContaining('cannot load the SDK'));
@@ -105,7 +105,7 @@ describe('publishToLangfuse (JEF-550)', () => {
     const { close, logError, deps } = setup();
     close.mockRejectedValue(new Error('flush timed out'));
 
-    const ok = await publishToLangfuse(config, runs, null, deps);
+    const ok = await publishToLangfuse(config, runs, null, 0.1, deps);
 
     expect(ok).toBe(false);
     expect(logError).toHaveBeenCalledWith(expect.stringContaining('flush timed out'));
@@ -118,7 +118,7 @@ describe('publishToLangfuse (JEF-550)', () => {
       }),
     });
 
-    await publishToLangfuse(config, runs, null, deps);
+    await publishToLangfuse(config, runs, null, 0.1, deps);
 
     const printed = JSON.stringify([...log.mock.calls, ...logError.mock.calls]);
     expect(printed).not.toContain('sk-lf-test');

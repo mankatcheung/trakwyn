@@ -289,9 +289,9 @@ A missing `EVAL_LANGFUSE_*` key stops the run with exit code 2 **before any paid
 **What you get:**
 
 - **One dataset**, `trakwyn-evals`, with an item per case. The item id is the case id, and its metadata holds the `feature` and the `prompt` (`id@version`).
-- **One dataset run per target per invocation**, named `<target> @ <commit> @ <timestamp>`. Its metadata holds the target, the judge, the commit and the cache counts.
+- **One dataset run per target per invocation**, named `<target> @ <commit> @ <timestamp>`. Its metadata holds the target, the judge, the commit, the cache counts, the `errors` and `skipped` counts and `untrusted` (`true` when more cases errored than `--max-error-rate` allows).
 - **A trace per case**, linked to its dataset item, with one generation per model call (messages in, reply out, tokens, latency) and one per judge call.
-- **Scores per case:** `passed` and `schema_valid` (true or false), plus `tool_calls` and `iterations` for chat. The failure reasons are the comment on `passed`.
+- **Scores per case:** `outcome` on every case (`pass`, `fail`, `error` or `skipped`, a categorical score you can filter and chart by), then `passed` and `schema_valid` (true or false), plus `tool_calls` and `iterations` for chat. An `error` or `skipped` case has only `outcome`, so Langfuse's `passed` average covers the cases that ran and does not count a provider error as a model failure. The failure reasons are the comment on `passed`.
 
 **Comparing two runs:** open the dataset in Langfuse, select two runs, and use Compare. Two `--target`s in one command give two runs you can compare; so do a run before and after a prompt edit. Run both on the same dataset and judge, as in [Comparing models](#comparing-models).
 

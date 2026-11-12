@@ -138,7 +138,12 @@ async function main(): Promise<number> {
   // After the report is printed and written: a Langfuse failure is logged by
   // `publishToLangfuse` and never changes the exit code, which is the pass rate's.
   if (config.publish) {
-    await publishToLangfuse(config.publish, runs, config.judge ? targetLabel(config.judge) : null);
+    await publishToLangfuse(
+      config.publish,
+      runs,
+      config.judge ? targetLabel(config.judge) : null,
+      config.maxErrorRate,
+    );
   }
 
   if (runs.some(stoppedOnQuota)) {
