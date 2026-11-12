@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runCase } from '#src/evals/runCase.js';
+import { LEAKED_TOOL_CALL_DETAIL } from '#src/infrastructure/llm/leakedToolCall.js';
 import { AiResponseInvalidError, LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescription.js';
 import { resumeMatchPrompt } from '#src/use-cases/prompts/resumeMatch.js';
@@ -32,6 +33,7 @@ describe('runCase', () => {
     expect(result).toMatchObject({
       caseId: 'c1',
       feature: 'jobDescription',
+      outcome: 'pass',
       passed: true,
       schemaValid: true,
       failures: [],
@@ -60,7 +62,7 @@ describe('runCase', () => {
       makeLLMProvider(),
     );
 
-    expect(result.passed).toBe(false);
+    expect(result).toMatchObject({ outcome: 'fail', passed: false });
     expect(result.schemaValid).toBe(true);
     expect(result.failures).toEqual(['role was "X"']);
   });
@@ -73,7 +75,7 @@ describe('runCase', () => {
       makeLLMProvider(),
     );
 
-    expect(result).toMatchObject({ passed: false, schemaValid: false });
+    expect(result).toMatchObject({ outcome: 'fail', passed: false, schemaValid: false });
     expect(result.failures[0]).toContain('not json');
   });
 
@@ -85,8 +87,81 @@ describe('runCase', () => {
       makeLLMProvider(),
     );
 
-    expect(result).toMatchObject({ passed: false, schemaValid: true });
+    expect(result).toMatchObject({ outcome: 'error', passed: false, schemaValid: true });
     expect(result.failures[0]).toContain('provider returned 429');
+  });
+});
+
+describe('runCase outcomes (JEF-559)', () => {
+  const thrown = (error: Error) =>
+    runCase(
+      evalCase(async () => {
+        throw error;
+      }),
+      makeLLMProvider(),
+    );
+
+  it('is an error when the provider answers 429', async () => {
+    const result = await thrown(
+      new LlmProviderError('rate_limited', { status: 429, detail: 'Token rate limit exceeded' }),
+    );
+
+    expect(result).toMatchObject({ outcome: 'error', passed: false });
+    expect(result.quotaStop).toBeUndefined();
+  });
+
+  it.each(['bad_request', 'unreachable', 'auth', 'unavailable'] as const)(
+    'is an error for a %s provider error',
+    async (kind) => {
+      expect((await thrown(new LlmProviderError(kind))).outcome).toBe('error');
+    },
+  );
+
+  it('is a fail for a truncated or unreadable reply', async () => {
+    const result = await thrown(new AiResponseInvalidError('reply was cut off'));
+
+    expect(result.outcome).toBe('fail');
+  });
+
+  it.each([LEAKED_TOOL_CALL_DETAIL.MARKERS, LEAKED_TOOL_CALL_DETAIL.REASONING])(
+    'is a fail, not an error, for a leaked tool call: %s',
+    async (detail) => {
+      const result = await thrown(new LlmProviderError('unavailable', { detail }));
+
+      expect(result).toMatchObject({ outcome: 'fail', passed: false });
+    },
+  );
+
+  it('is an error for an unavailable provider whose detail is something else', async () => {
+    const result = await thrown(new LlmProviderError('unavailable', { detail: 'HTTP 503' }));
+
+    expect(result.outcome).toBe('error');
+  });
+
+  it('is an error when the judge’s provider fails', async () => {
+    const judge = makeLLMProvider('{}');
+    vi.mocked(judge.complete).mockRejectedValue(
+      new LlmProviderError('rate_limited', { status: 429 }),
+    );
+
+    const result = await runCase(
+      evalCase(async (_provider, j) => {
+        await j?.complete([]);
+        return [];
+      }),
+      makeLLMProvider(),
+      judge,
+    );
+
+    expect(result.outcome).toBe('error');
+  });
+
+  it('is an error for a quota stop, which also stops the target', async () => {
+    const result = await thrown(
+      new LlmProviderError('quota', { status: 429, provider: 'Workers AI' }),
+    );
+
+    expect(result).toMatchObject({ outcome: 'error', quotaStop: true });
   });
 });
 

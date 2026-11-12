@@ -1,9 +1,10 @@
 import { AiResponseInvalidError, LlmProviderError } from '#src/use-cases/errors/DomainError.js';
+import { isLeakedToolCallError } from '#src/infrastructure/llm/leakedToolCall.js';
 import { isQuotaStop } from '#src/evals/quotaStop.js';
 import { promptRefOf } from '#src/evals/promptRef.js';
 import { meterProvider } from '#src/evals/usageMeter.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
-import type { CaseResult, EvalCase } from '#src/evals/types.js';
+import type { CaseOutcome, CaseResult, EvalCase } from '#src/evals/types.js';
 
 /**
  * What the provider said, which the user-facing message leaves out: "check the
@@ -20,8 +21,10 @@ function providerDetail(error: LlmProviderError): string {
 
 /**
  * Runs one case and always returns a result: a provider outage or an
- * unparseable reply fails that case and the run goes on, since the point is
- * to see how many of the rest the model gets right.
+ * unparseable reply ends that case and the run goes on, since the point is
+ * to see how many of the rest the model gets right. A thrown error is the
+ * model's (`fail`) when the reply was unreadable or a tool call leaked, and
+ * the provider's (`error`) otherwise, including a judge's (JEF-559).
  */
 export async function runCase(
   evalCase: EvalCase,
@@ -33,6 +36,7 @@ export async function runCase(
   let failures: string[];
   let schemaValid = true;
   let quotaStop = false;
+  let thrownOutcome: CaseOutcome | null = null;
 
   try {
     failures = await evalCase.run(meter.provider, judgeMeter?.provider);
@@ -40,14 +44,20 @@ export async function runCase(
     const message = error instanceof Error ? error.message : String(error);
     if (error instanceof AiResponseInvalidError) {
       schemaValid = false;
+      thrownOutcome = 'fail';
       failures = [`reply was not valid: ${message}`];
     } else if (error instanceof LlmProviderError) {
       quotaStop = isQuotaStop(error);
+      // A leaked tool call is thrown as a provider error so failover can act on
+      // it, but it is the model misbehaving, which is what the user would see.
+      thrownOutcome = isLeakedToolCallError(error) ? 'fail' : 'error';
       failures = [`error: ${message}${providerDetail(error)}`];
     } else {
+      thrownOutcome = 'error';
       failures = [`error: ${message}`];
     }
   }
+  const outcome: CaseOutcome = thrownOutcome ?? (failures.length === 0 ? 'pass' : 'fail');
 
   const { promptTokens, completionTokens, latencyMs, streams, toolCalls } = meter.totals();
   const judged = judgeMeter?.totals();
@@ -55,7 +65,8 @@ export async function runCase(
     caseId: evalCase.id,
     feature: evalCase.feature,
     prompt: promptRefOf(evalCase.feature),
-    passed: failures.length === 0,
+    outcome,
+    passed: outcome === 'pass',
     schemaValid,
     failures,
     ...(quotaStop ? { quotaStop } : {}),

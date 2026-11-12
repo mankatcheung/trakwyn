@@ -71,6 +71,34 @@ describe('parseEvalArgs', () => {
     },
   );
 
+  it('defaults the error ceiling to 10% and lets a flag or the env override it (JEF-559)', () => {
+    const base = { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k' };
+
+    expect(parse([], base).maxErrorRate).toBe(0.1);
+    expect(parse([], { ...base, EVAL_MAX_ERROR_RATE: '0.25' }).maxErrorRate).toBe(0.25);
+    expect(parse(['--max-error-rate', '0.05'], base).maxErrorRate).toBe(0.05);
+    expect(
+      parse(['--max-error-rate', '0'], { ...base, EVAL_MAX_ERROR_RATE: '0.5' }).maxErrorRate,
+    ).toBe(0);
+  });
+
+  it.each([
+    [['--max-error-rate', '2']],
+    [['--max-error-rate', '-0.1']],
+    [['--max-error-rate', 'abc']],
+    [['--max-error-rate', ' ']],
+  ])('rejects an error ceiling outside 0-1: %j', (argv) => {
+    expect(() => parse(argv, { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k' })).toThrow(
+      /max-error-rate/,
+    );
+  });
+
+  it('rejects a bad EVAL_MAX_ERROR_RATE too', () => {
+    expect(() =>
+      parse([], { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k', EVAL_MAX_ERROR_RATE: 'lots' }),
+    ).toThrow(/max-error-rate/);
+  });
+
   it('says what is missing when no target is configured', () => {
     expect(() => parse([], {})).toThrow(/--target|EVAL_PROVIDER/);
   });

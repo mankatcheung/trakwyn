@@ -1,6 +1,21 @@
 import { LEAKED_TOOL_CALL } from '#src/infrastructure/config/constants.js';
 import { LlmProviderError } from '#src/use-cases/errors/DomainError.js';
 
+/** The detail on the `unavailable` error for a leak, exported so callers can recognise it (JEF-559). */
+export const LEAKED_TOOL_CALL_DETAIL = {
+  MARKERS: 'Completion carried channel markers and no tool calls',
+  REASONING: 'Completion was reasoning text labelled "analysis" and no tool calls',
+} as const;
+
+/** The error is a leaked tool call thrown by `assertNoLeakedToolCall`: the model misbehaving, not the provider. */
+export function isLeakedToolCallError(error: LlmProviderError): boolean {
+  return (
+    error.kind === 'unavailable' &&
+    (error.detail === LEAKED_TOOL_CALL_DETAIL.MARKERS ||
+      error.detail === LEAKED_TOOL_CALL_DETAIL.REASONING)
+  );
+}
+
 /** Content carries a model channel marker (`<|call|>` and friends). */
 export function hasChannelMarkers(content: string): boolean {
   return LEAKED_TOOL_CALL.MARKER.test(content);
@@ -32,12 +47,12 @@ export function assertNoLeakedToolCall(content: string, toolCallCount: number): 
   if (toolCallCount !== 0) return;
   if (hasChannelMarkers(content)) {
     throw new LlmProviderError('unavailable', {
-      detail: 'Completion carried channel markers and no tool calls',
+      detail: LEAKED_TOOL_CALL_DETAIL.MARKERS,
     });
   }
   if (looksLikeReasoningText(content)) {
     throw new LlmProviderError('unavailable', {
-      detail: 'Completion was reasoning text labelled "analysis" and no tool calls',
+      detail: LEAKED_TOOL_CALL_DETAIL.REASONING,
     });
   }
 }

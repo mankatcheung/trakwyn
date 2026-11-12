@@ -6,7 +6,8 @@
  *
  * Exit status: 0 when every target met the pass rate, 1 when one fell short
  * (or the judge was not trusted), 2 when the arguments were wrong, 3 when a
- * target stopped on its provider's daily quota (JEF-556), which is no score.
+ * target stopped on its provider's daily quota (JEF-556), which is no score,
+ * 4 when a target had more errors than `--max-error-rate` allows (JEF-559).
  */
 import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { ALL_CASES, selectCases } from '#src/evals/cases/index.js';
@@ -25,6 +26,7 @@ import {
   meetsPassRate,
   stoppedOnQuota,
   summarise,
+  tooManyErrors,
   type CacheCounts,
   type TargetRun,
 } from '#src/evals/summary.js';
@@ -34,6 +36,7 @@ import type { CaseResult, EvalConfig } from '#src/evals/types.js';
 const CACHE_DIR = '.eval-cache';
 const USAGE_ERROR = 2;
 const QUOTA_STOP = 3;
+const TOO_MANY_ERRORS = 4;
 
 type Cache = { dir: string; refresh: boolean } | null;
 
@@ -43,7 +46,8 @@ const messageOf = (error: unknown): string =>
 function progressLine(result: CaseResult): string {
   const toolUse =
     result.feature === 'chat' ? `  ${result.toolCalls} calls, ${result.iterations} iterations` : '';
-  return `  ${result.passed ? 'pass' : 'FAIL'}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)${toolUse}`;
+  const label = { pass: 'pass', fail: 'FAIL', error: 'ERROR', skipped: 'skip' }[result.outcome];
+  return `  ${label}  ${result.caseId}  (${Math.round(result.latencyMs)} ms)${toolUse}`;
 }
 
 async function runTargets(
@@ -120,7 +124,7 @@ async function main(): Promise<number> {
     return USAGE_ERROR;
   }
 
-  const report = formatReport(runs);
+  const report = formatReport(runs, config.maxErrorRate);
   console.log(`\n${report}`);
   if (config.reportFile) {
     try {
@@ -142,6 +146,14 @@ async function main(): Promise<number> {
       '\nStopped on a provider quota, so this run is not a score. See the lines above.',
     );
     return QUOTA_STOP;
+  }
+
+  const untrusted = runs.filter((run) => tooManyErrors(run, config.maxErrorRate));
+  if (untrusted.length > 0) {
+    console.error(
+      `\nMore than ${Math.round(config.maxErrorRate * 100)}% of the cases errored: ${untrusted.map((run) => run.label).join(', ')}. The pass rate is not trusted. See the lines above.`,
+    );
+    return TOO_MANY_ERRORS;
   }
 
   const short = runs.filter((run) => !meetsPassRate(summarise(run.results), config.minPassRate));

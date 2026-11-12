@@ -2,15 +2,26 @@ import { CLOUDFLARE_DAILY_QUOTA } from '#src/evals/quotaStop.js';
 import type { CaseResult, EvalFeature } from '#src/evals/types.js';
 
 export interface RunSummary {
+  /** Every case that has a result, whatever its outcome. */
   total: number;
+  /** Cases that were scored: passed plus failed. Errors and skipped cases are not. */
+  ran: number;
   passed: number;
+  /** Cases the provider (or the harness) errored on, which say nothing about the model (JEF-559). */
+  errors: number;
+  /** Cases never run, because the target stopped on its quota. */
+  skipped: number;
+  /** Passed over passed plus failed. */
   passRate: number;
+  /** Errors over every case with a result. */
+  errorRate: number;
   schemaValidRate: number;
   promptTokens: number;
   completionTokens: number;
   judgePromptTokens: number;
   judgeCompletionTokens: number;
   meanLatencyMs: number;
+  /** Passed out of the cases that ran, per feature. */
   byFeature: Partial<Record<EvalFeature, { total: number; passed: number }>>;
 }
 
@@ -44,23 +55,55 @@ export function formatQuotaStops(runs: TargetRun[]): string[] {
     );
 }
 
+/** The target had more errors than `maxErrorRate` allows, so its pass rate is not to be trusted (JEF-559). */
+export function tooManyErrors(run: TargetRun, maxErrorRate: number): boolean {
+  return summarise(run.results).errorRate > maxErrorRate;
+}
+
+/** One line per target with too many errors, saying how many and what to do. */
+export function formatUntrusted(runs: TargetRun[], maxErrorRate: number): string[] {
+  return runs
+    .filter((run) => tooManyErrors(run, maxErrorRate))
+    .map((run) => {
+      const { errors, total, errorRate } = summarise(run.results);
+      return (
+        `${run.label} is not trusted: ${errors} of ${total} cases errored (${percent(errorRate)}), ` +
+        `above the ${percent(maxErrorRate)} allowed by --max-error-rate. ` +
+        "Errors are the provider's or the harness's, so the pass rate covers too few cases. See Errors below."
+      );
+    });
+}
+
 const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part / whole);
 const percent = (value: number): string => `${Math.round(value * 100)}%`;
 
-export function summarise(results: CaseResult[]): RunSummary {
-  const byFeature = results.reduce<RunSummary['byFeature']>((acc, result) => {
+const isScored = (result: CaseResult): boolean =>
+  result.outcome === 'pass' || result.outcome === 'fail';
+
+/**
+ * `notRun` is the cases the runner never started (a quota stop), which have no
+ * result to count; they are added to the results marked `skipped`.
+ */
+export function summarise(results: CaseResult[], notRun = 0): RunSummary {
+  const scored = results.filter(isScored);
+  const byFeature = scored.reduce<RunSummary['byFeature']>((acc, result) => {
     const seen = acc[result.feature] ?? { total: 0, passed: 0 };
     return {
       ...acc,
       [result.feature]: { total: seen.total + 1, passed: seen.passed + (result.passed ? 1 : 0) },
     };
   }, {});
-  const passed = results.filter((result) => result.passed).length;
+  const passed = results.filter((result) => result.outcome === 'pass').length;
+  const errors = results.filter((result) => result.outcome === 'error').length;
 
   return {
     total: results.length,
+    ran: scored.length,
     passed,
-    passRate: ratio(passed, results.length),
+    errors,
+    skipped: notRun + results.filter((result) => result.outcome === 'skipped').length,
+    passRate: ratio(passed, scored.length),
+    errorRate: ratio(errors, results.length),
     schemaValidRate: ratio(results.filter((result) => result.schemaValid).length, results.length),
     promptTokens: results.reduce((sum, result) => sum + result.promptTokens, 0),
     completionTokens: results.reduce((sum, result) => sum + result.completionTokens, 0),
@@ -74,9 +117,9 @@ export function summarise(results: CaseResult[]): RunSummary {
   };
 }
 
-/** An empty run never meets the floor: running nothing is not a pass. */
+/** A run that scored nothing never meets the floor: running nothing is not a pass. */
 export function meetsPassRate(summary: RunSummary, minPassRate: number): boolean {
-  return summary.total > 0 && summary.passRate >= minPassRate;
+  return summary.ran > 0 && summary.passRate >= minPassRate;
 }
 
 function featureColumn(summary: RunSummary): string {
@@ -114,15 +157,17 @@ function latencyColumn(summary: RunSummary, cache: CacheCounts | undefined): str
 }
 
 /** A table with a row per target, then each failing case and why it failed. */
-export function formatReport(runs: TargetRun[]): string {
+export function formatReport(runs: TargetRun[], maxErrorRate?: number): string {
   const showCache = runs.some((run) => run.cache !== undefined);
-  const rows = runs.map(({ label, results, cache }) => {
-    const summary = summarise(results);
+  const rows = runs.map(({ label, results, cache, skipped }) => {
+    const summary = summarise(results, skipped ?? 0);
     return [
       label,
       stoppedOnQuota({ label, results })
         ? 'stopped (quota)'
-        : `${summary.passed}/${summary.total} (${percent(summary.passRate)})`,
+        : `${summary.passed}/${summary.ran} (${percent(summary.passRate)})`,
+      String(summary.errors),
+      String(summary.skipped),
       percent(summary.schemaValidRate),
       featureColumn(summary),
       promptColumn(results),
@@ -135,6 +180,8 @@ export function formatReport(runs: TargetRun[]): string {
   const header = [
     'Target',
     'Passed',
+    'Errors',
+    'Skipped',
     'Schema',
     'By feature',
     'Prompts',
@@ -149,21 +196,27 @@ export function formatReport(runs: TargetRun[]): string {
   const line = (cells: string[]): string =>
     cells.map((cell, column) => cell.padEnd(widths[column] as number)).join('  ');
 
-  const failures = runs.flatMap(({ label, results }) =>
-    results
-      .filter((result) => !result.passed)
-      .map(
-        (result) =>
-          `  ${label}  ${result.caseId} (${result.feature}): ${result.failures.join('; ')}`,
-      ),
-  );
+  const listOutcome = (outcome: CaseResult['outcome']): string[] =>
+    runs.flatMap(({ label, results }) =>
+      results
+        .filter((result) => result.outcome === outcome)
+        .map(
+          (result) =>
+            `  ${label}  ${result.caseId} (${result.feature}): ${result.failures.join('; ')}`,
+        ),
+    );
+  const failures = listOutcome('fail');
+  const errors = listOutcome('error');
+  const untrusted = maxErrorRate === undefined ? [] : formatUntrusted(runs, maxErrorRate);
 
   return [
     line(header),
     ...rows.map(line),
     ...toolUseSection(runs),
     ...(formatQuotaStops(runs).length > 0 ? ['', ...formatQuotaStops(runs)] : []),
+    ...(untrusted.length > 0 ? ['', ...untrusted] : []),
     '',
     failures.length === 0 ? 'no failures' : `Failures:\n${failures.join('\n')}`,
+    ...(errors.length === 0 ? [] : ['', `Errors:\n${errors.join('\n')}`]),
   ].join('\n');
 }
