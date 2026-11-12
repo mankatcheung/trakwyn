@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.16.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.15.0...api-v0.16.0) (2026-11-12)
+
+
+### Features
+
+* **api:** publish eval runs to Langfuse with --publish (JEF-550) ([#1347](https://github.com/mankatcheung/trakwyn/issues/1347)) ([f02e829](https://github.com/mankatcheung/trakwyn/commit/f02e829a948cdd584d707539e445dbabb068cd6e))
+* **api:** stop an eval run on the first daily-quota error (JEF-556) ([#1353](https://github.com/mankatcheung/trakwyn/issues/1353)) ([781a63d](https://github.com/mankatcheung/trakwyn/commit/781a63d33de51c1b2e4c2af07c04bdf78a59b059))
+* **infra:** Axiom dashboard for AI output feedback (JEF-551) ([#1340](https://github.com/mankatcheung/trakwyn/issues/1340)) ([867cdcc](https://github.com/mankatcheung/trakwyn/commit/867cdcc9b15bd2fadbb3ec56bf8dae30c202759d))
+* pin the privacy policy's AI data-handling claims to code and link each provider's data use (JEF-549) ([#1337](https://github.com/mankatcheung/trakwyn/issues/1337)) ([f40ff2a](https://github.com/mankatcheung/trakwyn/commit/f40ff2a37180b83dc557dfa436b390f8aba6f1ee))
+* tell the company briefing to include dated news from its search results (JEF-544) ([#1328](https://github.com/mankatcheung/trakwyn/issues/1328)) ([96b6ea8](https://github.com/mankatcheung/trakwyn/commit/96b6ea8fc93de4bc879d3b6aa5b5f0826dc19abb))
+* thumbs up/down on AI output (JEF-547) ([#1334](https://github.com/mankatcheung/trakwyn/issues/1334)) ([e248ab2](https://github.com/mankatcheung/trakwyn/commit/e248ab2bfa452f5e01631214429cddf1cdc7faf6))
+
+
+### Bug Fixes
+
+* **api:** accept a full date in the briefing-cites-dated-news eval check (JEF-555) ([#1351](https://github.com/mankatcheung/trakwyn/issues/1351)) ([cce57ef](https://github.com/mankatcheung/trakwyn/commit/cce57ef506344d0aaebd54e123a82a34ead85387))
+* **api:** fail over when gpt-oss answers with its reasoning text and no markers (JEF-554) ([#1350](https://github.com/mankatcheung/trakwyn/issues/1350)) ([662bc2c](https://github.com/mankatcheung/trakwyn/commit/662bc2c1ad68da117856e953b3dc39e1c782016f))
+* **api:** keep Pro resumes and cover letters on the lite model (JEF-557) ([#1354](https://github.com/mankatcheung/trakwyn/issues/1354)) ([836c0b7](https://github.com/mankatcheung/trakwyn/commit/836c0b704394bd08fc12a5ee89ec43037589755d))
+* **api:** normalise Unicode spaces and dashes in the eval text matchers (JEF-546) ([#1330](https://github.com/mankatcheung/trakwyn/issues/1330)) ([b72a09c](https://github.com/mankatcheung/trakwyn/commit/b72a09cfec3f45e44ee8614c55ce595df5db2934))
+* **api:** stop resume match and cover letter obeying instructions in a posting (JEF-552) ([#1349](https://github.com/mankatcheung/trakwyn/issues/1349)) ([8d9554f](https://github.com/mankatcheung/trakwyn/commit/8d9554f8ee9bf0e9bbbf80b7b9a0c52cd4fe9aa2))
+* **api:** write profile dates in AI prompts as UTC month and year (JEF-553) ([#1348](https://github.com/mankatcheung/trakwyn/issues/1348)) ([b6cb6c5](https://github.com/mankatcheung/trakwyn/commit/b6cb6c51a19e5905ef9b97e9837ccb125652ca83))
+* fail over when gpt-oss leaks its tool call into the message text (JEF-541) ([#1321](https://github.com/mankatcheung/trakwyn/issues/1321)) ([9410ab5](https://github.com/mankatcheung/trakwyn/commit/9410ab556627e2119a91541a22532ddbe863e394))
+
 ## [0.15.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.14.0...api-v0.15.0) (2026-11-09)
 
 
