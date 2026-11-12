@@ -9,10 +9,11 @@ describe('aiModelTier', () => {
     }
   });
 
-  it('gives Pro the mid tier for cover letters and resumes only', () => {
+  // JEF-557: gpt-oss-120b (mid) invented about three times as many claims as
+  // Gemma (lite) in resumes and cover letters, so Pro stays on lite too.
+  it('gives Pro the lite tier for every feature, cover letters and resumes included', () => {
     for (const feature of Object.values(AI_FEATURE)) {
-      const expected = feature === AI_FEATURE.COVER_LETTER || feature === AI_FEATURE.RESUME;
-      expect(aiModelTier('pro', feature)).toBe(expected ? 'mid' : 'lite');
+      expect(aiModelTier('pro', feature)).toBe('lite');
     }
   });
 });

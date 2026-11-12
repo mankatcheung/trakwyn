@@ -283,13 +283,16 @@ export const HOSTED_AI = {
 
 /**
  * Which model tier a hosted call runs on (JEF-448). `lite` is the cheap model
- * every feature works on; `mid` is worth its price only for the writing a Pro
+ * every feature works on. `mid` is the dearer model, and no feature uses it:
+ * JEF-557 measured it inventing about three times as many resume and cover
+ * letter claims as `lite` (three eval runs), so Pro's writing stays on `lite`
+ * until a model earns `mid`. It was meant for the writing a Pro
  * user keeps. Tiers name a class, never a model: the ids live in
  * `PLATFORM_LLM.MODELS`.
  */
 export const AI_MODEL_TIER = {
   free: { default: 'lite' },
-  pro: { default: 'lite', coverLetter: 'mid', resume: 'mid' },
+  pro: { default: 'lite', coverLetter: 'lite', resume: 'lite' },
 } as const satisfies Record<
   Plan,
   { default: AiModelTier } & Partial<Record<AiFeature, AiModelTier>>
