@@ -227,8 +227,8 @@ describe('tier routing (JEF-448)', () => {
   it.each([
     ['free', AI_FEATURE.COVER_LETTER, 'lite'],
     ['free', AI_FEATURE.RESUME, 'lite'],
-    ['pro', AI_FEATURE.COVER_LETTER, 'mid'],
-    ['pro', AI_FEATURE.RESUME, 'mid'],
+    ['pro', AI_FEATURE.COVER_LETTER, 'lite'],
+    ['pro', AI_FEATURE.RESUME, 'lite'],
     ['pro', AI_FEATURE.CHAT, 'lite'],
     ['pro', AI_FEATURE.PARSE_JOB_DESCRIPTION, 'lite'],
   ] as const)('%s plan, %s -> %s', async (plan, feature, tier) => {
