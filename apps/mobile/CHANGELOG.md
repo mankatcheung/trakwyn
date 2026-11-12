@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.9.0...mobile-v0.10.0) (2026-11-12)
+
+
+### Features
+
+* pin the privacy policy's AI data-handling claims to code and link each provider's data use (JEF-549) ([#1337](https://github.com/mankatcheung/trakwyn/issues/1337)) ([f40ff2a](https://github.com/mankatcheung/trakwyn/commit/f40ff2a37180b83dc557dfa436b390f8aba6f1ee))
+* thumbs up/down on AI output (JEF-547) ([#1334](https://github.com/mankatcheung/trakwyn/issues/1334)) ([e248ab2](https://github.com/mankatcheung/trakwyn/commit/e248ab2bfa452f5e01631214429cddf1cdc7faf6))
+
 ## [0.9.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.8.0...mobile-v0.9.0) (2026-11-09)
 
 
