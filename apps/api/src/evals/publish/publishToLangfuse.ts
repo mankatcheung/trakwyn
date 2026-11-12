@@ -17,7 +17,7 @@ const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 /** The short SHA the run was made from; `unknown` outside a checkout or without git. */
-function gitShortSha(): string {
+export function gitShortSha(): string {
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       encoding: 'utf8',

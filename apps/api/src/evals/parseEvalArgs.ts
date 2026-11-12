@@ -11,13 +11,27 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
 const DEFAULT_MAX_ERROR_RATE = 0.1;
-const VALUE_FLAGS = ['--target', '--case', '--min-pass-rate', '--max-error-rate', '--out'] as const;
-const SWITCH_FLAGS = ['--cache', '--refresh', '--validate-judge', '--publish'] as const;
+const VALUE_FLAGS = [
+  '--target',
+  '--case',
+  '--min-pass-rate',
+  '--max-error-rate',
+  '--out',
+  '--label',
+] as const;
+const SWITCH_FLAGS = [
+  '--cache',
+  '--refresh',
+  '--validate-judge',
+  '--publish',
+  '--no-save',
+] as const;
 const SWITCH_KEYS = {
   '--cache': 'cache',
   '--refresh': 'refresh',
   '--publish': 'publish',
   '--validate-judge': 'validateJudge',
+  '--no-save': 'noSave',
 } as const;
 const PROVIDERS: string[] = [...Object.values(LLM_PROVIDER), WORKERS_AI_PROVIDER];
 
@@ -35,10 +49,12 @@ interface RawFlags {
   minPassRate: string | null;
   maxErrorRate: string | null;
   out: string | null;
+  label: string | null;
   cache: boolean;
   refresh: boolean;
   validateJudge: boolean;
   publish: boolean;
+  noSave: boolean;
 }
 
 function readFlags(argv: string[]): RawFlags {
@@ -48,10 +64,12 @@ function readFlags(argv: string[]): RawFlags {
     minPassRate: null,
     maxErrorRate: null,
     out: null,
+    label: null,
     cache: false,
     refresh: false,
     validateJudge: false,
     publish: false,
+    noSave: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -68,6 +86,7 @@ function readFlags(argv: string[]): RawFlags {
       if (arg === '--target') flags = { ...flags, targets: [...flags.targets, value] };
       else if (arg === '--case') flags = { ...flags, cases: [...flags.cases, value] };
       else if (arg === '--out') flags = { ...flags, out: value };
+      else if (arg === '--label') flags = { ...flags, label: value };
       else if (arg === '--max-error-rate') flags = { ...flags, maxErrorRate: value };
       else flags = { ...flags, minPassRate: value };
     } else {
@@ -236,5 +255,7 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     reportFile: flags.out,
     // A judge validation run has no targets to upload (JEF-550: not in this cut).
     publish: flags.publish && !flags.validateJudge ? parseLangfuse(env) : null,
+    label: flags.label?.trim() || null,
+    save: !flags.noSave,
   };
 }

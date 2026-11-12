@@ -215,6 +215,8 @@ describe('judge configuration', () => {
     maxErrorRate: 0.1,
     reportFile: null,
     publish: null,
+    label: null,
+    save: true,
   });
 
   it('refuses to start graded cases without a judge', () => {

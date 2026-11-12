@@ -270,3 +270,23 @@ describe('parseEvalArgs --publish (JEF-550)', () => {
     expect(parseEvalArgs(['--validate-judge', '--publish'], judgeEnv).publish).toBeNull();
   });
 });
+
+describe('parseEvalArgs --label and --no-save', () => {
+  const env = { EVAL_PROVIDER: 'openai', EVAL_API_KEY: 'k' };
+
+  it('saves the run by default, with no label', () => {
+    const config = parseEvalArgs([], env);
+    expect(config.save).toBe(true);
+    expect(config.label).toBeNull();
+  });
+
+  it('reads the label and skips saving with --no-save', () => {
+    const config = parseEvalArgs(['--label', 'baseline', '--no-save'], env);
+    expect(config.label).toBe('baseline');
+    expect(config.save).toBe(false);
+  });
+
+  it('needs a value for --label', () => {
+    expect(() => parseEvalArgs(['--label'], env)).toThrow('--label needs a value');
+  });
+});

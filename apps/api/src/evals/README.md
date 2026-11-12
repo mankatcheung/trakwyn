@@ -20,10 +20,11 @@ For the design notes behind each group of cases (why they exist, how to add one)
 8. [Comparing models](#comparing-models)
 9. [Reading the report](#reading-the-report)
 10. [Publishing to Langfuse](#publishing-to-langfuse)
-11. [The cache](#the-cache)
-12. [What is covered](#what-is-covered)
-13. [Where model text is rendered](#where-model-text-is-rendered)
-14. [Troubleshooting](#troubleshooting)
+11. [Saved runs](#saved-runs)
+12. [The cache](#the-cache)
+13. [What is covered](#what-is-covered)
+14. [Where model text is rendered](#where-model-text-is-rendered)
+15. [Troubleshooting](#troubleshooting)
 
 ## Quick start
 
@@ -160,7 +161,9 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 | `--refresh`                 | Ask the model again and overwrite what is stored. **Implies `--cache`**, so you do not need both.                                                                                                                 |
 | `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                               |
 | `--publish`                 | After the run, upload it to Langfuse so you can browse and compare it. Needs the `EVAL_LANGFUSE_*` keys. See [Publishing to Langfuse](#publishing-to-langfuse). Off by default; not used with `--validate-judge`. |
-| `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Without it nothing is written, and the table is gone when the terminal closes.  |
+| `--label <name>`            | Add a name to the run's folder, for example `baseline`. See [Saved runs](#saved-runs).                                                                                                                            |
+| `--no-save`                 | Do not keep this run in a folder. Without it every run is saved.                                                                                                                                                  |
+| `--out <file>`              | Also write the full report, failures included, to this file. Missing folders are created and an existing file is **overwritten**. Separate from the [saved run](#saved-runs) folder, which is kept either way.    |
 
 ## Example commands
 
@@ -302,6 +305,19 @@ A missing `EVAL_LANGFUSE_*` key stops the run with exit code 2 **before any paid
 - A cache hit is uploaded like a live reply. The run's metadata carries the hit and miss counts, and the latency of a replayed call says nothing about the model.
 - Running the same command twice makes two runs (the timestamp differs). The dataset and its items are updated in place.
 - `--validate-judge` runs are not uploaded.
+
+## Saved runs
+
+Every run is kept in a new folder under the gitignored `apps/api/.eval-runs/`, so it is still there after the terminal closes. The folder is named `<UTC time>-<short commit>[-<label>]`, for example `2026-11-12T1030Z-ab12cd3-baseline`. A name that already exists gets a `-2`, `-3` suffix: an earlier run is never overwritten. Add `--label` to name a run, or `--no-save` to keep nothing. `--out` works as before and is separate.
+
+| File                            | What it holds                                                                                                                                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.json`                      | How the run was made: commit, start and finish times, flags, target and judge labels, case ids, prompt versions, cache hits and misses, and the exit code. `partial: true` means a target stopped on its quota. |
+| `summary.md`                    | The report, as `--out` writes it.                                                                                                                                                                               |
+| `summary.json`                  | The summary per target: totals, pass rate, tokens and results by feature.                                                                                                                                       |
+| `transcripts/<target>.jsonl.gz` | One case result per line, with every model call and judge call (messages, reply, tokens, timing). Read one with `gzip -dc file \| jq`.                                                                          |
+
+No file holds an API key or a base URL: targets are recorded by their `provider:model` label only. A failed save is reported and never changes the exit code.
 
 ## The cache
 
