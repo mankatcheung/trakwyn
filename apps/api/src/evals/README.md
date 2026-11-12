@@ -116,9 +116,10 @@ Read only when you pass `--publish` (see [Publishing to Langfuse](#publishing-to
 
 ### Behaviour
 
-| Variable             | Meaning                                                                                                     |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `EVAL_MIN_PASS_RATE` | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it. |
+| Variable              | Meaning                                                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EVAL_MIN_PASS_RATE`  | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it.                                                                                        |
+| `EVAL_MAX_ERROR_RATE` | The share of a target's cases that may end in `error` before the target is not trusted, from 0 to 1. Default `0.1`. The `--max-error-rate` flag wins over it. See [Outcomes](#reading-the-report). |
 
 ## Targets: which model is tested
 
@@ -154,6 +155,7 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 | `--target provider[:model]` | A model to test. **Repeat it** to compare models in one table. If you pass none, `EVAL_PROVIDER` and `EVAL_MODEL` are used. With neither, the run stops (except with `--validate-judge`).                         |
 | `--case <id>[,<id>]`        | Run only these cases. Repeat the flag or separate ids with commas. Without it, all cases run.                                                                                                                     |
 | `--min-pass-rate <0-1>`     | The pass rate a target must reach for the run to succeed. Default `0.8`. Outside 0 to 1 is an error.                                                                                                              |
+| `--max-error-rate <0-1>`    | The share of a target's cases that may end in `error` (the provider's fault, not the model's) before the run exits `4`. Default `0.1`. Outside 0 to 1 is an error. See [Outcomes](#reading-the-report).           |
 | `--cache`                   | Store each reply on disk and reuse it on the next run. See [The cache](#the-cache).                                                                                                                               |
 | `--refresh`                 | Ask the model again and overwrite what is stored. **Implies `--cache`**, so you do not need both.                                                                                                                 |
 | `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                               |
@@ -219,24 +221,40 @@ Repeat `--target`. Every target runs the same cases with the same judge and shar
 
 ## Reading the report
 
-Each case prints a line as it finishes (`pass` or `FAIL`, the case id, the time, and for chat the tool calls and rounds). When all cases are done the table appears:
+Each case prints a line as it finishes (`pass`, `FAIL` or `ERROR`, the case id, the time, and for chat the tool calls and rounds). When all cases are done the table appears:
 
-| Column                  | Meaning                                                                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Target**              | The `provider:model` you passed.                                                                                                |
-| **Passed**              | Cases that passed out of cases run, with a percentage. This is what `--min-pass-rate` is compared against.                      |
-| **Schema**              | The share of replies the app could read in the shape it expects. Low means the model breaks the format, or ran out of room.     |
-| **By feature**          | Passed out of run for each feature: `jobDescription`, `resumeMatch`, `resume`, `coverLetter`, `chat`, `briefing`.               |
-| **Prompts**             | The prompt and version each feature ran, as `id@version`.                                                                       |
-| **Tokens in/out**       | What the target used.                                                                                                           |
-| **Judge tokens in/out** | What the judge used, kept apart from the target's.                                                                              |
-| **Cache hit/miss**      | Only with `--cache`. Replies served from disk versus asked of the model. Only the target's calls are counted.                   |
-| **Mean latency**        | Average time per case. It reads `cached` when every reply came from disk, because a replay's time says nothing about the model. |
+| Column                  | Meaning                                                                                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Target**              | The `provider:model` you passed.                                                                                                                                                                            |
+| **Passed**              | Cases that passed out of the cases that ran (passed plus failed), with a percentage, for example `61/63 (97%)`. Errors and skipped cases are not in it. This is what `--min-pass-rate` is compared against. |
+| **Errors**              | Cases that ended in `error`: the provider's fault, not the model's. Compared against `--max-error-rate`.                                                                                                    |
+| **Skipped**             | Cases never run because the target stopped on its quota.                                                                                                                                                    |
+| **Schema**              | The share of replies the app could read in the shape it expects. Low means the model breaks the format, or ran out of room.                                                                                 |
+| **By feature**          | Passed out of run for each feature: `jobDescription`, `resumeMatch`, `resume`, `coverLetter`, `chat`, `briefing`.                                                                                           |
+| **Prompts**             | The prompt and version each feature ran, as `id@version`.                                                                                                                                                   |
+| **Tokens in/out**       | What the target used.                                                                                                                                                                                       |
+| **Judge tokens in/out** | What the judge used, kept apart from the target's.                                                                                                                                                          |
+| **Cache hit/miss**      | Only with `--cache`. Replies served from disk versus asked of the model. Only the target's calls are counted.                                                                                               |
+| **Mean latency**        | Average time per case. It reads `cached` when every reply came from disk, because a replay's time says nothing about the model.                                                                             |
 
 Below the table:
 
 - **Chat tool use:** tool calls and rounds for each chat case.
-- **Failures:** every failed case with the reason. A provider error shows the HTTP status and the start of the response body, for example `[HTTP 400, body: …]`. An invented claim in a resume names the claim.
+- **Failures:** every case the model got wrong, with the reason. An invented claim in a resume names the claim.
+- **Errors:** every case the provider (or the judge) failed on, with the reason. A provider error shows the HTTP status and the start of the response body, for example `[HTTP 400, body: …]`.
+
+**Outcomes**
+
+Every case ends as one of four outcomes, so a provider's bad minute does not read as a model's score (JEF-559):
+
+| Outcome   | Meaning                                                                                                                                                                                                                                   | Scored |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `pass`    | The case found nothing wrong.                                                                                                                                                                                                             | yes    |
+| `fail`    | The model's: a check failed, the reply was not valid JSON, was cut off, or was refused for naming something the user never gave, or the model leaked a tool call into its answer (`Completion carried channel markers…`, reasoning text). | yes    |
+| `error`   | The provider's or the harness's: any provider error (HTTP 429, 5xx, 400, a timeout, a bad key), a quota stop, a judge failure, or any other thrown error.                                                                                 | no     |
+| `skipped` | Never run, because an earlier case hit the provider's daily quota.                                                                                                                                                                        | no     |
+
+The pass rate is passed over passed plus failed. Sixty-one passes, two fails and two 429s report as `61/63 (97%)` with `2` errors, and meet the default 80% bar. To keep a mostly broken run from looking green, a target whose errors are more than `--max-error-rate` of its cases (default `0.1`) is not trusted and the run exits `4`. Exit codes are checked in this order: `2`, then `3`, then `4`, then `1`, then `0`.
 
 **Exit codes**
 
@@ -245,6 +263,7 @@ Below the table:
 | `0`  | Every target reached the pass rate (or `--validate-judge` passed).                                                                                                                                                                                                                                                   |
 | `1`  | A target fell short, or the judge scored under 90% and was not trusted.                                                                                                                                                                                                                                              |
 | `2`  | Bad arguments or missing configuration. Nothing was called.                                                                                                                                                                                                                                                          |
+| `4`  | A target had more `error` cases than `--max-error-rate` allows (default 10%), so its pass rate is not trusted. The report says which target and how many. A systematic bug, such as a request the provider rejects with HTTP 400 on most cases, lands here instead of looking like a low score.                      |
 | `3`  | A target stopped on its provider's daily quota (for example Cloudflare's free allocation, which resets at 00:00 UTC). Its remaining cases were skipped and its row reads `stopped (quota)`, not a pass rate. Other targets in the run still ran. Re-run after the reset, with `--cache` to reuse the answered cases. |
 
 ## Publishing to Langfuse

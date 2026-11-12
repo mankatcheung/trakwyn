@@ -60,11 +60,21 @@ export interface RecordedCall {
   error: string | null;
 }
 
+/**
+ * What a case came to (JEF-559). `fail` is the model's (a wrong answer, an
+ * unreadable or truncated reply, a leaked tool call); `error` is the
+ * provider's or the harness's (HTTP 429, a quota stop, a judge outage);
+ * `skipped` was never run. Only `pass` and `fail` are scored.
+ */
+export type CaseOutcome = 'pass' | 'fail' | 'error' | 'skipped';
+
 export interface CaseResult {
   caseId: string;
   feature: EvalFeature;
   /** The prompt and version the case ran against, as `id@version` (JEF-505). */
   prompt: string;
+  outcome: CaseOutcome;
+  /** `outcome === 'pass'`, kept for readers written before outcomes. */
   passed: boolean;
   /** False only when the reply could not be read as the JSON the prompt asks for. */
   schemaValid: boolean;
@@ -129,8 +139,10 @@ export interface EvalConfig {
   cache: boolean;
   /** With `cache`: ignore what is stored and overwrite it. */
   refresh: boolean;
-  /** Share of cases that must pass, per target, for the run to exit 0. */
+  /** Share of the cases that ran that must pass, per target, for the run to exit 0. */
   minPassRate: number;
+  /** Share of a target's cases that may end in `error` before the target is untrusted (JEF-559). */
+  maxErrorRate: number;
   /** Where to also write the final report, or null to only print it. */
   reportFile: string | null;
   /** Where to upload the run once it finishes (`--publish`), or null to not upload. */
