@@ -10,7 +10,7 @@ import {
 type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
-const DEFAULT_MAX_ERROR_RATE = 0.1;
+export const DEFAULT_MAX_ERROR_RATE = 0.1;
 const VALUE_FLAGS = [
   '--target',
   '--case',
