@@ -115,11 +115,12 @@ describe('loadRunFolder and publishSavedRun (JEF-562)', () => {
       load: loadRunFolder,
       // The real publisher, over the fake gateway, with today's clock and commit
       // that must not leak into an old run.
-      publish: (cfg, r, judge, _deps, recorded) =>
+      publish: (cfg, r, judge, maxErrorRate, _deps, recorded) =>
         publishToLangfuse(
           cfg,
           r,
           judge,
+          maxErrorRate,
           {
             createSession,
             commit: () => 'TODAY00',
@@ -150,6 +151,7 @@ describe('loadRunFolder and publishSavedRun (JEF-562)', () => {
     expect(loaded.startedAt).toEqual(STARTED);
     expect(loaded.judge).toBe('openai:judge-1');
     expect(loaded.publishedAt).toBeNull();
+    expect(loaded.maxErrorRate).toBe(0.1);
     expect(loaded.runs).toEqual(runs);
   });
 
@@ -180,6 +182,8 @@ describe('loadRunFolder and publishSavedRun (JEF-562)', () => {
       startedAt: ORIGINAL_START,
     });
     expect(first.items[0]?.judgeCalls[0]?.latencyMs).toBe(321);
+    // The run's own error threshold, from run.json, decides `untrusted`.
+    expect(first.metadata.untrusted).toBe('false');
   });
 
   it('records the upload in run.json and refuses a second one without --force', async () => {

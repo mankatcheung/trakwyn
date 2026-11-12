@@ -54,7 +54,14 @@ export async function publishSavedRun(
   }
 
   const meta = { commit: loaded.commit, startedAt: loaded.startedAt };
-  const ok = await deps.publish(config.langfuse, loaded.runs, loaded.judge, undefined, meta);
+  const ok = await deps.publish(
+    config.langfuse,
+    loaded.runs,
+    loaded.judge,
+    loaded.maxErrorRate,
+    undefined,
+    meta,
+  );
   if (!ok) return PUBLISH_FAILED;
 
   try {
@@ -62,7 +69,13 @@ export async function publishSavedRun(
       publishedAt: deps.now().toISOString(),
       langfuseRuns: loaded.runs
         .filter((run) => run.results.length > 0)
-        .map((run) => buildRunName(run.label, { ...meta, judge: loaded.judge })),
+        .map((run) =>
+          buildRunName(run.label, {
+            ...meta,
+            judge: loaded.judge,
+            maxErrorRate: loaded.maxErrorRate,
+          }),
+        ),
     });
   } catch (error: unknown) {
     deps.logError(
