@@ -125,6 +125,8 @@ export class StreamChatWithAssistantUseCase {
     const resolution = await this.deps.llmProviderFactory.resolveForUser(input.userId, {
       feature: AI_FEATURE.CHAT,
       promptVersion: chatPrompt.version,
+      // A conversation is one PostHog AI session; its turns are the traces in it (JEF-568).
+      sessionKey: input.conversationId,
     });
     const llmProvider = resolution?.provider ?? null;
     const answeredBy = resolution ? (resolution.entry ?? resolution.providerId) : null;

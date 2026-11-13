@@ -1,4 +1,5 @@
 import type { AiFeedbackTarget } from '#src/use-cases/constants.js';
+import type { IAiFeedbackObserver } from '#src/use-cases/ports/IAiFeedbackObserver.js';
 import type { IAiFeedbackRepository } from '#src/use-cases/ports/IAiFeedbackRepository.js';
 
 export interface ClearAiOutputRatingInput {
@@ -13,6 +14,7 @@ export interface IClearAiOutputRatingUseCase {
 
 interface Deps {
   aiFeedbackRepository: IAiFeedbackRepository;
+  aiFeedbackObserver: IAiFeedbackObserver;
 }
 
 /**
@@ -24,6 +26,18 @@ export class ClearAiOutputRatingUseCase implements IClearAiOutputRatingUseCase {
   constructor(private readonly deps: Deps) {}
 
   async execute(input: ClearAiOutputRatingInput): Promise<void> {
-    await this.deps.aiFeedbackRepository.clear(input.userId, input.targetKind, input.targetId);
+    const removed = await this.deps.aiFeedbackRepository.clear(
+      input.userId,
+      input.targetKind,
+      input.targetId,
+    );
+    if (!removed) return;
+    this.deps.aiFeedbackObserver.cleared({
+      userId: input.userId,
+      feature: removed.feature,
+      rating: removed.rating,
+      reason: removed.reason,
+      generation: removed.generation,
+    });
   }
 }

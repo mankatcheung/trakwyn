@@ -35,6 +35,11 @@ export interface AiGenerationEvent {
   spanId?: string;
   /** Streams only. */
   timeToFirstTokenMs?: number;
+  /**
+   * What groups calls into one PostHog AI session (JEF-568): a chat's
+   * conversation id. The adapter hashes it, so PostHog never holds the raw id.
+   */
+  sessionKey?: string;
 }
 
 export interface AiSpanEvent {
@@ -44,6 +49,15 @@ export interface AiSpanEvent {
   name: string;
   latencyMs: number;
   outcome: AiAnalyticsOutcome;
+  /** This span's own id, and the id of the span it ran under, when tracing is on (JEF-568). */
+  spanId?: string;
+  parentId?: string;
+  /** Tool spans (JEF-568): bounded labels and a byte count, never arguments or results. */
+  surface?: string;
+  access?: string;
+  /** The tool's own outcome (`ok`, `domain_error`, `refused`, …), finer than `outcome`. */
+  toolOutcome?: string;
+  resultBytes?: number;
 }
 
 export interface AiFeedbackAnalyticsEvent {
@@ -55,12 +69,16 @@ export interface AiFeedbackAnalyticsEvent {
   provider: string | null;
   model: string | null;
   promptVersion: string | null;
+  source: string | null;
+  tier: string | null;
 }
 
 export interface IAiAnalytics {
   generation(event: AiGenerationEvent): void;
   span(event: AiSpanEvent): void;
   feedback(event: AiFeedbackAnalyticsEvent): void;
+  /** A rating taken back (JEF-569), so a dashboard can net it out. */
+  feedbackCleared(event: AiFeedbackAnalyticsEvent): void;
   /** Sends what is queued and stops. Called once, when the server closes. */
   shutdown(): Promise<void>;
 }

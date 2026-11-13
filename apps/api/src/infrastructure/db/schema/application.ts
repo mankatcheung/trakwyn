@@ -275,6 +275,8 @@ export const documentDraft = pgTable(
     aiPromptVersion: integer('aiPromptVersion'),
     aiSource: text('aiSource'),
     aiTier: text('aiTier'),
+    /** The PostHog trace of the generation (JEF-569); null before it existed. */
+    aiTraceId: text('aiTraceId'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),

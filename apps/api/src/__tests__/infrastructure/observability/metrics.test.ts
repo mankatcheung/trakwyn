@@ -132,6 +132,7 @@ describe('OtelMetrics', () => {
     metrics.setGlobalMeterProvider(new MeterProvider({ readers: [reader] }));
 
     otelMetrics.recordAiFeedback({
+      userId: 'user-1',
       feature: 'resume',
       rating: 'down',
       reason: 'wrong_or_made_up',
@@ -143,7 +144,13 @@ describe('OtelMetrics', () => {
         tier: 'mid',
       },
     });
-    otelMetrics.recordAiFeedback({ feature: 'chat', rating: 'up', reason: null, generation: null });
+    otelMetrics.recordAiFeedback({
+      userId: 'user-1',
+      feature: 'chat',
+      rating: 'up',
+      reason: null,
+      generation: null,
+    });
     await reader.forceFlush();
 
     const feedback = exporter

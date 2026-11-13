@@ -119,35 +119,38 @@ export async function executeChatTool(
   conversationId: string,
   deps: ChatToolDeps,
 ): Promise<unknown> {
-  return deps.toolCallObserver.observe({ surface: 'chat', name: call.name }, async (observed) => {
-    try {
-      // A write is only ever saved here, never run: the user confirms it later
-      // (ConfirmChatActionUseCase). Nothing below this branch can reach a write.
-      if (deps.chatWriteTools.has(call.name)) {
-        const proposed = await proposeChatWrite(call, userId, conversationId, deps);
-        observed.proposed(proposed);
-        return proposed;
+  return deps.toolCallObserver.observe(
+    { surface: 'chat', name: call.name, userId },
+    async (observed) => {
+      try {
+        // A write is only ever saved here, never run: the user confirms it later
+        // (ConfirmChatActionUseCase). Nothing below this branch can reach a write.
+        if (deps.chatWriteTools.has(call.name)) {
+          const proposed = await proposeChatWrite(call, userId, conversationId, deps);
+          observed.proposed(proposed);
+          return proposed;
+        }
+        // Every result is compacted on the way out — see `compactForModel` for
+        // what that costs otherwise — including the error shape below, which
+        // is what the model sees when a tool fails.
+        const result = compactForModel(
+          projectChatToolResult(call.name, await dispatchChatTool(call, userId, deps)),
+        );
+        observed.succeeded(result);
+        return result;
+      } catch (err) {
+        // Reported before it is swallowed: the model gets a reply either way,
+        // but a trace should still tell a bug from "Application not found"
+        // (JEF-365).
+        observed.failed(err);
+        // A DomainError's message was written for a person ("Application not
+        // found") and helps the model recover. Anything else is an internal
+        // failure — a driver error, a stack fragment — whose message the model
+        // would happily paraphrase to the user.
+        return { error: err instanceof DomainError ? err.message : 'Tool call failed' };
       }
-      // Every result is compacted on the way out — see `compactForModel` for
-      // what that costs otherwise — including the error shape below, which
-      // is what the model sees when a tool fails.
-      const result = compactForModel(
-        projectChatToolResult(call.name, await dispatchChatTool(call, userId, deps)),
-      );
-      observed.succeeded(result);
-      return result;
-    } catch (err) {
-      // Reported before it is swallowed: the model gets a reply either way,
-      // but a trace should still tell a bug from "Application not found"
-      // (JEF-365).
-      observed.failed(err);
-      // A DomainError's message was written for a person ("Application not
-      // found") and helps the model recover. Anything else is an internal
-      // failure — a driver error, a stack fragment — whose message the model
-      // would happily paraphrase to the user.
-      return { error: err instanceof DomainError ? err.message : 'Tool call failed' };
-    }
-  });
+    },
+  );
 }
 
 async function proposeChatWrite(

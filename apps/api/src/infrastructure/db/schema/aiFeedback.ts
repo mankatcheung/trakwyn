@@ -33,6 +33,8 @@ export const aiFeedback = pgTable(
     promptVersion: integer('promptVersion'),
     source: text('source'),
     tier: text('tier'),
+    /** The PostHog trace of the rated generation (JEF-569). */
+    traceId: text('traceId'),
     createdAt: timestamp('createdAt', TIMESTAMP)
       .notNull()
       .$defaultFn(() => new Date()),

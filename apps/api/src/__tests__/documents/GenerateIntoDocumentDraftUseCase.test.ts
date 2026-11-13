@@ -212,6 +212,7 @@ describe('GenerateIntoDocumentDraftUseCase generation snapshot (JEF-547)', () =>
       promptVersion: resumePrompt.version,
       source: 'byok',
       tier: null,
+      traceId: null,
     });
   });
 
