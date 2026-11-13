@@ -36,6 +36,8 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-find-and-replace": "3.31.3",
     "@tiptap/extension-text-align": "3.31.3",
     "@tiptap/extensions": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
