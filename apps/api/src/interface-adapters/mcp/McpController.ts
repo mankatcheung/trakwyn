@@ -190,7 +190,13 @@ export class McpController {
     // Wraps the whole call, refusal and argument checks included, so every
     // tools/call is one span and one count however it ends (JEF-365).
     return this.deps.toolCallObserver.observe(
-      { surface: 'mcp', name: toolName ?? '', tokenScope: scope, tokenId: actor?.apiTokenId },
+      {
+        surface: 'mcp',
+        name: toolName ?? '',
+        userId,
+        tokenScope: scope,
+        tokenId: actor?.apiTokenId,
+      },
       (observed) => this.runTool(id, toolName, params, userId, scope, budgetKey, observed, actor),
     );
   }
