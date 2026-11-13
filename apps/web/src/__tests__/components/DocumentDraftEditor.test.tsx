@@ -1,38 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 interface EditorUpdateConfig {
   onUpdate: (args: { editor: { getJSON: () => unknown; getText: () => string } }) => void;
 }
 
-const { mockChain, mockEditor, useEditorMock } = vi.hoisted(() => {
-  const mockChain = {
-    focus: vi.fn(),
-    toggleBold: vi.fn(),
-    toggleItalic: vi.fn(),
-    toggleHeading: vi.fn(),
-    toggleBulletList: vi.fn(),
-    toggleOrderedList: vi.fn(),
-    run: vi.fn(),
-  };
-  Object.values(mockChain).forEach((fn) => fn.mockReturnValue(mockChain));
-
-  const mockEditor = {
-    chain: vi.fn(() => mockChain),
-    isActive: vi.fn(() => false),
-  };
-
-  const useEditorMock = vi.fn();
-
-  return { mockChain, mockEditor, useEditorMock };
-});
+const { mockEditor, useEditorMock } = vi.hoisted(() => ({
+  mockEditor: {} as Record<string, unknown>,
+  useEditorMock: vi.fn(),
+}));
 
 vi.mock('@tiptap/react', () => ({
   useEditor: useEditorMock,
   EditorContent: () => <div data-testid="editor-content" />,
 }));
 
-vi.mock('@tiptap/starter-kit', () => ({ default: {} }));
+vi.mock('@tiptap/starter-kit', () => ({ default: { configure: () => ({}) } }));
+
+// The toolbar has its own tests against a real editor (DocumentEditorToolbar.test.tsx).
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorToolbar',
+  () => ({ DocumentEditorToolbar: () => <div data-testid="toolbar" /> }),
+);
 
 import {
   DocumentDraftEditor,
@@ -44,7 +33,6 @@ describe('DocumentDraftEditor', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.values(mockChain).forEach((fn) => fn.mockReturnValue(mockChain));
     useEditorMock.mockImplementation((config: EditorUpdateConfig) => {
       capturedConfig = config;
       return mockEditor;
@@ -61,17 +49,14 @@ describe('DocumentDraftEditor', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     expect(screen.getByTestId('editor-content')).toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(7);
+    expect(screen.getByTestId('toolbar')).toBeInTheDocument();
   });
 
-  it('toggles bold when the bold toolbar button is clicked', () => {
+  it('allows only http, https and mailto links', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
-
-    expect(mockChain.toggleBold).toHaveBeenCalled();
-    expect(mockChain.run).toHaveBeenCalled();
+    const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
+    expect(config.extensions).toHaveLength(1);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {
