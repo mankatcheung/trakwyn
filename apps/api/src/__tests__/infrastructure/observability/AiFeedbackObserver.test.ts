@@ -3,7 +3,6 @@ import {
   AiFeedbackObserver,
   AI_FEEDBACK_LOG_EVENT,
 } from '#src/infrastructure/observability/AiFeedbackObserver.js';
-import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeAiGeneration } from '#src/__tests__/helpers/mocks/aiFeedback.js';
 
@@ -22,13 +21,11 @@ const event = {
 };
 
 describe('AiFeedbackObserver (JEF-547)', () => {
-  it('counts the rating and logs one line with the same bounded fields', () => {
-    const metrics = makeFakeMetrics();
+  it('logs one line with the bounded fields', () => {
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics }).rated(event);
+    new AiFeedbackObserver({ logger }).rated(event);
 
-    expect(metrics.aiFeedback).toEqual([event]);
     expect(logger.info).toHaveBeenCalledWith('AI output rated', {
       event: AI_FEEDBACK_LOG_EVENT,
       feature: 'chat',
@@ -45,7 +42,7 @@ describe('AiFeedbackObserver (JEF-547)', () => {
   it('logs nothing about the output itself', () => {
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics: makeFakeMetrics() }).rated(event);
+    new AiFeedbackObserver({ logger }).rated(event);
 
     const fields = Object.keys(vi.mocked(logger.info).mock.calls[0][1] ?? {});
     expect(fields).toEqual([
@@ -62,27 +59,23 @@ describe('AiFeedbackObserver (JEF-547)', () => {
   });
 
   it('records a rating on an output from before the snapshot', () => {
-    const metrics = makeFakeMetrics();
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics }).rated({ ...event, generation: null });
+    new AiFeedbackObserver({ logger }).rated({ ...event, generation: null });
 
-    expect(metrics.aiFeedback).toHaveLength(1);
     expect(logger.info).toHaveBeenCalledWith(
       'AI output rated',
       expect.objectContaining({ model: null, prompt_version: null }),
     );
   });
 
-  it('never throws, so a broken metric cannot undo a rating', () => {
-    const metrics = makeFakeMetrics();
-    metrics.recordAiFeedback = () => {
-      throw new Error('exporter down');
-    };
+  it('never throws, so a broken logger cannot undo a rating', () => {
+    const logger = makeLogger();
+    vi.mocked(logger.info).mockImplementation(() => {
+      throw new Error('logger down');
+    });
 
-    expect(() =>
-      new AiFeedbackObserver({ logger: makeLogger(), metrics }).rated(event),
-    ).not.toThrow();
+    expect(() => new AiFeedbackObserver({ logger }).rated(event)).not.toThrow();
   });
 
   describe('PostHog (JEF-569)', () => {
@@ -93,8 +86,8 @@ describe('AiFeedbackObserver (JEF-547)', () => {
       feedbackCleared: vi.fn(),
       shutdown: vi.fn(),
     });
-    const build = (aiAnalytics: ReturnType<typeof makeAnalytics>, metrics = makeFakeMetrics()) =>
-      new AiFeedbackObserver({ logger: makeLogger(), metrics, aiAnalytics });
+    const build = (aiAnalytics: ReturnType<typeof makeAnalytics>) =>
+      new AiFeedbackObserver({ logger: makeLogger(), aiAnalytics });
 
     it('sends a rating on the generation trace, with bounded fields only', () => {
       const aiAnalytics = makeAnalytics();
@@ -150,7 +143,7 @@ describe('AiFeedbackObserver (JEF-547)', () => {
       expect(aiAnalytics.feedback).not.toHaveBeenCalled();
     });
 
-    it('never throws when PostHog fails, and the metric is still counted', () => {
+    it('never throws when PostHog fails, and the log line is still written', () => {
       const aiAnalytics = makeAnalytics();
       aiAnalytics.feedback.mockImplementation(() => {
         throw new Error('posthog down');
@@ -158,12 +151,12 @@ describe('AiFeedbackObserver (JEF-547)', () => {
       aiAnalytics.feedbackCleared.mockImplementation(() => {
         throw new Error('posthog down');
       });
-      const metrics = makeFakeMetrics();
-      const observer = build(aiAnalytics, metrics);
+      const logger = makeLogger();
+      const observer = new AiFeedbackObserver({ logger, aiAnalytics });
 
       expect(() => observer.rated(event)).not.toThrow();
       expect(() => observer.cleared(event)).not.toThrow();
-      expect(metrics.aiFeedback).toHaveLength(1);
+      expect(logger.info).toHaveBeenCalledTimes(1);
     });
   });
 });

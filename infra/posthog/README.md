@@ -217,7 +217,7 @@ The web app sends named events for each step. They are built by hand in the Post
 
 **Property names are a contract.** Every property the queries read is sent by `PostHogAiAnalytics.ts`. Renaming one there means updating `ai_features.tf` and `queries/ai_*.sql` in the same PR.
 
-**Rollout.** Apply only after the events have flowed for a few days, because a query on a property PostHog has never seen can be rejected. Then open the dashboard and compare a week of cost with the Axiom `llm_cost` dashboard; fix a disagreeing insight in the UI first and copy it back here. The thresholds are first guesses: tighten them in `terraform.tfvars` after two weeks. Rollback is `terraform destroy -target` on these resources; nothing else depends on them.
+**Rollout.** Apply only after the events have flowed for a few days, because a query on a property PostHog has never seen can be rejected. Then open the dashboard and compare a week of cost with the Axiom `llm_cost` dashboard (retired in JEF-571 once the two matched); fix a disagreeing insight in the UI first and copy it back here. The thresholds are first guesses: tighten them in `terraform.tfvars` after two weeks. Rollback is `terraform destroy -target` on these resources; nothing else depends on them.
 
 ### Checking that each alert fires
 

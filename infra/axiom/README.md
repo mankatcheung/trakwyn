@@ -135,27 +135,6 @@ Before relying on an MPL monitor, paste its query into Axiom's query editor agai
 3. Add a row to both tables above.
 4. `terraform fmt && terraform validate`, then `plan`/`apply` and trigger it once.
 
-## LLM cost dashboard (JEF-444)
+## Dashboards
 
-`axiom_dashboard.llm_cost` charts `trakwyn.llm.cost_micros` (micro-USD; 1 000 000 = 1 USD) per `feature` and per `source` per day, from the metrics dataset. It is a chart, not a monitor. The counter is written by `UsageTrackingLLMProvider` for every priced call and carries `provider`, `model`, `feature` and `source`; a call on a model with no entry in `LLM_PRICES` adds nothing to it and logs `llm.price_unknown` once per model per process, so a flat chart next to real usage means a missing price. The same figures are stored per call in `LlmUsageEvent.costMicros`, which is where the baseline token sizes per feature come from (query that table, not this chart).
-
-The dashboard document is an opaque JSON string to the provider, so `terraform validate` cannot check the chart fields. After the first apply, open it in Axiom; if a chart is rejected, fix it there and paste the exported JSON back into `monitors.tf`. Like the MPL monitors, check the query in the editor first.
-
-## AI feedback dashboard (JEF-547 follow-up, JEF-551)
-
-`axiom_dashboard.ai_feedback` ("Trakwyn AI feedback", 30-day window) reads the thumbs up/down on AI output. It is a chart, not a monitor: volume is too low to set a down-vote threshold, so revisit alerts once there is a baseline. The `AiFeedback` table keeps every row; query it directly for anything older than Axiom's retention.
-
-| Chart                                      | Source                        | Answers                                                                 |
-| ------------------------------------------ | ----------------------------- | ----------------------------------------------------------------------- |
-| Ratings per day, by rating                 | `trakwyn.ai.feedback` (MPL)   | Is anyone rating, and how do up and down compare?                       |
-| Down-votes per day, by feature             | `trakwyn.ai.feedback` (MPL)   | Which feature is down-voted, and when did it start?                     |
-| Down-votes per day, by model               | `trakwyn.ai.feedback` (MPL)   | Did a model change move the down-votes?                                 |
-| Down-votes per day, by prompt version      | `trakwyn.ai.feedback` (MPL)   | Did a prompt change move the down-votes?                                |
-| Down-votes by reason                       | `ai.feedback.rated` log (APL) | Why, across all features?                                               |
-| Down-vote share per feature                | `ai.feedback.rated` log (APL) | `downs / (ups + downs)`, so a busy feature is not blamed by count alone |
-| Top feature, model, prompt version, reason | `ai.feedback.rated` log (APL) | The combinations to write eval cases for (also `provider`, `tier`)      |
-
-- The MPL charts use `map increase`, because the counter restarts at zero whenever Cloud Run scales an instance in (same rule as the monitors above).
-- The share and the tables are APL on the log line, because MPL has no ratio precedent in this repo. A chart of ratings against `trakwyn.llm.calls` per feature is not built; add it once an MPL join is confirmed in the editor.
-- Neither the counter nor the log line carries a user id or any text. Free-text comments are excluded on purpose.
-- The chart JSON is opaque to the provider, so `terraform validate` cannot check it. After the first apply, open the dashboard; fix a rejected chart in the UI and paste the exported JSON back. Check each query in the editor first.
+There are none in Axiom. The LLM cost and AI feedback dashboards were retired under JEF-571: PostHog owns AI generations, cost and feedback (see `docs/observability.md`). The counters `trakwyn.llm.*` stay, because the hosted-AI spend monitor reads them, and so does the `ai.feedback.rated` log line, as the audit trail in the API's own logs. Per-call cost is also stored in `LlmUsageEvent.costMicros`, which is where baseline token sizes per feature come from.

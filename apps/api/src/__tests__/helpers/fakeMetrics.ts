@@ -19,7 +19,6 @@ import type { OutboundUrlPurpose } from '#src/use-cases/ports/IOutboundUrlPolicy
 import type { SecurityEventType } from '#src/domain/securityEvent/SecurityEvent.js';
 import type { ApiTokenScope } from '#src/domain/apiToken/ApiToken.js';
 import type { ToolCallOutcome, ToolSurface } from '#src/use-cases/ports/IToolCallObserver.js';
-import type { AiFeedbackEvent } from '#src/use-cases/ports/IAiFeedbackObserver.js';
 
 export interface GraphqlValidationFailureEvent {
   client: GraphqlClientKind;
@@ -88,7 +87,6 @@ export interface FakeMetrics extends IMetrics {
   llmCalls: LlmCallMetric[];
   llmTokens: LlmTokensEvent[];
   llmCosts: LlmCostMetric[];
-  aiFeedback: AiFeedbackEvent[];
   llmNeuronCosts: Array<{ model: string | null; feature: string; costMicros: number }>;
   llmCostMismatches: Array<{ model: string | null; direction: CostMismatchDirection }>;
   breakerOpens: BreakerOpenReason[];
@@ -119,7 +117,6 @@ export function makeFakeMetrics(): FakeMetrics {
     llmCalls: [],
     llmTokens: [],
     llmCosts: [],
-    aiFeedback: [],
     llmNeuronCosts: [],
     llmCostMismatches: [],
     breakerOpens: [],
@@ -178,9 +175,6 @@ export function makeFakeMetrics(): FakeMetrics {
     },
     recordLlmCostMismatch: (model, direction) => {
       fake.llmCostMismatches.push({ model, direction });
-    },
-    recordAiFeedback: (event) => {
-      fake.aiFeedback.push(event);
     },
     recordLlmCost: (cost) => {
       fake.llmCosts.push(cost);

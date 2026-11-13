@@ -26,7 +26,7 @@ resource "posthog_dashboard" "ai_features" {
 
 resource "posthog_insight" "ai_cost_daily" {
   name        = "AI cost a day by feature and source (USD, 30 days)"
-  description = "Sum of $ai_total_cost_usd. source is platform (Trakwyn AI) or byok (the user's own key; priced for comparison, not paid by Trakwyn). Compare a week with the Axiom llm_cost dashboard."
+  description = "Sum of $ai_total_cost_usd. source is platform (Trakwyn AI) or byok (the user's own key; priced for comparison, not paid by Trakwyn)."
   query_json = jsonencode({
     kind = "InsightVizNode"
     source = {

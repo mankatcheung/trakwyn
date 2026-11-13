@@ -7,6 +7,7 @@ Guidance for Claude Code in this repository. The root `AGENTS.md` is a pointer t
 - `apps/mobile/CLAUDE.md`: routing, token storage and refresh, the four test tiers and Maestro, and PostHog native crashes.
 - `apps/extension/CLAUDE.md`: the WXT build for Chrome and Safari, the Safari Xcode wrapper, OAuth sign-in per browser, and error reporting to PostHog.
 - `content/README.md`: the Markdown guides on the marketing site (`content/guides/en/<slug>/index.md`), how to add one, the image rules and how drafts work.
+- `docs/observability.md`: which of PostHog, Axiom and Langfuse owns each signal, and the ids that join them. Read it before adding telemetry.
 - Runbooks: `infra/gcp/README.md` (Cloud Run deploy and cutover), `infra/axiom/README.md` (monitors), `infra/posthog/README.md` (PostHog project settings, mobile release health dashboard), `infra/vercel/README.md` (web project, domains, env vars, the API's two Blob stores and moving documents to the private one; apply after `infra/posthog` and before `infra/gcp/load-secrets.sh`), `infra/cloudflare/README.md` (DNS records, zone settings, email forwarding rules), `infra/brevo/README.md` (Brevo sender domain), `infra/upstash/README.md` (production Redis database; its state holds the Redis credentials) and `infra/polar/README.md` (payment provider products, prices, webhook and launch; no Terraform) and `infra/neon/README.md` (production branch, compute sizing and suspend, database; no credentials in state).
 
 ## Commands
