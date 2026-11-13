@@ -376,6 +376,7 @@ function DocumentDraftEditPage() {
           flushRef={flushEditorRef}
           editorRef={editorRef}
           onTextChange={setLiveText}
+          draftType={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
         />
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           {liveText.trim() === '' && (

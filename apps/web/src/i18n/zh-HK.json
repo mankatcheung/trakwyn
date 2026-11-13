@@ -1721,5 +1721,14 @@
   "documents.editor.findReplaceWith": "取代為",
   "documents.editor.findReplace": "取代",
   "documents.editor.findReplaceAll": "全部取代",
-  "documents.editor.findClose": "關閉尋找"
+  "documents.editor.findClose": "關閉尋找",
+  "documents.editor.slash.menu": "插入區塊",
+  "documents.editor.slash.available": "有 {{count}} 個區塊可選。使用方向鍵和 Enter 鍵選擇。",
+  "documents.editor.placeholder": "開始輸入，或輸入 / 插入標題或清單。",
+  "documents.editor.placeholderResume": "在此開始撰寫履歷，或讓 AI 助手根據你的資料起草。輸入 / 插入標題或清單。",
+  "documents.editor.placeholderCoverLetter": "在此開始撰寫求職信，或讓 AI 助手為這個職位撰寫。輸入 / 插入標題或清單。",
+  "documents.editor.wordCount_other": "{{formatted}} 詞",
+  "documents.editor.characterCount_other": "{{formatted}} 個字元",
+  "documents.editor.selectionWords_other": "{{selected}} / {{formatted}} 詞",
+  "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 個字元"
 }
