@@ -136,6 +136,38 @@ describe('DocumentDraftEditor', () => {
       expect(onTextChange).toHaveBeenCalledWith('typed');
     });
 
+    it('reports the live document JSON on every change, for the resume checks (JEF-585)', () => {
+      const onJsonChange = vi.fn();
+      render(
+        <DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} onJsonChange={onJsonChange} />,
+      );
+      capturedConfig?.onUpdate({
+        editor: { getJSON: () => ({ type: 'doc' }), getText: () => 'typed' },
+      });
+      expect(onJsonChange).toHaveBeenCalledWith('{"type":"doc"}');
+    });
+
+    it('puts the cursor at the start of the block with the given index', () => {
+      const { editorRef } = setup();
+      const run = vi.fn();
+      const setTextSelection = vi.fn(() => ({ scrollIntoView: () => ({ run }) }));
+      const focus = vi.fn(() => ({ setTextSelection }));
+      Object.assign(mockEditor, {
+        chain: () => ({ focus }),
+        state: {
+          doc: {
+            content: { size: 42 },
+            // Three blocks, starting at 0, 10 and 25.
+            forEach: (fn: (node: unknown, offset: number, index: number) => void) =>
+              [0, 10, 25].forEach((offset, i) => fn({}, offset, i)),
+          },
+        },
+      });
+      editorRef.current!.focusBlock(2);
+      expect(setTextSelection).toHaveBeenCalledWith(26);
+      expect(run).toHaveBeenCalled();
+    });
+
     it('appends after the last block', () => {
       const { editorRef, commands } = setup();
       editorRef.current!.appendContent(nodes);

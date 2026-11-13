@@ -48,6 +48,7 @@ function makeEditor(text: string) {
     getJson: vi.fn(() => '{"doc":true}'),
     replaceContent: vi.fn(),
     appendContent: vi.fn(),
+    focusBlock: vi.fn(),
     setEditable: vi.fn(),
   };
   return handle;

@@ -9,6 +9,7 @@ import { downloadUrl } from '#/lib/downloadUrl';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
 import { AiHelperPanel } from '../-components/AiHelperPanel';
+import { DocumentEditorChecks } from '../-components/DocumentEditorChecks';
 import { DraftTitleField } from '../-components/DraftTitleField';
 import { ImportDocumentAction } from '../-components/ImportDocumentAction';
 import type { AiRating } from '#/lib/aiFeedback';
@@ -108,6 +109,8 @@ function DocumentDraftEditPage() {
   // The text on screen, ahead of the debounced save: the helper chooses
   // Generate or Polish by it, and a preview goes stale when it changes.
   const [liveText, setLiveText] = useState('');
+  // The document JSON on screen, for the resume checks (JEF-585).
+  const [liveJson, setLiveJson] = useState('');
   // The helper's last result is on screen but its save failed.
   const [aiUnsaved, setAiUnsaved] = useState(false);
   const [draft, setDraft] = useState<{
@@ -132,6 +135,7 @@ function DocumentDraftEditPage() {
       .then((res) => {
         setDraft(res.documentDraft);
         setLiveText(res.documentDraft?.plainText ?? '');
+        setLiveJson(res.documentDraft?.contentJson ?? '');
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : t('documentDraftEdit.loadFailed')),
@@ -236,6 +240,7 @@ function DocumentDraftEditPage() {
     // The editor is already showing the result: count it as the text even if the
     // save fails, and keep the failure visible with a way to retry.
     setLiveText(plainText);
+    setLiveJson(contentJson);
     aiInstructionsRef.current = aiInstructions;
     const save = saveContent(contentJson, plainText, aiInstructions);
     trackSave(save);
@@ -370,13 +375,22 @@ function DocumentDraftEditPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <DocumentDraftEditor
-          contentJson={draft.contentJson}
-          onUpdate={handleUpdate}
-          flushRef={flushEditorRef}
-          editorRef={editorRef}
-          onTextChange={setLiveText}
-        />
+        <div className="min-w-0">
+          <DocumentDraftEditor
+            contentJson={draft.contentJson}
+            onUpdate={handleUpdate}
+            flushRef={flushEditorRef}
+            editorRef={editorRef}
+            onTextChange={setLiveText}
+            onJsonChange={setLiveJson}
+          />
+          {draft.type === 'resume' && (
+            <DocumentEditorChecks
+              contentJson={liveJson}
+              onJump={(index) => editorRef.current?.focusBlock(index)}
+            />
+          )}
+        </div>
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           {liveText.trim() === '' && (
             <ImportDocumentAction

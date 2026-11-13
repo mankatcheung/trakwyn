@@ -91,6 +91,7 @@ const DRAFT = {
   createdAt: '2026-09-01T00:00:00Z',
   updatedAt: '2026-09-01T00:00:00Z',
 };
+const COVER_LETTER = { ...DRAFT, type: 'cover_letter' };
 const PDF = { id: 'doc-9', name: 'My_Resume.pdf', url: 'https://blob.example/doc-9.pdf' };
 
 type Handlers = {
@@ -488,5 +489,26 @@ describe('DocumentDraftEditPage — import into an empty draft (JEF-506)', () =>
     fireEvent.click(await screen.findByText('mock import'));
 
     expect(await screen.findByRole('button', { name: /retry save/i })).toBeInTheDocument();
+  });
+});
+
+describe('DocumentDraftEditPage — resume checks (JEF-585)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows the checks for a resume', async () => {
+    mockApi();
+    renderPage();
+    expect(await screen.findByRole('region', { name: /resume checks/i })).toBeInTheDocument();
+  });
+
+  it('does not show them for a cover letter', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(query.includes('query DocumentDraft') ? { documentDraft: COVER_LETTER } : {}),
+    );
+    renderPage();
+    await screen.findByTestId('editor');
+    expect(screen.queryByRole('region', { name: /resume checks/i })).not.toBeInTheDocument();
   });
 });
