@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CharacterCount, Placeholder } from '@tiptap/extensions';
+import TextAlign from '@tiptap/extension-text-align';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { SlashMenu } from './SlashMenu';
@@ -122,6 +123,12 @@ export function DocumentDraftEditor({
       // A decoration, not content: it never reaches the saved JSON or the PDF export.
       Placeholder.configure({ placeholder: () => placeholderText.current }),
       CharacterCount.configure({ wordCounter: countWords }),
+      // Left, centre and right only: justify reads poorly in a narrow column and in ATS
+      // parsing (JEF-578). No default, so a block nobody aligned stores nothing.
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right'],
+      }),
       SlashCommand.configure({
         controller: slashMenu,
         filter: (query) =>

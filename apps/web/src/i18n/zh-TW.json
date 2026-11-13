@@ -1739,5 +1739,8 @@
   "documents.editor.wordCount_other": "{{formatted}} 詞",
   "documents.editor.characterCount_other": "{{formatted}} 個字元",
   "documents.editor.selectionWords_other": "{{selected}} / {{formatted}} 詞",
-  "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 個字元"
+  "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 個字元",
+  "documents.editor.alignLeft": "靠左對齊",
+  "documents.editor.alignCenter": "置中對齊",
+  "documents.editor.alignRight": "靠右對齊"
 }

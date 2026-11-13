@@ -1765,5 +1765,8 @@
   "documents.editor.selectionWords_one": "{{selected}} of {{formatted}} word",
   "documents.editor.selectionWords_other": "{{selected}} of {{formatted}} words",
   "documents.editor.selectionCharacters_one": "{{selected}} of {{formatted}} character",
-  "documents.editor.selectionCharacters_other": "{{selected}} of {{formatted}} characters"
+  "documents.editor.selectionCharacters_other": "{{selected}} of {{formatted}} characters",
+  "documents.editor.alignLeft": "Align left",
+  "documents.editor.alignCenter": "Align center",
+  "documents.editor.alignRight": "Align right"
 }

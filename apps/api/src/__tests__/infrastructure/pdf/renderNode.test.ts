@@ -179,3 +179,62 @@ describe('ReactPdfDocumentRenderer with every node and mark', () => {
     expect(logger.warn).not.toHaveBeenCalled();
   });
 });
+
+describe('createNodeRenderer text alignment (JEF-578)', () => {
+  const aligned = (
+    type: 'paragraph' | 'heading',
+    textAlign: unknown,
+    level?: number,
+  ): JSONContent => ({
+    type,
+    attrs: { ...(level ? { level } : {}), ...(textAlign === undefined ? {} : { textAlign }) },
+    content: [{ type: 'text', text: 'x' }],
+  });
+  const styleOf = (node: JSONContent) => {
+    const out = render({ type: 'doc', content: [node] });
+    const [text] = find(
+      out,
+      (el) => el.type === 'Text' && textOf(el) === 'x' && props(el).style !== undefined,
+    );
+    return props(text).style;
+  };
+  const alignOf = (style: unknown): unknown =>
+    (Array.isArray(style) ? style : [style]).find((s) => s && 'textAlign' in s)?.textAlign;
+
+  it.each(['center', 'right'] as const)(
+    'prints a %s paragraph and heading aligned',
+    (textAlign) => {
+      expect(alignOf(styleOf(aligned('paragraph', textAlign)))).toBe(textAlign);
+      expect(alignOf(styleOf(aligned('heading', textAlign, 2)))).toBe(textAlign);
+    },
+  );
+
+  it('keeps the heading level style under the alignment', () => {
+    const style = styleOf(aligned('heading', 'center', 1)) as unknown as Array<{ name?: string }>;
+    expect(style[0]?.name).toBe('heading1');
+  });
+
+  it.each([undefined, null, 'left', 'justify', 'bogus', 7])(
+    'leaves a block with alignment %s exactly as it was',
+    (textAlign) => {
+      const style = styleOf(aligned('paragraph', textAlign)) as { name?: string };
+      expect(Array.isArray(style)).toBe(false);
+      expect(style.name).toBe('paragraph');
+    },
+  );
+
+  it('renders every alignment into a real PDF without logging an unknown node', async () => {
+    const logger = makeLogger();
+    const contentJson = JSON.stringify({
+      type: 'doc',
+      content: [
+        aligned('heading', 'center', 1),
+        aligned('paragraph', 'right'),
+        aligned('paragraph', 'left'),
+      ],
+    });
+    const pdf = await new ReactPdfDocumentRenderer({ logger }).render({ title: 'T', contentJson });
+    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+});

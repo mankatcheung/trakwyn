@@ -83,8 +83,8 @@ describe('DocumentDraftEditor', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
-    // StarterKit (links), placeholder, count, slash menu (JEF-574..576), find and replace and its shortcuts (JEF-580).
-    expect(config.extensions).toHaveLength(6);
+    // StarterKit (links), placeholder, count, slash menu (JEF-574..576), find and replace and its shortcuts (JEF-580), text align (JEF-578).
+    expect(config.extensions).toHaveLength(7);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {

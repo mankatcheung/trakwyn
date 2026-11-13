@@ -166,6 +166,95 @@ describe('DocumentEditorToolbar (JEF-573)', () => {
   });
 });
 
+describe('text alignment (JEF-578)', () => {
+  const twoParagraphs = JSON.stringify({
+    type: 'doc',
+    content: [
+      { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Title' }] },
+      { type: 'paragraph', content: [{ type: 'text', text: 'one' }] },
+      { type: 'paragraph', content: [{ type: 'text', text: 'two' }] },
+    ],
+  });
+  const render3 = () => {
+    const editorRef = createRef<DocumentEditorHandle>() as { current: DocumentEditorHandle | null };
+    render(
+      <DocumentDraftEditor contentJson={twoParagraphs} onUpdate={vi.fn()} editorRef={editorRef} />,
+    );
+    return editorRef;
+  };
+  const aligns = (editorRef: { current: DocumentEditorHandle | null }) =>
+    (
+      JSON.parse(editorRef.current!.getJson()).content as Array<{ attrs?: { textAlign?: string } }>
+    ).map((block) => block.attrs?.textAlign ?? null);
+  const selectBlocks = () => {
+    const area = selectAll();
+    act(() => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.selectNodeContents(area);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+  };
+
+  it('offers left, centre and right with names, shortcuts and a pressed state', () => {
+    render3();
+    for (const [name, shortcut] of [
+      ['Align left', /\(Ctrl\+Shift\+L|⌘⇧L\)/],
+      ['Align center', /\(Ctrl\+Shift\+E|⌘⇧E\)/],
+      ['Align right', /\(Ctrl\+Shift\+R|⌘⇧R\)/],
+    ] as const) {
+      const button = screen.getByRole('button', { name });
+      expect(button.getAttribute('title')).toMatch(shortcut);
+      expect(button).toHaveAttribute('aria-pressed');
+    }
+    // Nothing is set on an existing document, which reads as left.
+    expect(screen.getByRole('button', { name: 'Align left' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Align center' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('does not offer justify', () => {
+    render3();
+    expect(screen.queryByRole('button', { name: /justif/i })).not.toBeInTheDocument();
+  });
+
+  it('centres every selected block and shows the active alignment', () => {
+    const editorRef = render3();
+    selectBlocks();
+    fireEvent.click(screen.getByRole('button', { name: 'Align center' }));
+    expect(aligns(editorRef)).toEqual(['center', 'center', 'center']);
+    expect(screen.getByRole('button', { name: 'Align center' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Align left' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('right-aligns, then returns to left by clearing the setting', () => {
+    const editorRef = render3();
+    selectBlocks();
+    fireEvent.click(screen.getByRole('button', { name: 'Align right' }));
+    expect(aligns(editorRef)).toEqual(['right', 'right', 'right']);
+    fireEvent.click(screen.getByRole('button', { name: 'Align left' }));
+    expect(aligns(editorRef)).toEqual([null, null, null]);
+  });
+
+  it('leaves a document nobody aligned without any alignment', () => {
+    const editorRef = render3();
+    expect(aligns(editorRef)).toEqual([null, null, null]);
+  });
+});
+
 describe('link policy', () => {
   it.each(['https://a.com', 'http://a.com', 'mailto:me@a.com', 'HTTPS://A.COM'])(
     'allows %s',
