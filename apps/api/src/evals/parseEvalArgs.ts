@@ -1,6 +1,12 @@
 import { LLM_PROVIDER } from '#src/use-cases/constants.js';
 import { LANGFUSE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
 import {
+  binaryExists,
+  claudeCodeSettings,
+  type BinaryCheck,
+} from '#src/evals/claudeCodeProvider.js';
+import {
+  CLAUDE_CODE_PROVIDER,
   WORKERS_AI_PROVIDER,
   type EvalConfig,
   type EvalTarget,
@@ -37,7 +43,11 @@ const SWITCH_KEYS = {
   '--no-save': 'noSave',
   '--force': 'force',
 } as const;
-const PROVIDERS: string[] = [...Object.values(LLM_PROVIDER), WORKERS_AI_PROVIDER];
+const PROVIDERS: string[] = [
+  ...Object.values(LLM_PROVIDER),
+  WORKERS_AI_PROVIDER,
+  CLAUDE_CODE_PROVIDER,
+];
 
 function isValueFlag(arg: string): arg is (typeof VALUE_FLAGS)[number] {
   return (VALUE_FLAGS as readonly string[]).includes(arg);
@@ -139,7 +149,12 @@ function parseWorkersAiTarget(model: string, env: Env, isJudge: boolean): EvalTa
   };
 }
 
-function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarget {
+function parseTarget(
+  spec: string,
+  env: Env,
+  hasBinary: BinaryCheck,
+  keyVariables?: string[],
+): EvalTarget {
   // The first colon only: model names such as `anthropic/claude:beta` carry their own.
   const colon = spec.indexOf(':');
   const provider = colon === -1 ? spec : spec.slice(0, colon);
@@ -151,6 +166,18 @@ function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarge
 
   if (provider === WORKERS_AI_PROVIDER) {
     return parseWorkersAiTarget(model, env, keyVariables !== undefined);
+  }
+
+  if (provider === CLAUDE_CODE_PROVIDER) {
+    // No key, no URL: it uses the CLI's own login. Checked here so a missing
+    // binary stops the run before any call.
+    const { bin } = claudeCodeSettings(env);
+    if (!hasBinary(bin, env)) {
+      throw new Error(
+        `The claudecode provider needs the Claude Code CLI: "${bin}" was not found on PATH. Install it or set EVAL_CLAUDE_CODE_BIN`,
+      );
+    }
+    return { provider, model: model || null, apiKey: '', baseUrl: null };
   }
 
   const variables = keyVariables ?? [`EVAL_API_KEY_${provider.toUpperCase()}`, 'EVAL_API_KEY'];
@@ -178,12 +205,12 @@ function parseTarget(spec: string, env: Env, keyVariables?: string[]): EvalTarge
  * model under test or its key, because a grader that changes with the target
  * makes the scores incomparable.
  */
-function parseJudge(env: Env): EvalTarget | null {
+function parseJudge(env: Env, hasBinary: BinaryCheck): EvalTarget | null {
   if (!env.EVAL_JUDGE_PROVIDER) return null;
   const spec = env.EVAL_JUDGE_MODEL
     ? `${env.EVAL_JUDGE_PROVIDER}:${env.EVAL_JUDGE_MODEL}`
     : env.EVAL_JUDGE_PROVIDER;
-  return parseTarget(spec, env, JUDGE_KEY_VARIABLES);
+  return parseTarget(spec, env, hasBinary, JUDGE_KEY_VARIABLES);
 }
 
 /**
@@ -314,7 +341,11 @@ function splitCaseIds(values: string[]): string[] {
  * model call, because a typo found after twenty paid requests is a poor way
  * to learn about it.
  */
-export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
+export function parseEvalArgs(
+  argv: string[],
+  env: Env,
+  hasBinary: BinaryCheck = binaryExists,
+): EvalConfig {
   const flags = readFlags(argv);
 
   if (flags.show !== null) return parseShow(flags);
@@ -329,15 +360,15 @@ export function parseEvalArgs(argv: string[], env: Env): EvalConfig {
     throw new Error('No target: pass --target <provider[:model]> or set EVAL_PROVIDER');
   }
 
-  const judge = parseJudge(env);
+  const judge = parseJudge(env, hasBinary);
   if (flags.validateJudge && !judge) {
     throw new Error(
-      '--validate-judge needs a judge: set EVAL_JUDGE_PROVIDER, EVAL_JUDGE_MODEL and EVAL_JUDGE_API_KEY',
+      '--validate-judge needs a judge: set EVAL_JUDGE_PROVIDER, EVAL_JUDGE_MODEL and EVAL_JUDGE_API_KEY (not needed for claudecode)',
     );
   }
 
   return {
-    targets: specs.map((spec) => parseTarget(spec, env)),
+    targets: specs.map((spec) => parseTarget(spec, env, hasBinary)),
     judge,
     validateJudge: flags.validateJudge,
     caseIds: splitCaseIds(flags.cases),
