@@ -2,6 +2,7 @@ import { useEffect, useState, type RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
+import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { ALLOWED_LINK_PROTOCOLS, isAllowedLinkUri } from '#/lib/editorLinks';
 import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
 import type { TiptapNode } from '#/lib/markdownToTiptapDoc';
@@ -118,6 +119,7 @@ export function DocumentDraftEditor({
         editor={editor}
         className="prose min-h-[400px] max-w-none p-4 focus:outline-none dark:prose-invert [&_.ProseMirror]:min-h-[360px] [&_.ProseMirror]:text-gray-900 [&_.ProseMirror]:outline-none [&_.ProseMirror]:dark:text-gray-100"
       />
+      <DocumentEditorBubbleMenu editor={editor} editable={editable} />
     </div>
   );
 }
