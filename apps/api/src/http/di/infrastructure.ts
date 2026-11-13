@@ -274,7 +274,9 @@ export const infrastructure = {
     lifetime: Lifetime.SINGLETON,
   }),
   documentTextExtractor: asClass(DocumentTextExtractor, { lifetime: Lifetime.SINGLETON }),
-  pdfRenderer: asClass(ReactPdfDocumentRenderer, { lifetime: Lifetime.SINGLETON }),
+  pdfRenderer: asFunction(({ logger }: Cradle) => new ReactPdfDocumentRenderer({ logger }), {
+    lifetime: Lifetime.SINGLETON,
+  }),
   jobPostingSourceResolver: asClass(FetchJobPostingSourceResolver, {
     lifetime: Lifetime.SINGLETON,
   }),

@@ -1,6 +1,7 @@
 import type { IPdfRenderer, PdfRenderData } from '#src/use-cases/ports/IPdfRenderer.js';
 import type { JSONContent } from '@tiptap/core';
-import type { Style } from '@react-pdf/types';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import { createNodeRenderer } from './renderNode.js';
 
 function extractTextFromNode(node: JSONContent): string {
   if (node.text) return node.text;
@@ -37,8 +38,10 @@ export function prosemirrorToPlainText(json: string): string {
  * Converts TipTap/ProseMirror JSON to a PDF buffer.
  */
 export class ReactPdfDocumentRenderer implements IPdfRenderer {
+  constructor(private readonly deps: { logger?: ILogger } = {}) {}
+
   async render(data: PdfRenderData): Promise<Buffer> {
-    const { Document, Page, Text, StyleSheet, renderToBuffer } =
+    const { Document, Page, Text, View, StyleSheet, renderToBuffer } =
       await import('@react-pdf/renderer');
 
     const styles = StyleSheet.create({
@@ -74,15 +77,39 @@ export class ReactPdfDocumentRenderer implements IPdfRenderer {
       paragraph: {
         marginBottom: 8,
       },
-      bulletItem: {
+      listParagraph: {
+        marginBottom: 2,
+      },
+      list: {
         marginBottom: 4,
-        paddingLeft: 16,
+        paddingLeft: 8,
       },
-      bold: {
-        fontFamily: 'Helvetica-Bold',
+      nestedList: {
+        marginTop: 2,
       },
-      italic: {
-        fontFamily: 'Helvetica-Oblique',
+      listItem: {
+        flexDirection: 'row',
+        marginBottom: 2,
+      },
+      listMarker: {
+        width: 16,
+      },
+      listContent: {
+        flex: 1,
+      },
+      blockquote: {
+        borderLeftWidth: 2,
+        borderLeftColor: '#9ca3af',
+        borderLeftStyle: 'solid',
+        paddingLeft: 10,
+        marginBottom: 8,
+        color: '#4b5563',
+      },
+      rule: {
+        borderTopWidth: 1,
+        borderTopColor: '#9ca3af',
+        borderTopStyle: 'solid',
+        marginVertical: 10,
       },
     });
 
@@ -96,67 +123,17 @@ export class ReactPdfDocumentRenderer implements IPdfRenderer {
       };
     }
 
-    const renderNode = (node: JSONContent, index: number): React.ReactNode => {
-      if (node.type === 'doc') {
-        return (node.content ?? []).map((child, i) => renderNode(child, i));
-      }
-
-      if (node.type === 'heading') {
-        const level = node.attrs?.level ?? 1;
-        const headingStyle =
-          level === 1 ? styles.heading1 : level === 2 ? styles.heading2 : styles.heading3;
-        return (
-          <Text key={index} style={headingStyle}>
-            {(node.content ?? []).map((child, i) => renderNode(child, i))}
-          </Text>
-        );
-      }
-
-      if (node.type === 'paragraph') {
-        return (
-          <Text key={index} style={styles.paragraph}>
-            {(node.content ?? []).map((child, i) => renderNode(child, i))}
-          </Text>
-        );
-      }
-
-      if (node.type === 'bulletList' || node.type === 'orderedList') {
-        return (node.content ?? []).map((child, i) => renderNode(child, i));
-      }
-
-      if (node.type === 'listItem') {
-        return (
-          <Text key={index} style={styles.bulletItem}>
-            {'• '}
-            {(node.content ?? []).map((child, i) => renderNode(child, i))}
-          </Text>
-        );
-      }
-
-      if (node.type === 'text') {
-        let textStyle: Style = {};
-        if (node.marks) {
-          for (const mark of node.marks) {
-            if (mark.type === 'bold') textStyle = { ...textStyle, fontFamily: 'Helvetica-Bold' };
-            if (mark.type === 'italic')
-              textStyle = { ...textStyle, fontFamily: 'Helvetica-Oblique' };
-          }
-        }
-        return (
-          <Text key={index} style={textStyle}>
-            {node.text ?? ''}
-          </Text>
-        );
-      }
-
-      return null;
-    };
+    const renderNode = createNodeRenderer({
+      pdf: { Text, View },
+      styles,
+      logger: this.deps.logger,
+    });
 
     const doc = (
       <Document>
         <Page size="A4" style={styles.page}>
           <Text style={styles.title}>{data.title}</Text>
-          {renderNode(content, 0)}
+          {renderNode(content)}
         </Page>
       </Document>
     );
