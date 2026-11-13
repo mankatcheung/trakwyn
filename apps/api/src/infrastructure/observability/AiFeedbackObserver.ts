@@ -1,4 +1,3 @@
-import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type {
   AiFeedbackEvent,
@@ -10,27 +9,24 @@ export const AI_FEEDBACK_LOG_EVENT = 'ai.feedback.rated';
 
 interface Deps {
   logger: ILogger;
-  metrics?: IMetrics;
 }
 
 /**
- * Counts a rating and writes one log line for it (JEF-547). Both carry the same
- * bounded fields (feature, rating, reason, model, prompt version, source) and
- * nothing the user wrote, so they sit beside telemetry that keeps prompt and
- * completion text out. Never throws: a broken metric must not undo a rating.
+ * Writes one log line for a rating (JEF-547): bounded fields (feature, rating,
+ * reason, model, prompt version, source) and nothing the user wrote. It is the
+ * audit trail in the API's own logs; the counter and dashboards moved to PostHog
+ * (JEF-571, `docs/observability.md`). Never throws: a broken logger must not undo
+ * a rating.
  */
 export class AiFeedbackObserver implements IAiFeedbackObserver {
   private readonly logger: ILogger;
-  private readonly metrics: IMetrics;
 
-  constructor({ logger, metrics = otelMetrics }: Deps) {
+  constructor({ logger }: Deps) {
     this.logger = logger;
-    this.metrics = metrics;
   }
 
   rated(event: AiFeedbackEvent): void {
     try {
-      this.metrics.recordAiFeedback(event);
       this.logger.info('AI output rated', {
         event: AI_FEEDBACK_LOG_EVENT,
         feature: event.feature,

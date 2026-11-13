@@ -3,7 +3,6 @@ import {
   AiFeedbackObserver,
   AI_FEEDBACK_LOG_EVENT,
 } from '#src/infrastructure/observability/AiFeedbackObserver.js';
-import { makeFakeMetrics } from '#src/__tests__/helpers/fakeMetrics.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeAiGeneration } from '#src/__tests__/helpers/mocks/aiFeedback.js';
 
@@ -20,13 +19,11 @@ const event = {
 };
 
 describe('AiFeedbackObserver (JEF-547)', () => {
-  it('counts the rating and logs one line with the same bounded fields', () => {
-    const metrics = makeFakeMetrics();
+  it('logs one line with the bounded fields', () => {
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics }).rated(event);
+    new AiFeedbackObserver({ logger }).rated(event);
 
-    expect(metrics.aiFeedback).toEqual([event]);
     expect(logger.info).toHaveBeenCalledWith('AI output rated', {
       event: AI_FEEDBACK_LOG_EVENT,
       feature: 'chat',
@@ -43,7 +40,7 @@ describe('AiFeedbackObserver (JEF-547)', () => {
   it('logs nothing about the output itself', () => {
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics: makeFakeMetrics() }).rated(event);
+    new AiFeedbackObserver({ logger }).rated(event);
 
     const fields = Object.keys(vi.mocked(logger.info).mock.calls[0][1] ?? {});
     expect(fields).toEqual([
@@ -60,26 +57,22 @@ describe('AiFeedbackObserver (JEF-547)', () => {
   });
 
   it('records a rating on an output from before the snapshot', () => {
-    const metrics = makeFakeMetrics();
     const logger = makeLogger();
 
-    new AiFeedbackObserver({ logger, metrics }).rated({ ...event, generation: null });
+    new AiFeedbackObserver({ logger }).rated({ ...event, generation: null });
 
-    expect(metrics.aiFeedback).toHaveLength(1);
     expect(logger.info).toHaveBeenCalledWith(
       'AI output rated',
       expect.objectContaining({ model: null, prompt_version: null }),
     );
   });
 
-  it('never throws, so a broken metric cannot undo a rating', () => {
-    const metrics = makeFakeMetrics();
-    metrics.recordAiFeedback = () => {
-      throw new Error('exporter down');
-    };
+  it('never throws, so a broken logger cannot undo a rating', () => {
+    const logger = makeLogger();
+    vi.mocked(logger.info).mockImplementation(() => {
+      throw new Error('logger down');
+    });
 
-    expect(() =>
-      new AiFeedbackObserver({ logger: makeLogger(), metrics }).rated(event),
-    ).not.toThrow();
+    expect(() => new AiFeedbackObserver({ logger }).rated(event)).not.toThrow();
   });
 });
