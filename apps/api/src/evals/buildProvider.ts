@@ -4,7 +4,8 @@ import { workersAiReasoningFields } from '#src/infrastructure/llm/workersAiReaso
 import { OutboundUrlPolicy } from '#src/infrastructure/net/OutboundUrlPolicy.js';
 import { cachingProvider } from '#src/evals/responseCache.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
-import { WORKERS_AI_PROVIDER, type EvalTarget } from '#src/evals/types.js';
+import { createClaudeCodeProvider, claudeCodeSettings } from '#src/evals/claudeCodeProvider.js';
+import { CLAUDE_CODE_PROVIDER, WORKERS_AI_PROVIDER, type EvalTarget } from '#src/evals/types.js';
 
 export const targetLabel = (target: EvalTarget): string =>
   `${target.provider}:${target.model ?? 'default'}`;
@@ -46,6 +47,9 @@ function buildWorkersAi(target: EvalTarget): ILLMProvider {
 }
 
 function buildUncached(target: EvalTarget): ILLMProvider {
+  if (target.provider === CLAUDE_CODE_PROVIDER) {
+    return createClaudeCodeProvider({ model: target.model, ...claudeCodeSettings(process.env) });
+  }
   if (target.provider === WORKERS_AI_PROVIDER) return buildWorkersAi(target);
 
   const entry = PROVIDER_REGISTRY[target.provider];

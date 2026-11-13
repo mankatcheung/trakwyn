@@ -106,6 +106,15 @@ export interface CaseResult {
  */
 export const WORKERS_AI_PROVIDER = 'workersai';
 
+/**
+ * Runs a model through the Claude Code CLI (`claude -p`) instead of an HTTP API
+ * (JEF-563). Eval-only, no API key; never in `PROVIDER_REGISTRY`.
+ */
+export const CLAUDE_CODE_PROVIDER = 'claudecode';
+export const CLAUDE_CODE_DEFAULT_BIN = 'claude';
+/** One `claude -p` call, including its start-up. */
+export const CLAUDE_CODE_TIMEOUT_MS = 180_000;
+
 /** One provider/model to run every case against. */
 export interface EvalTarget {
   provider: string;

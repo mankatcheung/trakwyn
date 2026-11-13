@@ -117,10 +117,12 @@ Read only when you pass `--publish` (see [Publishing to Langfuse](#publishing-to
 
 ### Behaviour
 
-| Variable              | Meaning                                                                                                                                                                                            |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `EVAL_MIN_PASS_RATE`  | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it.                                                                                        |
-| `EVAL_MAX_ERROR_RATE` | The share of a target's cases that may end in `error` before the target is not trusted, from 0 to 1. Default `0.1`. The `--max-error-rate` flag wins over it. See [Outcomes](#reading-the-report). |
+| Variable                       | Meaning                                                                                                                                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EVAL_MIN_PASS_RATE`           | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it.                                                                                        |
+| `EVAL_MAX_ERROR_RATE`          | The share of a target's cases that may end in `error` before the target is not trusted, from 0 to 1. Default `0.1`. The `--max-error-rate` flag wins over it. See [Outcomes](#reading-the-report). |
+| `EVAL_CLAUDE_CODE_BIN`         | `claudecode` only. The `claude` binary, if it is not on `PATH`. A missing binary exits 2 before any call.                                                                                          |
+| `EVAL_CLAUDE_CODE_CONCURRENCY` | `claudecode` only. Calls at once. Default `1`, so a full run does not hit subscription limits in a burst.                                                                                          |
 
 ## Targets: which model is tested
 
@@ -130,6 +132,7 @@ A target is written `provider:model`. Only the first colon splits it, so model n
 | ----------------------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- |
 | `openai`, `anthropic`, `googleai`, `openrouter`, `mistral`, `groq`, `xai`, `deepseek`, `nvidia` | `anthropic:<model-id>`              | `EVAL_API_KEY_<PROVIDER>` or `EVAL_API_KEY`               |
 | `workersai` (Cloudflare Workers AI)                                                             | `workersai:@cf/openai/gpt-oss-120b` | `EVAL_CLOUDFLARE_ACCOUNT_ID`, `EVAL_CLOUDFLARE_API_TOKEN` |
+| `claudecode` (the Claude Code CLI)                                                              | `claudecode:sonnet`                 | the `claude` CLI, logged in; no key (see below)           |
 | `custom` (any OpenAI-compatible endpoint)                                                       | `custom:my-model`                   | a key, `EVAL_BASE_URL`, and a model after the colon       |
 
 **Use `workersai` for Cloudflare, not `custom` with a Cloudflare URL.** `workersai` builds the provider the way hosted AI does. A use case's "reasoning off" setting then becomes `reasoning_effort: "low"` for gpt-oss and `chat_template_kwargs` for Gemma. On `custom` that setting is dropped, gpt-oss thinks at its default effort, uses up the 512-token budget and returns truncated replies. `workersai` also calls Workers AI directly, with no gateway headers, so a run adds nothing to production analytics.
@@ -146,6 +149,23 @@ Two generation features, **resume** and **cover letter**, write text a user migh
 - **It is validated before it is trusted.** Every run that uses a judge first has it sort 11 hand-labelled outputs (faithful ones and ones with one planted invention). If it gets fewer than **90%** right, the run stops with exit code 1 and scores nothing.
 - **Validate once, then keep the judge fixed.** Changing the judge changes the scores of the same target, so two runs with different judges cannot be compared.
 - **Skip the graded cases** if you have no judge: list the other case ids with `--case`.
+
+### Running the judge on Claude Code
+
+`claudecode[:<model>]` calls `claude -p`, so the judge (and, if you like, single-call targets) run on your Claude Code login instead of a per-token API key. It works as a target for the `jd-`, `match-`, `resume-`, `cover-letter-` and `briefing-` cases and as the judge, `--validate-judge` included, and it goes through `--cache`, saved runs, `--show` and `--publish` like any provider.
+
+```bash
+# apps/api/.env: no key needed
+EVAL_JUDGE_PROVIDER=claudecode
+EVAL_JUDGE_MODEL=sonnet
+```
+
+- **Chat cases cannot run on it.** `claude -p` takes no native tool schemas, and faking tool calls in the prompt would change what the cases measure. A `chat-*` case on a `claudecode` target ends as `error` with that explanation.
+- **Read its score as a reference, not a gate.** Claude Code wraps the prompt in its own, and temperature and max tokens cannot be set. Production runs Workers AI or the user's own key, so do not decide a production prompt change on a `claudecode` column.
+- **Each call is isolated:** run from an empty temp directory with `--tools ""`, `--max-turns 1`, `--no-session-persistence` and `--setting-sources project`, so no `CLAUDE.md`, rules, hooks, skills or MCP config is loaded (a one-word reply otherwise cost about 185k input tokens).
+- **A usage-limit message** from the CLI stops the target like a provider quota (exit 3; `--cache` resumes the run). A plain rate limit is an `error` on that case.
+- **Subscription terms:** check Anthropic's current terms before relying on scripted `claude -p` use. Keep it local and manual, never CI.
+- It lives in `src/evals/` only and is not a product provider.
 
 ## Flags
 
