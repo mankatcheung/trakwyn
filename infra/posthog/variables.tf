@@ -77,9 +77,14 @@ variable "clipper_parser_alert_daily" {
 }
 
 variable "clipper_alert_boards" {
-  description = "Job boards that get a parser-result alert. PostHog's plan allows 5 alerts in the project and the mobile crash alert uses one, so keep this to 4 or fewer or an apply fails with \"reached the limit of 5 alerts\". Every board stays on the dashboard either way. Ids are those of local.clipper_boards."
+  description = "Job boards that get a parser-result alert. PostHog's plan allows 5 alerts in the project; the mobile crash alert uses one and the AI features alerts two (JEF-570), so keep this to 2 or fewer or an apply fails with \"reached the limit of 5 alerts\". Every board stays on the dashboard either way. Ids are those of local.clipper_boards."
   type        = list(string)
-  default     = ["linkedin", "indeed", "greenhouse", "workday"]
+  default     = ["linkedin", "indeed"]
+
+  validation {
+    condition     = length(var.clipper_alert_boards) <= 2
+    error_message = "At most 2 boards: the project's 5 alerts are the mobile crash alert, the 2 AI features alerts and these."
+  }
 
   validation {
     condition     = alltrue([for board in var.clipper_alert_boards : contains(["linkedin", "indeed", "glassdoor", "greenhouse", "lever", "workday"], board)])
