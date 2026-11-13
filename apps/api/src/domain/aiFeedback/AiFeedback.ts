@@ -12,6 +12,8 @@ export type AiGeneration = {
   source: string;
   /** The hosted model tier; null on the user's own key. */
   tier: string | null;
+  /** The PostHog trace of the generation (JEF-569); null when none was recorded. */
+  traceId?: string | null;
 };
 
 /**

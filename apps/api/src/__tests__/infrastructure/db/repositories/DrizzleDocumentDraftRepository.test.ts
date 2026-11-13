@@ -230,6 +230,7 @@ describe('DrizzleDocumentDraftRepository', () => {
       promptVersion: 2,
       source: 'byok',
       tier: null,
+      traceId: 'trace-1',
     };
 
     it('notes the model and prompt, and a later generation overwrites them', async () => {

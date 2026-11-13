@@ -1039,6 +1039,7 @@ describe('StreamChatWithAssistantUseCase generation snapshot (JEF-547)', () => {
       promptVersion: chatPrompt.version,
       source: 'byok',
       tier: null,
+      traceId: null,
     });
   });
 

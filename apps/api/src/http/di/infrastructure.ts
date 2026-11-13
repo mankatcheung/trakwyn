@@ -201,9 +201,12 @@ export const infrastructure = {
   aiAnalytics: asFunction(({ logger }: Cradle) => buildAiAnalytics(logger), {
     lifetime: Lifetime.SINGLETON,
   }),
-  aiFeedbackObserver: asFunction(({ logger }: Cradle) => new AiFeedbackObserver({ logger }), {
-    lifetime: Lifetime.SINGLETON,
-  }),
+  aiFeedbackObserver: asFunction(
+    ({ logger, aiAnalytics }: Cradle) => new AiFeedbackObserver({ logger, aiAnalytics }),
+    {
+      lifetime: Lifetime.SINGLETON,
+    },
+  ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   // Fails closed, unlike the cache and rate limiter that share this Redis (JEF-449).
   aiSpendGuard: asFunction(

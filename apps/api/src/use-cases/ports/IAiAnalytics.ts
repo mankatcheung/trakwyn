@@ -55,12 +55,16 @@ export interface AiFeedbackAnalyticsEvent {
   provider: string | null;
   model: string | null;
   promptVersion: string | null;
+  source: string | null;
+  tier: string | null;
 }
 
 export interface IAiAnalytics {
   generation(event: AiGenerationEvent): void;
   span(event: AiSpanEvent): void;
   feedback(event: AiFeedbackAnalyticsEvent): void;
+  /** A rating taken back (JEF-569), so a dashboard can net it out. */
+  feedbackCleared(event: AiFeedbackAnalyticsEvent): void;
   /** Sends what is queued and stops. Called once, when the server closes. */
   shutdown(): Promise<void>;
 }
