@@ -32,6 +32,8 @@ export interface ToolCallMeta {
    * with bounded cardinality: a span name, a metric label.
    */
   name: string;
+  /** Whose call it is. Used only to attribute the PostHog `$ai_span`, pseudonymised there (JEF-568). */
+  userId: string;
   /** MCP only. Chat is session-authenticated and has no token. */
   tokenScope?: ApiTokenScope;
   /** MCP only: the calling credential's id. Recorded on write calls (JEF-466), so a bad write names the token to revoke. */

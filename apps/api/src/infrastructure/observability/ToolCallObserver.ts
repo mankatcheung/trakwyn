@@ -1,9 +1,11 @@
+import { nanoid } from 'nanoid';
 import { context, trace, SpanStatusCode, type Attributes, type Span } from '@opentelemetry/api';
 
 import { AXIOM, SECURITY_EVENTS, TRACING } from '#src/infrastructure/config/constants.js';
 import { otelMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import { DomainError } from '#src/use-cases/errors/DomainError.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
+import type { IAiAnalytics } from '#src/use-cases/ports/IAiAnalytics.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type {
   IToolCallObserver,
@@ -30,6 +32,12 @@ interface Deps {
    * `InstrumentedRateLimiter`.
    */
   tracing: boolean;
+  /**
+   * Optional (JEF-568): each call also sends a PostHog `$ai_span`, so a chat
+   * turn reads as one trace with its tools inside. Carries the same fields as
+   * the OTel span and nothing about arguments or results.
+   */
+  aiAnalytics?: IAiAnalytics;
 }
 
 /** How one call ended, filled in by the recorder or by a throw. */
@@ -54,8 +62,10 @@ export class ToolCallObserver implements IToolCallObserver {
   private readonly logger: ILogger;
   private readonly metrics: IMetrics;
   private readonly tracing: boolean;
+  private readonly aiAnalytics: IAiAnalytics | undefined;
 
-  constructor({ tools, logger, metrics = otelMetrics, tracing }: Deps) {
+  constructor({ tools, logger, metrics = otelMetrics, tracing, aiAnalytics }: Deps) {
+    this.aiAnalytics = aiAnalytics;
     this.accessByName = new Map(tools.map((tool) => [tool.name, tool.access]));
     this.logger = logger;
     this.metrics = metrics;
@@ -69,10 +79,17 @@ export class ToolCallObserver implements IToolCallObserver {
     const access = this.accessByName.get(meta.name);
     const tool = access ? meta.name : TRACING.UNKNOWN_TOOL;
     const settlement: Settlement = { outcome: 'ok' };
+    const parent = validSpanContext(trace.getActiveSpan());
+    const startedAt = performance.now();
     const span = this.tracing ? this.startSpan(meta, tool, access) : undefined;
 
     try {
-      const recorder = this.recorderFor(meta, tool, settlement, span !== undefined);
+      const recorder = this.recorderFor(
+        meta,
+        tool,
+        settlement,
+        span !== undefined || this.aiAnalytics !== undefined,
+      );
       return await (span
         ? context.with(trace.setSpan(context.active(), span), () => run(recorder))
         : run(recorder));
@@ -81,7 +98,42 @@ export class ToolCallObserver implements IToolCallObserver {
       throw error;
     } finally {
       if (span) endSpan(span, settlement);
+      this.sendAiSpan(meta, tool, access, settlement, {
+        latencyMs: Math.round(performance.now() - startedAt),
+        traceId: validSpanContext(span)?.traceId ?? parent?.traceId,
+        spanId: validSpanContext(span)?.spanId,
+        parentId: parent?.spanId,
+      });
       this.metrics.recordToolCall(meta.surface, tool, settlement.outcome);
+    }
+  }
+
+  /** One `$ai_span` per call. Never throws: analytics must not fail a tool call. */
+  private sendAiSpan(
+    meta: ToolCallMeta,
+    tool: string,
+    access: ObservedTool['access'] | undefined,
+    { outcome, resultBytes }: Settlement,
+    ids: { latencyMs: number; traceId?: string; spanId?: string; parentId?: string },
+  ): void {
+    if (!this.aiAnalytics) return;
+    try {
+      this.aiAnalytics.span({
+        userId: meta.userId,
+        // Tracing off: nothing ties the call to a request, so it is a trace of its own.
+        traceId: ids.traceId ?? nanoid(),
+        name: tool,
+        latencyMs: ids.latencyMs,
+        outcome: outcome === 'internal_error' ? 'error' : 'ok',
+        surface: meta.surface,
+        access: access ?? TRACING.UNKNOWN_TOOL,
+        toolOutcome: outcome,
+        ...(ids.spanId ? { spanId: ids.spanId } : {}),
+        ...(ids.parentId ? { parentId: ids.parentId } : {}),
+        ...(resultBytes === undefined ? {} : { resultBytes }),
+      });
+    } catch {
+      // The port promises not to throw.
     }
   }
 
@@ -135,6 +187,11 @@ export class ToolCallObserver implements IToolCallObserver {
       },
     };
   }
+}
+
+function validSpanContext(span: Span | undefined) {
+  const context = span?.spanContext();
+  return context && trace.isSpanContextValid(context) ? context : undefined;
 }
 
 function settle(settlement: Settlement, outcome: ToolCallOutcome, error: unknown): void {

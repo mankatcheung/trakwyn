@@ -148,6 +148,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           source: LLM_USAGE_SOURCE.PLATFORM,
           tier,
           promptVersion: request.promptVersion,
+          sessionKey: request.sessionKey,
         });
         return {
           providerId: leg.providerId,
@@ -228,6 +229,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       model: resolvedModel,
       source: LLM_USAGE_SOURCE.BYOK,
       promptVersion: request.promptVersion,
+      sessionKey: request.sessionKey,
     });
     return {
       provider: tracked,
@@ -253,8 +255,10 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       source: LlmUsageSource;
       tier?: AiModelTier;
       promptVersion?: number;
+      sessionKey?: string;
     },
   ): ILLMProvider {
+    const { sessionKey, ...usageCtx } = ctx;
     const analysed = this.deps.aiAnalytics
       ? new AiAnalyticsLLMProvider({
           inner: raw,
@@ -266,6 +270,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
           source: ctx.source,
           tier: ctx.tier,
           promptVersion: ctx.promptVersion,
+          sessionKey,
         })
       : raw;
     const measured = this.deps.traceLlmCalls
@@ -285,7 +290,7 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       logger: this.deps.logger,
       metrics: this.deps.metrics ?? noopMetrics,
       aiSpendGuard: this.deps.aiSpendGuard,
-      ...ctx,
+      ...usageCtx,
     });
   }
 

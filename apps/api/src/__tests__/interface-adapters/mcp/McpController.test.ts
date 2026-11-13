@@ -1277,7 +1277,12 @@ describe('McpController', () => {
       }
 
       expect(deps.toolCallObserver.calls.map((c) => c.meta)).toEqual(
-        MCP_TOOLS.map((tool) => ({ surface: 'mcp', name: tool.name, tokenScope: 'full' })),
+        MCP_TOOLS.map((tool) => ({
+          surface: 'mcp',
+          name: tool.name,
+          userId: USER_ID,
+          tokenScope: 'full',
+        })),
       );
     });
 
@@ -1312,7 +1317,7 @@ describe('McpController', () => {
 
       expect(deps.toolCallObserver.calls).toEqual([
         {
-          meta: { surface: 'mcp', name: 'create_note', tokenScope: 'read' },
+          meta: { surface: 'mcp', name: 'create_note', userId: USER_ID, tokenScope: 'read' },
           reports: ['refused'],
           refusedUserId: USER_ID,
         },
@@ -1473,7 +1478,7 @@ describe('McpController', () => {
 
       const calls = deps.toolCallObserver.calls;
       expect(calls[calls.length - 1]).toMatchObject({
-        meta: { surface: 'mcp', name: 'create_note', tokenScope: 'full' },
+        meta: { surface: 'mcp', name: 'create_note', userId: USER_ID, tokenScope: 'full' },
         reports: ['rate_limited'],
       });
     });

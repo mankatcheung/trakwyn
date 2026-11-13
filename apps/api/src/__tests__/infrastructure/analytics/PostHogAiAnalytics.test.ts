@@ -3,7 +3,10 @@ import {
   PostHogAiAnalytics,
   type PostHogCaptureClient,
 } from '#src/infrastructure/analytics/PostHogAiAnalytics.js';
-import { pseudonymousUserId } from '#src/infrastructure/privacy/pseudonymousUserId.js';
+import {
+  pseudonymousSessionId,
+  pseudonymousUserId,
+} from '#src/infrastructure/privacy/pseudonymousUserId.js';
 import { makeLogger } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import type { AiGenerationEvent } from '#src/use-cases/ports/IAiAnalytics.js';
 
@@ -61,6 +64,55 @@ describe('PostHogAiAnalytics', () => {
     expect(message.properties.$ai_input_tokens).toBe(100);
     expect(message.properties.$ai_latency).toBe(1.5);
     expect(message.properties.$ai_total_cost_usd).toBe(0.0025);
+  });
+
+  it('groups generations by a hashed session id and never sends the raw conversation id (JEF-568)', () => {
+    const { analytics, client } = setup();
+
+    analytics.generation({ ...generation, sessionKey: 'conv-secret-1' });
+    analytics.generation(generation);
+
+    const [withSession, without] = client.capture.mock.calls.map((c) => c[0]);
+    expect(withSession.properties.$ai_session_id).toBe(pseudonymousSessionId('conv-secret-1'));
+    expect(JSON.stringify(withSession)).not.toContain('conv-secret-1');
+    expect(withSession.properties.$ai_session_id).not.toBe(pseudonymousUserId('conv-secret-1'));
+    expect(without.properties).not.toHaveProperty('$ai_session_id');
+  });
+
+  it('sends the tool span fields when present and omits them otherwise (JEF-568)', () => {
+    const { analytics, client } = setup();
+
+    analytics.span({
+      userId: 'user-123',
+      traceId: 't',
+      name: 'get_application',
+      latencyMs: 250,
+      outcome: 'ok',
+      spanId: 's1',
+      parentId: 'p1',
+      surface: 'chat',
+      access: 'read',
+      toolOutcome: 'domain_error',
+      resultBytes: 42,
+    });
+    analytics.span({ userId: 'user-123', traceId: 't', name: 'x', latencyMs: 1, outcome: 'ok' });
+
+    const [full, bare] = client.capture.mock.calls.map((c) => c[0]);
+    expect(full.event).toBe('$ai_span');
+    expect(full.properties).toMatchObject({
+      $ai_span_id: 's1',
+      $ai_parent_id: 'p1',
+      $ai_latency: 0.25,
+      $ai_is_error: false,
+      surface: 'chat',
+      access: 'read',
+      outcome: 'domain_error',
+      result_bytes: 42,
+    });
+    expect(bare.properties.outcome).toBe('ok');
+    for (const key of ['$ai_span_id', '$ai_parent_id', 'surface', 'access', 'result_bytes']) {
+      expect(bare.properties).not.toHaveProperty(key);
+    }
   });
 
   it('leaves the cost out when the model has no price', () => {

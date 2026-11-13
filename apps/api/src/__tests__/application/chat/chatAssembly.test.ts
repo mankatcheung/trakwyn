@@ -75,7 +75,10 @@ describe('executeChatTool observation (JEF-365)', () => {
     }
 
     expect(deps.toolCallObserver.calls.map((c) => [c.meta, c.reports])).toEqual(
-      readTools.map((tool) => [{ surface: 'chat', name: tool.name }, ['succeeded']]),
+      readTools.map((tool) => [
+        { surface: 'chat', name: tool.name, userId: 'user-1' },
+        ['succeeded'],
+      ]),
     );
   });
 
@@ -94,7 +97,10 @@ describe('executeChatTool observation (JEF-365)', () => {
     }
 
     expect(deps.toolCallObserver.calls.map((c) => [c.meta, c.reports])).toEqual(
-      writeTools.map((tool) => [{ surface: 'chat', name: tool.name }, ['proposed']]),
+      writeTools.map((tool) => [
+        { surface: 'chat', name: tool.name, userId: 'user-1' },
+        ['proposed'],
+      ]),
     );
   });
 

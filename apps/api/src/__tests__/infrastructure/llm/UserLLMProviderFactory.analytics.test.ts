@@ -69,6 +69,25 @@ describe('UserLLMProviderFactory AI analytics (JEF-567)', () => {
     expect(generation).not.toHaveBeenCalled();
   });
 
+  it("puts the caller's session key on every generation (JEF-568)", async () => {
+    const answering = makeLLMProvider('ok');
+    answering.complete = vi.fn().mockResolvedValue({ content: 'ok', usage });
+    const platform: IPlatformLLMProviderFactory = {
+      isEnabled: () => true,
+      isEnabledFor: () => true,
+      legs: vi.fn(() => [{ providerId: 'workersai', model: 'm', provider: answering }]),
+    };
+    const { factory, generation } = setup(platform);
+
+    const resolution = await factory.resolveForUser('user-1', {
+      feature: AI_FEATURE.CHAT,
+      sessionKey: 'conv-1',
+    });
+    await resolution!.provider.complete([]);
+
+    expect(generation.mock.calls[0]![0].sessionKey).toBe('conv-1');
+  });
+
   it('each failover leg records its own event, with the feature and tier', async () => {
     const failing = makeLLMProvider('x');
     failing.complete = vi
