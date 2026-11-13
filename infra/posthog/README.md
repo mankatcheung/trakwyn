@@ -152,14 +152,14 @@ Everything filters on `$lib = trakwyn-extension`, because web, the web server an
 
 **Non-job pages count.** LinkedIn and Indeed send `parser_result` only when the URL names a job; Glassdoor, Greenhouse, Lever and Workday cannot tell, so a few reports from their non-job pages are normal. The alert is per board for this reason: one board's baseline differs from another's.
 
-**The alert limit.** PostHog's plan allows 5 alerts in the project, and `posthog_alert.crashed_sessions` uses one, so at most four boards can have an alert. Over that, an apply fails with `Your team has reached the limit of 5 alerts on your plan`, and because resources apply in parallel some alerts are created before the failing one, leaving the state part-applied. Glassdoor and Lever are charted but have no alert by default: they are the smallest, and Glassdoor has no URL check, so it is the noisiest. Swap them in by editing `clipper_alert_boards` (and dropping another), or raise the plan's limit and list all six.
+**The alert limit.** PostHog's plan allows 5 alerts in the project, and `posthog_alert.crashed_sessions` uses one, so at most four boards could have an alert before the AI features alerts (JEF-570) took two more, and now at most two can. Over that, an apply fails with `Your team has reached the limit of 5 alerts on your plan`, and because resources apply in parallel some alerts are created before the failing one, leaving the state part-applied. Glassdoor and Lever are charted but have no alert by default: they are the smallest, and Glassdoor has no URL check, so it is the noisiest. Swap them in by editing `clipper_alert_boards` (and dropping another), or raise the plan's limit and list all six.
 
 **A new board.** `JOB_BOARDS` in `apps/extension/src/constants.ts` needs a matching entry in `local.clipper_boards`, or its reports appear only under the release split. `workday.com` and `myworkdayjobs.com` are both `workday`.
 
-| Variable                     | Default                                           | Meaning                                                             |
-| ---------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
-| `clipper_parser_alert_daily` | `10`                                              | Alert when one board's `parser_result` count in a day exceeds this. |
-| `clipper_alert_boards`       | `["linkedin", "indeed", "greenhouse", "workday"]` | Boards that get an alert. Keep it to 4 or fewer: see below.         |
+| Variable                     | Default                  | Meaning                                                                       |
+| ---------------------------- | ------------------------ | ----------------------------------------------------------------------------- |
+| `clipper_parser_alert_daily` | `10`                     | Alert when one board's `parser_result` count in a day exceeds this.           |
+| `clipper_alert_boards`       | `["linkedin", "indeed"]` | Boards that get an alert. At most 2: see "The alert limit" under AI features. |
 
 It notifies the same users as the mobile alert (`release_health_alert_user_ids`). The key also needs `dashboard:write`, `insight:write` and `alert:write`, as for mobile release health.
 
@@ -213,7 +213,7 @@ The web app sends named events for each step. They are built by hand in the Post
 
 **Plan, not tier.** The brief asked for cost per user by plan. The API sends no billing-plan property, only `tier` (the hosted model tier, absent on a user's own key), so that chart splits by `tier`. A `plan` property on `$ai_generation` would be a change to the API.
 
-**The alert limit.** These two alerts and the mobile crash alert make three, so the Clipper can have at most two board alerts. `clipper_alert_boards` defaults to four, which would make seven: set it to two or fewer in `terraform.tfvars` before applying, or the apply fails with `reached the limit of 5 alerts` and leaves the state part-applied.
+**The alert limit.** PostHog's plan allows 5 alerts: the mobile crash alert, these two, and at most two Clipper board alerts. `clipper_alert_boards` therefore defaults to `["linkedin", "indeed"]` and a validation rejects more. Moving an existing root over from the old four-board default destroys the Greenhouse and Workday alerts, and Terraform may try the creates first and hit the limit: apply the Clipper alerts alone first, `terraform apply -target='posthog_alert.clipper_parser_spike'`, then run a plain `apply`.
 
 **Property names are a contract.** Every property the queries read is sent by `PostHogAiAnalytics.ts`. Renaming one there means updating `ai_features.tf` and `queries/ai_*.sql` in the same PR.
 
