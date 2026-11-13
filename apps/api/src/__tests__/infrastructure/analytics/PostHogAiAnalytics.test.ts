@@ -123,6 +123,31 @@ describe('PostHogAiAnalytics', () => {
     }
   });
 
+  it('sends span id, time to first token, tier and reasoning tokens when present, and omits them otherwise (JEF-567)', () => {
+    const { analytics, client } = setup();
+
+    analytics.generation({
+      ...generation,
+      spanId: 'span-1',
+      timeToFirstTokenMs: 250,
+      tier: 'lite',
+      reasoningTokens: 7,
+    });
+    analytics.generation(generation);
+
+    const [withExtras, without] = client.capture.mock.calls.map((c) => c[0].properties);
+    expect(withExtras).toMatchObject({
+      $ai_span_id: 'span-1',
+      $ai_time_to_first_token: 0.25,
+      tier: 'lite',
+      reasoning_tokens: 7,
+    });
+    expect(without).not.toHaveProperty('$ai_span_id');
+    expect(without).not.toHaveProperty('$ai_time_to_first_token');
+    expect(without).not.toHaveProperty('tier');
+    expect(without).not.toHaveProperty('reasoning_tokens');
+  });
+
   it('does not throw when a capture fails, and logs no payload', () => {
     const { analytics, logger } = setup({
       capture: vi.fn(() => {

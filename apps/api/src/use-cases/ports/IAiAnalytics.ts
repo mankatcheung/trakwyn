@@ -27,6 +27,14 @@ export interface AiGenerationEvent {
   latencyMs: number;
   outcome: AiAnalyticsOutcome;
   errorKind: string | null;
+  /** The hosted model tier (JEF-567); absent on the user's own key. */
+  tier?: string;
+  /** Already inside `outputTokens`; absent when the provider reports none. */
+  reasoningTokens?: number;
+  /** The `llm.*` span id, so a generation leads to its Axiom span; absent with no active span. */
+  spanId?: string;
+  /** Streams only. */
+  timeToFirstTokenMs?: number;
 }
 
 export interface AiSpanEvent {

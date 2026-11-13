@@ -245,6 +245,7 @@ export const infrastructure = {
       platformLlmProviderFactory,
       aiSpendGuard,
       hostedAiCircuits,
+      aiAnalytics,
       now,
     }: Cradle) =>
       new UserLLMProviderFactory({
@@ -260,6 +261,7 @@ export const infrastructure = {
         platformLlmProviderFactory,
         aiSpendGuard,
         hostedAiCircuits,
+        aiAnalytics,
         now,
       }),
     { lifetime: Lifetime.SINGLETON },
