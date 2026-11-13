@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import {
+  AlignCenterIcon,
+  AlignLeftIcon,
+  AlignRightIcon,
   LinkIcon,
   ListIcon,
   ListOrderedIcon,
@@ -23,6 +26,30 @@ const BLOCK_TYPES: ReadonlyArray<{ value: BlockType; labelKey: string }> = [
   { value: 'h3', labelKey: 'documents.editor.blockHeading3' },
 ];
 
+type Alignment = 'left' | 'center' | 'right';
+
+/** The extension binds these keys itself; they are listed here for the tooltips. */
+const ALIGNMENTS = [
+  {
+    value: 'left',
+    labelKey: 'documents.editor.alignLeft',
+    shortcut: 'Mod-Shift-l',
+    Icon: AlignLeftIcon,
+  },
+  {
+    value: 'center',
+    labelKey: 'documents.editor.alignCenter',
+    shortcut: 'Mod-Shift-e',
+    Icon: AlignCenterIcon,
+  },
+  {
+    value: 'right',
+    labelKey: 'documents.editor.alignRight',
+    shortcut: 'Mod-Shift-r',
+    Icon: AlignRightIcon,
+  },
+] as const;
+
 function Divider() {
   return <div role="separator" className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />;
 }
@@ -41,6 +68,12 @@ function readState(editor: Editor) {
     bulletList: editor.isActive('bulletList'),
     orderedList: editor.isActive('orderedList'),
     blockquote: editor.isActive('blockquote'),
+    // A block nobody aligned reads as left.
+    alignment: (editor.isActive({ textAlign: 'center' })
+      ? 'center'
+      : editor.isActive({ textAlign: 'right' })
+        ? 'right'
+        : 'left') as Alignment,
     canUndo: editor.can().undo(),
     canRedo: editor.can().redo(),
   };
@@ -74,6 +107,9 @@ export function DocumentEditorToolbar({
     if (value === 'paragraph') run((c) => c.setParagraph());
     else run((c) => c.setHeading({ level: Number(value[1]) as 1 | 2 | 3 }));
   };
+
+  const setAlignment = (value: Alignment) =>
+    run((c) => (value === 'left' ? c.unsetTextAlign() : c.setTextAlign(value)));
 
   return (
     <div className="sticky top-0 z-30 rounded-t-lg border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
@@ -135,6 +171,19 @@ export function DocumentEditorToolbar({
         >
           <LinkIcon className="size-4" />
         </ToolbarButton>
+        <Divider />
+        {ALIGNMENTS.map(({ value, labelKey, shortcut, Icon }) => (
+          <ToolbarButton
+            key={value}
+            label={t(labelKey)}
+            shortcut={shortcut}
+            pressed={state.alignment === value}
+            disabled={off}
+            onClick={() => setAlignment(value)}
+          >
+            <Icon className="size-4" />
+          </ToolbarButton>
+        ))}
         <Divider />
         <ToolbarButton
           label={t('documents.editor.bulletList')}

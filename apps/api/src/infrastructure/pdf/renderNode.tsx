@@ -58,6 +58,19 @@ function styleForMarks(marks: NonNullable<JSONContent['marks']>): Style {
   };
 }
 
+/**
+ * Alignment the editor can set (JEF-578). Anything else, including justify
+ * and the default left, prints as before, so existing documents are unchanged.
+ */
+const ALIGNMENTS = new Set(['center', 'right']);
+
+function withAlignment(style: Style, node: JSONContent): Style | Style[] {
+  const align = node.attrs?.textAlign;
+  return typeof align === 'string' && ALIGNMENTS.has(align)
+    ? [style, { textAlign: align as Style['textAlign'] }]
+    : style;
+}
+
 function linkHref(node: JSONContent): string | null {
   const href = node.marks?.find((mark) => mark.type === 'link')?.attrs?.href;
   return typeof href === 'string' && PRINTABLE_LINK.test(href) ? href : null;
@@ -83,14 +96,17 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
       const level = node.attrs?.level ?? 1;
       const style = level === 1 ? styles.heading1 : level === 2 ? styles.heading2 : styles.heading3;
       return (
-        <Text key={key} style={style}>
+        <Text key={key} style={withAlignment(style, node)}>
           {children(node, ctx)}
         </Text>
       );
     },
 
     paragraph: (node, key, ctx) => (
-      <Text key={key} style={ctx.list ? styles.listParagraph : styles.paragraph}>
+      <Text
+        key={key}
+        style={withAlignment(ctx.list ? styles.listParagraph : styles.paragraph, node)}
+      >
         {children(node, ctx)}
       </Text>
     ),

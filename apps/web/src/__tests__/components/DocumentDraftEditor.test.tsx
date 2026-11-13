@@ -75,7 +75,7 @@ describe('DocumentDraftEditor', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
-    expect(config.extensions).toHaveLength(4);
+    expect(config.extensions).toHaveLength(5);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {
