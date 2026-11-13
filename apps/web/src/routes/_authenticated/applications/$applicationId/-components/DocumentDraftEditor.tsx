@@ -35,6 +35,8 @@ export interface DocumentEditorHandle {
   replaceContent: (nodes: TiptapNode[]) => void;
   /** Adds blocks after the last one. */
   appendContent: (nodes: TiptapNode[]) => void;
+  /** Puts the cursor at the start of the top-level block with this index. */
+  focusBlock: (index: number) => void;
   /** Read-only while an AI request is in flight, so nothing typed meanwhile is overwritten. */
   setEditable: (editable: boolean) => void;
 }
@@ -52,6 +54,8 @@ interface DocumentDraftEditorProps {
   editorRef?: RefObject<DocumentEditorHandle | null>;
   /** Called on every change with the live text, ahead of the save debounce. */
   onTextChange?: (plainText: string) => void;
+  /** Called on every change with the live document JSON, ahead of the save debounce. */
+  onJsonChange?: (json: string) => void;
   /** Words the hint shown in an empty draft for what the draft is. */
   draftType?: 'resume' | 'cover_letter';
 }
@@ -62,6 +66,7 @@ export function DocumentDraftEditor({
   flushRef,
   editorRef,
   onTextChange,
+  onJsonChange,
   draftType,
 }: DocumentDraftEditorProps) {
   let initialContent;
@@ -133,6 +138,7 @@ export function DocumentDraftEditor({
       const json = JSON.stringify(e.getJSON());
       const plainText = e.getText();
       onTextChange?.(plainText);
+      onJsonChange?.(json);
       debouncedUpdate(json, plainText);
     },
   });
@@ -149,6 +155,13 @@ export function DocumentDraftEditor({
       appendContent: (nodes) => {
         flushPendingUpdate();
         editor.commands.insertContentAt(editor.state.doc.content.size, nodes);
+      },
+      focusBlock: (index) => {
+        let pos = 0;
+        editor.state.doc.forEach((_node, offset, i) => {
+          if (i === index) pos = offset + 1;
+        });
+        editor.chain().focus().setTextSelection(pos).scrollIntoView().run();
       },
       setEditable: (next) => {
         editor.setEditable(next, false);

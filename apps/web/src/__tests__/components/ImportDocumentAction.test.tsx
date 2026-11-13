@@ -25,6 +25,7 @@ function setup() {
     getJson: vi.fn(() => '{"on":"screen"}'),
     replaceContent: vi.fn(),
     appendContent: vi.fn(),
+    focusBlock: vi.fn(),
     setEditable: vi.fn(),
   };
   const onSave = vi.fn().mockResolvedValue(true);
