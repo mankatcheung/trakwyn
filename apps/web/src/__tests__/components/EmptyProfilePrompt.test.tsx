@@ -69,6 +69,7 @@ function renderPanel(type: 'cover_letter' | 'resume') {
     getJson: () => '{}',
     replaceContent: vi.fn(),
     appendContent: vi.fn(),
+    focusBlock: vi.fn(),
     setEditable: vi.fn(),
   };
   render(
