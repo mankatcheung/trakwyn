@@ -159,6 +159,7 @@ describe('DrizzleMessageRepository', () => {
       promptVersion: 4,
       source: 'platform',
       tier: 'lite',
+      traceId: 'trace-1',
     };
 
     it('stores which model and prompt wrote a reply and reads it back', async () => {

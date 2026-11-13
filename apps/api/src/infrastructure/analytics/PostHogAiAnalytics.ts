@@ -109,15 +109,11 @@ export class PostHogAiAnalytics implements IAiAnalytics {
   }
 
   feedback(event: AiFeedbackAnalyticsEvent): void {
-    this.send(event.userId, '$ai_feedback', {
-      $ai_trace_id: event.traceId,
-      feature: event.feature,
-      rating: event.rating,
-      reason: event.reason,
-      $ai_provider: event.provider,
-      $ai_model: event.model,
-      prompt_version: event.promptVersion,
-    });
+    this.send(event.userId, '$ai_feedback', feedbackProperties(event));
+  }
+
+  feedbackCleared(event: AiFeedbackAnalyticsEvent): void {
+    this.send(event.userId, 'ai_output_rating_cleared', feedbackProperties(event));
   }
 
   async shutdown(): Promise<void> {
@@ -145,4 +141,19 @@ export class PostHogAiAnalytics implements IAiAnalytics {
       this.logger.warn('posthog.capture_failed', err, { event: name });
     }
   }
+}
+
+/** Field by field, so nothing a caller smuggles into the event object is sent. */
+function feedbackProperties(event: AiFeedbackAnalyticsEvent): Record<string, unknown> {
+  return {
+    $ai_trace_id: event.traceId,
+    feature: event.feature,
+    rating: event.rating,
+    reason: event.reason,
+    $ai_provider: event.provider,
+    $ai_model: event.model,
+    prompt_version: event.promptVersion,
+    source: event.source,
+    tier: event.tier,
+  };
 }

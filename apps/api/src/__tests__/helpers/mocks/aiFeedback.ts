@@ -9,6 +9,7 @@ export const makeAiGeneration = (overrides?: Partial<AiGeneration>): AiGeneratio
   promptVersion: 3,
   source: 'byok',
   tier: null,
+  traceId: null,
   ...overrides,
 });
 
@@ -41,7 +42,7 @@ export const makeAiFeedbackRepository = (
       generation: data.generation,
     }),
   ),
-  clear: vi.fn().mockResolvedValue(undefined),
+  clear: vi.fn().mockResolvedValue(null),
   findForTargets: vi.fn().mockResolvedValue([]),
   ...overrides,
 });
@@ -50,5 +51,6 @@ export const makeAiFeedbackObserver = (
   overrides?: Partial<IAiFeedbackObserver>,
 ): IAiFeedbackObserver => ({
   rated: vi.fn(),
+  cleared: vi.fn(),
   ...overrides,
 });

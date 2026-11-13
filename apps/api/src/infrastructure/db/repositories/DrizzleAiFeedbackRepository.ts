@@ -30,6 +30,7 @@ export class DrizzleAiFeedbackRepository implements IAiFeedbackRepository {
       promptVersion: data.generation?.promptVersion ?? null,
       source: data.generation?.source ?? null,
       tier: data.generation?.tier ?? null,
+      traceId: data.generation?.traceId ?? null,
     };
     const [row] = await this.db
       .insert(aiFeedback)
@@ -49,8 +50,12 @@ export class DrizzleAiFeedbackRepository implements IAiFeedbackRepository {
     return this.toEntity(row);
   }
 
-  async clear(userId: string, targetKind: AiFeedbackTarget, targetId: string): Promise<void> {
-    await this.db
+  async clear(
+    userId: string,
+    targetKind: AiFeedbackTarget,
+    targetId: string,
+  ): Promise<AiFeedback | null> {
+    const [row] = await this.db
       .delete(aiFeedback)
       .where(
         and(
@@ -58,7 +63,9 @@ export class DrizzleAiFeedbackRepository implements IAiFeedbackRepository {
           eq(aiFeedback.targetKind, targetKind),
           eq(aiFeedback.targetId, targetId),
         ),
-      );
+      )
+      .returning();
+    return row ? this.toEntity(row) : null;
   }
 
   async findForTargets(
@@ -97,6 +104,7 @@ export class DrizzleAiFeedbackRepository implements IAiFeedbackRepository {
               promptVersion: row.promptVersion,
               source: row.source,
               tier: row.tier,
+              traceId: row.traceId,
             }
           : null,
       createdAt: row.createdAt,

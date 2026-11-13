@@ -142,6 +142,8 @@ describe('PostHogAiAnalytics', () => {
       provider: null,
       model: null,
       promptVersion: null,
+      source: null,
+      tier: null,
     });
 
     for (const [message] of client.capture.mock.calls) {
@@ -149,6 +151,32 @@ describe('PostHogAiAnalytics', () => {
       expect(message.properties.$process_person_profile).toBe(false);
     }
     expect(client.capture.mock.calls[0]?.[0].properties.$ai_is_error).toBe(true);
+  });
+
+  it('sends a cleared rating as its own event, with the same fields', () => {
+    const { analytics, client } = setup();
+
+    analytics.feedbackCleared({
+      userId: 'user-123',
+      traceId: 'trace-9',
+      feature: 'chat',
+      rating: 'down',
+      reason: 'wrong',
+      provider: 'openai',
+      model: 'gpt-test',
+      promptVersion: '3',
+      source: 'platform',
+      tier: 'lite',
+    });
+
+    const message = client.capture.mock.calls[0]?.[0];
+    expect(message.event).toBe('ai_output_rating_cleared');
+    expect(message.properties).toMatchObject({
+      $ai_trace_id: 'trace-9',
+      source: 'platform',
+      tier: 'lite',
+      $process_person_profile: false,
+    });
   });
 
   it('never puts prompt or output fields in a payload, even if a caller smuggles them in', () => {

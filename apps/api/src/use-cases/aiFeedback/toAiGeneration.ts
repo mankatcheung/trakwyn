@@ -18,5 +18,6 @@ export function toAiGeneration(
     promptVersion,
     source: answeredBy.source,
     tier: answeredBy.tier ?? null,
+    traceId: answeredBy.traceId ?? null,
   };
 }

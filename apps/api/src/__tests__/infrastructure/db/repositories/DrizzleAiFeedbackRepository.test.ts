@@ -10,6 +10,7 @@ const generation = {
   promptVersion: 5,
   source: 'platform',
   tier: 'lite',
+  traceId: 'trace-1',
 };
 
 describe('DrizzleAiFeedbackRepository', () => {
@@ -100,14 +101,16 @@ describe('DrizzleAiFeedbackRepository', () => {
       await rate({ id: 'a', userId: 'u1' });
       await rate({ id: 'b', userId: 'u2' });
 
-      await repo.clear('u1', 'chat_message', 'msg-1');
+      const removed = await repo.clear('u1', 'chat_message', 'msg-1');
+
+      expect(removed).toMatchObject({ userId: 'u1', rating: 'up', generation });
 
       const rows = await db.db.select().from(aiFeedback);
       expect(rows.map((r) => r.userId)).toEqual(['u2']);
     });
 
     it('is a no-op when there is no rating', async () => {
-      await expect(repo.clear('u1', 'chat_message', 'nope')).resolves.toBeUndefined();
+      await expect(repo.clear('u1', 'chat_message', 'nope')).resolves.toBeNull();
     });
   });
 

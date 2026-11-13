@@ -94,6 +94,7 @@ export class RateAiOutputUseCase implements IRateAiOutputUseCase {
       generation: target.generation,
     });
     this.deps.aiFeedbackObserver.rated({
+      userId: input.userId,
       feature: target.feature,
       rating: input.rating,
       reason,
