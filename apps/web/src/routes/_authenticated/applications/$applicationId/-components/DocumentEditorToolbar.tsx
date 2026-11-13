@@ -1,10 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import {
-  BoldIcon,
-  ItalicIcon,
-  UnderlineIcon,
-  StrikethroughIcon,
   LinkIcon,
   ListIcon,
   ListOrderedIcon,
@@ -14,7 +10,9 @@ import {
   Redo2Icon,
 } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
-import { normalizeLinkInput } from '#/lib/editorLinks';
+import { ToolbarButton } from './EditorToolbarButton';
+import { DocumentEditorLinkForm } from './DocumentEditorLinkForm';
+import { MARK_COMMANDS, readMarkState, runMarkCommand } from './editorMarkCommands';
 
 type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3';
 
@@ -24,60 +22,6 @@ const BLOCK_TYPES: ReadonlyArray<{ value: BlockType; labelKey: string }> = [
   { value: 'h2', labelKey: 'documents.editor.blockHeading2' },
   { value: 'h3', labelKey: 'documents.editor.blockHeading3' },
 ];
-
-const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform);
-
-/** `Mod-b` style shortcut as the reader's keyboard names it. */
-function shortcutLabel(keys: string): string {
-  const mac = isMac();
-  return keys
-    .split('-')
-    .map((key) => {
-      if (key === 'Mod') return mac ? '⌘' : 'Ctrl';
-      if (key === 'Shift') return mac ? '⇧' : 'Shift';
-      return key.toUpperCase();
-    })
-    .join(mac ? '' : '+');
-}
-
-interface ToolbarButtonProps {
-  label: string;
-  shortcut?: string;
-  onClick: () => void;
-  /** Set for toggles, so assistive tech reads the state. Omit for plain actions. */
-  pressed?: boolean;
-  disabled?: boolean;
-  children: ReactNode;
-}
-
-export function ToolbarButton({
-  label,
-  shortcut,
-  onClick,
-  pressed,
-  disabled,
-  children,
-}: ToolbarButtonProps) {
-  const hint = shortcut ? `${label} (${shortcutLabel(shortcut)})` : label;
-  return (
-    <button
-      type="button"
-      title={hint}
-      aria-label={label}
-      aria-keyshortcuts={shortcut?.replace('Mod', 'Control')}
-      aria-pressed={pressed}
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-sm p-1.5 transition-colors ${
-        pressed
-          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
-      } ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function Divider() {
   return <div role="separator" className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />;
@@ -93,104 +37,13 @@ function readState(editor: Editor) {
         : 'paragraph';
   return {
     blockType,
-    bold: editor.isActive('bold'),
-    italic: editor.isActive('italic'),
-    underline: editor.isActive('underline'),
-    strike: editor.isActive('strike'),
-    link: editor.isActive('link'),
-    linkHref: (editor.getAttributes('link').href as string | undefined) ?? '',
+    ...readMarkState(editor),
     bulletList: editor.isActive('bulletList'),
     orderedList: editor.isActive('orderedList'),
     blockquote: editor.isActive('blockquote'),
     canUndo: editor.can().undo(),
     canRedo: editor.can().redo(),
   };
-}
-
-function LinkForm({
-  editor,
-  initial,
-  hasLink,
-  onClose,
-}: {
-  editor: Editor;
-  initial: string;
-  hasLink: boolean;
-  onClose: () => void;
-}) {
-  const { t } = useLocale();
-  const [value, setValue] = useState(initial);
-  const [invalid, setInvalid] = useState(false);
-
-  const apply = () => {
-    const href = normalizeLinkInput(value);
-    if (!href) {
-      setInvalid(true);
-      return;
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
-    onClose();
-  };
-
-  const remove = () => {
-    editor.chain().focus().extendMarkRange('link').unsetLink().run();
-    onClose();
-  };
-
-  return (
-    <form
-      role="group"
-      aria-label={t('documents.editor.link')}
-      className="flex flex-wrap items-center gap-1.5 border-t border-gray-200 px-1.5 py-1.5 dark:border-gray-700"
-      onSubmit={(event) => {
-        event.preventDefault();
-        apply();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation();
-          onClose();
-          editor.commands.focus();
-        }
-      }}
-    >
-      <input
-        autoFocus
-        type="text"
-        inputMode="url"
-        value={value}
-        aria-label={t('documents.editor.linkUrl')}
-        aria-invalid={invalid}
-        aria-describedby={invalid ? 'editor-link-error' : undefined}
-        placeholder="https://"
-        onChange={(event) => {
-          setValue(event.target.value);
-          setInvalid(false);
-        }}
-        className="min-w-0 flex-1 rounded-sm border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-      />
-      <button
-        type="submit"
-        className="cursor-pointer rounded-sm bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-700"
-      >
-        {t('documents.editor.linkApply')}
-      </button>
-      {hasLink && (
-        <button
-          type="button"
-          onClick={remove}
-          className="cursor-pointer rounded-sm px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-        >
-          {t('documents.editor.linkRemove')}
-        </button>
-      )}
-      {invalid && (
-        <p id="editor-link-error" role="alert" className="w-full text-xs text-red-600">
-          {t('documents.editor.linkInvalid')}
-        </p>
-      )}
-    </form>
-  );
 }
 
 /**
@@ -262,42 +115,18 @@ export function DocumentEditorToolbar({
           ))}
         </select>
         <Divider />
-        <ToolbarButton
-          label={t('documents.editor.bold')}
-          shortcut="Mod-b"
-          pressed={state.bold}
-          disabled={off}
-          onClick={() => run((c) => c.toggleBold())}
-        >
-          <BoldIcon className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label={t('documents.editor.italic')}
-          shortcut="Mod-i"
-          pressed={state.italic}
-          disabled={off}
-          onClick={() => run((c) => c.toggleItalic())}
-        >
-          <ItalicIcon className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label={t('documents.editor.underline')}
-          shortcut="Mod-u"
-          pressed={state.underline}
-          disabled={off}
-          onClick={() => run((c) => c.toggleUnderline())}
-        >
-          <UnderlineIcon className="size-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          label={t('documents.editor.strike')}
-          shortcut="Mod-Shift-s"
-          pressed={state.strike}
-          disabled={off}
-          onClick={() => run((c) => c.toggleStrike())}
-        >
-          <StrikethroughIcon className="size-4" />
-        </ToolbarButton>
+        {MARK_COMMANDS.map(({ id, labelKey, shortcut, Icon }) => (
+          <ToolbarButton
+            key={id}
+            label={t(labelKey)}
+            shortcut={shortcut}
+            pressed={state[id]}
+            disabled={off}
+            onClick={() => runMarkCommand(editor, id)}
+          >
+            <Icon className="size-4" />
+          </ToolbarButton>
+        ))}
         <ToolbarButton
           label={t('documents.editor.link')}
           pressed={state.link || linkOpen}
@@ -343,7 +172,7 @@ export function DocumentEditorToolbar({
         </ToolbarButton>
       </div>
       {linkOpen && !off && (
-        <LinkForm
+        <DocumentEditorLinkForm
           key={state.linkHref}
           editor={editor}
           initial={state.linkHref}
