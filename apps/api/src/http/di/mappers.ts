@@ -5,6 +5,7 @@ import { ApplicationMapper } from '#src/interface-adapters/mappers/ApplicationMa
 import { NoteMapper } from '#src/interface-adapters/mappers/NoteMapper.js';
 import { DocumentMapper } from '#src/interface-adapters/mappers/DocumentMapper.js';
 import { DocumentDraftMapper } from '#src/interface-adapters/mappers/DocumentDraftMapper.js';
+import { DocumentDraftVersionMapper } from '#src/interface-adapters/mappers/DocumentDraftVersionMapper.js';
 import { CompanyBriefingMapper } from '#src/interface-adapters/mappers/CompanyBriefingMapper.js';
 import { UserMapper } from '#src/interface-adapters/mappers/UserMapper.js';
 import { InterviewRoundMapper } from '#src/interface-adapters/mappers/InterviewRoundMapper.js';
@@ -40,6 +41,9 @@ export const mappers = {
   documentMapper: asClass(DocumentMapper, { lifetime: Lifetime.SINGLETON }),
   companyBriefingMapper: asClass(CompanyBriefingMapper, { lifetime: Lifetime.SINGLETON }),
   documentDraftMapper: asClass(DocumentDraftMapper, { lifetime: Lifetime.SINGLETON }),
+  documentDraftVersionMapper: asClass(DocumentDraftVersionMapper, {
+    lifetime: Lifetime.SINGLETON,
+  }),
   userMapper: asClass(UserMapper, { lifetime: Lifetime.SINGLETON }),
   interviewRoundMapper: asClass(InterviewRoundMapper, { lifetime: Lifetime.SINGLETON }),
   interviewQuestionMapper: asClass(InterviewQuestionMapper, { lifetime: Lifetime.SINGLETON }),

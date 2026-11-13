@@ -32,6 +32,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'Document -> JobApplication': 'cascade',
   'DocumentDraft -> Document': 'set null', // a draft and its exported file reference each other; neither owns the other
   'DocumentDraft -> JobApplication': 'cascade',
+  'DocumentDraftVersion -> DocumentDraft': 'cascade', // history belongs to its draft: deleting the draft, application or account removes it (JEF-584)
   'Education -> User': 'cascade',
   'EmailVerificationToken -> User': 'cascade',
   'InterviewQuestion -> InterviewRound': 'cascade', // what was asked in a round is part of the round

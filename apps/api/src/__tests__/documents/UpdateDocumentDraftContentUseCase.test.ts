@@ -5,6 +5,11 @@ import {
   makeDocumentDraftRepository,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { ValidationError } from '#src/use-cases/errors/DomainError.js';
+import {
+  makeDocumentDraftVersion,
+  makeDocumentDraftVersionRepository,
+} from '#src/__tests__/helpers/mocks/draftHistory.js';
+import { DRAFT_HISTORY } from '#src/use-cases/constants.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 
 describe('UpdateDocumentDraftContentUseCase', () => {
@@ -14,6 +19,7 @@ describe('UpdateDocumentDraftContentUseCase', () => {
     });
 
     const useCase = new UpdateDocumentDraftContentUseCase({
+      documentDraftVersionRepository: makeDocumentDraftVersionRepository(),
       documentDraftRepository,
       applicationRepository: makeApplicationRepository(),
     });
@@ -34,6 +40,7 @@ describe('UpdateDocumentDraftContentUseCase', () => {
     });
 
     const useCase = new UpdateDocumentDraftContentUseCase({
+      documentDraftVersionRepository: makeDocumentDraftVersionRepository(),
       documentDraftRepository,
       applicationRepository,
     });
@@ -61,6 +68,7 @@ describe('UpdateDocumentDraftContentUseCase', () => {
     });
 
     const useCase = new UpdateDocumentDraftContentUseCase({
+      documentDraftVersionRepository: makeDocumentDraftVersionRepository(),
       documentDraftRepository,
       applicationRepository,
     });
@@ -85,6 +93,7 @@ describe('UpdateDocumentDraftContentUseCase', () => {
         updateContent: vi.fn().mockResolvedValue(makeDocumentDraft()),
       });
       const useCase = new UpdateDocumentDraftContentUseCase({
+        documentDraftVersionRepository: makeDocumentDraftVersionRepository(),
         documentDraftRepository,
         applicationRepository: makeApplicationRepository({
           findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
@@ -122,6 +131,133 @@ describe('UpdateDocumentDraftContentUseCase', () => {
       await expect(
         useCase.execute({ ...base, aiInstructions: 'a'.repeat(501) }),
       ).rejects.toBeInstanceOf(ValidationError);
+    });
+  });
+
+  describe('draft history (JEF-584)', () => {
+    const NOW = new Date('2024-06-01T12:00:00Z');
+    const OLD =
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"old"}]}]}';
+    const NEW =
+      '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"new"}]}]}';
+    const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000);
+
+    const setup = (
+      opts: {
+        latest?: ReturnType<typeof makeDocumentDraftVersion> | null;
+        plainText?: string;
+      } = {},
+    ) => {
+      const draft = makeDocumentDraft({ contentJson: OLD, plainText: opts.plainText ?? 'old' });
+      const calls: string[] = [];
+      const documentDraftRepository = makeDocumentDraftRepository({
+        findById: vi.fn().mockResolvedValue(draft),
+        updateContent: vi.fn().mockImplementation(async () => {
+          calls.push('update');
+          return draft;
+        }),
+      });
+      const documentDraftVersionRepository = makeDocumentDraftVersionRepository({
+        findLatestByDraft: vi.fn().mockResolvedValue(opts.latest ?? null),
+        create: vi.fn().mockImplementation(async (data) => {
+          calls.push('snapshot');
+          return { ...data, createdAt: NOW };
+        }),
+      });
+      const transactionManager = {
+        run: vi.fn().mockImplementation((fn: () => Promise<unknown>) => fn()),
+      };
+      const useCase = new UpdateDocumentDraftContentUseCase({
+        documentDraftRepository,
+        documentDraftVersionRepository,
+        applicationRepository: makeApplicationRepository({
+          findById: vi.fn().mockResolvedValue(makeApplication({ userId: 'user-1' })),
+        }),
+        transactionManager,
+        now: () => NOW,
+      });
+      return {
+        useCase,
+        documentDraftVersionRepository,
+        documentDraftRepository,
+        calls,
+        transactionManager,
+      };
+    };
+    const edit = { userId: 'user-1', draftId: 'draft-1', contentJson: NEW, plainText: 'new' };
+
+    it('snapshots the content being replaced, before replacing it, in one transaction', async () => {
+      const { useCase, documentDraftVersionRepository, calls, transactionManager } = setup();
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draftId: 'draft-1',
+          contentJson: OLD,
+          plainText: 'old',
+          source: 'autosave',
+        }),
+      );
+      expect(calls).toEqual(['snapshot', 'update']);
+      expect(transactionManager.run).toHaveBeenCalledTimes(1);
+    });
+
+    it('trims the history to the cap after a snapshot', async () => {
+      const { useCase, documentDraftVersionRepository } = setup();
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.pruneToLimit).toHaveBeenCalledWith(
+        'draft-1',
+        DRAFT_HISTORY.MAX_VERSIONS,
+      );
+    });
+
+    it('does not snapshot again within the autosave interval', async () => {
+      const { useCase, documentDraftVersionRepository, documentDraftRepository } = setup({
+        latest: makeDocumentDraftVersion({ createdAt: minutesAgo(1), contentJson: '{"a":1}' }),
+      });
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.create).not.toHaveBeenCalled();
+      expect(documentDraftRepository.updateContent).toHaveBeenCalled();
+    });
+
+    it('snapshots once the interval has passed', async () => {
+      const { useCase, documentDraftVersionRepository } = setup({
+        latest: makeDocumentDraftVersion({
+          createdAt: new Date(NOW.getTime() - DRAFT_HISTORY.AUTOSAVE_INTERVAL_MS - 1),
+          contentJson: '{"a":1}',
+        }),
+      });
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not snapshot when the content did not change', async () => {
+      const { useCase, documentDraftVersionRepository } = setup();
+      await useCase.execute({ ...edit, contentJson: OLD, plainText: 'old' });
+      expect(documentDraftVersionRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('does not keep a copy of a blank draft', async () => {
+      const { useCase, documentDraftVersionRepository } = setup({ plainText: '   ' });
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('does not repeat the latest snapshot when it already holds this content', async () => {
+      const { useCase, documentDraftVersionRepository } = setup({
+        latest: makeDocumentDraftVersion({ createdAt: minutesAgo(60), contentJson: OLD }),
+      });
+      await useCase.execute(edit);
+      expect(documentDraftVersionRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('always snapshots before an AI replace, even inside the interval, labelled ai', async () => {
+      const { useCase, documentDraftVersionRepository } = setup({
+        latest: makeDocumentDraftVersion({ createdAt: minutesAgo(1), contentJson: '{"a":1}' }),
+      });
+      await useCase.execute({ ...edit, replacedByAi: true });
+      expect(documentDraftVersionRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ contentJson: OLD, source: 'ai' }),
+      );
     });
   });
 });

@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 
-const { mockGqlRequest, mockNavigate, mockDownloadUrl, mockToastSuccess } = vi.hoisted(() => ({
-  mockGqlRequest: vi.fn(),
-  mockNavigate: vi.fn(),
-  mockDownloadUrl: vi.fn(),
-  mockToastSuccess: vi.fn(),
-}));
+const { mockGqlRequest, mockNavigate, mockDownloadUrl, mockToastSuccess, mockReplaceContent } =
+  vi.hoisted(() => ({
+    mockReplaceContent: vi.fn(),
+    mockGqlRequest: vi.fn(),
+    mockNavigate: vi.fn(),
+    mockDownloadUrl: vi.fn(),
+    mockToastSuccess: vi.fn(),
+  }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (opts: Record<string, unknown>) => ({
@@ -45,6 +47,41 @@ vi.mock(
     }) => <button onClick={() => void onSave('{"imported":true}', 'imported')}>mock import</button>,
   }),
 );
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DraftHistoryPanel',
+  () => ({
+    DraftHistoryPanel: ({
+      prepare,
+      onRestored,
+      refreshKey,
+    }: {
+      prepare: () => Promise<boolean>;
+      onRestored: (draft: { id: string; contentJson: string; plainText: string }) => void;
+      refreshKey: number;
+    }) => {
+      const [settled, setSettled] = useState('');
+      return (
+        <div data-testid="history-panel" data-refresh={refreshKey}>
+          <button
+            aria-label="mock settle"
+            onClick={() => void prepare().then((ok) => setSettled(String(ok)))}
+          />
+          <output data-testid="settled">{settled}</output>
+          <button
+            aria-label="mock restore"
+            onClick={() =>
+              onRestored({
+                id: 'draft-1',
+                contentJson: '{"type":"doc","content":[{"type":"paragraph"}]}',
+                plainText: 'restored text',
+              })
+            }
+          />
+        </div>
+      );
+    },
+  }),
+);
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 // Stands in for the TipTap editor with an edit still waiting out its save
@@ -62,11 +99,16 @@ vi.mock(
       editorRef?: RefObject<{
         getJson: () => string;
         getText: () => string;
+        replaceContent: (nodes: unknown[]) => void;
       } | null>;
     }) => {
       if (flushRef) flushRef.current = () => onUpdate('{"edited":true}', 'edited');
       if (editorRef)
-        editorRef.current = { getJson: () => '{"on":"screen"}', getText: () => 'on screen' };
+        editorRef.current = {
+          getJson: () => '{"on":"screen"}',
+          getText: () => 'on screen',
+          replaceContent: mockReplaceContent,
+        };
       return <div data-testid="editor" />;
     },
   }),
@@ -255,6 +297,7 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
             contentJson: '{"ai":true}',
             plainText: 'ai text',
             aiInstructions: 'make it short',
+            replacedByAi: true,
           },
         },
       ),
@@ -288,6 +331,8 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
           contentJson: '{"on":"screen"}',
           plainText: 'on screen',
           aiInstructions: 'make it short',
+          // The retry still carries an AI result over the saved content.
+          replacedByAi: true,
         },
       },
     );
@@ -510,5 +555,82 @@ describe('DocumentDraftEditPage — resume checks (JEF-585)', () => {
     renderPage();
     await screen.findByTestId('editor');
     expect(screen.queryByRole('region', { name: /resume checks/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('DocumentDraftEditPage — draft history (JEF-584)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi();
+  });
+
+  const openHistory = async () =>
+    fireEvent.click(await screen.findByRole('button', { name: /^history$/i }));
+
+  it('shows the history panel only after the History button is pressed', async () => {
+    renderPage();
+    await screen.findByTestId('editor');
+    expect(screen.queryByTestId('history-panel')).not.toBeInTheDocument();
+    await openHistory();
+    expect(screen.getByTestId('history-panel')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^history$/i }));
+    expect(screen.queryByTestId('history-panel')).not.toBeInTheDocument();
+  });
+
+  it('flags only a save that carries an AI result, so the server keeps what it replaces', async () => {
+    renderPage();
+    await clickExport(); // an ordinary save: the editor's pending edit
+    await waitFor(() => expect(operations()).toContain('UpdateDocumentDraftContent'));
+    const ordinary = mockGqlRequest.mock.calls.find(([q]) =>
+      String(q).includes('UpdateDocumentDraftContent'),
+    )!;
+    expect(ordinary[1].input).not.toHaveProperty('replacedByAi');
+
+    fireEvent.click(await screen.findByText(/mock ai save/));
+    await waitFor(() =>
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateDocumentDraftContent'),
+        { input: expect.objectContaining({ contentJson: '{"ai":true}', replacedByAi: true }) },
+      ),
+    );
+  });
+
+  it('sends the editor’s pending edit and waits for it before the panel acts', async () => {
+    renderPage();
+    await openHistory();
+    fireEvent.click(screen.getByRole('button', { name: 'mock settle' }));
+    await waitFor(() => expect(screen.getByTestId('settled')).toHaveTextContent('true'));
+    expect(operations()).toContain('UpdateDocumentDraftContent');
+  });
+
+  it('tells the panel the save failed, so it does not act on content the server lacks', async () => {
+    mockApi({ save: () => Promise.reject(new Error('offline')) });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderPage();
+    await openHistory();
+    fireEvent.click(screen.getByRole('button', { name: 'mock settle' }));
+    await waitFor(() => expect(screen.getByTestId('settled')).toHaveTextContent('false'));
+  });
+
+  it('puts a restored version into the editor without another save, and tells the helper its text', async () => {
+    renderPage();
+    await openHistory();
+    const savesBefore = operations().filter((op) => op === 'UpdateDocumentDraftContent').length;
+    fireEvent.click(screen.getByRole('button', { name: 'mock restore' }));
+    expect(mockReplaceContent).toHaveBeenCalledWith([{ type: 'paragraph' }]);
+    expect(await screen.findByText(/mock ai save \[restored text\]/)).toBeInTheDocument();
+    expect(operations().filter((op) => op === 'UpdateDocumentDraftContent')).toHaveLength(
+      savesBefore,
+    );
+  });
+
+  it('refreshes the panel after each save', async () => {
+    renderPage();
+    await openHistory();
+    const before = Number(screen.getByTestId('history-panel').dataset.refresh);
+    fireEvent.click(screen.getByRole('button', { name: 'mock settle' }));
+    await waitFor(() =>
+      expect(Number(screen.getByTestId('history-panel').dataset.refresh)).toBeGreaterThan(before),
+    );
   });
 });
