@@ -1728,5 +1728,7 @@
   "documents.editor.bulletList": "Bulleted list",
   "documents.editor.orderedList": "Numbered list",
   "documents.editor.blockquote": "Quote",
-  "documents.editor.rule": "Divider"
+  "documents.editor.rule": "Divider",
+  "documents.editor.bubbleMenu": "Format selection",
+  "documents.editor.clearFormatting": "Clear formatting"
 }

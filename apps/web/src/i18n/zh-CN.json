@@ -1706,5 +1706,7 @@
   "documents.editor.bulletList": "项目符号列表",
   "documents.editor.orderedList": "编号列表",
   "documents.editor.blockquote": "引用",
-  "documents.editor.rule": "分隔线"
+  "documents.editor.rule": "分隔线",
+  "documents.editor.bubbleMenu": "设置所选文字格式",
+  "documents.editor.clearFormatting": "清除格式"
 }
