@@ -28,7 +28,7 @@ Loaded when working under `apps/api/src/infrastructure/observability`. The rest 
 - **Logged events:** `oidc.jwks_unavailable` (as distinct from a forged token) and `cron.auth.rejected` with `reason`.
 - **Security events (JEF-354):** `LoggingSecurityEventRepository`, a decorator over `DrizzleSecurityEventRepository`, emits one `security.<eventType>` line and increments `trakwyn.security.events`. The level is `warn` for `SUSPICIOUS_SECURITY_EVENT_TYPES`. Lines carry `userId` and `eventType` only, **never the IP or user agent**.
 - **Failed sign-ins:** logged as `auth.login.failed`/`auth.totp.failed` (`logAuthFailure.ts`). An unknown email and a wrong password are both `invalid_credentials` with no user id, so the log can't be used to enumerate accounts.
-- **Alerting** is Terraform in `infra/axiom/` (JEF-355; see its `README.md`). **Renaming a `METRICS.*` name, an `ADMIN_JOBS` entry or a log line's `event` field means updating `infra/axiom/monitors.tf` in the same PR.** That covers the dashboards too: `axiom_dashboard.llm_cost` reads `trakwyn.llm.*`, and `axiom_dashboard.ai_feedback` reads `trakwyn.ai.feedback`, its labels (`feature`, `rating`, `reason`, `model`, `prompt_version`) and the `ai.feedback.rated` event.
+- **Alerting** is Terraform in `infra/axiom/` (JEF-355; see its `README.md`). **Renaming a `METRICS.*` name, an `ADMIN_JOBS` entry or a log line's `event` field means updating `infra/axiom/monitors.tf` in the same PR.** That covers the dashboards too: `axiom_dashboard.llm_cost` reads `trakwyn.llm.*`, and `axiom_dashboard.ai_feedback` reads `trakwyn.ai.feedback`, its labels (`feature`, `rating`, `reason`, `model`, `prompt_version`) and the `ai.feedback.rated` event. **Same for a PostHog AI property or event name:** update `infra/posthog/ai_features.tf` and `queries/ai_*.sql`.
 
 ## PostHog (server) (JEF-566)
 
@@ -42,7 +42,7 @@ AI usage analytics, separate from Axiom. `$ai_generation` events start with JEF-
 - **Privacy is fixed in the adapter, not by callers:** client `privacyMode: true` and `disableGeoip: true`, `$process_person_profile: false` on every event, `release` from `APP_RELEASE`. The distinct id is `pseudonymousUserId(userId)` (`infrastructure/privacy/`), the same 16-hex hash as the gateway's `cf-aig-metadata` `user`, so a row in either can be matched to the other. Payloads are built field by field; `$ai_input`, `$ai_output_choices` and `$ai_output` are never set (held by `PostHogAiAnalytics.test.ts`).
 - **It never throws.** A failed capture or shutdown is logged at `warn` with the event name and the error only, never the payload.
 - **Config:** `POSTHOG_API_KEY` (the public `phc_` key) and `POSTHOG_HOST` (default `https://eu.i.posthog.com`). `infra/gcp/posthog.tf` reads the key from `infra/posthog`'s `project_api_key` output, the way `infra/vercel` does, so apply `infra/posthog` first. Rollback is to unset `POSTHOG_API_KEY`.
-- **Boot check:** the boot log line `AI analytics: PostHog adapter selected` (`ai_analytics.selected`) is at `info`, and production's logger level is `warn` (`index.ts`), so it does not appear in production logs. Confirm the rollout from the revision's env (`POSTHOG_API_KEY`, `POSTHOG_HOST`) instead.
+- **Boot check:** the `ai_analytics.selected` line is `info` and production logs `warn`, so it never shows there. Confirm the rollout from the revision's env (`POSTHOG_API_KEY`, `POSTHOG_HOST`).
 - The privacy policy says it (`legal.privacy.aiUsageAnalyticsBody`), and `docs/ai-data-handling.md` has the row, guarded by `aiDataHandling.test.ts`.
 
 ## Use-case spans
