@@ -1706,5 +1706,7 @@
   "documents.editor.bulletList": "項目符號清單",
   "documents.editor.orderedList": "編號清單",
   "documents.editor.blockquote": "引用",
-  "documents.editor.rule": "分隔線"
+  "documents.editor.rule": "分隔線",
+  "documents.editor.bubbleMenu": "設定所選文字格式",
+  "documents.editor.clearFormatting": "清除格式"
 }

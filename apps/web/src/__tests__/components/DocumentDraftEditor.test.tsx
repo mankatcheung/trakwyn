@@ -17,6 +17,11 @@ vi.mock('@tiptap/react', () => ({
 
 vi.mock('@tiptap/starter-kit', () => ({ default: { configure: () => ({}) } }));
 
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorBubbleMenu',
+  () => ({ DocumentEditorBubbleMenu: () => <div data-testid="bubble-menu" /> }),
+);
+
 // The toolbar has its own tests against a real editor (DocumentEditorToolbar.test.tsx).
 vi.mock(
   '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorToolbar',
