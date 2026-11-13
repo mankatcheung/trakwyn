@@ -192,8 +192,13 @@ export const infrastructure = {
   // each tool's access tag and checks that a name is real. Spans are gated
   // on `isObservabilityEnabled` like use-case tracing; the refusal log is not.
   toolCallObserver: asFunction(
-    ({ logger }: Cradle) =>
-      new ToolCallObserver({ tools: TOOL_CATALOGUE, logger, tracing: isObservabilityEnabled }),
+    ({ logger, aiAnalytics }: Cradle) =>
+      new ToolCallObserver({
+        tools: TOOL_CATALOGUE,
+        logger,
+        tracing: isObservabilityEnabled,
+        aiAnalytics,
+      }),
     { lifetime: Lifetime.SINGLETON },
   ),
   // PostHog in production with a key, otherwise a no-op (JEF-566). Flushed from

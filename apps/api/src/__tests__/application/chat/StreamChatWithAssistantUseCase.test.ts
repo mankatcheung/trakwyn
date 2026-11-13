@@ -151,6 +151,18 @@ describe('StreamChatWithAssistantUseCase write proposals (JEF-469)', () => {
     expect(deps.chatWriteTools.apply).not.toHaveBeenCalled();
   });
 
+  it('asks for a provider tagged with the conversation, so its turns share a PostHog session (JEF-568)', async () => {
+    const deps = proposingDeps();
+
+    await collect(new StreamChatWithAssistantUseCase(deps as never), {
+      ...baseInput,
+      message: 'move Acme to interviewing',
+    });
+
+    const request = vi.mocked(deps.llmProviderFactory.resolveForUser).mock.calls[0]![1];
+    expect(request.sessionKey).toBe(baseInput.conversationId);
+  });
+
   it('tells the model on its second round that the change was only proposed', async () => {
     const deps = proposingDeps();
     const provider = (
@@ -842,11 +854,13 @@ describe('StreamChatWithAssistantUseCase', () => {
         message: 'hi',
       });
 
-      // No provider and no model: the order decides. The only other thing the
-      // call says is which version of the chat prompt it sends (JEF-505).
+      // No provider and no model: the order decides. The only other things the
+      // call says are the version of the chat prompt it sends (JEF-505) and the
+      // conversation, which groups its turns in PostHog (JEF-568).
       expect(resolveForUser).toHaveBeenCalledWith('user-1', {
         feature: AI_FEATURE.CHAT,
         promptVersion: chatPrompt.version,
+        sessionKey: 'conv-1',
       });
     });
 
