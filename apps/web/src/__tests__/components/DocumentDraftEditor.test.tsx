@@ -26,6 +26,11 @@ vi.mock('#/routes/_authenticated/applications/$applicationId/-components/SlashMe
   SlashMenu: () => <div data-testid="slash-menu" />,
 }));
 
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorStatusBar',
+  () => ({ DocumentEditorStatusBar: () => <div data-testid="status-bar" /> }),
+);
+
 vi.mock('#/lib/editor/SlashCommandExtension', () => ({
   SlashCommand: { configure: () => ({}) },
 }));
@@ -63,13 +68,14 @@ describe('DocumentDraftEditor', () => {
 
     expect(screen.getByTestId('editor-content')).toBeInTheDocument();
     expect(screen.getByTestId('toolbar')).toBeInTheDocument();
+    expect(screen.getByTestId('status-bar')).toBeInTheDocument();
   });
 
   it('allows only http, https and mailto links', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
-    expect(config.extensions).toHaveLength(2);
+    expect(config.extensions).toHaveLength(4);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {
