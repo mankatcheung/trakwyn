@@ -86,3 +86,40 @@ variable "clipper_alert_boards" {
     error_message = "Each board must be one of linkedin, indeed, glassdoor, greenhouse, lever, workday."
   }
 }
+
+# AI features (JEF-570). First guesses: tighten after two weeks of real data.
+# The alerts notify release_health_alert_user_ids.
+
+variable "ai_downvote_alert_percent" {
+  description = "Alert when a feature's down-vote share of ratings over 7 days exceeds this percentage."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.ai_downvote_alert_percent > 0 && var.ai_downvote_alert_percent < 100
+    error_message = "Must be between 0 and 100, exclusive."
+  }
+}
+
+variable "ai_downvote_alert_min_ratings" {
+  description = "Below this many ratings in 7 days a feature's down-vote share is reported as 0, so two down-votes out of five do not alert."
+  type        = number
+  default     = 20
+}
+
+variable "ai_byok_error_alert_percent" {
+  description = "Alert when a feature's share of failed calls on the user's own key over 24 hours exceeds this percentage."
+  type        = number
+  default     = 15
+
+  validation {
+    condition     = var.ai_byok_error_alert_percent > 0 && var.ai_byok_error_alert_percent < 100
+    error_message = "Must be between 0 and 100, exclusive."
+  }
+}
+
+variable "ai_byok_error_alert_min_calls" {
+  description = "Below this many own-key calls in 24 hours a feature's error share is reported as 0."
+  type        = number
+  default     = 20
+}

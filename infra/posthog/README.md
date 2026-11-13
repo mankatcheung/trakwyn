@@ -11,6 +11,7 @@ The PostHog project the web and mobile apps report errors and product events to 
 | Output `project_api_key`       | The public `phc_` key; `infra/vercel` sets it as `VITE_POSTHOG_KEY`.          |
 | `release_health.tf`            | The mobile release health dashboard and its alert (JEF-368, below).           |
 | `clipper_health.tf`            | The Clipper health dashboard and its parser alerts (JEF-417, below).          |
+| `ai_features.tf`               | The AI features dashboard and its two alerts (JEF-570, below).                |
 
 ### Project settings
 
@@ -189,6 +190,38 @@ The web app sends named events for each step. They are built by hand in the Post
 - `checkout_completed` comes from the browser, which is the consent-gated client. If its count runs well below Polar's order count, move it to the Polar webhook (the open question on JEF-514).
 
 **Checking it.** With a key configured, click through `/` → `/register` → sign up; the events appear under Activity within a minute. Every property is a fixed string from the table, so none carries an email, a name or a query string; `scrub.ts` passes them untouched (`funnel.test.ts`).
+
+## AI features (JEF-570)
+
+`ai_features.tf` builds an **AI features** dashboard from the events the API sends with `posthog-node` (JEF-566 to JEF-569; see `apps/api/src/infrastructure/observability/CLAUDE.md`): `$ai_generation`, `$ai_span`, `$ai_feedback` and `ai_output_rating_cleared`. Its first tile is `ai_features_definitions.md`. Spend, breaker, circuit and failover alerting stays in Axiom (`infra/axiom/monitors.tf`).
+
+| Resource                                                      | What                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `posthog_dashboard.ai_features`                               | The dashboard.                                                                                                                                                                                                                                                                         |
+| `posthog_insight.ai_cost_daily`                               | Cost a day by `feature` and `source` (a trends chart).                                                                                                                                                                                                                                 |
+| `posthog_insight.ai_cost_per_user_by_tier`, `ai_top_spenders` | Cost per user p50 and p95 by hosted `tier`; the ten biggest pseudonymous ids.                                                                                                                                                                                                          |
+| `posthog_insight.ai_latency`                                  | p50 and p95 latency, p95 time to first token, by `feature` and `model`.                                                                                                                                                                                                                |
+| `posthog_insight.ai_error_share`                              | Errors by `feature`, `source` and `error_kind`.                                                                                                                                                                                                                                        |
+| `posthog_insight.ai_downvote_share`, `ai_downvote_reasons`    | Down-vote share by `feature`, `model` and `prompt_version`, and the reasons; both net of cleared ratings.                                                                                                                                                                              |
+| `posthog_insight.ai_tool_calls`                               | `$ai_span` by tool and outcome.                                                                                                                                                                                                                                                        |
+| `posthog_insight.ai_downvote_alert`, `ai_byok_error_alert`    | The rows the two alerts read, also shown on the dashboard.                                                                                                                                                                                                                             |
+| `posthog_alert.ai_downvote_share`                             | Down-vote share above `ai_downvote_alert_percent` (30) on any feature over 7 days, with at least `ai_downvote_alert_min_ratings` (20) ratings. Daily.                                                                                                                                  |
+| `posthog_alert.ai_byok_error_share`                           | Share of calls on a user's own key that failed, above `ai_byok_error_alert_percent` (15) on any feature over 24 hours, with at least `ai_byok_error_alert_min_calls` (20) calls. Hourly. Own-key failures hit users and no Axiom monitor covers them; hosted errors are covered there. |
+| `posthog_dashboard_layout.ai_features`                        | Tile order and sizes. Authoritative: tiles added by hand lose their place on apply.                                                                                                                                                                                                    |
+
+**Why SQL alerts.** A trends alert watches one series, so "any feature" would need an alert per feature and the plan allows 5. Both alerts are SQL alerts (`evaluation = "any_row"`) on a query with a row per feature, so one alert covers all of them and the notification names the feature (`label_column`). They need provider 1.0.29 or later (`versions.tf`). Below the minimum, a row reads 0, so five ratings with two down-votes do not alert.
+
+**Plan, not tier.** The brief asked for cost per user by plan. The API sends no billing-plan property, only `tier` (the hosted model tier, absent on a user's own key), so that chart splits by `tier`. A `plan` property on `$ai_generation` would be a change to the API.
+
+**The alert limit.** These two alerts and the mobile crash alert make three, so the Clipper can have at most two board alerts. `clipper_alert_boards` defaults to four, which would make seven: set it to two or fewer in `terraform.tfvars` before applying, or the apply fails with `reached the limit of 5 alerts` and leaves the state part-applied.
+
+**Property names are a contract.** Every property the queries read is sent by `PostHogAiAnalytics.ts`. Renaming one there means updating `ai_features.tf` and `queries/ai_*.sql` in the same PR.
+
+**Rollout.** Apply only after the events have flowed for a few days, because a query on a property PostHog has never seen can be rejected. Then open the dashboard and compare a week of cost with the Axiom `llm_cost` dashboard; fix a disagreeing insight in the UI first and copy it back here. The thresholds are first guesses: tighten them in `terraform.tfvars` after two weeks. Rollback is `terraform destroy -target` on these resources; nothing else depends on them.
+
+### Checking that each alert fires
+
+Both alerts notify `release_health_alert_user_ids`. For each: set its threshold to 0 and apply (`-var ai_downvote_alert_percent=0.01`, the variable allows no less than above 0), then in PostHog open **Alerts**, the alert, and **Check now**. The notification should arrive by email and the alert read `Firing`, naming a feature. For the down-vote alert, lower `ai_downvote_alert_min_ratings` to 1 as well, or the rows read 0. Set the variables back and apply again. Delete nothing by hand: an alert that was edited in the UI shows in `plan`.
 
 ## Mobile release health (JEF-368)
 

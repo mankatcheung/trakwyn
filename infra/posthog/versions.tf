@@ -4,7 +4,8 @@ terraform {
   required_providers {
     posthog = {
       source  = "PostHog/posthog"
-      version = "~> 1.0"
+      # 1.0.29 added SQL alerts (evaluation, column), which ai_features.tf uses.
+      version = "~> 1.0, >= 1.0.29"
     }
   }
 
