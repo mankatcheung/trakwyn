@@ -1730,5 +1730,7 @@
   "documents.editor.blockquote": "Quote",
   "documents.editor.rule": "Divider",
   "documents.editor.bubbleMenu": "Format selection",
-  "documents.editor.clearFormatting": "Clear formatting"
+  "documents.editor.clearFormatting": "Clear formatting",
+  "documents.editor.slash.menu": "Insert block",
+  "documents.editor.slash.available": "{{count}} blocks available. Use the arrow keys and Enter."
 }
