@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 interface EditorUpdateConfig {
   onUpdate: (args: { editor: { getJSON: () => unknown; getText: () => string } }) => void;
@@ -16,6 +16,14 @@ vi.mock('@tiptap/react', () => ({
 }));
 
 vi.mock('@tiptap/starter-kit', () => ({ default: { configure: () => ({}) } }));
+
+// The find bar has its own tests against a real editor (DocumentEditorFindBar.test.tsx).
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorFindBar',
+  () => ({
+    DocumentEditorFindBar: ({ mode }: { mode: string }) => <div data-testid="find-bar">{mode}</div>,
+  }),
+);
 
 vi.mock(
   '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorBubbleMenu',
@@ -75,7 +83,8 @@ describe('DocumentDraftEditor', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
-    expect(config.extensions).toHaveLength(4);
+    // StarterKit (links), placeholder, count, slash menu (JEF-574..576), find and replace and its shortcuts (JEF-580).
+    expect(config.extensions).toHaveLength(6);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {
@@ -180,6 +189,17 @@ describe('DocumentDraftEditor', () => {
       editorRef.current!.focusBlock(2);
       expect(setTextSelection).toHaveBeenCalledWith(26);
       expect(run).toHaveBeenCalled();
+    });
+
+    it('opens the find bar from the editor shortcut, in the requested mode, and closes it again (JEF-580)', () => {
+      render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
+      expect(screen.queryByTestId('find-bar')).not.toBeInTheDocument();
+      const shortcuts = useEditorMock.mock.calls[0][0].extensions.find(
+        (e: { options?: { onOpen?: unknown } }) => typeof e?.options?.onOpen === 'function',
+      );
+      expect(shortcuts).toBeDefined();
+      act(() => shortcuts.options.onOpen('replace'));
+      expect(screen.getByTestId('find-bar')).toHaveTextContent('replace');
     });
 
     it('appends after the last block', () => {

@@ -11,6 +11,9 @@ import { SlashCommand } from '#/lib/editor/SlashCommandExtension';
 import { createSlashMenuController } from '#/lib/editor/slashMenuController';
 import { SLASH_COMMANDS, filterSlashCommands } from '#/lib/editor/slashCommands';
 import { useLocale } from '#/lib/i18n';
+import { FindAndReplace } from '@tiptap/extension-find-and-replace';
+import { DocumentEditorFindBar } from './DocumentEditorFindBar';
+import { FindShortcuts, type FindMode } from '#/lib/editor/findShortcuts';
 import { ALLOWED_LINK_PROTOCOLS, isAllowedLinkUri } from '#/lib/editorLinks';
 import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
 import type { TiptapNode } from '#/lib/markdownToTiptapDoc';
@@ -102,6 +105,9 @@ export function DocumentDraftEditor({
     translate.current = t;
     placeholderText.current = t(placeholderKey);
   }, [t, placeholderKey]);
+  // The find bar (JEF-580). `signal` changes on every Cmd/Ctrl+F, so pressing it
+  // while the bar is open puts the cursor back in the find field.
+  const [find, setFind] = useState<{ mode: FindMode; signal: number } | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -120,6 +126,11 @@ export function DocumentDraftEditor({
         controller: slashMenu,
         filter: (query) =>
           filterSlashCommands(SLASH_COMMANDS, query, (item) => translate.current(item.labelKey)),
+      }),
+      // Small documents: search as the user types, no debounce.
+      FindAndReplace.configure({ searchDebounceMs: 0 }),
+      FindShortcuts.configure({
+        onOpen: (mode) => setFind((prev) => ({ mode, signal: (prev?.signal ?? 0) + 1 })),
       }),
     ],
     content: initialContent,
@@ -167,6 +178,16 @@ export function DocumentDraftEditor({
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700">
       <DocumentEditorToolbar editor={editor} editable={editable} />
+      {find && (
+        <DocumentEditorFindBar
+          editor={editor}
+          editable={editable}
+          mode={find.mode}
+          focusSignal={find.signal}
+          onModeChange={(mode) => setFind((prev) => (prev ? { ...prev, mode } : prev))}
+          onClose={() => setFind(null)}
+        />
+      )}
       <EditorContent editor={editor} className={EDITOR_CONTENT_CLASS} />
       <DocumentEditorStatusBar editor={editor} />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
