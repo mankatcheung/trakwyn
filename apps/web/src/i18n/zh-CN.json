@@ -1717,5 +1717,14 @@
   "documents.editor.blockquote": "引用",
   "documents.editor.rule": "分隔线",
   "documents.editor.bubbleMenu": "设置所选文字格式",
-  "documents.editor.clearFormatting": "清除格式"
+  "documents.editor.clearFormatting": "清除格式",
+  "documents.editor.slash.menu": "插入内容块",
+  "documents.editor.slash.available": "有 {{count}} 个内容块可选。使用方向键和回车键选择。",
+  "documents.editor.placeholder": "开始输入，或输入 / 插入标题或列表。",
+  "documents.editor.placeholderResume": "在此开始撰写简历，或让 AI 助手根据你的资料起草。输入 / 插入标题或列表。",
+  "documents.editor.placeholderCoverLetter": "在此开始撰写求职信，或让 AI 助手为这个职位撰写。输入 / 插入标题或列表。",
+  "documents.editor.wordCount_other": "{{formatted}} 词",
+  "documents.editor.characterCount_other": "{{formatted}} 个字符",
+  "documents.editor.selectionWords_other": "{{selected}} / {{formatted}} 词",
+  "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 个字符"
 }

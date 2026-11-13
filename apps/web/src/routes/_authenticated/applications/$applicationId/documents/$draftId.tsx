@@ -383,6 +383,7 @@ function DocumentDraftEditPage() {
             editorRef={editorRef}
             onTextChange={setLiveText}
             onJsonChange={setLiveJson}
+            draftType={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
           />
           {draft.type === 'resume' && (
             <DocumentEditorChecks

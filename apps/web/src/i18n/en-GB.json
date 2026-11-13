@@ -1739,5 +1739,18 @@
   "documents.editor.blockquote": "Quote",
   "documents.editor.rule": "Divider",
   "documents.editor.bubbleMenu": "Format selection",
-  "documents.editor.clearFormatting": "Clear formatting"
+  "documents.editor.clearFormatting": "Clear formatting",
+  "documents.editor.slash.menu": "Insert block",
+  "documents.editor.slash.available": "{{count}} blocks available. Use the arrow keys and Enter.",
+  "documents.editor.placeholder": "Start typing, or type / to insert a heading or list.",
+  "documents.editor.placeholderResume": "Start your resume here, or let the AI helper draft one from your profile. Type / to insert a heading or list.",
+  "documents.editor.placeholderCoverLetter": "Start your cover letter here, or let the AI helper write one for this job. Type / to insert a heading or list.",
+  "documents.editor.wordCount_one": "{{formatted}} word",
+  "documents.editor.wordCount_other": "{{formatted}} words",
+  "documents.editor.characterCount_one": "{{formatted}} character",
+  "documents.editor.characterCount_other": "{{formatted}} characters",
+  "documents.editor.selectionWords_one": "{{selected}} of {{formatted}} word",
+  "documents.editor.selectionWords_other": "{{selected}} of {{formatted}} words",
+  "documents.editor.selectionCharacters_one": "{{selected}} of {{formatted}} character",
+  "documents.editor.selectionCharacters_other": "{{selected}} of {{formatted}} characters"
 }
