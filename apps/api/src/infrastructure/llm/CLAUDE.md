@@ -58,3 +58,4 @@ A health circuit per Workers AI model, in front of the spend guards above. The s
 - **Where it is decided.** `UserLLMProviderFactory.resolvePlatform` picks `request.tier ?? aiModelTier(plan, feature)` and returns `tier` and `plan` on the `LLMProviderResolution` (absent on an own key). When `AiCreditService.charge` reports `overflow` and the resolution is not `lite`, `LimitEnforcingLLMProviderFactory` resolves again with `tier: 'lite'`.
 - **Free hosted chat** is tighter: `chatLimitsFor(resolution)` (`use-cases/chat/chatLimits.ts`) gives `CHAT.HOSTED_FREE` (3 tool iterations, 12_000 history chars) when `source === 'platform'` and `plan === 'free'`, else `CHAT.MAX_TOOL_ITERATIONS` / `MAX_HISTORY_CHARS`. The stream use case resolves the provider before it trims history for that reason.
 - **Telemetry:** `app.llm.tier` on the LLM span and a `tier` attribute on `trakwyn.llm.cost_micros` (`none` on an own key).
+- **PostHog:** `infrastructure/observability/CLAUDE.md`.

@@ -78,6 +78,12 @@ export class PostHogAiAnalytics implements IAiAnalytics {
       prompt_version: event.promptVersion,
       outcome: event.outcome,
       error_kind: event.errorKind,
+      ...(event.spanId === undefined ? {} : { $ai_span_id: event.spanId }),
+      ...(event.timeToFirstTokenMs === undefined
+        ? {}
+        : { $ai_time_to_first_token: event.timeToFirstTokenMs / MS_PER_SECOND }),
+      ...(event.tier === undefined ? {} : { tier: event.tier }),
+      ...(event.reasoningTokens === undefined ? {} : { reasoning_tokens: event.reasoningTokens }),
     });
   }
 

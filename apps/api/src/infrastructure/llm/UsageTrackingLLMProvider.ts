@@ -81,7 +81,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
   ): Promise<LLMCompleteResult> {
     const result = await this.deps.inner.complete(messages, maxTokens, signal, options);
     await this.record(result.usage);
-    return { ...result, answeredBy: this.answeredBy() };
+    return { ...result, answeredBy: this.answeredBy(result.answeredBy) };
   }
 
   async *completeWithToolsStream(
@@ -109,7 +109,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
         if (event.type === 'done') {
           recorded = true;
           await this.record(event.usage);
-          yield { ...event, answeredBy: this.answeredBy() };
+          yield { ...event, answeredBy: this.answeredBy(event.answeredBy) };
           continue;
         }
         yield event;
@@ -128,7 +128,8 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
     }
   }
 
-  private answeredBy(): LLMAnsweredBy {
+  /** `inner` is what the wrapped provider said; only its trace id (JEF-567) is kept. */
+  private answeredBy(inner?: LLMAnsweredBy): LLMAnsweredBy {
     const { provider, model, source, tier } = this.deps;
     // A key that names no model runs the provider's default; a rating needs to say which.
     return {
@@ -136,6 +137,7 @@ export class UsageTrackingLLMProvider implements ILLMProvider {
       model: resolveModelName(provider, model),
       source,
       ...(tier ? { tier } : {}),
+      ...(inner?.traceId ? { traceId: inner.traceId } : {}),
     };
   }
 

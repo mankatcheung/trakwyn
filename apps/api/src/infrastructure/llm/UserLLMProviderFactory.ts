@@ -17,6 +17,7 @@ import type { User } from '#src/domain/user/User.js';
 import { llmApiKeyCipherContext } from '#src/use-cases/user/llmApiKeyCipherContext.js';
 import { UsageTrackingLLMProvider } from '#src/infrastructure/llm/UsageTrackingLLMProvider.js';
 import { FailoverLLMProvider } from '#src/infrastructure/llm/FailoverLLMProvider.js';
+import { AiAnalyticsLLMProvider } from '#src/infrastructure/llm/AiAnalyticsLLMProvider.js';
 import { TracingLLMProvider } from '#src/infrastructure/llm/TracingLLMProvider.js';
 import { noopMetrics, type IMetrics } from '#src/infrastructure/observability/metrics.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
@@ -25,6 +26,7 @@ import type { ILlmApiKeyCipher } from '#src/use-cases/ports/ILlmApiKeyCipher.js'
 import type { ILlmUsageEventRepository } from '#src/use-cases/ports/ILlmUsageEventRepository.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy.js';
+import type { IAiAnalytics } from '#src/use-cases/ports/IAiAnalytics.js';
 import type { IAiSpendGuard } from '#src/use-cases/ports/IAiSpendGuard.js';
 import type { IPlatformLLMProviderFactory } from '#src/use-cases/ports/IPlatformLLMProviderFactory.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
@@ -50,6 +52,8 @@ interface Deps {
    */
   traceLlmCalls?: boolean;
   metrics?: IMetrics;
+  /** Optional (JEF-567): every tracked call sends a PostHog `$ai_generation` event. */
+  aiAnalytics?: IAiAnalytics;
   /** The platform-owned path (JEF-446). Absent or disabled, every call is the user's own key. */
   platformLlmProviderFactory?: IPlatformLLMProviderFactory;
   /** Optional (JEF-449): platform calls add their cost to the daily spend. */
@@ -235,7 +239,9 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
 
   /**
    * Tracing sits beneath usage tracking, so the span times the provider
-   * rather than the ledger insert that follows it.
+   * rather than the ledger insert that follows it. AI analytics (JEF-567) is
+   * beneath tracing, so the active span while it runs is the call's own
+   * `llm.*` span, and each failover leg sends its own event.
    */
   private track(
     raw: ILLMProvider,
@@ -249,16 +255,29 @@ export class UserLLMProviderFactory implements ILLMProviderFactory {
       promptVersion?: number;
     },
   ): ILLMProvider {
+    const analysed = this.deps.aiAnalytics
+      ? new AiAnalyticsLLMProvider({
+          inner: raw,
+          analytics: this.deps.aiAnalytics,
+          userId: ctx.userId,
+          provider: ctx.provider,
+          model: ctx.model,
+          feature: ctx.feature,
+          source: ctx.source,
+          tier: ctx.tier,
+          promptVersion: ctx.promptVersion,
+        })
+      : raw;
     const measured = this.deps.traceLlmCalls
       ? new TracingLLMProvider({
-          inner: raw,
+          inner: analysed,
           metrics: this.deps.metrics ?? noopMetrics,
           provider: ctx.provider,
           model: ctx.model,
           tier: ctx.tier,
           promptVersion: ctx.promptVersion,
         })
-      : raw;
+      : analysed;
     return new UsageTrackingLLMProvider({
       inner: measured,
       usageEventRepository: this.deps.llmUsageEventRepository,

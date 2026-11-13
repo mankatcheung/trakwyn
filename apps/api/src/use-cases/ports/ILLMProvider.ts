@@ -80,6 +80,11 @@ export interface LLMAnsweredBy {
   source: string;
   /** The hosted model tier; absent on the user's own key. */
   tier?: string;
+  /**
+   * The trace id the call's PostHog generation carries (JEF-567), so a rating
+   * can point at it. Absent when no AI analytics decorator wrapped the call.
+   */
+  traceId?: string;
 }
 
 export interface LLMCompleteResult {
