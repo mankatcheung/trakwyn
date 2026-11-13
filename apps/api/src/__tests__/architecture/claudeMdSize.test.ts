@@ -95,6 +95,38 @@ describe('CLAUDE.md size', () => {
   });
 });
 
+describe('AGENTS.md', () => {
+  /**
+   * Agents that read AGENTS.md instead of CLAUDE.md (JEF-564) get one root
+   * file that points at the CLAUDE.md notes. It stays a pointer: small, naming
+   * CLAUDE.md, and every repo path it names is real.
+   */
+  const AGENTS_MAX_BYTES = 2 * 1024;
+  const agentsPath = join(REPO_ROOT, 'AGENTS.md');
+  const text = (): string => readFileSync(agentsPath, 'utf8');
+
+  it('exists at the repo root and stays under 2 KB', () => {
+    expect(existsSync(agentsPath)).toBe(true);
+    expect(sizeOf(agentsPath)).toBeLessThanOrEqual(AGENTS_MAX_BYTES);
+  });
+
+  it('names CLAUDE.md', () => {
+    expect(text()).toContain('CLAUDE.md');
+  });
+
+  it('only names repo paths that exist', () => {
+    const paths = [...text().matchAll(/`([^`\s]+)`/g)]
+      .map((match) => match[1])
+      .filter((token) => token.includes('/') || token.endsWith('.md'))
+      // Slash commands such as `/rename` are not paths.
+      .filter((token) => !token.startsWith('/'));
+
+    expect(paths.length).toBeGreaterThan(0);
+    const missing = paths.filter((p) => !existsSync(join(REPO_ROOT, p)));
+    expect(missing).toEqual([]);
+  });
+});
+
 describe('CLAUDE.md pointers', () => {
   /**
    * A file moved out of a CLAUDE.md and renamed later leaves a pointer to

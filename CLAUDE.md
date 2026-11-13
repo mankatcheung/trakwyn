@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. Subsystem detail lives next to the code and loads when you work there:
+Guidance for Claude Code in this repository. The root `AGENTS.md` is a pointer to these files for other coding agents; keep it a pointer, not a copy (held by `claudeMdSize.test.ts`). Subsystem detail lives next to the code and loads when you work there:
 
 - `apps/api/CLAUDE.md`: auth cookies, session revocation, database, deployment, client compatibility and testing, plus an index of the nested `CLAUDE.md` files next to the code they describe (billing, AI, MCP, storage, observability and so on). Those load only when you work in their directory.
 - `apps/web/CLAUDE.md`: routing, session detection, codegen and PostHog.
