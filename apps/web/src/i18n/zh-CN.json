@@ -1708,5 +1708,18 @@
   "documents.editor.blockquote": "引用",
   "documents.editor.rule": "分隔线",
   "documents.editor.bubbleMenu": "设置所选文字格式",
-  "documents.editor.clearFormatting": "清除格式"
+  "documents.editor.clearFormatting": "清除格式",
+  "documents.editor.find": "查找",
+  "documents.editor.findNoResults": "没有结果",
+  "documents.editor.findCount": "第 {{current}} 个，共 {{total}} 个",
+  "documents.editor.findMatchCase": "区分大小写",
+  "documents.editor.findWholeWord": "全字匹配",
+  "documents.editor.findPrevious": "上一个",
+  "documents.editor.findNext": "下一个",
+  "documents.editor.findShowReplace": "显示替换",
+  "documents.editor.findHideReplace": "隐藏替换",
+  "documents.editor.findReplaceWith": "替换为",
+  "documents.editor.findReplace": "替换",
+  "documents.editor.findReplaceAll": "全部替换",
+  "documents.editor.findClose": "关闭查找"
 }

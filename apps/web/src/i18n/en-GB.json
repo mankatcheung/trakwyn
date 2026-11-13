@@ -1730,5 +1730,18 @@
   "documents.editor.blockquote": "Quote",
   "documents.editor.rule": "Divider",
   "documents.editor.bubbleMenu": "Format selection",
-  "documents.editor.clearFormatting": "Clear formatting"
+  "documents.editor.clearFormatting": "Clear formatting",
+  "documents.editor.find": "Find",
+  "documents.editor.findNoResults": "No results",
+  "documents.editor.findCount": "{{current}} of {{total}}",
+  "documents.editor.findMatchCase": "Match case",
+  "documents.editor.findWholeWord": "Whole word",
+  "documents.editor.findPrevious": "Previous match",
+  "documents.editor.findNext": "Next match",
+  "documents.editor.findShowReplace": "Show replace",
+  "documents.editor.findHideReplace": "Hide replace",
+  "documents.editor.findReplaceWith": "Replace with",
+  "documents.editor.findReplace": "Replace",
+  "documents.editor.findReplaceAll": "Replace all",
+  "documents.editor.findClose": "Close find"
 }
