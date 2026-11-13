@@ -1165,6 +1165,7 @@
   "legal.privacy.aiHostedSentBody": "发送的内容及原因：仅限你所请求的操作生成结果所需的内容，例如职位发布或从页面读取的文本、其中用到的简历和个人资料部分、你对该申请的笔记；在助手中还包括你的消息、此前的对话以及它为你查询的申请数据。仅在你发起操作时才会发送。我们不会发送你的密码、付款信息或登录令牌。",
   "legal.privacy.aiHostedNoTrainingBody": "通过 Trakwyn AI 发送的内容不会被我们用于训练模型。Cloudflare 声明，它不会使用经 Workers AI 处理的内容来训练 AI 模型；其数据使用说明和条款见下方链接。",
   "legal.privacy.aiHostedRetentionBody": "Cloudflare 声明，Workers AI 在作出回应后不会保留你的提示词或回复，但在 AI Gateway 中开启了日志或缓存，或使用了 Cloudflare 存储服务的情况除外。我们关闭了网关的日志和缓存，也没有为这些内容使用 Cloudflare 存储服务。Cloudflare 可能会保留不包含你的内容的运营数据，例如时间戳、请求大小、令牌数量和错误代码。AI 操作的结果会作为你的数据的一部分保存，例如你保存的求职信，并会在你删除该内容或账户时一并删除。",
+  "legal.privacy.aiUsageAnalyticsBody": "当你使用 AI 功能时，我们会把使用详情发送给产品分析服务商 PostHog：功能名称、模型、令牌数量、费用、调用耗时以及是否成功。这些数据只关联一个化名标识符，不包含你的姓名或电子邮件，PostHog 也不会据此建立个人档案或推断你的位置。我们绝不会把你的提示词、内容或回复发送给 PostHog。",
   "legal.privacy.webSearchTitle": "公司简报中的网络搜索",
   "legal.privacy.webSearchBody": "在包含此功能的方案中生成公司简报时，我们可能会在网络上搜索该公司的新闻、融资和评价。搜索由我们的子处理方 Tavily 执行，它只会收到您申请中的公司名称，以及（当职位链接指向公司自己的网站时）该网站的域名，不会收到任何其他有关您或您申请的信息。搜索结果属于第三方网络内容，会随同请求发送给撰写简报的 AI 模型，并连同日期一起列在简报旁边，方便您核对。某家公司的搜索结果最多保留三天，并在用户之间共享，因此与提出请求的人无关。",
   "legal.privacy.aiTableCaption": "Trakwyn AI 的 AI 子处理方",

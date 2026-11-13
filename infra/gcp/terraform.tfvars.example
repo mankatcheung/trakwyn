@@ -1,6 +1,7 @@
 # Copy to terraform.tfvars (gitignored) and fill in. Nothing here is secret;
 # secrets go to Secret Manager (README.md, "Secrets").
 project_id             = "job-finder-503217"
+state_bucket           = "job-finder-503217-tfstate" # the bucket passed to terraform init; read for infra/posthog's key (JEF-566)
 initial_image          = "europe-west1-docker.pkg.dev/job-finder-503217/trakwyn/api:bootstrap"
 upstash_redis_rest_url = "https://<name>.upstash.io" # terraform -chdir=../upstash output -raw rest_url
 

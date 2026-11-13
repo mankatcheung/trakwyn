@@ -146,6 +146,11 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
     disposeOnResponse: true,
   });
 
+  // Resolved once at boot so the adapter choice is logged; queued AI events are
+  // flushed when the server closes (JEF-566).
+  const { aiAnalytics } = container.cradle;
+  fastify.addHook('onClose', async () => aiAnalytics.shutdown());
+
   if (process.env[ENV.STORAGE_PROVIDER] === STORAGE_PROVIDER.LOCAL) {
     fastify.put<{ Params: { '*': string }; Body: Buffer }>(
       '/uploads/_upload/*',

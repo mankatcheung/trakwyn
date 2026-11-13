@@ -34,6 +34,10 @@ locals {
       EMAIL_PROVIDER         = "brevo"
       # Whose OIDC tokens the admin cron routes accept (scheduler.tf).
       CRON_INVOKER_SA = google_service_account.cron_invoker.email
+      # AI usage analytics (JEF-566). The key is public, so it is not a secret.
+      # Unset it here to switch the adapter back to a no-op.
+      POSTHOG_API_KEY = data.terraform_remote_state.posthog.outputs.project_api_key
+      POSTHOG_HOST    = var.posthog_host
     },
     var.hosted_ai ? {
       HOSTED_AI_ENABLED         = "true"

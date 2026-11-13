@@ -86,6 +86,8 @@ export function PrivacyPage() {
         </tbody>
       </table>
 
+      <p>{t('legal.privacy.aiUsageAnalyticsBody')}</p>
+
       <h3>{t('legal.privacy.webSearchTitle')}</h3>
       <p>{t('legal.privacy.webSearchBody')}</p>
 

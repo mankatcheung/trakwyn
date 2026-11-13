@@ -363,6 +363,7 @@ import type { CreateCheckoutSessionUseCase } from '#src/use-cases/billing/Create
 import type { CreateBillingPortalSessionUseCase } from '#src/use-cases/billing/CreateBillingPortalSessionUseCase.js';
 import type { HandleBillingWebhookUseCase } from '#src/use-cases/billing/HandleBillingWebhookUseCase.js';
 import type { IPdfRenderer } from '#src/use-cases/ports/IPdfRenderer.js';
+import type { IAiAnalytics } from '#src/use-cases/ports/IAiAnalytics.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
 export interface Cradle {
@@ -722,6 +723,7 @@ export interface Cradle {
   outboundUrlPolicy: IOutboundUrlPolicy;
   toolCallObserver: IToolCallObserver;
   aiFeedbackObserver: IAiFeedbackObserver;
+  aiAnalytics: IAiAnalytics;
   oidcTokenVerifier: IOidcTokenVerifier;
   llmApiKeyCipher: ILlmApiKeyCipher;
   platformLlmProviderFactory: IPlatformLLMProviderFactory;
