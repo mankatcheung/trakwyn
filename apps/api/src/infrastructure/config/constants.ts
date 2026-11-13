@@ -53,6 +53,9 @@ export const ENV = {
   AXIOM_DATASET: 'AXIOM_DATASET',
   AXIOM_METRICS_DATASET: 'AXIOM_METRICS_DATASET',
   AXIOM_LOGS_DATASET: 'AXIOM_LOGS_DATASET',
+  /** Public `phc_` project key; PostHog AI analytics run only with it in production (JEF-566). */
+  POSTHOG_API_KEY: 'POSTHOG_API_KEY',
+  POSTHOG_HOST: 'POSTHOG_HOST',
   /** Commit SHA the image was built from, baked in by CI (JEF-362). */
   APP_RELEASE: 'APP_RELEASE',
   /** `'true'` turns on the JEF-353 diagnostic — see `inboundTraceparent.ts`. */
@@ -342,6 +345,14 @@ export const SESSION_BLOCKLIST = {
  * Axiom (observability: logs, traces, metrics) settings.
  * @see https://axiom.co/docs/send-data/opentelemetry
  */
+/** Server-side PostHog client (JEF-566). */
+export const POSTHOG = {
+  DEFAULT_HOST: 'https://eu.i.posthog.com',
+  FLUSH_AT: 20,
+  FLUSH_INTERVAL_MS: 10_000,
+  SHUTDOWN_TIMEOUT_MS: 5_000,
+} as const;
+
 export const AXIOM = {
   API_URL: 'https://eu-central-1.aws.edge.axiom.co',
   TRACES_PATH: '/v1/traces',

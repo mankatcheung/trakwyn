@@ -122,3 +122,14 @@ variable "secret_env_vars" {
     error_message = "DATABASE_URL is required: it is the Neon connection string, password included."
   }
 }
+
+variable "state_bucket" {
+  description = "GCS bucket holding every root's state, the same one passed to `terraform init -backend-config`. Read here for infra/posthog's project_api_key output (JEF-566)."
+  type        = string
+}
+
+variable "posthog_host" {
+  description = "PostHog ingestion host the API sends AI usage events to (POSTHOG_HOST). The EU cloud."
+  type        = string
+  default     = "https://eu.i.posthog.com"
+}

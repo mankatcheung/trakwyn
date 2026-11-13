@@ -170,9 +170,48 @@ describe('AI data handling matches the privacy policy', () => {
     });
   });
 
+  describe('LLM usage analytics (legal.privacy.aiUsageAnalyticsBody)', () => {
+    const key = 'legal.privacy.aiUsageAnalyticsBody';
+    const row = 'LLM usage analytics to PostHog';
+    const adapter = read('apps/api/src/infrastructure/analytics/PostHogAiAnalytics.ts');
+    const port = read('apps/api/src/use-cases/ports/IAiAnalytics.ts');
+
+    it('keeps privacy mode, GeoIP off and no person profile', () => {
+      expect(adapter, fail(key, row, 'privacyMode must stay true')).toMatch(/privacyMode:\s*true/);
+      expect(adapter, fail(key, row, 'disableGeoip must stay true')).toMatch(
+        /disableGeoip:\s*true/,
+      );
+      expect(adapter, fail(key, row, 'events must not create person profiles')).toContain(
+        '$process_person_profile: false',
+      );
+    });
+
+    it('gives the port no field that could carry text', () => {
+      const code = port.replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(
+        /\b(content|messages?|prompt|completion|reply|input|output|text)\??:/i.test(code),
+        fail(key, row, 'IAiAnalytics gained a field that looks like it carries content'),
+      ).toBe(false);
+    });
+
+    it('says it in every locale', () => {
+      for (const locale of ['en', 'en-GB', 'zh-CN', 'zh-HK', 'zh-TW']) {
+        expect(
+          read(`apps/web/src/i18n/${locale}.json`),
+          fail(key, row, `${locale}.json lost the PostHog usage-analytics paragraph`),
+        ).toContain(`"${key}"`);
+      }
+    });
+  });
+
   it('documents every guarded flow', () => {
     const doc = read('docs/ai-data-handling.md');
-    for (const row of ['Hosted LLM', 'Tavily web search', 'LLM telemetry to Axiom']) {
+    for (const row of [
+      'Hosted LLM',
+      'Tavily web search',
+      'LLM telemetry to Axiom',
+      'LLM usage analytics to PostHog',
+    ]) {
       expect(doc, `docs/ai-data-handling.md has no "${row}" row`).toContain(row);
     }
     expect(doc).toMatch(/Last checked: \d{4}-\d{2}-\d{2}/);

@@ -1,8 +1,5 @@
-import { createHash } from 'node:crypto';
+import { pseudonymousUserId } from '#src/infrastructure/privacy/pseudonymousUserId.js';
 import type { AiFeature, AiModelTier } from '#src/use-cases/constants.js';
-
-/** Hex characters of the user hash sent to the gateway: enough to tell users apart, too short to mistake for an id. */
-const USER_HASH_LENGTH = 16;
 
 export interface GatewayCallContext {
   userId: string;
@@ -18,9 +15,8 @@ export interface GatewayCallContext {
  * to find who a row belongs to.
  */
 export function buildGatewayMetadata(context: GatewayCallContext, tier: AiModelTier): string {
-  const user = createHash('sha256').update(context.userId).digest('hex');
   return JSON.stringify({
-    user: user.slice(0, USER_HASH_LENGTH),
+    user: pseudonymousUserId(context.userId),
     feature: context.feature,
     tier,
   });
