@@ -1,8 +1,13 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
+import { SlashMenu } from './SlashMenu';
+import { SlashCommand } from '#/lib/editor/SlashCommandExtension';
+import { createSlashMenuController } from '#/lib/editor/slashMenuController';
+import { SLASH_COMMANDS, filterSlashCommands } from '#/lib/editor/slashCommands';
+import { useLocale } from '#/lib/i18n';
 import { ALLOWED_LINK_PROTOCOLS, isAllowedLinkUri } from '#/lib/editorLinks';
 import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
 import type { TiptapNode } from '#/lib/markdownToTiptapDoc';
@@ -66,6 +71,13 @@ export function DocumentDraftEditor({
   });
 
   const [editable, setEditable] = useState(true);
+  const { t } = useLocale();
+  const [slashMenu] = useState(createSlashMenuController);
+  // The editor is built once, so the slash filter reads the current language through a ref.
+  const translate = useRef(t);
+  useEffect(() => {
+    translate.current = t;
+  }, [t]);
 
   const editor = useEditor({
     extensions: [
@@ -76,6 +88,11 @@ export function DocumentDraftEditor({
           protocols: [...ALLOWED_LINK_PROTOCOLS],
           isAllowedUri: (url) => isAllowedLinkUri(url),
         },
+      }),
+      SlashCommand.configure({
+        controller: slashMenu,
+        filter: (query) =>
+          filterSlashCommands(SLASH_COMMANDS, query, (item) => translate.current(item.labelKey)),
       }),
     ],
     content: initialContent,
@@ -120,6 +137,7 @@ export function DocumentDraftEditor({
         className="prose min-h-[400px] max-w-none p-4 focus:outline-none dark:prose-invert [&_.ProseMirror]:min-h-[360px] [&_.ProseMirror]:text-gray-900 [&_.ProseMirror]:outline-none [&_.ProseMirror]:dark:text-gray-100"
       />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
+      <SlashMenu editor={editor} controller={slashMenu} />
     </div>
   );
 }

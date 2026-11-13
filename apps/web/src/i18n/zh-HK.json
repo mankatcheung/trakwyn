@@ -1708,5 +1708,7 @@
   "documents.editor.blockquote": "引用",
   "documents.editor.rule": "分隔線",
   "documents.editor.bubbleMenu": "設定所選文字格式",
-  "documents.editor.clearFormatting": "清除格式"
+  "documents.editor.clearFormatting": "清除格式",
+  "documents.editor.slash.menu": "插入區塊",
+  "documents.editor.slash.available": "有 {{count}} 個區塊可選。使用方向鍵和 Enter 鍵選擇。"
 }
