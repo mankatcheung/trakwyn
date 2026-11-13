@@ -192,8 +192,13 @@ export const infrastructure = {
   // each tool's access tag and checks that a name is real. Spans are gated
   // on `isObservabilityEnabled` like use-case tracing; the refusal log is not.
   toolCallObserver: asFunction(
-    ({ logger }: Cradle) =>
-      new ToolCallObserver({ tools: TOOL_CATALOGUE, logger, tracing: isObservabilityEnabled }),
+    ({ logger, aiAnalytics }: Cradle) =>
+      new ToolCallObserver({
+        tools: TOOL_CATALOGUE,
+        logger,
+        tracing: isObservabilityEnabled,
+        aiAnalytics,
+      }),
     { lifetime: Lifetime.SINGLETON },
   ),
   // PostHog in production with a key, otherwise a no-op (JEF-566). Flushed from
@@ -201,9 +206,12 @@ export const infrastructure = {
   aiAnalytics: asFunction(({ logger }: Cradle) => buildAiAnalytics(logger), {
     lifetime: Lifetime.SINGLETON,
   }),
-  aiFeedbackObserver: asFunction(({ logger }: Cradle) => new AiFeedbackObserver({ logger }), {
-    lifetime: Lifetime.SINGLETON,
-  }),
+  aiFeedbackObserver: asFunction(
+    ({ logger, aiAnalytics }: Cradle) => new AiFeedbackObserver({ logger, aiAnalytics }),
+    {
+      lifetime: Lifetime.SINGLETON,
+    },
+  ),
   llmApiKeyCipher: asClass(LlmApiKeyCipher, { lifetime: Lifetime.SINGLETON }),
   // Fails closed, unlike the cache and rate limiter that share this Redis (JEF-449).
   aiSpendGuard: asFunction(

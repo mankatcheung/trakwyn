@@ -58,7 +58,7 @@ describe('ToolCallObserver', () => {
     const { observer } = makeObserver();
 
     await observer.observe(
-      { surface: 'mcp', name: 'get_application', tokenScope: 'read' },
+      { surface: 'mcp', name: 'get_application', userId: 'user-1', tokenScope: 'read' },
       async (call) => {
         call.succeeded('{"id":"app-1"}');
         return 'reply';
@@ -81,10 +81,13 @@ describe('ToolCallObserver', () => {
   it('measures a non-string result by its JSON size, in UTF-8 bytes', async () => {
     const { observer } = makeObserver();
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async (call) => {
-      call.succeeded({ company: 'Café' });
-      return null;
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async (call) => {
+        call.succeeded({ company: 'Café' });
+        return null;
+      },
+    );
 
     // {"company":"Café"} is 18 characters, and é is two bytes.
     expect(onlySpan().attributes[TRACING.TOOL_RESULT_BYTES_ATTRIBUTE]).toBe(19);
@@ -94,10 +97,13 @@ describe('ToolCallObserver', () => {
     const { observer } = makeObserver();
     const secret = 'app-secret-id';
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async (call) => {
-      call.succeeded({ id: secret, notes: 'private' });
-      return null;
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async (call) => {
+        call.succeeded({ id: secret, notes: 'private' });
+        return null;
+      },
+    );
 
     expect(JSON.stringify(onlySpan().attributes)).not.toContain(secret);
     expect(JSON.stringify(onlySpan().attributes)).not.toContain('private');
@@ -108,9 +114,12 @@ describe('ToolCallObserver', () => {
     const { observer } = makeObserver();
     const tracer = trace.getTracer('test');
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async () => {
-      tracer.startSpan('pg.query').end();
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async () => {
+        tracer.startSpan('pg.query').end();
+      },
+    );
 
     const spans = exporter.getFinishedSpans();
     const tool = spans.find((span) => span.name === 'chat.tool get_application')!;
@@ -121,10 +130,13 @@ describe('ToolCallObserver', () => {
   it('marks an internal failure ERROR with the exception, and counts it', async () => {
     const { observer, metrics } = makeObserver();
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async (call) => {
-      call.failed(new Error('connection reset'));
-      return { error: 'Tool call failed' };
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async (call) => {
+        call.failed(new Error('connection reset'));
+        return { error: 'Tool call failed' };
+      },
+    );
 
     const span = onlySpan();
     expect(span.attributes[TRACING.TOOL_OUTCOME_ATTRIBUTE]).toBe('internal_error');
@@ -138,9 +150,12 @@ describe('ToolCallObserver', () => {
   it('records a domain error by code without marking the span failed', async () => {
     const { observer } = makeObserver();
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async (call) => {
-      call.failed(new NotFoundError('Application'));
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async (call) => {
+        call.failed(new NotFoundError('Application'));
+      },
+    );
 
     const span = onlySpan();
     expect(span.attributes[TRACING.TOOL_OUTCOME_ATTRIBUTE]).toBe('domain_error');
@@ -151,9 +166,12 @@ describe('ToolCallObserver', () => {
   it('classifies a ValidationError as invalid params', async () => {
     const { observer } = makeObserver();
 
-    await observer.observe({ surface: 'chat', name: 'get_application' }, async (call) => {
-      call.failed(new ValidationError('Unknown tool'));
-    });
+    await observer.observe(
+      { surface: 'chat', name: 'get_application', userId: 'user-1' },
+      async (call) => {
+        call.failed(new ValidationError('Unknown tool'));
+      },
+    );
 
     expect(onlySpan().attributes[TRACING.TOOL_OUTCOME_ATTRIBUTE]).toBe('invalid_params');
   });
@@ -163,7 +181,7 @@ describe('ToolCallObserver', () => {
     const boom = new Error('boom');
 
     await expect(
-      observer.observe({ surface: 'mcp', name: 'get_application' }, async () => {
+      observer.observe({ surface: 'mcp', name: 'get_application', userId: 'user-1' }, async () => {
         throw boom;
       }),
     ).rejects.toBe(boom);
@@ -176,7 +194,7 @@ describe('ToolCallObserver', () => {
     const { observer, logger, metrics } = makeObserver();
 
     await observer.observe(
-      { surface: 'mcp', name: 'create_note', tokenScope: 'read' },
+      { surface: 'mcp', name: 'create_note', userId: 'user-1', tokenScope: 'read' },
       async (call) => call.refused('user-1'),
     );
 
@@ -198,8 +216,10 @@ describe('ToolCallObserver', () => {
   it('counts a chat write that was only proposed as proposed, not ok (JEF-469)', async () => {
     const { observer, metrics } = makeObserver();
 
-    await observer.observe({ surface: 'chat', name: 'create_note' }, async (call) =>
-      call.proposed({ status: 'proposed', proposalId: 'p1', summary: 'Add a note' }),
+    await observer.observe(
+      { surface: 'chat', name: 'create_note', userId: 'user-1' },
+      async (call) =>
+        call.proposed({ status: 'proposed', proposalId: 'p1', summary: 'Add a note' }),
     );
 
     expect(metrics.toolCalls).toEqual([
@@ -214,8 +234,9 @@ describe('ToolCallObserver', () => {
   it('records a tool name outside the catalogue as unknown, so a client cannot mint names', async () => {
     const { observer, metrics } = makeObserver();
 
-    await observer.observe({ surface: 'mcp', name: 'drop_table_users' }, async (call) =>
-      call.invalidParams(),
+    await observer.observe(
+      { surface: 'mcp', name: 'drop_table_users', userId: 'user-1' },
+      async (call) => call.invalidParams(),
     );
 
     const span = onlySpan();
@@ -233,14 +254,14 @@ describe('ToolCallObserver', () => {
       const unserialisable = { toJSON: () => expect.fail('result was serialised') };
 
       const value = await observer.observe(
-        { surface: 'chat', name: 'get_application' },
+        { surface: 'chat', name: 'get_application', userId: 'user-1' },
         async (call) => {
           call.succeeded(unserialisable);
           return 'reply';
         },
       );
       await observer.observe(
-        { surface: 'mcp', name: 'create_note', tokenScope: 'read' },
+        { surface: 'mcp', name: 'create_note', userId: 'user-1', tokenScope: 'read' },
         async (call) => call.refused('user-1'),
       );
 
@@ -256,7 +277,13 @@ describe('ToolCallObserver', () => {
       const { observer } = makeObserver();
 
       await observer.observe(
-        { surface: 'mcp', name: 'create_note', tokenScope: 'full', tokenId: 'tok-1' },
+        {
+          surface: 'mcp',
+          name: 'create_note',
+          userId: 'user-1',
+          tokenScope: 'full',
+          tokenId: 'tok-1',
+        },
         async () => 'reply',
       );
 
@@ -267,7 +294,13 @@ describe('ToolCallObserver', () => {
       const { observer } = makeObserver();
 
       await observer.observe(
-        { surface: 'mcp', name: 'get_application', tokenScope: 'full', tokenId: 'tok-1' },
+        {
+          surface: 'mcp',
+          name: 'get_application',
+          userId: 'user-1',
+          tokenScope: 'full',
+          tokenId: 'tok-1',
+        },
         async () => 'reply',
       );
 

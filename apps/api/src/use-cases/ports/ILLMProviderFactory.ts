@@ -94,6 +94,11 @@ export interface LLMProviderRequest {
   model?: string | null;
   trackUsage?: boolean;
   /**
+   * What groups this call with others in PostHog's AI sessions (JEF-568): a
+   * chat's conversation id. Sent hashed, only on the `$ai_generation` event.
+   */
+  sessionKey?: string;
+  /**
    * Pins a platform call to a tier instead of the one the user's plan gets
    * for the feature (JEF-448). Set by the limit-enforcing decorator when a
    * Pro user's overflow is sent to `lite`; ignored on the user's own key.

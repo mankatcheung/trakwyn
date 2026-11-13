@@ -169,6 +169,13 @@
       "when": 1794412580605,
       "tag": "0023_happy_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794573926983,
+      "tag": "0024_chilly_martin_li",
+      "breakpoints": true
     }
   ]
 }

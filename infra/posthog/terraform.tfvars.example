@@ -13,3 +13,9 @@ release_health_alert_user_ids = [12345]
 # crash_free_sessions_alert_percent = 99
 # crash_alert_min_sessions          = 50
 # crash_alert_app_version           = "1.2.0"
+
+# AI features alerts (JEF-570). Thresholds are first guesses.
+# ai_downvote_alert_percent     = 30
+# ai_downvote_alert_min_ratings = 20
+# ai_byok_error_alert_percent   = 15
+# ai_byok_error_alert_min_calls = 20

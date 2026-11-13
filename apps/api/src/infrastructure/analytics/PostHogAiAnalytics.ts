@@ -1,5 +1,8 @@
 import { PostHog } from 'posthog-node';
-import { pseudonymousUserId } from '#src/infrastructure/privacy/pseudonymousUserId.js';
+import {
+  pseudonymousSessionId,
+  pseudonymousUserId,
+} from '#src/infrastructure/privacy/pseudonymousUserId.js';
 import { POSTHOG } from '#src/infrastructure/config/constants.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import type {
@@ -79,6 +82,9 @@ export class PostHogAiAnalytics implements IAiAnalytics {
       outcome: event.outcome,
       error_kind: event.errorKind,
       ...(event.spanId === undefined ? {} : { $ai_span_id: event.spanId }),
+      ...(event.sessionKey === undefined
+        ? {}
+        : { $ai_session_id: pseudonymousSessionId(event.sessionKey) }),
       ...(event.timeToFirstTokenMs === undefined
         ? {}
         : { $ai_time_to_first_token: event.timeToFirstTokenMs / MS_PER_SECOND }),
@@ -93,20 +99,21 @@ export class PostHogAiAnalytics implements IAiAnalytics {
       $ai_span_name: event.name,
       $ai_latency: event.latencyMs / MS_PER_SECOND,
       $ai_is_error: event.outcome === 'error',
-      outcome: event.outcome,
+      outcome: event.toolOutcome ?? event.outcome,
+      ...(event.spanId === undefined ? {} : { $ai_span_id: event.spanId }),
+      ...(event.parentId === undefined ? {} : { $ai_parent_id: event.parentId }),
+      ...(event.surface === undefined ? {} : { surface: event.surface }),
+      ...(event.access === undefined ? {} : { access: event.access }),
+      ...(event.resultBytes === undefined ? {} : { result_bytes: event.resultBytes }),
     });
   }
 
   feedback(event: AiFeedbackAnalyticsEvent): void {
-    this.send(event.userId, '$ai_feedback', {
-      $ai_trace_id: event.traceId,
-      feature: event.feature,
-      rating: event.rating,
-      reason: event.reason,
-      $ai_provider: event.provider,
-      $ai_model: event.model,
-      prompt_version: event.promptVersion,
-    });
+    this.send(event.userId, '$ai_feedback', feedbackProperties(event));
+  }
+
+  feedbackCleared(event: AiFeedbackAnalyticsEvent): void {
+    this.send(event.userId, 'ai_output_rating_cleared', feedbackProperties(event));
   }
 
   async shutdown(): Promise<void> {
@@ -134,4 +141,19 @@ export class PostHogAiAnalytics implements IAiAnalytics {
       this.logger.warn('posthog.capture_failed', err, { event: name });
     }
   }
+}
+
+/** Field by field, so nothing a caller smuggles into the event object is sent. */
+function feedbackProperties(event: AiFeedbackAnalyticsEvent): Record<string, unknown> {
+  return {
+    $ai_trace_id: event.traceId,
+    feature: event.feature,
+    rating: event.rating,
+    reason: event.reason,
+    $ai_provider: event.provider,
+    $ai_model: event.model,
+    prompt_version: event.promptVersion,
+    source: event.source,
+    tier: event.tier,
+  };
 }

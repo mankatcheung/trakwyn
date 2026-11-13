@@ -107,11 +107,24 @@ describe('RateAiOutputUseCase', () => {
     await rateMessage(useCase, { rating: 'down', reason: 'wrong_or_made_up' });
 
     expect(aiFeedbackObserver.rated).toHaveBeenCalledWith({
+      userId: 'user-1',
       feature: 'chat',
       rating: 'down',
       reason: 'wrong_or_made_up',
       generation,
     });
+  });
+
+  it('tells the observer about a rating on output from before the snapshot, with no generation', async () => {
+    const { useCase, aiFeedbackObserver } = setup({
+      message: makeMessage({ id: 'msg-1', role: 'assistant', generation: null }),
+    });
+
+    await rateMessage(useCase);
+
+    expect(aiFeedbackObserver.rated).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-1', generation: null }),
+    );
   });
 
   it('still records a rating on a reply from before the snapshot, without a generation', async () => {

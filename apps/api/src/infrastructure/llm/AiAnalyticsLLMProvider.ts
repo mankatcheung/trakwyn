@@ -32,6 +32,8 @@ interface Deps {
   tier?: AiModelTier;
   /** The version of the prompt the call sends (JEF-505); absent when it sends none. */
   promptVersion?: number;
+  /** The chat conversation the call belongs to (JEF-568); the adapter hashes it into `$ai_session_id`. */
+  sessionKey?: string;
   /** Monotonic clock in ms; injectable so tests can assert on exact durations. */
   now?: () => number;
 }
@@ -191,7 +193,8 @@ class AnalyticsCall {
   finish(usage: LLMUsage | null, failure: Failure | null): void {
     if (this.sent) return;
     this.sent = true;
-    const { analytics, userId, provider, model, feature, source, tier, promptVersion } = this.deps;
+    const { analytics, userId, provider, model, feature, source, tier, promptVersion, sessionKey } =
+      this.deps;
     const resolvedModel = resolveModelName(provider, model);
     // An unknown model still gets an event: the count has to match the call metric.
     const modelName = resolvedModel ?? 'unknown';
@@ -216,6 +219,7 @@ class AnalyticsCall {
         ...(tier ? { tier } : {}),
         ...(usage?.reasoningTokens === undefined ? {} : { reasoningTokens: usage.reasoningTokens }),
         ...(this.spanId ? { spanId: this.spanId } : {}),
+        ...(sessionKey ? { sessionKey } : {}),
         ...(this.firstTokenAt === null
           ? {}
           : { timeToFirstTokenMs: Math.round(this.firstTokenAt - this.startedAt) }),
