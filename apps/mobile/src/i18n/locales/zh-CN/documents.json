@@ -90,5 +90,19 @@
   "aiAccept": "接受",
   "aiReject": "拒绝",
   "aiDismiss": "关闭",
-  "aiSelectionChanged": "AI 处理期间所选文字已更改，因此未应用结果。请重新选择后再试。"
+  "aiSelectionChanged": "AI 处理期间所选文字已更改，因此未应用结果。请重新选择后再试。",
+  "historyOpen": "历史",
+  "historyTitle": "草稿历史",
+  "historySave": "保存版本",
+  "historySaved": "版本已保存",
+  "historyEmpty": "还没有保存的版本。AI 助手替换文档之前，以及你编辑期间每隔几分钟，都会自动保存一个版本。你也可以自己保存。",
+  "historyUnsaved": "你最近的修改未能保存，所以没有改动历史。请在保存后重试。",
+  "historyPreview": "预览",
+  "historyRestore": "恢复此版本",
+  "historyRestoreConfirm": "用此版本替换当前文本？当前文本会保留为一个版本，之后可以返回。",
+  "historySourceAutosave": "已编辑",
+  "historySourceAi": "AI 修改之前",
+  "historySourceManual": "由你保存",
+  "historySourceRestore": "恢复之前",
+  "historyCharacters_other": "{{formatted}} 个字符"
 }

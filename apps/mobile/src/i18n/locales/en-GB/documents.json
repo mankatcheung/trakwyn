@@ -90,5 +90,20 @@
   "aiAccept": "Accept",
   "aiReject": "Reject",
   "aiDismiss": "Dismiss",
-  "aiSelectionChanged": "The selected text changed while the AI was working, so the result was not applied. Select it again to retry."
+  "aiSelectionChanged": "The selected text changed while the AI was working, so the result was not applied. Select it again to retry.",
+  "historyOpen": "History",
+  "historyTitle": "Draft history",
+  "historySave": "Save version",
+  "historySaved": "Version saved",
+  "historyEmpty": "No saved versions yet. A version is kept automatically before the AI helper replaces your document, and every few minutes while you edit. You can also save one yourself.",
+  "historyUnsaved": "Your latest changes could not be saved, so the history was left alone. Try again once they are saved.",
+  "historyPreview": "Preview",
+  "historyRestore": "Restore this version",
+  "historyRestoreConfirm": "Replace the current text with this version? The current text is kept as a version, so you can go back.",
+  "historySourceAutosave": "Edited",
+  "historySourceAi": "Before AI change",
+  "historySourceManual": "Saved by you",
+  "historySourceRestore": "Before restore",
+  "historyCharacters_one": "{{formatted}} character",
+  "historyCharacters_other": "{{formatted}} characters"
 }

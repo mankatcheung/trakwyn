@@ -33,6 +33,16 @@ jest.mock('../../components/SelectionAiBar', () => {
   const { View } = require('react-native');
   return { SelectionAiBar: () => <View testID="selection-ai-bar-mock" /> };
 });
+jest.mock('../../components/DraftHistorySheet', () => {
+  const { View } = require('react-native');
+  return {
+    DraftHistorySheet: (props: Record<string, unknown>) => {
+      mockHistoryProps(props);
+      return props.visible ? <View testID="draft-history-sheet-mock" /> : null;
+    },
+  };
+});
+const mockHistoryProps = jest.fn();
 jest.mock('../../hooks/useRenameDocumentDraft', () => ({ useRenameDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useExportDocumentDraftToPdf', () => ({
@@ -407,5 +417,69 @@ describe('DocumentDraftEditorScreen', () => {
     } as never);
     const { getByTestId } = await renderScreen();
     expect(getByTestId('draft-content-input').props.editable).toBe(false);
+  });
+
+  describe('draft history', () => {
+    const lastHistoryProps = () => mockHistoryProps.mock.calls.at(-1)![0];
+
+    it('opens from the header', async () => {
+      loaded();
+      const { getByTestId, queryByTestId } = await renderScreen();
+      expect(queryByTestId('draft-history-sheet-mock')).toBeNull();
+      await fireEvent.press(getByTestId('draft-history-open'));
+      expect(getByTestId('draft-history-sheet-mock')).toBeTruthy();
+    });
+
+    it('saves a pending edit before the history acts, and not when nothing changed', async () => {
+      jest.useFakeTimers();
+      loaded();
+      const { getByTestId } = await renderScreen();
+      await expect(lastHistoryProps().prepare()).resolves.toBe(true);
+      expect(save).not.toHaveBeenCalled();
+
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'Edited text');
+      await act(async () => {
+        await lastHistoryProps().prepare();
+      });
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'Edited text' }));
+      jest.useRealTimers();
+    });
+
+    it('reports a failed save so the history leaves the server alone', async () => {
+      loaded();
+      save.mockResolvedValueOnce(false);
+      const { getByTestId } = await renderScreen();
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'Edited text');
+      await expect(lastHistoryProps().prepare()).resolves.toBe(false);
+    });
+
+    it('shows a restored version in the editor and keeps autosave working', async () => {
+      jest.useFakeTimers();
+      loaded();
+      const { getByTestId } = await renderScreen();
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'Unsaved newer text');
+      await act(async () => {
+        lastHistoryProps().onRestored({
+          id: 'draft-1',
+          plainText: 'Old',
+          updatedAt: '2026-02-01T00:00:00.000Z',
+          contentJson: JSON.stringify({
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Old' }] },
+            ],
+          }),
+        });
+      });
+      expect(getByTestId('draft-content-input').props.value).toBe('# Old');
+      // The edit made before the restore is not saved over it.
+      jest.advanceTimersByTime(1000);
+      expect(save).not.toHaveBeenCalled();
+
+      await fireEvent.changeText(getByTestId('draft-content-input'), '# Old\n\nNew');
+      jest.advanceTimersByTime(1000);
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'Old\n\nNew' }));
+      jest.useRealTimers();
+    });
   });
 });
