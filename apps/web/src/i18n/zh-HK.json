@@ -1758,5 +1758,13 @@
   "draftHistory.sourceAi": "AI 修改之前",
   "draftHistory.sourceManual": "由你儲存",
   "draftHistory.sourceRestore": "還原之前",
-  "draftHistory.characters_other": "{{formatted}} 個字元"
+  "draftHistory.characters_other": "{{formatted}} 個字元",
+  "documents.editor.language": "文件語言",
+  "documents.editor.languageHint": "此文件嘅拼字檢查語言",
+  "documents.editor.saveState.saved": "已儲存",
+  "documents.editor.saveState.saving": "儲存緊…",
+  "documents.editor.saveState.dirty": "有未儲存嘅變更",
+  "documents.editor.saveState.error": "無法儲存",
+  "documents.editor.saveState.retry": "重試",
+  "documentDraftEdit.leaveConfirm": "有未儲存嘅變更。仍然離開嗎？"
 }

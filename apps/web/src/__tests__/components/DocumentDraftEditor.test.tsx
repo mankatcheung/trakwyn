@@ -67,6 +67,7 @@ describe('DocumentDraftEditor', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEditor.setOptions = vi.fn();
     useEditorMock.mockImplementation((config: EditorUpdateConfig) => {
       capturedConfig = config;
       return mockEditor;
@@ -83,6 +84,23 @@ describe('DocumentDraftEditor', () => {
     // The page is white in dark mode too; only the surround follows the theme.
     expect(page.className).not.toContain('dark:');
     expect(screen.getByTestId('document-page-surround').className).toContain('dark:bg-gray-900');
+  });
+
+  it('asks for spellcheck and sets the document language on the editing area (JEF-579)', () => {
+    render(
+      <DocumentDraftEditor
+        contentJson="{}"
+        onUpdate={vi.fn()}
+        language={{ value: 'fr', onChange: vi.fn() }}
+      />,
+    );
+    expect(
+      (capturedConfig as unknown as { editorProps: { attributes: object } }).editorProps.attributes,
+    ).toEqual({ spellcheck: 'true', lang: 'fr' });
+    // The editor is built once, so the language is also pushed into the live view.
+    expect(mockEditor.setOptions).toHaveBeenCalledWith({
+      editorProps: { attributes: { spellcheck: 'true', lang: 'fr' } },
+    });
   });
 
   it('renders nothing while the editor is not ready', () => {

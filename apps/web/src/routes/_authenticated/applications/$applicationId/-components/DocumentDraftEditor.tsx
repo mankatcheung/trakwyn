@@ -8,6 +8,8 @@ import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
 import { documentPageStyle } from '#/lib/documentPage';
+import type { DocumentLanguageTag } from '#/lib/editor/documentLanguage';
+import type { SaveStatus } from '#/lib/editor/saveState';
 import { countWords } from '#/lib/editor/countWords';
 import { SlashCommand } from '#/lib/editor/SlashCommandExtension';
 import { createSlashMenuController } from '#/lib/editor/slashMenuController';
@@ -28,6 +30,10 @@ const PLACEHOLDER =
 // the theme's; the page itself is always white.
 const PAGE_SURROUND = 'min-h-[400px] bg-gray-100 p-2 sm:p-6 dark:bg-gray-900';
 const PAGE_CLASS = `document-page focus:outline-none ${PLACEHOLDER}`;
+
+function editorAttributes(lang: string | undefined): Record<string, string> {
+  return lang ? { spellcheck: 'true', lang } : { spellcheck: 'true' };
+}
 
 /**
  * What the AI helper panel may do to the visible editor (JEF-506). The
@@ -64,6 +70,10 @@ interface DocumentDraftEditorProps {
   onJsonChange?: (json: string) => void;
   /** Words the hint shown in an empty draft for what the draft is. */
   draftType?: 'resume' | 'cover_letter';
+  /** Spell-check language (a BCP 47 tag) and the way to change it (JEF-579). */
+  language?: { value: DocumentLanguageTag; onChange: (tag: DocumentLanguageTag) => void };
+  /** The save state shown in the status line (JEF-577). */
+  saveStatus?: SaveStatus;
 }
 
 export function DocumentDraftEditor({
@@ -74,6 +84,8 @@ export function DocumentDraftEditor({
   onTextChange,
   onJsonChange,
   draftType,
+  language,
+  saveStatus,
 }: DocumentDraftEditorProps) {
   let initialContent;
   try {
@@ -145,6 +157,9 @@ export function DocumentDraftEditor({
         onOpen: (mode) => setFind((prev) => ({ mode, signal: (prev?.signal ?? 0) + 1 })),
       }),
     ],
+    // Spellcheck is asked for outright, not left to the browser's default, and checks
+    // in the draft's language (JEF-579). The browser's own dictionary does it: no text is sent anywhere.
+    editorProps: { attributes: editorAttributes(language?.value) },
     content: initialContent,
     onUpdate: ({ editor: e }) => {
       const json = JSON.stringify(e.getJSON());
@@ -154,6 +169,11 @@ export function DocumentDraftEditor({
       debouncedUpdate(json, plainText);
     },
   });
+
+  // The editor is built once, so a language change is pushed into the live view.
+  useEffect(() => {
+    editor?.setOptions({ editorProps: { attributes: editorAttributes(language?.value) } });
+  }, [editor, language?.value]);
 
   useEffect(() => {
     if (!editorRef || !editor) return;
@@ -208,7 +228,7 @@ export function DocumentDraftEditor({
           data-testid="document-page"
         />
       </div>
-      <DocumentEditorStatusBar editor={editor} />
+      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>
