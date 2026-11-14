@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', () => ({
     useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }),
   }),
   useNavigate: () => mockNavigate,
+  useBlocker: vi.fn(),
 }));
 
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));

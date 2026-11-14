@@ -1781,5 +1781,13 @@
   "documents.editor.ai.reject": "拒絕",
   "documents.editor.ai.changed": "AI 處理期間文字有變。請重新選取再試。",
   "documents.editor.ai.emptyProposal": "AI 冇傳回任何文字，請再試一次。",
-  "documents.editor.ai.notApplied": "未能套用呢個建議，請再試一次。"
+  "documents.editor.ai.notApplied": "未能套用呢個建議，請再試一次。",
+  "documents.editor.language": "文件語言",
+  "documents.editor.languageHint": "此文件嘅拼字檢查語言",
+  "documents.editor.saveState.saved": "已儲存",
+  "documents.editor.saveState.saving": "儲存緊…",
+  "documents.editor.saveState.dirty": "有未儲存嘅變更",
+  "documents.editor.saveState.error": "無法儲存",
+  "documents.editor.saveState.retry": "重試",
+  "documentDraftEdit.leaveConfirm": "有未儲存嘅變更。仍然離開嗎？"
 }

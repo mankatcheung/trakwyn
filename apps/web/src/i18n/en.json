@@ -1808,5 +1808,13 @@
   "documents.editor.ai.reject": "Reject",
   "documents.editor.ai.changed": "The text changed while the AI worked. Select it again and retry.",
   "documents.editor.ai.emptyProposal": "The AI didn't return any text. Please try again.",
-  "documents.editor.ai.notApplied": "The suggestion could not be applied. Please try again."
+  "documents.editor.ai.notApplied": "The suggestion could not be applied. Please try again.",
+  "documents.editor.language": "Document language",
+  "documents.editor.languageHint": "Spellcheck language for this document",
+  "documents.editor.saveState.saved": "Saved",
+  "documents.editor.saveState.saving": "Saving…",
+  "documents.editor.saveState.dirty": "Unsaved changes",
+  "documents.editor.saveState.error": "Couldn't save",
+  "documents.editor.saveState.retry": "Retry",
+  "documentDraftEdit.leaveConfirm": "You have changes that haven't been saved. Leave anyway?"
 }

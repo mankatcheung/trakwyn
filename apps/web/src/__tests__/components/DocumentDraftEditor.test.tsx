@@ -59,9 +59,27 @@ describe('DocumentDraftEditor', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEditor.setOptions = vi.fn();
     useEditorMock.mockImplementation((config: EditorUpdateConfig) => {
       capturedConfig = config;
       return mockEditor;
+    });
+  });
+
+  it('asks for spellcheck and sets the document language on the editing area (JEF-579)', () => {
+    render(
+      <DocumentDraftEditor
+        contentJson="{}"
+        onUpdate={vi.fn()}
+        language={{ value: 'fr', onChange: vi.fn() }}
+      />,
+    );
+    expect(
+      (capturedConfig as unknown as { editorProps: { attributes: object } }).editorProps.attributes,
+    ).toEqual({ spellcheck: 'true', lang: 'fr' });
+    // The editor is built once, so the language is also pushed into the live view.
+    expect(mockEditor.setOptions).toHaveBeenCalledWith({
+      editorProps: { attributes: { spellcheck: 'true', lang: 'fr' } },
     });
   });
 
