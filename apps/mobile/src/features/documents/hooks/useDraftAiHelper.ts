@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { getErrorMessage } from '../../../lib/errors';
-import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
+import { markdownToTiptapDoc } from '../lib/markdownToTiptapDoc';
 import { useAiCredits } from '../../ai/hooks/useAiCredits';
 import type { ResumeChoice } from '../components/ResumeSourcePicker';
 import { useGenerateIntoDocumentDraft, usePolishDocumentDraft } from './useDocumentDraftAi';
@@ -100,7 +100,7 @@ export function useDraftAiHelper({ draftId, type, getText, setText, saver }: Opt
         mode === 'replace' ? suggestion.markdown : `${current.trimEnd()}\n\n${suggestion.markdown}`;
       setSuggestion(null);
       setText(next);
-      const { contentJson, plainText } = proseToTiptapDoc(next);
+      const { contentJson, plainText } = markdownToTiptapDoc(next);
       await saver.save({ contentJson, plainText, aiInstructions: instructions.trim() });
     },
     [suggestion, getText, setText, saver],

@@ -75,5 +75,7 @@
   "importAction": "导入",
   "importing": "正在导入…",
   "importEmpty": "该文档中没有可读取的文字。",
-  "aiCreditsLeft": "剩余 {{left}} / {{total}} AI 额度"
+  "aiCreditsLeft": "剩余 {{left}} / {{total}} AI 额度",
+  "lossyBanner": "此草稿使用了移动端编辑器无法显示的格式（如对齐或高亮）。在你选择“仍然编辑”之前不会保存更改，因此不会丢失任何内容。保存后这些格式会被移除。",
+  "lossyEditAnyway": "仍然编辑"
 }

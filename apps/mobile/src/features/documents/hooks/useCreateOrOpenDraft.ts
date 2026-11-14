@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { gqlRequest } from '../../../graphql/client';
 import { getErrorMessage } from '../../../lib/errors';
-import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
+import { markdownToTiptapDoc } from '../lib/markdownToTiptapDoc';
 import { CREATE_DOCUMENT_DRAFT_MUTATION, DOCUMENT_DRAFTS_QUERY } from '../graphql/draftOperations';
 import { documentDraftsQueryKey } from './useDocumentDraftQueries';
 import type { DocumentDraft, DocumentDraftSummary, DocumentDraftType } from '../types';
@@ -70,7 +70,7 @@ export function useCreateOrOpenDraft(
         return;
       }
 
-      const { contentJson, plainText } = proseToTiptapDoc('');
+      const { contentJson, plainText } = markdownToTiptapDoc('');
       const { createDocumentDraft } = await gqlRequest<{ createDocumentDraft: DocumentDraft }>(
         CREATE_DOCUMENT_DRAFT_MUTATION,
         {
