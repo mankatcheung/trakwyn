@@ -77,5 +77,18 @@
   "importEmpty": "That document has no readable text.",
   "aiCreditsLeft": "{{left}} of {{total}} AI credits left",
   "lossyBanner": "This draft uses formatting the mobile editor can't show (such as alignment or highlight). Changes are not saved, so nothing is lost, until you choose to edit anyway. Saving then removes that formatting.",
-  "lossyEditAnyway": "Edit anyway"
+  "lossyEditAnyway": "Edit anyway",
+  "aiActionRewrite": "Rewrite",
+  "aiActionShorten": "Shorten",
+  "aiActionFormal": "Make more formal",
+  "aiActionGrammar": "Fix grammar",
+  "aiActionAsk": "Ask AI…",
+  "aiAskPlaceholder": "What should change in the selected text?",
+  "aiAskSend": "Send",
+  "aiBefore": "Before",
+  "aiAfter": "After",
+  "aiAccept": "Accept",
+  "aiReject": "Reject",
+  "aiDismiss": "Dismiss",
+  "aiSelectionChanged": "The selected text changed while the AI was working, so the result was not applied. Select it again to retry."
 }

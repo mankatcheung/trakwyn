@@ -17,6 +17,8 @@ import { useDeleteDocumentDraft } from '../hooks/useDeleteDocumentDraft';
 import { useExportDocumentDraftToPdf } from '../hooks/useExportDocumentDraftToPdf';
 import { useDraftSaver } from '../hooks/useDraftSaver';
 import { useDraftAiHelper } from '../hooks/useDraftAiHelper';
+import { useSelectionAi } from '../hooks/useSelectionAi';
+import { SelectionAiBar } from '../components/SelectionAiBar';
 import { AiHelperSheet } from '../components/AiHelperSheet';
 import { DraftFormattingToolbar } from '../components/DraftFormattingToolbar';
 import { ImportFromDocument } from '../components/ImportFromDocument';
@@ -116,6 +118,13 @@ export function DocumentDraftEditorScreen() {
     setText: applyText,
     saver,
   });
+
+  const selectionAi = useSelectionAi({
+    draftId: draft?.id ?? '',
+    getText: () => textRef.current,
+    applyEdit,
+  });
+  const hasSelection = selection.start !== selection.end;
 
   const commitRename = () => {
     const title = titleDraft.trim();
@@ -301,8 +310,19 @@ export function DocumentDraftEditorScreen() {
         text={text}
         selection={selection}
         onEdit={applyEdit}
-        disabled={ai.running}
+        disabled={ai.running || selectionAi.running}
       />
+
+      {!saveBlocked && (hasSelection || selectionAi.state.phase !== 'idle') ? (
+        <SelectionAiBar
+          state={selectionAi.state}
+          disabled={ai.running}
+          onRun={(request) => void selectionAi.run(request, selection)}
+          onAsk={() => selectionAi.openAsk(selection)}
+          onAccept={selectionAi.accept}
+          onDismiss={selectionAi.dismiss}
+        />
+      ) : null}
 
       <ScrollView style={styles.editorScroll} keyboardShouldPersistTaps="handled">
         <TextInput
@@ -314,7 +334,7 @@ export function DocumentDraftEditorScreen() {
           placeholder={t('editorPlaceholder')}
           placeholderTextColor={colors.textFaint}
           // Read-only while the AI answers, so nothing typed is lost under its result.
-          editable={!ai.running}
+          editable={!ai.running && !selectionAi.running}
           testID="draft-content-input"
         />
       </ScrollView>

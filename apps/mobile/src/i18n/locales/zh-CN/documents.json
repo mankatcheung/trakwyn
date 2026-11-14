@@ -77,5 +77,18 @@
   "importEmpty": "该文档中没有可读取的文字。",
   "aiCreditsLeft": "剩余 {{left}} / {{total}} AI 额度",
   "lossyBanner": "此草稿使用了移动端编辑器无法显示的格式（如对齐或高亮）。在你选择“仍然编辑”之前不会保存更改，因此不会丢失任何内容。保存后这些格式会被移除。",
-  "lossyEditAnyway": "仍然编辑"
+  "lossyEditAnyway": "仍然编辑",
+  "aiActionRewrite": "改写",
+  "aiActionShorten": "缩短",
+  "aiActionFormal": "更正式",
+  "aiActionGrammar": "修正语法",
+  "aiActionAsk": "询问 AI…",
+  "aiAskPlaceholder": "要如何修改所选文字？",
+  "aiAskSend": "发送",
+  "aiBefore": "修改前",
+  "aiAfter": "修改后",
+  "aiAccept": "接受",
+  "aiReject": "拒绝",
+  "aiDismiss": "关闭",
+  "aiSelectionChanged": "AI 处理期间所选文字已更改，因此未应用结果。请重新选择后再试。"
 }
