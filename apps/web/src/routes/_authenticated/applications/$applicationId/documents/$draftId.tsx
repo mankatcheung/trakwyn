@@ -10,13 +10,15 @@ import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
 import { AiHelperPanel } from '../-components/AiHelperPanel';
 import { DocumentEditorChecks } from '../-components/DocumentEditorChecks';
+import { DraftHistoryPanel } from '../-components/DraftHistoryPanel';
 import { DraftTitleField } from '../-components/DraftTitleField';
 import { ImportDocumentAction } from '../-components/ImportDocumentAction';
 import type { AiRating } from '#/lib/aiFeedback';
 import { documentDraftsQueryKey } from '../-documentQueries';
+import type { RestoredDraft } from '../-draftHistoryQueries';
 import { resumeAtsScoresQueryKey } from '../-resumeAtsQueries';
 import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
-import { DownloadIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
+import { DownloadIcon, TrashIcon, ArrowLeftIcon, HistoryIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
 
 const DRAFT_QUERY = `
@@ -128,6 +130,9 @@ function DocumentDraftEditPage() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // Draft history (JEF-584): the panel, and a counter that changes with every save.
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveCount, setSaveCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     gqlClient
@@ -147,9 +152,10 @@ function DocumentDraftEditPage() {
     contentJson: string,
     plainText: string,
     aiInstructions?: string,
+    replacedByAi = false,
   ): Promise<boolean> => {
     const run = saveQueueRef.current.then(() =>
-      writeContent(contentJson, plainText, aiInstructions),
+      writeContent(contentJson, plainText, aiInstructions, replacedByAi),
     );
     saveQueueRef.current = run;
     return run;
@@ -159,6 +165,7 @@ function DocumentDraftEditPage() {
     contentJson: string,
     plainText: string,
     aiInstructions?: string,
+    replacedByAi = false,
   ): Promise<boolean> => {
     setSaving(true);
     try {
@@ -168,9 +175,12 @@ function DocumentDraftEditPage() {
           contentJson,
           plainText,
           ...(aiInstructions !== undefined && { aiInstructions }),
+          // The server keeps the content an AI result replaces (JEF-584).
+          ...(replacedByAi && { replacedByAi }),
         },
       });
       setLastSaved(new Date());
+      setSaveCount((n) => n + 1);
       setDraft((prev) =>
         prev
           ? {
@@ -236,13 +246,19 @@ function DocumentDraftEditPage() {
 
   // The helper's saves go through the same pending-save tracking as the editor's,
   // so Export waits for them too.
-  const handleAiSave = (contentJson: string, plainText: string, aiInstructions: string) => {
+  const handleAiSave = (
+    contentJson: string,
+    plainText: string,
+    aiInstructions: string,
+    // An imported document goes into a blank draft: nothing is being replaced to keep.
+    replacedByAi = true,
+  ) => {
     // The editor is already showing the result: count it as the text even if the
     // save fails, and keep the failure visible with a way to retry.
     setLiveText(plainText);
     setLiveJson(contentJson);
     aiInstructionsRef.current = aiInstructions;
-    const save = saveContent(contentJson, plainText, aiInstructions);
+    const save = saveContent(contentJson, plainText, aiInstructions, replacedByAi);
     trackSave(save);
     void save.then((ok) => setAiUnsaved(!ok));
     return save;
@@ -250,12 +266,47 @@ function DocumentDraftEditPage() {
 
   // An imported document is saved like an AI result, keeping the prompt as it was.
   const handleImportSave = (contentJson: string, plainText: string) =>
-    handleAiSave(contentJson, plainText, aiInstructionsRef.current ?? draft?.aiInstructions ?? '');
+    handleAiSave(
+      contentJson,
+      plainText,
+      aiInstructionsRef.current ?? draft?.aiInstructions ?? '',
+      false,
+    );
 
   const retryAiSave = () => {
     const editor = editorRef.current;
     if (!editor) return;
     void handleAiSave(editor.getJson(), editor.getText(), aiInstructionsRef.current ?? '');
+  };
+
+  // Save version and Restore act on what the server holds, so the editor's pending
+  // edit is sent first and waited out. False means that save failed.
+  const settleSaves = async (): Promise<boolean> => {
+    flushEditorRef.current?.();
+    return (await (pendingSaveRef.current ?? Promise.resolve(true))) !== false;
+  };
+
+  // The server has put an earlier version back: show it, without a save of its own.
+  const handleRestored = (restored: RestoredDraft) => {
+    let nodes: unknown[] = [];
+    try {
+      const parsed = JSON.parse(restored.contentJson) as { content?: unknown[] };
+      nodes = parsed.content ?? [];
+    } catch {
+      // Content the server accepted but the editor cannot read: show it empty rather than stale.
+    }
+    editorRef.current?.replaceContent(
+      nodes as Parameters<DocumentEditorHandle['replaceContent']>[0],
+    );
+    setLiveText(restored.plainText);
+    setLiveJson(restored.contentJson);
+    setDraft((prev) =>
+      prev ? { ...prev, contentJson: restored.contentJson, plainText: restored.plainText } : prev,
+    );
+    setLastSaved(new Date());
+    setAiUnsaved(false);
+    void queryClient.invalidateQueries({ queryKey: resumeMatchesQueryKey(applicationId) });
+    void queryClient.invalidateQueries({ queryKey: resumeAtsScoresQueryKey(applicationId) });
   };
 
   const handleExportPdf = async () => {
@@ -349,6 +400,12 @@ function DocumentDraftEditPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <IconButton
+            label={t('draftHistory.open')}
+            icon={<HistoryIcon className="size-4" />}
+            aria-pressed={historyOpen}
+            onClick={() => setHistoryOpen((open) => !open)}
+          />
           <Button onClick={handleExportPdf} disabled={exporting}>
             <span className="inline-flex items-center gap-1.5">
               <DownloadIcon className="size-4" />
@@ -398,6 +455,14 @@ function DocumentDraftEditPage() {
               applicationId={applicationId}
               editorRef={editorRef}
               onSave={handleImportSave}
+            />
+          )}
+          {historyOpen && (
+            <DraftHistoryPanel
+              draftId={draft.id}
+              prepare={settleSaves}
+              onRestored={handleRestored}
+              refreshKey={saveCount}
             />
           )}
           <AiHelperPanel

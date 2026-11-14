@@ -12,6 +12,7 @@ Each of these loads on its own when you work in its directory. Paths are under `
 | `interface-adapters/mcp/`              | the MCP server: protocol, tool annotations, scopes, call limits, write attribution            |
 | `use-cases/chat/`                      | chat write proposals the user confirms                                                        |
 | `infrastructure/storage/`              | storage providers, document links, quotas, the two Blob stores, the ATS score                 |
+| `use-cases/documents/`                 | draft history: snapshots, the cap, restore                                                    |
 | `use-cases/profile/`                   | CV import                                                                                     |
 | `use-cases/mockInterviewQuestions/`    | practice questions tailored to the candidate, talking points                                  |
 | `use-cases/plans/`                     | plans and entitlements, hosted AI credits                                                     |

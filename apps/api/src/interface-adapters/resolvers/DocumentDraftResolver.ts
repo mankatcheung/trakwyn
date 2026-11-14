@@ -56,6 +56,7 @@ interface UpdateContentInput {
   contentJson: string;
   plainText: string;
   aiInstructions?: string | null;
+  replacedByAi?: boolean | null;
 }
 
 export class DocumentDraftResolver {
@@ -94,6 +95,7 @@ export class DocumentDraftResolver {
       contentJson: input.contentJson,
       plainText: input.plainText,
       aiInstructions: input.aiInstructions,
+      replacedByAi: input.replacedByAi ?? false,
     });
     return this.deps.documentDraftMapper.toDTO(draft);
   }

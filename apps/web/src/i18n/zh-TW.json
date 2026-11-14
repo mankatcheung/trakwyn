@@ -1742,5 +1742,21 @@
   "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 個字元",
   "documents.editor.alignLeft": "靠左對齊",
   "documents.editor.alignCenter": "置中對齊",
-  "documents.editor.alignRight": "靠右對齊"
+  "documents.editor.alignRight": "靠右對齊",
+  "draftHistory.open": "歷史",
+  "draftHistory.title": "草稿歷史",
+  "draftHistory.save": "儲存版本",
+  "draftHistory.saved": "版本已儲存",
+  "draftHistory.empty": "還沒有儲存的版本。AI 助手取代文件之前，以及你編輯期間每隔幾分鐘，都會自動儲存一個版本。你也可以自己儲存。",
+  "draftHistory.loadFailed": "無法載入草稿歷史。",
+  "draftHistory.unsaved": "你最近的修改未能儲存，所以沒有更動歷史。請在儲存後重試。",
+  "draftHistory.preview": "預覽",
+  "draftHistory.restore": "還原此版本",
+  "draftHistory.restoreConfirm": "用此版本取代目前文字？目前文字會保留為一個版本，之後可以返回。",
+  "draftHistory.restored": "版本已還原",
+  "draftHistory.sourceAutosave": "已編輯",
+  "draftHistory.sourceAi": "AI 修改之前",
+  "draftHistory.sourceManual": "由你儲存",
+  "draftHistory.sourceRestore": "還原之前",
+  "draftHistory.characters_other": "{{formatted}} 個字元"
 }

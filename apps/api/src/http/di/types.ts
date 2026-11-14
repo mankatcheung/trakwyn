@@ -10,6 +10,7 @@ import type { DrizzleApplicationRepository } from '#src/infrastructure/db/reposi
 import type { DrizzleNoteRepository } from '#src/infrastructure/db/repositories/DrizzleNoteRepository.js';
 import type { DrizzleDocumentRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentRepository.js';
 import type { DrizzleDocumentDraftRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentDraftRepository.js';
+import type { DrizzleDocumentDraftVersionRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentDraftVersionRepository.js';
 import type { CachedApplicationRepository } from '#src/infrastructure/db/repositories/CachedApplicationRepository.js';
 import type { CachedNoteRepository } from '#src/infrastructure/db/repositories/CachedNoteRepository.js';
 import type { CachedApiTokenRepository } from '#src/infrastructure/db/repositories/CachedApiTokenRepository.js';
@@ -94,6 +95,7 @@ import type { ApplicationMapper } from '#src/interface-adapters/mappers/Applicat
 import type { NoteMapper } from '#src/interface-adapters/mappers/NoteMapper.js';
 import type { DocumentMapper } from '#src/interface-adapters/mappers/DocumentMapper.js';
 import type { DocumentDraftMapper } from '#src/interface-adapters/mappers/DocumentDraftMapper.js';
+import type { DocumentDraftVersionMapper } from '#src/interface-adapters/mappers/DocumentDraftVersionMapper.js';
 import type { UserMapper } from '#src/interface-adapters/mappers/UserMapper.js';
 import type { InterviewRoundMapper } from '#src/interface-adapters/mappers/InterviewRoundMapper.js';
 import type { InterviewQuestionMapper } from '#src/interface-adapters/mappers/InterviewQuestionMapper.js';
@@ -115,6 +117,7 @@ import type { ApplicationResolver } from '#src/interface-adapters/resolvers/Appl
 import type { NoteResolver } from '#src/interface-adapters/resolvers/NoteResolver.js';
 import type { DocumentResolver } from '#src/interface-adapters/resolvers/DocumentResolver.js';
 import type { DocumentDraftResolver } from '#src/interface-adapters/resolvers/DocumentDraftResolver.js';
+import type { DraftHistoryResolver } from '#src/interface-adapters/resolvers/DraftHistoryResolver.js';
 import type { UserResolver } from '#src/interface-adapters/resolvers/UserResolver.js';
 import type { AccountDeletionResolver } from '#src/interface-adapters/resolvers/AccountDeletionResolver.js';
 import type { InterviewRoundResolver } from '#src/interface-adapters/resolvers/InterviewRoundResolver.js';
@@ -180,6 +183,10 @@ import type { ConfirmDocumentUseCase } from '#src/use-cases/documents/ConfirmDoc
 import type { GetDocumentsUseCase } from '#src/use-cases/documents/GetDocumentsUseCase.js';
 import type { DeleteDocumentUseCase } from '#src/use-cases/documents/DeleteDocumentUseCase.js';
 import type { CreateDocumentDraftUseCase } from '#src/use-cases/documents/CreateDocumentDraftUseCase.js';
+import type { CreateDraftVersionUseCase } from '#src/use-cases/documents/CreateDraftVersionUseCase.js';
+import type { ListDraftVersionsUseCase } from '#src/use-cases/documents/ListDraftVersionsUseCase.js';
+import type { GetDraftVersionUseCase } from '#src/use-cases/documents/GetDraftVersionUseCase.js';
+import type { RestoreDraftVersionUseCase } from '#src/use-cases/documents/RestoreDraftVersionUseCase.js';
 import type { UpdateDocumentDraftContentUseCase } from '#src/use-cases/documents/UpdateDocumentDraftContentUseCase.js';
 import type { PolishDocumentDraftUseCase } from '#src/use-cases/documents/PolishDocumentDraftUseCase.js';
 import type { GenerateIntoDocumentDraftUseCase } from '#src/use-cases/documents/GenerateIntoDocumentDraftUseCase.js';
@@ -407,6 +414,7 @@ export interface Cradle {
   drizzleNoteRepository: DrizzleNoteRepository;
   drizzleDocumentRepository: DrizzleDocumentRepository;
   documentDraftRepository: DrizzleDocumentDraftRepository;
+  documentDraftVersionRepository: DrizzleDocumentDraftVersionRepository;
   drizzleSkillRepository: DrizzleSkillRepository;
   drizzleEducationRepository: DrizzleEducationRepository;
   drizzleWorkExperienceRepository: DrizzleWorkExperienceRepository;
@@ -511,6 +519,7 @@ export interface Cradle {
   noteMapper: NoteMapper;
   documentMapper: DocumentMapper;
   documentDraftMapper: DocumentDraftMapper;
+  documentDraftVersionMapper: DocumentDraftVersionMapper;
   userMapper: UserMapper;
   interviewRoundMapper: InterviewRoundMapper;
   interviewQuestionMapper: InterviewQuestionMapper;
@@ -535,6 +544,7 @@ export interface Cradle {
   noteResolver: NoteResolver;
   documentResolver: DocumentResolver;
   documentDraftResolver: DocumentDraftResolver;
+  draftHistoryResolver: DraftHistoryResolver;
   userResolver: UserResolver;
   accountDeletionResolver: AccountDeletionResolver;
   interviewRoundResolver: InterviewRoundResolver;
@@ -614,6 +624,10 @@ export interface Cradle {
   getDocumentsUseCase: GetDocumentsUseCase;
   deleteDocumentUseCase: DeleteDocumentUseCase;
   createDocumentDraftUseCase: CreateDocumentDraftUseCase;
+  createDraftVersionUseCase: CreateDraftVersionUseCase;
+  listDraftVersionsUseCase: ListDraftVersionsUseCase;
+  getDraftVersionUseCase: GetDraftVersionUseCase;
+  restoreDraftVersionUseCase: RestoreDraftVersionUseCase;
   updateDocumentDraftContentUseCase: UpdateDocumentDraftContentUseCase;
   renameDocumentDraftUseCase: RenameDocumentDraftUseCase;
   polishDocumentDraftUseCase: PolishDocumentDraftUseCase;

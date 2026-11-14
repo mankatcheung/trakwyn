@@ -1742,5 +1742,21 @@
   "documents.editor.selectionCharacters_other": "{{selected}} / {{formatted}} 个字符",
   "documents.editor.alignLeft": "左对齐",
   "documents.editor.alignCenter": "居中对齐",
-  "documents.editor.alignRight": "右对齐"
+  "documents.editor.alignRight": "右对齐",
+  "draftHistory.open": "历史",
+  "draftHistory.title": "草稿历史",
+  "draftHistory.save": "保存版本",
+  "draftHistory.saved": "版本已保存",
+  "draftHistory.empty": "还没有保存的版本。AI 助手替换文档之前，以及你编辑期间每隔几分钟，都会自动保存一个版本。你也可以自己保存。",
+  "draftHistory.loadFailed": "无法加载草稿历史。",
+  "draftHistory.unsaved": "你最近的修改未能保存，所以没有改动历史。请在保存后重试。",
+  "draftHistory.preview": "预览",
+  "draftHistory.restore": "恢复此版本",
+  "draftHistory.restoreConfirm": "用此版本替换当前文本？当前文本会保留为一个版本，之后可以返回。",
+  "draftHistory.restored": "版本已恢复",
+  "draftHistory.sourceAutosave": "已编辑",
+  "draftHistory.sourceAi": "AI 修改之前",
+  "draftHistory.sourceManual": "由你保存",
+  "draftHistory.sourceRestore": "恢复之前",
+  "draftHistory.characters_other": "{{formatted}} 个字符"
 }

@@ -21,6 +21,8 @@ const UpdateDocumentDraftContentInput = builder.inputType('UpdateDocumentDraftCo
     contentJson: t.string({ required: true }),
     plainText: t.string({ required: true }),
     aiInstructions: t.string(),
+    /** The save carries an AI result replacing the document: keep the content it replaces first (JEF-584). */
+    replacedByAi: t.boolean(),
   }),
 });
 

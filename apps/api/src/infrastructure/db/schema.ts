@@ -2,6 +2,7 @@ export * from './schema/user.js';
 export * from './schema/auth.js';
 export * from './schema/credentials.js';
 export * from './schema/application.js';
+export * from './schema/draftHistory.js';
 export * from './schema/companyBriefing.js';
 export * from './schema/conversation.js';
 export * from './schema/notification.js';

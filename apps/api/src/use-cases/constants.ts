@@ -749,6 +749,14 @@ export const MOCK_INTERVIEW_PROMPT_TASK = {
 export const CV_IMPORT_PROMPT_TASK = 'extract structured data from a CV';
 
 /** The task sentence the polish prompt carries (JEF-506); the fake LLM route reads it to answer with canned markdown. */
+/** Draft history (JEF-584): snapshots of a draft's content that can be restored. */
+export const DRAFT_HISTORY = {
+  /** Newest snapshots kept per draft; older ones are removed as new ones arrive. */
+  MAX_VERSIONS: 30,
+  /** At most one automatic snapshot this often while a draft is being edited. */
+  AUTOSAVE_INTERVAL_MS: 5 * 60 * 1000,
+} as const;
+
 export const POLISH_DRAFT_PROMPT_TASK = 'polish a resume or cover letter the user wrote';
 
 /** Output budget for a polished document (JEF-506); sized above POLISH_DOCUMENT_MAX_CHARS of prose. */

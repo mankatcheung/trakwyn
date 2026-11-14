@@ -6,6 +6,7 @@ import { user } from './user.js';
 import { jobs } from './jobs.js';
 import { notes } from './notes.js';
 import { documents } from './documents.js';
+import { draftHistory } from './draftHistory.js';
 import { interviews } from './interviews.js';
 import { mockInterviews } from './mockInterviews.js';
 import { activity } from './activity.js';
@@ -35,6 +36,7 @@ export const useCases = {
   ...jobs,
   ...notes,
   ...documents,
+  ...draftHistory,
   ...interviews,
   ...mockInterviews,
   ...activity,

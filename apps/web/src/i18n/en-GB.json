@@ -1768,5 +1768,22 @@
   "documents.editor.selectionCharacters_other": "{{selected}} of {{formatted}} characters",
   "documents.editor.alignLeft": "Align left",
   "documents.editor.alignCenter": "Align centre",
-  "documents.editor.alignRight": "Align right"
+  "documents.editor.alignRight": "Align right",
+  "draftHistory.open": "History",
+  "draftHistory.title": "Draft history",
+  "draftHistory.save": "Save version",
+  "draftHistory.saved": "Version saved",
+  "draftHistory.empty": "No saved versions yet. A version is kept automatically before the AI helper replaces your document, and every few minutes while you edit. You can also save one yourself.",
+  "draftHistory.loadFailed": "Could not load the draft history.",
+  "draftHistory.unsaved": "Your latest changes could not be saved, so the history was left alone. Try again once they are saved.",
+  "draftHistory.preview": "Preview",
+  "draftHistory.restore": "Restore this version",
+  "draftHistory.restoreConfirm": "Replace the current text with this version? The current text is kept as a version, so you can go back.",
+  "draftHistory.restored": "Version restored",
+  "draftHistory.sourceAutosave": "Edited",
+  "draftHistory.sourceAi": "Before AI change",
+  "draftHistory.sourceManual": "Saved by you",
+  "draftHistory.sourceRestore": "Before restore",
+  "draftHistory.characters_one": "{{formatted}} character",
+  "draftHistory.characters_other": "{{formatted}} characters"
 }
