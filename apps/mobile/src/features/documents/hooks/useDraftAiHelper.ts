@@ -7,7 +7,9 @@ import { useGenerateIntoDocumentDraft, usePolishDocumentDraft } from './useDocum
 import type { DraftSaver } from './useDraftSaver';
 import type { DocumentDraftType } from '../types';
 
-export const AI_PROMPT_MAX_LENGTH = 500;
+import { AI_PROMPT_MAX_LENGTH } from '../lib/aiActions';
+
+export { AI_PROMPT_MAX_LENGTH };
 
 export interface PolishSuggestion {
   markdown: string;

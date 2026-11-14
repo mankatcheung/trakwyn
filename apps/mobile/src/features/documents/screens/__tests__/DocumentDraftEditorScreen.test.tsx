@@ -28,6 +28,11 @@ jest.mock('../../components/ImportFromDocument', () => {
   };
 });
 const mockSheetProps = jest.fn();
+jest.mock('../../hooks/useSelectionAi', () => ({ useSelectionAi: jest.fn() }));
+jest.mock('../../components/SelectionAiBar', () => {
+  const { View } = require('react-native');
+  return { SelectionAiBar: () => <View testID="selection-ai-bar-mock" /> };
+});
 jest.mock('../../hooks/useRenameDocumentDraft', () => ({ useRenameDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useDeleteDocumentDraft', () => ({ useDeleteDocumentDraft: jest.fn() }));
 jest.mock('../../hooks/useExportDocumentDraftToPdf', () => ({
@@ -49,6 +54,7 @@ jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDocumentDraft } from '../../hooks/useDocumentDraftQueries';
 import { useDraftSaver } from '../../hooks/useDraftSaver';
+import { useSelectionAi } from '../../hooks/useSelectionAi';
 import { useDraftAiHelper } from '../../hooks/useDraftAiHelper';
 import { useRenameDocumentDraft } from '../../hooks/useRenameDocumentDraft';
 import { useDeleteDocumentDraft } from '../../hooks/useDeleteDocumentDraft';
@@ -63,6 +69,7 @@ const mockedUseRouter = jest.mocked(useRouter);
 const mockedUseDocumentDraft = jest.mocked(useDocumentDraft);
 const mockedUseDraftSaver = jest.mocked(useDraftSaver);
 const mockedUseDraftAiHelper = jest.mocked(useDraftAiHelper);
+const mockedUseSelectionAi = jest.mocked(useSelectionAi);
 const mockedUseRenameDocumentDraft = jest.mocked(useRenameDocumentDraft);
 const mockedUseDeleteDocumentDraft = jest.mocked(useDeleteDocumentDraft);
 const mockedUseExportDocumentDraftToPdf = jest.mocked(useExportDocumentDraftToPdf);
@@ -122,6 +129,14 @@ describe('DocumentDraftEditorScreen', () => {
     mockedUseRouter.mockReturnValue({ back } as never);
     mockedUseDraftSaver.mockReturnValue(baseSaver as never);
     mockedUseDraftAiHelper.mockReturnValue(baseAi as never);
+    mockedUseSelectionAi.mockReturnValue({
+      state: { phase: 'idle' },
+      running: false,
+      openAsk: jest.fn(),
+      run: jest.fn(),
+      accept: jest.fn(),
+      dismiss: jest.fn(),
+    } as never);
     mockedUseRenameDocumentDraft.mockReturnValue({ mutate: jest.fn() } as never);
     mockedUseDeleteDocumentDraft.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
     mockedUseExportDocumentDraftToPdf.mockReturnValue({
@@ -362,5 +377,35 @@ describe('DocumentDraftEditorScreen', () => {
       expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'Centred!!' }));
       jest.useRealTimers();
     });
+  });
+
+  it('shows the selection AI bar only while text is selected', async () => {
+    loaded();
+    const { getByTestId, queryByTestId } = await renderScreen();
+    expect(queryByTestId('selection-ai-bar-mock')).toBeNull();
+
+    await fireEvent(getByTestId('draft-content-input'), 'selectionChange', {
+      nativeEvent: { selection: { start: 0, end: 4 } },
+    });
+    expect(getByTestId('selection-ai-bar-mock')).toBeTruthy();
+
+    await fireEvent(getByTestId('draft-content-input'), 'selectionChange', {
+      nativeEvent: { selection: { start: 4, end: 4 } },
+    });
+    expect(queryByTestId('selection-ai-bar-mock')).toBeNull();
+  });
+
+  it('is read-only while a selection request runs', async () => {
+    loaded();
+    mockedUseSelectionAi.mockReturnValue({
+      state: { phase: 'loading', range: { start: 0, end: 4, text: 'Dear' } },
+      running: true,
+      openAsk: jest.fn(),
+      run: jest.fn(),
+      accept: jest.fn(),
+      dismiss: jest.fn(),
+    } as never);
+    const { getByTestId } = await renderScreen();
+    expect(getByTestId('draft-content-input').props.editable).toBe(false);
   });
 });
