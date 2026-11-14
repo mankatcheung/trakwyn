@@ -21,6 +21,7 @@ import { useSelectionAi } from '../hooks/useSelectionAi';
 import { DraftHistorySheet } from '../components/DraftHistorySheet';
 import { SelectionAiBar } from '../components/SelectionAiBar';
 import { AiHelperSheet } from '../components/AiHelperSheet';
+import { DraftStatusBar } from '../components/DraftStatusBar';
 import { DraftFormattingToolbar } from '../components/DraftFormattingToolbar';
 import { ImportFromDocument } from '../components/ImportFromDocument';
 import type { ResumeChoice } from '../components/ResumeSourcePicker';
@@ -38,7 +39,6 @@ const AUTOSAVE_DELAY_MS = 1000;
 
 export function DocumentDraftEditorScreen() {
   const { t } = useTranslation('documents');
-  const { t: tCommon } = useTranslation('common');
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
@@ -218,12 +218,6 @@ export function DocumentDraftEditorScreen() {
       <Stack.Screen
         options={{
           title: draft.title,
-          headerRight: () =>
-            saver.saving ? (
-              <Text style={styles.savingText}>{t('savingEllipsis')}</Text>
-            ) : (
-              <Text style={styles.savedText}>{`✓ ${t('saved')}`}</Text>
-            ),
         }}
       />
 
@@ -308,11 +302,6 @@ export function DocumentDraftEditorScreen() {
           <Text style={styles.errorText} testID="draft-save-error">
             {bannerError}
           </Text>
-          {saver.error ? (
-            <Pressable onPress={() => void saver.retry()} hitSlop={8} testID="draft-save-retry">
-              <Text style={styles.headerActionText}>{tCommon('retry')}</Text>
-            </Pressable>
-          ) : null}
         </View>
       ) : null}
 
@@ -368,8 +357,20 @@ export function DocumentDraftEditorScreen() {
           // Read-only while the AI answers, so nothing typed is lost under its result.
           editable={!ai.running && !selectionAi.running}
           testID="draft-content-input"
+          spellCheck
+          autoCorrect
+          autoCapitalize="sentences"
         />
       </ScrollView>
+
+      <DraftStatusBar
+        text={text}
+        selection={selection}
+        saving={saver.saving}
+        failed={saver.error !== null}
+        hasSaved={saver.lastSavedAt !== null}
+        onRetry={() => void saver.retry()}
+      />
 
       <DraftHistorySheet
         visible={historyOpen}
@@ -423,8 +424,6 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 0,
       fontSize: 14,
     },
-    savedText: { fontSize: 13, fontWeight: '600', color: colors.success },
-    savingText: { fontSize: 13, fontWeight: '600', color: colors.primary },
     headerActionText: { fontSize: 13, fontWeight: '600', color: colors.primary },
     headerActionTextDanger: { fontSize: 13, fontWeight: '600', color: colors.danger },
     disabledText: { opacity: 0.5 },
