@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.17.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.16.0...web-v0.17.0) (2026-11-14)
+
+
+### Features
+
+* **api:** add a PostHog server client behind an IAiAnalytics port (JEF-566) ([#1380](https://github.com/mankatcheung/trakwyn/issues/1380)) ([3802658](https://github.com/mankatcheung/trakwyn/commit/3802658762e6379462bbd945bf202784aef41652))
+* draft history with restore and a snapshot before the AI replaces the document (JEF-584) ([#1415](https://github.com/mankatcheung/trakwyn/issues/1415)) ([48d94b5](https://github.com/mankatcheung/trakwyn/commit/48d94b553fa702b7c7942bcab68676fc7ea12a38))
+* tables and text highlight in the document editor and the PDF export (JEF-582) ([#1419](https://github.com/mankatcheung/trakwyn/issues/1419)) ([f7a0dd5](https://github.com/mankatcheung/trakwyn/commit/f7a0dd50d3faeb88b0f43fd1065739900523eefd))
+* text alignment (left, center, right) in the editor and the PDF export (JEF-578) ([#1414](https://github.com/mankatcheung/trakwyn/issues/1414)) ([2505dd5](https://github.com/mankatcheung/trakwyn/commit/2505dd5387dc2de69fcbb2e80d6d076cecb7ec03))
+* **web:** ATS-friendliness hints for resumes in the document editor (JEF-585) ([#1412](https://github.com/mankatcheung/trakwyn/issues/1412)) ([46915a5](https://github.com/mankatcheung/trakwyn/commit/46915a5a96142adbb3184c478e2dc016ef0a81f7))
+* **web:** draw the document editor on a page that matches the PDF (JEF-581) ([#1418](https://github.com/mankatcheung/trakwyn/issues/1418)) ([3f7c437](https://github.com/mankatcheung/trakwyn/commit/3f7c437c4cdffa1cbc5952414794fdaf7c2ad997))
+* **web:** explicit spellcheck and a switchable document language in the editor (JEF-579) ([#1417](https://github.com/mankatcheung/trakwyn/issues/1417)) ([9deda69](https://github.com/mankatcheung/trakwyn/commit/9deda692ea2d9bdff4004b524dcc0fd99ccedca2))
+* **web:** find and replace inside the document editor (JEF-580) ([#1413](https://github.com/mankatcheung/trakwyn/issues/1413)) ([602497e](https://github.com/mankatcheung/trakwyn/commit/602497e7dce5d3121ca810e511bc5d05a7c5a853))
+* **web:** floating bubble menu for the current selection in the document editor (JEF-574) ([#1408](https://github.com/mankatcheung/trakwyn/issues/1408)) ([#1409](https://github.com/mankatcheung/trakwyn/issues/1409)) ([392ac3d](https://github.com/mankatcheung/trakwyn/commit/392ac3dfcaaee77c74a36512b14120b3335da077))
+* **web:** full formatting toolbar for the document editor (JEF-573) ([#1406](https://github.com/mankatcheung/trakwyn/issues/1406)) ([#1407](https://github.com/mankatcheung/trakwyn/issues/1407)) ([afb0891](https://github.com/mankatcheung/trakwyn/commit/afb0891d554e889188ca2d003c52780276c07053))
+* **web:** inline AI actions on a selection with accept / reject (JEF-583) ([#1420](https://github.com/mankatcheung/trakwyn/issues/1420)) ([9b14de0](https://github.com/mankatcheung/trakwyn/commit/9b14de03af473d6aefff5310e438b034f94a2d2c))
+* **web:** placeholder and a live word and character count in the document editor (JEF-576) ([#1411](https://github.com/mankatcheung/trakwyn/issues/1411)) ([d83784d](https://github.com/mankatcheung/trakwyn/commit/d83784df9417d25ba28a8ca910d760ccc675750c))
+* **web:** slash command menu to insert blocks in the document editor (JEF-575) ([#1410](https://github.com/mankatcheung/trakwyn/issues/1410)) ([9484601](https://github.com/mankatcheung/trakwyn/commit/94846018eaa19d36d394651cd48f5fa950882333))
+* **web:** visible save state with retry in the document editor (JEF-577) ([#1416](https://github.com/mankatcheung/trakwyn/issues/1416)) ([402c08d](https://github.com/mankatcheung/trakwyn/commit/402c08d7a64fba68d7328c102b28deb27c6557ac))
+
 ## [0.16.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.15.0...web-v0.16.0) (2026-11-12)
 
 

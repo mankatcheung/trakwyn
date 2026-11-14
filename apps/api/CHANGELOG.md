@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.17.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.16.0...api-v0.17.0) (2026-11-14)
+
+
+### Features
+
+* **api:** add a claudecode eval provider that runs the judge and single-call cases through the Claude Code CLI (JEF-563) ([#1372](https://github.com/mankatcheung/trakwyn/issues/1372)) ([88014d5](https://github.com/mankatcheung/trakwyn/commit/88014d517dc17fb76b4177dc6504605bf825ca94))
+* **api:** add a PostHog server client behind an IAiAnalytics port (JEF-566) ([#1380](https://github.com/mankatcheung/trakwyn/issues/1380)) ([3802658](https://github.com/mankatcheung/trakwyn/commit/3802658762e6379462bbd945bf202784aef41652))
+* **api:** give each eval case an outcome and score only the cases that ran (JEF-559) ([#1362](https://github.com/mankatcheung/trakwyn/issues/1362)) ([ed3685c](https://github.com/mankatcheung/trakwyn/commit/ed3685c1e0934fa4426aba753eda23bf3e40ac75))
+* **api:** group chat turns into PostHog AI sessions and send tool calls as $ai_span (JEF-568) ([#1382](https://github.com/mankatcheung/trakwyn/issues/1382)) ([afa2091](https://github.com/mankatcheung/trakwyn/commit/afa2091718f8d7a4a98cd5719f3c7e40c13a9beb))
+* **api:** print a saved eval run's transcripts as readable text with eval --show ([#1368](https://github.com/mankatcheung/trakwyn/issues/1368)) ([410ae65](https://github.com/mankatcheung/trakwyn/commit/410ae652886d222675733b7d174d66ebef782874))
+* **api:** publish a saved eval run to Langfuse without calling any model (JEF-562) ([#1366](https://github.com/mankatcheung/trakwyn/issues/1366)) ([d1b9560](https://github.com/mankatcheung/trakwyn/commit/d1b9560caeec6bcdf203253f2ea12ea5db00dae9))
+* **api:** refuse a cover letter that names an employer, school, credential or number the user never gave (JEF-558) ([#1357](https://github.com/mankatcheung/trakwyn/issues/1357)) ([acc9402](https://github.com/mankatcheung/trakwyn/commit/acc9402ecf0318a183a5dcc1f8e6d45894cd5b3d))
+* **api:** save each eval run to its own folder with a summary and compressed transcripts (JEF-560) ([#1363](https://github.com/mankatcheung/trakwyn/issues/1363)) ([7a912cd](https://github.com/mankatcheung/trakwyn/commit/7a912cdcb5281aa21333d78a079359214c30e48e))
+* **api:** send a $ai_generation event to PostHog for every tracked LLM call (JEF-567) ([#1381](https://github.com/mankatcheung/trakwyn/issues/1381)) ([cf5fdf7](https://github.com/mankatcheung/trakwyn/commit/cf5fdf7792e28120f2e34e4c8c9392e09a1dab70))
+* **api:** send AI output ratings to PostHog on the generation's trace (JEF-569) ([#1383](https://github.com/mankatcheung/trakwyn/issues/1383)) ([2ef215d](https://github.com/mankatcheung/trakwyn/commit/2ef215d52cacbf165d7669d4a92cd461f306edda))
+* **api:** send each eval case's outcome to Langfuse so provider errors are not counted as failures (JEF-561) ([#1365](https://github.com/mankatcheung/trakwyn/issues/1365)) ([06e6ed1](https://github.com/mankatcheung/trakwyn/commit/06e6ed13a15a70f9d7c73d5f8ed3be7f431a6537))
+* draft history with restore and a snapshot before the AI replaces the document (JEF-584) ([#1415](https://github.com/mankatcheung/trakwyn/issues/1415)) ([48d94b5](https://github.com/mankatcheung/trakwyn/commit/48d94b553fa702b7c7942bcab68676fc7ea12a38))
+* **posthog:** add an AI features dashboard and two alerts (JEF-570) ([#1398](https://github.com/mankatcheung/trakwyn/issues/1398)) ([f05cf07](https://github.com/mankatcheung/trakwyn/commit/f05cf07f36a7808099736741e53235886ef5d72b))
+* tables and text highlight in the document editor and the PDF export (JEF-582) ([#1419](https://github.com/mankatcheung/trakwyn/issues/1419)) ([f7a0dd5](https://github.com/mankatcheung/trakwyn/commit/f7a0dd50d3faeb88b0f43fd1065739900523eefd))
+* text alignment (left, center, right) in the editor and the PDF export (JEF-578) ([#1414](https://github.com/mankatcheung/trakwyn/issues/1414)) ([2505dd5](https://github.com/mankatcheung/trakwyn/commit/2505dd5387dc2de69fcbb2e80d6d076cecb7ec03))
+* **web:** draw the document editor on a page that matches the PDF (JEF-581) ([#1418](https://github.com/mankatcheung/trakwyn/issues/1418)) ([3f7c437](https://github.com/mankatcheung/trakwyn/commit/3f7c437c4cdffa1cbc5952414794fdaf7c2ad997))
+
+
+### Bug Fixes
+
+* **api:** number ordered lists in PDF export and keep text of unknown nodes (JEF-572) ([#1404](https://github.com/mankatcheung/trakwyn/issues/1404)) ([29bfa5d](https://github.com/mankatcheung/trakwyn/commit/29bfa5df564080264a51ae23296c13897a7a8201))
+* **api:** pass the saved run's max error rate when publishing it (JEF-562) ([#1367](https://github.com/mankatcheung/trakwyn/issues/1367)) ([da2d49c](https://github.com/mankatcheung/trakwyn/commit/da2d49cea305142cdec7f0d2dfa688a65ac06b49))
+
 ## [0.16.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.15.0...api-v0.16.0) (2026-11-12)
 
 
