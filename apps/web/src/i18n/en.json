@@ -1785,5 +1785,11 @@
   "draftHistory.sourceManual": "Saved by you",
   "draftHistory.sourceRestore": "Before restore",
   "draftHistory.characters_one": "{{formatted}} character",
-  "draftHistory.characters_other": "{{formatted}} characters"
+  "draftHistory.characters_other": "{{formatted}} characters",
+  "documents.editor.saveState.saved": "Saved",
+  "documents.editor.saveState.saving": "Saving…",
+  "documents.editor.saveState.dirty": "Unsaved changes",
+  "documents.editor.saveState.error": "Couldn't save",
+  "documents.editor.saveState.retry": "Retry",
+  "documentDraftEdit.leaveConfirm": "You have changes that haven't been saved. Leave anyway?"
 }

@@ -7,6 +7,7 @@ import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
+import type { SaveStatus } from '#/lib/editor/saveState';
 import { countWords } from '#/lib/editor/countWords';
 import { SlashCommand } from '#/lib/editor/SlashCommandExtension';
 import { createSlashMenuController } from '#/lib/editor/slashMenuController';
@@ -59,6 +60,8 @@ interface DocumentDraftEditorProps {
   onJsonChange?: (json: string) => void;
   /** Words the hint shown in an empty draft for what the draft is. */
   draftType?: 'resume' | 'cover_letter';
+  /** The save state shown in the status line (JEF-577). */
+  saveStatus?: SaveStatus;
 }
 
 export function DocumentDraftEditor({
@@ -69,6 +72,7 @@ export function DocumentDraftEditor({
   onTextChange,
   onJsonChange,
   draftType,
+  saveStatus,
 }: DocumentDraftEditorProps) {
   let initialContent;
   try {
@@ -196,7 +200,7 @@ export function DocumentDraftEditor({
         />
       )}
       <EditorContent editor={editor} className={EDITOR_CONTENT_CLASS} />
-      <DocumentEditorStatusBar editor={editor} />
+      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>

@@ -1758,5 +1758,11 @@
   "draftHistory.sourceAi": "AI 修改之前",
   "draftHistory.sourceManual": "由你保存",
   "draftHistory.sourceRestore": "恢复之前",
-  "draftHistory.characters_other": "{{formatted}} 个字符"
+  "draftHistory.characters_other": "{{formatted}} 个字符",
+  "documents.editor.saveState.saved": "已保存",
+  "documents.editor.saveState.saving": "正在保存…",
+  "documents.editor.saveState.dirty": "有未保存的更改",
+  "documents.editor.saveState.error": "无法保存",
+  "documents.editor.saveState.retry": "重试",
+  "documentDraftEdit.leaveConfirm": "有尚未保存的更改。仍要离开吗？"
 }
