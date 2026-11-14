@@ -27,6 +27,8 @@ function setup() {
     appendContent: vi.fn(),
     focusBlock: vi.fn(),
     setEditable: vi.fn(),
+    getSelection: vi.fn(),
+    replaceRange: vi.fn(),
   };
   const onSave = vi.fn().mockResolvedValue(true);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

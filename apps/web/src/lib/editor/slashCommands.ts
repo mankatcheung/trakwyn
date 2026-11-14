@@ -1,4 +1,5 @@
 import type { Editor, Range } from '@tiptap/react';
+import { requestAskAi } from '#/lib/editor/askAi';
 import {
   Heading1Icon,
   Heading2Icon,
@@ -7,6 +8,7 @@ import {
   ListOrderedIcon,
   MinusIcon,
   QuoteIcon,
+  SparklesIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -82,6 +84,16 @@ export const SLASH_COMMANDS: readonly SlashCommandItem[] = [
     Icon: MinusIcon,
     run: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+    },
+  },
+  {
+    id: 'askAi',
+    labelKey: 'documents.editor.ai.askAi',
+    keywords: ['ai', 'ask', 'assistant', 'rewrite', 'improve'],
+    Icon: SparklesIcon,
+    run: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run();
+      requestAskAi(editor);
     },
   },
 ];

@@ -71,6 +71,8 @@ function renderPanel(type: 'cover_letter' | 'resume') {
     appendContent: vi.fn(),
     focusBlock: vi.fn(),
     setEditable: vi.fn(),
+    getSelection: vi.fn(),
+    replaceRange: vi.fn(),
   };
   render(
     <QueryClientProvider client={client}>

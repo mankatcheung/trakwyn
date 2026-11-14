@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { PluginKey } from '@tiptap/pm/state';
-import { LinkIcon, RemoveFormattingIcon } from 'lucide-react';
+import { LinkIcon, RemoveFormattingIcon, SparklesIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { ToolbarButton } from './EditorToolbarButton';
 import { DocumentEditorLinkForm } from './DocumentEditorLinkForm';
+import { InlineAiForm } from './InlineAiForm';
+import { describeRange, type AiRange } from '#/lib/editor/selectionRange';
+import type { InlineAiRequest } from '#/lib/editor/aiActions';
 import { MARK_COMMANDS, readMarkState, runMarkCommand } from './editorMarkCommands';
 
 const BUBBLE_MENU_KEY = new PluginKey('documentBubbleMenu');
@@ -23,12 +26,22 @@ const isTouchPrimary = () =>
 export function DocumentEditorBubbleMenu({
   editor,
   editable,
+  ai,
 }: {
   editor: Editor;
   editable: boolean;
+  /** The inline AI actions on the selection (JEF-583). Without it the menu has no AI button. */
+  ai?: { run: (request: InlineAiRequest, range: AiRange | null) => void };
 }) {
   const { t } = useLocale();
   const [linkOpen, setLinkOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  // What an AI action could replace for the current selection, or null.
+  const aiRange = useEditorState({
+    editor,
+    selector: ({ editor: e }) =>
+      describeRange(e.state.doc, e.state.selection.from, e.state.selection.to),
+  });
   // The selection Escape closed the menu for; a different selection shows it again.
   const dismissedFor = useRef<string | null>(null);
   const state = useEditorState({ editor, selector: ({ editor: e }) => readMarkState(e) });
@@ -62,7 +75,10 @@ export function DocumentEditorBubbleMenu({
       dismissedFor.current = `${from}:${to}`;
       editor.view.dispatch(editor.state.tr.setMeta(BUBBLE_MENU_KEY, 'hide'));
     };
-    const closeForm = () => setLinkOpen(false);
+    const closeForm = () => {
+      setLinkOpen(false);
+      setAiOpen(false);
+    };
     editor.view.dom.addEventListener('keydown', onKeyDown);
     editor.on('selectionUpdate', closeForm);
     return () => {
@@ -83,6 +99,7 @@ export function DocumentEditorBubbleMenu({
         if (event.key !== 'Escape') return;
         event.stopPropagation();
         setLinkOpen(false);
+        setAiOpen(false);
         editor.chain().focus().run();
       }}
     >
@@ -109,10 +126,25 @@ export function DocumentEditorBubbleMenu({
         <ToolbarButton
           label={t('documents.editor.link')}
           pressed={state.link || linkOpen}
-          onClick={() => setLinkOpen((open) => !open)}
+          onClick={() => {
+            setAiOpen(false);
+            setLinkOpen((open) => !open);
+          }}
         >
           <LinkIcon className="size-4" />
         </ToolbarButton>
+        {ai && (
+          <ToolbarButton
+            label={t('documents.editor.ai.title')}
+            pressed={aiOpen}
+            onClick={() => {
+              setLinkOpen(false);
+              setAiOpen((open) => !open);
+            }}
+          >
+            <SparklesIcon className="size-4" />
+          </ToolbarButton>
+        )}
         <ToolbarButton
           label={t('documents.editor.clearFormatting')}
           onClick={() => editor.chain().focus().unsetAllMarks().run()}
@@ -120,6 +152,16 @@ export function DocumentEditorBubbleMenu({
           <RemoveFormattingIcon className="size-4" />
         </ToolbarButton>
       </div>
+      {ai && aiOpen && (
+        <InlineAiForm
+          canRun={aiRange !== null}
+          hint={t('documents.editor.ai.selectBlocks')}
+          onRun={(request) => {
+            setAiOpen(false);
+            ai.run(request, aiRange);
+          }}
+        />
+      )}
       {linkOpen && (
         <DocumentEditorLinkForm
           key={state.linkHref}

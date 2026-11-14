@@ -50,6 +50,8 @@ function makeEditor(text: string) {
     appendContent: vi.fn(),
     focusBlock: vi.fn(),
     setEditable: vi.fn(),
+    getSelection: vi.fn(),
+    replaceRange: vi.fn(),
   };
   return handle;
 }

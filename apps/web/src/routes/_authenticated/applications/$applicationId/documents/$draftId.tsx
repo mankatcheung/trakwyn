@@ -276,7 +276,21 @@ function DocumentDraftEditPage() {
   const retryAiSave = () => {
     const editor = editorRef.current;
     if (!editor) return;
-    void handleAiSave(editor.getJson(), editor.getText(), aiInstructionsRef.current ?? '');
+    void handleAiSave(
+      editor.getJson(),
+      editor.getText(),
+      aiInstructionsRef.current ?? draft?.aiInstructions ?? '',
+    );
+  };
+
+  // An accepted inline suggestion (JEF-583) is saved like an AI result: the server keeps what
+  // it replaced in the draft's history. The draft's own prompt is left as it was.
+  const handleInlineAiApplied = (contentJson: string, plainText: string) => {
+    setLiveText(plainText);
+    setLiveJson(contentJson);
+    const save = saveContent(contentJson, plainText, undefined, true);
+    trackSave(save);
+    void save.then((ok) => setAiUnsaved(!ok));
   };
 
   // Save version and Restore act on what the server holds, so the editor's pending
@@ -441,6 +455,7 @@ function DocumentDraftEditPage() {
             onTextChange={setLiveText}
             onJsonChange={setLiveJson}
             draftType={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
+            inlineAi={{ draftId: draft.id, onApplied: handleInlineAiApplied }}
           />
           {draft.type === 'resume' && (
             <DocumentEditorChecks
