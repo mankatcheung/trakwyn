@@ -16,6 +16,7 @@ describe('slash commands (JEF-575)', () => {
       'blockquote',
       'rule',
       'table',
+      'askAi',
     ]);
     expect(new Set(SLASH_COMMANDS.map((c) => c.id)).size).toBe(SLASH_COMMANDS.length);
   });

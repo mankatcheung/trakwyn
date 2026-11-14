@@ -7,6 +7,8 @@ import Highlight from '@tiptap/extension-highlight';
 import { TableKit } from '@tiptap/extension-table';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
+import { InlineAiLayer } from './InlineAiLayer';
+import { describeRange, replaceRangeWithContent, type AiRange } from '#/lib/editor/selectionRange';
 import { DocumentEditorTableMenu } from './DocumentEditorTableMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
@@ -54,6 +56,13 @@ export interface DocumentEditorHandle {
   focusBlock: (index: number) => void;
   /** Read-only while an AI request is in flight, so nothing typed meanwhile is overwritten. */
   setEditable: (editable: boolean) => void;
+  /** What an inline AI action would replace for the current selection, or null (JEF-583). */
+  getSelection: () => AiRange | null;
+  /**
+   * Replaces a range with blocks or inline text as one undo step, without the editor's own
+   * save: the caller saves the result. Any edit waiting out the save debounce is sent first.
+   */
+  replaceRange: (from: number, to: number, nodes: TiptapNode[]) => boolean;
 }
 
 interface DocumentDraftEditorProps {
@@ -73,6 +82,14 @@ interface DocumentDraftEditorProps {
   onJsonChange?: (json: string) => void;
   /** Words the hint shown in an empty draft for what the draft is. */
   draftType?: 'resume' | 'cover_letter';
+  /**
+   * Turns on the inline AI actions on a selection (JEF-583), which ask the draft's Polish
+   * action. `onApplied` gets the document after a suggestion is accepted, to save it.
+   */
+  inlineAi?: {
+    draftId: string;
+    onApplied?: (contentJson: string, plainText: string) => void;
+  };
   /** Spell-check language (a BCP 47 tag) and the way to change it (JEF-579). */
   language?: { value: DocumentLanguageTag; onChange: (tag: DocumentLanguageTag) => void };
   /** The save state shown in the status line (JEF-577). */
@@ -87,6 +104,7 @@ export function DocumentDraftEditor({
   onTextChange,
   onJsonChange,
   draftType,
+  inlineAi,
   language,
   saveStatus,
 }: DocumentDraftEditorProps) {
@@ -206,11 +224,23 @@ export function DocumentDraftEditor({
         editor.setEditable(next, false);
         setEditable(next);
       },
+      getSelection: () =>
+        describeRange(editor.state.doc, editor.state.selection.from, editor.state.selection.to),
+      replaceRange: (from, to, nodes) => {
+        flushPendingUpdate();
+        return replaceRangeWithContent(editor, from, to, nodes);
+      },
     };
     return () => {
       editorRef.current = null;
     };
   });
+
+  // The inline AI layer locks the editor while a request runs, as the helper panel does.
+  const setEditableFromAi = (next: boolean) => {
+    editor?.setEditable(next, false);
+    setEditable(next);
+  };
 
   if (!editor) return null;
 
@@ -236,7 +266,18 @@ export function DocumentDraftEditor({
         />
       </div>
       <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
-      <DocumentEditorBubbleMenu editor={editor} editable={editable} />
+      {inlineAi ? (
+        <InlineAiLayer
+          editor={editor}
+          editable={editable}
+          draftId={inlineAi.draftId}
+          setEditable={setEditableFromAi}
+          flush={flushPendingUpdate}
+          onApplied={inlineAi.onApplied}
+        />
+      ) : (
+        <DocumentEditorBubbleMenu editor={editor} editable={editable} />
+      )}
       <DocumentEditorTableMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>

@@ -94,7 +94,9 @@ vi.mock(
       onUpdate,
       flushRef,
       editorRef,
+      inlineAi,
     }: {
+      inlineAi?: { draftId: string; onApplied?: (json: string, text: string) => void };
       onUpdate: (json: string, text: string) => void;
       flushRef?: RefObject<(() => void) | null>;
       editorRef?: RefObject<{
@@ -110,7 +112,13 @@ vi.mock(
           getText: () => 'on screen',
           replaceContent: mockReplaceContent,
         };
-      return <div data-testid="editor" />;
+      return (
+        <div data-testid="editor">
+          <button onClick={() => inlineAi?.onApplied?.('{"inline":true}', 'inline text')}>
+            mock accept inline {inlineAi?.draftId}
+          </button>
+        </div>
+      );
     },
   }),
 );
@@ -175,6 +183,50 @@ function renderPage() {
 
 const clickExport = async () =>
   fireEvent.click(await screen.findByRole('button', { name: /export pdf/i }));
+
+describe('DocumentDraftEditPage — inline AI (JEF-583)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi();
+  });
+
+  it('gives the editor the draft to ask about', async () => {
+    renderPage();
+    expect(await screen.findByRole('button', { name: /mock accept inline draft-1/ })).toBeTruthy();
+  });
+
+  it('saves an accepted suggestion as an AI replacement, so history keeps what it replaced, and leaves the draft prompt alone', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /mock accept inline/ }));
+
+    await waitFor(() => expect(operations()).toContain('UpdateDocumentDraftContent'));
+    const call = mockGqlRequest.mock.calls.find(([q]) =>
+      String(q).includes('UpdateDocumentDraftContent'),
+    )!;
+    expect(call[1].input).toEqual({
+      draftId: 'draft-1',
+      contentJson: '{"inline":true}',
+      plainText: 'inline text',
+      replacedByAi: true,
+    });
+  });
+
+  it('keeps the failure visible, with a retry that does not erase the draft prompt', async () => {
+    mockApi({ save: () => Promise.reject(new Error('offline')) });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /mock accept inline/ }));
+
+    expect(await screen.findByText(/on screen but could not be saved/i)).toBeInTheDocument();
+    mockApi();
+    fireEvent.click(screen.getByRole('button', { name: /retry save/i }));
+    await waitFor(() => {
+      const last = mockGqlRequest.mock.calls
+        .filter(([q]) => String(q).includes('UpdateDocumentDraftContent'))
+        .at(-1)!;
+      expect(last[1].input.aiInstructions).toBe('last prompt');
+    });
+  });
+});
 
 describe('DocumentDraftEditPage — Export PDF', () => {
   beforeEach(() => {

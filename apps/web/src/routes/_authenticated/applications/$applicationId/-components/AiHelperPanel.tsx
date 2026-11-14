@@ -16,15 +16,8 @@ import type { AiFeature } from '#/lib/billingStatus';
 import type { DocumentEditorHandle } from './DocumentDraftEditor';
 import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
 import { PolishPreview } from './PolishPreview';
+import { requestPolish } from '../-polishApi';
 import { ResumeSourcePicker, useResumeSourceChoice } from './ResumeSourcePicker';
-
-const POLISH_MUTATION = `
-  mutation PolishDocumentDraft($draftId: ID!, $plainText: String!, $instructions: String) {
-    polishDocumentDraft(draftId: $draftId, plainText: $plainText, instructions: $instructions) {
-      markdown
-    }
-  }
-`;
 
 const GENERATE_MUTATION = `
   mutation GenerateIntoDocumentDraft(
@@ -189,11 +182,8 @@ export function AiHelperPanel({
     editor.setEditable(false);
     const sourceText = editor.getText();
     try {
-      const res = await gqlClient.request<{ polishDocumentDraft: { markdown: string } }>(
-        POLISH_MUTATION,
-        { draftId, plainText: sourceText, instructions: prompt || null },
-      );
-      setPreview({ markdown: res.polishDocumentDraft.markdown, sourceText });
+      const markdown = await requestPolish(draftId, sourceText, prompt || null);
+      setPreview({ markdown, sourceText });
     } catch (err) {
       fail(err);
     } finally {

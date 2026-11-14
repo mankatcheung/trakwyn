@@ -1,4 +1,5 @@
 import type { Editor, Range } from '@tiptap/react';
+import { requestAskAi } from '#/lib/editor/askAi';
 import { NEW_TABLE } from '#/lib/editor/tableCommands';
 import {
   Heading1Icon,
@@ -8,6 +9,7 @@ import {
   ListOrderedIcon,
   MinusIcon,
   QuoteIcon,
+  SparklesIcon,
   TableIcon,
   type LucideIcon,
 } from 'lucide-react';
@@ -93,6 +95,16 @@ export const SLASH_COMMANDS: readonly SlashCommandItem[] = [
     Icon: TableIcon,
     run: (editor, range) => {
       editor.chain().focus().deleteRange(range).insertTable(NEW_TABLE).run();
+    },
+  },
+  {
+    id: 'askAi',
+    labelKey: 'documents.editor.ai.askAi',
+    keywords: ['ai', 'ask', 'assistant', 'rewrite', 'improve'],
+    Icon: SparklesIcon,
+    run: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run();
+      requestAskAi(editor);
     },
   },
 ];
