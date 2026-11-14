@@ -1758,5 +1758,16 @@
   "draftHistory.sourceAi": "AI 修改之前",
   "draftHistory.sourceManual": "由你儲存",
   "draftHistory.sourceRestore": "還原之前",
-  "draftHistory.characters_other": "{{formatted}} 個字元"
+  "draftHistory.characters_other": "{{formatted}} 個字元",
+  "documents.editor.highlight": "突顯",
+  "documents.editor.insertTable": "插入表格",
+  "documents.editor.table.menu": "表格",
+  "documents.editor.table.addRowBefore": "喺上面插入列",
+  "documents.editor.table.addRowAfter": "喺下面插入列",
+  "documents.editor.table.deleteRow": "刪除列",
+  "documents.editor.table.addColumnBefore": "喺左邊插入欄",
+  "documents.editor.table.addColumnAfter": "喺右邊插入欄",
+  "documents.editor.table.deleteColumn": "刪除欄",
+  "documents.editor.table.headerRow": "標題列",
+  "documents.editor.table.deleteTable": "刪除表格"
 }

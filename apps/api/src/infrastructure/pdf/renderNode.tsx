@@ -12,8 +12,12 @@ interface ListContext {
   readonly depth: number;
 }
 
+/** Where a paragraph sits in a table: a header cell prints bold, a body cell tight. */
+type CellKind = 'header' | 'body' | null;
+
 interface RenderContext {
   readonly list: ListContext | null;
+  readonly cell: CellKind;
 }
 
 export interface PdfStyles {
@@ -32,6 +36,14 @@ type NodeRenderer = (node: JSONContent, key: number, ctx: RenderContext) => Reac
 const PRINTABLE_LINK = /^(https?:|mailto:)/i;
 
 const LINK_COLOR = '#1a56db';
+
+/**
+ * The highlight the editor offers (JEF-582): one soft yellow. The editor paints
+ * the same colour in `apps/web/src/styles.css`; its test holds this literal too.
+ * The colour is not read from the document, so a model-written mark cannot set
+ * an arbitrary one.
+ */
+export const HIGHLIGHT_COLOR = '#fef08a';
 
 function fontFor(bold: boolean, italic: boolean): string {
   if (bold && italic) return 'Helvetica-BoldOblique';
@@ -55,6 +67,7 @@ function styleForMarks(marks: NonNullable<JSONContent['marks']>): Style {
       ? { textDecoration: decorations.join(' ') as Style['textDecoration'] }
       : {}),
     ...(types.has('link') ? { color: LINK_COLOR } : {}),
+    ...(types.has('highlight') ? { backgroundColor: HIGHLIGHT_COLOR } : {}),
   };
 }
 
@@ -103,10 +116,7 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
     },
 
     paragraph: (node, key, ctx) => (
-      <Text
-        key={key}
-        style={withAlignment(ctx.list ? styles.listParagraph : styles.paragraph, node)}
-      >
+      <Text key={key} style={withAlignment(paragraphStyle(ctx), node)}>
         {children(node, ctx)}
       </Text>
     ),
@@ -128,9 +138,34 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
       );
     },
 
-    blockquote: (node, key) => (
+    blockquote: (node, key, ctx) => (
       <View key={key} style={styles.blockquote}>
-        {children(node, { list: null })}
+        {children(node, { ...ctx, list: null })}
+      </View>
+    ),
+
+    // Equal-width columns filling the page: simple, and long text wraps inside its cell.
+    table: (node, key, ctx) => (
+      <View key={key} style={styles.table}>
+        {children(node, { ...ctx, list: null })}
+      </View>
+    ),
+
+    tableRow: (node, key, ctx) => (
+      <View key={key} style={styles.tableRow} wrap={false}>
+        {children(node, ctx)}
+      </View>
+    ),
+
+    tableHeader: (node, key, ctx) => (
+      <View key={key} style={styles.tableHeaderCell}>
+        {children(node, { ...ctx, cell: 'header' })}
+      </View>
+    ),
+
+    tableCell: (node, key, ctx) => (
+      <View key={key} style={styles.tableCell}>
+        {children(node, { ...ctx, cell: 'body' })}
       </View>
     ),
 
@@ -151,6 +186,12 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
     },
   };
 
+  function paragraphStyle(ctx: RenderContext): Style {
+    if (ctx.cell === 'header') return styles.cellHeaderParagraph!;
+    if (ctx.cell === 'body') return styles.cellParagraph!;
+    return (ctx.list ? styles.listParagraph : styles.paragraph)!;
+  }
+
   function listNode(
     node: JSONContent,
     key: number,
@@ -161,7 +202,7 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
     const list: ListContext = { ordered, start, depth: (ctx.list?.depth ?? -1) + 1 };
     return (
       <View key={key} style={list.depth === 0 ? styles.list : styles.nestedList}>
-        {children(node, { list })}
+        {children(node, { ...ctx, list })}
       </View>
     );
   }
@@ -181,5 +222,5 @@ export function createNodeRenderer({ pdf, styles, logger }: Deps): (doc: JSONCon
     return <Fragment key={key}>{children(node, ctx)}</Fragment>;
   }
 
-  return (doc) => render(doc, 0, { list: null });
+  return (doc) => render(doc, 0, { list: null, cell: null });
 }

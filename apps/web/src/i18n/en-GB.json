@@ -1785,5 +1785,16 @@
   "draftHistory.sourceManual": "Saved by you",
   "draftHistory.sourceRestore": "Before restore",
   "draftHistory.characters_one": "{{formatted}} character",
-  "draftHistory.characters_other": "{{formatted}} characters"
+  "draftHistory.characters_other": "{{formatted}} characters",
+  "documents.editor.highlight": "Highlight",
+  "documents.editor.insertTable": "Insert table",
+  "documents.editor.table.menu": "Table",
+  "documents.editor.table.addRowBefore": "Row above",
+  "documents.editor.table.addRowAfter": "Row below",
+  "documents.editor.table.deleteRow": "Delete row",
+  "documents.editor.table.addColumnBefore": "Column left",
+  "documents.editor.table.addColumnAfter": "Column right",
+  "documents.editor.table.deleteColumn": "Delete column",
+  "documents.editor.table.headerRow": "Header row",
+  "documents.editor.table.deleteTable": "Delete table"
 }

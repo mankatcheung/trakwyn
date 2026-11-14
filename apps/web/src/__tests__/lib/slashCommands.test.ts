@@ -15,6 +15,7 @@ describe('slash commands (JEF-575)', () => {
       'orderedList',
       'blockquote',
       'rule',
+      'table',
     ]);
     expect(new Set(SLASH_COMMANDS.map((c) => c.id)).size).toBe(SLASH_COMMANDS.length);
   });

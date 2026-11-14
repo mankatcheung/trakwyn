@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type { JSONContent } from '@tiptap/core';
-import { createNodeRenderer } from '#src/infrastructure/pdf/renderNode.js';
+import { createNodeRenderer, HIGHLIGHT_COLOR } from '#src/infrastructure/pdf/renderNode.js';
 import { ReactPdfDocumentRenderer } from '#src/infrastructure/pdf/ReactPdfDocumentRenderer.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 
@@ -236,5 +236,106 @@ describe('createNodeRenderer text alignment (JEF-578)', () => {
     const pdf = await new ReactPdfDocumentRenderer({ logger }).render({ title: 'T', contentJson });
     expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('createNodeRenderer tables and highlight (JEF-582)', () => {
+  const cell = (type: 'tableCell' | 'tableHeader', ...content: JSONContent[]): JSONContent => ({
+    type,
+    attrs: { colspan: 1, rowspan: 1 },
+    content,
+  });
+  const row = (...cells: JSONContent[]): JSONContent => ({ type: 'tableRow', content: cells });
+  const table = (...rows: JSONContent[]): JSONContent => ({ type: 'table', content: rows });
+  const named = (out: ReactNode, name: string) => find(out, (el) => props(el).style?.name === name);
+
+  const skills = table(
+    row(cell('tableHeader', p('Skill')), cell('tableHeader', p('Years'))),
+    row(cell('tableCell', p('TypeScript')), cell('tableCell', p('9'))),
+    row(cell('tableCell', p('Go')), cell('tableCell', p('3'))),
+  );
+
+  it('prints a table as rows of equal cells and keeps every cell text', () => {
+    const out = render({ type: 'doc', content: [skills] });
+    expect(named(out, 'table')).toHaveLength(1);
+    expect(named(out, 'tableRow')).toHaveLength(3);
+    expect(named(out, 'tableHeaderCell')).toHaveLength(2);
+    expect(named(out, 'tableCell')).toHaveLength(4);
+    expect(textOf(out)).toBe('SkillYearsTypeScript9Go3');
+  });
+
+  it('prints header cell text bold and body cell text tight, not as page paragraphs', () => {
+    const out = render({ type: 'doc', content: [skills] });
+    expect(named(out, 'cellHeaderParagraph')).toHaveLength(2);
+    expect(named(out, 'cellParagraph')).toHaveLength(4);
+    expect(named(out, 'paragraph')).toHaveLength(0);
+  });
+
+  it('keeps a row on one page', () => {
+    const out = render({ type: 'doc', content: [skills] });
+    for (const r of named(out, 'tableRow')) expect(r.props).toMatchObject({ wrap: false });
+  });
+
+  it('goes back to page paragraphs after the table', () => {
+    const out = render({ type: 'doc', content: [skills, p('After')] });
+    expect(named(out, 'paragraph')).toHaveLength(1);
+  });
+
+  it('renders a list and a quote inside a cell without losing their text', () => {
+    const out = render({
+      type: 'doc',
+      content: [
+        table(
+          row(
+            cell(
+              'tableCell',
+              { type: 'bulletList', content: [item(p('one'))] },
+              { type: 'blockquote', content: [p('said')] },
+            ),
+          ),
+        ),
+      ],
+    });
+    expect(textOf(out)).toBe('•onesaid');
+  });
+
+  it('paints a highlight as a fixed background, whatever colour the mark claims', () => {
+    const out = render({
+      type: 'doc',
+      content: [p('marked', [{ type: 'highlight', attrs: { color: 'red; evil' } }])],
+    });
+    const [text] = find(out, (el) => props(el).children === 'marked');
+    expect(props(text!).style).toMatchObject({ backgroundColor: HIGHLIGHT_COLOR });
+    expect(HIGHLIGHT_COLOR).toBe('#fef08a');
+  });
+
+  it('combines highlight with bold', () => {
+    const out = render({
+      type: 'doc',
+      content: [p('x', [{ type: 'bold' }, { type: 'highlight' }])],
+    });
+    const [text] = find(out, (el) => props(el).children === 'x');
+    expect(props(text!).style).toMatchObject({
+      fontFamily: 'Helvetica-Bold',
+      backgroundColor: HIGHLIGHT_COLOR,
+    });
+  });
+
+  it('renders a table and a highlight into a real PDF without logging an unknown node', async () => {
+    const logger = makeLogger();
+    const contentJson = JSON.stringify({
+      type: 'doc',
+      content: [skills, p('a highlighted phrase', [{ type: 'highlight' }])],
+    });
+    const pdf = await new ReactPdfDocumentRenderer({ logger }).render({ title: 'T', contentJson });
+    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('keeps a document with no table or highlight exactly as it printed before', () => {
+    const out = render({ type: 'doc', content: [p('plain', [{ type: 'bold' }])] });
+    expect(named(out, 'paragraph')).toHaveLength(1);
+    const [text] = find(out, (el) => props(el).children === 'plain');
+    expect(props(text!).style).not.toHaveProperty('backgroundColor');
   });
 });

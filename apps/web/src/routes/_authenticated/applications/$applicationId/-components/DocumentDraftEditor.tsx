@@ -3,8 +3,11 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CharacterCount, Placeholder } from '@tiptap/extensions';
 import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import { TableKit } from '@tiptap/extension-table';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
+import { DocumentEditorTableMenu } from './DocumentEditorTableMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
 import { countWords } from '#/lib/editor/countWords';
@@ -129,6 +132,10 @@ export function DocumentDraftEditor({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right'],
       }),
+      // One highlight colour, no choice (JEF-582): the PDF prints the same one.
+      Highlight.configure({ multicolor: false }),
+      // Equal columns, no resizing or merged cells (JEF-582): the PDF prints equal columns.
+      TableKit.configure({ table: { resizable: false } }),
       SlashCommand.configure({
         controller: slashMenu,
         filter: (query) =>
@@ -198,6 +205,7 @@ export function DocumentDraftEditor({
       <EditorContent editor={editor} className={EDITOR_CONTENT_CLASS} />
       <DocumentEditorStatusBar editor={editor} />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
+      <DocumentEditorTableMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>
   );

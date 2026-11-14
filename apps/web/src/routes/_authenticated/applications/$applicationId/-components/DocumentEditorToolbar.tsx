@@ -9,6 +9,7 @@ import {
   ListOrderedIcon,
   QuoteIcon,
   MinusIcon,
+  TableIcon,
   Undo2Icon,
   Redo2Icon,
 } from 'lucide-react';
@@ -16,6 +17,8 @@ import { useLocale } from '#/lib/i18n';
 import { ToolbarButton } from './EditorToolbarButton';
 import { DocumentEditorLinkForm } from './DocumentEditorLinkForm';
 import { MARK_COMMANDS, readMarkState, runMarkCommand } from './editorMarkCommands';
+
+import { NEW_TABLE } from '#/lib/editor/tableCommands';
 
 type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3';
 
@@ -68,6 +71,9 @@ function readState(editor: Editor) {
     bulletList: editor.isActive('bulletList'),
     orderedList: editor.isActive('orderedList'),
     blockquote: editor.isActive('blockquote'),
+    table: editor.isActive('table'),
+    // A table cannot go inside a table, or where a table is not allowed.
+    canInsertTable: !editor.isActive('table') && editor.can().insertTable(NEW_TABLE),
     // A block nobody aligned reads as left.
     alignment: (editor.isActive({ textAlign: 'center' })
       ? 'center'
@@ -218,6 +224,14 @@ export function DocumentEditorToolbar({
           onClick={() => run((c) => c.setHorizontalRule())}
         >
           <MinusIcon className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label={t('documents.editor.insertTable')}
+          pressed={state.table}
+          disabled={off || !state.canInsertTable}
+          onClick={() => run((c) => c.insertTable(NEW_TABLE))}
+        >
+          <TableIcon className="size-4" />
         </ToolbarButton>
       </div>
       {linkOpen && !off && (

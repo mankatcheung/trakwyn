@@ -30,6 +30,11 @@ vi.mock(
   () => ({ DocumentEditorBubbleMenu: () => <div data-testid="bubble-menu" /> }),
 );
 
+vi.mock(
+  '#/routes/_authenticated/applications/$applicationId/-components/DocumentEditorTableMenu',
+  () => ({ DocumentEditorTableMenu: () => <div data-testid="table-menu" /> }),
+);
+
 vi.mock('#/routes/_authenticated/applications/$applicationId/-components/SlashMenu', () => ({
   SlashMenu: () => <div data-testid="slash-menu" />,
 }));
@@ -83,8 +88,8 @@ describe('DocumentDraftEditor', () => {
     render(<DocumentDraftEditor contentJson="{}" onUpdate={vi.fn()} />);
 
     const config = useEditorMock.mock.calls[0][0] as { extensions: unknown[] };
-    // StarterKit (links), placeholder, count, slash menu (JEF-574..576), find and replace and its shortcuts (JEF-580), text align (JEF-578).
-    expect(config.extensions).toHaveLength(7);
+    // StarterKit (links), placeholder, count, slash menu (JEF-574..576), find and replace and its shortcuts (JEF-580), text align (JEF-578), highlight and tables (JEF-582).
+    expect(config.extensions).toHaveLength(9);
   });
 
   it('falls back to undefined initial content for invalid JSON', () => {

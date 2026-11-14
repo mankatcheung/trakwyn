@@ -105,6 +105,41 @@ export class ReactPdfDocumentRenderer implements IPdfRenderer {
         marginBottom: 8,
         color: '#4b5563',
       },
+      // A table (JEF-582): equal-width columns, 1pt borders, the cell text a little tighter.
+      table: {
+        marginBottom: 8,
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      tableRow: {
+        flexDirection: 'row',
+      },
+      tableCell: {
+        flex: 1,
+        padding: 4,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      tableHeaderCell: {
+        flex: 1,
+        padding: 4,
+        backgroundColor: '#f3f4f6',
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      cellParagraph: {
+        marginBottom: 2,
+      },
+      cellHeaderParagraph: {
+        fontFamily: 'Helvetica-Bold',
+        marginBottom: 2,
+      },
       rule: {
         borderTopWidth: 1,
         borderTopColor: '#9ca3af',
