@@ -114,3 +114,48 @@ export const EXTRACT_DOCUMENT_TEXT_MUTATION = `
     }
   }
 `;
+
+// Draft history (JEF-584 API, JEF-588). Field-for-field with apps/web's
+// `-draftHistoryQueries.ts`, plus `contentJson` so the preview keeps its structure.
+export const DRAFT_VERSIONS_QUERY = `
+  query DocumentDraftVersions($draftId: ID!) {
+    documentDraftVersions(draftId: $draftId) {
+      id
+      source
+      characterCount
+      createdAt
+    }
+  }
+`;
+
+export const DRAFT_VERSION_QUERY = `
+  query DocumentDraftVersion($id: ID!) {
+    documentDraftVersion(id: $id) {
+      id
+      source
+      contentJson
+      plainText
+      createdAt
+    }
+  }
+`;
+
+export const CREATE_DRAFT_VERSION_MUTATION = `
+  mutation CreateDocumentDraftVersion($draftId: ID!) {
+    createDocumentDraftVersion(draftId: $draftId) {
+      id
+      source
+    }
+  }
+`;
+
+export const RESTORE_DRAFT_VERSION_MUTATION = `
+  mutation RestoreDocumentDraftVersion($versionId: ID!) {
+    restoreDocumentDraftVersion(versionId: $versionId) {
+      id
+      contentJson
+      plainText
+      updatedAt
+    }
+  }
+`;

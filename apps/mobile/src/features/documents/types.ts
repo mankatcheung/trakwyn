@@ -35,3 +35,28 @@ export interface DocumentDraft extends DocumentDraftSummary {
   /** The last prompt given to the AI helper on this draft. */
   aiInstructions: string | null;
 }
+
+/** Why a draft version was kept (JEF-584). */
+export type DraftVersionSource = 'autosave' | 'ai' | 'manual' | 'restore';
+
+export interface DraftVersionSummary {
+  id: string;
+  source: DraftVersionSource;
+  characterCount: number;
+  createdAt: string;
+}
+
+export interface DraftVersionPreview {
+  id: string;
+  source: DraftVersionSource;
+  contentJson: string;
+  plainText: string;
+  createdAt: string;
+}
+
+export interface RestoredDraft {
+  id: string;
+  contentJson: string;
+  plainText: string;
+  updatedAt: string;
+}

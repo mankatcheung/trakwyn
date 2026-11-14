@@ -18,6 +18,7 @@ import { useExportDocumentDraftToPdf } from '../hooks/useExportDocumentDraftToPd
 import { useDraftSaver } from '../hooks/useDraftSaver';
 import { useDraftAiHelper } from '../hooks/useDraftAiHelper';
 import { useSelectionAi } from '../hooks/useSelectionAi';
+import { DraftHistorySheet } from '../components/DraftHistorySheet';
 import { SelectionAiBar } from '../components/SelectionAiBar';
 import { AiHelperSheet } from '../components/AiHelperSheet';
 import { DraftFormattingToolbar } from '../components/DraftFormattingToolbar';
@@ -31,7 +32,7 @@ import { timeAgo } from '../../notifications/lib/timeAgo';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-import type { DocumentDraftType } from '../types';
+import type { DocumentDraftType, RestoredDraft } from '../types';
 
 const AUTOSAVE_DELAY_MS = 1000;
 
@@ -57,6 +58,9 @@ export function DocumentDraftEditorScreen() {
   const [titleDraft, setTitleDraft] = useState('');
   const [instructions, setInstructions] = useState('');
   const [helperOpen, setHelperOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  // Edits not yet sent to the server: what History must settle before it acts.
+  const dirtyRef = useRef(false);
   const [actionError, setActionError] = useState<string | null>(null);
   // A draft with formatting Markdown cannot show (alignment, highlight, ...) is not
   // autosaved until the user chooses to edit it anyway (JEF-586).
@@ -89,18 +93,21 @@ export function DocumentDraftEditorScreen() {
     setText(value);
   };
 
-  const saveText = (value: string) => {
+  const saveText = async (value: string) => {
     const { contentJson, plainText } = markdownToTiptapDoc(value);
-    return saver.save({ contentJson, plainText });
+    const saved = await saver.save({ contentJson, plainText });
+    if (saved && textRef.current === value) dirtyRef.current = false;
+    return saved;
   };
 
   // Reads the latest text when it fires, not the text it was scheduled with: an AI
   // result written in the meantime must not be overwritten by an older keystroke.
   const debouncedSave = useDebouncedCallback(() => {
-    if (!saveBlockedRef.current) void saveText(textRef.current);
+    if (!saveBlockedRef.current && dirtyRef.current) void saveText(textRef.current);
   }, AUTOSAVE_DELAY_MS);
 
   const onChangeText = (value: string) => {
+    dirtyRef.current = true;
     applyText(value);
     saver.clearError();
     debouncedSave();
@@ -125,6 +132,23 @@ export function DocumentDraftEditorScreen() {
     applyEdit,
   });
   const hasSelection = selection.start !== selection.end;
+
+  /** Sends any edit still waiting out the autosave debounce; false if that save failed. */
+  const settleForHistory = async () => {
+    if (saveBlockedRef.current || !dirtyRef.current) return true;
+    return saveText(textRef.current);
+  };
+
+  const onHistoryRestored = (restored: RestoredDraft) => {
+    const opened = draftToMarkdown(restored);
+    dirtyRef.current = false;
+    applyText(opened.markdown);
+    setSelection({ start: 0, end: 0 });
+    setLossy(opened.lossy);
+    setEditAnyway(false);
+    saver.clearError();
+    saver.setLastSavedAt(restored.updatedAt);
+  };
 
   const commitRename = () => {
     const title = titleDraft.trim();
@@ -249,6 +273,14 @@ export function DocumentDraftEditorScreen() {
             >{`✨ ${t('aiTitle')}`}</Text>
           </Pressable>
           <Pressable
+            onPress={() => setHistoryOpen(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            testID="draft-history-open"
+          >
+            <Text style={styles.headerActionText}>{t('historyOpen')}</Text>
+          </Pressable>
+          <Pressable
             onPress={() => void handleExport()}
             disabled={busy}
             hitSlop={8}
@@ -338,6 +370,14 @@ export function DocumentDraftEditorScreen() {
           testID="draft-content-input"
         />
       </ScrollView>
+
+      <DraftHistorySheet
+        visible={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        draftId={draft.id}
+        prepare={settleForHistory}
+        onRestored={onHistoryRestored}
+      />
 
       <AiHelperSheet
         visible={helperOpen}
