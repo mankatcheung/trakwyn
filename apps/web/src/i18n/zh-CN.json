@@ -1758,5 +1758,7 @@
   "draftHistory.sourceAi": "AI 修改之前",
   "draftHistory.sourceManual": "由你保存",
   "draftHistory.sourceRestore": "恢复之前",
-  "draftHistory.characters_other": "{{formatted}} 个字符"
+  "draftHistory.characters_other": "{{formatted}} 个字符",
+  "documents.editor.language": "文档语言",
+  "documents.editor.languageHint": "此文档的拼写检查语言"
 }

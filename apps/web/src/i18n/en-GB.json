@@ -1785,5 +1785,7 @@
   "draftHistory.sourceManual": "Saved by you",
   "draftHistory.sourceRestore": "Before restore",
   "draftHistory.characters_one": "{{formatted}} character",
-  "draftHistory.characters_other": "{{formatted}} characters"
+  "draftHistory.characters_other": "{{formatted}} characters",
+  "documents.editor.language": "Document language",
+  "documents.editor.languageHint": "Spellcheck language for this document"
 }
