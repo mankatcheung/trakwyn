@@ -193,3 +193,107 @@ body * {
     0 0 10px #60a5fa,
     0 0 5px #60a5fa;
 }
+
+/*
+  The document editor's page (JEF-581). It mirrors the PDF export, so every
+  number comes from a custom property that `documentPageStyle()` sets from
+  `lib/documentPage.ts`; none is written here. The page stays white in dark mode
+  because the PDF is white, and the surround around it follows the theme.
+*/
+.document-page {
+  width: 100%;
+  max-width: var(--doc-width);
+  margin-inline: auto;
+  background: #fff;
+  color: #111827;
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.12),
+    0 1px 2px rgb(0 0 0 / 0.08);
+  /* The PDF's 40pt margin, eased on a phone so the text keeps a usable width. */
+  padding: clamp(1rem, 7vw, var(--doc-padding));
+  font-family: var(--doc-font-family);
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-line-height);
+}
+
+.document-page .ProseMirror {
+  min-height: 360px;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.document-page .ProseMirror p {
+  margin: 0 0 var(--doc-p-mb);
+}
+
+.document-page .ProseMirror h1,
+.document-page .ProseMirror h2,
+.document-page .ProseMirror h3,
+.document-page .ProseMirror h4,
+.document-page .ProseMirror h5,
+.document-page .ProseMirror h6 {
+  font-weight: 700;
+}
+
+.document-page .ProseMirror h1 {
+  font-size: var(--doc-h1-size);
+  margin: var(--doc-h1-mt) 0 var(--doc-h1-mb);
+}
+
+.document-page .ProseMirror h2 {
+  font-size: var(--doc-h2-size);
+  margin: var(--doc-h2-mt) 0 var(--doc-h2-mb);
+}
+
+/* The PDF prints level 3 and deeper alike. */
+.document-page .ProseMirror :is(h3, h4, h5, h6) {
+  font-size: var(--doc-h3-size);
+  margin: var(--doc-h3-mt) 0 var(--doc-h3-mb);
+}
+
+.document-page .ProseMirror :is(ul, ol) {
+  margin: 0 0 var(--doc-list-mb);
+  padding-left: var(--doc-list-indent);
+}
+
+.document-page .ProseMirror ul {
+  list-style: disc;
+}
+
+.document-page .ProseMirror ol {
+  list-style: decimal;
+}
+
+.document-page .ProseMirror li {
+  margin-bottom: var(--doc-item-mb);
+}
+
+.document-page .ProseMirror li > p {
+  margin-bottom: var(--doc-item-mb);
+}
+
+.document-page .ProseMirror li > :is(ul, ol) {
+  margin-top: 2pt;
+}
+
+.document-page .ProseMirror blockquote {
+  border-left: var(--doc-quote-border) solid var(--doc-quote-border-color);
+  padding-left: var(--doc-quote-padding);
+  margin: 0 0 var(--doc-quote-mb);
+  color: var(--doc-quote-color);
+}
+
+.document-page .ProseMirror hr {
+  border: 0;
+  border-top: var(--doc-rule-width) solid var(--doc-rule-color);
+  margin: var(--doc-rule-my) 0;
+}
+
+.document-page .ProseMirror a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.document-page .ProseMirror :is(p, h1, h2, h3, h4, h5, h6, li):last-child {
+  margin-bottom: 0;
+}
