@@ -75,5 +75,7 @@
   "importAction": "Import",
   "importing": "Importing…",
   "importEmpty": "That document has no readable text.",
-  "aiCreditsLeft": "{{left}} of {{total}} AI credits left"
+  "aiCreditsLeft": "{{left}} of {{total}} AI credits left",
+  "lossyBanner": "This draft uses formatting the mobile editor can't show (such as alignment or highlight). Changes are not saved, so nothing is lost, until you choose to edit anyway. Saving then removes that formatting.",
+  "lossyEditAnyway": "Edit anyway"
 }

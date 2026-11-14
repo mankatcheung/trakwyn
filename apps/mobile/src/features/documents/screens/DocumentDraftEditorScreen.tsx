@@ -21,7 +21,8 @@ import { AiHelperSheet } from '../components/AiHelperSheet';
 import { DraftFormattingToolbar } from '../components/DraftFormattingToolbar';
 import { ImportFromDocument } from '../components/ImportFromDocument';
 import type { ResumeChoice } from '../components/ResumeSourcePicker';
-import { proseToTiptapDoc } from '../../../lib/proseToTiptapDoc';
+import { markdownToTiptapDoc } from '../lib/markdownToTiptapDoc';
+import { draftToMarkdown } from '../lib/tiptapToMarkdown';
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback';
 import type { Selection, TextEdit } from '../lib/markdownEditing';
 import { timeAgo } from '../../notifications/lib/timeAgo';
@@ -55,10 +56,19 @@ export function DocumentDraftEditorScreen() {
   const [instructions, setInstructions] = useState('');
   const [helperOpen, setHelperOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // A draft with formatting Markdown cannot show (alignment, highlight, ...) is not
+  // autosaved until the user chooses to edit it anyway (JEF-586).
+  const [lossy, setLossy] = useState(false);
+  const [editAnyway, setEditAnyway] = useState(false);
+  const saveBlocked = lossy && !editAnyway;
+  const saveBlockedRef = useRef(false);
 
   if (draft && draft.id !== syncedDraftId) {
     setSyncedDraftId(draft.id);
-    setText(draft.plainText);
+    const opened = draftToMarkdown(draft);
+    setText(opened.markdown);
+    setLossy(opened.lossy);
+    setEditAnyway(false);
     setTitleDraft(draft.title);
     setInstructions(draft.aiInstructions ?? '');
     saver.setLastSavedAt(draft.updatedAt);
@@ -68,6 +78,9 @@ export function DocumentDraftEditorScreen() {
   useEffect(() => {
     textRef.current = text;
   }, [text]);
+  useEffect(() => {
+    saveBlockedRef.current = saveBlocked;
+  }, [saveBlocked]);
 
   const applyText = (value: string) => {
     textRef.current = value;
@@ -75,16 +88,15 @@ export function DocumentDraftEditorScreen() {
   };
 
   const saveText = (value: string) => {
-    const { contentJson, plainText } = proseToTiptapDoc(value);
+    const { contentJson, plainText } = markdownToTiptapDoc(value);
     return saver.save({ contentJson, plainText });
   };
 
   // Reads the latest text when it fires, not the text it was scheduled with: an AI
   // result written in the meantime must not be overwritten by an older keystroke.
-  const debouncedSave = useDebouncedCallback(
-    () => void saveText(textRef.current),
-    AUTOSAVE_DELAY_MS,
-  );
+  const debouncedSave = useDebouncedCallback(() => {
+    if (!saveBlockedRef.current) void saveText(textRef.current);
+  }, AUTOSAVE_DELAY_MS);
 
   const onChangeText = (value: string) => {
     applyText(value);
@@ -119,7 +131,7 @@ export function DocumentDraftEditorScreen() {
 
   const importText = (imported: string) => {
     onChangeText(imported);
-    void saveText(imported);
+    if (!saveBlocked) void saveText(imported);
   };
 
   const handleDelete = () => {
@@ -217,8 +229,15 @@ export function DocumentDraftEditorScreen() {
           </Text>
         </View>
         <View style={styles.metaRowActions}>
-          <Pressable onPress={() => setHelperOpen(true)} hitSlop={8} testID="ai-helper-open">
-            <Text style={styles.headerActionText}>{`✨ ${t('aiTitle')}`}</Text>
+          <Pressable
+            onPress={() => setHelperOpen(true)}
+            disabled={saveBlocked}
+            hitSlop={8}
+            testID="ai-helper-open"
+          >
+            <Text
+              style={[styles.headerActionText, saveBlocked && styles.disabledText]}
+            >{`✨ ${t('aiTitle')}`}</Text>
           </Pressable>
           <Pressable
             onPress={() => void handleExport()}
@@ -253,6 +272,20 @@ export function DocumentDraftEditorScreen() {
               <Text style={styles.headerActionText}>{tCommon('retry')}</Text>
             </Pressable>
           ) : null}
+        </View>
+      ) : null}
+
+      {saveBlocked ? (
+        <View style={styles.lossyRow} testID="draft-lossy-banner">
+          <Text style={styles.lossyText}>{t('lossyBanner')}</Text>
+          <Pressable
+            onPress={() => setEditAnyway(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            testID="draft-lossy-edit-anyway"
+          >
+            <Text style={styles.headerActionText}>{t('lossyEditAnyway')}</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -373,6 +406,18 @@ function createStyles(colors: ThemeColors) {
       margin: 16,
       marginBottom: 0,
     },
+    lossyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      padding: 10,
+      margin: 16,
+      marginBottom: 0,
+    },
+    lossyText: { flex: 1, color: colors.text, fontSize: 14 },
     errorText: { flex: 1, color: colors.danger, fontSize: 14 },
     editorScroll: { flex: 1 },
     editor: {

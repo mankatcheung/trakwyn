@@ -75,5 +75,7 @@
   "importAction": "匯入",
   "importing": "正在匯入…",
   "importEmpty": "該文件中沒有可讀取的文字。",
-  "aiCreditsLeft": "剩餘 {{left}} / {{total}} AI 額度"
+  "aiCreditsLeft": "剩餘 {{left}} / {{total}} AI 額度",
+  "lossyBanner": "此草稿使用了手機版編輯器無法顯示的格式（如對齊或醒目標示）。在你選擇「仍要編輯」之前不會儲存變更，因此不會遺失任何內容。儲存後這些格式會被移除。",
+  "lossyEditAnyway": "仍要編輯"
 }

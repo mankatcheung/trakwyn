@@ -241,7 +241,11 @@ describe('DocumentDraftEditorScreen', () => {
   });
 
   it('imports a document into an empty draft and saves it', async () => {
-    loaded({ ...draft, plainText: '' });
+    loaded({
+      ...draft,
+      contentJson: '{"type":"doc","content":[{"type":"paragraph"}]}',
+      plainText: '',
+    });
     const { getByTestId } = await renderScreen();
     await fireEvent.press(getByTestId('import-mock'));
 
@@ -299,5 +303,64 @@ describe('DocumentDraftEditorScreen', () => {
 
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'AI text' }));
     jest.useRealTimers();
+  });
+  it('opens a formatted draft as Markdown and saves it back as formatting', async () => {
+    jest.useFakeTimers();
+    const formatted = JSON.stringify({
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Jane' }] },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Built', marks: [{ type: 'bold' }] }],
+        },
+      ],
+    });
+    loaded({ ...draft, contentJson: formatted, plainText: 'Jane\n\nBuilt' });
+    const { getByTestId, queryByTestId } = await renderScreen();
+    const input = getByTestId('draft-content-input');
+    expect(input.props.value).toBe('# Jane\n\n**Built**');
+    expect(queryByTestId('draft-lossy-banner')).toBeNull();
+
+    await fireEvent.changeText(input, '# Jane\n\n**Built** things');
+    jest.advanceTimersByTime(1000);
+
+    const saved = save.mock.calls.at(-1)![0];
+    expect(saved.plainText).toBe('Jane\n\nBuilt things');
+    expect(JSON.parse(saved.contentJson).content[0]).toMatchObject({ type: 'heading' });
+    jest.useRealTimers();
+  });
+
+  describe('a draft with formatting Markdown cannot show', () => {
+    const aligned = JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'center' },
+          content: [{ type: 'text', text: 'Centred' }],
+        },
+      ],
+    });
+
+    it('shows the banner and does not autosave until Edit anyway', async () => {
+      jest.useFakeTimers();
+      loaded({ ...draft, contentJson: aligned, plainText: 'Centred' });
+      const { getByTestId, queryByTestId } = await renderScreen();
+      expect(getByTestId('draft-lossy-banner')).toBeTruthy();
+
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'Centred!');
+      jest.advanceTimersByTime(1000);
+      expect(save).not.toHaveBeenCalled();
+
+      await fireEvent.press(getByTestId('draft-lossy-edit-anyway'));
+      expect(queryByTestId('draft-lossy-banner')).toBeNull();
+      expect(save).not.toHaveBeenCalled();
+
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'Centred!!');
+      jest.advanceTimersByTime(1000);
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({ plainText: 'Centred!!' }));
+      jest.useRealTimers();
+    });
   });
 });
