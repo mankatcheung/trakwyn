@@ -20,6 +20,54 @@
   }
 }
 
+/*
+  Tables and highlight in the document editor (JEF-582). The PDF prints equal
+  columns with 1pt grey borders, a light header row and one soft yellow highlight
+  (apps/api/src/infrastructure/pdf/renderNode.tsx); these match them. Colours are
+  explicit rather than inherited so the cells read the same whether the editor
+  sits on a dark or a light surface.
+*/
+.ProseMirror table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0 0 8pt;
+  overflow: hidden;
+}
+
+.ProseMirror :is(th, td) {
+  position: relative;
+  min-width: 0;
+  padding: 4pt;
+  border: 1px solid #9ca3af;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.ProseMirror th {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 700;
+  text-align: left;
+}
+
+.ProseMirror :is(th, td) > p {
+  margin: 0 0 2pt;
+}
+
+.ProseMirror .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(59 130 246 / 0.18);
+  pointer-events: none;
+}
+
+.ProseMirror mark {
+  background-color: #fef08a;
+  color: #111827;
+}
+
 * {
   box-sizing: border-box;
 }

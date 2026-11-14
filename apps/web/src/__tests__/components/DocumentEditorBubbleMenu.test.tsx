@@ -94,12 +94,12 @@ describe('DocumentEditorBubbleMenu (JEF-574)', () => {
     await waitFor(() => expect(screen.queryByRole('toolbar', MENU)).not.toBeInTheDocument());
   });
 
-  it('offers bold, italic, underline, link and clear formatting with names and shortcut tooltips', async () => {
+  it('offers bold, italic, underline, highlight, link and clear formatting with names and shortcut tooltips', async () => {
     const h = setup();
     select(h.editor, 1, 6);
     const menu = await screen.findByRole('toolbar', MENU);
 
-    for (const name of ['Bold', 'Italic', 'Underline', 'Link', 'Clear formatting']) {
+    for (const name of ['Bold', 'Italic', 'Underline', 'Highlight', 'Link', 'Clear formatting']) {
       const button = Array.from(menu.querySelectorAll('button')).find(
         (b) => b.getAttribute('aria-label') === name,
       );
@@ -109,7 +109,7 @@ describe('DocumentEditorBubbleMenu (JEF-574)', () => {
     expect(menu.querySelector('[aria-label="Bold"]')!.getAttribute('title')).toMatch(
       /Bold \((Ctrl\+B|⌘B)\)/,
     );
-    expect(menu.querySelectorAll('button')).toHaveLength(5);
+    expect(menu.querySelectorAll('button')).toHaveLength(6);
   });
 
   it('applies a mark and shows it as pressed', async () => {
