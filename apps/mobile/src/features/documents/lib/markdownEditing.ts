@@ -1,3 +1,5 @@
+import { isSafeMarkdownUrl } from '../../../lib/safeMarkdownUrl';
+
 export interface Selection {
   start: number;
   end: number;
@@ -52,5 +54,34 @@ export function toggleLinePrefix(text: string, selection: Selection, prefix: str
       start: Math.max(lineStart, selection.start + delta),
       end: Math.max(lineStart, selection.end + delta),
     },
+  };
+}
+
+/**
+ * The URL a typed link points at, or null when it is not one the app opens
+ * (JEF-589). A bare `example.com` gets `https://`; `javascript:`, `data:` and the
+ * like are refused, as `isSafeMarkdownUrl` does everywhere else.
+ */
+export function normalizeLinkUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === '' || /\s/.test(trimmed) || /[()<>]/.test(trimmed)) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return isSafeMarkdownUrl(withScheme) ? withScheme : null;
+}
+
+/**
+ * Turns the selection into `[selected](url)`, or inserts `[url](url)` at the
+ * cursor. Null when the URL is not safe.
+ */
+export function insertLink(text: string, selection: Selection, rawUrl: string): TextEdit | null {
+  const url = normalizeLinkUrl(rawUrl);
+  if (!url) return null;
+  const { start, end } = selection;
+  const label = end > start ? text.slice(start, end) : url;
+  const link = `[${label}](${url})`;
+  const caret = start + link.length;
+  return {
+    text: `${text.slice(0, start)}${link}${text.slice(end)}`,
+    selection: { start: caret, end: caret },
   };
 }

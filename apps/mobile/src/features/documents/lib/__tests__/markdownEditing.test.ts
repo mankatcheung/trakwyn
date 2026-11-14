@@ -1,4 +1,4 @@
-import { toggleLinePrefix, wrapSelection } from '../markdownEditing';
+import { insertLink, normalizeLinkUrl, toggleLinePrefix, wrapSelection } from '../markdownEditing';
 
 describe('wrapSelection', () => {
   it('wraps a selected range in the marker on both sides', () => {
@@ -36,5 +36,53 @@ describe('toggleLinePrefix', () => {
     const result = toggleLinePrefix('## Title', { start: 0, end: 0 }, '## ');
     expect(result.text).toBe('Title');
     expect(result.selection).toEqual({ start: 0, end: 0 });
+  });
+});
+
+describe('strike and quote', () => {
+  it('wraps the selection in ~~ for strikethrough', () => {
+    const result = wrapSelection('Old price', { start: 4, end: 9 }, '~~');
+    expect(result.text).toBe('Old ~~price~~');
+  });
+
+  it('toggles a quote prefix on the current line', () => {
+    expect(toggleLinePrefix('Said so', { start: 2, end: 2 }, '> ').text).toBe('> Said so');
+    expect(toggleLinePrefix('> Said so', { start: 4, end: 4 }, '> ').text).toBe('Said so');
+  });
+});
+
+describe('normalizeLinkUrl', () => {
+  it('keeps a web or mail URL and adds https:// to a bare host', () => {
+    expect(normalizeLinkUrl('https://example.com/a')).toBe('https://example.com/a');
+    expect(normalizeLinkUrl(' http://example.com ')).toBe('http://example.com');
+    expect(normalizeLinkUrl('mailto:me@example.com')).toBe('mailto:me@example.com');
+    expect(normalizeLinkUrl('example.com/cv')).toBe('https://example.com/cv');
+  });
+
+  it('refuses unsafe, empty and Markdown-breaking addresses', () => {
+    expect(normalizeLinkUrl('javascript:alert(1)')).toBeNull();
+    expect(normalizeLinkUrl('data:text/html,hi')).toBeNull();
+    expect(normalizeLinkUrl('')).toBeNull();
+    expect(normalizeLinkUrl('https://exa mple.com')).toBeNull();
+    expect(normalizeLinkUrl('https://example.com/a)b')).toBeNull();
+  });
+});
+
+describe('insertLink', () => {
+  it('turns the selection into a link and puts the cursor after it', () => {
+    const result = insertLink('See my site now', { start: 4, end: 11 }, 'example.com');
+    expect(result).toEqual({
+      text: 'See [my site](https://example.com) now',
+      selection: { start: 34, end: 34 },
+    });
+  });
+
+  it('inserts the address as its own label when nothing is selected', () => {
+    const result = insertLink('Hi ', { start: 3, end: 3 }, 'https://example.com');
+    expect(result?.text).toBe('Hi [https://example.com](https://example.com)');
+  });
+
+  it('returns null for an unsafe address', () => {
+    expect(insertLink('Hi', { start: 0, end: 2 }, 'javascript:alert(1)')).toBeNull();
   });
 });

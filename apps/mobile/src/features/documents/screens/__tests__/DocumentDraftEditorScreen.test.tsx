@@ -482,4 +482,55 @@ describe('DocumentDraftEditorScreen', () => {
       jest.useRealTimers();
     });
   });
+
+  describe('status bar and editor settings', () => {
+    it('turns spellcheck, autocorrect and sentence capitals on', async () => {
+      loaded();
+      const { getByTestId } = await renderScreen();
+      const input = getByTestId('draft-content-input');
+      expect(input.props.spellCheck).toBe(true);
+      expect(input.props.autoCorrect).toBe(true);
+      expect(input.props.autoCapitalize).toBe('sentences');
+    });
+
+    it('shows a live count that follows typing and the selection', async () => {
+      loaded();
+      const { getByTestId } = await renderScreen();
+      expect(getByTestId('draft-count').props.children).toBe('3 words · 20 characters');
+
+      await fireEvent.changeText(getByTestId('draft-content-input'), 'One two');
+      expect(getByTestId('draft-count').props.children).toBe('2 words · 7 characters');
+
+      await fireEvent(getByTestId('draft-content-input'), 'selectionChange', {
+        nativeEvent: { selection: { start: 0, end: 3 } },
+      });
+      expect(getByTestId('draft-count').props.children).toBe('Selected: 1 word · 3 characters');
+    });
+
+    it('shows Saving while the saver saves', async () => {
+      loaded();
+      mockedUseDraftSaver.mockReturnValue({ ...baseSaver, saving: true } as never);
+      const { getByTestId } = await renderScreen();
+      expect(getByTestId('draft-status-saving')).toBeTruthy();
+    });
+
+    it('shows Saved once the draft has been saved', async () => {
+      loaded();
+      mockedUseDraftSaver.mockReturnValue({
+        ...baseSaver,
+        lastSavedAt: '2026-01-01T00:00:00.000Z',
+      } as never);
+      const { getByTestId } = await renderScreen();
+      expect(getByTestId('draft-status-saved')).toBeTruthy();
+    });
+
+    it("shows Couldn't save, and Retry resends the failed payload", async () => {
+      loaded();
+      mockedUseDraftSaver.mockReturnValue({ ...baseSaver, error: 'Offline' } as never);
+      const { getByTestId } = await renderScreen();
+      expect(getByTestId('draft-status-failed')).toBeTruthy();
+      await fireEvent.press(getByTestId('draft-save-retry'));
+      expect(retry).toHaveBeenCalled();
+    });
+  });
 });
