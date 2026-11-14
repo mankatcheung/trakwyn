@@ -1,6 +1,6 @@
 {
-  "apps/api": "0.16.0",
-  "apps/web": "0.16.0",
+  "apps/api": "0.17.0",
+  "apps/web": "0.17.0",
   "apps/extension": "1.5.0",
   "apps/mobile": "0.10.0",
   "apps/cli": "0.0.3"
