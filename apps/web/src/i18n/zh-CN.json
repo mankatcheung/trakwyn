@@ -1769,5 +1769,13 @@
   "documents.editor.table.addColumnAfter": "在右侧插入列",
   "documents.editor.table.deleteColumn": "删除列",
   "documents.editor.table.headerRow": "标题行",
-  "documents.editor.table.deleteTable": "删除表格"
+  "documents.editor.table.deleteTable": "删除表格",
+  "documents.editor.language": "文档语言",
+  "documents.editor.languageHint": "此文档的拼写检查语言",
+  "documents.editor.saveState.saved": "已保存",
+  "documents.editor.saveState.saving": "正在保存…",
+  "documents.editor.saveState.dirty": "有未保存的更改",
+  "documents.editor.saveState.error": "无法保存",
+  "documents.editor.saveState.retry": "重试",
+  "documentDraftEdit.leaveConfirm": "有尚未保存的更改。仍要离开吗？"
 }

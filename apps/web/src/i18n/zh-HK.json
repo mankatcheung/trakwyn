@@ -1769,5 +1769,13 @@
   "documents.editor.table.addColumnAfter": "喺右邊插入欄",
   "documents.editor.table.deleteColumn": "刪除欄",
   "documents.editor.table.headerRow": "標題列",
-  "documents.editor.table.deleteTable": "刪除表格"
+  "documents.editor.table.deleteTable": "刪除表格",
+  "documents.editor.language": "文件語言",
+  "documents.editor.languageHint": "此文件嘅拼字檢查語言",
+  "documents.editor.saveState.saved": "已儲存",
+  "documents.editor.saveState.saving": "儲存緊…",
+  "documents.editor.saveState.dirty": "有未儲存嘅變更",
+  "documents.editor.saveState.error": "無法儲存",
+  "documents.editor.saveState.retry": "重試",
+  "documentDraftEdit.leaveConfirm": "有未儲存嘅變更。仍然離開嗎？"
 }

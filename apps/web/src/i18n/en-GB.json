@@ -1796,5 +1796,13 @@
   "documents.editor.table.addColumnAfter": "Column right",
   "documents.editor.table.deleteColumn": "Delete column",
   "documents.editor.table.headerRow": "Header row",
-  "documents.editor.table.deleteTable": "Delete table"
+  "documents.editor.table.deleteTable": "Delete table",
+  "documents.editor.language": "Document language",
+  "documents.editor.languageHint": "Spellcheck language for this document",
+  "documents.editor.saveState.saved": "Saved",
+  "documents.editor.saveState.saving": "Saving…",
+  "documents.editor.saveState.dirty": "Unsaved changes",
+  "documents.editor.saveState.error": "Couldn't save",
+  "documents.editor.saveState.retry": "Retry",
+  "documentDraftEdit.leaveConfirm": "You have changes that haven't been saved. Leave anyway?"
 }

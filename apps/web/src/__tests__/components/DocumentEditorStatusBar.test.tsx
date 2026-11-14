@@ -1,6 +1,8 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, type ComponentProps } from 'react';
+import userEvent from '@testing-library/user-event';
+import type { SaveStatus } from '#/lib/editor/saveState';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CharacterCount } from '@tiptap/extensions';
@@ -27,7 +29,17 @@ const paragraphs = (...texts: string[]) => ({
   ),
 });
 
-function Harness({ content, onEditor }: { content: object; onEditor: (e: Editor) => void }) {
+function Harness({
+  content,
+  onEditor,
+  saveStatus,
+  language,
+}: {
+  content: object;
+  onEditor: (e: Editor) => void;
+  saveStatus?: SaveStatus;
+  language?: ComponentProps<typeof DocumentEditorStatusBar>['language'];
+}) {
   const editor = useEditor({
     extensions: [StarterKit, CharacterCount.configure({ wordCounter: countWords })],
     content,
@@ -37,7 +49,7 @@ function Harness({ content, onEditor }: { content: object; onEditor: (e: Editor)
   return (
     <div>
       <EditorContent editor={editor} />
-      <DocumentEditorStatusBar editor={editor} />
+      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
     </div>
   );
 }
@@ -204,5 +216,52 @@ describe('DocumentDraftEditor: placeholder and AI changes (JEF-576)', () => {
       ref.current!.appendContent([{ type: 'paragraph', content: [{ type: 'text', text: 'f g' }] }]),
     );
     await waitFor(() => expect(status.getByText('7 words')).toBeInTheDocument());
+  });
+});
+
+describe('DocumentEditorStatusBar — save status (JEF-577)', () => {
+  const renderWith = (saveStatus: SaveStatus) =>
+    render(<Harness content={paragraphs('hi')} onEditor={() => {}} saveStatus={saveStatus} />);
+
+  it.each([
+    ['saved', 'Saved'],
+    ['saving', 'Saving…'],
+    ['dirty', 'Unsaved changes'],
+  ] as const)('labels the %s state without a Retry or an announcement', (state, label) => {
+    renderWith({ state, onRetry: vi.fn() });
+    expect(screen.getByTestId('save-status')).toHaveAttribute('data-state', state);
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('');
+  });
+
+  it("announces a failure with the API's message and offers Retry", async () => {
+    const onRetry = vi.fn();
+    renderWith({ state: 'error', errorMessage: 'Session expired', onRetry });
+
+    expect(screen.getByRole('status')).toHaveTextContent("Couldn't save. Session expired");
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('shows counts only when no save status is given', () => {
+    render(<Harness content={paragraphs('hi')} onEditor={() => {}} />);
+    expect(screen.queryByTestId('save-status')).not.toBeInTheDocument();
+  });
+});
+
+describe('DocumentEditorStatusBar — language beside save status (JEF-577, JEF-579)', () => {
+  it('shows the language picker and the save state together on one line', () => {
+    render(
+      <Harness
+        content={paragraphs('hi')}
+        onEditor={() => {}}
+        saveStatus={{ state: 'saved', onRetry: vi.fn() }}
+        language={{ value: 'en-GB', onChange: vi.fn() }}
+      />,
+    );
+    const line = screen.getByTestId('editor-status-bar');
+    expect(within(line).getByRole('combobox', { name: 'Document language' })).toHaveValue('en-GB');
+    expect(within(line).getByTestId('save-status')).toHaveAttribute('data-state', 'saved');
   });
 });
