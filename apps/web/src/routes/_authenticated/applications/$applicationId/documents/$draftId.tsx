@@ -7,6 +7,8 @@ import { useLocale } from '#/lib/i18n';
 import { useDocumentLanguage } from '#/lib/editor/documentLanguage';
 import { getErrorMessage } from '#/lib/errors';
 import { downloadUrl } from '#/lib/downloadUrl';
+import { deriveSaveState, hasUnsavedWork } from '#/lib/editor/saveState';
+import { useUnsavedChangesGuard } from '#/hooks/useUnsavedChangesGuard';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
 import { AiHelperPanel } from '../-components/AiHelperPanel';
@@ -133,6 +135,13 @@ function DocumentDraftEditPage() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // Save state for the status line (JEF-577). `dirty`: typed since the last save was
+  // asked for. `inFlight`: content saves asked for and not yet settled (counted from
+  // the request, not from when the queue reaches it, so there is no gap showing
+  // Saved between two queued saves). `saveFailure`: the last one failed, with its message.
+  const [dirty, setDirty] = useState(false);
+  const [inFlight, setInFlight] = useState(0);
+  const [saveFailure, setSaveFailure] = useState<{ message: string } | null>(null);
   // Draft history (JEF-584): the panel, and a counter that changes with every save.
   const [historyOpen, setHistoryOpen] = useState(false);
   const [saveCount, setSaveCount] = useState(0);
@@ -157,9 +166,10 @@ function DocumentDraftEditPage() {
     aiInstructions?: string,
     replacedByAi = false,
   ): Promise<boolean> => {
-    const run = saveQueueRef.current.then(() =>
-      writeContent(contentJson, plainText, aiInstructions, replacedByAi),
-    );
+    setInFlight((n) => n + 1);
+    const run = saveQueueRef.current
+      .then(() => writeContent(contentJson, plainText, aiInstructions, replacedByAi))
+      .finally(() => setInFlight((n) => n - 1));
     saveQueueRef.current = run;
     return run;
   };
@@ -183,6 +193,7 @@ function DocumentDraftEditPage() {
         },
       });
       setLastSaved(new Date());
+      setSaveFailure(null);
       setSaveCount((n) => n + 1);
       setDraft((prev) =>
         prev
@@ -202,6 +213,7 @@ function DocumentDraftEditPage() {
       return true;
     } catch (err) {
       console.error('Failed to save:', err);
+      setSaveFailure({ message: getErrorMessage(err) });
       return false;
     } finally {
       setSaving(false);
@@ -217,6 +229,8 @@ function DocumentDraftEditPage() {
   };
 
   const handleUpdate = (contentJson: string, plainText: string) => {
+    // The editor hands over its latest content, so nothing is left waiting.
+    setDirty(false);
     const save = saveContent(contentJson, plainText);
     trackSave(save);
     void save.then((ok) => {
@@ -276,6 +290,13 @@ function DocumentDraftEditPage() {
       false,
     );
 
+  // Retry sends what is on screen now, not the content of the attempt that failed.
+  const retryContentSave = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    handleUpdate(editor.getJson(), editor.getText());
+  };
+
   const retryAiSave = () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -308,6 +329,8 @@ function DocumentDraftEditPage() {
     );
     setLastSaved(new Date());
     setAiUnsaved(false);
+    setDirty(false);
+    setSaveFailure(null);
     void queryClient.invalidateQueries({ queryKey: resumeMatchesQueryKey(applicationId) });
     void queryClient.invalidateQueries({ queryKey: resumeAtsScoresQueryKey(applicationId) });
   };
@@ -356,6 +379,13 @@ function DocumentDraftEditPage() {
       setError(err instanceof Error ? err.message : t('documentDraftEdit.deleteFailed'));
     }
   };
+
+  const saveState = deriveSaveState({
+    dirty,
+    saving: inFlight > 0,
+    failed: saveFailure !== null || aiUnsaved,
+  });
+  useUnsavedChangesGuard(hasUnsavedWork(saveState), t('documentDraftEdit.leaveConfirm'));
 
   const typeLabel =
     draft?.type === 'cover_letter' ? t('documents.cover_letter') : t('documents.resume');
@@ -441,10 +471,19 @@ function DocumentDraftEditPage() {
             onUpdate={handleUpdate}
             flushRef={flushEditorRef}
             editorRef={editorRef}
-            onTextChange={setLiveText}
+            onTextChange={(text) => {
+              setLiveText(text);
+              setDirty(true);
+            }}
             onJsonChange={setLiveJson}
             draftType={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
             language={{ value: documentLanguage, onChange: setDocumentLanguage }}
+            saveStatus={{
+              state: saveState,
+              errorMessage: saveFailure?.message,
+              // An AI result that failed to save is retried with its AI flags, as in the alert above.
+              onRetry: aiUnsaved ? retryAiSave : retryContentSave,
+            }}
           />
           {draft.type === 'resume' && (
             <DocumentEditorChecks

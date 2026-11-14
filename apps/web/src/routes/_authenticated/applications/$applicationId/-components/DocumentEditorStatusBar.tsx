@@ -6,6 +6,7 @@ import {
   isDocumentLanguage,
   type DocumentLanguageTag,
 } from '#/lib/editor/documentLanguage';
+import type { SaveStatus } from '#/lib/editor/saveState';
 
 function readCounts(editor: Editor) {
   const { characterCount } = editor.storage;
@@ -29,9 +30,12 @@ function readCounts(editor: Editor) {
  */
 export function DocumentEditorStatusBar({
   editor,
+  saveStatus,
   language,
 }: {
   editor: Editor;
+  /** Where the draft stands with the server (JEF-577). Omitted, the line shows counts only. */
+  saveStatus?: SaveStatus;
   /** The spell-check language and the way to change it (JEF-579). */
   language?: { value: DocumentLanguageTag; onChange: (tag: DocumentLanguageTag) => void };
 }) {
@@ -70,8 +74,51 @@ export function DocumentEditorStatusBar({
       <span>{words}</span>
       <span aria-hidden="true">·</span>
       <span>{characters}</span>
-      {language && <LanguageSelect {...language} />}
+      {/* Both sit at the right of the line: the language, then where the draft stands with the server. */}
+      <div className="ml-auto flex items-center gap-2">
+        {language && <LanguageSelect {...language} />}
+        {saveStatus && <SaveStatusIndicator status={saveStatus} />}
+      </div>
     </div>
+  );
+}
+
+/**
+ * Saved, Saving…, Unsaved changes or Couldn't save with a Retry (JEF-577). Only
+ * a failure is announced: the other states change on every pause in typing and
+ * would turn a screen reader into a ticker. The announcement is its own
+ * always-mounted region, because a live region has to exist before its text does.
+ */
+function SaveStatusIndicator({ status }: { status: SaveStatus }) {
+  const { t } = useLocale();
+  const failed = status.state === 'error';
+  const label = t(`documents.editor.saveState.${status.state}`);
+  return (
+    <span
+      data-testid="save-status"
+      data-state={status.state}
+      className="ml-auto flex items-center gap-2"
+    >
+      <span role="status" className="sr-only">
+        {failed ? [label, status.errorMessage].filter(Boolean).join('. ') : ''}
+      </span>
+      <span
+        aria-hidden={failed || undefined}
+        className={failed ? 'font-medium text-red-600 dark:text-red-400' : undefined}
+        title={failed ? (status.errorMessage ?? undefined) : undefined}
+      >
+        {label}
+      </span>
+      {failed && (
+        <button
+          type="button"
+          onClick={status.onRetry}
+          className="rounded px-1 font-medium text-blue-700 underline hover:text-blue-900 dark:text-blue-400"
+        >
+          {t('documents.editor.saveState.retry')}
+        </button>
+      )}
+    </span>
   );
 }
 
@@ -92,7 +139,7 @@ function LanguageSelect({
       onChange={(event) => {
         if (isDocumentLanguage(event.target.value)) onChange(event.target.value);
       }}
-      className="ml-auto max-w-40 truncate rounded border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
+      className="max-w-40 truncate rounded border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
     >
       {DOCUMENT_LANGUAGES.map((language) => (
         <option key={language.tag} value={language.tag}>

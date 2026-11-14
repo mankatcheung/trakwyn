@@ -8,6 +8,7 @@ import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
 import type { DocumentLanguageTag } from '#/lib/editor/documentLanguage';
+import type { SaveStatus } from '#/lib/editor/saveState';
 import { countWords } from '#/lib/editor/countWords';
 import { SlashCommand } from '#/lib/editor/SlashCommandExtension';
 import { createSlashMenuController } from '#/lib/editor/slashMenuController';
@@ -66,6 +67,8 @@ interface DocumentDraftEditorProps {
   draftType?: 'resume' | 'cover_letter';
   /** Spell-check language (a BCP 47 tag) and the way to change it (JEF-579). */
   language?: { value: DocumentLanguageTag; onChange: (tag: DocumentLanguageTag) => void };
+  /** The save state shown in the status line (JEF-577). */
+  saveStatus?: SaveStatus;
 }
 
 export function DocumentDraftEditor({
@@ -77,6 +80,7 @@ export function DocumentDraftEditor({
   onJsonChange,
   draftType,
   language,
+  saveStatus,
 }: DocumentDraftEditorProps) {
   let initialContent;
   try {
@@ -212,7 +216,7 @@ export function DocumentDraftEditor({
         />
       )}
       <EditorContent editor={editor} className={EDITOR_CONTENT_CLASS} />
-      <DocumentEditorStatusBar editor={editor} language={language} />
+      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
       <DocumentEditorBubbleMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>
