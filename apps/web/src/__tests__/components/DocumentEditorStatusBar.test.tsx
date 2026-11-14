@@ -1,6 +1,6 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, type ComponentProps } from 'react';
 import userEvent from '@testing-library/user-event';
 import type { SaveStatus } from '#/lib/editor/saveState';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
@@ -33,10 +33,12 @@ function Harness({
   content,
   onEditor,
   saveStatus,
+  language,
 }: {
   content: object;
   onEditor: (e: Editor) => void;
   saveStatus?: SaveStatus;
+  language?: ComponentProps<typeof DocumentEditorStatusBar>['language'];
 }) {
   const editor = useEditor({
     extensions: [StarterKit, CharacterCount.configure({ wordCounter: countWords })],
@@ -47,7 +49,7 @@ function Harness({
   return (
     <div>
       <EditorContent editor={editor} />
-      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} />
+      <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
     </div>
   );
 }
@@ -245,5 +247,21 @@ describe('DocumentEditorStatusBar — save status (JEF-577)', () => {
   it('shows counts only when no save status is given', () => {
     render(<Harness content={paragraphs('hi')} onEditor={() => {}} />);
     expect(screen.queryByTestId('save-status')).not.toBeInTheDocument();
+  });
+});
+
+describe('DocumentEditorStatusBar — language beside save status (JEF-577, JEF-579)', () => {
+  it('shows the language picker and the save state together on one line', () => {
+    render(
+      <Harness
+        content={paragraphs('hi')}
+        onEditor={() => {}}
+        saveStatus={{ state: 'saved', onRetry: vi.fn() }}
+        language={{ value: 'en-GB', onChange: vi.fn() }}
+      />,
+    );
+    const line = screen.getByTestId('editor-status-bar');
+    expect(within(line).getByRole('combobox', { name: 'Document language' })).toHaveValue('en-GB');
+    expect(within(line).getByTestId('save-status')).toHaveAttribute('data-state', 'saved');
   });
 });

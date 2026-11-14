@@ -1,6 +1,11 @@
 import { useEditorState, type Editor } from '@tiptap/react';
 import { useLocale } from '#/lib/i18n';
 import { countWords } from '#/lib/editor/countWords';
+import {
+  DOCUMENT_LANGUAGES,
+  isDocumentLanguage,
+  type DocumentLanguageTag,
+} from '#/lib/editor/documentLanguage';
 import type { SaveStatus } from '#/lib/editor/saveState';
 
 function readCounts(editor: Editor) {
@@ -26,10 +31,13 @@ function readCounts(editor: Editor) {
 export function DocumentEditorStatusBar({
   editor,
   saveStatus,
+  language,
 }: {
   editor: Editor;
   /** Where the draft stands with the server (JEF-577). Omitted, the line shows counts only. */
   saveStatus?: SaveStatus;
+  /** The spell-check language and the way to change it (JEF-579). */
+  language?: { value: DocumentLanguageTag; onChange: (tag: DocumentLanguageTag) => void };
 }) {
   const { t, formatNumber } = useLocale();
   const { total, selected } = useEditorState({
@@ -66,7 +74,11 @@ export function DocumentEditorStatusBar({
       <span>{words}</span>
       <span aria-hidden="true">·</span>
       <span>{characters}</span>
-      {saveStatus && <SaveStatusIndicator status={saveStatus} />}
+      {/* Both sit at the right of the line: the language, then where the draft stands with the server. */}
+      <div className="ml-auto flex items-center gap-2">
+        {language && <LanguageSelect {...language} />}
+        {saveStatus && <SaveStatusIndicator status={saveStatus} />}
+      </div>
     </div>
   );
 }
@@ -107,5 +119,33 @@ function SaveStatusIndicator({ status }: { status: SaveStatus }) {
         </button>
       )}
     </span>
+  );
+}
+
+/** Picks the language the draft is spell-checked in (JEF-579). */
+function LanguageSelect({
+  value,
+  onChange,
+}: {
+  value: DocumentLanguageTag;
+  onChange: (tag: DocumentLanguageTag) => void;
+}) {
+  const { t } = useLocale();
+  return (
+    <select
+      aria-label={t('documents.editor.language')}
+      title={t('documents.editor.languageHint')}
+      value={value}
+      onChange={(event) => {
+        if (isDocumentLanguage(event.target.value)) onChange(event.target.value);
+      }}
+      className="max-w-40 truncate rounded border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
+    >
+      {DOCUMENT_LANGUAGES.map((language) => (
+        <option key={language.tag} value={language.tag}>
+          {language.label}
+        </option>
+      ))}
+    </select>
   );
 }

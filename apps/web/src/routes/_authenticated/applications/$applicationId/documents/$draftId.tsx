@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDocumentLanguage } from '#/lib/editor/documentLanguage';
 import { getErrorMessage } from '#/lib/errors';
 import { downloadUrl } from '#/lib/downloadUrl';
 import { deriveSaveState, hasUnsavedWork } from '#/lib/editor/saveState';
@@ -95,8 +96,10 @@ interface ExportedPdf {
 // component alone when the file also exports it, and this one pulls in the whole
 // rich-text editor. Tests reach it through `Route.component`.
 function DocumentDraftEditPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { applicationId, draftId } = Route.useParams();
+  // The spell-check language of this draft (JEF-579): the app's language until one is chosen.
+  const [documentLanguage, setDocumentLanguage] = useDocumentLanguage(draftId, locale);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The editor debounces saves, and a save can still be on the wire when the
@@ -474,6 +477,7 @@ function DocumentDraftEditPage() {
             }}
             onJsonChange={setLiveJson}
             draftType={draft.type === 'cover_letter' ? 'cover_letter' : 'resume'}
+            language={{ value: documentLanguage, onChange: setDocumentLanguage }}
             saveStatus={{
               state: saveState,
               errorMessage: saveFailure?.message,

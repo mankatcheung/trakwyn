@@ -1786,6 +1786,8 @@
   "draftHistory.sourceRestore": "Before restore",
   "draftHistory.characters_one": "{{formatted}} character",
   "draftHistory.characters_other": "{{formatted}} characters",
+  "documents.editor.language": "Document language",
+  "documents.editor.languageHint": "Spellcheck language for this document",
   "documents.editor.saveState.saved": "Saved",
   "documents.editor.saveState.saving": "Saving…",
   "documents.editor.saveState.dirty": "Unsaved changes",
