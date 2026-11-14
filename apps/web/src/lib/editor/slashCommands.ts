@@ -1,5 +1,6 @@
 import type { Editor, Range } from '@tiptap/react';
 import { requestAskAi } from '#/lib/editor/askAi';
+import { NEW_TABLE } from '#/lib/editor/tableCommands';
 import {
   Heading1Icon,
   Heading2Icon,
@@ -9,6 +10,7 @@ import {
   MinusIcon,
   QuoteIcon,
   SparklesIcon,
+  TableIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -84,6 +86,15 @@ export const SLASH_COMMANDS: readonly SlashCommandItem[] = [
     Icon: MinusIcon,
     run: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+    },
+  },
+  {
+    id: 'table',
+    labelKey: 'documents.editor.insertTable',
+    keywords: ['table', 'grid', 'rows', 'columns'],
+    Icon: TableIcon,
+    run: (editor, range) => {
+      editor.chain().focus().deleteRange(range).insertTable(NEW_TABLE).run();
     },
   },
   {

@@ -84,9 +84,10 @@ describe('SlashMenu (JEF-575)', () => {
       'Numbered list',
       'Quote',
       'Divider',
+      'Insert table',
       'Ask AI',
     ]);
-    expect(screen.getByRole('status')).toHaveTextContent('8 blocks available');
+    expect(screen.getByRole('status')).toHaveTextContent('9 blocks available');
   });
 
   it('filters as the reader types', async () => {
@@ -120,9 +121,9 @@ describe('SlashMenu (JEF-575)', () => {
   it('wraps around with the arrow keys', async () => {
     const h = setup();
     type(h.editor, '/');
-    await waitFor(() => expect(options()).toHaveLength(8));
+    await waitFor(() => expect(options()).toHaveLength(9));
     key(h.editor, 'ArrowUp');
-    await waitFor(() => expect(options()[7]).toHaveAttribute('aria-selected', 'true'));
+    await waitFor(() => expect(options()[8]).toHaveAttribute('aria-selected', 'true'));
     key(h.editor, 'ArrowDown');
     await waitFor(() => expect(options()[0]).toHaveAttribute('aria-selected', 'true'));
   });

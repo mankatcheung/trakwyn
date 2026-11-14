@@ -3,12 +3,16 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CharacterCount, Placeholder } from '@tiptap/extensions';
 import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import { TableKit } from '@tiptap/extension-table';
 import { DocumentEditorToolbar } from './DocumentEditorToolbar';
 import { DocumentEditorBubbleMenu } from './DocumentEditorBubbleMenu';
 import { InlineAiLayer } from './InlineAiLayer';
 import { describeRange, replaceRangeWithContent, type AiRange } from '#/lib/editor/selectionRange';
+import { DocumentEditorTableMenu } from './DocumentEditorTableMenu';
 import { SlashMenu } from './SlashMenu';
 import { DocumentEditorStatusBar } from './DocumentEditorStatusBar';
+import { documentPageStyle } from '#/lib/documentPage';
 import type { DocumentLanguageTag } from '#/lib/editor/documentLanguage';
 import type { SaveStatus } from '#/lib/editor/saveState';
 import { countWords } from '#/lib/editor/countWords';
@@ -23,10 +27,14 @@ import { ALLOWED_LINK_PROTOCOLS, isAllowedLinkUri } from '#/lib/editorLinks';
 import { useDebouncedCallback } from '#/hooks/useDebouncedCallback';
 import type { TiptapNode } from '#/lib/markdownToTiptapDoc';
 
+// The placeholder sits on the white page, which stays light in dark mode.
 const PLACEHOLDER =
-  '[&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-500 [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] dark:[&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-400';
+  '[&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-500 [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]';
 
-const EDITOR_CONTENT_CLASS = `prose min-h-[400px] max-w-none p-4 focus:outline-none dark:prose-invert [&_.ProseMirror]:min-h-[360px] [&_.ProseMirror]:text-gray-900 [&_.ProseMirror]:outline-none [&_.ProseMirror]:dark:text-gray-100 ${PLACEHOLDER}`;
+// The page is the PDF's page (JEF-581): see `lib/documentPage.ts`. The surround is
+// the theme's; the page itself is always white.
+const PAGE_SURROUND = 'min-h-[400px] bg-gray-100 p-2 sm:p-6 dark:bg-gray-900';
+const PAGE_CLASS = `document-page focus:outline-none ${PLACEHOLDER}`;
 
 function editorAttributes(lang: string | undefined): Record<string, string> {
   return lang ? { spellcheck: 'true', lang } : { spellcheck: 'true' };
@@ -159,6 +167,10 @@ export function DocumentDraftEditor({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right'],
       }),
+      // One highlight colour, no choice (JEF-582): the PDF prints the same one.
+      Highlight.configure({ multicolor: false }),
+      // Equal columns, no resizing or merged cells (JEF-582): the PDF prints equal columns.
+      TableKit.configure({ table: { resizable: false } }),
       SlashCommand.configure({
         controller: slashMenu,
         filter: (query) =>
@@ -245,7 +257,14 @@ export function DocumentDraftEditor({
           onClose={() => setFind(null)}
         />
       )}
-      <EditorContent editor={editor} className={EDITOR_CONTENT_CLASS} />
+      <div className={PAGE_SURROUND} data-testid="document-page-surround">
+        <EditorContent
+          editor={editor}
+          className={PAGE_CLASS}
+          style={documentPageStyle()}
+          data-testid="document-page"
+        />
+      </div>
       <DocumentEditorStatusBar editor={editor} saveStatus={saveStatus} language={language} />
       {inlineAi ? (
         <InlineAiLayer
@@ -259,6 +278,7 @@ export function DocumentDraftEditor({
       ) : (
         <DocumentEditorBubbleMenu editor={editor} editable={editable} />
       )}
+      <DocumentEditorTableMenu editor={editor} editable={editable} />
       <SlashMenu editor={editor} controller={slashMenu} />
     </div>
   );

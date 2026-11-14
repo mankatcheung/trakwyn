@@ -2,6 +2,7 @@ import type { IPdfRenderer, PdfRenderData } from '#src/use-cases/ports/IPdfRende
 import type { JSONContent } from '@tiptap/core';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import { createNodeRenderer } from './renderNode.js';
+import { DOCUMENT_PAGE } from './documentPage.js';
 
 function extractTextFromNode(node: JSONContent): string {
   if (node.text) return node.text;
@@ -44,72 +45,109 @@ export class ReactPdfDocumentRenderer implements IPdfRenderer {
     const { Document, Page, Text, View, StyleSheet, renderToBuffer } =
       await import('@react-pdf/renderer');
 
+    const page = DOCUMENT_PAGE;
+    const [h1, h2, h3] = page.headings;
     const styles = StyleSheet.create({
       page: {
-        padding: 40,
-        fontSize: 11,
-        fontFamily: 'Helvetica',
-        lineHeight: 1.5,
+        padding: page.paddingPt,
+        fontSize: page.fontSizePt,
+        fontFamily: page.fontFamily,
+        lineHeight: page.lineHeight,
       },
       title: {
         fontSize: 18,
-        fontFamily: 'Helvetica-Bold',
+        fontFamily: page.boldFontFamily,
         marginBottom: 16,
       },
       heading1: {
-        fontSize: 16,
-        fontFamily: 'Helvetica-Bold',
-        marginBottom: 8,
-        marginTop: 16,
+        fontSize: h1.fontSizePt,
+        fontFamily: page.boldFontFamily,
+        marginBottom: h1.marginBottomPt,
+        marginTop: h1.marginTopPt,
       },
       heading2: {
-        fontSize: 14,
-        fontFamily: 'Helvetica-Bold',
-        marginBottom: 6,
-        marginTop: 12,
+        fontSize: h2.fontSizePt,
+        fontFamily: page.boldFontFamily,
+        marginBottom: h2.marginBottomPt,
+        marginTop: h2.marginTopPt,
       },
       heading3: {
-        fontSize: 12,
-        fontFamily: 'Helvetica-Bold',
-        marginBottom: 4,
-        marginTop: 10,
+        fontSize: h3.fontSizePt,
+        fontFamily: page.boldFontFamily,
+        marginBottom: h3.marginBottomPt,
+        marginTop: h3.marginTopPt,
       },
       paragraph: {
-        marginBottom: 8,
+        marginBottom: page.paragraph.marginBottomPt,
       },
       listParagraph: {
-        marginBottom: 2,
+        marginBottom: page.list.itemMarginBottomPt,
       },
       list: {
-        marginBottom: 4,
-        paddingLeft: 8,
+        marginBottom: page.list.marginBottomPt,
+        paddingLeft: page.list.paddingLeftPt,
       },
       nestedList: {
         marginTop: 2,
       },
       listItem: {
         flexDirection: 'row',
-        marginBottom: 2,
+        marginBottom: page.list.itemMarginBottomPt,
       },
       listMarker: {
-        width: 16,
+        width: page.list.markerWidthPt,
       },
       listContent: {
         flex: 1,
       },
       blockquote: {
-        borderLeftWidth: 2,
-        borderLeftColor: '#9ca3af',
+        borderLeftWidth: page.blockquote.borderWidthPt,
+        borderLeftColor: page.blockquote.borderColor,
         borderLeftStyle: 'solid',
-        paddingLeft: 10,
+        paddingLeft: page.blockquote.paddingLeftPt,
+        marginBottom: page.blockquote.marginBottomPt,
+        color: page.blockquote.color,
+      },
+      // A table (JEF-582): equal-width columns, 1pt borders, the cell text a little tighter.
+      table: {
         marginBottom: 8,
-        color: '#4b5563',
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      tableRow: {
+        flexDirection: 'row',
+      },
+      tableCell: {
+        flex: 1,
+        padding: 4,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      tableHeaderCell: {
+        flex: 1,
+        padding: 4,
+        backgroundColor: '#f3f4f6',
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#9ca3af',
+        borderStyle: 'solid',
+      },
+      cellParagraph: {
+        marginBottom: 2,
+      },
+      cellHeaderParagraph: {
+        fontFamily: 'Helvetica-Bold',
+        marginBottom: 2,
       },
       rule: {
-        borderTopWidth: 1,
-        borderTopColor: '#9ca3af',
+        borderTopWidth: page.rule.widthPt,
+        borderTopColor: page.rule.color,
         borderTopStyle: 'solid',
-        marginVertical: 10,
+        marginVertical: page.rule.marginVerticalPt,
       },
     });
 
