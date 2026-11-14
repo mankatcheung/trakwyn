@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.10.0...mobile-v0.11.0) (2026-11-14)
+
+
+### Features
+
+* **mobile:** AI actions on the selected text in the draft editor (JEF-587) ([#1422](https://github.com/mankatcheung/trakwyn/issues/1422)) ([86e6345](https://github.com/mankatcheung/trakwyn/commit/86e6345855dfa9653f85ec72fee937456d8635eb))
+* **mobile:** complete the formatting toolbar, add a word count and a clear save status (JEF-589) ([#1424](https://github.com/mankatcheung/trakwyn/issues/1424)) ([3d527ad](https://github.com/mankatcheung/trakwyn/commit/3d527adcefdb570c7f3713ae6238f358143effa8))
+* **mobile:** draft history sheet with preview and restore (JEF-588) ([#1423](https://github.com/mankatcheung/trakwyn/issues/1423)) ([5bfec32](https://github.com/mankatcheung/trakwyn/commit/5bfec328fb3575d11dc294517ca0030376be47aa))
+
+
+### Bug Fixes
+
+* **mobile:** keep web formatting when a draft is edited, via a Markdown round trip (JEF-586) ([#1421](https://github.com/mankatcheung/trakwyn/issues/1421)) ([5d2798f](https://github.com/mankatcheung/trakwyn/commit/5d2798fc257ec4bad812a383c4cd29893f1868da))
+
 ## [0.10.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.9.0...mobile-v0.10.0) (2026-11-12)
 
 
