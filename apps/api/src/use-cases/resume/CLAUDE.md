@@ -15,3 +15,14 @@ A resume is sent to an employer, so the facts the profile already holds are not 
 - **Not checked here:** the bullet text and the summary. They are the model's wording of the descriptions; invented content there is the eval judge's job (`evals/judge/claimCheck.ts`).
 - **Logged, never stored.** When a title was changed or a skill dropped, the use case logs `resume.grounding.corrected` at `info` with counts and the prompt version (no text). A period rewrite alone logs nothing, since the model's date format almost always differs. A rise in `titles` or `skills_dropped` after a prompt or model change is the signal to look at.
 - A new alias or abbreviation goes in `SKILL_ALIASES` or `TITLE_ABBREVIATIONS` with a test; keep both short, since a wrong alias lets a skill through.
+
+## Asking the user instead (JEF-594)
+
+The model may not invent a skill or a number, so a resume can only be as strong as the profile behind it. `GetResumeGapsUseCase` works out what to ask, in code, with no model call and no cost (`resumeGaps.ts`):
+
+- **Requirement gaps:** the saved posting keywords (`PostingRequirements.keywords`, JEF-593) the profile neither lists nor mentions, tested with `profileSkillMatcher`, the same matcher `applyProfileFacts` uses. "The resume may say it" and "we need not ask about it" are therefore one test: a skill the user adds is immediately kept by the next resume, and one they never added is still dropped. Up to `RESUME_GAPS.MAX_REQUIREMENTS`, in the posting's order.
+- **Roles without numbers:** roles whose description holds no digit, most recent first, up to `RESUME_GAPS.MAX_ROLES`. A digit is a crude test for "has a figure" and deliberately so: it is cheap, explainable, and a role that gets a number stops being asked about.
+- **`requirementsRead: false`** says the posting has not been read, so the client can point to the Overview instead of showing nothing. The list is not refused for a stale reading: a slightly old keyword is still a useful question.
+- **Answers use the existing writes.** The web panel saves a "yes" with `createSkill` or `updateWorkExperience` (the answer appended to the description as a bullet); there is no new write path and nothing is written into a draft, so the user generates again once the profile is fuller.
+- **A "no" is remembered per application** (`ResumeGapDismissal`, one row per `(applicationId, key)`, cascades with the application). The key is the requirement lower-cased and trimmed, or `role:<workExperienceId>`. It is per application on purpose: not having used Kubernetes is true everywhere, but the question only exists for a posting that asks for it, and a profile that later gains the skill answers it anyway. `DismissResumeGapUseCase` bounds the table (`KEY_MAX_CHARS`, `MAX_DISMISSED_PER_APPLICATION`), since the key is free text from the client.
+- Web reports `resume_gap_answered {kind, answer}` (string enums only; no keyword or text leaves the device).

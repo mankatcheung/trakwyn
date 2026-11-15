@@ -322,6 +322,9 @@ import type { DrizzleResumeMatchRepository } from '#src/infrastructure/db/reposi
 import type { DrizzlePostingRequirementsRepository } from '#src/infrastructure/db/repositories/DrizzlePostingRequirementsRepository.js';
 import type { ExtractPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/ExtractPostingRequirementsUseCase.js';
 import type { GetPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/GetPostingRequirementsUseCase.js';
+import type { DrizzleResumeGapDismissalRepository } from '#src/infrastructure/db/repositories/DrizzleResumeGapDismissalRepository.js';
+import type { GetResumeGapsUseCase } from '#src/use-cases/resume/GetResumeGapsUseCase.js';
+import type { DismissResumeGapUseCase } from '#src/use-cases/resume/DismissResumeGapUseCase.js';
 import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import type { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
@@ -779,6 +782,9 @@ export interface Cradle {
   postingRequirementsRepository: DrizzlePostingRequirementsRepository;
   extractPostingRequirementsUseCase: ExtractPostingRequirementsUseCase;
   getPostingRequirementsUseCase: GetPostingRequirementsUseCase;
+  resumeGapDismissalRepository: DrizzleResumeGapDismissalRepository;
+  getResumeGapsUseCase: GetResumeGapsUseCase;
+  dismissResumeGapUseCase: DismissResumeGapUseCase;
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;
   getCalendarEventsUseCase: GetCalendarEventsUseCase;
   getDocumentVersionOutcomesUseCase: GetDocumentVersionOutcomesUseCase;

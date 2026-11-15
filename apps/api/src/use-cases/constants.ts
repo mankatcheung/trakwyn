@@ -778,6 +778,19 @@ export const DRAFT_HISTORY = {
 
 export const POLISH_DRAFT_PROMPT_TASK = 'polish a resume or cover letter the user wrote';
 
+/**
+ * The gap questions shown beside an application's resumes (JEF-594). Short
+ * lists on purpose: a few questions get answered, a wall of them does not.
+ */
+export const RESUME_GAPS = {
+  MAX_REQUIREMENTS: 8,
+  MAX_ROLES: 3,
+  /** A dismissed question's key: a posting keyword, or `role:<id>`. */
+  KEY_MAX_CHARS: 200,
+  /** Bounds the dismissal table, whose key is free text from the client. */
+  MAX_DISMISSED_PER_APPLICATION: 200,
+} as const;
+
 /** The sentence the fake LLM route finds to answer the posting requirements prompt (JEF-593). */
 export const POSTING_REQUIREMENTS_PROMPT_TASK = 'list what a job posting requires of a candidate';
 

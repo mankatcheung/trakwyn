@@ -41,6 +41,8 @@ export const ANALYTICS_EVENTS = {
   AI_CREDITS_EXHAUSTED_SHOWN: 'ai_credits_exhausted_shown',
   AI_UPGRADE_CLICKED: 'ai_upgrade_clicked',
   AI_ADD_KEY_CLICKED: 'ai_add_key_clicked',
+  // A "strengthen this resume" question was answered (JEF-594): {kind, answer}, string enums only.
+  RESUME_GAP_ANSWERED: 'resume_gap_answered',
   // The marketing → signup → Pro funnel (JEF-514). Properties are string enums only.
   MARKETING_CTA_CLICKED: 'marketing_cta_clicked',
   REGISTER_STARTED: 'register_started',
