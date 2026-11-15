@@ -8,6 +8,10 @@ import {
   makeEducationRepository,
   makeSkill,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -60,6 +64,10 @@ function build(reply: unknown = aiReply, extractedText = 'Jane Doe — CV text')
     }),
     workExperienceRepository: makeWorkExperienceRepository(),
     educationRepository: makeEducationRepository(),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
+    projectRepository: makeProjectRepository(),
+    awardRepository: makeAwardRepository(),
     skillRepository: makeSkillRepository(),
     parseCvRateLimiter: makeRateLimiter(),
   };

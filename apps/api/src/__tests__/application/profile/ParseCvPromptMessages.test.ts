@@ -7,6 +7,10 @@ import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 
@@ -25,6 +29,10 @@ describe('ParseCvUseCase prompt messages', () => {
       }),
       workExperienceRepository: makeWorkExperienceRepository(),
       educationRepository: makeEducationRepository(),
+      certificationRepository: makeCertificationRepository(),
+      languageRepository: makeLanguageRepository(),
+      projectRepository: makeProjectRepository(),
+      awardRepository: makeAwardRepository(),
       skillRepository: makeSkillRepository(),
       parseCvRateLimiter: makeRateLimiter(),
     }).execute({

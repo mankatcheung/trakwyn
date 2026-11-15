@@ -6,6 +6,10 @@ import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastruct
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 import { ValidationError } from '#src/use-cases/errors/DomainError.js';
@@ -20,6 +24,10 @@ function build() {
     educationRepository: makeEducationRepository({
       create: vi.fn().mockImplementation(async (data) => data),
     }),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
+    projectRepository: makeProjectRepository(),
+    awardRepository: makeAwardRepository(),
     skillRepository: makeSkillRepository({
       create: vi.fn().mockImplementation(async (data) => data),
     }),
@@ -65,7 +73,16 @@ describe('ImportCvProfileUseCase', () => {
   it('creates every entry for the user and returns the counts', async () => {
     const result = await ctx.useCase.execute(input());
 
-    expect(result).toEqual({ workExperiences: 1, educations: 1, skills: 1, filledContact: [] });
+    expect(result).toEqual({
+      workExperiences: 1,
+      educations: 1,
+      skills: 1,
+      certifications: 0,
+      languages: 0,
+      projects: 0,
+      awards: 0,
+      filledContact: [],
+    });
     expect(ctx.deps.workExperienceRepository.create).toHaveBeenCalledWith({
       id: 'id-1',
       userId: 'user-1',
@@ -103,7 +120,16 @@ describe('ImportCvProfileUseCase', () => {
     const result = await ctx.useCase.execute(
       input({ workExperiences: [], educations: [], skills: [{ name: 'Go' }] }),
     );
-    expect(result).toEqual({ workExperiences: 0, educations: 0, skills: 1, filledContact: [] });
+    expect(result).toEqual({
+      workExperiences: 0,
+      educations: 0,
+      skills: 1,
+      certifications: 0,
+      languages: 0,
+      projects: 0,
+      awards: 0,
+      filledContact: [],
+    });
     expect(ctx.deps.workExperienceRepository.create).not.toHaveBeenCalled();
   });
 
@@ -230,6 +256,10 @@ describe('ImportCvProfileUseCase', () => {
       workExperiences: 1,
       educations: 1,
       skills: 1,
+      certifications: 0,
+      languages: 0,
+      projects: 0,
+      awards: 0,
       filledContact: [],
     });
     expect(ctx.deps.transactionManager.run).not.toHaveBeenCalled();

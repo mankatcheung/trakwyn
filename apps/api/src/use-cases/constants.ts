@@ -922,6 +922,10 @@ export const CV_IMPORT = {
   MAX_WORK_EXPERIENCES: 30,
   MAX_EDUCATIONS: 15,
   MAX_SKILLS: 60,
+  MAX_CERTIFICATIONS: 30,
+  MAX_LANGUAGES: 20,
+  MAX_PROJECTS: 20,
+  MAX_AWARDS: 20,
   /** Company, title, location, institution, degree, field, skill name, category and proficiency. */
   SHORT_FIELD_MAX_CHARS: 200,
   /** A work experience or education description. */
@@ -932,6 +936,12 @@ export const CV_IMPORT = {
    * profile has to fit in `MAX_OUTPUT_TOKENS`; a user can add more by hand.
    */
   PROMPT_DESCRIPTION_MAX_CHARS: 800,
+  /**
+   * What the prompt asks for in a project's or award's description (JEF-592):
+   * short, because the four new sections share the output budget with the
+   * roles. Storage allows `PROFILE_ENTRY.DESCRIPTION_MAX_CHARS`.
+   */
+  PROMPT_SECTION_DESCRIPTION_MAX_CHARS: 300,
   /** Roles that keep every bullet; older ones are asked for their two strongest, for the same budget. */
   PROMPT_FULL_DETAIL_ROLES: 5,
   /** The levels the profile's skill picker offers; anything else the model writes is dropped. */

@@ -236,6 +236,10 @@ describe('CV import (JEF-461)', () => {
         skills: [
           { name: 'TypeScript', category: 'Language', proficiency: null, alreadyInProfile: false },
         ],
+        certifications: [],
+        languages: [],
+        projects: [],
+        awards: [],
         truncated: false,
       });
       expect(ai).toHaveBeenCalledTimes(1);

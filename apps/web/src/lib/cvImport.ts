@@ -93,6 +93,39 @@ export interface ParsedCvSkill {
   alreadyInProfile: boolean;
 }
 
+export interface ParsedCvCertification {
+  name: string;
+  issuer: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  credentialUrl: string | null;
+  alreadyInProfile: boolean;
+}
+
+export interface ParsedCvLanguage {
+  name: string;
+  proficiency: string | null;
+  alreadyInProfile: boolean;
+}
+
+export interface ParsedCvProject {
+  name: string;
+  role: string | null;
+  url: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+  alreadyInProfile: boolean;
+}
+
+export interface ParsedCvAward {
+  title: string;
+  issuer: string | null;
+  date: string | null;
+  description: string | null;
+  alreadyInProfile: boolean;
+}
+
 /** The CV's header details (JEF-527); each fills a profile field only when that is empty. */
 export interface ParsedCvContact {
   phone: string | null;
@@ -105,6 +138,11 @@ export interface ParsedCvProfile {
   workExperiences: ParsedCvWorkExperience[];
   educations: ParsedCvEducation[];
   skills: ParsedCvSkill[];
+  /** Added in JEF-592; absent from an API that predates them. */
+  certifications?: ParsedCvCertification[];
+  languages?: ParsedCvLanguage[];
+  projects?: ParsedCvProject[];
+  awards?: ParsedCvAward[];
   /** The CV was longer than the model is given, so later entries may be missing. */
   truncated: boolean;
 }

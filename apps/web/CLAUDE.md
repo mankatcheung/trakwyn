@@ -27,6 +27,7 @@ The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_auth
 - **The file is checked in the browser first** (type, `.doc`, empty, 10 MB) so a wrong file is turned away with no request. The input's `accept` lists extensions as well as types because some systems report no type for `.docx`; `resolveCvMimeType` retypes the part from the extension for the same reason. The API repeats every check.
 - **Review state is plain data** (`cvImportDrafts.ts`): rows start ticked unless the profile already has them (`alreadyInProfile`), a ticked row that has been edited into something invalid blocks Import, and only ticked rows are sent. Save guards a double click with a ref, because the API would add every row twice.
 - **No `.graphql` file or codegen:** the confirm mutation is an inline string in `profileQueries.ts`, like the rest of the profile.
+- **The four newer sections (JEF-592)** are review groups of their own (projects, certifications, awards, languages) in the same `Draft` shape. Their dates may be blank, so they use `MonthField`, not `DateFields`, and `cvImportDrafts` has a validity rule for each. `toImportInput` leaves a section out of the mutation when nothing in it is ticked, so a CV without them sends exactly what it did before, and the success toast names the extra entries only when there are some (`cvImport.successWithOther`).
 
 ## Email verification wall (JEF-438)
 
