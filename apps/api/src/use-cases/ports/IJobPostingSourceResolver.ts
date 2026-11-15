@@ -21,6 +21,11 @@ export interface ResolvedJobPosting {
   fetchedFromUrl: boolean;
   /** JSON-LD fields found on a fetched page; `null` for pasted text or a page without any. */
   structured: StructuredJobPosting | null;
+  /**
+   * The posting's own description in full, when the page's JSON-LD carried one
+   * (JEF-591). Cleaner than `text`, which is the whole page; absent otherwise.
+   */
+  structuredDescription?: string | null;
 }
 
 export interface IJobPostingSourceResolver {

@@ -74,6 +74,7 @@ describe('ParseJobDescriptionUseCase', () => {
       location: 'Remote',
       salary: '$140k–$180k',
       description: 'Build distributed systems.',
+      postingText: 'We are Acme Corp looking for a Senior Engineer',
     });
   });
 
@@ -374,7 +375,7 @@ describe('ParseJobDescriptionUseCase', () => {
 
       const result = await build(resolver).execute({ userId: 'user-1', url: 'https://x.test/j' });
 
-      expect(result).toEqual(structured);
+      expect(result).toEqual({ ...structured, postingText: 'page text' });
       expect(llmProvider.complete).not.toHaveBeenCalled();
       expect(parsedPostingCache.getOrParse).not.toHaveBeenCalled();
     });
@@ -420,7 +421,7 @@ describe('ParseJobDescriptionUseCase', () => {
 
       const result = await build(resolver).execute({ userId: 'user-2', url: 'https://x.test/j' });
 
-      expect(result).toEqual(cachedValue);
+      expect(result).toEqual({ ...cachedValue, postingText: 'Senior Engineer at Acme' });
       expect(llmProvider.complete).not.toHaveBeenCalled();
     });
 
@@ -431,5 +432,73 @@ describe('ParseJobDescriptionUseCase', () => {
 
       expect(parsedPostingCache.getOrParse).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('ParseJobDescriptionUseCase posting text (JEF-591)', () => {
+  const REPLY = JSON.stringify({
+    company: 'Acme',
+    role: 'Engineer',
+    location: null,
+    salary: null,
+    description: 'A two sentence summary.',
+  });
+
+  function build(resolver: IJobPostingSourceResolver, cache = makeParsedPostingCache()) {
+    return new ParseJobDescriptionUseCase({
+      llmProviderFactory: makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(makeLLMProvider(REPLY)),
+      }),
+      jobPostingSourceResolver: resolver,
+      parsedPostingCache: cache,
+      parseJobDescriptionRateLimiter: makeRateLimiter(),
+    });
+  }
+
+  it("returns pasted text as the posting, beside the model's summary", async () => {
+    const pasted = 'Senior Engineer.\nMust have: Kubernetes, PostgreSQL, on-call.';
+    const result = await build(makeSourceResolver(pasted)).execute({ userId: 'u', text: pasted });
+
+    expect(result.description).toBe('A two sentence summary.');
+    expect(result.postingText).toBe(pasted);
+  });
+
+  it("prefers the page's own JSON-LD description to the whole page text", async () => {
+    const resolver = makeSourceResolver('Nav · Jobs · Login · the posting · Footer', {
+      fetchedFromUrl: true,
+      structuredDescription: 'Own the build pipeline. Kubernetes required.',
+    });
+
+    const result = await build(resolver).execute({ userId: 'u', url: 'https://x.test/j' });
+
+    expect(result.postingText).toBe('Own the build pipeline. Kubernetes required.');
+  });
+
+  it('cuts a very long page to what the application can store', async () => {
+    const resolver = makeSourceResolver('x'.repeat(40_000), { fetchedFromUrl: true });
+
+    const result = await build(resolver).execute({ userId: 'u', url: 'https://x.test/j' });
+
+    expect(result.postingText).toHaveLength(15_000);
+  });
+
+  it('adds the posting text to a cached parse, which never stored it', async () => {
+    const cache: IParsedPostingCache = {
+      getOrParse: vi.fn().mockResolvedValue({
+        value: {
+          company: 'Acme',
+          role: 'Engineer',
+          location: null,
+          salary: null,
+          description: 's',
+        },
+        cached: true,
+      }),
+    };
+    const resolver = makeSourceResolver('The full page text', { fetchedFromUrl: true });
+
+    const result = await build(resolver, cache).execute({ userId: 'u', url: 'https://x.test/j' });
+
+    expect(result.postingText).toBe('The full page text');
   });
 });

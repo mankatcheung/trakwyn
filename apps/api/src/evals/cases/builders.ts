@@ -19,13 +19,16 @@ import {
 } from '#src/evals/fixtures/generationFixture.js';
 import { checkClaims, claimFailures } from '#src/evals/judge/claimCheck.js';
 import type { ResumeMatchView } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
-import type { ParsedJobDescription } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
+import type {
+  ParsedJobDescription,
+  ParsedPostingFields,
+} from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
 import type { EvalCase } from '#src/evals/types.js';
 
 interface JobPostingSpec {
   id: string;
   posting: string;
-  idealReply: ParsedJobDescription;
+  idealReply: ParsedPostingFields;
   expect: (parsed: ParsedJobDescription) => Check[];
 }
 

@@ -28,6 +28,8 @@ export const jobApplication = pgTable(
     location: text('location'),
     salaryRange: text('salaryRange'),
     description: text('description'),
+    /** The full posting text (JEF-591); nullable, so rows from before it need no backfill. */
+    postingText: text('postingText'),
     appliedAt: timestamp('appliedAt', TIMESTAMP),
     starred: boolean('starred').notNull().default(false),
     source: text('source'),

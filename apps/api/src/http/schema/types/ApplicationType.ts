@@ -16,6 +16,11 @@ JobApplicationRef.implement({
     location: t.exposeString('location', { nullable: true }),
     salaryRange: t.exposeString('salaryRange', { nullable: true }),
     description: t.exposeString('description', { nullable: true }),
+    postingText: t.exposeString('postingText', {
+      nullable: true,
+      description:
+        'The full job posting text, when captured. AI features read it in preference to the description.',
+    }),
     appliedAt: t.exposeString('appliedAt', { nullable: true }),
     starred: t.exposeBoolean('starred'),
     source: t.exposeString('source', { nullable: true }),

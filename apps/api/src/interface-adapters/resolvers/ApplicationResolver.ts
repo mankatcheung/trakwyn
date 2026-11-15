@@ -67,6 +67,7 @@ interface CreateInput {
   location?: string;
   salaryRange?: string;
   description?: string;
+  postingText?: string;
   starred?: boolean;
   source?: string;
   followUpAt?: Date | null;
@@ -81,6 +82,7 @@ interface UpdateInput {
   location?: string | null;
   salaryRange?: string | null;
   description?: string | null;
+  postingText?: string | null;
   starred?: boolean;
   source?: string | null;
   followUpAt?: Date | null;

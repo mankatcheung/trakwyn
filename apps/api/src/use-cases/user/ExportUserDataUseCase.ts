@@ -39,6 +39,7 @@ export class ExportUserDataUseCase implements IExportUserDataUseCase {
           location: app.location,
           salaryRange: app.salaryRange,
           description: app.description,
+          postingText: app.postingText,
           appliedAt: app.appliedAt ? app.appliedAt.toISOString() : null,
           createdAt: app.createdAt.toISOString(),
           notes: notes.map((n) => ({

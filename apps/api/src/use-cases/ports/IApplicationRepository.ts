@@ -16,6 +16,7 @@ export interface CreateApplicationData {
   location?: string | null;
   salaryRange?: string | null;
   description?: string | null;
+  postingText?: string | null;
   starred?: boolean;
   source?: string | null;
   followUpAt?: Date | null;
@@ -37,6 +38,7 @@ export interface UpdateApplicationData {
   location?: string | null;
   salaryRange?: string | null;
   description?: string | null;
+  postingText?: string | null;
   appliedAt?: Date | null;
   starred?: boolean;
   source?: string | null;

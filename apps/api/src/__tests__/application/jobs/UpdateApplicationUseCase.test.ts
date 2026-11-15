@@ -330,3 +330,61 @@ describe('UpdateApplicationUseCase', () => {
     });
   });
 });
+
+describe('UpdateApplicationUseCase posting text (JEF-591)', () => {
+  const build = (applicationRepository: ReturnType<typeof makeApplicationRepository>) =>
+    new UpdateApplicationUseCase({ applicationRepository, generateId: () => 'id' });
+  const repository = () =>
+    makeApplicationRepository({
+      findById: vi.fn().mockResolvedValue(makeApplication()),
+      update: vi.fn().mockResolvedValue(makeApplication()),
+    });
+
+  it('saves a new posting text', async () => {
+    const applicationRepository = repository();
+
+    await build(applicationRepository).execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+      postingText: ' Must have Kubernetes. ',
+    });
+
+    expect(applicationRepository.update).toHaveBeenCalledWith(
+      'app-1',
+      expect.objectContaining({ postingText: 'Must have Kubernetes.' }),
+    );
+  });
+
+  it('clears it when sent empty or null, and leaves it alone when not sent', async () => {
+    for (const [sent, stored] of [
+      ['', null],
+      [null, null],
+      [undefined, undefined],
+    ] as const) {
+      const applicationRepository = repository();
+
+      await build(applicationRepository).execute({
+        userId: 'user-1',
+        applicationId: 'app-1',
+        company: 'Acme',
+        postingText: sent,
+      });
+
+      const [, data] = vi.mocked(applicationRepository.update).mock.calls[0]!;
+      expect(data.postingText).toBe(stored);
+    }
+  });
+
+  it('refuses a posting longer than the limit', async () => {
+    const applicationRepository = repository();
+
+    await expect(
+      build(applicationRepository).execute({
+        userId: 'user-1',
+        applicationId: 'app-1',
+        postingText: 'x'.repeat(15_001),
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(applicationRepository.update).not.toHaveBeenCalled();
+  });
+});

@@ -1,0 +1,1 @@
+ALTER TABLE "JobApplication" ADD COLUMN "postingText" text;

@@ -346,6 +346,8 @@ export async function createApplication(input: {
   role: string;
   jobUrl?: string;
   description?: string;
+  /** The posting in full (JEF-591); the API refuses more than `POSTING_TEXT_MAX_CHARS`. */
+  postingText?: string;
   source?: string;
 }): Promise<JobApplication> {
   const data = await authedGql<{ createApplication: JobApplication }>(CREATE_APPLICATION, {
@@ -356,7 +358,7 @@ export async function createApplication(input: {
 
 const PARSE_JOB_DESCRIPTION = `
   mutation ParseJobDescription($text: String!) {
-    parseJobDescription(text: $text) { company role location description }
+    parseJobDescription(text: $text) { company role location description postingText }
   }
 `;
 
@@ -365,6 +367,8 @@ export interface AiParsedJob {
   role: string | null;
   location: string | null;
   description: string | null;
+  /** The text that was read, as the API will store it (JEF-591). */
+  postingText?: string | null;
 }
 
 const AI_CREDITS_EXHAUSTED_FALLBACK =

@@ -20,6 +20,7 @@ import {
 } from '#src/use-cases/prompts/resumeMatch.js';
 import { hashResumeText } from '#src/use-cases/shared/hashResumeText.js';
 import { hashJobDescription } from '#src/use-cases/shared/hashJobDescription.js';
+import { postingForPrompt } from '#src/use-cases/shared/postingForPrompt.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { loadDocumentText } from '#src/use-cases/shared/loadDocumentText.js';
@@ -91,7 +92,9 @@ export class ComputeResumeMatchScoreUseCase {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }
 
-    const jobDescription = app.description?.trim();
+    // The full posting when it was captured, not the summary (JEF-591). The
+    // hash below is of this text, so capturing a posting rescores once.
+    const jobDescription = postingForPrompt(app);
     if (!jobDescription) {
       throw new ValidationError(
         'Add a job description to this application before checking resume match',

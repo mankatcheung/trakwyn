@@ -7,7 +7,7 @@ import type { IOutboundUrlPolicy } from '#src/use-cases/ports/IOutboundUrlPolicy
 import { ServiceUnavailableError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { JOB_POSTING_FETCH } from '#src/infrastructure/config/constants.js';
 import { htmlToText } from './htmlToText.js';
-import { extractJobPostingJsonLd } from './jsonLdJobPosting.js';
+import { extractJobPostingDescription, extractJobPostingJsonLd } from './jsonLdJobPosting.js';
 import { readBounded } from '#src/infrastructure/net/readBounded.js';
 
 interface Deps {
@@ -43,6 +43,7 @@ export class FetchJobPostingSourceResolver implements IJobPostingSourceResolver 
         text: this.stripHtml(html),
         fetchedFromUrl: true,
         structured: extractJobPostingJsonLd(html),
+        structuredDescription: extractJobPostingDescription(html),
       };
     }
 

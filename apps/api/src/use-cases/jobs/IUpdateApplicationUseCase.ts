@@ -12,6 +12,8 @@ export interface UpdateApplicationInput {
   location?: string | null;
   salaryRange?: string | null;
   description?: string | null;
+  /** The full posting text (JEF-591); `null` clears it, `undefined` leaves it. */
+  postingText?: string | null;
   starred?: boolean;
   source?: string | null;
   followUpAt?: Date | null;

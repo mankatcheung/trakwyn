@@ -6,6 +6,7 @@ import {
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
 import type {
   IJobPostingSourceResolver,
+  ResolvedJobPosting,
   StructuredJobPosting,
 } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
 import type { IParsedPostingCache } from '#src/use-cases/ports/IParsedPostingCache.js';
@@ -19,6 +20,7 @@ import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJs
 import {
   AI_FEATURE,
   AI_REASONING_DEFAULTS,
+  FIELD_LENGTH_LIMITS,
   JOB_POSTING_STRUCTURED,
 } from '#src/use-cases/constants.js';
 
@@ -34,7 +36,17 @@ export interface ParsedJobDescription {
   location: string | null;
   salary: string | null;
   description: string | null;
+  /**
+   * The posting as written (JEF-591), for `JobApplication.postingText`: the
+   * page's own JSON-LD description when it has one, else the text that was
+   * read. Cut to `FIELD_LENGTH_LIMITS.POSTING_TEXT`. Never from the model, so
+   * it is added after the cache and the parse rather than stored in either.
+   */
+  postingText: string | null;
 }
+
+/** What the model, the JSON-LD and the cross-user cache hold: everything but the text itself. */
+export type ParsedPostingFields = Omit<ParsedJobDescription, 'postingText'>;
 
 interface Deps {
   llmProviderFactory: ILLMProviderFactory;
@@ -80,23 +92,35 @@ export class ParseJobDescriptionUseCase {
       throw new ValidationError('No job description content provided');
     }
 
+    const postingText =
+      (posting.structuredDescription ?? text)
+        .trim()
+        .slice(0, FIELD_LENGTH_LIMITS.POSTING_TEXT)
+        .trim() || null;
+    return { ...(await this.parseFields(llmProvider, posting)), postingText };
+  }
+
+  private async parseFields(
+    llmProvider: ILLMProvider,
+    posting: ResolvedJobPosting,
+  ): Promise<ParsedPostingFields> {
     // A page that carries complete JSON-LD needs no model at all.
     if (posting.structured && isCompleteStructuredPosting(posting.structured)) {
       return { ...posting.structured };
     }
 
-    const parse = () => this.askModel(llmProvider, text, posting.structured);
+    const parse = () => this.askModel(llmProvider, posting.text, posting.structured);
     // Only a page the server fetched from a public URL is shared between
     // users; pasted text may hold the user's own notes.
     if (!posting.fetchedFromUrl) return parse();
-    return (await this.deps.parsedPostingCache.getOrParse(text, parse)).value;
+    return (await this.deps.parsedPostingCache.getOrParse(posting.text, parse)).value;
   }
 
   private async askModel(
     llmProvider: ILLMProvider,
     text: string,
     hints: StructuredJobPosting | null,
-  ): Promise<ParsedJobDescription> {
+  ): Promise<ParsedPostingFields> {
     const result = await llmProvider.complete(
       parseJobDescriptionPrompt.build({ text, hints }),
       undefined,
@@ -108,7 +132,7 @@ export class ParseJobDescriptionUseCase {
     return this.parseResponse(result.content);
   }
 
-  private parseResponse(raw: string): ParsedJobDescription {
+  private parseResponse(raw: string): ParsedPostingFields {
     const parsed = parseAiJson(raw, parsedJobDescriptionResponseSchema);
     return {
       company: parsed.company ?? null,

@@ -1,4 +1,5 @@
 import type { JobData } from './types';
+import { DESCRIPTION_MAX_CHARS, POSTING_TEXT_MAX_CHARS } from '../../constants';
 
 /** `/viewjob?jk=…`, or a job selected in the search split pane (`?vjk=…`). */
 export function isIndeedJobPage(): boolean {
@@ -41,7 +42,8 @@ export function parseIndeed(): JobData | null {
     company,
     role,
     location: location || undefined,
-    description: description?.slice(0, 2000) || undefined,
+    description: description?.slice(0, DESCRIPTION_MAX_CHARS) || undefined,
+    postingText: description?.slice(0, POSTING_TEXT_MAX_CHARS) || undefined,
     jobUrl: window.location.href,
     source: 'Indeed',
   };

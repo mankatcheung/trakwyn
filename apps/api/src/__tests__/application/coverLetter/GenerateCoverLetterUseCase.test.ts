@@ -680,3 +680,29 @@ describe('GenerateCoverLetterUseCase grounding (JEF-558)', () => {
     );
   });
 });
+
+describe('GenerateCoverLetterUseCase posting text (JEF-591)', () => {
+  it('writes from the full posting, not the summary', async () => {
+    const llmProvider = makeLLMProvider(COVER_LETTER);
+
+    await new GenerateCoverLetterUseCase({
+      applicationRepository: makeApplicationRepository({
+        findById: vi.fn().mockResolvedValue(
+          makeApplication({
+            description: 'A summary.',
+            postingText: 'You will run our Kubernetes platform and mentor juniors.',
+          }),
+        ),
+      }),
+      llmProviderFactory: makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(llmProvider),
+      }),
+      ...baseDeps(),
+    } as never).execute({ applicationId: 'app-1', userId: 'user-1' });
+
+    const [messages] = vi.mocked(llmProvider.complete).mock.calls[0]!;
+    const user = messages.find((m) => m.role === 'user')!.content as string;
+    expect(user).toContain('run our Kubernetes platform');
+    expect(user).not.toContain('A summary.');
+  });
+});

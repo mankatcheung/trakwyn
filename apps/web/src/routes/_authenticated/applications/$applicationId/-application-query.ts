@@ -4,7 +4,7 @@ import { gqlClient } from '#/graphql/client';
 const APPLICATION_QUERY = `
   query Application($id: ID!) {
     application(id: $id) {
-      id company role status jobUrl location salaryRange description appliedAt starred source followUpAt tags createdAt updatedAt deletedAt purgeAt
+      id company role status jobUrl location salaryRange description postingText appliedAt starred source followUpAt tags createdAt updatedAt deletedAt purgeAt
     }
   }
 `;
@@ -18,6 +18,7 @@ export type Application = {
   location?: string | null;
   salaryRange?: string | null;
   description?: string | null;
+  postingText?: string | null;
   appliedAt?: string | null;
   starred: boolean;
   source?: string | null;

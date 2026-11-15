@@ -500,8 +500,10 @@ export const AI_PROMPT_INPUT = {
   POLISH_DOCUMENT_MAX_CHARS: 20000,
   /** ParseJobDescriptionUseCase — raw scraped/pasted job posting text. */
   JOB_POSTING_MAX_CHARS: 8000,
-  /** GenerateCoverLetterUseCase — the application's job description field. */
-  COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS: 3000,
+  /** GenerateCoverLetterUseCase — the posting (`postingForPrompt`), raised from 3,000 with the full text (JEF-591). */
+  COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS: 6000,
+  /** GenerateResumeUseCase — the posting (`postingForPrompt`); the same room the match score has (JEF-591). */
+  RESUME_JOB_DESCRIPTION_MAX_CHARS: 6000,
   /** GenerateCompanyBriefingUseCase — the application's job description field. */
   COMPANY_BRIEFING_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** GenerateCompanyBriefingUseCase — text read from the company's own pages, all sources together (JEF-475). */
@@ -676,6 +678,13 @@ export const CONTENT_LIMITS = {
  */
 export const FIELD_LENGTH_LIMITS = {
   NOTE_CONTENT: 10_000,
+  /**
+   * `JobApplication.postingText` (JEF-591): the full posting, kept so AI
+   * features read the employer's own words. Long postings run to about
+   * 10,000 characters; a fetched page with its navigation is cut to this
+   * before it is offered to the client.
+   */
+  POSTING_TEXT: 15_000,
   TAG_NAME: 50,
 } as const;
 

@@ -6,6 +6,7 @@ export const ParsedJobDescriptionRef = builder.objectRef<{
   location: string | null;
   salary: string | null;
   description: string | null;
+  postingText: string | null;
 }>('ParsedJobDescription');
 
 ParsedJobDescriptionRef.implement({
@@ -15,5 +16,9 @@ ParsedJobDescriptionRef.implement({
     location: t.exposeString('location', { nullable: true }),
     salary: t.exposeString('salary', { nullable: true }),
     description: t.exposeString('description', { nullable: true }),
+    postingText: t.exposeString('postingText', {
+      nullable: true,
+      description: "The posting as written, for the application's postingText field.",
+    }),
   }),
 });

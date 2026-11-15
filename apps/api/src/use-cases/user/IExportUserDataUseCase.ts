@@ -18,6 +18,7 @@ export interface ExportedApplication {
   location: string | null;
   salaryRange: string | null;
   description: string | null;
+  postingText: string | null;
   appliedAt: string | null;
   createdAt: string;
   notes: ExportedNote[];

@@ -18,6 +18,7 @@ import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import { resumePrompt, resumeResponseSchema } from '#src/use-cases/prompts/resume.js';
 import { assertNotTruncated, parseAiJson } from '#src/use-cases/shared/parseAiJson.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
+import { postingForPrompt } from '#src/use-cases/shared/postingForPrompt.js';
 import {
   loadUserProfile,
   formatUserProfile,
@@ -134,7 +135,8 @@ export class GenerateResumeUseCase {
     }
 
     const messages = resumePrompt.build({
-      app,
+      // The full posting when it was captured, not the summary (JEF-591).
+      app: { ...app, description: postingForPrompt(app) },
       profileText: formatUserProfile(profile, { maxChars: AI_PROMPT_INPUT.PROFILE_MAX_CHARS }),
       applicationContext: context,
       crossApplicationContext,

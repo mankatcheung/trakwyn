@@ -40,6 +40,7 @@ export const makeApplication = (overrides?: Partial<Application>): Application =
   location: null,
   salaryRange: null,
   description: null,
+  postingText: null,
   appliedAt: null,
   starred: false,
   source: null,

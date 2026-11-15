@@ -56,6 +56,7 @@ function makeUseCase(over?: {
   user?: ReturnType<typeof makeUser>;
   otherNotes?: unknown[];
   otherCoverLetters?: unknown[];
+  app?: ReturnType<typeof makeApplication>;
 }) {
   const llmProvider = makeLLMProvider(over?.response ?? VALID_RESUME);
   const deps = {
@@ -65,7 +66,7 @@ function makeUseCase(over?: {
     applicationRepository: makeApplicationRepository({
       findById: vi
         .fn()
-        .mockResolvedValue(makeApplication({ userId: 'user-1', company: 'Initech' })),
+        .mockResolvedValue(over?.app ?? makeApplication({ userId: 'user-1', company: 'Initech' })),
     }),
     userRepository: makeUserRepository({
       findById: vi.fn().mockResolvedValue(over?.user ?? makeUser()),
@@ -370,5 +371,51 @@ describe('GenerateResumeUseCase', () => {
       ).rejects.toBeInstanceOf(ValidationError);
       expect(ctx.llmProvider.complete).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('GenerateResumeUseCase posting text (JEF-591)', () => {
+  const userMessage = (ctx: ReturnType<typeof makeUseCase>) => {
+    const [messages] = vi.mocked(ctx.llmProvider.complete).mock.calls[0]!;
+    return messages.find((m) => m.role === 'user')!.content as string;
+  };
+
+  it('tailors to the full posting, not the summary', async () => {
+    const ctx = makeUseCase({
+      app: makeApplication({
+        userId: 'user-1',
+        description: 'A backend role at a logistics firm.',
+        postingText: 'Requirements: Kubernetes, PostgreSQL, incident response, mentoring juniors.',
+      }),
+    });
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(userMessage(ctx)).toContain('Kubernetes, PostgreSQL, incident response');
+    expect(userMessage(ctx)).not.toContain('A backend role at a logistics firm.');
+  });
+
+  it('sends 6,000 characters of a long posting, where it used to send 3,000', async () => {
+    const ctx = makeUseCase({
+      app: makeApplication({
+        userId: 'user-1',
+        postingText: `${'a'.repeat(5_990)}KEEP-THIS${'z'.repeat(2_000)}DROPPED`,
+      }),
+    });
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(userMessage(ctx)).toContain('KEEP-THIS'.slice(0, 9));
+    expect(userMessage(ctx)).not.toContain('DROPPED');
+  });
+
+  it('falls back to the description when no posting was captured', async () => {
+    const ctx = makeUseCase({
+      app: makeApplication({ userId: 'user-1', description: 'Only a description.' }),
+    });
+
+    await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(userMessage(ctx)).toContain('Only a description.');
   });
 });

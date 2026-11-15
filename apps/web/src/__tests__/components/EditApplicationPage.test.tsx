@@ -208,4 +208,48 @@ describe('EditApplicationPage', () => {
     });
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it('shows the stored posting and saves an edit to it (JEF-591)', async () => {
+    mockGqlRequest
+      .mockResolvedValueOnce({
+        application: { ...mockApp, postingText: 'Must have Kubernetes.' },
+      })
+      .mockResolvedValueOnce({ updateApplication: { id: 'app-test-id' } });
+
+    render(<EditApplicationPage />, { wrapper: Wrapper });
+
+    const field = await screen.findByDisplayValue('Must have Kubernetes.');
+    fireEvent.change(field, { target: { value: 'Must have Kubernetes and Go.' } });
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateApplication'),
+        expect.objectContaining({
+          input: expect.objectContaining({ postingText: 'Must have Kubernetes and Go.' }),
+        }),
+      );
+    });
+  });
+
+  it('clears the posting when the field is emptied (JEF-591)', async () => {
+    mockGqlRequest
+      .mockResolvedValueOnce({
+        application: { ...mockApp, postingText: 'Must have Kubernetes.' },
+      })
+      .mockResolvedValueOnce({ updateApplication: { id: 'app-test-id' } });
+
+    render(<EditApplicationPage />, { wrapper: Wrapper });
+
+    const field = await screen.findByDisplayValue('Must have Kubernetes.');
+    fireEvent.change(field, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('UpdateApplication'),
+        expect.objectContaining({ input: expect.objectContaining({ postingText: null }) }),
+      );
+    });
+  });
 });

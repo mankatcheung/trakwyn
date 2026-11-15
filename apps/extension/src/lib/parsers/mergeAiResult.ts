@@ -39,6 +39,10 @@ export function mergeAiResult(
       role: pick('role') ?? '',
       location: pick('location'),
       description: pick('description'),
+      // The built-in parser read the posting's own element, which is cleaner
+      // than the whole page the AI was sent, so it wins when it has one.
+      postingText:
+        builtin?.postingText ?? (present(ai.postingText) ? ai.postingText.trim() : undefined),
       jobUrl: builtin?.jobUrl ?? page.jobUrl,
       source: builtin?.source ?? page.source,
     },
