@@ -9,6 +9,8 @@
 import { vi } from 'vitest';
 import type { Application } from '#src/domain/application/Application.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
+import type { PostingRequirements } from '#src/domain/postingRequirements/PostingRequirements.js';
+import type { IPostingRequirementsRepository } from '#src/use-cases/ports/IPostingRequirementsRepository.js';
 
 export const makeApplicationRepository = (
   overrides?: Partial<IApplicationRepository>,
@@ -51,5 +53,28 @@ export const makeApplication = (overrides?: Partial<Application>): Application =
   boardPosition: 0,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makePostingRequirementsRepository = (
+  overrides?: Partial<IPostingRequirementsRepository>,
+): IPostingRequirementsRepository => ({
+  findByApplicationId: vi.fn().mockResolvedValue(null),
+  upsert: vi.fn().mockImplementation((data: PostingRequirements) => Promise.resolve(data)),
+  ...overrides,
+});
+
+export const makePostingRequirements = (
+  overrides?: Partial<PostingRequirements>,
+): PostingRequirements => ({
+  id: 'req-1',
+  applicationId: 'app-1',
+  mustHave: ['5+ years of backend development'],
+  niceToHave: ['Experience with Kafka'],
+  keywords: ['PostgreSQL', 'Kubernetes'],
+  seniority: 'Senior',
+  postingHash: 'posting-hash',
+  promptVersion: 1,
+  generatedAt: new Date('2026-11-15T12:00:00Z'),
   ...overrides,
 });

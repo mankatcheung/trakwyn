@@ -122,6 +122,10 @@ export const rateLimiters = {
     'computeResumeMatchScoreRateLimiter',
     RATE_LIMIT.COMPUTE_RESUME_MATCH_SCORE,
   ),
+  extractPostingRequirementsRateLimiter: limiter(
+    'extractPostingRequirementsRateLimiter',
+    RATE_LIMIT.EXTRACT_POSTING_REQUIREMENTS,
+  ),
   computeResumeAtsScoreRateLimiter: limiter(
     'computeResumeAtsScoreRateLimiter',
     RATE_LIMIT.COMPUTE_RESUME_ATS_SCORE,

@@ -181,6 +181,7 @@ export const AI_FEATURE = {
   CHAT: 'chat',
   KEY_TEST: 'keyTest',
   POLISH_DRAFT: 'polishDraft',
+  POSTING_REQUIREMENTS: 'postingRequirements',
 } as const;
 
 export type AiFeature = (typeof AI_FEATURE)[keyof typeof AI_FEATURE];
@@ -265,6 +266,8 @@ export const AI_CREDITS = {
     chat: 1,
     keyTest: 0,
     polishDraft: 1,
+    // Once per version of a posting, however many resumes are written from it (JEF-593).
+    postingRequirements: 1,
   } as const satisfies Record<AiFeature, number>,
   /** Extra credits a new account has for its first `WELCOME_DAYS`, on top of the plan's monthly size. A plan with no credits gets none. */
   WELCOME_BONUS: 20,
@@ -534,6 +537,8 @@ export const AI_PROMPT_INPUT = {
    * Room for a full two-page CV; past it the oldest roles lose their detail first.
    */
   PROFILE_MAX_CHARS: 8000,
+  /** ExtractPostingRequirementsUseCase — the posting (`postingForPrompt`); what the parser reads of a page (JEF-593). */
+  POSTING_REQUIREMENTS_MAX_CHARS: 8000,
   /** ParseCvUseCase — the text read from an uploaded CV (JEF-461). Longer than a posting: a CV is the whole document. */
   CV_IMPORT_MAX_CHARS: 24000,
 } as const;
@@ -772,6 +777,24 @@ export const DRAFT_HISTORY = {
 } as const;
 
 export const POLISH_DRAFT_PROMPT_TASK = 'polish a resume or cover letter the user wrote';
+
+/** The sentence the fake LLM route finds to answer the posting requirements prompt (JEF-593). */
+export const POSTING_REQUIREMENTS_PROMPT_TASK = 'list what a job posting requires of a candidate';
+
+/**
+ * Bounds on what is kept from a posting's requirements (JEF-593). The model
+ * is asked for these sizes and its reply is cut to them: the lists go into
+ * every resume prompt for the application, so they must stay short.
+ */
+export const POSTING_REQUIREMENTS = {
+  /** Must-haves, and nice-to-haves, each. */
+  MAX_ITEMS: 12,
+  MAX_KEYWORDS: 25,
+  ITEM_MAX_CHARS: 160,
+  SENIORITY_MAX_CHARS: 40,
+  /** Output budget: three short lists. The default (512) can cut a long posting's off. */
+  MAX_OUTPUT_TOKENS: 1024,
+} as const;
 
 /** Output budget for a polished document (JEF-506); sized above POLISH_DOCUMENT_MAX_CHARS of prose. */
 export const POLISH_DRAFT_MAX_TOKENS = 6000;
@@ -1019,4 +1042,5 @@ export const AI_REASONING_DEFAULTS = {
   TALKING_POINTS: 'off',
   TEST_API_KEY: 'off',
   POLISH_DRAFT: 'off',
+  POSTING_REQUIREMENTS: 'off',
 } as const satisfies Record<string, 'off' | 'low' | 'default'>;

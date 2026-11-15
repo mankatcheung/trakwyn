@@ -26,6 +26,8 @@ import {
 } from '#src/use-cases/shared/userProfile.js';
 import { applyProfileFacts, assertGrounded } from '#src/use-cases/resume/resumeGrounding.js';
 import type { ILogger } from '#src/use-cases/ports/ILogger.js';
+import type { IExtractPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/ExtractPostingRequirementsUseCase.js';
+import type { ResumePromptRequirements } from '#src/use-cases/prompts/resume.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
@@ -50,6 +52,8 @@ interface Deps extends UserProfileRepositories {
   documentDraftRepository: IDocumentDraftRepository;
   /** Optional so the eval harness and unit tests need none. */
   logger?: ILogger;
+  /** Optional for the same reason; without it the resume is tailored to the posting text alone. */
+  extractPostingRequirementsUseCase?: IExtractPostingRequirementsUseCase;
 }
 
 export class GenerateResumeUseCase {
@@ -111,6 +115,8 @@ export class GenerateResumeUseCase {
       crossApplicationContext = formatCrossApplicationContext(otherNotes, otherCoverLetters);
     }
 
+    const requirements = await this.requirementsFor(input);
+
     const messages = resumePrompt.build({
       // The full posting when it was captured, not the summary (JEF-591).
       app: { ...app, description: postingForPrompt(app) },
@@ -119,6 +125,7 @@ export class GenerateResumeUseCase {
       crossApplicationContext,
       customAiPrompt: user?.customAiPrompt,
       instructions,
+      requirements,
     });
 
     const result = await llmProvider.complete(messages, 2048, undefined, {
@@ -145,5 +152,35 @@ export class GenerateResumeUseCase {
       });
     }
     return grounded.resume;
+  }
+
+  /**
+   * What the posting asks for, to tailor against (JEF-593). The saved list is
+   * reused while the posting is unchanged, so this is a model call only the
+   * first time a posting is used.
+   *
+   * It is an improvement to the resume, never a condition of it: an
+   * application with no posting, a rate limit, spent credits or a reply the
+   * model got wrong all leave the resume to be written from the posting text
+   * alone, as it was before.
+   */
+  private async requirementsFor(
+    input: GenerateResumeInput,
+  ): Promise<ResumePromptRequirements | null> {
+    if (!this.deps.extractPostingRequirementsUseCase) return null;
+    try {
+      return await this.deps.extractPostingRequirementsUseCase.execute({
+        userId: input.userId,
+        applicationId: input.applicationId,
+      });
+    } catch (err) {
+      // "No posting on this application" is the ordinary case, not a fault.
+      if (!(err instanceof ValidationError)) {
+        this.deps.logger?.warn('Could not read the posting requirements for a resume', err, {
+          event: 'resume.requirements.unavailable',
+        });
+      }
+      return null;
+    }
   }
 }

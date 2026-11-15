@@ -8,6 +8,7 @@ import { DrizzleDocumentDraftRepository } from '#src/infrastructure/db/repositor
 import { DrizzleDocumentDraftVersionRepository } from '#src/infrastructure/db/repositories/DrizzleDocumentDraftVersionRepository.js';
 import { DrizzleResumeAtsScoreRepository } from '#src/infrastructure/db/repositories/DrizzleResumeAtsScoreRepository.js';
 import { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
+import { DrizzlePostingRequirementsRepository } from '#src/infrastructure/db/repositories/DrizzlePostingRequirementsRepository.js';
 import { DrizzleCompanyBriefingRepository } from '#src/infrastructure/db/repositories/DrizzleCompanyBriefingRepository.js';
 import { CachedApplicationRepository } from '#src/infrastructure/db/repositories/CachedApplicationRepository.js';
 import { CachedNoteRepository } from '#src/infrastructure/db/repositories/CachedNoteRepository.js';
@@ -77,6 +78,9 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   resumeMatchRepository: asClass(DrizzleResumeMatchRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  postingRequirementsRepository: asClass(DrizzlePostingRequirementsRepository, {
     lifetime: Lifetime.SINGLETON,
   }),
   resumeAtsScoreRepository: asClass(DrizzleResumeAtsScoreRepository, {

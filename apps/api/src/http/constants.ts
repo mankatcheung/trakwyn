@@ -319,6 +319,11 @@ export const RATE_LIMIT = {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   },
+  /** Reading a posting's requirements (JEF-593). Counted only when a model is called, not on a saved list. */
+  EXTRACT_POSTING_REQUIREMENTS: {
+    MAX_ATTEMPTS: 20,
+    WINDOW_MS: 5 * 60 * 1000, // 5 minutes
+  },
   COMPUTE_RESUME_ATS_SCORE: {
     MAX_ATTEMPTS: 20,
     WINDOW_MS: 5 * 60 * 1000, // 5 minutes

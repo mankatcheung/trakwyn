@@ -5,7 +5,11 @@ import {
   makeDocumentDraftRepository,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
-import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
+import {
+  makeApplication,
+  makeApplicationRepository,
+  makePostingRequirements,
+} from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
 import {
@@ -16,7 +20,7 @@ import {
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
-import { ValidationError } from '#src/use-cases/errors/DomainError.js';
+import { RateLimitedError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
 
 const WORK = [
@@ -500,5 +504,79 @@ describe('GenerateResumeUseCase profile facts (JEF-597)', () => {
     await expect(
       ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' }),
     ).rejects.toMatchObject({ code: 'AI_RESPONSE_INVALID' });
+  });
+});
+
+describe('GenerateResumeUseCase posting requirements (JEF-593)', () => {
+  const userMessage = (llmProvider: ReturnType<typeof makeLLMProvider>) => {
+    const [messages] = vi.mocked(llmProvider.complete).mock.calls[0]!;
+    return messages.find((m) => m.role === 'user')!.content as string;
+  };
+  const run = (
+    ctx: ReturnType<typeof makeUseCase>,
+    extract: ReturnType<typeof vi.fn>,
+    logger = makeLogger(),
+  ) =>
+    new GenerateResumeUseCase({
+      ...ctx.deps,
+      logger,
+      extractPostingRequirementsUseCase: { execute: extract as never },
+    }).execute({ userId: 'user-1', applicationId: 'app-1' });
+
+  it('tailors against the posting’s requirements, fenced as untrusted data', async () => {
+    const ctx = makeUseCase();
+    const extract = vi.fn().mockResolvedValue({
+      ...makePostingRequirements({
+        mustHave: ['5+ years of backend development'],
+        niceToHave: ['Experience with Kafka'],
+        keywords: ['PostgreSQL', 'Kubernetes'],
+      }),
+      isStale: false,
+    });
+
+    await run(ctx, extract);
+
+    expect(extract).toHaveBeenCalledWith({ userId: 'user-1', applicationId: 'app-1' });
+    const message = userMessage(ctx.llmProvider);
+    expect(message).toMatch(
+      /What the posting asks for:\n<untrusted_external_content>[\s\S]*Must have:\n- 5\+ years of backend development\n\nNice to have:\n- Experience with Kafka\n\nKeywords: PostgreSQL, Kubernetes[\s\S]*<\/untrusted_external_content>/,
+    );
+  });
+
+  it('leaves the block out when the posting states no requirements', async () => {
+    const ctx = makeUseCase();
+    const extract = vi.fn().mockResolvedValue({
+      ...makePostingRequirements({ mustHave: [], niceToHave: [], keywords: [] }),
+      isStale: false,
+    });
+
+    await run(ctx, extract);
+
+    expect(userMessage(ctx.llmProvider)).not.toContain('What the posting asks for');
+  });
+
+  it('still writes the resume when the requirements cannot be read, and says so in the log', async () => {
+    const ctx = makeUseCase();
+    const logger = makeLogger();
+    const extract = vi.fn().mockRejectedValue(new RateLimitedError('Too many requests'));
+
+    const resume = await run(ctx, extract, logger);
+
+    expect(resume.experience).toHaveLength(2);
+    expect(userMessage(ctx.llmProvider)).not.toContain('What the posting asks for');
+    expect(logger.warn).toHaveBeenCalledWith(expect.any(String), expect.any(RateLimitedError), {
+      event: 'resume.requirements.unavailable',
+    });
+  });
+
+  it('treats an application with no posting as ordinary: no requirements, no warning', async () => {
+    const ctx = makeUseCase();
+    const logger = makeLogger();
+    const extract = vi.fn().mockRejectedValue(new ValidationError('Add the job posting'));
+
+    const resume = await run(ctx, extract, logger);
+
+    expect(resume.experience).toHaveLength(2);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 });

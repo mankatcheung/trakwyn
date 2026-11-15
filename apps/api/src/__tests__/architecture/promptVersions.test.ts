@@ -12,6 +12,7 @@ import { parseJobDescriptionPrompt } from '#src/use-cases/prompts/parseJobDescri
 import { polishDraftPrompt } from '#src/use-cases/prompts/polishDraft.js';
 import { resumePrompt } from '#src/use-cases/prompts/resume.js';
 import { resumeMatchPrompt } from '#src/use-cases/prompts/resumeMatch.js';
+import { postingRequirementsPrompt } from '#src/use-cases/prompts/postingRequirements.js';
 import { talkingPointsPrompt } from '#src/use-cases/prompts/talkingPoints.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import type { LLMMessage } from '#src/use-cases/ports/ILLMProvider.js';
@@ -70,6 +71,16 @@ const RENDERED: Rendered[] = [
     applicationContext: 'Notes: ask about the team',
     crossApplicationContext: 'Earlier letters: warm tone',
     customAiPrompt: null,
+    requirements: {
+      mustHave: ['5+ years of backend development'],
+      niceToHave: ['Kafka'],
+      keywords: ['PostgreSQL'],
+    },
+  }),
+  render(postingRequirementsPrompt, {
+    company: 'Acme Corp',
+    role: 'Senior Engineer',
+    posting: 'We need a senior TS engineer. PostgreSQL required.',
   }),
   render(polishDraftPrompt, {
     type: 'cover_letter',
@@ -114,7 +125,8 @@ const hashOf = ({ messages }: Rendered) =>
 /** `id@version` to the first 16 hex characters of the sha256 of the rendered messages. */
 const RECORDED: Record<string, string> = {
   'coverLetter@4': '21554b1113ce1d0f',
-  'resume@4': '137a2c2306b8a12b',
+  'resume@5': 'e913b8725475a496',
+  'postingRequirements@1': '88084bacb942232f',
   'polishDraft@1': '814195a70b7c682b',
   'resumeMatch@2': 'e26dd139ad360cb0',
   'parseJobDescription@1': 'e357e943306332df',

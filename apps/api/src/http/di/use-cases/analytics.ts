@@ -5,6 +5,8 @@ import { ComputeResumeMatchScoreUseCase } from '#src/use-cases/application/Compu
 import { ComputeResumeAtsScoreUseCase } from '#src/use-cases/application/ComputeResumeAtsScoreUseCase.js';
 import { GetResumeAtsScoresUseCase } from '#src/use-cases/application/GetResumeAtsScoresUseCase.js';
 import { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
+import { ExtractPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/ExtractPostingRequirementsUseCase.js';
+import { GetPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/GetPostingRequirementsUseCase.js';
 import { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import { SendWeeklyDigestUseCase } from '#src/use-cases/digest/SendWeeklyDigestUseCase.js';
@@ -25,6 +27,12 @@ export const analytics = {
     lifetime: Lifetime.TRANSIENT,
   }),
   getResumeMatchesUseCase: asClass(GetResumeMatchesUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  extractPostingRequirementsUseCase: asClass(ExtractPostingRequirementsUseCase, {
+    lifetime: Lifetime.TRANSIENT,
+  }),
+  getPostingRequirementsUseCase: asClass(GetPostingRequirementsUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
   getApplicationChannelAnalyticsUseCase: asClass(GetApplicationChannelAnalyticsUseCase, {
