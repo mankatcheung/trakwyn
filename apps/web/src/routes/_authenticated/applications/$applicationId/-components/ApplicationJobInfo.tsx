@@ -3,6 +3,7 @@ import type { Application } from '../-application-query';
 import { ApplicationInfoChips } from './ApplicationInfoChips';
 import { CollapsibleDescription } from './CollapsibleDescription';
 import { HealthScorePanel, type HealthScore } from './HealthScorePanel';
+import { PostingRequirementsPanel } from './PostingRequirementsPanel';
 
 interface ApplicationJobInfoProps {
   app: Application;
@@ -59,6 +60,9 @@ export function ApplicationJobInfo({
           )}
         </div>
       )}
+
+      {/* Only where there is a posting to read (JEF-593). */}
+      {(app.description || app.postingText) && <PostingRequirementsPanel applicationId={app.id} />}
 
       {healthScore && <HealthScorePanel healthScore={healthScore} />}
     </>

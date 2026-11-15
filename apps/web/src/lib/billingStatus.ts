@@ -71,7 +71,8 @@ export type AiFeature =
   | 'companyBriefing'
   | 'resumeMatch'
   | 'parseJobDescription'
-  | 'parseCv';
+  | 'parseCv'
+  | 'postingRequirements';
 
 export interface AiFeatureCost {
   feature: AiFeature | (string & {});

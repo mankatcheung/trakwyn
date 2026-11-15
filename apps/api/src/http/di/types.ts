@@ -319,6 +319,9 @@ import type { GetResumeAtsScoresUseCase } from '#src/use-cases/application/GetRe
 import type { DrizzleResumeAtsScoreRepository } from '#src/infrastructure/db/repositories/DrizzleResumeAtsScoreRepository.js';
 import type { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
 import type { DrizzleResumeMatchRepository } from '#src/infrastructure/db/repositories/DrizzleResumeMatchRepository.js';
+import type { DrizzlePostingRequirementsRepository } from '#src/infrastructure/db/repositories/DrizzlePostingRequirementsRepository.js';
+import type { ExtractPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/ExtractPostingRequirementsUseCase.js';
+import type { GetPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/GetPostingRequirementsUseCase.js';
 import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import type { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import type { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
@@ -478,6 +481,7 @@ export interface Cradle {
   parseJobDescriptionRateLimiter: IRateLimiter;
   parseCvRateLimiter: IRateLimiter;
   computeResumeMatchScoreRateLimiter: IRateLimiter;
+  extractPostingRequirementsRateLimiter: IRateLimiter;
   computeResumeAtsScoreRateLimiter: IRateLimiter;
   generateCompanyBriefingRateLimiter: IRateLimiter;
   /** Per user per day, on the searches Trakwyn pays for (JEF-538). */
@@ -772,6 +776,9 @@ export interface Cradle {
   resumeAtsScoreRepository: DrizzleResumeAtsScoreRepository;
   getResumeMatchesUseCase: GetResumeMatchesUseCase;
   resumeMatchRepository: DrizzleResumeMatchRepository;
+  postingRequirementsRepository: DrizzlePostingRequirementsRepository;
+  extractPostingRequirementsUseCase: ExtractPostingRequirementsUseCase;
+  getPostingRequirementsUseCase: GetPostingRequirementsUseCase;
   getApplicationChannelAnalyticsUseCase: GetApplicationChannelAnalyticsUseCase;
   getCalendarEventsUseCase: GetCalendarEventsUseCase;
   getDocumentVersionOutcomesUseCase: GetDocumentVersionOutcomesUseCase;

@@ -57,6 +57,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'UserActionToken -> User': 'cascade', // a step-up code or deletion link means nothing once its user is erased
   'ResumeAtsScore -> Document': 'cascade', // a score for a file that no longer exists
   'ResumeAtsScore -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
+  'PostingRequirements -> JobApplication': 'cascade', // a reading of a posting that no longer exists
   'ResumeAtsScore -> JobApplication': 'cascade',
   'ResumeMatch -> Document': 'cascade', // a score for a file that no longer exists
   'ResumeMatch -> DocumentDraft': 'cascade', // a score for a draft that no longer exists

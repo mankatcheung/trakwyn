@@ -4,9 +4,20 @@ import {
   CV_IMPORT_PROMPT_TASK,
   MOCK_INTERVIEW_PROMPT_TASK,
   POLISH_DRAFT_PROMPT_TASK,
+  POSTING_REQUIREMENTS_PROMPT_TASK,
 } from '#src/use-cases/constants.js';
 
 const FAKE_CHAT_REPLY = 'Fake assistant reply for e2e testing.';
+
+const FAKE_POSTING_REQUIREMENTS = {
+  mustHave: [
+    '3+ years of professional software development',
+    'Experience running services in production',
+  ],
+  niceToHave: ['Experience mentoring other engineers'],
+  keywords: ['TypeScript', 'PostgreSQL', 'Kubernetes', 'CI/CD'],
+  seniority: 'Senior',
+};
 
 const FAKE_MOCK_QUESTIONS = {
   questions: [
@@ -149,6 +160,14 @@ export function fakeLlmCompletionsRoutes(): RouteDefinition[] {
         }
         if (system.includes(POLISH_DRAFT_PROMPT_TASK)) {
           res.send({ choices: [{ message: { content: FAKE_POLISHED_DRAFT, tool_calls: [] } }] });
+          return;
+        }
+        if (system.includes(POSTING_REQUIREMENTS_PROMPT_TASK)) {
+          res.send({
+            choices: [
+              { message: { content: JSON.stringify(FAKE_POSTING_REQUIREMENTS), tool_calls: [] } },
+            ],
+          });
           return;
         }
         if (system.includes(CV_IMPORT_PROMPT_TASK)) {

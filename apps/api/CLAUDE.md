@@ -25,6 +25,7 @@ Each of these loads on its own when you work in its directory. Paths are under `
 | `use-cases/resume/`                    | the resume's grounding: refused employers, and dates, titles and skills taken from the profile |
 | `use-cases/coverLetter/`               | the grounding guard that refuses a letter naming an employer, credential, number or link       |
 | `use-cases/jobDescription/`            | cheaper AI calls: JSON-LD, posting cache, match reuse                                          |
+| `use-cases/postingRequirements/`       | what a posting asks for: one cached AI read per posting, used to tailor resumes                |
 | `use-cases/companyBriefing/`           | company briefing: the company's own site, web search, sources, the research caches             |
 | `use-cases/prompts/`                   | prompt modules and versions                                                                    |
 | `docs/ai-data-handling.md` (repo root) | where AI-related user data goes and which code backs each privacy-policy claim (JEF-549)       |
