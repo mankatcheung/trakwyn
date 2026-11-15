@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AI_FEATURE, CV_IMPORT_PROMPT_TASK } from '#src/use-cases/constants.js';
+import { AI_FEATURE, CV_IMPORT, CV_IMPORT_PROMPT_TASK } from '#src/use-cases/constants.js';
 import { RETURN_ONLY_VALID_JSON } from '#src/use-cases/prompts/shared.js';
 import type { PromptDefinition } from '#src/use-cases/prompts/types.js';
 import { wrapUntrustedContent } from '#src/use-cases/shared/wrapUntrustedContent.js';
@@ -30,7 +30,7 @@ const userPrompt = ({
       "location": "city, country or remote, or null",
       "startDate": "YYYY-MM, or YYYY when only the year is given",
       "endDate": "YYYY-MM, YYYY, or \\"Present\\" when the role is still held",
-      "description": "one sentence of at most 200 characters on the responsibilities and achievements, or null"
+      "description": "the role's responsibilities and achievements as the CV words them, every bullet kept with its numbers, one per line separated by \\n, at most ${CV_IMPORT.PROMPT_DESCRIPTION_MAX_CHARS} characters; do not summarise or reword; null when the CV gives none"
     }
   ],
   "educations": [
@@ -40,7 +40,7 @@ const userPrompt = ({
       "field": "field of study, or null",
       "startDate": "YYYY-MM, or YYYY when only the year is given",
       "endDate": "YYYY-MM, YYYY, \\"Present\\", or null",
-      "description": "honours or thesis in at most 100 characters, or null"
+      "description": "honours, grade, thesis and relevant coursework as the CV words them, one per line separated by \\n, or null"
     }
   ],
   "skills": [
@@ -48,14 +48,14 @@ const userPrompt = ({
   ]
 }
 
-List work experience and education from most recent to oldest. Leave out an entry whose start date the CV does not give.
+List work experience and education from most recent to oldest. When the CV lists more than ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES} roles, keep only the two strongest bullets for each role after the first ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES}. Leave out an entry whose start date the CV does not give.
 
 CV:
 ${wrapUntrustedContent(cvText)}`;
 
 export const parseCvPrompt: PromptDefinition<ParseCvPromptInput> = {
   id: AI_FEATURE.PARSE_CV,
-  version: 2,
+  version: 3,
   build: (input) => [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt(input) },
