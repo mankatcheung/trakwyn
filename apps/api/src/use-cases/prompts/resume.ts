@@ -45,6 +45,15 @@ Absolute rules:
 - The candidate's name and contact details are added above your resume separately. Do not write a name, email address, phone number or other contact line anywhere in your reply.
 ${USER_INSTRUCTIONS_RULE}
 
+Writing for a recruiter's first skim. A recruiter decides in a few seconds, from the top of the page, so the strongest evidence for this role goes first:
+- Summary: two or three sentences. Open with the role the candidate is applying for, or the nearest title they have really held, then the two or three strongest things in their background that match the posting. State plain facts; leave out filler such as "passionate", "results-driven" or "team player".
+- Bullets: start each with a strong action verb, in the past tense (the present tense for a role still held). Say what was done and what came of it. Keep every number, scale and named tool exactly as the background gives it, and never add one.
+- Put the bullet that best matches the posting first in each role.
+- Give a recent role that matches the posting up to five bullets, as many as its description supports. Give an older or unrelated role one or two, or none. Leave a bullet out rather than pad it.
+- Order the skill groups, and the items in each, by how much the posting asks for them.
+- When the candidate has a skill under another spelling, abbreviation or full name than the posting uses (for example "Postgres" for "PostgreSQL"), use the posting's name. Only for the same skill, never a related one.
+- Aim for one page, about 400 words, for a career under ten years; two pages at most for a longer one. Shorter is better than padded.
+
 Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
 {"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}]}`;
 
@@ -92,7 +101,7 @@ function userPrompt({
 
 export const resumePrompt: PromptDefinition<ResumePromptInput> = {
   id: AI_FEATURE.RESUME,
-  version: 5,
+  version: 6,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,
