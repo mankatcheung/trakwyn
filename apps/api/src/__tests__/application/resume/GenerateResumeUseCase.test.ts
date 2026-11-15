@@ -4,7 +4,7 @@ import {
   makeDocumentDraft,
   makeDocumentDraftRepository,
 } from '#src/__tests__/helpers/mocks/documents.js';
-import { makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
+import { makeLogger, makeRateLimiter } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { makeApplication, makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeLLMProvider, makeLLMProviderFactory } from '#src/__tests__/helpers/mocks/llm.js';
 import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
@@ -417,5 +417,88 @@ describe('GenerateResumeUseCase posting text (JEF-591)', () => {
     await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
 
     expect(userMessage(ctx)).toContain('Only a description.');
+  });
+});
+
+describe('GenerateResumeUseCase profile facts (JEF-597)', () => {
+  // The mocks' defaults: Acme and Globex both Jan 2020 – Jan 2023, State University Sep 2016 – May 2020.
+  const DRIFTED = JSON.stringify({
+    summary: 'Engineer.',
+    experience: [
+      {
+        company: 'Acme',
+        title: 'Staff Engineer',
+        period: '2015 – 2024',
+        bullets: ['Built widgets'],
+      },
+      { company: 'Globex', title: 'Senior Engineer', period: '2022 – Present', bullets: [] },
+    ],
+    education: [{ institution: 'State University', qualification: 'BSc CS', period: '2001' }],
+    skills: [
+      { category: 'Languages', items: ['TypeScript', 'Rust'] },
+      { category: 'Cloud', items: ['Kubernetes'] },
+    ],
+  });
+
+  it('returns the stored dates and titles, and only skills the profile has', async () => {
+    const ctx = makeUseCase({ response: DRIFTED });
+
+    const resume = await ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' });
+
+    expect(resume.experience).toEqual([
+      {
+        company: 'Acme',
+        title: 'Engineer',
+        period: 'Jan 2020 – Jan 2023',
+        bullets: ['Built widgets'],
+      },
+      { company: 'Globex', title: 'Senior Engineer', period: 'Jan 2020 – Jan 2023', bullets: [] },
+    ]);
+    expect(resume.education[0]!.period).toBe('Sep 2016 – May 2020');
+    expect(resume.skills).toEqual([{ category: 'Languages', items: ['TypeScript'] }]);
+  });
+
+  it('logs how much was corrected, as counts with no text from the resume', async () => {
+    const logger = makeLogger();
+    const ctx = makeUseCase({ response: DRIFTED });
+
+    await new GenerateResumeUseCase({ ...ctx.deps, logger }).execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+    });
+
+    expect(logger.info).toHaveBeenCalledWith(expect.any(String), {
+      event: 'resume.grounding.corrected',
+      periods: 3,
+      titles: 1,
+      skills_dropped: 2,
+      prompt_version: expect.any(Number),
+    });
+  });
+
+  it('logs nothing when only the period format differed', async () => {
+    const logger = makeLogger();
+    const ctx = makeUseCase();
+
+    await new GenerateResumeUseCase({ ...ctx.deps, logger }).execute({
+      userId: 'user-1',
+      applicationId: 'app-1',
+    });
+
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+
+  it('still refuses an invented employer instead of correcting it', async () => {
+    const ctx = makeUseCase({
+      response: JSON.stringify({
+        experience: [{ company: 'Google', title: 'Engineer', bullets: [] }],
+        education: [],
+        skills: [],
+      }),
+    });
+
+    await expect(
+      ctx.useCase.execute({ userId: 'user-1', applicationId: 'app-1' }),
+    ).rejects.toMatchObject({ code: 'AI_RESPONSE_INVALID' });
   });
 });
