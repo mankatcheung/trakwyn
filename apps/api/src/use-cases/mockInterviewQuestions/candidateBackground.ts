@@ -52,7 +52,11 @@ export async function buildCandidateBackground(
 
   const profileText =
     profile && !isUserProfileEmpty(profile)
-      ? formatUserProfile(profile).slice(0, AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS)
+      ? // The budget trims the oldest descriptions first; the slice only bounds a
+        // profile whose role lines and skills alone run past it.
+        formatUserProfile(profile, {
+          maxChars: AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS,
+        }).slice(0, AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS)
       : '';
   const documentText =
     document?.text.trim().slice(0, AI_PROMPT_INPUT.MOCK_INTERVIEW_RESUME_MAX_CHARS) ?? '';

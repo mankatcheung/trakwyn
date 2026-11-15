@@ -23,7 +23,7 @@ exports[`ParseCvUseCase prompt messages > sends the CV parser prompt 1`] = `
       "location": "city, country or remote, or null",
       "startDate": "YYYY-MM, or YYYY when only the year is given",
       "endDate": "YYYY-MM, YYYY, or \\"Present\\" when the role is still held",
-      "description": "one sentence of at most 200 characters on the responsibilities and achievements, or null"
+      "description": "the role's responsibilities and achievements as the CV words them, every bullet kept with its numbers, one per line separated by \\n, at most 800 characters; do not summarise or reword; null when the CV gives none"
     }
   ],
   "educations": [
@@ -33,7 +33,7 @@ exports[`ParseCvUseCase prompt messages > sends the CV parser prompt 1`] = `
       "field": "field of study, or null",
       "startDate": "YYYY-MM, or YYYY when only the year is given",
       "endDate": "YYYY-MM, YYYY, \\"Present\\", or null",
-      "description": "honours or thesis in at most 100 characters, or null"
+      "description": "honours, grade, thesis and relevant coursework as the CV words them, one per line separated by \\n, or null"
     }
   ],
   "skills": [
@@ -41,7 +41,7 @@ exports[`ParseCvUseCase prompt messages > sends the CV parser prompt 1`] = `
   ]
 }
 
-List work experience and education from most recent to oldest. Leave out an entry whose start date the CV does not give.
+List work experience and education from most recent to oldest. When the CV lists more than 5 roles, keep only the two strongest bullets for each role after the first 5. Leave out an entry whose start date the CV does not give.
 
 CV:
 <untrusted_external_content>

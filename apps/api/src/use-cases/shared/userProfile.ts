@@ -64,46 +64,129 @@ export function formatProfileMonth(date: string | Date): string {
   return PROFILE_MONTH_FORMAT.format(new Date(date));
 }
 
-/** The prompt-facing rendering. Empty profile → empty string, as before. */
-export function formatUserProfile(profile: UserProfile): string {
+export interface FormatUserProfileOptions {
+  /**
+   * A budget for the whole block. The role and course lines and the skills are
+   * always kept; the descriptions share what is left, the most recent role
+   * first, so a long history loses its oldest detail rather than its newest
+   * (JEF-590). Without it nothing is cut.
+   */
+  maxChars?: number;
+}
+
+type DatedEntry = WorkExperience | Education;
+
+const DESCRIPTION_INDENT = '  ';
+const CUT_MARK = '…';
+/** A description cut to less than this says nothing useful, so it is left out. */
+const MIN_USEFUL_DESCRIPTION_CHARS = 40;
+
+/** Most recent first: a role still held, then by end date, then by start date. */
+function byRecency(a: DatedEntry, b: DatedEntry): number {
+  const end = (entry: DatedEntry) =>
+    entry.endDate ? new Date(entry.endDate).getTime() : Number.POSITIVE_INFINITY;
+  const byEnd = end(b) - end(a);
+  // Infinity - Infinity is NaN, so two roles still held fall through to the start date.
+  if (byEnd) return byEnd;
+  return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+}
+
+/** Each line of a description indented under its role, blank lines dropped. */
+function indentDescription(description: string): string {
+  return description
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `${DESCRIPTION_INDENT}${line}`)
+    .join('\n');
+}
+
+function workExperienceLine(we: WorkExperience): string {
+  const end = we.endDate ? formatProfileMonth(we.endDate) : 'Present';
+  // After the dates, not beside the employer: "Acme, London" reads as a company name.
+  const location = we.location?.trim() ? `; ${we.location.trim()}` : '';
+  return `- ${we.title} at ${we.company} (${formatProfileMonth(we.startDate)} – ${end}${location})`;
+}
+
+function educationLine(edu: Education): string {
+  const end = edu.endDate ? formatProfileMonth(edu.endDate) : 'Present';
+  return `- ${edu.degree ?? ''} ${edu.field ?? ''} at ${edu.institution} (${formatProfileMonth(edu.startDate)} – ${end})`;
+}
+
+function skillLines(skills: Skill[]): string[] {
+  const grouped = new Map<string, string[]>();
+  for (const skill of skills) {
+    const category = skill.category ?? 'General';
+    const label = skill.proficiency ? `${skill.name} (${skill.proficiency})` : skill.name;
+    grouped.set(category, [...(grouped.get(category) ?? []), label]);
+  }
+  return Array.from(grouped, ([category, names]) => `- ${category}: ${names.join(', ')}`);
+}
+
+/**
+ * Which descriptions fit, and how much of each. Work experience comes before
+ * education, each most recent first; the first one that no longer fits whole
+ * is cut at the budget and everything after it is left out.
+ */
+function allotDescriptions(profile: UserProfile, budget: number): Map<DatedEntry, string> {
+  const entries: DatedEntry[] = [
+    ...[...profile.workExperiences].sort(byRecency),
+    ...[...profile.educations].sort(byRecency),
+  ];
+  const allotted = new Map<DatedEntry, string>();
+  let remaining = budget;
+  for (const entry of entries) {
+    const text = entry.description ? indentDescription(entry.description) : '';
+    if (!text) continue;
+    // +1 for the line break that joins it to the block.
+    const cost = text.length + 1;
+    if (cost <= remaining) {
+      allotted.set(entry, text);
+      remaining -= cost;
+      continue;
+    }
+    const room = remaining - 1 - CUT_MARK.length;
+    if (room >= MIN_USEFUL_DESCRIPTION_CHARS) {
+      allotted.set(entry, `${text.slice(0, room).trimEnd()}${CUT_MARK}`);
+    }
+    break;
+  }
+  return allotted;
+}
+
+/**
+ * The prompt-facing rendering. Empty profile → empty string, as before.
+ *
+ * Descriptions are sent whole (JEF-590): they are the only source a resume's
+ * bullets may be written from, and the 200 characters each was once cut to
+ * left the model one sentence per job.
+ */
+export function formatUserProfile(
+  profile: UserProfile,
+  options: FormatUserProfileOptions = {},
+): string {
   const { workExperiences, educations, skills } = profile;
-  const lines: string[] = [];
+  const sections = (describe: (line: string, entry: DatedEntry) => string[]): string[] => [
+    ...(workExperiences.length > 0
+      ? [
+          'Work Experience:',
+          ...workExperiences.flatMap((we) => describe(workExperienceLine(we), we)),
+        ]
+      : []),
+    ...(educations.length > 0
+      ? ['\nEducation:', ...educations.flatMap((edu) => describe(educationLine(edu), edu))]
+      : []),
+    ...(skills.length > 0 ? ['\nSkills:', ...skillLines(skills)] : []),
+  ];
 
-  if (workExperiences.length > 0) {
-    lines.push('Work Experience:');
-    for (const we of workExperiences) {
-      const end = we.endDate ? formatProfileMonth(we.endDate) : 'Present';
-      lines.push(`- ${we.title} at ${we.company} (${formatProfileMonth(we.startDate)} – ${end})`);
-      if (we.description) lines.push(`  ${we.description.slice(0, 200)}`);
-    }
-  }
+  const fixedLength = sections((line) => [line]).join('\n').length;
+  const descriptions = allotDescriptions(
+    profile,
+    options.maxChars === undefined ? Number.POSITIVE_INFINITY : options.maxChars - fixedLength,
+  );
 
-  if (educations.length > 0) {
-    lines.push('\nEducation:');
-    for (const edu of educations) {
-      const end = edu.endDate ? formatProfileMonth(edu.endDate) : 'Present';
-      lines.push(
-        `- ${edu.degree ?? ''} ${edu.field ?? ''} at ${edu.institution} (${formatProfileMonth(edu.startDate)} – ${end})`,
-      );
-      if (edu.description) lines.push(`  ${edu.description.slice(0, 200)}`);
-    }
-  }
-
-  if (skills.length > 0) {
-    lines.push('\nSkills:');
-    const grouped = skills.reduce(
-      (acc, s) => {
-        const cat = s.category ?? 'General';
-        acc[cat] = acc[cat] || [];
-        acc[cat].push(s.proficiency ? `${s.name} (${s.proficiency})` : s.name);
-        return acc;
-      },
-      {} as Record<string, string[]>,
-    );
-    for (const [cat, names] of Object.entries(grouped)) {
-      lines.push(`- ${cat}: ${names.join(', ')}`);
-    }
-  }
-
-  return lines.join('\n');
+  return sections((line, entry) => {
+    const description = descriptions.get(entry);
+    return description ? [line, description] : [line];
+  }).join('\n');
 }

@@ -135,7 +135,7 @@ export class GenerateResumeUseCase {
 
     const messages = resumePrompt.build({
       app,
-      profileText: formatUserProfile(profile),
+      profileText: formatUserProfile(profile, { maxChars: AI_PROMPT_INPUT.PROFILE_MAX_CHARS }),
       applicationContext: context,
       crossApplicationContext,
       customAiPrompt: user?.customAiPrompt,

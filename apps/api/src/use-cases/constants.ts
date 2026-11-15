@@ -527,6 +527,11 @@ export const AI_PROMPT_INPUT = {
   MOCK_INTERVIEW_PROFILE_MAX_CHARS: 4000,
   /** Practice question, answer and talking point generation — the text of one chosen resume document (JEF-394). */
   MOCK_INTERVIEW_RESUME_MAX_CHARS: 8000,
+  /**
+   * Resume and cover letter generation — the user's profile as prose (JEF-590).
+   * Room for a full two-page CV; past it the oldest roles lose their detail first.
+   */
+  PROFILE_MAX_CHARS: 8000,
   /** ParseCvUseCase — the text read from an uploaded CV (JEF-461). Longer than a posting: a CV is the whole document. */
   CV_IMPORT_MAX_CHARS: 24000,
 } as const;
@@ -860,6 +865,14 @@ export const CV_IMPORT = {
   SHORT_FIELD_MAX_CHARS: 200,
   /** A work experience or education description. */
   DESCRIPTION_MAX_CHARS: 2000,
+  /**
+   * What the prompt asks for per role (JEF-590): the bullets as written, not a
+   * one-sentence summary. Below `DESCRIPTION_MAX_CHARS` because the whole
+   * profile has to fit in `MAX_OUTPUT_TOKENS`; a user can add more by hand.
+   */
+  PROMPT_DESCRIPTION_MAX_CHARS: 800,
+  /** Roles that keep every bullet; older ones are asked for their two strongest, for the same budget. */
+  PROMPT_FULL_DETAIL_ROLES: 5,
   /** The levels the profile's skill picker offers; anything else the model writes is dropped. */
   PROFICIENCY_LEVELS: ['beginner', 'intermediate', 'advanced', 'expert'],
   /** The years a date from the model may fall in; outside them it is read as a mistake. */

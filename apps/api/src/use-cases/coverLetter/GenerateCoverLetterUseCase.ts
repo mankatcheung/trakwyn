@@ -85,7 +85,9 @@ export class GenerateCoverLetterUseCase {
       this.deps.noteRepository.findAllByApplicationId(input.applicationId),
       this.deps.companyBriefingRepository.findByApplicationId(input.applicationId),
     ]);
-    const profile = formatUserProfile(userProfile);
+    const profile = formatUserProfile(userProfile, {
+      maxChars: AI_PROMPT_INPUT.PROFILE_MAX_CHARS,
+    });
     const context = formatApplicationContext({ notes, briefing });
 
     // Only fetched when the user opted in (JEF-249) — an extra pair of
