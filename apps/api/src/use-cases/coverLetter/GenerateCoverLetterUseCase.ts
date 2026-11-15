@@ -11,6 +11,8 @@ import type { IEducationRepository } from '#src/use-cases/ports/IEducationReposi
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
 import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { INoteRepository } from '#src/use-cases/ports/INoteRepository.js';
@@ -48,6 +50,8 @@ interface Deps {
   skillRepository: ISkillRepository;
   certificationRepository: ICertificationRepository;
   languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
   userRepository: IUserRepository;
   generateCoverLetterRateLimiter: IRateLimiter;
   noteRepository: INoteRepository;

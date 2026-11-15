@@ -182,8 +182,8 @@ describe('ProfilePage', () => {
     });
 
     const addButtons = screen.getAllByRole('button', { name: /add/i });
-    // Skills is third from last: certifications and languages follow it (JEF-592).
-    fireEvent.click(addButtons[addButtons.length - 3]);
+    // Skills is fourth from last: certifications, awards and languages follow it (JEF-592).
+    fireEvent.click(addButtons[addButtons.length - 4]);
 
     fireEvent.change(screen.getByPlaceholderText('TypeScript'), {
       target: { value: 'GraphQL' },
@@ -248,8 +248,10 @@ describe('ProfilePage', () => {
     expect(hrefs).toEqual([
       '#work-experience',
       '#education',
+      '#projects',
       '#skills',
       '#certifications',
+      '#awards',
       '#languages',
     ]);
     for (const href of hrefs) {

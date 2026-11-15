@@ -26,6 +26,8 @@ import { OAuthResolver } from '#src/interface-adapters/resolvers/OAuthResolver.j
 import { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkExperienceResolver.js';
 import { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
 import { CertificationResolver } from '#src/interface-adapters/resolvers/CertificationResolver.js';
+import { ProjectResolver } from '#src/interface-adapters/resolvers/ProjectResolver.js';
+import { AwardResolver } from '#src/interface-adapters/resolvers/AwardResolver.js';
 import { LanguageResolver } from '#src/interface-adapters/resolvers/LanguageResolver.js';
 import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
@@ -65,6 +67,8 @@ export const resolvers = {
   educationResolver: asClass(EducationResolver, { lifetime: Lifetime.SINGLETON }),
   skillResolver: asClass(SkillResolver, { lifetime: Lifetime.SINGLETON }),
   certificationResolver: asClass(CertificationResolver, { lifetime: Lifetime.SINGLETON }),
+  projectResolver: asClass(ProjectResolver, { lifetime: Lifetime.SINGLETON }),
+  awardResolver: asClass(AwardResolver, { lifetime: Lifetime.SINGLETON }),
   languageResolver: asClass(LanguageResolver, { lifetime: Lifetime.SINGLETON }),
   offerResolver: asClass(OfferResolver, { lifetime: Lifetime.SINGLETON }),
   mcpController: asClass(McpController, { lifetime: Lifetime.SINGLETON }),

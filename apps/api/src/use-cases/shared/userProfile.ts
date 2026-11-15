@@ -3,11 +3,15 @@ import type { Education } from '#src/domain/education/Education.js';
 import type { Skill } from '#src/domain/skill/Skill.js';
 import type { Certification } from '#src/domain/certification/Certification.js';
 import type { Language } from '#src/domain/language/Language.js';
+import type { Project } from '#src/domain/project/Project.js';
+import type { Award } from '#src/domain/award/Award.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
 import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 
 /**
  * The user's stored background — work experience, education and skills — as
@@ -27,6 +31,8 @@ export interface UserProfileRepositories {
   skillRepository: ISkillRepository;
   certificationRepository: ICertificationRepository;
   languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
 }
 
 export interface UserProfile {
@@ -35,20 +41,25 @@ export interface UserProfile {
   skills: Skill[];
   certifications: Certification[];
   languages: Language[];
+  projects: Project[];
+  awards: Award[];
 }
 
 export async function loadUserProfile(
   deps: UserProfileRepositories,
   userId: string,
 ): Promise<UserProfile> {
-  const [workExperiences, educations, skills, certifications, languages] = await Promise.all([
-    deps.workExperienceRepository.findAllByUserId(userId),
-    deps.educationRepository.findAllByUserId(userId),
-    deps.skillRepository.findAllByUserId(userId),
-    deps.certificationRepository.findAllByUserId(userId),
-    deps.languageRepository.findAllByUserId(userId),
-  ]);
-  return { workExperiences, educations, skills, certifications, languages };
+  const [workExperiences, educations, skills, certifications, languages, projects, awards] =
+    await Promise.all([
+      deps.workExperienceRepository.findAllByUserId(userId),
+      deps.educationRepository.findAllByUserId(userId),
+      deps.skillRepository.findAllByUserId(userId),
+      deps.certificationRepository.findAllByUserId(userId),
+      deps.languageRepository.findAllByUserId(userId),
+      deps.projectRepository.findAllByUserId(userId),
+      deps.awardRepository.findAllByUserId(userId),
+    ]);
+  return { workExperiences, educations, skills, certifications, languages, projects, awards };
 }
 
 export function isUserProfileEmpty(profile: UserProfile): boolean {
@@ -57,7 +68,9 @@ export function isUserProfileEmpty(profile: UserProfile): boolean {
     profile.educations.length === 0 &&
     profile.skills.length === 0 &&
     profile.certifications.length === 0 &&
-    profile.languages.length === 0
+    profile.languages.length === 0 &&
+    profile.projects.length === 0 &&
+    profile.awards.length === 0
   );
 }
 
@@ -144,6 +157,32 @@ function certificationLine(cert: Certification): string {
   return `- ${cert.name}${details.length > 0 ? ` (${details.join(', ')})` : ''}`;
 }
 
+/** A project or award's description, indented under its line and cut to a short allowance. */
+const SECTION_DESCRIPTION_MAX_CHARS = 600;
+
+function projectLines(project: Project): string[] {
+  const dates = project.startDate
+    ? `${formatProfileMonth(project.startDate)} – ${project.endDate ? formatProfileMonth(project.endDate) : 'Present'}`
+    : null;
+  const details = [project.role?.trim(), dates].filter(Boolean);
+  const head = `- ${project.name}${details.length > 0 ? ` (${details.join('; ')})` : ''}`;
+  const description = project.description
+    ? indentDescription(project.description.slice(0, SECTION_DESCRIPTION_MAX_CHARS))
+    : '';
+  return description ? [head, description] : [head];
+}
+
+function awardLines(award: Award): string[] {
+  const details = [award.issuer?.trim(), award.date ? formatProfileMonth(award.date) : null].filter(
+    Boolean,
+  );
+  const head = `- ${award.title}${details.length > 0 ? ` (${details.join(', ')})` : ''}`;
+  const description = award.description
+    ? indentDescription(award.description.slice(0, SECTION_DESCRIPTION_MAX_CHARS))
+    : '';
+  return description ? [head, description] : [head];
+}
+
 function languageLine(language: Language): string {
   return `- ${language.name}${language.proficiency ? ` (${language.proficiency})` : ''}`;
 }
@@ -190,7 +229,15 @@ export function formatUserProfile(
   profile: UserProfile,
   options: FormatUserProfileOptions = {},
 ): string {
-  const { workExperiences, educations, skills, certifications = [], languages = [] } = profile;
+  const {
+    workExperiences,
+    educations,
+    skills,
+    certifications = [],
+    languages = [],
+    projects = [],
+    awards = [],
+  } = profile;
   const sections = (describe: (line: string, entry: DatedEntry) => string[]): string[] => [
     ...(workExperiences.length > 0
       ? [
@@ -205,6 +252,8 @@ export function formatUserProfile(
     ...(certifications.length > 0
       ? ['\nCertifications:', ...certifications.map(certificationLine)]
       : []),
+    ...(projects.length > 0 ? ['\nProjects:', ...projects.flatMap(projectLines)] : []),
+    ...(awards.length > 0 ? ['\nAwards:', ...awards.flatMap(awardLines)] : []),
     ...(languages.length > 0 ? ['\nLanguages:', ...languages.map(languageLine)] : []),
   ];
 

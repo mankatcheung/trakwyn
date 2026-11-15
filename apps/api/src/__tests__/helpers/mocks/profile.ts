@@ -14,6 +14,10 @@ import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperi
 import type { Skill } from '#src/domain/skill/Skill.js';
 import type { Certification } from '#src/domain/certification/Certification.js';
 import type { Language } from '#src/domain/language/Language.js';
+import type { Project } from '#src/domain/project/Project.js';
+import type { Award } from '#src/domain/award/Award.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
 import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
@@ -126,6 +130,50 @@ export const makeLanguage = (overrides?: Partial<Language>): Language => ({
   userId: 'user-1',
   name: 'French',
   proficiency: 'Fluent',
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeProjectRepository = (
+  overrides?: Partial<IProjectRepository>,
+): IProjectRepository => ({
+  findAllByUserId: vi.fn().mockResolvedValue([]),
+  findById: vi.fn().mockResolvedValue(null),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  ...overrides,
+});
+
+export const makeAwardRepository = (overrides?: Partial<IAwardRepository>): IAwardRepository => ({
+  findAllByUserId: vi.fn().mockResolvedValue([]),
+  findById: vi.fn().mockResolvedValue(null),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  ...overrides,
+});
+
+export const makeProject = (overrides?: Partial<Project>): Project => ({
+  id: 'proj-1',
+  userId: 'user-1',
+  name: 'Open-source CLI',
+  role: 'Maintainer',
+  url: null,
+  startDate: new Date('2021-03-01T00:00:00Z'),
+  endDate: null,
+  description: 'Maintained a CLI used by 2,000 developers.',
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeAward = (overrides?: Partial<Award>): Award => ({
+  id: 'award-1',
+  userId: 'user-1',
+  title: 'Engineering Excellence Award',
+  issuer: 'Acme',
+  date: new Date('2022-06-01T00:00:00Z'),
+  description: null,
   createdAt: new Date('2024-01-01'),
   ...overrides,
 });

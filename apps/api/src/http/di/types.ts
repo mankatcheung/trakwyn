@@ -42,6 +42,8 @@ import type { ISessionBlocklist } from '#src/use-cases/ports/ISessionBlocklist.j
 import type { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import type { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import type { DrizzleCertificationRepository } from '#src/infrastructure/db/repositories/DrizzleCertificationRepository.js';
+import type { DrizzleProjectRepository } from '#src/infrastructure/db/repositories/DrizzleProjectRepository.js';
+import type { DrizzleAwardRepository } from '#src/infrastructure/db/repositories/DrizzleAwardRepository.js';
 import type { DrizzleLanguageRepository } from '#src/infrastructure/db/repositories/DrizzleLanguageRepository.js';
 import type { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
 import type { DrizzleAiFeedbackRepository } from '#src/infrastructure/db/repositories/DrizzleAiFeedbackRepository.js';
@@ -89,6 +91,8 @@ import type { OAuthResolver } from '#src/interface-adapters/resolvers/OAuthResol
 import type { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkExperienceResolver.js';
 import type { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
 import type { CertificationResolver } from '#src/interface-adapters/resolvers/CertificationResolver.js';
+import type { ProjectResolver } from '#src/interface-adapters/resolvers/ProjectResolver.js';
+import type { AwardResolver } from '#src/interface-adapters/resolvers/AwardResolver.js';
 import type { LanguageResolver } from '#src/interface-adapters/resolvers/LanguageResolver.js';
 import type { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 
@@ -114,6 +118,8 @@ import type { SessionMapper } from '#src/interface-adapters/mappers/SessionMappe
 import type { WorkExperienceMapper } from '#src/interface-adapters/mappers/WorkExperienceMapper.js';
 import type { EducationMapper } from '#src/interface-adapters/mappers/EducationMapper.js';
 import type { CertificationMapper } from '#src/interface-adapters/mappers/CertificationMapper.js';
+import type { ProjectMapper } from '#src/interface-adapters/mappers/ProjectMapper.js';
+import type { AwardMapper } from '#src/interface-adapters/mappers/AwardMapper.js';
 import type { LanguageMapper } from '#src/interface-adapters/mappers/LanguageMapper.js';
 import type { SkillMapper } from '#src/interface-adapters/mappers/SkillMapper.js';
 
@@ -356,6 +362,12 @@ import type { DeleteEducationUseCase } from '#src/use-cases/education/DeleteEduc
 import type { CreateCertificationUseCase } from '#src/use-cases/certification/CreateCertificationUseCase.js';
 import type { UpdateCertificationUseCase } from '#src/use-cases/certification/UpdateCertificationUseCase.js';
 import type { DeleteCertificationUseCase } from '#src/use-cases/certification/DeleteCertificationUseCase.js';
+import type { CreateProjectUseCase } from '#src/use-cases/project/CreateProjectUseCase.js';
+import type { UpdateProjectUseCase } from '#src/use-cases/project/UpdateProjectUseCase.js';
+import type { DeleteProjectUseCase } from '#src/use-cases/project/DeleteProjectUseCase.js';
+import type { CreateAwardUseCase } from '#src/use-cases/award/CreateAwardUseCase.js';
+import type { UpdateAwardUseCase } from '#src/use-cases/award/UpdateAwardUseCase.js';
+import type { DeleteAwardUseCase } from '#src/use-cases/award/DeleteAwardUseCase.js';
 import type { CreateLanguageUseCase } from '#src/use-cases/language/CreateLanguageUseCase.js';
 import type { UpdateLanguageUseCase } from '#src/use-cases/language/UpdateLanguageUseCase.js';
 import type { DeleteLanguageUseCase } from '#src/use-cases/language/DeleteLanguageUseCase.js';
@@ -459,6 +471,8 @@ export interface Cradle {
   userRepository: CachedUserRepository;
   skillRepository: CachedSkillRepository;
   certificationRepository: DrizzleCertificationRepository;
+  projectRepository: DrizzleProjectRepository;
+  awardRepository: DrizzleAwardRepository;
   languageRepository: DrizzleLanguageRepository;
   educationRepository: CachedEducationRepository;
   workExperienceRepository: CachedWorkExperienceRepository;
@@ -558,6 +572,8 @@ export interface Cradle {
   educationMapper: EducationMapper;
   skillMapper: SkillMapper;
   certificationMapper: CertificationMapper;
+  projectMapper: ProjectMapper;
+  awardMapper: AwardMapper;
   languageMapper: LanguageMapper;
   offerMapper: OfferMapper;
   oauthAccountMapper: OAuthAccountMapper;
@@ -587,6 +603,8 @@ export interface Cradle {
   educationResolver: EducationResolver;
   skillResolver: SkillResolver;
   certificationResolver: CertificationResolver;
+  projectResolver: ProjectResolver;
+  awardResolver: AwardResolver;
   languageResolver: LanguageResolver;
   offerResolver: OfferResolver;
   oauthResolver: OAuthResolver;
@@ -829,6 +847,12 @@ export interface Cradle {
   createCertificationUseCase: CreateCertificationUseCase;
   updateCertificationUseCase: UpdateCertificationUseCase;
   deleteCertificationUseCase: DeleteCertificationUseCase;
+  createProjectUseCase: CreateProjectUseCase;
+  updateProjectUseCase: UpdateProjectUseCase;
+  deleteProjectUseCase: DeleteProjectUseCase;
+  createAwardUseCase: CreateAwardUseCase;
+  updateAwardUseCase: UpdateAwardUseCase;
+  deleteAwardUseCase: DeleteAwardUseCase;
   createLanguageUseCase: CreateLanguageUseCase;
   updateLanguageUseCase: UpdateLanguageUseCase;
   deleteLanguageUseCase: DeleteLanguageUseCase;

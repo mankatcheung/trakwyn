@@ -69,6 +69,8 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'Skill -> User': 'cascade',
   'Certification -> User': 'cascade',
   'Language -> User': 'cascade',
+  'Project -> User': 'cascade',
+  'Award -> User': 'cascade',
   'TotpBackupCode -> User': 'cascade',
   'WorkExperience -> User': 'cascade',
 };

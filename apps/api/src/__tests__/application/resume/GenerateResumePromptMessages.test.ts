@@ -12,6 +12,8 @@ import {
   makeSkillRepository,
   makeCertificationRepository,
   makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -78,6 +80,8 @@ describe('GenerateResumeUseCase prompt messages', () => {
               makeEducation({ institution: 'State University', ...NEUTRAL_DATES.education }),
             ]),
         }),
+        projectRepository: makeProjectRepository(),
+        awardRepository: makeAwardRepository(),
         certificationRepository: makeCertificationRepository(),
         languageRepository: makeLanguageRepository(),
         skillRepository: makeSkillRepository({

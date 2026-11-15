@@ -21,6 +21,8 @@ import {
   makeSkillRepository,
   makeCertificationRepository,
   makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -53,6 +55,8 @@ const oldest = makeWorkExperience({
 const profileOf = (over: Partial<UserProfile> = {}): UserProfile => ({
   certifications: [],
   languages: [],
+  projects: [],
+  awards: [],
   workExperiences: [oldest, older, current],
   educations: [],
   skills: [makeSkill({ id: 's1', name: 'TypeScript' }), makeSkill({ id: 's2', name: 'Postgres' })],
@@ -154,6 +158,8 @@ function profileRepositories(profile: UserProfile) {
     educationRepository: makeEducationRepository({
       findAllByUserId: vi.fn().mockResolvedValue(profile.educations),
     }),
+    projectRepository: makeProjectRepository(),
+    awardRepository: makeAwardRepository(),
     certificationRepository: makeCertificationRepository(),
     languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository({

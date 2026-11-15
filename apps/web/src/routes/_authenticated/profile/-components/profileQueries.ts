@@ -75,6 +75,34 @@ const LANGUAGES_QUERY = `
   }
 `;
 
+const PROJECTS_QUERY = `
+  query Projects {
+    projects {
+      id
+      name
+      role
+      url
+      startDate
+      endDate
+      description
+      createdAt
+    }
+  }
+`;
+
+const AWARDS_QUERY = `
+  query Awards {
+    awards {
+      id
+      title
+      issuer
+      date
+      description
+      createdAt
+    }
+  }
+`;
+
 // ── Mutations ────────────────────────────────────────────────────────────
 
 export const CREATE_WORK_EXPERIENCE = `
@@ -245,6 +273,74 @@ export const DELETE_LANGUAGE = `
   }
 `;
 
+export const CREATE_PROJECT = `
+  mutation CreateProject($input: CreateProjectInput!) {
+    createProject(input: $input) {
+      id
+      name
+      role
+      url
+      startDate
+      endDate
+      description
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_PROJECT = `
+  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {
+    updateProject(id: $id, input: $input) {
+      id
+      name
+      role
+      url
+      startDate
+      endDate
+      description
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_PROJECT = `
+  mutation DeleteProject($id: ID!) {
+    deleteProject(id: $id)
+  }
+`;
+
+export const CREATE_AWARD = `
+  mutation CreateAward($input: CreateAwardInput!) {
+    createAward(input: $input) {
+      id
+      title
+      issuer
+      date
+      description
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_AWARD = `
+  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {
+    updateAward(id: $id, input: $input) {
+      id
+      title
+      issuer
+      date
+      description
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_AWARD = `
+  mutation DeleteAward($id: ID!) {
+    deleteAward(id: $id)
+  }
+`;
+
 /** The confirm step of the CV import (JEF-461); reading the file is `uploadCv` in `lib/cvImport`. */
 export const IMPORT_CV_PROFILE = `
   mutation ImportCvProfile($input: ImportCvProfileInput!) {
@@ -307,6 +403,26 @@ export type Language = {
   createdAt: string;
 };
 
+export type Project = {
+  id: string;
+  name: string;
+  role: string | null;
+  url: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+  createdAt: string;
+};
+
+export type Award = {
+  id: string;
+  title: string;
+  issuer: string | null;
+  date: string | null;
+  description: string | null;
+  createdAt: string;
+};
+
 // ── Query options ────────────────────────────────────────────────────────
 
 export const workExperiencesQueryOptions = queryOptions({
@@ -332,4 +448,14 @@ export const certificationsQueryOptions = queryOptions({
 export const languagesQueryOptions = queryOptions({
   queryKey: ['languages'],
   queryFn: () => gqlClient.request<{ languages: Language[] }>(LANGUAGES_QUERY),
+});
+
+export const projectsQueryOptions = queryOptions({
+  queryKey: ['projects'],
+  queryFn: () => gqlClient.request<{ projects: Project[] }>(PROJECTS_QUERY),
+});
+
+export const awardsQueryOptions = queryOptions({
+  queryKey: ['awards'],
+  queryFn: () => gqlClient.request<{ awards: Award[] }>(AWARDS_QUERY),
 });

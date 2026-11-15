@@ -101,3 +101,41 @@ export const language = pgTable(
   },
   (table) => [index('Language_userId_idx').on(table.userId)],
 );
+
+export const project = pgTable(
+  'Project',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    role: text('role'),
+    url: text('url'),
+    startDate: timestamp('startDate', TIMESTAMP),
+    endDate: timestamp('endDate', TIMESTAMP),
+    description: text('description'),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('Project_userId_idx').on(table.userId)],
+);
+
+export const award = pgTable(
+  'Award',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    issuer: text('issuer'),
+    date: timestamp('date', TIMESTAMP),
+    description: text('description'),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('Award_userId_idx').on(table.userId)],
+);

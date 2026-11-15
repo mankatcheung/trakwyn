@@ -6,6 +6,8 @@ import {
   BriefcaseIcon,
   GraduationCapIcon,
   LanguagesIcon,
+  RocketIcon,
+  TrophyIcon,
   UploadIcon,
   WrenchIcon,
 } from 'lucide-react';
@@ -25,6 +27,8 @@ import {
   CertificationsSection,
 } from './-components/CertificationsSection';
 import { LANGUAGES_SECTION_ID, LanguagesSection } from './-components/LanguagesSection';
+import { PROJECTS_SECTION_ID, ProjectsSection } from './-components/ProjectsSection';
+import { AWARDS_SECTION_ID, AwardsSection } from './-components/AwardsSection';
 import { CompletenessMeter } from './-components/CompletenessMeter';
 import { profileCompleteness } from './-components/profileCompleteness';
 import { useProfileData } from './-components/useProfileData';
@@ -50,12 +54,14 @@ const SECTION_LINKS = [
     icon: BriefcaseIcon,
   },
   { id: EDUCATION_SECTION_ID, labelKey: 'experience.educationTitle', icon: GraduationCapIcon },
+  { id: PROJECTS_SECTION_ID, labelKey: 'experience.projectsTitle', icon: RocketIcon },
   { id: SKILLS_SECTION_ID, labelKey: 'experience.skillsTitle', icon: WrenchIcon },
   {
     id: CERTIFICATIONS_SECTION_ID,
     labelKey: 'experience.certificationsTitle',
     icon: AwardIcon,
   },
+  { id: AWARDS_SECTION_ID, labelKey: 'experience.awardsTitle', icon: TrophyIcon },
   { id: LANGUAGES_SECTION_ID, labelKey: 'experience.languagesTitle', icon: LanguagesIcon },
 ] as const;
 
@@ -121,8 +127,10 @@ function ProfilePage() {
         <div className="min-w-0 space-y-6">
           <WorkExperienceSection />
           <EducationSection />
+          <ProjectsSection />
           <SkillsSection />
           <CertificationsSection />
+          <AwardsSection />
           <LanguagesSection />
         </div>
       </div>

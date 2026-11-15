@@ -666,6 +666,8 @@ export const CONTENT_LIMITS = {
   SKILLS_PER_USER: 100,
   CERTIFICATIONS_PER_USER: 30,
   LANGUAGES_PER_USER: 20,
+  PROJECTS_PER_USER: 30,
+  AWARDS_PER_USER: 30,
   SHARE_LINKS_PER_USER: 50,
   API_TOKENS_PER_USER: 20,
   PUSH_SUBSCRIPTIONS_PER_USER: 10,
@@ -903,8 +905,10 @@ export const PROFILE_CONTACT = {
 export const PROFILE_ENTRY = {
   /** A name, issuer or level. */
   SHORT_FIELD_MAX_CHARS: 200,
-  /** A credential link. */
+  /** A credential or project link. */
   URL_MAX_CHARS: 500,
+  /** A project or award description. */
+  DESCRIPTION_MAX_CHARS: 2000,
 } as const;
 
 export const CV_IMPORT = {

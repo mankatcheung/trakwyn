@@ -34,10 +34,10 @@ The model may not invent a skill or a number, so a resume can only be as strong 
 - **A "no" is remembered per application** (`ResumeGapDismissal`, one row per `(applicationId, key)`, cascades with the application). The key is the requirement lower-cased and trimmed, or `role:<workExperienceId>`. It is per application on purpose: not having used Kubernetes is true everywhere, but the question only exists for a posting that asks for it, and a profile that later gains the skill answers it anyway. `DismissResumeGapUseCase` bounds the table (`KEY_MAX_CHARS`, `MAX_DISMISSED_PER_APPLICATION`), since the key is free text from the client.
 - Web reports `resume_gap_answered {kind, answer}` (string enums only; no keyword or text leaves the device).
 
-## Certifications and languages (JEF-592)
+## Certifications, languages, projects and awards (JEF-592)
 
-The profile also holds `Certification` (name, issuer, issued and expiry dates, credential link) and `Language` (name, level), each its own table and CRUD like skills. They are part of `UserProfile` (`loadUserProfile`, `formatUserProfile`, `isUserProfileEmpty`), so a profile with only these is not empty.
+The profile also holds `Certification` (name, issuer, issued and expiry dates, credential link) `Language` (name, level), `Project` (name, role, link, dates, description) and `Award` (title, issuer, date, description), each its own table and CRUD like skills. They are part of `UserProfile` (`loadUserProfile`, `formatUserProfile`, `isUserProfileEmpty`), so a profile with only these is not empty.
 
-- **The model only chooses which to list.** `assertGrounded` refuses a certification or language the profile does not hold (same refusal as an invented employer); `applyProfileFacts` then rewrites each listed entry's name, issuer, date and level from the profile and drops repeats. A certification's date is its issue month; an expiry date is in the prompt text but not on the resume.
-- **Both arrays are optional in the reply** (`resumeResponseSchema`), so an older or shorter reply is still valid. `resumeToTiptapDoc` renders Certifications and Languages after Skills.
-- **Not yet:** CV import, mobile editing, chat and MCP tools do not read or write these sections; Projects and Awards come in a follow-up under the same ticket.
+- **The model only chooses which to list.** `assertGrounded` refuses a certification, language, project or award the profile does not hold (same refusal as an invented employer); `applyProfileFacts` then rewrites each listed entry's name, issuer, date, level, role and period from the profile and drops repeats. A project's bullets stay the model's wording, written from its description, so they are the eval judge's to check, like a role's. A certification's date is its issue month; an expiry date is in the prompt text but not on the resume.
+- **Both arrays are optional in the reply** (`resumeResponseSchema`), so an older or shorter reply is still valid. `resumeToTiptapDoc` renders Projects after Experience, and Certifications, Awards and Languages after Skills.
+- **Not yet:** CV import, mobile editing, chat and MCP tools do not read or write these sections.
