@@ -1887,5 +1887,6 @@
   "experience.awardTitleLabel": "Award *",
   "experience.awardIssuerLabel": "Awarded by",
   "experience.awardDateLabel": "Date",
-  "cvImport.successWithOther": "Added from your CV: {{work}} work experience, {{education}} education, {{skills}} skills and {{other}} certifications, languages, projects and awards."
+  "cvImport.successWithOther": "Added from your CV: {{work}} work experience, {{education}} education, {{skills}} skills and {{other}} certifications, languages, projects and awards.",
+  "documentOutcomes.generatedLabel": "Generated in Trakwyn"
 }

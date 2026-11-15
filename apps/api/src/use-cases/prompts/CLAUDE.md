@@ -35,3 +35,12 @@ A thumbs up/down on an assistant reply (web and mobile) or on a generated resume
   The counter in the metrics dataset answers the same question. Look monthly, find the feature and prompt version with the most down-votes, then write a new eval case by hand: fixtures must stay invented, so a rating never becomes a case automatically.
 
 - **Up-votes alone say little.** Compare against `trakwyn.llm.calls` for the same feature to get a rate.
+
+## Reading interview outcomes next to the ratings (JEF-598)
+
+A thumbs up or down says whether a person liked a resume when they read it; an interview says whether an employer did. They disagree often enough that each is worth reading alone, and a prompt change should be judged on both.
+
+- **What is sent.** When an application gets its **first interview round** and the resume it went out with was written by Trakwyn's AI, `CreateInterviewRoundUseCase` sends `application_interview_reached` (`PostHogAiAnalytics.interviewReached`) with that draft's `prompt_version`, `$ai_model`, `$ai_provider`, `source` and `tier`. It names no application, draft or document and holds no text, and it is best effort: a failed lookup or send never fails the user's own action. Deleting every round and adding one again sends it again.
+- **Which draft.** `pickGeneratedResumeDraft` (`use-cases/documents/generatedResume.ts`): the most recently updated resume draft created on or before the applied date, or the latest one when there is no applied date; it counts only when the AI wrote it (the draft has a generation snapshot). The analytics page's "Generated in Trakwyn" row uses the same function, so the user's number and ours cannot disagree.
+- **The insight** is `resume_interview_rate` on the AI features dashboard (`infra/posthog/queries/resume_interview_rate.sql`): interviews per 100 resume generations by prompt version and model. The base is generations, not applications (a resume regenerated three times counts three), so it compares versions and models; it is not a conversion rate. A new version reads 0 until its first interviews arrive, which takes weeks.
+- **How to use it with the ratings.** Put `ai_downvote_share` and `resume_interview_rate` side by side for the same prompt version. A version that is down-voted more _and_ reaches fewer interviews is a regression worth an eval case. A version that is down-voted more but reaches as many interviews says the dislike may be about style. Small samples swing both, so read the counts beside the rates, and do not act on a version with only a handful of interviews.

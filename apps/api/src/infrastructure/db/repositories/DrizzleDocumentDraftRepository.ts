@@ -53,6 +53,22 @@ export class DrizzleDocumentDraftRepository implements IDocumentDraftRepository 
     return rows.map((r) => this.toEntity(r));
   }
 
+  async findResumeDraftsByUserId(userId: string): Promise<DocumentDraft[]> {
+    const rows = await this.db
+      .select({ documentDraft })
+      .from(documentDraft)
+      .innerJoin(jobApplication, eq(documentDraft.applicationId, jobApplication.id))
+      .where(
+        and(
+          eq(jobApplication.userId, userId),
+          eq(documentDraft.type, 'resume'),
+          isNull(jobApplication.deletedAt),
+        ),
+      )
+      .orderBy(desc(documentDraft.updatedAt));
+    return rows.map((r) => this.toEntity(r.documentDraft));
+  }
+
   async findById(id: string): Promise<DocumentDraft | null> {
     const [row] = await this.db
       .select()

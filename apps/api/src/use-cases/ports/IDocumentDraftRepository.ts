@@ -25,6 +25,12 @@ export interface IDocumentDraftRepository {
   countByApplicationId(applicationId: string): Promise<number>;
   /** Drafts that count against the per-application cap: those with any text. A blank draft does not (JEF-506). */
   countWithTextByApplicationId(applicationId: string): Promise<number>;
+  /**
+   * Every resume draft the user has, on applications that are not in the
+   * trash (JEF-598): what the outcomes view reads to work out which resume each
+   * application went out with.
+   */
+  findResumeDraftsByUserId(userId: string): Promise<DocumentDraft[]>;
   findById(id: string): Promise<DocumentDraft | null>;
   create(data: CreateDocumentDraftData): Promise<DocumentDraft>;
   updateContent(id: string, data: UpdateDocumentDraftContentData): Promise<DocumentDraft>;

@@ -10,6 +10,7 @@ import type {
   AiGenerationEvent,
   AiSpanEvent,
   IAiAnalytics,
+  InterviewReachedAnalyticsEvent,
 } from '#src/use-cases/ports/IAiAnalytics.js';
 
 /** The only client surface used, so a test can pass a fake without `posthog-node`. */
@@ -114,6 +115,18 @@ export class PostHogAiAnalytics implements IAiAnalytics {
 
   feedbackCleared(event: AiFeedbackAnalyticsEvent): void {
     this.send(event.userId, 'ai_output_rating_cleared', feedbackProperties(event));
+  }
+
+  interviewReached(event: InterviewReachedAnalyticsEvent): void {
+    // Field by field: nothing that names the application or the draft is sent.
+    this.send(event.userId, 'application_interview_reached', {
+      feature: 'resume',
+      $ai_provider: event.provider,
+      $ai_model: event.model,
+      prompt_version: event.promptVersion,
+      source: event.source,
+      tier: event.tier,
+    });
   }
 
   async shutdown(): Promise<void> {
