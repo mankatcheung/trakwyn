@@ -123,6 +123,7 @@ describe('ImportUserDataUseCase', () => {
       location: 'Remote',
       salaryRange: '100k-120k',
       description: 'Great role',
+      postingText: null,
       applicationLimit: null,
     });
     expect(summary.applicationsImported).toBe(1);

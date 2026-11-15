@@ -19,6 +19,7 @@ import { formatCrossApplicationContext } from '#src/use-cases/shared/crossApplic
 import { coverLetterPrompt } from '#src/use-cases/prompts/coverLetter.js';
 import { loadUserProfile, formatUserProfile } from '#src/use-cases/shared/userProfile.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
+import { postingForPrompt } from '#src/use-cases/shared/postingForPrompt.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import { assertCoverLetterGrounded } from '#src/use-cases/coverLetter/assertCoverLetterGrounded.js';
 import { profileDurationsInYears } from '#src/use-cases/coverLetter/profileDurations.js';
@@ -110,8 +111,10 @@ export class GenerateCoverLetterUseCase {
       crossApplicationContext = formatCrossApplicationContext(otherNotes, otherCoverLetters);
     }
 
+    // The full posting when it was captured, not the summary (JEF-591).
+    const posting = postingForPrompt(app);
     const messages = coverLetterPrompt.build({
-      app,
+      app: { ...app, description: posting },
       profile,
       resumeText: input.resumeText,
       applicationContext: context,
@@ -143,7 +146,7 @@ export class GenerateCoverLetterUseCase {
         instructions ?? '',
       ],
       durationsInYears: profileDurationsInYears(userProfile, new Date()),
-      posting: app.description ?? '',
+      posting: posting ?? '',
     });
     return result.content;
   }

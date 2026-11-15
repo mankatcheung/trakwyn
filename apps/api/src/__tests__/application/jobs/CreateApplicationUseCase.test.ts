@@ -40,6 +40,7 @@ describe('CreateApplicationUseCase', () => {
       location: 'Remote',
       salaryRange: null,
       description: null,
+      postingText: null,
       starred: false,
       source: null,
       followUpAt: null,
@@ -157,5 +158,43 @@ describe('CreateApplicationUseCase', () => {
         expect.objectContaining({ applicationLimit: null }),
       );
     });
+  });
+});
+
+describe('CreateApplicationUseCase posting text (JEF-591)', () => {
+  const build = (applicationRepository = makeApplicationRepository()) =>
+    new CreateApplicationUseCase({
+      applicationRepository,
+      entitlementService: makeEntitlementService(),
+      generateId: () => 'app-1',
+    });
+
+  it('stores the posting text, trimmed', async () => {
+    const applicationRepository = makeApplicationRepository();
+
+    await build(applicationRepository).execute({
+      userId: 'user-1',
+      company: 'Acme',
+      role: 'Engineer',
+      postingText: '  Must have Kubernetes.  ',
+    });
+
+    expect(applicationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ postingText: 'Must have Kubernetes.' }),
+    );
+  });
+
+  it('refuses a posting longer than the limit instead of cutting it', async () => {
+    const applicationRepository = makeApplicationRepository();
+
+    await expect(
+      build(applicationRepository).execute({
+        userId: 'user-1',
+        company: 'Acme',
+        role: 'Engineer',
+        postingText: 'x'.repeat(15_001),
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(applicationRepository.create).not.toHaveBeenCalled();
   });
 });

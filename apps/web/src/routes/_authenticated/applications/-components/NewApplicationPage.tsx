@@ -16,6 +16,7 @@ import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
 import { Alert, Button, Checkbox, FormLabel, Input, Textarea } from '@trakwyn/ui';
 import { JdImportPanel } from './JdImportPanel';
+import { POSTING_TEXT_MAX_CHARS, PostingTextField } from './PostingTextField';
 
 const schema = z.object({
   company: z.string().min(1, 'Company is required'),
@@ -24,6 +25,10 @@ const schema = z.object({
   location: z.string().optional(),
   salaryRange: z.string().optional(),
   description: z.string().optional(),
+  postingText: z
+    .string()
+    .max(POSTING_TEXT_MAX_CHARS, `Must be at most ${POSTING_TEXT_MAX_CHARS} characters`)
+    .optional(),
   source: z.string().optional(),
   followUpAt: z.string().optional(),
   starred: z.boolean().optional(),
@@ -79,6 +84,7 @@ export function NewApplicationPage() {
         ...(data.location ? { location: data.location } : {}),
         ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
         ...(data.description ? { description: data.description } : {}),
+        ...(data.postingText?.trim() ? { postingText: data.postingText.trim() } : {}),
         ...(data.source ? { source: data.source } : {}),
         ...(data.followUpAt ? { followUpAt: data.followUpAt } : {}),
         starred: data.starred ?? false,
@@ -124,6 +130,7 @@ export function NewApplicationPage() {
           if (parsed.location) setValue('location', parsed.location);
           if (parsed.salary) setValue('salaryRange', parsed.salary);
           if (parsed.description) setValue('description', parsed.description);
+          if (parsed.postingText) setValue('postingText', parsed.postingText);
         }}
       />
 
@@ -165,6 +172,11 @@ export function NewApplicationPage() {
             placeholder="Job description, notes…"
           />
         </Field>
+
+        <PostingTextField
+          registration={register('postingText')}
+          error={errors.postingText?.message}
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t('applicationForm.sourceLabel')}>

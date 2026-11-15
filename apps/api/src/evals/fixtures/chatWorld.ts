@@ -28,6 +28,7 @@ const application = (
   location: null,
   salaryRange: null,
   description: null,
+  postingText: null,
   appliedAt: null,
   starred: false,
   source: null,

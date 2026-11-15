@@ -158,4 +158,50 @@ describe('NewApplicationPage', () => {
     });
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it('sends the full job posting when one is entered (JEF-591)', async () => {
+    mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
+    render(<NewApplicationPage />);
+
+    fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
+    fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
+      target: { value: 'Engineer' },
+    });
+    fireEvent.change(screen.getByLabelText('Full job posting'), {
+      target: { value: '  Must have Kubernetes and PostgreSQL.  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(mockGqlRequest).toHaveBeenCalledWith(
+        expect.stringContaining('CreateApplication'),
+        expect.objectContaining({
+          input: expect.objectContaining({ postingText: 'Must have Kubernetes and PostgreSQL.' }),
+        }),
+      );
+    });
+  });
+
+  it('leaves the posting out of the request when the field is empty (JEF-591)', async () => {
+    mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
+    render(<NewApplicationPage />);
+
+    fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
+    fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
+      target: { value: 'Engineer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => expect(mockGqlRequest).toHaveBeenCalled());
+    const [, variables] = mockGqlRequest.mock.calls[0] as [string, { input: object }];
+    expect(variables.input).not.toHaveProperty('postingText');
+  });
+
+  it('explains what the full posting is used for (JEF-591)', () => {
+    render(<NewApplicationPage />);
+
+    expect(screen.getByLabelText('Full job posting')).toHaveAccessibleDescription(
+      /tailor your resume, cover letter and match score/i,
+    );
+  });
 });

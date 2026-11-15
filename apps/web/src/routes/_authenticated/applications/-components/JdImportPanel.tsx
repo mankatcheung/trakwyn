@@ -12,7 +12,7 @@ import { Button, Input, Textarea } from '@trakwyn/ui';
 const PARSE_JD_MUTATION = `
   mutation ParseJobDescription($text: String, $url: String) {
     parseJobDescription(text: $text, url: $url) {
-      company role location salary description
+      company role location salary description postingText
     }
   }
 `;
@@ -23,6 +23,8 @@ type ParsedJd = {
   location: string | null;
   salary: string | null;
   description: string | null;
+  /** The posting as written (JEF-591); absent from an API that predates it. */
+  postingText?: string | null;
 };
 
 interface Props {

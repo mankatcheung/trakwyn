@@ -51,7 +51,7 @@ function userPrompt({
     ...(app.description
       ? [
           `\nJob description:\n${wrapUntrustedContent(
-            app.description.slice(0, AI_PROMPT_INPUT.COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS),
+            app.description.slice(0, AI_PROMPT_INPUT.RESUME_JOB_DESCRIPTION_MAX_CHARS),
           )}`,
         ]
       : []),

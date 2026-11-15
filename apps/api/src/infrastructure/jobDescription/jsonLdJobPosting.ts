@@ -1,5 +1,6 @@
 import type { StructuredJobPosting } from '#src/use-cases/ports/IJobPostingSourceResolver.js';
 import { JOB_POSTING_JSON_LD } from '#src/infrastructure/config/constants.js';
+import { FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
 import { htmlToText } from './htmlToText.js';
 
 const JSON_LD_SCRIPT =
@@ -99,10 +100,26 @@ function toPosting(node: Json): StructuredJobPosting {
  * skipped. Returns `null` when the page carries none.
  */
 export function extractJobPostingJsonLd(html: string): StructuredJobPosting | null {
+  const node = firstJobPosting(html);
+  return node ? toPosting(node) : null;
+}
+
+/**
+ * The same posting's description in full (JEF-591), up to what
+ * `JobApplication.postingText` holds. `extractJobPostingJsonLd` keeps only the
+ * first `MAX_DESCRIPTION_CHARS` because that field is shown in lists; this is
+ * the text a resume is tailored to.
+ */
+export function extractJobPostingDescription(html: string): string | null {
+  const raw = text(firstJobPosting(html)?.['description']);
+  return raw ? htmlToText(raw).slice(0, FIELD_LENGTH_LIMITS.POSTING_TEXT).trim() || null : null;
+}
+
+function firstJobPosting(html: string): Json | null {
   for (const match of html.matchAll(JSON_LD_SCRIPT)) {
     try {
       const [node] = collectJobPostings(JSON.parse(match[1] ?? ''));
-      if (node) return toPosting(node);
+      if (node) return node;
     } catch {
       // A page with one broken block can still have a good one.
     }

@@ -10,6 +10,12 @@ export interface Application {
   location: string | null;
   salaryRange: string | null;
   description: string | null;
+  /**
+   * The posting as the employer wrote it (JEF-591). `description` is the short
+   * summary the lists show; this is what a resume is tailored to, because the
+   * summary drops the keywords a screener looks for. Null when never captured.
+   */
+  postingText: string | null;
   appliedAt: Date | null;
   starred: boolean;
   source: string | null;

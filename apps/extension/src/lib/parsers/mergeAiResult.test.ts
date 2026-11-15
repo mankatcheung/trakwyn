@@ -85,3 +85,33 @@ describe('mergeAiResult', () => {
     expect(jobData.role).toBe('');
   });
 });
+
+describe('mergeAiResult posting text (JEF-591)', () => {
+  it('keeps the posting the built-in parser read, even when the AI rewrites the description', () => {
+    const { jobData, filled } = mergeAiResult(
+      { ...builtin, postingText: 'The full posting from the page element.' },
+      { ...nothing, description: 'AI summary', postingText: 'Nav. The full posting. Footer.' },
+      page,
+    );
+
+    expect(jobData.description).toBe('AI summary');
+    expect(jobData.postingText).toBe('The full posting from the page element.');
+    expect(filled).toEqual(['description']);
+  });
+
+  it('takes the text the API read when the built-in parser found none', () => {
+    const { jobData } = mergeAiResult(
+      null,
+      { ...nothing, company: 'Acme', role: 'Engineer', postingText: '  The page text.  ' },
+      page,
+    );
+
+    expect(jobData.postingText).toBe('The page text.');
+  });
+
+  it('has no posting text when neither side has one (an API from before the field)', () => {
+    const { jobData } = mergeAiResult(builtin, { ...nothing, description: 'AI summary' }, page);
+
+    expect(jobData.postingText).toBeUndefined();
+  });
+});

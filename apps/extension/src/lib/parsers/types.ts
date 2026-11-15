@@ -5,6 +5,11 @@ export interface JobData {
   role: string;
   location?: string;
   description?: string;
+  /**
+   * The posting in full (JEF-591), up to `POSTING_TEXT_MAX_CHARS`. Trakwyn's AI
+   * tailors a resume to this, not to the shortened `description`.
+   */
+  postingText?: string;
   jobUrl: string;
   source?: string;
 }

@@ -51,6 +51,18 @@ export const STORAGE_KEYS = {
  */
 export const PAGE_TEXT_MAX_CHARS = 8000;
 
+/**
+ * The short description shown in the popup and the application lists. The
+ * full posting travels beside it as `postingText` (JEF-591).
+ */
+export const DESCRIPTION_MAX_CHARS = 2000;
+
+/**
+ * The most of a posting that is saved as `postingText`: the API's
+ * `FIELD_LENGTH_LIMITS.POSTING_TEXT`, which refuses anything longer.
+ */
+export const POSTING_TEXT_MAX_CHARS = 15_000;
+
 /** OAuth login through the API's handoff-code flow (JEF-383). */
 export const OAUTH = {
   /** The API's `OAUTH_PLATFORM.EXTENSION`: Chrome's `launchWebAuthFlow`. */

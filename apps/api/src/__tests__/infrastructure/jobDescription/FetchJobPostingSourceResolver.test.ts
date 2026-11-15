@@ -213,6 +213,8 @@ describe('FetchJobPostingSourceResolver', () => {
       expect(result.fetchedFromUrl).toBe(true);
       expect(result.structured).toMatchObject({ role: 'Platform Engineer', company: 'Acme Corp' });
       expect(result.text).toContain('Own the build pipeline.');
+      // The full description, not the 2,000 characters the summary field keeps (JEF-591).
+      expect(result.structuredDescription).toBe('Own the build pipeline. '.repeat(15).trim());
     });
 
     it('has no structured data for a fetched page without JSON-LD', async () => {
@@ -220,7 +222,12 @@ describe('FetchJobPostingSourceResolver', () => {
 
       const result = await resolver.resolveDetailed({ url: 'https://example.com/job' });
 
-      expect(result).toEqual({ text: 'Dev at Acme', fetchedFromUrl: true, structured: null });
+      expect(result).toEqual({
+        text: 'Dev at Acme',
+        fetchedFromUrl: true,
+        structured: null,
+        structuredDescription: null,
+      });
     });
 
     it('never treats pasted text as fetched, even if it looks like JSON-LD', async () => {

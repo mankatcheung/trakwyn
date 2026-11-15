@@ -14,6 +14,7 @@ import { StarIcon, XIcon } from 'lucide-react';
 import { Alert, Button, Checkbox, FormLabel, Input, Select, Skeleton, Textarea } from '@trakwyn/ui';
 import { JdImportPanel } from '../../-components/JdImportPanel';
 import { applicationQueryOptions } from '../-application-query';
+import { POSTING_TEXT_MAX_CHARS, PostingTextField } from '../../-components/PostingTextField';
 import { Route } from '../edit';
 
 const APPLICATION_STATUSES = [
@@ -34,6 +35,10 @@ const schema = z.object({
   location: z.string().optional(),
   salaryRange: z.string().optional(),
   description: z.string().optional(),
+  postingText: z
+    .string()
+    .max(POSTING_TEXT_MAX_CHARS, `Must be at most ${POSTING_TEXT_MAX_CHARS} characters`)
+    .optional(),
   source: z.string().optional(),
   followUpAt: z.string().optional(),
   starred: z.boolean().optional(),
@@ -98,6 +103,7 @@ export function EditApplicationPage() {
           location: app.location ?? '',
           salaryRange: app.salaryRange ?? '',
           description: app.description ?? '',
+          postingText: app.postingText ?? '',
           source: app.source ?? '',
           followUpAt: app.followUpAt ? app.followUpAt.slice(0, 10) : '',
           starred: app.starred,
@@ -115,6 +121,8 @@ export function EditApplicationPage() {
         ...(data.location ? { location: data.location } : {}),
         ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
         ...(data.description ? { description: data.description } : {}),
+        // Sent every time, so emptying the field clears a stale posting.
+        postingText: data.postingText?.trim() ? data.postingText.trim() : null,
         ...(data.source ? { source: data.source } : { source: null }),
         ...(data.followUpAt ? { followUpAt: data.followUpAt } : { followUpAt: null }),
         starred: data.starred ?? false,
@@ -157,6 +165,7 @@ export function EditApplicationPage() {
           if (parsed.location) setValue('location', parsed.location);
           if (parsed.salary) setValue('salaryRange', parsed.salary);
           if (parsed.description) setValue('description', parsed.description);
+          if (parsed.postingText) setValue('postingText', parsed.postingText);
         }}
       />
 
@@ -199,6 +208,11 @@ export function EditApplicationPage() {
         <Field label={t('applicationForm.descriptionLabel')}>
           <Textarea {...register('description')} className="h-28" />
         </Field>
+
+        <PostingTextField
+          registration={register('postingText')}
+          error={errors.postingText?.message}
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t('applicationForm.sourceLabel')}>

@@ -319,6 +319,7 @@ export function App() {
         role: jobData.role,
         jobUrl: jobData.jobUrl,
         description: jobData.description,
+        postingText: jobData.postingText,
         source: jobData.source,
       });
       setScreen({

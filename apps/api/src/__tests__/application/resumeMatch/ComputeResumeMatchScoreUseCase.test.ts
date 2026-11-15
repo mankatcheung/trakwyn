@@ -435,3 +435,45 @@ describe('ComputeResumeMatchScoreUseCase', () => {
     });
   });
 });
+
+describe('ComputeResumeMatchScoreUseCase posting text (JEF-591)', () => {
+  const FULL = 'Requirements: Kubernetes, PostgreSQL and incident response.';
+
+  it('scores against the full posting and hashes that text', async () => {
+    const llmProvider = makeLLMProvider(MATCH_RESPONSE);
+    const deps = makeDeps({
+      applicationRepository: makeApplicationRepository({
+        findById: vi
+          .fn()
+          .mockResolvedValue(makeApplication({ description: 'A summary.', postingText: FULL })),
+      }),
+      llmProviderFactory: makeLLMProviderFactory({
+        forUser: vi.fn().mockResolvedValue(llmProvider),
+      }),
+    });
+
+    await run(deps);
+
+    const [messages] = vi.mocked(llmProvider.complete).mock.calls[0]!;
+    expect(messages[messages.length - 1]!.content).toContain(FULL);
+    expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ jobDescriptionHash: hashJobDescription(FULL) }),
+    );
+  });
+
+  it('needs neither field to be long: a posting with no description is enough', async () => {
+    const deps = makeDeps({
+      applicationRepository: makeApplicationRepository({
+        findById: vi
+          .fn()
+          .mockResolvedValue(makeApplication({ description: null, postingText: FULL })),
+      }),
+    });
+
+    await run(deps);
+
+    expect(deps.resumeMatchRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ jobDescriptionHash: hashJobDescription(FULL) }),
+    );
+  });
+});

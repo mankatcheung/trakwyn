@@ -10,6 +10,8 @@ export interface CreateApplicationInput {
   location?: string;
   salaryRange?: string;
   description?: string;
+  /** The full posting text (JEF-591), at most `FIELD_LENGTH_LIMITS.POSTING_TEXT`. */
+  postingText?: string;
   starred?: boolean;
   source?: string;
   followUpAt?: Date | null;

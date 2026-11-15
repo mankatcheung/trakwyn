@@ -1,6 +1,7 @@
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
-import { DEFAULTS } from '#src/use-cases/constants.js';
+import { DEFAULTS, FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
+import { assertMaxLength } from '#src/use-cases/shared/assertUnderLimit.js';
 import { assertValidTags } from '#src/use-cases/shared/assertValidTags.js';
 import type {
   ICreateApplicationUseCase,
@@ -19,6 +20,9 @@ export class CreateApplicationUseCase implements ICreateApplicationUseCase {
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationOutput> {
     assertValidTags(input.tags ?? []);
+    if (input.postingText) {
+      assertMaxLength(input.postingText, FIELD_LENGTH_LIMITS.POSTING_TEXT, 'The job posting');
+    }
     const { limits } = await this.deps.entitlementService.forUserId(input.userId);
     const tags = (input.tags ?? []).map((name) => ({ id: this.deps.generateId(), name }));
 
@@ -32,6 +36,7 @@ export class CreateApplicationUseCase implements ICreateApplicationUseCase {
       location: input.location ?? null,
       salaryRange: input.salaryRange ?? null,
       description: input.description ?? null,
+      postingText: input.postingText?.trim() || null,
       starred: input.starred ?? false,
       source: input.source ?? null,
       followUpAt: input.followUpAt ?? null,

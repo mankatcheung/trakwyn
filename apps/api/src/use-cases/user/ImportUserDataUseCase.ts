@@ -26,6 +26,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function asPostingText(value: unknown): string | null {
+  const text = asNullableString(value);
+  return text && text.length <= FIELD_LENGTH_LIMITS.POSTING_TEXT ? text : null;
+}
+
 function asNullableString(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
@@ -94,6 +99,9 @@ export class ImportUserDataUseCase implements IImportUserDataUseCase {
             location: asNullableString(entry.location),
             salaryRange: asNullableString(entry.salaryRange),
             description: asNullableString(entry.description),
+            // Older exports have no posting text; one too long to store is
+            // dropped rather than failing the whole application.
+            postingText: asPostingText(entry.postingText),
             applicationLimit: limits.applications,
           });
 

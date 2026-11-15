@@ -12,6 +12,7 @@ export interface ApplicationDTO {
   location: string | null;
   salaryRange: string | null;
   description: string | null;
+  postingText: string | null;
   appliedAt: string | null;
   starred: boolean;
   source: string | null;
@@ -44,6 +45,7 @@ export class ApplicationMapper {
       location: app.location,
       salaryRange: app.salaryRange,
       description: app.description,
+      postingText: app.postingText,
       appliedAt: app.appliedAt?.toISOString() ?? null,
       starred: app.starred,
       source: app.source,

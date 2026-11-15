@@ -1,5 +1,7 @@
 import { actorPayload } from '#src/use-cases/shared/mcpActor.js';
 import { assertValidTags } from '#src/use-cases/shared/assertValidTags.js';
+import { assertMaxLength } from '#src/use-cases/shared/assertUnderLimit.js';
+import { FIELD_LENGTH_LIMITS } from '#src/use-cases/constants.js';
 import { ForbiddenError, NotFoundError } from '#src/use-cases/errors/DomainError.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { IActivityLogRepository } from '#src/use-cases/ports/IActivityLogRepository.js';
@@ -40,6 +42,9 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
     const changesColumn = input.status !== undefined && input.status !== app.status;
 
     if (input.tags !== undefined) assertValidTags(input.tags);
+    if (input.postingText) {
+      assertMaxLength(input.postingText, FIELD_LENGTH_LIMITS.POSTING_TEXT, 'The job posting');
+    }
     const tags =
       input.tags === undefined
         ? undefined
@@ -54,6 +59,9 @@ export class UpdateApplicationUseCase implements IUpdateApplicationUseCase {
         location: input.location,
         salaryRange: input.salaryRange,
         description: input.description,
+        // An emptied field is stored as null, the same as one never captured.
+        postingText:
+          input.postingText === undefined ? undefined : input.postingText?.trim() || null,
         starred: input.starred,
         source: input.source,
         followUpAt: input.followUpAt,
