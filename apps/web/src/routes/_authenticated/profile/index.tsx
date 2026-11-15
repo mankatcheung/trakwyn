@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import {
   ArrowLeftIcon,
+  AwardIcon,
   BriefcaseIcon,
   GraduationCapIcon,
+  LanguagesIcon,
   UploadIcon,
   WrenchIcon,
 } from 'lucide-react';
@@ -18,6 +20,11 @@ import {
 } from './-components/WorkExperienceSection';
 import { EDUCATION_SECTION_ID, EducationSection } from './-components/EducationSection';
 import { SKILLS_SECTION_ID, SkillsSection } from './-components/SkillsSection';
+import {
+  CERTIFICATIONS_SECTION_ID,
+  CertificationsSection,
+} from './-components/CertificationsSection';
+import { LANGUAGES_SECTION_ID, LanguagesSection } from './-components/LanguagesSection';
 import { CompletenessMeter } from './-components/CompletenessMeter';
 import { profileCompleteness } from './-components/profileCompleteness';
 import { useProfileData } from './-components/useProfileData';
@@ -44,6 +51,12 @@ const SECTION_LINKS = [
   },
   { id: EDUCATION_SECTION_ID, labelKey: 'experience.educationTitle', icon: GraduationCapIcon },
   { id: SKILLS_SECTION_ID, labelKey: 'experience.skillsTitle', icon: WrenchIcon },
+  {
+    id: CERTIFICATIONS_SECTION_ID,
+    labelKey: 'experience.certificationsTitle',
+    icon: AwardIcon,
+  },
+  { id: LANGUAGES_SECTION_ID, labelKey: 'experience.languagesTitle', icon: LanguagesIcon },
 ] as const;
 
 function ProfilePage() {
@@ -109,6 +122,8 @@ function ProfilePage() {
           <WorkExperienceSection />
           <EducationSection />
           <SkillsSection />
+          <CertificationsSection />
+          <LanguagesSection />
         </div>
       </div>
     </div>

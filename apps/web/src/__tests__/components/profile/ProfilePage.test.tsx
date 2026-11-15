@@ -182,7 +182,8 @@ describe('ProfilePage', () => {
     });
 
     const addButtons = screen.getAllByRole('button', { name: /add/i });
-    fireEvent.click(addButtons[addButtons.length - 1]);
+    // Skills is third from last: certifications and languages follow it (JEF-592).
+    fireEvent.click(addButtons[addButtons.length - 3]);
 
     fireEvent.change(screen.getByPlaceholderText('TypeScript'), {
       target: { value: 'GraphQL' },
@@ -244,7 +245,13 @@ describe('ProfilePage', () => {
     const hrefs = within(nav)
       .getAllByRole('link')
       .map((link) => link.getAttribute('href'));
-    expect(hrefs).toEqual(['#work-experience', '#education', '#skills']);
+    expect(hrefs).toEqual([
+      '#work-experience',
+      '#education',
+      '#skills',
+      '#certifications',
+      '#languages',
+    ]);
     for (const href of hrefs) {
       expect(document.getElementById(href!.slice(1))).not.toBeNull();
     }

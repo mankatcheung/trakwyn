@@ -1,9 +1,13 @@
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
 import type { Education } from '#src/domain/education/Education.js';
 import type { Skill } from '#src/domain/skill/Skill.js';
+import type { Certification } from '#src/domain/certification/Certification.js';
+import type { Language } from '#src/domain/language/Language.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
 
 /**
  * The user's stored background — work experience, education and skills — as
@@ -21,31 +25,39 @@ export interface UserProfileRepositories {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
 }
 
 export interface UserProfile {
   workExperiences: WorkExperience[];
   educations: Education[];
   skills: Skill[];
+  certifications: Certification[];
+  languages: Language[];
 }
 
 export async function loadUserProfile(
   deps: UserProfileRepositories,
   userId: string,
 ): Promise<UserProfile> {
-  const [workExperiences, educations, skills] = await Promise.all([
+  const [workExperiences, educations, skills, certifications, languages] = await Promise.all([
     deps.workExperienceRepository.findAllByUserId(userId),
     deps.educationRepository.findAllByUserId(userId),
     deps.skillRepository.findAllByUserId(userId),
+    deps.certificationRepository.findAllByUserId(userId),
+    deps.languageRepository.findAllByUserId(userId),
   ]);
-  return { workExperiences, educations, skills };
+  return { workExperiences, educations, skills, certifications, languages };
 }
 
 export function isUserProfileEmpty(profile: UserProfile): boolean {
   return (
     profile.workExperiences.length === 0 &&
     profile.educations.length === 0 &&
-    profile.skills.length === 0
+    profile.skills.length === 0 &&
+    profile.certifications.length === 0 &&
+    profile.languages.length === 0
   );
 }
 
@@ -123,6 +135,19 @@ function skillLines(skills: Skill[]): string[] {
   return Array.from(grouped, ([category, names]) => `- ${category}: ${names.join(', ')}`);
 }
 
+function certificationLine(cert: Certification): string {
+  const details = [
+    cert.issuer?.trim(),
+    cert.issuedAt ? `issued ${formatProfileMonth(cert.issuedAt)}` : null,
+    cert.expiresAt ? `expires ${formatProfileMonth(cert.expiresAt)}` : null,
+  ].filter(Boolean);
+  return `- ${cert.name}${details.length > 0 ? ` (${details.join(', ')})` : ''}`;
+}
+
+function languageLine(language: Language): string {
+  return `- ${language.name}${language.proficiency ? ` (${language.proficiency})` : ''}`;
+}
+
 /**
  * Which descriptions fit, and how much of each. Work experience comes before
  * education, each most recent first; the first one that no longer fits whole
@@ -165,7 +190,7 @@ export function formatUserProfile(
   profile: UserProfile,
   options: FormatUserProfileOptions = {},
 ): string {
-  const { workExperiences, educations, skills } = profile;
+  const { workExperiences, educations, skills, certifications = [], languages = [] } = profile;
   const sections = (describe: (line: string, entry: DatedEntry) => string[]): string[] => [
     ...(workExperiences.length > 0
       ? [
@@ -177,6 +202,10 @@ export function formatUserProfile(
       ? ['\nEducation:', ...educations.flatMap((edu) => describe(educationLine(edu), edu))]
       : []),
     ...(skills.length > 0 ? ['\nSkills:', ...skillLines(skills)] : []),
+    ...(certifications.length > 0
+      ? ['\nCertifications:', ...certifications.map(certificationLine)]
+      : []),
+    ...(languages.length > 0 ? ['\nLanguages:', ...languages.map(languageLine)] : []),
   ];
 
   const fixedLength = sections((line) => [line]).join('\n').length;

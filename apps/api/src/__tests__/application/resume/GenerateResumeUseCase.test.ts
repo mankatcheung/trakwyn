@@ -17,6 +17,8 @@ import {
   makeEducationRepository,
   makeSkill,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -81,6 +83,8 @@ function makeUseCase(over?: {
     educationRepository: makeEducationRepository({
       findAllByUserId: vi.fn().mockResolvedValue(over?.edu ?? EDU),
     }),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository({
       findAllByUserId: vi.fn().mockResolvedValue(over?.skills ?? SKILLS),
     }),

@@ -34,6 +34,8 @@ const stateU = makeEducation({
 });
 
 const profileOf = (over: Partial<UserProfile> = {}): UserProfile => ({
+  certifications: [],
+  languages: [],
   workExperiences: [acme, globex],
   educations: [stateU],
   skills: [

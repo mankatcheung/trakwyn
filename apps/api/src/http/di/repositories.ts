@@ -40,6 +40,8 @@ import { DrizzleSessionRepository } from '#src/infrastructure/db/repositories/Dr
 import { BlocklistingSessionRepository } from '#src/infrastructure/db/repositories/BlocklistingSessionRepository.js';
 import { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
+import { DrizzleCertificationRepository } from '#src/infrastructure/db/repositories/DrizzleCertificationRepository.js';
+import { DrizzleLanguageRepository } from '#src/infrastructure/db/repositories/DrizzleLanguageRepository.js';
 import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
 import { DrizzleAiFeedbackRepository } from '#src/infrastructure/db/repositories/DrizzleAiFeedbackRepository.js';
 import { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
@@ -97,6 +99,10 @@ export const repositories = {
     lifetime: Lifetime.SINGLETON,
   }),
   drizzleSkillRepository: asClass(DrizzleSkillRepository, { lifetime: Lifetime.SINGLETON }),
+  certificationRepository: asClass(DrizzleCertificationRepository, {
+    lifetime: Lifetime.SINGLETON,
+  }),
+  languageRepository: asClass(DrizzleLanguageRepository, { lifetime: Lifetime.SINGLETON }),
   drizzleEducationRepository: asClass(DrizzleEducationRepository, {
     lifetime: Lifetime.SINGLETON,
   }),

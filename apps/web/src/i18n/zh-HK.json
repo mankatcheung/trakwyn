@@ -1832,5 +1832,18 @@
   "documents.editor.saveState.dirty": "有未儲存嘅變更",
   "documents.editor.saveState.error": "無法儲存",
   "documents.editor.saveState.retry": "重試",
-  "documentDraftEdit.leaveConfirm": "有未儲存嘅變更。仍然離開嗎？"
+  "documentDraftEdit.leaveConfirm": "有未儲存嘅變更。仍然離開嗎？",
+  "experience.certificationsTitle": "證書",
+  "experience.certificationsDescription": "履歷可以列出嘅專業證書。",
+  "experience.noCertificationsYet": "未有加入證書。",
+  "experience.certificationNameLabel": "證書 *",
+  "experience.certificationIssuerLabel": "頒發機構",
+  "experience.certificationIssuedLabel": "頒發日期",
+  "experience.certificationExpiresLabel": "到期日期",
+  "experience.certificationUrlLabel": "證書連結",
+  "experience.languagesTitle": "語言",
+  "experience.languagesDescription": "履歷可以列出嘅口語語言。",
+  "experience.noLanguagesYet": "未有加入語言。",
+  "experience.languageNameLabel": "語言 *",
+  "experience.languageLevelLabel": "程度"
 }

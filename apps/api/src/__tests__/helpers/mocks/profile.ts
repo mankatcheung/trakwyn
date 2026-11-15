@@ -12,6 +12,10 @@ import type { IEducationRepository } from '#src/use-cases/ports/IEducationReposi
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { Skill } from '#src/domain/skill/Skill.js';
+import type { Certification } from '#src/domain/certification/Certification.js';
+import type { Language } from '#src/domain/language/Language.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
 
 export const makeWorkExperienceRepository = (
@@ -79,6 +83,49 @@ export const makeSkill = (overrides?: Partial<Skill>): Skill => ({
   name: 'TypeScript',
   category: 'Language',
   proficiency: 'expert',
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeCertificationRepository = (
+  overrides?: Partial<ICertificationRepository>,
+): ICertificationRepository => ({
+  findAllByUserId: vi.fn().mockResolvedValue([]),
+  findById: vi.fn().mockResolvedValue(null),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  ...overrides,
+});
+
+export const makeLanguageRepository = (
+  overrides?: Partial<ILanguageRepository>,
+): ILanguageRepository => ({
+  findAllByUserId: vi.fn().mockResolvedValue([]),
+  findById: vi.fn().mockResolvedValue(null),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  ...overrides,
+});
+
+export const makeCertification = (overrides?: Partial<Certification>): Certification => ({
+  id: 'cert-1',
+  userId: 'user-1',
+  name: 'AWS Certified Solutions Architect',
+  issuer: 'Amazon Web Services',
+  issuedAt: new Date('2022-03-01T00:00:00Z'),
+  expiresAt: null,
+  credentialUrl: null,
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const makeLanguage = (overrides?: Partial<Language>): Language => ({
+  id: 'lang-1',
+  userId: 'user-1',
+  name: 'French',
+  proficiency: 'Fluent',
   createdAt: new Date('2024-01-01'),
   ...overrides,
 });

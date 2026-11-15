@@ -664,6 +664,8 @@ export const CONTENT_LIMITS = {
   WORK_EXPERIENCES_PER_USER: 30,
   EDUCATIONS_PER_USER: 15,
   SKILLS_PER_USER: 100,
+  CERTIFICATIONS_PER_USER: 30,
+  LANGUAGES_PER_USER: 20,
   SHARE_LINKS_PER_USER: 50,
   API_TOKENS_PER_USER: 20,
   PUSH_SUBSCRIPTIONS_PER_USER: 10,
@@ -895,6 +897,14 @@ export const PROFILE_CONTACT = {
   LINK_MAX_CHARS: 200,
   /** Digits, spaces and the punctuation a phone number is written with. */
   PHONE_PATTERN: /^\+?[0-9(][0-9 ()./-]*$/,
+} as const;
+
+/** Text typed into the profile sections added in JEF-592 (certifications, languages). */
+export const PROFILE_ENTRY = {
+  /** A name, issuer or level. */
+  SHORT_FIELD_MAX_CHARS: 200,
+  /** A credential link. */
+  URL_MAX_CHARS: 500,
 } as const;
 
 export const CV_IMPORT = {

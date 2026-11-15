@@ -1859,5 +1859,18 @@
   "documents.editor.saveState.dirty": "Unsaved changes",
   "documents.editor.saveState.error": "Couldn't save",
   "documents.editor.saveState.retry": "Retry",
-  "documentDraftEdit.leaveConfirm": "You have changes that haven't been saved. Leave anyway?"
+  "documentDraftEdit.leaveConfirm": "You have changes that haven't been saved. Leave anyway?",
+  "experience.certificationsTitle": "Certifications",
+  "experience.certificationsDescription": "Professional certifications a resume can list.",
+  "experience.noCertificationsYet": "No certifications added yet.",
+  "experience.certificationNameLabel": "Certification *",
+  "experience.certificationIssuerLabel": "Issuer",
+  "experience.certificationIssuedLabel": "Issued",
+  "experience.certificationExpiresLabel": "Expires",
+  "experience.certificationUrlLabel": "Credential link",
+  "experience.languagesTitle": "Languages",
+  "experience.languagesDescription": "Spoken languages a resume can list.",
+  "experience.noLanguagesYet": "No languages added yet.",
+  "experience.languageNameLabel": "Language *",
+  "experience.languageLevelLabel": "Level"
 }

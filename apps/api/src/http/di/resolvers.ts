@@ -25,6 +25,8 @@ import { SessionResolver } from '#src/interface-adapters/resolvers/SessionResolv
 import { OAuthResolver } from '#src/interface-adapters/resolvers/OAuthResolver.js';
 import { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkExperienceResolver.js';
 import { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
+import { CertificationResolver } from '#src/interface-adapters/resolvers/CertificationResolver.js';
+import { LanguageResolver } from '#src/interface-adapters/resolvers/LanguageResolver.js';
 import { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 import { OfferResolver } from '#src/interface-adapters/resolvers/OfferResolver.js';
 import { ChatWriteTools } from '#src/interface-adapters/llm/ChatWriteTools.js';
@@ -62,6 +64,8 @@ export const resolvers = {
   workExperienceResolver: asClass(WorkExperienceResolver, { lifetime: Lifetime.SINGLETON }),
   educationResolver: asClass(EducationResolver, { lifetime: Lifetime.SINGLETON }),
   skillResolver: asClass(SkillResolver, { lifetime: Lifetime.SINGLETON }),
+  certificationResolver: asClass(CertificationResolver, { lifetime: Lifetime.SINGLETON }),
+  languageResolver: asClass(LanguageResolver, { lifetime: Lifetime.SINGLETON }),
   offerResolver: asClass(OfferResolver, { lifetime: Lifetime.SINGLETON }),
   mcpController: asClass(McpController, { lifetime: Lifetime.SINGLETON }),
   // The chat assistant's write tools (JEF-469): the same handlers as MCP,

@@ -9,6 +9,8 @@ import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRe
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { INoteRepository } from '#src/use-cases/ports/INoteRepository.js';
@@ -44,6 +46,8 @@ interface Deps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
   userRepository: IUserRepository;
   generateCoverLetterRateLimiter: IRateLimiter;
   noteRepository: INoteRepository;

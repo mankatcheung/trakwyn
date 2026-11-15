@@ -1832,5 +1832,18 @@
   "documents.editor.saveState.dirty": "有未保存的更改",
   "documents.editor.saveState.error": "无法保存",
   "documents.editor.saveState.retry": "重试",
-  "documentDraftEdit.leaveConfirm": "有尚未保存的更改。仍要离开吗？"
+  "documentDraftEdit.leaveConfirm": "有尚未保存的更改。仍要离开吗？",
+  "experience.certificationsTitle": "证书",
+  "experience.certificationsDescription": "简历可以列出的专业证书。",
+  "experience.noCertificationsYet": "尚未添加证书。",
+  "experience.certificationNameLabel": "证书 *",
+  "experience.certificationIssuerLabel": "颁发机构",
+  "experience.certificationIssuedLabel": "颁发日期",
+  "experience.certificationExpiresLabel": "到期日期",
+  "experience.certificationUrlLabel": "证书链接",
+  "experience.languagesTitle": "语言",
+  "experience.languagesDescription": "简历可以列出的口语语言。",
+  "experience.noLanguagesYet": "尚未添加语言。",
+  "experience.languageNameLabel": "语言 *",
+  "experience.languageLevelLabel": "水平"
 }

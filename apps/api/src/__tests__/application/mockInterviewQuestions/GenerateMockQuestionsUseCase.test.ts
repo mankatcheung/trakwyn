@@ -17,6 +17,8 @@ import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -87,6 +89,8 @@ function makeUseCase(options: Options = {}) {
       findAllByUserId: vi.fn().mockResolvedValue(options.workExperiences ?? []),
     }),
     educationRepository: makeEducationRepository(),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository(),
     extractDocumentTextUseCase: makeExtractDocumentTextUseCase({
       execute: options.extractDocument ?? vi.fn().mockResolvedValue({ text: '' }),

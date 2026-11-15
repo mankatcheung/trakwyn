@@ -8,7 +8,7 @@ function clean(value: string | null | undefined): string | null {
 }
 
 /** True for an `http(s)` URL with a host and no credentials. */
-function isWebUrl(value: string): boolean {
+export function isWebUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (

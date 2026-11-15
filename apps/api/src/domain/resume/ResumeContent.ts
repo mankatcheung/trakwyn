@@ -23,11 +23,26 @@ export interface ResumeSkillGroup {
   items: string[];
 }
 
+export interface ResumeCertificationEntry {
+  name: string;
+  issuer?: string;
+  /** When it was issued, as "Mar 2022"; taken from the profile, not the model. */
+  date?: string;
+}
+
+export interface ResumeLanguageEntry {
+  name: string;
+  proficiency?: string;
+}
+
 export interface ResumeContent {
   summary?: string;
   experience: ResumeExperienceEntry[];
   education: ResumeEducationEntry[];
   skills: ResumeSkillGroup[];
+  /** Only entries the profile holds (JEF-592); absent when the model wrote none. */
+  certifications?: ResumeCertificationEntry[];
+  languages?: ResumeLanguageEntry[];
 }
 
 /**

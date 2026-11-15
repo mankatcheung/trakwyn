@@ -130,7 +130,7 @@ const hashOf = ({ messages }: Rendered) =>
 /** `id@version` to the first 16 hex characters of the sha256 of the rendered messages. */
 const RECORDED: Record<string, string> = {
   'coverLetter@4': '21554b1113ce1d0f',
-  'resume@6': '3accf0b0f6d48e60',
+  'resume@7': '00d8b91aaf4dd6a8',
   'postingRequirements@1': '88084bacb942232f',
   'polishDraft@2': '67def16a4e8e7f66',
   'resumeMatch@2': 'e26dd139ad360cb0',
