@@ -1,6 +1,5 @@
 import {
   AiNotConfiguredError,
-  AiResponseInvalidError,
   ForbiddenError,
   NotFoundError,
   RateLimitedError,
@@ -23,9 +22,10 @@ import {
   loadUserProfile,
   formatUserProfile,
   isUserProfileEmpty,
-  type UserProfile,
   type UserProfileRepositories,
 } from '#src/use-cases/shared/userProfile.js';
+import { applyProfileFacts, assertGrounded } from '#src/use-cases/resume/resumeGrounding.js';
+import type { ILogger } from '#src/use-cases/ports/ILogger.js';
 import { AI_PROMPT_INPUT, AI_FEATURE, AI_REASONING_DEFAULTS } from '#src/use-cases/constants.js';
 import type { LLMAnsweredBy } from '#src/use-cases/ports/ILLMProvider.js';
 
@@ -48,31 +48,8 @@ interface Deps extends UserProfileRepositories {
   generateResumeRateLimiter: IRateLimiter;
   noteRepository: INoteRepository;
   documentDraftRepository: IDocumentDraftRepository;
-}
-
-/** Compared loosely: rewording is allowed, inventing is not. */
-const normalize = (value: string) => value.trim().toLowerCase();
-
-/**
- * Every employer and institution in the output must be one the user entered.
- *
- * A resume asserts facts about someone's history. A model that adds a job is
- * not producing a worse draft, it is producing a document that is harmful to
- * send — so this refuses rather than filtering the invented entries out, which
- * would hand back a plausible resume with no sign anything had gone wrong.
- */
-function assertGrounded(resume: ResumeContent, profile: UserProfile): void {
-  const companies = new Set(profile.workExperiences.map((w) => normalize(w.company)));
-  const institutions = new Set(profile.educations.map((e) => normalize(e.institution)));
-
-  const inventedEmployer = resume.experience.find((e) => !companies.has(normalize(e.company)));
-  const inventedSchool = resume.education.find((e) => !institutions.has(normalize(e.institution)));
-
-  if (inventedEmployer || inventedSchool) {
-    throw new AiResponseInvalidError(
-      'The AI produced a resume containing experience you have not recorded — nothing was saved. Please try again.',
-    );
-  }
+  /** Optional so the eval harness and unit tests need none. */
+  logger?: ILogger;
 }
 
 export class GenerateResumeUseCase {
@@ -152,6 +129,21 @@ export class GenerateResumeUseCase {
     assertNotTruncated(result);
     const resume = parseAiJson<ResumeContent>(result.content, resumeResponseSchema);
     assertGrounded(resume, profile);
-    return resume;
+
+    // The stored dates, titles and skills, in place of the model's (JEF-597).
+    const grounded = applyProfileFacts(resume, profile);
+    const { periods, titles, skillsDropped } = grounded.corrections;
+    if (titles > 0 || skillsDropped > 0) {
+      // Periods are rewritten on almost every reply (the model's format differs),
+      // so only a changed title or a dropped skill is worth a line. Counts only.
+      this.deps.logger?.info('A generated resume was corrected against the profile', {
+        event: 'resume.grounding.corrected',
+        periods,
+        titles,
+        skills_dropped: skillsDropped,
+        prompt_version: resumePrompt.version,
+      });
+    }
+    return grounded.resume;
   }
 }

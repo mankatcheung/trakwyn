@@ -6,28 +6,29 @@ Loaded when working under `apps/api`. The layer map, DI shape and cross-cutting 
 
 Each of these loads on its own when you work in its directory. Paths are under `src/`.
 
-| Directory                              | Topics                                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `use-cases/auth/`                      | account deletion and step-up, the email verification wall, captcha and sign-up/sign-in limits |
-| `interface-adapters/mcp/`              | the MCP server: protocol, tool annotations, scopes, call limits, write attribution            |
-| `use-cases/chat/`                      | chat write proposals the user confirms                                                        |
-| `infrastructure/storage/`              | storage providers, document links, quotas, the two Blob stores, the ATS score                 |
-| `use-cases/documents/`                 | draft history: snapshots, the cap, restore                                                    |
-| `use-cases/profile/`                   | CV import                                                                                     |
-| `use-cases/mockInterviewQuestions/`    | practice questions tailored to the candidate, talking points                                  |
-| `use-cases/plans/`                     | plans and entitlements, hosted AI credits                                                     |
-| `use-cases/quotas/`                    | content quotas                                                                                |
-| `infrastructure/billing/`              | Polar billing, webhooks, known gaps                                                           |
-| `infrastructure/email/`                | email providers and verification-mail abuse limits                                            |
-| `infrastructure/observability/`        | Axiom/OTel, metrics, LLM cost, use-case spans                                                 |
-| `infrastructure/llm/`                  | hosted AI provider, reasoning tokens, spend guards, model circuits, model tiers               |
-| `use-cases/user/`                      | AI provider order                                                                             |
-| `use-cases/coverLetter/`               | the grounding guard that refuses a letter naming an employer, credential, number or link      |
-| `use-cases/jobDescription/`            | cheaper AI calls: JSON-LD, posting cache, match reuse                                         |
-| `use-cases/companyBriefing/`           | company briefing: the company's own site, web search, sources, the research caches            |
-| `use-cases/prompts/`                   | prompt modules and versions                                                                   |
-| `docs/ai-data-handling.md` (repo root) | where AI-related user data goes and which code backs each privacy-policy claim (JEF-549)      |
-| `evals/`                               | running and extending the AI evals                                                            |
+| Directory                              | Topics                                                                                         |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `use-cases/auth/`                      | account deletion and step-up, the email verification wall, captcha and sign-up/sign-in limits  |
+| `interface-adapters/mcp/`              | the MCP server: protocol, tool annotations, scopes, call limits, write attribution             |
+| `use-cases/chat/`                      | chat write proposals the user confirms                                                         |
+| `infrastructure/storage/`              | storage providers, document links, quotas, the two Blob stores, the ATS score                  |
+| `use-cases/documents/`                 | draft history: snapshots, the cap, restore                                                     |
+| `use-cases/profile/`                   | CV import                                                                                      |
+| `use-cases/mockInterviewQuestions/`    | practice questions tailored to the candidate, talking points                                   |
+| `use-cases/plans/`                     | plans and entitlements, hosted AI credits                                                      |
+| `use-cases/quotas/`                    | content quotas                                                                                 |
+| `infrastructure/billing/`              | Polar billing, webhooks, known gaps                                                            |
+| `infrastructure/email/`                | email providers and verification-mail abuse limits                                             |
+| `infrastructure/observability/`        | Axiom/OTel, metrics, LLM cost, use-case spans                                                  |
+| `infrastructure/llm/`                  | hosted AI provider, reasoning tokens, spend guards, model circuits, model tiers                |
+| `use-cases/user/`                      | AI provider order                                                                              |
+| `use-cases/resume/`                    | the resume's grounding: refused employers, and dates, titles and skills taken from the profile |
+| `use-cases/coverLetter/`               | the grounding guard that refuses a letter naming an employer, credential, number or link       |
+| `use-cases/jobDescription/`            | cheaper AI calls: JSON-LD, posting cache, match reuse                                          |
+| `use-cases/companyBriefing/`           | company briefing: the company's own site, web search, sources, the research caches             |
+| `use-cases/prompts/`                   | prompt modules and versions                                                                    |
+| `docs/ai-data-handling.md` (repo root) | where AI-related user data goes and which code backs each privacy-policy claim (JEF-549)       |
+| `evals/`                               | running and extending the AI evals                                                             |
 
 ## Auth
 
