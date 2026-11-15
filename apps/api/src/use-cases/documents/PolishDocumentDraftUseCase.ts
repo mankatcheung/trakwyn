@@ -11,6 +11,7 @@ import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRe
 import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
+import { postingForPrompt } from '#src/use-cases/shared/postingForPrompt.js';
 import { assertNotTruncated } from '#src/use-cases/shared/parseAiJson.js';
 import { normaliseAiInstructions } from '#src/use-cases/shared/aiInstructions.js';
 import { polishDraftPrompt } from '#src/use-cases/prompts/polishDraft.js';
@@ -72,12 +73,15 @@ export class PolishDocumentDraftUseCase implements IPolishDocumentDraftUseCase {
       throw new AiNotConfiguredError('Add your AI API key in Settings to use this feature');
     }
 
+    const posting =
+      postingForPrompt(app)?.slice(0, AI_PROMPT_INPUT.POLISH_JOB_DESCRIPTION_MAX_CHARS) ?? null;
     const user = await this.deps.userRepository.findById(input.userId);
     const messages = polishDraftPrompt.build({
       type: draft.type,
       text,
       instructions,
       customAiPrompt: user?.customAiPrompt,
+      app: { company: app.company, role: app.role, posting },
     });
 
     const result = await llmProvider.complete(messages, POLISH_DRAFT_MAX_TOKENS, undefined, {

@@ -507,6 +507,8 @@ export const AI_PROMPT_INPUT = {
   COVER_LETTER_JOB_DESCRIPTION_MAX_CHARS: 6000,
   /** GenerateResumeUseCase — the posting (`postingForPrompt`); the same room the match score has (JEF-591). */
   RESUME_JOB_DESCRIPTION_MAX_CHARS: 6000,
+  /** PolishDocumentDraftUseCase — the posting (`postingForPrompt`), the same room the resume has (JEF-595). */
+  POLISH_JOB_DESCRIPTION_MAX_CHARS: 6000,
   /** GenerateCompanyBriefingUseCase — the application's job description field. */
   COMPANY_BRIEFING_JOB_DESCRIPTION_MAX_CHARS: 3000,
   /** GenerateCompanyBriefingUseCase — text read from the company's own pages, all sources together (JEF-475). */

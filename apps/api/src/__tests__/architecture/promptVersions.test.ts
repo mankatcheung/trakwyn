@@ -87,6 +87,11 @@ const RENDERED: Rendered[] = [
     text: 'Dear team, I am writing to apply.',
     instructions: null,
     customAiPrompt: null,
+    app: {
+      company: 'Acme Corp',
+      role: 'Senior Engineer',
+      posting: 'We need a senior TS engineer.',
+    },
   }),
   render(resumeMatchPrompt, { jobDescription: 'We need a TS engineer', resumeText: 'TypeScript' }),
   render(parseJobDescriptionPrompt, {
@@ -127,7 +132,7 @@ const RECORDED: Record<string, string> = {
   'coverLetter@4': '21554b1113ce1d0f',
   'resume@6': '3accf0b0f6d48e60',
   'postingRequirements@1': '88084bacb942232f',
-  'polishDraft@1': '814195a70b7c682b',
+  'polishDraft@2': '67def16a4e8e7f66',
   'resumeMatch@2': 'e26dd139ad360cb0',
   'parseJobDescription@1': 'e357e943306332df',
   'parseCv@3': 'c613258006625a57',
