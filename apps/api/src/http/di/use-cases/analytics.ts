@@ -7,6 +7,8 @@ import { GetResumeAtsScoresUseCase } from '#src/use-cases/application/GetResumeA
 import { GetResumeMatchesUseCase } from '#src/use-cases/application/GetResumeMatchesUseCase.js';
 import { ExtractPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/ExtractPostingRequirementsUseCase.js';
 import { GetPostingRequirementsUseCase } from '#src/use-cases/postingRequirements/GetPostingRequirementsUseCase.js';
+import { GetResumeGapsUseCase } from '#src/use-cases/resume/GetResumeGapsUseCase.js';
+import { DismissResumeGapUseCase } from '#src/use-cases/resume/DismissResumeGapUseCase.js';
 import { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/application/GetApplicationChannelAnalyticsUseCase.js';
 import { GetCalendarEventsUseCase } from '#src/use-cases/calendar/GetCalendarEventsUseCase.js';
 import { SendWeeklyDigestUseCase } from '#src/use-cases/digest/SendWeeklyDigestUseCase.js';
@@ -35,6 +37,8 @@ export const analytics = {
   getPostingRequirementsUseCase: asClass(GetPostingRequirementsUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),
+  getResumeGapsUseCase: asClass(GetResumeGapsUseCase, { lifetime: Lifetime.TRANSIENT }),
+  dismissResumeGapUseCase: asClass(DismissResumeGapUseCase, { lifetime: Lifetime.TRANSIENT }),
   getApplicationChannelAnalyticsUseCase: asClass(GetApplicationChannelAnalyticsUseCase, {
     lifetime: Lifetime.TRANSIENT,
   }),

@@ -208,17 +208,26 @@ function profileSkillText(profile: UserProfile): string {
   return ` ${words.join(' ')} `;
 }
 
+/**
+ * Whether the profile has a skill: it lists it, or one of its role or course
+ * descriptions names it. Shared with the gap questions (JEF-594), so "the
+ * resume may say it" and "we need not ask about it" are the same test.
+ */
+export function profileSkillMatcher(profile: UserProfile): (item: string) => boolean {
+  const listed = new Set(profile.skills.map((skill) => skillKey(skill.name)));
+  const mentioned = profileSkillText(profile);
+  return (item) => {
+    const key = skillKey(item);
+    return key !== '' && (listed.has(key) || mentioned.includes(` ${key} `));
+  };
+}
+
 function groundSkills(
   groups: readonly ResumeSkillGroup[],
   profile: UserProfile,
   corrections: ProfileFactCorrections,
 ): ResumeSkillGroup[] {
-  const listed = new Set(profile.skills.map((skill) => skillKey(skill.name)));
-  const mentioned = profileSkillText(profile);
-  const known = (item: string): boolean => {
-    const key = skillKey(item);
-    return key !== '' && (listed.has(key) || mentioned.includes(` ${key} `));
-  };
+  const known = profileSkillMatcher(profile);
 
   return groups
     .map((group) => {

@@ -59,6 +59,7 @@ const DECLARED_ON_DELETE: Record<string, string> = {
   'ResumeAtsScore -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
   'PostingRequirements -> JobApplication': 'cascade', // a reading of a posting that no longer exists
   'ResumeAtsScore -> JobApplication': 'cascade',
+  'ResumeGapDismissal -> JobApplication': 'cascade', // an answer about an application that no longer exists
   'ResumeMatch -> Document': 'cascade', // a score for a file that no longer exists
   'ResumeMatch -> DocumentDraft': 'cascade', // a score for a draft that no longer exists
   'ResumeMatch -> JobApplication': 'cascade',

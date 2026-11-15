@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 import { jobApplication } from './application.js';
 
@@ -24,3 +24,25 @@ export const postingRequirements = pgTable('PostingRequirements', {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+/**
+ * A gap question the user answered "no" to for an application (JEF-594): a
+ * posting keyword they have not used, or `role:<workExperienceId>` for a role
+ * they will not add a number to. One row per question, so it is not asked again.
+ */
+export const resumeGapDismissal = pgTable(
+  'ResumeGapDismissal',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('applicationId')
+      .notNull()
+      .references(() => jobApplication.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('ResumeGapDismissal_applicationId_key_idx').on(table.applicationId, table.key),
+  ],
+);

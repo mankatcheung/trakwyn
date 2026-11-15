@@ -15,6 +15,7 @@ import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { TrashedApplicationView } from './TrashedApplicationView';
 import type { HealthScore } from './HealthScorePanel';
 import { ApplicationJobInfo } from './ApplicationJobInfo';
+import { ResumeGapsPanel } from './ResumeGapsPanel';
 import { OverviewTab } from './OverviewTab';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
 import { ACTIONS_TRIGGER_CLASS, ApplicationActionsMenu } from './ApplicationActionsMenu';
@@ -280,7 +281,10 @@ export function ApplicationDetailPage() {
         <DocumentList applicationId={applicationId} category="cover_letter" />
       )}
       {activeSection === 'resumes' && (
-        <DocumentList applicationId={applicationId} category="resume" />
+        <>
+          <ResumeGapsPanel applicationId={applicationId} />
+          <DocumentList applicationId={applicationId} category="resume" />
+        </>
       )}
       {activeSection === 'other-documents' && (
         <DocumentList applicationId={applicationId} category="other" />

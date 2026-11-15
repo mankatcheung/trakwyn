@@ -11,6 +11,7 @@ import type { Application } from '#src/domain/application/Application.js';
 import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
 import type { PostingRequirements } from '#src/domain/postingRequirements/PostingRequirements.js';
 import type { IPostingRequirementsRepository } from '#src/use-cases/ports/IPostingRequirementsRepository.js';
+import type { IResumeGapDismissalRepository } from '#src/use-cases/ports/IResumeGapDismissalRepository.js';
 
 export const makeApplicationRepository = (
   overrides?: Partial<IApplicationRepository>,
@@ -76,5 +77,14 @@ export const makePostingRequirements = (
   postingHash: 'posting-hash',
   promptVersion: 1,
   generatedAt: new Date('2026-11-15T12:00:00Z'),
+  ...overrides,
+});
+
+export const makeResumeGapDismissalRepository = (
+  overrides?: Partial<IResumeGapDismissalRepository>,
+): IResumeGapDismissalRepository => ({
+  findKeysByApplicationId: vi.fn().mockResolvedValue([]),
+  add: vi.fn().mockResolvedValue(undefined),
+  countByApplicationId: vi.fn().mockResolvedValue(0),
   ...overrides,
 });
