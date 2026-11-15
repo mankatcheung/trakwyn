@@ -15,6 +15,8 @@ import { makeNote, makeNoteRepository } from '#src/__tests__/helpers/mocks/notes
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -27,6 +29,8 @@ function baseDeps(overrides?: Record<string, unknown>) {
   return {
     workExperienceRepository: makeWorkExperienceRepository(),
     educationRepository: makeEducationRepository(),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository(),
     userRepository: makeUserRepository({ findById: vi.fn().mockResolvedValue(makeUser()) }),
     generateCoverLetterRateLimiter: makeRateLimiter(),

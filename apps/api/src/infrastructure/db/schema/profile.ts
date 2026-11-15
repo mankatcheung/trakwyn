@@ -66,3 +66,38 @@ export const skill = pgTable(
   },
   (table) => [index('Skill_userId_idx').on(table.userId)],
 );
+
+export const certification = pgTable(
+  'Certification',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    issuer: text('issuer'),
+    issuedAt: timestamp('issuedAt', TIMESTAMP),
+    expiresAt: timestamp('expiresAt', TIMESTAMP),
+    credentialUrl: text('credentialUrl'),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('Certification_userId_idx').on(table.userId)],
+);
+
+export const language = pgTable(
+  'Language',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    proficiency: text('proficiency'),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('Language_userId_idx').on(table.userId)],
+);

@@ -104,6 +104,28 @@ export function resumeToTiptapDoc(
     }
   }
 
+  if (resume.certifications && resume.certifications.length > 0) {
+    nodes.push(heading(1, 'Certifications'));
+    lines.push('', 'Certifications');
+    for (const cert of resume.certifications) {
+      const line = [cert.name, cert.issuer, cert.date].filter(Boolean).join(' — ');
+      nodes.push(paragraph(line));
+      lines.push(line);
+    }
+  }
+
+  if (resume.languages && resume.languages.length > 0) {
+    nodes.push(heading(1, 'Languages'));
+    lines.push('', 'Languages');
+    for (const language of resume.languages) {
+      const line = language.proficiency
+        ? `${language.name} (${language.proficiency})`
+        : language.name;
+      nodes.push(paragraph(line));
+      lines.push(line);
+    }
+  }
+
   // A ProseMirror doc may not be empty.
   if (nodes.length === 0) nodes.push(paragraph());
 

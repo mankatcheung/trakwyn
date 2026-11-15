@@ -10,6 +10,8 @@ import {
   makeEducationRepository,
   makeSkill,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -76,6 +78,8 @@ describe('GenerateResumeUseCase prompt messages', () => {
               makeEducation({ institution: 'State University', ...NEUTRAL_DATES.education }),
             ]),
         }),
+        certificationRepository: makeCertificationRepository(),
+        languageRepository: makeLanguageRepository(),
         skillRepository: makeSkillRepository({
           findAllByUserId: vi
             .fn()

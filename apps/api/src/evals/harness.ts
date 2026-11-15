@@ -127,6 +127,8 @@ function generationDeps(provider: ILLMProvider, fixture: GenerationFixture) {
     workExperienceRepository: { findAllByUserId: async () => fixture.workExperiences },
     educationRepository: { findAllByUserId: async () => fixture.educations },
     skillRepository: { findAllByUserId: async () => fixture.skills },
+    certificationRepository: { findAllByUserId: async () => fixture.certifications ?? [] },
+    languageRepository: { findAllByUserId: async () => fixture.languages ?? [] },
     userRepository: {
       findById: async () => ({
         id: EVAL_USER_ID,

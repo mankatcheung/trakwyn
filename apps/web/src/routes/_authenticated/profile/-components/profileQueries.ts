@@ -50,6 +50,31 @@ const SKILLS_QUERY = `
   }
 `;
 
+const CERTIFICATIONS_QUERY = `
+  query Certifications {
+    certifications {
+      id
+      name
+      issuer
+      issuedAt
+      expiresAt
+      credentialUrl
+      createdAt
+    }
+  }
+`;
+
+const LANGUAGES_QUERY = `
+  query Languages {
+    languages {
+      id
+      name
+      proficiency
+      createdAt
+    }
+  }
+`;
+
 // ── Mutations ────────────────────────────────────────────────────────────
 
 export const CREATE_WORK_EXPERIENCE = `
@@ -158,6 +183,68 @@ export const DELETE_SKILL = `
   }
 `;
 
+export const CREATE_CERTIFICATION = `
+  mutation CreateCertification($input: CreateCertificationInput!) {
+    createCertification(input: $input) {
+      id
+      name
+      issuer
+      issuedAt
+      expiresAt
+      credentialUrl
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_CERTIFICATION = `
+  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {
+    updateCertification(id: $id, input: $input) {
+      id
+      name
+      issuer
+      issuedAt
+      expiresAt
+      credentialUrl
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_CERTIFICATION = `
+  mutation DeleteCertification($id: ID!) {
+    deleteCertification(id: $id)
+  }
+`;
+
+export const CREATE_LANGUAGE = `
+  mutation CreateLanguage($input: CreateLanguageInput!) {
+    createLanguage(input: $input) {
+      id
+      name
+      proficiency
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_LANGUAGE = `
+  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {
+    updateLanguage(id: $id, input: $input) {
+      id
+      name
+      proficiency
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_LANGUAGE = `
+  mutation DeleteLanguage($id: ID!) {
+    deleteLanguage(id: $id)
+  }
+`;
+
 /** The confirm step of the CV import (JEF-461); reading the file is `uploadCv` in `lib/cvImport`. */
 export const IMPORT_CV_PROFILE = `
   mutation ImportCvProfile($input: ImportCvProfileInput!) {
@@ -203,6 +290,23 @@ export type Skill = {
   createdAt: string;
 };
 
+export type Certification = {
+  id: string;
+  name: string;
+  issuer: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  credentialUrl: string | null;
+  createdAt: string;
+};
+
+export type Language = {
+  id: string;
+  name: string;
+  proficiency: string | null;
+  createdAt: string;
+};
+
 // ── Query options ────────────────────────────────────────────────────────
 
 export const workExperiencesQueryOptions = queryOptions({
@@ -218,4 +322,14 @@ export const educationsQueryOptions = queryOptions({
 export const skillsQueryOptions = queryOptions({
   queryKey: ['skills'],
   queryFn: () => gqlClient.request<{ skills: Skill[] }>(SKILLS_QUERY),
+});
+
+export const certificationsQueryOptions = queryOptions({
+  queryKey: ['certifications'],
+  queryFn: () => gqlClient.request<{ certifications: Certification[] }>(CERTIFICATIONS_QUERY),
+});
+
+export const languagesQueryOptions = queryOptions({
+  queryKey: ['languages'],
+  queryFn: () => gqlClient.request<{ languages: Language[] }>(LANGUAGES_QUERY),
 });

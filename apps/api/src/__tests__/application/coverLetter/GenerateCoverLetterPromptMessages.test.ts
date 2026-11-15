@@ -12,6 +12,8 @@ import { makeNoteRepository } from '#src/__tests__/helpers/mocks/notes.js';
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
@@ -37,6 +39,8 @@ describe('GenerateCoverLetterUseCase prompt messages', () => {
       }),
       workExperienceRepository: makeWorkExperienceRepository(),
       educationRepository: makeEducationRepository(),
+      certificationRepository: makeCertificationRepository(),
+      languageRepository: makeLanguageRepository(),
       skillRepository: makeSkillRepository(),
       userRepository: makeUserRepository({
         findById: vi.fn().mockResolvedValue(makeUser({ customAiPrompt })),

@@ -52,10 +52,11 @@ Writing for a recruiter's first skim. A recruiter decides in a few seconds, from
 - Give a recent role that matches the posting up to five bullets, as many as its description supports. Give an older or unrelated role one or two, or none. Leave a bullet out rather than pad it.
 - Order the skill groups, and the items in each, by how much the posting asks for them.
 - When the candidate has a skill under another spelling, abbreviation or full name than the posting uses (for example "Postgres" for "PostgreSQL"), use the posting's name. Only for the same skill, never a related one.
+- Certifications and languages: list only those in the candidate's background, and only the ones that matter for this role; leave the arrays empty when the background has none. Copy a certification's name as written. Never add one.
 - Aim for one page, about 400 words, for a career under ten years; two pages at most for a longer one. Shorter is better than padded.
 
 Return ONLY minified JSON of this shape, with no markdown fence and no commentary:
-{"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}]}`;
+{"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}],"certifications":[{"name":string,"issuer":string,"date":string}],"languages":[{"name":string,"proficiency":string}]}`;
 
 function requirementsBlock(requirements: ResumePromptRequirements | null | undefined): string[] {
   if (!requirements) return [];
@@ -101,7 +102,7 @@ function userPrompt({
 
 export const resumePrompt: PromptDefinition<ResumePromptInput> = {
   id: AI_FEATURE.RESUME,
-  version: 6,
+  version: 7,
   build: (input) =>
     promptMessages({
       system: SYSTEM_PROMPT,
@@ -129,4 +130,10 @@ export const resumeResponseSchema = z.object({
     }),
   ),
   skills: z.array(z.object({ category: z.string(), items: z.array(z.string()) })),
+  certifications: z
+    .array(
+      z.object({ name: z.string(), issuer: z.string().optional(), date: z.string().optional() }),
+    )
+    .optional(),
+  languages: z.array(z.object({ name: z.string(), proficiency: z.string().optional() })).optional(),
 });

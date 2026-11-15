@@ -1,6 +1,8 @@
 import type {
   ResumeContent,
+  ResumeCertificationEntry,
   ResumeEducationEntry,
+  ResumeLanguageEntry,
   ResumeExperienceEntry,
   ResumeSkillGroup,
 } from '#src/domain/resume/ResumeContent.js';
@@ -38,7 +40,14 @@ export function assertGrounded(resume: ResumeContent, profile: UserProfile): voi
   const inventedEmployer = resume.experience.find((e) => !companies.has(normalize(e.company)));
   const inventedSchool = resume.education.find((e) => !institutions.has(normalize(e.institution)));
 
-  if (inventedEmployer || inventedSchool) {
+  const certifications = new Set(profile.certifications.map((c) => normalize(c.name)));
+  const languages = new Set(profile.languages.map((l) => normalize(l.name)));
+  const inventedCertification = (resume.certifications ?? []).find(
+    (c) => !certifications.has(normalize(c.name)),
+  );
+  const inventedLanguage = (resume.languages ?? []).find((l) => !languages.has(normalize(l.name)));
+
+  if (inventedEmployer || inventedSchool || inventedCertification || inventedLanguage) {
     throw new AiResponseInvalidError(
       'The AI produced a resume containing experience you have not recorded — nothing was saved. Please try again.',
     );
@@ -238,6 +247,42 @@ function groundSkills(
     .filter((group) => group.items.length > 0);
 }
 
+/** A certification's name, issuer and date are the profile's; the model only chooses which to list. */
+function groundCertifications(
+  entries: readonly ResumeCertificationEntry[],
+  profile: UserProfile,
+): ResumeCertificationEntry[] {
+  const seen = new Set<string>();
+  return entries.flatMap((entry) => {
+    const key = normalize(entry.name);
+    const row = profile.certifications.find((c) => normalize(c.name) === key);
+    if (!row || seen.has(key)) return [];
+    seen.add(key);
+    return [
+      {
+        name: row.name,
+        ...(row.issuer ? { issuer: row.issuer } : {}),
+        ...(row.issuedAt ? { date: formatProfileMonth(row.issuedAt) } : {}),
+      },
+    ];
+  });
+}
+
+/** A language's name and level are the profile's, never the model's. */
+function groundLanguages(
+  entries: readonly ResumeLanguageEntry[],
+  profile: UserProfile,
+): ResumeLanguageEntry[] {
+  const seen = new Set<string>();
+  return entries.flatMap((entry) => {
+    const key = normalize(entry.name);
+    const row = profile.languages.find((l) => normalize(l.name) === key);
+    if (!row || seen.has(key)) return [];
+    seen.add(key);
+    return [{ name: row.name, ...(row.proficiency ? { proficiency: row.proficiency } : {}) }];
+  });
+}
+
 /**
  * Replaces what the model wrote with what the profile holds, wherever the
  * profile holds it (JEF-597):
@@ -261,6 +306,8 @@ export function applyProfileFacts(resume: ResumeContent, profile: UserProfile): 
       experience: groundExperience(resume.experience, profile.workExperiences, corrections),
       education: groundEducation(resume.education, profile.educations, corrections),
       skills: groundSkills(resume.skills, profile, corrections),
+      certifications: groundCertifications(resume.certifications ?? [], profile),
+      languages: groundLanguages(resume.languages ?? [], profile),
     },
     corrections,
   };

@@ -1,5 +1,7 @@
 import { formatUserProfile } from '#src/use-cases/shared/userProfile.js';
 import type { Education } from '#src/domain/education/Education.js';
+import type { Certification } from '#src/domain/certification/Certification.js';
+import type { Language } from '#src/domain/language/Language.js';
 import type { Skill } from '#src/domain/skill/Skill.js';
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
@@ -14,6 +16,8 @@ export interface GenerationFixture {
   workExperiences: WorkExperience[];
   educations: Education[];
   skills: Skill[];
+  certifications?: Certification[];
+  languages?: Language[];
   app: { company: string; role: string; location: string | null; description: string };
   notes: string[];
   /** What a good model returns for the resume. Used only to prove the case can pass. */
@@ -87,7 +91,11 @@ export const skill = (
  * notes.
  */
 export function claimSource(fixture: GenerationFixture): string {
-  const profile = formatUserProfile(fixture);
+  const profile = formatUserProfile({
+    ...fixture,
+    certifications: fixture.certifications ?? [],
+    languages: fixture.languages ?? [],
+  });
   return [
     'Candidate background:',
     profile === '' ? '(none recorded)' : profile,

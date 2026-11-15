@@ -19,6 +19,8 @@ import {
 import {
   makeEducationRepository,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -66,6 +68,8 @@ function makeDeps(llmProvider: ReturnType<typeof makeLLMProvider>, customAiPromp
       ]),
     }),
     educationRepository: makeEducationRepository(),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository(),
     extractDocumentTextUseCase: makeExtractDocumentTextUseCase({
       execute: vi.fn().mockResolvedValue({ text: '' }),

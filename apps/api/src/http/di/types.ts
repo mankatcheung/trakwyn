@@ -41,6 +41,8 @@ import type { BlocklistingSessionRepository } from '#src/infrastructure/db/repos
 import type { ISessionBlocklist } from '#src/use-cases/ports/ISessionBlocklist.js';
 import type { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import type { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
+import type { DrizzleCertificationRepository } from '#src/infrastructure/db/repositories/DrizzleCertificationRepository.js';
+import type { DrizzleLanguageRepository } from '#src/infrastructure/db/repositories/DrizzleLanguageRepository.js';
 import type { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
 import type { DrizzleAiFeedbackRepository } from '#src/infrastructure/db/repositories/DrizzleAiFeedbackRepository.js';
 import type { IAiFeedbackObserver } from '#src/use-cases/ports/IAiFeedbackObserver.js';
@@ -86,6 +88,8 @@ import type { OAuthAccountMapper } from '#src/interface-adapters/mappers/OAuthAc
 import type { OAuthResolver } from '#src/interface-adapters/resolvers/OAuthResolver.js';
 import type { WorkExperienceResolver } from '#src/interface-adapters/resolvers/WorkExperienceResolver.js';
 import type { EducationResolver } from '#src/interface-adapters/resolvers/EducationResolver.js';
+import type { CertificationResolver } from '#src/interface-adapters/resolvers/CertificationResolver.js';
+import type { LanguageResolver } from '#src/interface-adapters/resolvers/LanguageResolver.js';
 import type { SkillResolver } from '#src/interface-adapters/resolvers/SkillResolver.js';
 
 import type { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
@@ -109,6 +113,8 @@ import type { ConversationMapper } from '#src/interface-adapters/mappers/Convers
 import type { SessionMapper } from '#src/interface-adapters/mappers/SessionMapper.js';
 import type { WorkExperienceMapper } from '#src/interface-adapters/mappers/WorkExperienceMapper.js';
 import type { EducationMapper } from '#src/interface-adapters/mappers/EducationMapper.js';
+import type { CertificationMapper } from '#src/interface-adapters/mappers/CertificationMapper.js';
+import type { LanguageMapper } from '#src/interface-adapters/mappers/LanguageMapper.js';
 import type { SkillMapper } from '#src/interface-adapters/mappers/SkillMapper.js';
 
 import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
@@ -347,6 +353,12 @@ import type { DeleteWorkExperienceUseCase } from '#src/use-cases/workExperience/
 import type { CreateEducationUseCase } from '#src/use-cases/education/CreateEducationUseCase.js';
 import type { UpdateEducationUseCase } from '#src/use-cases/education/UpdateEducationUseCase.js';
 import type { DeleteEducationUseCase } from '#src/use-cases/education/DeleteEducationUseCase.js';
+import type { CreateCertificationUseCase } from '#src/use-cases/certification/CreateCertificationUseCase.js';
+import type { UpdateCertificationUseCase } from '#src/use-cases/certification/UpdateCertificationUseCase.js';
+import type { DeleteCertificationUseCase } from '#src/use-cases/certification/DeleteCertificationUseCase.js';
+import type { CreateLanguageUseCase } from '#src/use-cases/language/CreateLanguageUseCase.js';
+import type { UpdateLanguageUseCase } from '#src/use-cases/language/UpdateLanguageUseCase.js';
+import type { DeleteLanguageUseCase } from '#src/use-cases/language/DeleteLanguageUseCase.js';
 import type { CreateSkillUseCase } from '#src/use-cases/skill/CreateSkillUseCase.js';
 import type { UpdateSkillUseCase } from '#src/use-cases/skill/UpdateSkillUseCase.js';
 import type { DeleteSkillUseCase } from '#src/use-cases/skill/DeleteSkillUseCase.js';
@@ -446,6 +458,8 @@ export interface Cradle {
   mockInterviewQuestionRepository: CachedMockInterviewQuestionRepository;
   userRepository: CachedUserRepository;
   skillRepository: CachedSkillRepository;
+  certificationRepository: DrizzleCertificationRepository;
+  languageRepository: DrizzleLanguageRepository;
   educationRepository: CachedEducationRepository;
   workExperienceRepository: CachedWorkExperienceRepository;
   activityLogRepository: DrizzleActivityLogRepository;
@@ -543,6 +557,8 @@ export interface Cradle {
   workExperienceMapper: WorkExperienceMapper;
   educationMapper: EducationMapper;
   skillMapper: SkillMapper;
+  certificationMapper: CertificationMapper;
+  languageMapper: LanguageMapper;
   offerMapper: OfferMapper;
   oauthAccountMapper: OAuthAccountMapper;
 
@@ -570,6 +586,8 @@ export interface Cradle {
   workExperienceResolver: WorkExperienceResolver;
   educationResolver: EducationResolver;
   skillResolver: SkillResolver;
+  certificationResolver: CertificationResolver;
+  languageResolver: LanguageResolver;
   offerResolver: OfferResolver;
   oauthResolver: OAuthResolver;
   mcpController: McpController;
@@ -808,6 +826,12 @@ export interface Cradle {
   createSkillUseCase: CreateSkillUseCase;
   updateSkillUseCase: UpdateSkillUseCase;
   deleteSkillUseCase: DeleteSkillUseCase;
+  createCertificationUseCase: CreateCertificationUseCase;
+  updateCertificationUseCase: UpdateCertificationUseCase;
+  deleteCertificationUseCase: DeleteCertificationUseCase;
+  createLanguageUseCase: CreateLanguageUseCase;
+  updateLanguageUseCase: UpdateLanguageUseCase;
+  deleteLanguageUseCase: DeleteLanguageUseCase;
   createOfferUseCase: CreateOfferUseCase;
   updateOfferUseCase: UpdateOfferUseCase;
   deleteOfferUseCase: DeleteOfferUseCase;
