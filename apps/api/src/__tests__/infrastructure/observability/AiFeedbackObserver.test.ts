@@ -84,6 +84,7 @@ describe('AiFeedbackObserver (JEF-547)', () => {
       span: vi.fn(),
       feedback: vi.fn(),
       feedbackCleared: vi.fn(),
+      interviewReached: vi.fn(),
       shutdown: vi.fn(),
     });
     const build = (aiAnalytics: ReturnType<typeof makeAnalytics>) =>

@@ -1,7 +1,7 @@
 # AI features (JEF-570): what the AI actions cost, how fast they are, how
 # often they fail and whether people like the output, from the events the API
 # sends to PostHog (JEF-566 to JEF-569): `$ai_generation`, `$ai_span`,
-# `$ai_feedback` and `ai_output_rating_cleared`. Definitions are in
+# `$ai_feedback`, `ai_output_rating_cleared` and `application_interview_reached` (JEF-598). Definitions are in
 # ai_features_definitions.md, the dashboard's first tile.
 #
 # Every property named here is sent by apps/api/src/infrastructure/analytics/
@@ -99,6 +99,14 @@ resource "posthog_insight" "ai_downvote_reasons" {
   name          = "Down-vote reasons by feature (30 days)"
   description   = "The reason picked with a down-vote, net of ratings taken back."
   query_sql     = file("${path.module}/queries/ai_downvote_reasons.sql")
+  dashboard_ids = [posthog_dashboard.ai_features.id]
+  tags          = ["ai", "ai-features"]
+}
+
+resource "posthog_insight" "resume_interview_rate" {
+  name          = "Resume interviews per 100 generations by prompt version and model (90 days)"
+  description   = "From application_interview_reached (first interview round, sent with the prompt version and model behind the resume the application went out with; JEF-598) over $ai_generation for the resume feature. The base is generations, not applications, so compare versions with each other rather than reading it as a conversion rate."
+  query_sql     = file("${path.module}/queries/resume_interview_rate.sql")
   dashboard_ids = [posthog_dashboard.ai_features.id]
   tags          = ["ai", "ai-features"]
 }

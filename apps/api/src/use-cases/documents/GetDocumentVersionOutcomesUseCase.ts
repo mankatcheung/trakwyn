@@ -1,7 +1,15 @@
 import type { IEntitlementService } from '#src/use-cases/ports/IEntitlementService.js';
 import type { IDocumentRepository } from '#src/use-cases/ports/IDocumentRepository.js';
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
+import type { IDocumentDraftRepository } from '#src/use-cases/ports/IDocumentDraftRepository.js';
+import type { IApplicationRepository } from '#src/use-cases/ports/IApplicationRepository.js';
+import { pickGeneratedResumeDraft } from '#src/use-cases/documents/generatedResume.js';
 import { DOCUMENT_TYPE } from '#src/use-cases/constants.js';
+import type { Application } from '#src/domain/application/Application.js';
+import type { DocumentDraft } from '#src/domain/documentDraft/DocumentDraft.js';
+
+/** The `version` of the row for resumes written by Trakwyn's AI (JEF-598). */
+export const GENERATED_RESUME_VERSION = 'Generated';
 
 export interface DocumentVersionOutcome {
   documentType: string;
@@ -16,6 +24,8 @@ interface Deps {
   entitlementService: IEntitlementService;
   documentRepository: IDocumentRepository;
   interviewRoundRepository: IInterviewRoundRepository;
+  documentDraftRepository: IDocumentDraftRepository;
+  applicationRepository: IApplicationRepository;
 }
 
 export interface GetDocumentVersionOutcomesInput {
@@ -38,6 +48,12 @@ interface Group {
  * it from Application.status, which is a single mutable field a user could
  * leave stale or skip past.
  *
+ * Resumes written in Trakwyn have no upload, so they are one more row,
+ * `version: 'Generated'` (JEF-598): each application counts once, with the
+ * resume `pickGeneratedResumeDraft` says it went out with, and only when the
+ * AI wrote that draft. It is its own group even if a user typed "Generated" as
+ * an upload's version label, and then both rows are shown.
+ *
  * `version` is free-text and optional at upload time (no normalization or
  * required-field enforcement exists yet), so documents with no version set
  * are grouped together under `version: null` rather than dropped.
@@ -47,9 +63,11 @@ export class GetDocumentVersionOutcomesUseCase {
 
   async execute(input: GetDocumentVersionOutcomesInput): Promise<DocumentVersionOutcome[]> {
     await this.deps.entitlementService.assertFeature(input.userId, 'analytics');
-    const [documents, interviewRounds] = await Promise.all([
+    const [documents, interviewRounds, resumeDrafts, applications] = await Promise.all([
       this.deps.documentRepository.findAllByUserId(input.userId),
       this.deps.interviewRoundRepository.findAllByUserId(input.userId),
+      this.deps.documentDraftRepository.findResumeDraftsByUserId(input.userId),
+      this.deps.applicationRepository.findAllByUserId(input.userId),
     ]);
 
     const applicationIdsWithInterview = new Set(interviewRounds.map((r) => r.applicationId));
@@ -72,7 +90,17 @@ export class GetDocumentVersionOutcomesUseCase {
       groups.set(key, group);
     }
 
-    return Array.from(groups.values())
+    const generated: Group = {
+      documentType: DOCUMENT_TYPE.RESUME,
+      version: GENERATED_RESUME_VERSION,
+      applicationIds: this.generatedApplicationIds(resumeDrafts, applications),
+    };
+    const allGroups = [
+      ...groups.values(),
+      ...(generated.applicationIds.size > 0 ? [generated] : []),
+    ];
+
+    return allGroups
       .map((group) => {
         const applicationCount = group.applicationIds.size;
         const interviewCount = Array.from(group.applicationIds).filter((id) =>
@@ -88,5 +116,29 @@ export class GetDocumentVersionOutcomesUseCase {
         };
       })
       .sort((a, b) => b.applicationCount - a.applicationCount);
+  }
+
+  /** The applications whose chosen resume draft was written by the AI. */
+  private generatedApplicationIds(
+    drafts: readonly DocumentDraft[],
+    applications: readonly Application[],
+  ): Set<string> {
+    const appliedAtById = new Map(applications.map((app) => [app.id, app.appliedAt]));
+    const draftsByApplication = new Map<string, DocumentDraft[]>();
+    for (const draft of drafts) {
+      // An application in the trash is not among `applications`, so it drops out here.
+      if (!appliedAtById.has(draft.applicationId)) continue;
+      draftsByApplication.set(draft.applicationId, [
+        ...(draftsByApplication.get(draft.applicationId) ?? []),
+        draft,
+      ]);
+    }
+    const ids = new Set<string>();
+    for (const [applicationId, list] of draftsByApplication) {
+      if (pickGeneratedResumeDraft(list, appliedAtById.get(applicationId) ?? null)) {
+        ids.add(applicationId);
+      }
+    }
+    return ids;
   }
 }

@@ -15,3 +15,7 @@ A draft keeps copies of its earlier content (`DocumentDraftVersion`), so the AI 
 - **Ownership goes through the application** (`findOwnedDraft`), for the list, a single version, Save version and Restore. A version of another user's draft answers FORBIDDEN and never returns its content.
 - **The FK cascades from the draft** (`onDeleteBehaviour.test.ts`), so deleting the draft, the application or the account removes its history.
 - **The web settles saves first.** Save version and Restore flush the editor's pending edit and wait for it (`settleSaves` in the draft page) and refuse to run if that save failed; Restore puts the returned content into the editor with `replaceContent`, which does not save again.
+
+## Outcomes for generated resumes (JEF-598)
+
+`GetDocumentVersionOutcomesUseCase` (the analytics page's "Resume & cover letter versions") groups uploads by version. A resume written in Trakwyn has no upload, so it is one more row, `version: 'Generated'`, which the web panel labels "Generated in Trakwyn". Each application counts once, with the draft `pickGeneratedResumeDraft` chooses (see `use-cases/prompts/CLAUDE.md`), and only when the AI wrote it; a typed resume is not counted. Applications in the trash are left out, as everywhere else. It is a separate group even when a user typed "Generated" as an upload's version. Mobile shows the row under its raw `version` text.

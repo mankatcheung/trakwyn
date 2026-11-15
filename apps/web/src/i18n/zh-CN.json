@@ -1860,5 +1860,6 @@
   "experience.awardTitleLabel": "奖项 *",
   "experience.awardIssuerLabel": "颁发方",
   "experience.awardDateLabel": "日期",
-  "cvImport.successWithOther": "已从你的简历添加：{{work}} 条工作经历、{{education}} 条教育经历、{{skills}} 项技能，以及 {{other}} 项证书、语言、项目和奖项。"
+  "cvImport.successWithOther": "已从你的简历添加：{{work}} 条工作经历、{{education}} 条教育经历、{{skills}} 项技能，以及 {{other}} 项证书、语言、项目和奖项。",
+  "documentOutcomes.generatedLabel": "在 Trakwyn 中生成"
 }
