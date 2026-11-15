@@ -30,6 +30,17 @@ Unit tests replace the model with `makeLLMProvider`, so they show the use cases 
 - **Cost:** the report has a "Judge tokens in/out" column, apart from the target's. A full generation run is ten generations and ten claim checks per target, plus eleven checks for the judge validation.
 - **Adding a case:** a `GenerationFixture` (profile, posting, notes, and an ideal resume and letter that are faithful) in `profiles.ts`; `cases.test.ts` and `generationCases.test.ts` run every case with a canned judge, so an unsatisfiable fixture, an unnamed failure or a judge that finds nothing is caught without a model.
 
+## Resume quality (JEF-599)
+
+`claimCheck.ts` answers "is it true"; `judge/resumeQuality.ts` answers "is it good", on four 1 to 5 criteria (coverage of the posting's must-haves the candidate really has, use of the posting's terms, bullet specificity, a summary aimed at the role) plus a list of must-haves the profile supports but the resume omits. The user-facing detail and the run commands are in the README ("Resume quality").
+
+- **Reported, never pass or fail.** A resume case still passes or fails on the claim check and `noForeignLinks` alone. Its quality goes on `CaseResult.quality` through `CaseReport`, a third argument `runCase` gives every case's `run`; it shows in the report's "Resume quality" column and section and as `quality` and `quality_<criterion>` Langfuse scores. A judge reply that cannot be read (`AiResponseInvalidError`) gives `qualityNote` and no score and does not fail the case; a provider error (a quota stop, an outage) is let through as it is for every other call.
+- **A resume is judged twice,** once for claims and once for quality, so `Judge tokens in/out` is about double the claim check alone for a resume case.
+- **Trusted after ranking pairs, but not a gate.** `validateQualityJudge` has the judge score both resumes of each of the eleven pairs in `judge/labelledQuality.ts` (the same facts, written well and badly, both true) and needs the strong one strictly higher, at `JUDGE_MIN_ACCURACY`. If it fails, `runEvals` takes the quality scores out of the results with a note and carries on: quality is a comparison number, so an untrusted judge costs the numbers, not the invented-content result. `--validate-judge` checks both judges and exits 1 if either fails.
+- **Fixtures:** `fixtures/qualityProfiles.ts` (`RESUME_QUALITY_FIXTURES`) adds three resume-only cases to `GENERATION_CASES`; their `idealResume` is the strong resume of their pairs, and `resumeQuality.test.ts` checks every weak resume names only employers, schools and skills the profile holds.
+- **`EVAL_REASONING`** (`reasoningOverride.ts`) forces a reasoning level on the model under test, never the judge, so one model can be run at `off` and `low` on the same cases (README, "Comparing reasoning off and low"). It is in the target's label and, through the options, the cache key.
+- **Adding a criterion** means changing `QUALITY_RULE`, the response schema, `QUALITY_CRITERIA`, the labelled pairs and the report together.
+
 ## Chat tool selection (JEF-471)
 
 `StreamChatWithAssistantUseCase` is the most expensive AI feature per call, and its unit tests script the model's replies, so nothing else notices when a prompt, a catalogue change, the result shaping or a cheaper model (JEF-445, JEF-448) stops it choosing the right tool. These cases measure that and change nothing.

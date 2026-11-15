@@ -4,7 +4,8 @@ import { isQuotaStop } from '#src/evals/quotaStop.js';
 import { promptRefOf } from '#src/evals/promptRef.js';
 import { meterProvider } from '#src/evals/usageMeter.js';
 import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
-import type { CaseOutcome, CaseResult, EvalCase } from '#src/evals/types.js';
+import type { ResumeQualityScores } from '#src/evals/judge/resumeQuality.js';
+import type { CaseOutcome, CaseReport, CaseResult, EvalCase } from '#src/evals/types.js';
 
 /**
  * What the provider said, which the user-facing message leaves out: "check the
@@ -37,9 +38,19 @@ export async function runCase(
   let schemaValid = true;
   let quotaStop = false;
   let thrownOutcome: CaseOutcome | null = null;
+  let quality: ResumeQualityScores | undefined;
+  let qualityNote: string | undefined;
+  const report: CaseReport = {
+    quality: (scores) => {
+      quality = scores;
+    },
+    qualityUnreadable: (reason) => {
+      qualityNote = reason;
+    },
+  };
 
   try {
-    failures = await evalCase.run(meter.provider, judgeMeter?.provider);
+    failures = await evalCase.run(meter.provider, judgeMeter?.provider, report);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     if (error instanceof AiResponseInvalidError) {
@@ -69,6 +80,8 @@ export async function runCase(
     passed: outcome === 'pass',
     schemaValid,
     failures,
+    ...(quality ? { quality } : {}),
+    ...(qualityNote ? { qualityNote } : {}),
     ...(quotaStop ? { quotaStop } : {}),
     promptTokens,
     completionTokens,

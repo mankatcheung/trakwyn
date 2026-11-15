@@ -1,5 +1,11 @@
 import type { ChatScript } from '#src/evals/chatScript.js';
-import type { ILLMProvider, LLMMessage, LLMToolCall } from '#src/use-cases/ports/ILLMProvider.js';
+import type { ResumeQualityScores } from '#src/evals/judge/resumeQuality.js';
+import type {
+  ILLMProvider,
+  LLMMessage,
+  LLMReasoning,
+  LLMToolCall,
+} from '#src/use-cases/ports/ILLMProvider.js';
 
 /** The AI features the eval covers. Add one here when a new feature gets cases. */
 export type EvalFeature =
@@ -25,7 +31,18 @@ export interface EvalCase {
    * stops a mistyped expectation from failing every model forever.
    */
   idealReply: string;
-  run(provider: ILLMProvider, judge?: ILLMProvider): Promise<string[]>;
+  run(provider: ILLMProvider, judge?: ILLMProvider, report?: CaseReport): Promise<string[]>;
+}
+
+/**
+ * Where a case puts what it measured but does not pass or fail on (JEF-599):
+ * a resume's quality scores, or why they could not be read. `runCase` hands
+ * every case one and copies what it was given onto the result.
+ */
+export interface CaseReport {
+  quality(scores: ResumeQualityScores): void;
+  /** The judge answered, but not in a form that could be read. */
+  qualityUnreadable(reason: string): void;
 }
 
 /**
@@ -86,6 +103,14 @@ export interface CaseResult {
   quotaStop?: boolean;
   promptTokens: number;
   completionTokens: number;
+  /**
+   * How good the resume was, 1 to 5 per criterion (JEF-599). Reported, never
+   * pass or fail. Absent for other features, and when the judge was not asked
+   * or could not be read (`qualityNote` says which).
+   */
+  quality?: ResumeQualityScores;
+  /** Why a resume case has no `quality`, when the judge's reply could not be read. */
+  qualityNote?: string;
   /** What the grader spent on this case, apart from the model under test (JEF-470). */
   judgePromptTokens: number;
   judgeCompletionTokens: number;
@@ -172,4 +197,10 @@ export interface EvalConfig {
   label: string | null;
   /** Keep the run in its own folder (JEF-560); `--no-save` turns it off. */
   save: boolean;
+  /**
+   * `EVAL_REASONING` (JEF-599): force this reasoning level on every call the
+   * model under test receives, to compare off against low. Null or absent leaves
+   * each use case's own setting. The judge is never affected.
+   */
+  reasoning?: LLMReasoning | null;
 }

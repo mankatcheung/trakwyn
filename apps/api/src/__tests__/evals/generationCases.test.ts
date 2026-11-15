@@ -196,13 +196,18 @@ describe('generationCase', () => {
 
     const result = await runCase(resumeCase, target, judge);
 
+    // A resume is judged twice (JEF-599): the claim check, then its quality. The
+    // stubbed reply is a claim list, so the second is unreadable and reported as
+    // "no score" without failing the case.
     expect(result).toMatchObject({
       passed: true,
       promptTokens: 40,
       completionTokens: 10,
-      judgePromptTokens: 700,
-      judgeCompletionTokens: 90,
+      judgePromptTokens: 1400,
+      judgeCompletionTokens: 180,
     });
+    expect(result.quality).toBeUndefined();
+    expect(result.qualityNote).toBeDefined();
   });
 
   it('throws an unreadable judge reply, which runCase reports as a failed case', async () => {

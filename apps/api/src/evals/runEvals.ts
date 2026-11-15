@@ -13,11 +13,16 @@ import { buildProvider, targetLabel } from '#src/evals/buildProvider.js';
 import { ALL_CASES, selectCases } from '#src/evals/cases/index.js';
 import { requireJudge } from '#src/evals/judge/requireJudge.js';
 import {
+  formatQualityValidation,
+  validateQualityJudge,
+} from '#src/evals/judge/validateQualityJudge.js';
+import {
   formatValidation,
   JUDGE_MIN_ACCURACY,
   validateJudge,
 } from '#src/evals/judge/validateJudge.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
+import { withReasoning } from '#src/evals/reasoningOverride.js';
 import { gitShortSha, publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
 import { publishSavedRun } from '#src/evals/publish/publishSavedRun.js';
 import { showSavedRun } from '#src/evals/show/showSavedRun.js';
@@ -63,7 +68,10 @@ async function runTargets(
   const runs: TargetRun[] = [];
 
   for (const target of config.targets) {
-    const label = targetLabel(target);
+    // The level is part of the label, so two runs of one model at off and low read as two rows (JEF-599).
+    const label = config.reasoning
+      ? `${targetLabel(target)} reasoning=${config.reasoning}`
+      : targetLabel(target);
     console.log(`\n${label}: ${cases.length} cases`);
     let counts: CacheCounts = { hits: 0, misses: 0 };
     const targetCache = cache
@@ -76,8 +84,9 @@ async function runTargets(
           },
         }
       : null;
+    const built = buildProvider(target, targetCache);
     const results = await runSuite(
-      buildProvider(target, targetCache),
+      config.reasoning ? withReasoning(built, config.reasoning) : built,
       cases,
       (result) => console.log(progressLine(result)),
       judge ?? undefined,
@@ -145,10 +154,27 @@ function saveRun(
   }
 }
 
+/**
+ * Takes the quality scores off every result when the quality judge was not
+ * trusted, with a note saying why, so an untrusted number is never compared.
+ */
+function withoutUntrustedQuality(runs: TargetRun[], trusted: boolean): TargetRun[] {
+  if (trusted) return runs;
+  return runs.map((run) => ({
+    ...run,
+    results: run.results.map(({ quality, ...rest }) =>
+      quality === undefined
+        ? rest
+        : { ...rest, qualityNote: 'the quality judge was not trusted, so this score is left out' },
+    ),
+  }));
+}
+
 async function main(): Promise<number> {
   let config: EvalConfig;
   let cache: Cache;
   let judge: ILLMProvider | null;
+  let needsQuality = false;
 
   try {
     config = parseEvalArgs(process.argv.slice(2), process.env);
@@ -161,6 +187,9 @@ async function main(): Promise<number> {
       ? config.judge
       : requireJudge(config, selectCases(ALL_CASES, config.caseIds));
     judge = judgeTarget ? buildProvider(judgeTarget, cache) : null;
+    needsQuality =
+      config.validateJudge ||
+      selectCases(ALL_CASES, config.caseIds).some((evalCase) => evalCase.feature === 'resume');
   } catch (error: unknown) {
     console.error(messageOf(error));
     return USAGE_ERROR;
@@ -173,13 +202,26 @@ async function main(): Promise<number> {
     const validation = await validateJudge(judge);
     console.log(formatValidation(validation, JUDGE_MIN_ACCURACY));
     if (!validation.meetsThreshold) return 1;
-    if (config.validateJudge) return 0;
+  }
+
+  // The quality scores count only once the judge has ranked hand-labelled
+  // pairs correctly (JEF-599). Unlike the claim check this does not stop the
+  // run: quality is reported, never pass or fail, so an untrusted judge costs
+  // the scores (dropped below) and not the invented-content result.
+  let qualityTrusted = true;
+  if (judge && needsQuality) {
+    const quality = await validateQualityJudge(judge);
+    console.log(`\n${formatQualityValidation(quality, JUDGE_MIN_ACCURACY)}`);
+    qualityTrusted = quality.meetsThreshold;
+    if (config.validateJudge) return qualityTrusted ? 0 : 1;
+  } else if (config.validateJudge) {
+    return 0;
   }
 
   const startedAt = new Date();
   let runs: TargetRun[];
   try {
-    runs = await runTargets(config, judge, cache);
+    runs = withoutUntrustedQuality(await runTargets(config, judge, cache), qualityTrusted);
   } catch (error: unknown) {
     console.error(messageOf(error));
     return USAGE_ERROR;

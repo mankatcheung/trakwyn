@@ -1,3 +1,4 @@
+import { QUALITY_CRITERIA, meanQuality } from '#src/evals/judge/resumeQuality.js';
 import { CLOUDFLARE_DAILY_QUOTA } from '#src/evals/quotaStop.js';
 import type { CaseResult, EvalFeature } from '#src/evals/types.js';
 
@@ -150,15 +151,67 @@ function toolUseSection(runs: TargetRun[]): string[] {
   return lines.length === 0 ? [] : ['', 'Chat tool use:', ...lines];
 }
 
+const toOne = (value: number): string => value.toFixed(1);
+
+/** The mean of the cases' mean quality, and how many cases that is; null when none was scored (JEF-599). */
+function qualityMean(results: CaseResult[]): { mean: number; cases: number } | null {
+  const scored = results.filter((result) => result.quality !== undefined);
+  if (scored.length === 0) return null;
+  const total = scored.reduce((sum, result) => sum + meanQuality(result.quality!), 0);
+  return { mean: total / scored.length, cases: scored.length };
+}
+
+/**
+ * Resume quality per target and per case (JEF-599): what a prompt or model
+ * change is compared on, since pass or fail only says nothing was invented.
+ * Scores run from 1 to 5 and are reported, never scored.
+ */
+function qualitySection(runs: TargetRun[]): string[] {
+  const lines = runs.flatMap(({ label, results }) => {
+    const scored = results.filter((result) => result.quality !== undefined);
+    const noted = results.filter((result) => result.quality === undefined && result.qualityNote);
+    if (scored.length === 0 && noted.length === 0) return [];
+    const perCriterion = QUALITY_CRITERIA.map((criterion) => {
+      const mean =
+        scored.reduce((sum, result) => sum + result.quality!.scores[criterion], 0) / scored.length;
+      return `${criterion} ${toOne(mean)}`;
+    }).join(', ');
+    return [
+      ...(scored.length > 0 ? [`  ${label}  ${perCriterion}`] : []),
+      ...scored.map((result) => {
+        const quality = result.quality!;
+        const scores = QUALITY_CRITERIA.map(
+          (criterion) => `${criterion} ${quality.scores[criterion]}`,
+        ).join(', ');
+        const omitted =
+          quality.omittedMustHaves.length > 0
+            ? `; left out: ${quality.omittedMustHaves.join(', ')}`
+            : '';
+        return `    ${result.caseId}: ${toOne(meanQuality(quality))} (${scores})${omitted}`;
+      }),
+      ...noted.map((result) => `    ${result.caseId}: no score (${result.qualityNote})`),
+    ];
+  });
+  return lines.length === 0
+    ? []
+    : ['', 'Resume quality (1 to 5, reported and not scored):', ...lines];
+}
+
 /** `cached` when every reply came from disk: a replay's `0 ms` is not a fast model. */
 function latencyColumn(summary: RunSummary, cache: CacheCounts | undefined): string {
   if (cache && cache.hits > 0 && cache.misses === 0) return 'cached';
   return `${Math.round(summary.meanLatencyMs)} ms`;
 }
 
+const qualityCell = (results: CaseResult[]): string => {
+  const quality = qualityMean(results);
+  return quality === null ? '-' : `${toOne(quality.mean)} (${quality.cases})`;
+};
+
 /** A table with a row per target, then each failing case and why it failed. */
 export function formatReport(runs: TargetRun[], maxErrorRate?: number): string {
   const showCache = runs.some((run) => run.cache !== undefined);
+  const showQuality = runs.some((run) => qualityMean(run.results) !== null);
   const rows = runs.map(({ label, results, cache, skipped }) => {
     const summary = summarise(results, skipped ?? 0);
     return [
@@ -173,6 +226,7 @@ export function formatReport(runs: TargetRun[], maxErrorRate?: number): string {
       promptColumn(results),
       `${summary.promptTokens}/${summary.completionTokens}`,
       `${summary.judgePromptTokens}/${summary.judgeCompletionTokens}`,
+      ...(showQuality ? [qualityCell(results)] : []),
       ...(showCache ? [cache ? `${cache.hits}/${cache.misses}` : '-'] : []),
       latencyColumn(summary, cache),
     ];
@@ -187,6 +241,7 @@ export function formatReport(runs: TargetRun[], maxErrorRate?: number): string {
     'Prompts',
     'Tokens in/out',
     'Judge tokens in/out',
+    ...(showQuality ? ['Resume quality'] : []),
     ...(showCache ? ['Cache hit/miss'] : []),
     'Mean latency',
   ];
@@ -213,6 +268,7 @@ export function formatReport(runs: TargetRun[], maxErrorRate?: number): string {
     line(header),
     ...rows.map(line),
     ...toolUseSection(runs),
+    ...qualitySection(runs),
     ...(formatQuotaStops(runs).length > 0 ? ['', ...formatQuotaStops(runs)] : []),
     ...(untrusted.length > 0 ? ['', ...untrusted] : []),
     '',

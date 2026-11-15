@@ -117,12 +117,13 @@ Read only when you pass `--publish` (see [Publishing to Langfuse](#publishing-to
 
 ### Behaviour
 
-| Variable                       | Meaning                                                                                                                                                                                            |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `EVAL_MIN_PASS_RATE`           | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it.                                                                                        |
-| `EVAL_MAX_ERROR_RATE`          | The share of a target's cases that may end in `error` before the target is not trusted, from 0 to 1. Default `0.1`. The `--max-error-rate` flag wins over it. See [Outcomes](#reading-the-report). |
-| `EVAL_CLAUDE_CODE_BIN`         | `claudecode` only. The `claude` binary, if it is not on `PATH`. A missing binary exits 2 before any call.                                                                                          |
-| `EVAL_CLAUDE_CODE_CONCURRENCY` | `claudecode` only. Calls at once. Default `1`, so a full run does not hit subscription limits in a burst.                                                                                          |
+| Variable                       | Meaning                                                                                                                                                                                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EVAL_MIN_PASS_RATE`           | The pass rate every target must reach, from 0 to 1. Default `0.8`. The `--min-pass-rate` flag wins over it.                                                                                                                              |
+| `EVAL_MAX_ERROR_RATE`          | The share of a target's cases that may end in `error` before the target is not trusted, from 0 to 1. Default `0.1`. The `--max-error-rate` flag wins over it. See [Outcomes](#reading-the-report).                                       |
+| `EVAL_REASONING`               | `off`, `low` or `default`: force that reasoning level on every call the model under test receives, to compare levels (see [Resume quality](#resume-quality-jef-599)). Unset leaves each use case's own setting. Any other value exits 2. |
+| `EVAL_CLAUDE_CODE_BIN`         | `claudecode` only. The `claude` binary, if it is not on `PATH`. A missing binary exits 2 before any call.                                                                                                                                |
+| `EVAL_CLAUDE_CODE_CONCURRENCY` | `claudecode` only. Calls at once. Default `1`, so a full run does not hit subscription limits in a burst.                                                                                                                                |
 
 ## Targets: which model is tested
 
@@ -167,6 +168,36 @@ EVAL_JUDGE_MODEL=sonnet
 - **Subscription terms:** check Anthropic's current terms before relying on scripted `claude -p` use. Keep it local and manual, never CI.
 - It lives in `src/evals/` only and is not a product provider.
 
+## Resume quality (JEF-599)
+
+The claim check says whether a resume is **true**. A second judge says whether it is **good**: would it win a first interview. It scores each resume from 1 to 5 on four things, the ones the resume prompt tickets are meant to move:
+
+| Criterion     | What it asks                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `coverage`    | Of the posting's must-haves the candidate really has, how many does the resume make easy to find?                  |
+| `terms`       | Does it use the posting's own word for a skill the candidate has under another name ("PostgreSQL" for "Postgres")? |
+| `specificity` | Do the bullets say what was done and what came of it, keeping the numbers, scale and tools the profile gives?      |
+| `summary`     | Is the summary aimed at this role, opening with the role or nearest true title, with no filler?                    |
+
+It also lists the must-haves the profile supports but the resume leaves out. The scale is `QUALITY_RULE` in `judge/resumeQuality.ts`.
+
+- **Reported, never scored.** Pass or fail stays on the invented-content check. Quality is a number to compare between runs: the **Resume quality** column (mean of the cases' means, and how many cases) and a "Resume quality" section with each target's per-criterion means and each case's scores and omitted must-haves. Langfuse gets `quality` and `quality_<criterion>` scores per case (`--publish`). A judge reply that cannot be read gives that case no score, with a note, and does not fail it.
+- **Trusted only after ranking pairs.** `judge/labelledQuality.ts` holds eleven pairs of resumes for one candidate and posting that a person ranked: the same facts, one written well and one badly (vague bullets with the numbers dropped, a summary aimed at another role, the posting's must-haves left out, the candidate's own names kept where the posting uses others). Every run that includes a resume case first has the judge score both of each pair (`validateQualityJudge`); it is right when the strong one scores strictly higher, and it needs `JUDGE_MIN_ACCURACY` (90%, so one wrong pair in eleven is allowed). **Unlike the claim check it does not stop the run:** if the quality judge is not trusted, the quality scores are left out of the report with a note and the invented-content result stands. `--validate-judge` runs both checks and exits 1 if either fails.
+- **Fixtures** (`fixtures/qualityProfiles.ts`) run as resume cases only: `long-metric-rich` (a long history full of numbers, where the resume has to choose what leads), `posting-synonyms` (a posting that says PostgreSQL, Kubernetes and JavaScript where the candidate wrote Postgres, K8s and JS) and `career-changer` (a teacher moving to customer success, where most roles are unrelated). Each `idealResume` is the strong resume of its pairs.
+- **Adding a pair:** write the weak resume as data in `labelledQuality.ts` with the one thing that is wrong with it. `resumeQuality.test.ts` checks that it invents no employer, school or skill, so it is worse and not false.
+
+### Comparing reasoning off and low
+
+`EVAL_REASONING=off|low|default` forces that reasoning level on every call the **model under test** receives (the judge always answers with reasoning off), so one model can be run at both levels on the same cases. The level is in the row's label (`provider:model reasoning=low`) and in the cache key, so the two runs do not share replies. The use case's own setting (`AI_REASONING_DEFAULTS.RESUME`, currently `off`) is unchanged by it.
+
+```bash
+# The same resume cases, reasoning off, then low; compare the Resume quality columns
+EVAL_REASONING=off pnpm --filter @trakwyn/api eval --target workersai:@cf/openai/gpt-oss-120b --case resume-long-metric-rich,resume-posting-synonyms,resume-career-changer --cache --label reasoning-off
+EVAL_REASONING=low pnpm --filter @trakwyn/api eval --target workersai:@cf/openai/gpt-oss-120b --case resume-long-metric-rich,resume-posting-synonyms,resume-career-changer --cache --label reasoning-low
+```
+
+Read the two things together: the quality means, and whether `low` runs out of room. The resume reply is capped at 2,048 tokens (`LLM.MAX_OUTPUT_TOKENS_CAP`, shared by every feature), and reasoning tokens come out of it, so a `low` run that truncates shows as failed cases and a lower Schema rate, which is a worse result however good the scores of the cases that finished.
+
 ## Flags
 
 Flags that take a value need one (`--out` with nothing after it is an error). An unknown flag is an error. Everything is checked before the first model call.
@@ -179,7 +210,7 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 | `--max-error-rate <0-1>`    | The share of a target's cases that may end in `error` (the provider's fault, not the model's) before the run exits `4`. Default `0.1`. Outside 0 to 1 is an error. See [Outcomes](#reading-the-report).           |
 | `--cache`                   | Store each reply on disk and reuse it on the next run. See [The cache](#the-cache).                                                                                                                               |
 | `--refresh`                 | Ask the model again and overwrite what is stored. **Implies `--cache`**, so you do not need both.                                                                                                                 |
-| `--validate-judge`          | Run only the judge check, print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                                                                               |
+| `--validate-judge`          | Run only the judge checks (the claim check and the resume quality ranking), print each verdict and stop. Needs the `EVAL_JUDGE_*` variables and no target. No target model is called.                             |
 | `--publish`                 | After the run, upload it to Langfuse so you can browse and compare it. Needs the `EVAL_LANGFUSE_*` keys. See [Publishing to Langfuse](#publishing-to-langfuse). Off by default; not used with `--validate-judge`. |
 | `--label <name>`            | Add a name to the run's folder, for example `baseline`. See [Saved runs](#saved-runs).                                                                                                                            |
 | `--publish-from <run-dir>`  | Upload a [saved run](#saved-runs) to Langfuse without calling any model. Needs only the `EVAL_LANGFUSE_*` keys; cannot be combined with run flags. See [Publishing to Langfuse](#publishing-to-langfuse).         |
@@ -372,22 +403,22 @@ No file holds an API key or a base URL: targets are recorded by their `provider:
 
 ## What is covered
 
-The suite has **65 cases** over six features:
+The suite has **68 cases** over six features:
 
-| Feature (prompt)        | Cases | What they check                                                                                                                                                                                                                                    |
-| ----------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Job description parsing | 13    | Clean ads, a page with its navigation attached, German, a recruiter blurb, a prompt injection, one that plants an image and a link, a long posting that must be summarised. Ids start `jd-`.                                                       |
-| Resume match score      | 10    | Strong, partial, junior for senior, adjacent field, zero overlap both ways, an injection in the resume and one in the job description. Ids start `match-`.                                                                                         |
-| Resume                  | 7     | A posting that asks for skills the user lacks, a thin profile, an empty skills list, an instruction hidden in the posting and in a note, and two that order a link and an address into the document. **Graded by the judge.** Ids start `resume-`. |
-| Cover letter            | 7     | The same seven situations. **Graded by the judge.** Ids start `cover-letter-`.                                                                                                                                                                     |
-| Chat tool selection     | 20    | Whether the assistant picks the right tool with the right arguments. Writes are proposals, never applied; a delete is refused. Ids start `chat-`.                                                                                                  |
-| Company briefing        | 8     | A briefing grounded in the pages it was given, not inventing sources, and ignoring orders hidden in a page, including one to send the reader to another site. Ids start `briefing-`.                                                               |
+| Feature (prompt)        | Cases | What they check                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Job description parsing | 13    | Clean ads, a page with its navigation attached, German, a recruiter blurb, a prompt injection, one that plants an image and a link, a long posting that must be summarised. Ids start `jd-`.                                                                                                                                                                                                                         |
+| Resume match score      | 10    | Strong, partial, junior for senior, adjacent field, zero overlap both ways, an injection in the resume and one in the job description. Ids start `match-`.                                                                                                                                                                                                                                                           |
+| Resume                  | 10    | A posting that asks for skills the user lacks, a thin profile, an empty skills list, an instruction hidden in the posting and in a note, two that order a link and an address into the document, and three made to be judged for quality: a long metric-rich history, a posting with synonyms and a career changer. **Graded by the judge**, and scored for [quality](#resume-quality-jef-599). Ids start `resume-`. |
+| Cover letter            | 7     | The same seven situations. **Graded by the judge.** Ids start `cover-letter-`.                                                                                                                                                                                                                                                                                                                                       |
+| Chat tool selection     | 20    | Whether the assistant picks the right tool with the right arguments. Writes are proposals, never applied; a delete is refused. Ids start `chat-`.                                                                                                                                                                                                                                                                    |
+| Company briefing        | 8     | A briefing grounded in the pages it was given, not inventing sources, and ignoring orders hidden in a page, including one to send the reader to another site. Ids start `briefing-`.                                                                                                                                                                                                                                 |
 
 Checks are ranges and "mentions" tests, not exact wording, because every model phrases a correct answer differently. Fixtures are invented. Tone and helpfulness are not judged.
 
 ### Cost
 
-A full run is about 22 short requests for the plain features, 20 chat turns (each may make several model calls), and for the resume and cover letter, 14 generations and 14 judge calls. Add 11 judge calls for validation. The report shows tokens for the target and the judge separately. With `--cache`, a repeat is free.
+A full run is about 22 short requests for the plain features, 20 chat turns (each may make several model calls), and for the resume and cover letter, 17 generations and 27 judge calls (17 claim checks and 10 resume quality reviews). Add 33 judge calls for validation (11 claim checks and 22 quality reviews, two for each of eleven pairs). The report shows tokens for the target and the judge separately. With `--cache`, a repeat is free.
 
 ## Where model text is rendered
 

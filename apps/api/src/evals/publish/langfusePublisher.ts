@@ -1,4 +1,5 @@
 import { LANGFUSE } from '#src/infrastructure/config/constants.js';
+import { QUALITY_CRITERIA, meanQuality } from '#src/evals/judge/resumeQuality.js';
 import { summarise, tooManyErrors, type TargetRun } from '#src/evals/summary.js';
 import type { CaseResult, RecordedCall } from '#src/evals/types.js';
 
@@ -90,6 +91,33 @@ function lastReply(calls: RecordedCall[]): string | null {
  * `passed` and `schema_valid`, so Langfuse's averages leave out provider errors
  * and skipped cases (JEF-561), as the printed report does.
  */
+/**
+ * A resume's quality (JEF-599): the mean and one score per criterion, so a run
+ * can be compared by what moved. The must-haves it left out ride on the mean's
+ * comment. Nothing for a case with no quality scores.
+ */
+function qualityScores(result: CaseResult): ScoreInput[] {
+  const quality = result.quality;
+  if (!quality) return [];
+  return [
+    {
+      name: 'quality',
+      value: meanQuality(quality),
+      dataType: 'NUMERIC',
+      comment:
+        quality.omittedMustHaves.length > 0
+          ? `left out: ${quality.omittedMustHaves.join(', ')}`
+          : undefined,
+    },
+    ...QUALITY_CRITERIA.map((criterion): ScoreInput => ({
+      name: `quality_${criterion}`,
+      value: quality.scores[criterion],
+      dataType: 'NUMERIC',
+      comment: quality.reasons[criterion] === '' ? undefined : quality.reasons[criterion],
+    })),
+  ];
+}
+
 function scoresFor(result: CaseResult): ScoreInput[] {
   const outcome: ScoreInput = { name: 'outcome', value: result.outcome, dataType: 'CATEGORICAL' };
   if (result.outcome === 'error' || result.outcome === 'skipped') return [outcome];
@@ -104,12 +132,14 @@ function scoresFor(result: CaseResult): ScoreInput[] {
     },
     { name: 'schema_valid', value: result.schemaValid, dataType: 'BOOLEAN' },
   ];
-  if (result.feature !== 'chat') return base;
-  return [
-    ...base,
-    { name: 'tool_calls', value: result.toolCalls, dataType: 'NUMERIC' },
-    { name: 'iterations', value: result.iterations, dataType: 'NUMERIC' },
-  ];
+  const chat: ScoreInput[] =
+    result.feature === 'chat'
+      ? [
+          { name: 'tool_calls', value: result.toolCalls, dataType: 'NUMERIC' },
+          { name: 'iterations', value: result.iterations, dataType: 'NUMERIC' },
+        ]
+      : [];
+  return [...base, ...chat, ...qualityScores(result)];
 }
 
 function itemsOf(runs: TargetRun[]): DatasetItemInput[] {

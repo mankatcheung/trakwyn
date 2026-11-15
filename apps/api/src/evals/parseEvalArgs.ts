@@ -1,4 +1,5 @@
 import { LLM_PROVIDER } from '#src/use-cases/constants.js';
+import { parseReasoning } from '#src/evals/reasoningOverride.js';
 import { LANGFUSE, PLATFORM_LLM } from '#src/infrastructure/config/constants.js';
 import {
   binaryExists,
@@ -391,5 +392,6 @@ export function parseEvalArgs(
     show: null,
     label: flags.label?.trim() || null,
     save: !flags.noSave,
+    reasoning: parseReasoning(env.EVAL_REASONING),
   };
 }
