@@ -2,6 +2,13 @@
 
 Loaded when working under `apps/api/src/use-cases/resume`. Paths are relative to `apps/api/src/`.
 
+## How the prompt asks for it to read (JEF-596)
+
+`prompts/resume.ts` has two kinds of rule, and they are not equal. The "Absolute rules" are about what may be stated (no invented employer, title, date, skill or achievement) and are enforced again in code, below. The "Writing for a recruiter's first skim" section is style: a summary aimed at the role, action-led bullets that keep the source's numbers, the best match first, more room for recent roles, skills ordered by the posting, about one page. A style rule is never allowed to relax an absolute one, and `resumePromptRules.test.ts` pins each absolute rule by its wording so a rewrite of the style guidance cannot drop one unnoticed.
+
+- **A renamed skill must be a known alias.** The prompt tells the model to use the posting's name for a skill the candidate has under another spelling ("PostgreSQL" for "Postgres"). `applyProfileFacts` then keeps a skill only if the profile has it, so a rename outside `SKILL_ALIASES` is dropped, not shown. That is the safe failure, but a posting term you want accepted needs an alias (and a test).
+- **The output budget did not move.** The reply is still capped at `LLM.MAX_OUTPUT_TOKENS_CAP` (2,048 tokens, shared by every feature). The new rules ask for fewer bullets in old roles and about a page overall, so replies should be shorter than before, not longer, but that has not been measured on a long profile with a real model. If a long history truncates ("the AI ran out of room"), raising the cap is a cost decision for every AI feature, not part of the prompt.
+
 ## What the model may and may not decide
 
 A resume is sent to an employer, so the facts the profile already holds are not left to the model. `GenerateResumeUseCase` runs two checks on the parsed reply, both in `resumeGrounding.ts`:
