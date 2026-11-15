@@ -15,6 +15,10 @@ import {
 import type { IDocumentTextExtractor } from '#src/use-cases/ports/IDocumentTextExtractor.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ILLMProviderFactory } from '#src/use-cases/ports/ILLMProviderFactory.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
@@ -31,7 +35,11 @@ import {
 import type {
   IParseCvUseCase,
   ParseCvInput,
+  ParsedCvAward,
+  ParsedCvCertification,
   ParsedCvEducation,
+  ParsedCvLanguage,
+  ParsedCvProject,
   ParsedCvProfile,
   ParsedCvSkill,
   ParsedCvWorkExperience,
@@ -48,6 +56,10 @@ interface Deps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
   parseCvRateLimiter: IRateLimiter;
 }
 
@@ -117,10 +129,22 @@ export class ParseCvUseCase implements IParseCvUseCase {
     userId: string,
     reply: ParsedCvReply,
   ): Promise<Omit<ParsedCvProfile, 'truncated'>> {
-    const [existingWork, existingEducation, existingSkills] = await Promise.all([
+    const [
+      existingWork,
+      existingEducation,
+      existingSkills,
+      existingCertifications,
+      existingLanguages,
+      existingProjects,
+      existingAwards,
+    ] = await Promise.all([
       this.deps.workExperienceRepository.findAllByUserId(userId),
       this.deps.educationRepository.findAllByUserId(userId),
       this.deps.skillRepository.findAllByUserId(userId),
+      this.deps.certificationRepository.findAllByUserId(userId),
+      this.deps.languageRepository.findAllByUserId(userId),
+      this.deps.projectRepository.findAllByUserId(userId),
+      this.deps.awardRepository.findAllByUserId(userId),
     ]);
 
     const knownWork = new Set(
@@ -156,13 +180,54 @@ export class ParseCvUseCase implements IParseCvUseCase {
       .slice(0, CV_IMPORT.MAX_SKILLS)
       .map((s) => ({ ...s, alreadyInProfile: knownSkills.has(matchKey(s.name)) }));
 
+    const knownCertifications = new Set(existingCertifications.map((c) => matchKey(c.name)));
+    const certifications = uniqueBy(
+      (reply.certifications ?? []).flatMap((entry) => this.certification(entry)),
+      (c) => matchKey(c.name),
+    )
+      .slice(0, CV_IMPORT.MAX_CERTIFICATIONS)
+      .map((c) => ({ ...c, alreadyInProfile: knownCertifications.has(matchKey(c.name)) }));
+
+    const knownLanguages = new Set(existingLanguages.map((l) => matchKey(l.name)));
+    const languages = uniqueBy(
+      (reply.languages ?? []).flatMap((entry) => this.language(entry)),
+      (l) => matchKey(l.name),
+    )
+      .slice(0, CV_IMPORT.MAX_LANGUAGES)
+      .map((l) => ({ ...l, alreadyInProfile: knownLanguages.has(matchKey(l.name)) }));
+
+    const knownProjects = new Set(existingProjects.map((p) => matchKey(p.name)));
+    const projects = uniqueBy(
+      (reply.projects ?? []).flatMap((entry) => this.project(entry)),
+      (p) => matchKey(p.name),
+    )
+      .slice(0, CV_IMPORT.MAX_PROJECTS)
+      .map((p) => ({ ...p, alreadyInProfile: knownProjects.has(matchKey(p.name)) }));
+
+    const knownAwards = new Set(existingAwards.map((a) => matchKey(a.title)));
+    const awards = uniqueBy(
+      (reply.awards ?? []).flatMap((entry) => this.award(entry)),
+      (a) => matchKey(a.title),
+    )
+      .slice(0, CV_IMPORT.MAX_AWARDS)
+      .map((a) => ({ ...a, alreadyInProfile: knownAwards.has(matchKey(a.title)) }));
+
     const contact = {
       phone: readPhone(reply.contact?.phone),
       location: readLocation(reply.contact?.location),
       links: readProfileLinks(reply.contact?.links),
     };
 
-    return { contact, workExperiences, educations, skills };
+    return {
+      contact,
+      workExperiences,
+      educations,
+      skills,
+      certifications,
+      languages,
+      projects,
+      awards,
+    };
   }
 
   private workExperience(
@@ -212,6 +277,69 @@ export class ParseCvUseCase implements IParseCvUseCase {
         name,
         category: cleanText(entry.category, CV_IMPORT.SHORT_FIELD_MAX_CHARS),
         proficiency: normalizeProficiency(entry.proficiency),
+      },
+    ];
+  }
+
+  private certification(
+    entry: NonNullable<ParsedCvReply['certifications']>[number],
+  ): Array<Omit<ParsedCvCertification, 'alreadyInProfile'>> {
+    const name = cleanText(entry.name, CV_IMPORT.SHORT_FIELD_MAX_CHARS);
+    if (!name) return [];
+    const issuedAt = normalizeCvDate(entry.issuedAt);
+    const expiresAt = normalizeCvDate(entry.expiresAt);
+    return [
+      {
+        name,
+        issuer: cleanText(entry.issuer, CV_IMPORT.SHORT_FIELD_MAX_CHARS),
+        issuedAt,
+        // An expiry before the issue date is a misreading, so it is dropped.
+        expiresAt:
+          expiresAt !== null && (issuedAt === null || expiresAt >= issuedAt) ? expiresAt : null,
+        credentialUrl:
+          readProfileLinks(entry.credentialUrl ? [entry.credentialUrl] : [])[0] ?? null,
+      },
+    ];
+  }
+
+  private language(
+    entry: NonNullable<ParsedCvReply['languages']>[number],
+  ): Array<Omit<ParsedCvLanguage, 'alreadyInProfile'>> {
+    const name = cleanText(entry.name, CV_IMPORT.SHORT_FIELD_MAX_CHARS);
+    if (!name) return [];
+    return [{ name, proficiency: cleanText(entry.proficiency, CV_IMPORT.SHORT_FIELD_MAX_CHARS) }];
+  }
+
+  private project(
+    entry: NonNullable<ParsedCvReply['projects']>[number],
+  ): Array<Omit<ParsedCvProject, 'alreadyInProfile'>> {
+    const name = cleanText(entry.name, CV_IMPORT.SHORT_FIELD_MAX_CHARS);
+    if (!name) return [];
+    const startDate = normalizeCvDate(entry.startDate);
+    return [
+      {
+        name,
+        role: cleanText(entry.role, CV_IMPORT.SHORT_FIELD_MAX_CHARS),
+        url: readProfileLinks(entry.url ? [entry.url] : [])[0] ?? null,
+        startDate,
+        // An end date needs a start date to be checked against; without one it is dropped.
+        endDate: startDate === null ? null : normalizeCvEndDate(entry.endDate, startDate),
+        description: cleanText(entry.description, CV_IMPORT.DESCRIPTION_MAX_CHARS),
+      },
+    ];
+  }
+
+  private award(
+    entry: NonNullable<ParsedCvReply['awards']>[number],
+  ): Array<Omit<ParsedCvAward, 'alreadyInProfile'>> {
+    const title = cleanText(entry.title, CV_IMPORT.SHORT_FIELD_MAX_CHARS);
+    if (!title) return [];
+    return [
+      {
+        title,
+        issuer: cleanText(entry.issuer, CV_IMPORT.SHORT_FIELD_MAX_CHARS),
+        date: normalizeCvDate(entry.date),
+        description: cleanText(entry.description, CV_IMPORT.DESCRIPTION_MAX_CHARS),
       },
     ];
   }

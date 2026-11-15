@@ -32,6 +32,35 @@ export interface SkillValue {
   proficiency: string;
 }
 
+export interface CertificationValue {
+  name: string;
+  issuer: string;
+  issuedAt: string;
+  expiresAt: string;
+  credentialUrl: string;
+}
+
+export interface LanguageValue {
+  name: string;
+  proficiency: string;
+}
+
+export interface ProjectValue {
+  name: string;
+  role: string;
+  url: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
+export interface AwardValue {
+  title: string;
+  issuer: string;
+  date: string;
+  description: string;
+}
+
 export interface Draft<T> {
   id: string;
   selected: boolean;
@@ -44,6 +73,10 @@ export interface CvDrafts {
   workExperiences: Draft<WorkValue>[];
   educations: Draft<EducationValue>[];
   skills: Draft<SkillValue>[];
+  certifications: Draft<CertificationValue>[];
+  languages: Draft<LanguageValue>[];
+  projects: Draft<ProjectValue>[];
+  awards: Draft<AwardValue>[];
 }
 
 /** What the `importCvProfile` mutation takes. */
@@ -66,6 +99,24 @@ export interface ImportCvProfileInput {
     description?: string;
   }>;
   skills: Array<{ name: string; category?: string; proficiency?: string }>;
+  /** Sent only when something is ticked: an API from before JEF-592 does not know them. */
+  certifications?: Array<{
+    name: string;
+    issuer?: string;
+    issuedAt?: string;
+    expiresAt?: string;
+    credentialUrl?: string;
+  }>;
+  languages?: Array<{ name: string; proficiency?: string }>;
+  projects?: Array<{
+    name: string;
+    role?: string;
+    url?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }>;
+  awards?: Array<{ title: string; issuer?: string; date?: string; description?: string }>;
 }
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -111,11 +162,53 @@ export function toDrafts(parsed: ParsedCvProfile): CvDrafts {
         proficiency: text(entry.proficiency),
       },
     })),
+    certifications: (parsed.certifications ?? []).map((entry, index) => ({
+      id: `certification-${index}`,
+      selected: !entry.alreadyInProfile,
+      alreadyInProfile: entry.alreadyInProfile,
+      value: {
+        name: entry.name,
+        issuer: text(entry.issuer),
+        issuedAt: text(entry.issuedAt),
+        expiresAt: text(entry.expiresAt),
+        credentialUrl: text(entry.credentialUrl),
+      },
+    })),
+    languages: (parsed.languages ?? []).map((entry, index) => ({
+      id: `language-${index}`,
+      selected: !entry.alreadyInProfile,
+      alreadyInProfile: entry.alreadyInProfile,
+      value: { name: entry.name, proficiency: text(entry.proficiency) },
+    })),
+    projects: (parsed.projects ?? []).map((entry, index) => ({
+      id: `project-${index}`,
+      selected: !entry.alreadyInProfile,
+      alreadyInProfile: entry.alreadyInProfile,
+      value: {
+        name: entry.name,
+        role: text(entry.role),
+        url: text(entry.url),
+        startDate: text(entry.startDate),
+        endDate: text(entry.endDate),
+        description: text(entry.description),
+      },
+    })),
+    awards: (parsed.awards ?? []).map((entry, index) => ({
+      id: `award-${index}`,
+      selected: !entry.alreadyInProfile,
+      alreadyInProfile: entry.alreadyInProfile,
+      value: {
+        title: entry.title,
+        issuer: text(entry.issuer),
+        date: text(entry.date),
+        description: text(entry.description),
+      },
+    })),
   };
 }
 
 export function isEmpty(drafts: CvDrafts): boolean {
-  return drafts.workExperiences.length + drafts.educations.length + drafts.skills.length === 0;
+  return allLists(drafts).every((list) => list.length === 0);
 }
 
 /** A month input's value, and an end that is not before the start; a blank end means "present". */
@@ -140,8 +233,43 @@ export function isSkillValid(value: SkillValue): boolean {
   return value.name.trim() !== '';
 }
 
+/** Dates the new sections may leave blank: each blank or a month, and an end not before the start. */
+function optionalMonthsValid(start: string, end: string): boolean {
+  if (start !== '' && !MONTH.test(start)) return false;
+  if (end !== '' && !MONTH.test(end)) return false;
+  return start === '' || end === '' || end >= start;
+}
+
+export function isCertificationValid(value: CertificationValue): boolean {
+  return value.name.trim() !== '' && optionalMonthsValid(value.issuedAt, value.expiresAt);
+}
+
+export function isLanguageValid(value: LanguageValue): boolean {
+  return value.name.trim() !== '';
+}
+
+export function isProjectValid(value: ProjectValue): boolean {
+  return value.name.trim() !== '' && optionalMonthsValid(value.startDate, value.endDate);
+}
+
+export function isAwardValid(value: AwardValue): boolean {
+  return value.title.trim() !== '' && optionalMonthsValid(value.date, '');
+}
+
+function allLists(drafts: CvDrafts): ReadonlyArray<readonly Draft<unknown>[]> {
+  return [
+    drafts.workExperiences,
+    drafts.educations,
+    drafts.skills,
+    drafts.certifications,
+    drafts.languages,
+    drafts.projects,
+    drafts.awards,
+  ];
+}
+
 export function countSelected(drafts: CvDrafts): number {
-  return [drafts.workExperiences, drafts.educations, drafts.skills].reduce(
+  return allLists(drafts).reduce(
     (total, list) => total + list.filter((draft) => draft.selected).length,
     0,
   );
@@ -152,7 +280,11 @@ export function hasInvalidSelection(drafts: CvDrafts): boolean {
   return (
     drafts.workExperiences.some((d) => d.selected && !isWorkValid(d.value)) ||
     drafts.educations.some((d) => d.selected && !isEducationValid(d.value)) ||
-    drafts.skills.some((d) => d.selected && !isSkillValid(d.value))
+    drafts.skills.some((d) => d.selected && !isSkillValid(d.value)) ||
+    drafts.certifications.some((d) => d.selected && !isCertificationValid(d.value)) ||
+    drafts.languages.some((d) => d.selected && !isLanguageValid(d.value)) ||
+    drafts.projects.some((d) => d.selected && !isProjectValid(d.value)) ||
+    drafts.awards.some((d) => d.selected && !isAwardValid(d.value))
   );
 }
 
@@ -170,6 +302,12 @@ export function setAllSelected<T>(list: readonly Draft<T>[], selected: boolean):
 
 /** Only the ticked rows, trimmed, with blank optional fields left out. */
 export function toImportInput(drafts: CvDrafts, contact?: ParsedCvContact): ImportCvProfileInput {
+  const ticked = <T>(list: readonly Draft<T>[]) =>
+    list.filter((draft) => draft.selected).map(({ value }) => value);
+  const certifications = ticked(drafts.certifications);
+  const languages = ticked(drafts.languages);
+  const projects = ticked(drafts.projects);
+  const awards = ticked(drafts.awards);
   return {
     contact: contact
       ? {
@@ -205,5 +343,38 @@ export function toImportInput(drafts: CvDrafts, contact?: ParsedCvContact): Impo
         category: given(value.category),
         proficiency: given(value.proficiency),
       })),
+    ...(certifications.length > 0 && {
+      certifications: certifications.map((value) => ({
+        name: value.name.trim(),
+        issuer: given(value.issuer),
+        issuedAt: given(value.issuedAt),
+        expiresAt: given(value.expiresAt),
+        credentialUrl: given(value.credentialUrl),
+      })),
+    }),
+    ...(languages.length > 0 && {
+      languages: languages.map((value) => ({
+        name: value.name.trim(),
+        proficiency: given(value.proficiency),
+      })),
+    }),
+    ...(projects.length > 0 && {
+      projects: projects.map((value) => ({
+        name: value.name.trim(),
+        role: given(value.role),
+        url: given(value.url),
+        startDate: given(value.startDate),
+        endDate: given(value.endDate),
+        description: given(value.description),
+      })),
+    }),
+    ...(awards.length > 0 && {
+      awards: awards.map((value) => ({
+        title: value.title.trim(),
+        issuer: given(value.issuer),
+        date: given(value.date),
+        description: given(value.description),
+      })),
+    }),
   };
 }

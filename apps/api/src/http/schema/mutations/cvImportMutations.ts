@@ -45,6 +45,31 @@ builder.mutationField('importCvProfile', (t) =>
             category: entry.category,
             proficiency: entry.proficiency,
           })),
+          certifications: (args.input.certifications ?? []).map((entry) => ({
+            name: entry.name,
+            issuer: entry.issuer,
+            issuedAt: entry.issuedAt ? new Date(entry.issuedAt) : null,
+            expiresAt: entry.expiresAt ? new Date(entry.expiresAt) : null,
+            credentialUrl: entry.credentialUrl,
+          })),
+          languages: (args.input.languages ?? []).map((entry) => ({
+            name: entry.name,
+            proficiency: entry.proficiency,
+          })),
+          projects: (args.input.projects ?? []).map((entry) => ({
+            name: entry.name,
+            role: entry.role,
+            url: entry.url,
+            startDate: entry.startDate ? new Date(entry.startDate) : null,
+            endDate: entry.endDate ? new Date(entry.endDate) : null,
+            description: entry.description,
+          })),
+          awards: (args.input.awards ?? []).map((entry) => ({
+            title: entry.title,
+            issuer: entry.issuer,
+            date: entry.date ? new Date(entry.date) : null,
+            description: entry.description,
+          })),
         });
       } catch (err) {
         throw fromCodedError(err);

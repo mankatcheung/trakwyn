@@ -31,7 +31,11 @@ import {
 } from './cvImportDrafts';
 import {
   IMPORT_CV_PROFILE,
+  awardsQueryOptions,
+  certificationsQueryOptions,
   educationsQueryOptions,
+  languagesQueryOptions,
+  projectsQueryOptions,
   skillsQueryOptions,
   workExperiencesQueryOptions,
 } from './profileQueries';
@@ -68,7 +72,15 @@ const PROBLEM_KEYS: Record<CvFileProblem, string> = {
 };
 
 interface ImportResult {
-  importCvProfile: { workExperiences: number; educations: number; skills: number };
+  importCvProfile: {
+    workExperiences: number;
+    educations: number;
+    skills: number;
+    certifications?: number;
+    languages?: number;
+    projects?: number;
+    awards?: number;
+  };
 }
 
 function CvImportFlow({ onClose }: { onClose: () => void }) {
@@ -92,14 +104,24 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
         workExperiencesQueryOptions,
         educationsQueryOptions,
         skillsQueryOptions,
+        certificationsQueryOptions,
+        languagesQueryOptions,
+        projectsQueryOptions,
+        awardsQueryOptions,
       ]) {
         void queryClient.invalidateQueries({ queryKey: options.queryKey });
       }
+      const other =
+        (added.certifications ?? 0) +
+        (added.languages ?? 0) +
+        (added.projects ?? 0) +
+        (added.awards ?? 0);
       toast.success(
-        t('cvImport.success', {
+        t(other > 0 ? 'cvImport.successWithOther' : 'cvImport.success', {
           work: added.workExperiences,
           education: added.educations,
           skills: added.skills,
+          other,
         }),
       );
       onClose();

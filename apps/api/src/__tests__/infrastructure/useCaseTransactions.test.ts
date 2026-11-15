@@ -20,6 +20,10 @@ import { DrizzleMcpOAuthTokenRepository } from '#src/infrastructure/db/repositor
 import { DrizzleWorkExperienceRepository } from '#src/infrastructure/db/repositories/DrizzleWorkExperienceRepository.js';
 import { DrizzleEducationRepository } from '#src/infrastructure/db/repositories/DrizzleEducationRepository.js';
 import { DrizzleSkillRepository } from '#src/infrastructure/db/repositories/DrizzleSkillRepository.js';
+import { DrizzleCertificationRepository } from '#src/infrastructure/db/repositories/DrizzleCertificationRepository.js';
+import { DrizzleLanguageRepository } from '#src/infrastructure/db/repositories/DrizzleLanguageRepository.js';
+import { DrizzleProjectRepository } from '#src/infrastructure/db/repositories/DrizzleProjectRepository.js';
+import { DrizzleAwardRepository } from '#src/infrastructure/db/repositories/DrizzleAwardRepository.js';
 import { DrizzleChatActionProposalRepository } from '#src/infrastructure/db/repositories/DrizzleChatActionProposalRepository.js';
 import { DrizzleMessageRepository } from '#src/infrastructure/db/repositories/DrizzleMessageRepository.js';
 import { conversation } from '#src/infrastructure/db/schema.js';
@@ -519,6 +523,10 @@ describe('repository transaction participation (JEF-427)', () => {
           workExperienceRepository,
           educationRepository,
           skillRepository,
+          certificationRepository: new DrizzleCertificationRepository({ db }),
+          languageRepository: new DrizzleLanguageRepository({ db }),
+          projectRepository: new DrizzleProjectRepository({ db }),
+          awardRepository: new DrizzleAwardRepository({ db }),
           userRepository: new DrizzleUserRepository({ db: testDb.db }),
           transactionManager: new DrizzleTransactionManager({ db: testDb.db }),
           generateId: nanoid,
@@ -549,6 +557,10 @@ describe('repository transaction participation (JEF-427)', () => {
         workExperiences: 1,
         educations: 1,
         skills: 1,
+        certifications: 0,
+        languages: 0,
+        projects: 0,
+        awards: 0,
         filledContact: [],
       });
 

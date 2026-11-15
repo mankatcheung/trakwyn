@@ -1,5 +1,15 @@
 import { useId, useState, type ReactNode } from 'react';
-import { BriefcaseIcon, CheckIcon, GraduationCapIcon, PencilIcon, WrenchIcon } from 'lucide-react';
+import {
+  AwardIcon,
+  BriefcaseIcon,
+  CheckIcon,
+  GraduationCapIcon,
+  LanguagesIcon,
+  PencilIcon,
+  RocketIcon,
+  TrophyIcon,
+  WrenchIcon,
+} from 'lucide-react';
 import {
   Alert,
   Badge,
@@ -13,14 +23,22 @@ import {
 } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import {
+  isAwardValid,
+  isCertificationValid,
   isEducationValid,
+  isLanguageValid,
+  isProjectValid,
   isSkillValid,
   isWorkValid,
   setAllSelected,
   updateDraft,
+  type AwardValue,
+  type CertificationValue,
   type CvDrafts,
   type Draft,
   type EducationValue,
+  type LanguageValue,
+  type ProjectValue,
   type SkillValue,
   type WorkValue,
 } from './cvImportDrafts';
@@ -206,6 +224,75 @@ export function CvImportReview({ drafts, onChange, truncated, disabled }: CvImpo
         )}
       />
 
+      <ReviewGroup<ProjectValue>
+        id="projects"
+        title={t('experience.projectsTitle')}
+        icon={<RocketIcon size={16} />}
+        drafts={drafts.projects}
+        disabled={disabled}
+        onChange={(projects) => onChange({ ...drafts, projects })}
+        labelOf={(v) => v.name}
+        isValid={isProjectValid}
+        summary={(v) => (
+          <>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {[v.role, v.startDate && range(v.startDate, v.endDate)].filter(Boolean).join(' · ')}
+            </p>
+            {v.description && (
+              <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-gray-300">
+                {v.description}
+              </p>
+            )}
+          </>
+        )}
+        fields={(v, update) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('experience.projectNameLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.name}
+                  invalid={v.name.trim() === ''}
+                  onChange={(e) => update({ name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label={t('experience.projectRoleLabel')}>
+              {(id) => (
+                <Input id={id} value={v.role} onChange={(e) => update({ role: e.target.value })} />
+              )}
+            </Field>
+            <MonthField
+              label={t('experience.projectStartLabel')}
+              value={v.startDate}
+              onChange={(startDate) => update({ startDate })}
+            />
+            <MonthField
+              label={t('experience.projectEndLabel')}
+              value={v.endDate}
+              invalid={v.startDate !== '' && v.endDate !== '' && v.endDate < v.startDate}
+              onChange={(endDate) => update({ endDate })}
+            />
+            <Field label={t('experience.projectUrlLabel')} className="sm:col-span-2">
+              {(id) => (
+                <Input id={id} value={v.url} onChange={(e) => update({ url: e.target.value })} />
+              )}
+            </Field>
+            <Field label={t('experience.descriptionLabel')} className="sm:col-span-2">
+              {(id) => (
+                <Textarea
+                  id={id}
+                  rows={3}
+                  value={v.description}
+                  onChange={(e) => update({ description: e.target.value })}
+                />
+              )}
+            </Field>
+          </div>
+        )}
+      />
+
       <ReviewGroup<SkillValue>
         id="skills"
         title={t('experience.skillsTitle')}
@@ -269,6 +356,157 @@ export function CvImportReview({ drafts, onChange, truncated, disabled }: CvImpo
           </div>
         )}
       />
+
+      <ReviewGroup<CertificationValue>
+        id="certifications"
+        title={t('experience.certificationsTitle')}
+        icon={<AwardIcon size={16} />}
+        drafts={drafts.certifications}
+        disabled={disabled}
+        onChange={(certifications) => onChange({ ...drafts, certifications })}
+        labelOf={(v) => v.name}
+        isValid={isCertificationValid}
+        summary={(v) => (
+          <>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {[v.issuer, v.issuedAt && month(v.issuedAt)].filter(Boolean).join(' · ')}
+            </p>
+          </>
+        )}
+        fields={(v, update) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('experience.certificationNameLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.name}
+                  invalid={v.name.trim() === ''}
+                  onChange={(e) => update({ name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label={t('experience.certificationIssuerLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.issuer}
+                  onChange={(e) => update({ issuer: e.target.value })}
+                />
+              )}
+            </Field>
+            <MonthField
+              label={t('experience.certificationIssuedLabel')}
+              value={v.issuedAt}
+              onChange={(issuedAt) => update({ issuedAt })}
+            />
+            <MonthField
+              label={t('experience.certificationExpiresLabel')}
+              value={v.expiresAt}
+              invalid={v.issuedAt !== '' && v.expiresAt !== '' && v.expiresAt < v.issuedAt}
+              onChange={(expiresAt) => update({ expiresAt })}
+            />
+            <Field label={t('experience.certificationUrlLabel')} className="sm:col-span-2">
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.credentialUrl}
+                  onChange={(e) => update({ credentialUrl: e.target.value })}
+                />
+              )}
+            </Field>
+          </div>
+        )}
+      />
+
+      <ReviewGroup<AwardValue>
+        id="awards"
+        title={t('experience.awardsTitle')}
+        icon={<TrophyIcon size={16} />}
+        drafts={drafts.awards}
+        disabled={disabled}
+        onChange={(awards) => onChange({ ...drafts, awards })}
+        labelOf={(v) => v.title}
+        isValid={isAwardValid}
+        summary={(v) => (
+          <>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {[v.issuer, v.date && month(v.date)].filter(Boolean).join(' · ')}
+            </p>
+          </>
+        )}
+        fields={(v, update) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('experience.awardTitleLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.title}
+                  invalid={v.title.trim() === ''}
+                  onChange={(e) => update({ title: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label={t('experience.awardIssuerLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.issuer}
+                  onChange={(e) => update({ issuer: e.target.value })}
+                />
+              )}
+            </Field>
+            <MonthField
+              label={t('experience.awardDateLabel')}
+              value={v.date}
+              onChange={(date) => update({ date })}
+            />
+          </div>
+        )}
+      />
+
+      <ReviewGroup<LanguageValue>
+        id="languages"
+        title={t('experience.languagesTitle')}
+        icon={<LanguagesIcon size={16} />}
+        drafts={drafts.languages}
+        disabled={disabled}
+        onChange={(languages) => onChange({ ...drafts, languages })}
+        labelOf={(v) => v.name}
+        isValid={isLanguageValid}
+        summary={(v) => (
+          <p className="text-sm text-gray-900 dark:text-gray-100">
+            <span className="font-medium">{v.name}</span>
+            {v.proficiency && (
+              <span className="text-gray-500 dark:text-gray-400"> · {v.proficiency}</span>
+            )}
+          </p>
+        )}
+        fields={(v, update) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('experience.languageNameLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.name}
+                  invalid={v.name.trim() === ''}
+                  onChange={(e) => update({ name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label={t('experience.languageLevelLabel')}>
+              {(id) => (
+                <Input
+                  id={id}
+                  value={v.proficiency}
+                  onChange={(e) => update({ proficiency: e.target.value })}
+                />
+              )}
+            </Field>
+          </div>
+        )}
+      />
     </div>
   );
 }
@@ -287,6 +525,30 @@ function Field({ label, className, children }: FieldProps) {
       <FormLabel htmlFor={id}>{label}</FormLabel>
       {children(id)}
     </div>
+  );
+}
+
+interface MonthFieldProps {
+  label: string;
+  value: string;
+  invalid?: boolean;
+  onChange: (value: string) => void;
+}
+
+/** A month the CV may not give: blank is fine, a value must be a month. */
+function MonthField({ label, value, invalid, onChange }: MonthFieldProps) {
+  return (
+    <Field label={label}>
+      {(id) => (
+        <Input
+          id={id}
+          type="month"
+          value={value}
+          invalid={(value !== '' && !MONTH.test(value)) || invalid}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </Field>
   );
 }
 

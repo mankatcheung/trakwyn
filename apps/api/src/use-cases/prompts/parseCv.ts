@@ -45,17 +45,29 @@ const userPrompt = ({
   ],
   "skills": [
     { "name": "skill name", "category": "e.g. Language, Framework, Tool, Soft skill, or null", "proficiency": "beginner, intermediate, advanced or expert, only if the CV states a level; otherwise null" }
+  ],
+  "certifications": [
+    { "name": "certification name as written", "issuer": "issuing body, or null", "issuedAt": "YYYY-MM or YYYY, or null", "expiresAt": "YYYY-MM or YYYY, or null", "credentialUrl": "a full https URL only if written in the CV, or null" }
+  ],
+  "languages": [
+    { "name": "spoken language", "proficiency": "the level as the CV words it (for example Native, Fluent, B2), or null" }
+  ],
+  "projects": [
+    { "name": "project name", "role": "the candidate's role, or null", "url": "a full https URL only if written in the CV, or null", "startDate": "YYYY-MM or YYYY, or null", "endDate": "YYYY-MM, YYYY, \\"Present\\", or null", "description": "what it was and what came of it, as the CV words it, at most ${CV_IMPORT.PROMPT_SECTION_DESCRIPTION_MAX_CHARS} characters, or null" }
+  ],
+  "awards": [
+    { "title": "award or honour as written", "issuer": "who gave it, or null", "date": "YYYY-MM or YYYY, or null", "description": "one line as the CV words it, at most ${CV_IMPORT.PROMPT_SECTION_DESCRIPTION_MAX_CHARS} characters, or null" }
   ]
 }
 
-List work experience and education from most recent to oldest. When the CV lists more than ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES} roles, keep only the two strongest bullets for each role after the first ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES}. Leave out an entry whose start date the CV does not give.
+List work experience and education from most recent to oldest. When the CV lists more than ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES} roles, keep only the two strongest bullets for each role after the first ${CV_IMPORT.PROMPT_FULL_DETAIL_ROLES}. Leave out a work experience or education entry whose start date the CV does not give. Certifications, languages, projects and awards need no dates; use empty lists for any section the CV does not have, and never add one the CV does not state.
 
 CV:
 ${wrapUntrustedContent(cvText)}`;
 
 export const parseCvPrompt: PromptDefinition<ParseCvPromptInput> = {
   id: AI_FEATURE.PARSE_CV,
-  version: 3,
+  version: 4,
   build: (input) => [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt(input) },
@@ -106,6 +118,41 @@ export const parsedCvResponseSchema = z.object({
     .optional(),
   skills: z
     .array(z.object({ name: textField, category: textField, proficiency: textField }))
+    .nullable()
+    .optional(),
+  certifications: z
+    .array(
+      z.object({
+        name: textField,
+        issuer: textField,
+        issuedAt: dateField,
+        expiresAt: dateField,
+        credentialUrl: textField,
+      }),
+    )
+    .nullable()
+    .optional(),
+  languages: z
+    .array(z.object({ name: textField, proficiency: textField }))
+    .nullable()
+    .optional(),
+  projects: z
+    .array(
+      z.object({
+        name: textField,
+        role: textField,
+        url: textField,
+        startDate: dateField,
+        endDate: dateField,
+        description: textField,
+      }),
+    )
+    .nullable()
+    .optional(),
+  awards: z
+    .array(
+      z.object({ title: textField, issuer: textField, date: dateField, description: textField }),
+    )
     .nullable()
     .optional(),
 });
