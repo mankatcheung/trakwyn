@@ -18,12 +18,15 @@ import {
   type GenerationFixture,
 } from '#src/evals/fixtures/generationFixture.js';
 import { checkClaims, claimFailures } from '#src/evals/judge/claimCheck.js';
+import { scoreResumeQuality } from '#src/evals/judge/resumeQuality.js';
+import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import type { ILLMProvider } from '#src/use-cases/ports/ILLMProvider.js';
 import type { ResumeMatchView } from '#src/use-cases/application/ComputeResumeMatchScoreUseCase.js';
 import type {
   ParsedJobDescription,
   ParsedPostingFields,
 } from '#src/use-cases/jobDescription/ParseJobDescriptionUseCase.js';
-import type { EvalCase } from '#src/evals/types.js';
+import type { CaseReport, EvalCase } from '#src/evals/types.js';
 
 interface JobPostingSpec {
   id: string;
@@ -84,10 +87,29 @@ interface GenerationSpec {
 }
 
 /**
+ * Scores a resume's quality and puts the numbers in the report (JEF-599). It
+ * never fails the case: quality is compared between runs, and a judge reply
+ * that cannot be read is reported as "no score" rather than as a bad resume.
+ * A provider error (a quota stop, an outage) is let through, as for any call.
+ */
+async function reportQuality(
+  judge: ILLMProvider,
+  report: CaseReport | undefined,
+  input: { source: string; resume: string },
+): Promise<void> {
+  try {
+    report?.quality(await scoreResumeQuality(judge, input));
+  } catch (error: unknown) {
+    if (!(error instanceof AiResponseInvalidError)) throw error;
+    report?.qualityUnreadable(error.message);
+  }
+}
+
+/**
  * Passes only when the judge finds every claim in the generated document
  * supported by the fixture (JEF-470) and the document names no link or address
- * the user did not supply (JEF-548). A failure names each one. Writing quality
- * is deliberately not checked.
+ * the user did not supply (JEF-548). A failure names each one. A resume is also
+ * scored for quality (JEF-599), which is reported and never decides pass or fail.
  */
 export function generationCase(spec: GenerationSpec): EvalCase {
   const { fixture, feature } = spec;
@@ -96,7 +118,7 @@ export function generationCase(spec: GenerationSpec): EvalCase {
     feature,
     idealReply:
       feature === 'resume' ? JSON.stringify(fixture.idealResume) : fixture.idealCoverLetter,
-    run: async (provider, judge) => {
+    run: async (provider, judge, report) => {
       if (!judge) {
         throw new Error(`${spec.id} is graded by a judge model, but none was given`);
       }
@@ -104,11 +126,15 @@ export function generationCase(spec: GenerationSpec): EvalCase {
         feature === 'resume'
           ? renderResume(await generateResume(provider, fixture))
           : await generateCoverLetter(provider, fixture);
-      return [
+      const failures = [
         // A link or address the user never entered goes to an employer under their name (JEF-548).
         ...failuresOf(noForeignLinks('document', output, [allowedLinkSource(fixture)])),
         ...claimFailures(await checkClaims(judge, { source: claimSource(fixture), output })),
       ];
+      if (feature === 'resume') {
+        await reportQuality(judge, report, { source: claimSource(fixture), resume: output });
+      }
+      return failures;
     },
   };
 }

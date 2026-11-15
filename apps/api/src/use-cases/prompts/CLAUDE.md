@@ -36,6 +36,12 @@ A thumbs up/down on an assistant reply (web and mobile) or on a generated resume
 
 - **Up-votes alone say little.** Compare against `trakwyn.llm.calls` for the same feature to get a rate.
 
+## Judging resume quality, and the reasoning comparison (JEF-599)
+
+The invented-content eval says a resume is true; it cannot say whether a prompt change makes one better. `evals/judge/resumeQuality.ts` scores generated resumes from 1 to 5 on coverage of the posting's must-haves, use of its terms, bullet specificity and a summary aimed at the role, and every resume eval case reports those numbers (see `evals/CLAUDE.md` and the README). Compare two prompt versions by running the resume cases on the same model, with `--cache` and a `--label` for each, and reading the "Resume quality" columns; the version is in the report's Prompts column. Quality is the offline counterpart of the interview rate below: the eval says which prompt reads better to a judge, the interview rate says which one employers answered.
+
+**Reasoning off versus low for resumes has not been measured yet.** `AI_REASONING_DEFAULTS.RESUME` is still `'off'`. The comparison needs paid runs on a real model and judge, which are run by hand: use `EVAL_REASONING=off` and `EVAL_REASONING=low` with the commands in the README. Change the default only if `low` scores higher on the quality means **and** does not truncate (reasoning tokens come out of the 2,048-token reply cap, so a `low` run with a lower Schema rate or failed cases is a worse result), and write the numbers here when you do.
+
 ## Reading interview outcomes next to the ratings (JEF-598)
 
 A thumbs up or down says whether a person liked a resume when they read it; an interview says whether an employer did. They disagree often enough that each is worth reading alone, and a prompt change should be judged on both.

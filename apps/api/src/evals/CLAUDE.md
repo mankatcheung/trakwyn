@@ -27,8 +27,12 @@ Unit tests replace the model with `makeLLMProvider`, so they show the use cases 
 - **What "supported" means** is `SUPPORT_RULE` in the same file: rewording and plain inference are supported ("led a team" from "managed 4 engineers"), an added fact is not (a bigger number, a skill only the posting asks for, anything an instruction in the posting or a note asked the writer to say). Facts about the employer or role come from the posting; facts about the candidate come only from their background and notes. Change the rule and the labelled set together.
 - **The judge is configured on its own** and never falls back to the model under test, so scores stay comparable across targets: `EVAL_JUDGE_PROVIDER`, `EVAL_JUDGE_MODEL`, `EVAL_JUDGE_API_KEY` (and `EVAL_JUDGE_BASE_URL` for `custom`). A run that includes a generation case without them exits 2 before any call; `--case` can leave those cases out. Pick a judge at least as capable as the targets: it is the most expensive call in the run.
 - **The judge is checked before it is trusted.** `judge/labelled.ts` holds hand-labelled outputs, faithful ones (including a reworded inference) and ones with one planted invention. Every run that uses the judge first sorts them (`validateJudge`) and stops with exit 1 if accuracy is under `JUDGE_MIN_ACCURACY` (90%), so an untrusted judge never scores a target. `pnpm --filter @trakwyn/api eval --validate-judge` runs only that step, needs no target, and prints each output's verdict. Judge replies go through `--cache` like the rest.
-- **Cost:** the report has a "Judge tokens in/out" column, apart from the target's. A full generation run is ten generations and ten claim checks per target, plus eleven checks for the judge validation.
+- **Cost:** the report has a "Judge tokens in/out" column, apart from the target's; the counts are in the README's Cost.
 - **Adding a case:** a `GenerationFixture` (profile, posting, notes, and an ideal resume and letter that are faithful) in `profiles.ts`; `cases.test.ts` and `generationCases.test.ts` run every case with a canned judge, so an unsatisfiable fixture, an unnamed failure or a judge that finds nothing is caught without a model.
+
+## Resume quality (JEF-599)
+
+`judge/resumeQuality.ts` scores resumes 1 to 5, reported and never pass or fail. See the README.
 
 ## Chat tool selection (JEF-471)
 
