@@ -27,6 +27,8 @@ const profileOf = (over: Partial<UserProfile> = {}): UserProfile => ({
   skills: [],
   certifications: [aws],
   languages: [french],
+  projects: [],
+  awards: [],
   ...over,
 });
 

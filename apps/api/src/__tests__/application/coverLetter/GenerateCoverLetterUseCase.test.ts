@@ -17,6 +17,8 @@ import {
   makeSkillRepository,
   makeCertificationRepository,
   makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -29,6 +31,8 @@ function baseDeps(overrides?: Record<string, unknown>) {
   return {
     workExperienceRepository: makeWorkExperienceRepository(),
     educationRepository: makeEducationRepository(),
+    projectRepository: makeProjectRepository(),
+    awardRepository: makeAwardRepository(),
     certificationRepository: makeCertificationRepository(),
     languageRepository: makeLanguageRepository(),
     skillRepository: makeSkillRepository(),

@@ -211,6 +211,13 @@
       "when": 1794775779922,
       "tag": "0029_numerous_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794777682450,
+      "tag": "0030_gifted_devos",
+      "breakpoints": true
     }
   ]
 }

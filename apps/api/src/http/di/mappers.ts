@@ -21,6 +21,8 @@ import { SessionMapper } from '#src/interface-adapters/mappers/SessionMapper.js'
 import { WorkExperienceMapper } from '#src/interface-adapters/mappers/WorkExperienceMapper.js';
 import { EducationMapper } from '#src/interface-adapters/mappers/EducationMapper.js';
 import { CertificationMapper } from '#src/interface-adapters/mappers/CertificationMapper.js';
+import { ProjectMapper } from '#src/interface-adapters/mappers/ProjectMapper.js';
+import { AwardMapper } from '#src/interface-adapters/mappers/AwardMapper.js';
 import { LanguageMapper } from '#src/interface-adapters/mappers/LanguageMapper.js';
 import { SkillMapper } from '#src/interface-adapters/mappers/SkillMapper.js';
 import { ApiTokenMapper } from '#src/interface-adapters/mappers/ApiTokenMapper.js';
@@ -65,6 +67,8 @@ export const mappers = {
   educationMapper: asClass(EducationMapper, { lifetime: Lifetime.SINGLETON }),
   skillMapper: asClass(SkillMapper, { lifetime: Lifetime.SINGLETON }),
   certificationMapper: asClass(CertificationMapper, { lifetime: Lifetime.SINGLETON }),
+  projectMapper: asClass(ProjectMapper, { lifetime: Lifetime.SINGLETON }),
+  awardMapper: asClass(AwardMapper, { lifetime: Lifetime.SINGLETON }),
   languageMapper: asClass(LanguageMapper, { lifetime: Lifetime.SINGLETON }),
   offerMapper: asClass(OfferMapper, { lifetime: Lifetime.SINGLETON }),
   oauthAccountMapper: asClass(OAuthAccountMapper, { lifetime: Lifetime.SINGLETON }),

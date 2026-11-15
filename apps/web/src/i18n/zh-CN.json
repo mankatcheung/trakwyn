@@ -1845,5 +1845,19 @@
   "experience.languagesDescription": "简历可以列出的口语语言。",
   "experience.noLanguagesYet": "尚未添加语言。",
   "experience.languageNameLabel": "语言 *",
-  "experience.languageLevelLabel": "水平"
+  "experience.languageLevelLabel": "水平",
+  "experience.projectsTitle": "项目",
+  "experience.projectsDescription": "简历可以列出的个人、开源或业余项目。",
+  "experience.noProjectsYet": "尚未添加项目。",
+  "experience.projectNameLabel": "项目 *",
+  "experience.projectRoleLabel": "你的角色",
+  "experience.projectUrlLabel": "链接",
+  "experience.projectStartLabel": "开始日期",
+  "experience.projectEndLabel": "结束日期",
+  "experience.awardsTitle": "奖项",
+  "experience.awardsDescription": "简历可以列出的奖项和荣誉。",
+  "experience.noAwardsYet": "尚未添加奖项。",
+  "experience.awardTitleLabel": "奖项 *",
+  "experience.awardIssuerLabel": "颁发方",
+  "experience.awardDateLabel": "日期"
 }

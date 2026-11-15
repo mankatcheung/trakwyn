@@ -1872,5 +1872,19 @@
   "experience.languagesDescription": "Spoken languages a resume can list.",
   "experience.noLanguagesYet": "No languages added yet.",
   "experience.languageNameLabel": "Language *",
-  "experience.languageLevelLabel": "Level"
+  "experience.languageLevelLabel": "Level",
+  "experience.projectsTitle": "Projects",
+  "experience.projectsDescription": "Personal, open-source or side projects a resume can list.",
+  "experience.noProjectsYet": "No projects added yet.",
+  "experience.projectNameLabel": "Project *",
+  "experience.projectRoleLabel": "Your role",
+  "experience.projectUrlLabel": "Link",
+  "experience.projectStartLabel": "Start date",
+  "experience.projectEndLabel": "End date",
+  "experience.awardsTitle": "Awards",
+  "experience.awardsDescription": "Awards and honours a resume can list.",
+  "experience.noAwardsYet": "No awards added yet.",
+  "experience.awardTitleLabel": "Award *",
+  "experience.awardIssuerLabel": "Awarded by",
+  "experience.awardDateLabel": "Date"
 }

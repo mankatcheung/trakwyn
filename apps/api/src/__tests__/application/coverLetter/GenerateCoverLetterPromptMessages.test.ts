@@ -14,6 +14,8 @@ import {
   makeSkillRepository,
   makeCertificationRepository,
   makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
 import { makeUser, makeUserRepository } from '#src/__tests__/helpers/mocks/user.js';
@@ -39,6 +41,8 @@ describe('GenerateCoverLetterUseCase prompt messages', () => {
       }),
       workExperienceRepository: makeWorkExperienceRepository(),
       educationRepository: makeEducationRepository(),
+      projectRepository: makeProjectRepository(),
+      awardRepository: makeAwardRepository(),
       certificationRepository: makeCertificationRepository(),
       languageRepository: makeLanguageRepository(),
       skillRepository: makeSkillRepository(),

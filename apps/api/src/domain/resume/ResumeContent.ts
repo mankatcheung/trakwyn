@@ -30,6 +30,20 @@ export interface ResumeCertificationEntry {
   date?: string;
 }
 
+export interface ResumeProjectEntry {
+  name: string;
+  role?: string;
+  /** From the stored dates, like a role's; absent when the project has none. */
+  period?: string;
+  bullets: string[];
+}
+
+export interface ResumeAwardEntry {
+  title: string;
+  issuer?: string;
+  date?: string;
+}
+
 export interface ResumeLanguageEntry {
   name: string;
   proficiency?: string;
@@ -43,6 +57,8 @@ export interface ResumeContent {
   /** Only entries the profile holds (JEF-592); absent when the model wrote none. */
   certifications?: ResumeCertificationEntry[];
   languages?: ResumeLanguageEntry[];
+  projects?: ResumeProjectEntry[];
+  awards?: ResumeAwardEntry[];
 }
 
 /**

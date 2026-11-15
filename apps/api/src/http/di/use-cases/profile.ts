@@ -11,6 +11,12 @@ import { DeleteEducationUseCase } from '#src/use-cases/education/DeleteEducation
 import { CreateCertificationUseCase } from '#src/use-cases/certification/CreateCertificationUseCase.js';
 import { UpdateCertificationUseCase } from '#src/use-cases/certification/UpdateCertificationUseCase.js';
 import { DeleteCertificationUseCase } from '#src/use-cases/certification/DeleteCertificationUseCase.js';
+import { CreateProjectUseCase } from '#src/use-cases/project/CreateProjectUseCase.js';
+import { UpdateProjectUseCase } from '#src/use-cases/project/UpdateProjectUseCase.js';
+import { DeleteProjectUseCase } from '#src/use-cases/project/DeleteProjectUseCase.js';
+import { CreateAwardUseCase } from '#src/use-cases/award/CreateAwardUseCase.js';
+import { UpdateAwardUseCase } from '#src/use-cases/award/UpdateAwardUseCase.js';
+import { DeleteAwardUseCase } from '#src/use-cases/award/DeleteAwardUseCase.js';
 import { CreateLanguageUseCase } from '#src/use-cases/language/CreateLanguageUseCase.js';
 import { UpdateLanguageUseCase } from '#src/use-cases/language/UpdateLanguageUseCase.js';
 import { DeleteLanguageUseCase } from '#src/use-cases/language/DeleteLanguageUseCase.js';
@@ -41,6 +47,12 @@ export const profile = {
   createCertificationUseCase: asClass(CreateCertificationUseCase, { lifetime: Lifetime.TRANSIENT }),
   updateCertificationUseCase: asClass(UpdateCertificationUseCase, { lifetime: Lifetime.TRANSIENT }),
   deleteCertificationUseCase: asClass(DeleteCertificationUseCase, { lifetime: Lifetime.TRANSIENT }),
+  createProjectUseCase: asClass(CreateProjectUseCase, { lifetime: Lifetime.TRANSIENT }),
+  updateProjectUseCase: asClass(UpdateProjectUseCase, { lifetime: Lifetime.TRANSIENT }),
+  deleteProjectUseCase: asClass(DeleteProjectUseCase, { lifetime: Lifetime.TRANSIENT }),
+  createAwardUseCase: asClass(CreateAwardUseCase, { lifetime: Lifetime.TRANSIENT }),
+  updateAwardUseCase: asClass(UpdateAwardUseCase, { lifetime: Lifetime.TRANSIENT }),
+  deleteAwardUseCase: asClass(DeleteAwardUseCase, { lifetime: Lifetime.TRANSIENT }),
   createLanguageUseCase: asClass(CreateLanguageUseCase, { lifetime: Lifetime.TRANSIENT }),
   updateLanguageUseCase: asClass(UpdateLanguageUseCase, { lifetime: Lifetime.TRANSIENT }),
   deleteLanguageUseCase: asClass(DeleteLanguageUseCase, { lifetime: Lifetime.TRANSIENT }),

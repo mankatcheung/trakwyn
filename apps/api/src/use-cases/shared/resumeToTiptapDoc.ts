@@ -84,6 +84,16 @@ export function resumeToTiptapDoc(
     }
   }
 
+  if (resume.projects && resume.projects.length > 0) {
+    nodes.push(heading(1, 'Projects'));
+    lines.push('', 'Projects');
+    for (const project of resume.projects) {
+      const head = [project.name, project.role].filter(Boolean).join(' — ');
+      const title = project.period ? `${head} (${project.period})` : head;
+      nodes.push(heading(2, title), ...bullets(project.bullets));
+      lines.push(title, ...project.bullets.map((b) => `- ${b}`));
+    }
+  }
   if (resume.education.length > 0) {
     nodes.push(heading(1, 'Education'));
     lines.push('', 'Education');
@@ -114,6 +124,15 @@ export function resumeToTiptapDoc(
     }
   }
 
+  if (resume.awards && resume.awards.length > 0) {
+    nodes.push(heading(1, 'Awards'));
+    lines.push('', 'Awards');
+    for (const award of resume.awards) {
+      const line = [award.title, award.issuer, award.date].filter(Boolean).join(' — ');
+      nodes.push(paragraph(line));
+      lines.push(line);
+    }
+  }
   if (resume.languages && resume.languages.length > 0) {
     nodes.push(heading(1, 'Languages'));
     lines.push('', 'Languages');

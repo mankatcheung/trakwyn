@@ -38,3 +38,15 @@ export function optionalWebUrl(value: string | null | undefined, field: string):
   if (!isWebUrl(url)) throw new ValidationError(`The ${field} is not a valid http or https link`);
   return url;
 }
+
+/** A description: trimmed, at most `PROFILE_ENTRY.DESCRIPTION_MAX_CHARS`, or null when blank. */
+export function optionalLongText(value: string | null | undefined, field: string): string | null {
+  const text = value?.trim() ?? '';
+  if (!text) return null;
+  if (text.length > PROFILE_ENTRY.DESCRIPTION_MAX_CHARS) {
+    throw new ValidationError(
+      `The ${field} must be at most ${PROFILE_ENTRY.DESCRIPTION_MAX_CHARS} characters`,
+    );
+  }
+  return text;
+}

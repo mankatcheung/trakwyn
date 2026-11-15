@@ -1845,5 +1845,19 @@
   "experience.languagesDescription": "履歷可以列出嘅口語語言。",
   "experience.noLanguagesYet": "未有加入語言。",
   "experience.languageNameLabel": "語言 *",
-  "experience.languageLevelLabel": "程度"
+  "experience.languageLevelLabel": "程度",
+  "experience.projectsTitle": "項目",
+  "experience.projectsDescription": "履歷可以列出嘅個人、開源或業餘項目。",
+  "experience.noProjectsYet": "未有加入項目。",
+  "experience.projectNameLabel": "項目 *",
+  "experience.projectRoleLabel": "你嘅角色",
+  "experience.projectUrlLabel": "連結",
+  "experience.projectStartLabel": "開始日期",
+  "experience.projectEndLabel": "結束日期",
+  "experience.awardsTitle": "獎項",
+  "experience.awardsDescription": "履歷可以列出嘅獎項同榮譽。",
+  "experience.noAwardsYet": "未有加入獎項。",
+  "experience.awardTitleLabel": "獎項 *",
+  "experience.awardIssuerLabel": "頒發方",
+  "experience.awardDateLabel": "日期"
 }

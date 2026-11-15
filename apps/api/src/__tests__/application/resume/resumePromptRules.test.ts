@@ -67,7 +67,7 @@ describe('resume prompt rules', () => {
 
   it('still returns the same JSON shape', () => {
     expect(system()).toContain(
-      '{"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}],"certifications":[{"name":string,"issuer":string,"date":string}],"languages":[{"name":string,"proficiency":string}]}',
+      '{"summary":string,"experience":[{"company":string,"title":string,"period":string,"bullets":[string]}],"education":[{"institution":string,"qualification":string,"period":string}],"skills":[{"category":string,"items":[string]}],"certifications":[{"name":string,"issuer":string,"date":string}],"languages":[{"name":string,"proficiency":string}],"projects":[{"name":string,"role":string,"period":string,"bullets":[string]}],"awards":[{"title":string,"issuer":string,"date":string}]}',
     );
   });
 });

@@ -1,7 +1,9 @@
 import type {
   ResumeContent,
   ResumeCertificationEntry,
+  ResumeAwardEntry,
   ResumeEducationEntry,
+  ResumeProjectEntry,
   ResumeLanguageEntry,
   ResumeExperienceEntry,
   ResumeSkillGroup,
@@ -47,7 +49,19 @@ export function assertGrounded(resume: ResumeContent, profile: UserProfile): voi
   );
   const inventedLanguage = (resume.languages ?? []).find((l) => !languages.has(normalize(l.name)));
 
-  if (inventedEmployer || inventedSchool || inventedCertification || inventedLanguage) {
+  const projects = new Set(profile.projects.map((p) => normalize(p.name)));
+  const awards = new Set(profile.awards.map((a) => normalize(a.title)));
+  const inventedProject = (resume.projects ?? []).find((p) => !projects.has(normalize(p.name)));
+  const inventedAward = (resume.awards ?? []).find((a) => !awards.has(normalize(a.title)));
+
+  if (
+    inventedEmployer ||
+    inventedSchool ||
+    inventedCertification ||
+    inventedLanguage ||
+    inventedProject ||
+    inventedAward
+  ) {
     throw new AiResponseInvalidError(
       'The AI produced a resume containing experience you have not recorded — nothing was saved. Please try again.',
     );
@@ -268,6 +282,51 @@ function groundCertifications(
   });
 }
 
+/** A project's name, role and period are the profile's; the bullets are the model's wording. */
+function groundProjects(
+  entries: readonly ResumeProjectEntry[],
+  profile: UserProfile,
+): ResumeProjectEntry[] {
+  const seen = new Set<string>();
+  return entries.flatMap((entry) => {
+    const key = normalize(entry.name);
+    const row = profile.projects.find((p) => normalize(p.name) === key);
+    if (!row || seen.has(key)) return [];
+    seen.add(key);
+    return [
+      {
+        name: row.name,
+        ...(row.role ? { role: row.role } : {}),
+        ...(row.startDate
+          ? { period: periodOf({ startDate: row.startDate, endDate: row.endDate }) }
+          : {}),
+        bullets: entry.bullets,
+      },
+    ];
+  });
+}
+
+/** An award's title, issuer and date are the profile's. */
+function groundAwards(
+  entries: readonly ResumeAwardEntry[],
+  profile: UserProfile,
+): ResumeAwardEntry[] {
+  const seen = new Set<string>();
+  return entries.flatMap((entry) => {
+    const key = normalize(entry.title);
+    const row = profile.awards.find((a) => normalize(a.title) === key);
+    if (!row || seen.has(key)) return [];
+    seen.add(key);
+    return [
+      {
+        title: row.title,
+        ...(row.issuer ? { issuer: row.issuer } : {}),
+        ...(row.date ? { date: formatProfileMonth(row.date) } : {}),
+      },
+    ];
+  });
+}
+
 /** A language's name and level are the profile's, never the model's. */
 function groundLanguages(
   entries: readonly ResumeLanguageEntry[],
@@ -308,6 +367,8 @@ export function applyProfileFacts(resume: ResumeContent, profile: UserProfile): 
       skills: groundSkills(resume.skills, profile, corrections),
       certifications: groundCertifications(resume.certifications ?? [], profile),
       languages: groundLanguages(resume.languages ?? [], profile),
+      projects: groundProjects(resume.projects ?? [], profile),
+      awards: groundAwards(resume.awards ?? [], profile),
     },
     corrections,
   };
