@@ -46,6 +46,7 @@ function setup(tracing = true) {
     span: (e) => void spans.push(e),
     feedback: vi.fn(),
     feedbackCleared: vi.fn(),
+    interviewReached: vi.fn(),
     shutdown: vi.fn().mockResolvedValue(undefined),
   };
   const observer = new ToolCallObserver({

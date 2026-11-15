@@ -6,5 +6,6 @@ export class NoopAiAnalytics implements IAiAnalytics {
   span(): void {}
   feedback(): void {}
   feedbackCleared(): void {}
+  interviewReached(): void {}
   async shutdown(): Promise<void> {}
 }

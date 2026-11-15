@@ -13,6 +13,9 @@ const DOCUMENT_TYPE_BADGE_STYLE: Record<string, string> = {
 // read can be useful (JEF-58's open question on statistical significance).
 const SMALL_SAMPLE_THRESHOLD = 3;
 
+/** The API's `version` for resumes written in Trakwyn rather than uploaded (JEF-598). */
+const GENERATED_RESUME_VERSION = 'Generated';
+
 /**
  * Turns per-application resume/cover-letter uploads into a longitudinal
  * view of which version tends to lead to interviews. Fetches independently
@@ -48,12 +51,13 @@ export function DocumentVersionOutcomesPanel() {
         <EmptyState size="compact" className="py-8" message={t('documentOutcomes.emptyMessage')} />
       ) : (
         <div className="space-y-3">
-          {outcomes.map((o) => {
+          {outcomes.map((o, index) => {
             const smallSample = o.applicationCount < SMALL_SAMPLE_THRESHOLD;
+            const generated = o.documentType === 'resume' && o.version === GENERATED_RESUME_VERSION;
             return (
               <div
-                key={`${o.documentType}::${o.version ?? ''}`}
-                className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700"
+                key={`${o.documentType}::${o.version ?? ''}::${index}`}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100 py-2 last:border-0 sm:flex-nowrap dark:border-gray-700"
               >
                 <span
                   className={`shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${
@@ -63,10 +67,14 @@ export function DocumentVersionOutcomesPanel() {
                 >
                   {DOCUMENT_TYPE_LABEL[o.documentType] ?? o.documentType}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">
-                  {o.version ?? (
-                    <span className="text-gray-400 italic">{t('documentOutcomes.noVersion')}</span>
-                  )}
+                <span className="min-w-[9rem] flex-1 text-sm break-words text-gray-900 sm:min-w-0 sm:truncate dark:text-gray-100">
+                  {generated
+                    ? t('documentOutcomes.generatedLabel')
+                    : (o.version ?? (
+                        <span className="text-gray-400 italic">
+                          {t('documentOutcomes.noVersion')}
+                        </span>
+                      ))}
                 </span>
                 <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                   {t('documentOutcomes.interviewsCount', {

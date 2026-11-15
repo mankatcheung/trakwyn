@@ -66,6 +66,37 @@ describe('DocumentVersionOutcomesPanel', () => {
     expect(screen.getByText('1/5 interviews')).toBeInTheDocument();
   });
 
+  it('shows resumes written in Trakwyn as one row of their own, next to the uploads (JEF-598)', async () => {
+    mockGqlRequest.mockResolvedValue({
+      documentVersionOutcomes: [
+        outcome({
+          version: 'Generated',
+          applicationCount: 8,
+          interviewCount: 2,
+          interviewRate: 25,
+        }),
+        outcome({ version: 'v3', applicationCount: 5, interviewCount: 1, interviewRate: 20 }),
+      ],
+    });
+    render(<DocumentVersionOutcomesPanel />, { wrapper: Wrapper });
+
+    expect(await screen.findByText('Generated in Trakwyn')).toBeInTheDocument();
+    expect(screen.getByText('2/8 interviews')).toBeInTheDocument();
+    expect(screen.getByText('25%')).toBeInTheDocument();
+    expect(screen.getByText('v3')).toBeInTheDocument();
+    expect(screen.getAllByText('Resume')).toHaveLength(2);
+  });
+
+  it('does not rename a cover letter version a user labelled "Generated"', async () => {
+    mockGqlRequest.mockResolvedValue({
+      documentVersionOutcomes: [outcome({ documentType: 'cover_letter', version: 'Generated' })],
+    });
+    render(<DocumentVersionOutcomesPanel />, { wrapper: Wrapper });
+
+    expect(await screen.findByText('Generated')).toBeInTheDocument();
+    expect(screen.queryByText('Generated in Trakwyn')).not.toBeInTheDocument();
+  });
+
   it('shows "No version" for a null version', async () => {
     mockGqlRequest.mockResolvedValue({
       documentVersionOutcomes: [outcome({ version: null })],

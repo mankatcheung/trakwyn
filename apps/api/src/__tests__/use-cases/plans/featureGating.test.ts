@@ -93,6 +93,8 @@ const GATED: Gated[] = [
         entitlementService,
         documentRepository: untouchable,
         interviewRoundRepository: untouchable,
+        documentDraftRepository: untouchable,
+        applicationRepository: untouchable,
       }).execute({ userId: 'user-1' }),
   },
   {

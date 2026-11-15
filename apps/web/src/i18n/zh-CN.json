@@ -1859,5 +1859,6 @@
   "experience.noAwardsYet": "尚未添加奖项。",
   "experience.awardTitleLabel": "奖项 *",
   "experience.awardIssuerLabel": "颁发方",
-  "experience.awardDateLabel": "日期"
+  "experience.awardDateLabel": "日期",
+  "documentOutcomes.generatedLabel": "在 Trakwyn 中生成"
 }

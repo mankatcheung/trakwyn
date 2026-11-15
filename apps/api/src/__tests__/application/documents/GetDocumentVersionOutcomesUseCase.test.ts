@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { makeEntitlementService } from '#src/__tests__/helpers/mocks/plans.js';
 import { GetDocumentVersionOutcomesUseCase } from '#src/use-cases/documents/GetDocumentVersionOutcomesUseCase.js';
-import { makeDocument, makeDocumentRepository } from '#src/__tests__/helpers/mocks/documents.js';
+import {
+  makeDocument,
+  makeDocumentDraftRepository,
+  makeDocumentRepository,
+} from '#src/__tests__/helpers/mocks/documents.js';
+import { makeApplicationRepository } from '#src/__tests__/helpers/mocks/jobs.js';
 import {
   makeInterviewRound,
   makeInterviewRoundRepository,
@@ -20,6 +25,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([]);
@@ -57,6 +66,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([
@@ -101,6 +114,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([
@@ -130,6 +147,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([
@@ -159,6 +180,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([
@@ -193,6 +218,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toHaveLength(2);
@@ -221,6 +250,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result).toEqual([
@@ -252,6 +285,10 @@ describe('GetDocumentVersionOutcomesUseCase', () => {
       entitlementService: makeEntitlementService(),
       documentRepository,
       interviewRoundRepository,
+      documentDraftRepository: makeDocumentDraftRepository(),
+      applicationRepository: makeApplicationRepository({
+        findAllByUserId: vi.fn().mockResolvedValue([]),
+      }),
     }).execute({ userId: 'user-1' });
 
     expect(result.map((r) => r.version)).toEqual(['v2', 'v1']);

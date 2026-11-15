@@ -1886,5 +1886,6 @@
   "experience.noAwardsYet": "No awards added yet.",
   "experience.awardTitleLabel": "Award *",
   "experience.awardIssuerLabel": "Awarded by",
-  "experience.awardDateLabel": "Date"
+  "experience.awardDateLabel": "Date",
+  "documentOutcomes.generatedLabel": "Generated in Trakwyn"
 }

@@ -73,12 +73,29 @@ export interface AiFeedbackAnalyticsEvent {
   tier: string | null;
 }
 
+/**
+ * An application reached its first interview round, with the model and prompt
+ * behind the resume it went out with (JEF-598). It names no application,
+ * draft or document and holds no text: only which prompt version and model
+ * produced the resume, so PostHog can set interviews against generations.
+ */
+export interface InterviewReachedAnalyticsEvent {
+  userId: string;
+  provider: string;
+  model: string | null;
+  promptVersion: number | null;
+  source: string;
+  tier: string | null;
+}
+
 export interface IAiAnalytics {
   generation(event: AiGenerationEvent): void;
   span(event: AiSpanEvent): void;
   feedback(event: AiFeedbackAnalyticsEvent): void;
   /** A rating taken back (JEF-569), so a dashboard can net it out. */
   feedbackCleared(event: AiFeedbackAnalyticsEvent): void;
+  /** The first interview round on an application whose resume the AI wrote (JEF-598). */
+  interviewReached(event: InterviewReachedAnalyticsEvent): void;
   /** Sends what is queued and stops. Called once, when the server closes. */
   shutdown(): Promise<void>;
 }

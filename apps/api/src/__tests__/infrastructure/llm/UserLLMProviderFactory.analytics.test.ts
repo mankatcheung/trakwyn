@@ -23,6 +23,7 @@ function fakeAnalytics() {
     span: vi.fn(),
     feedback: vi.fn(),
     feedbackCleared: vi.fn(),
+    interviewReached: vi.fn(),
     shutdown: vi.fn().mockResolvedValue(undefined),
   };
   return { analytics, generation };
