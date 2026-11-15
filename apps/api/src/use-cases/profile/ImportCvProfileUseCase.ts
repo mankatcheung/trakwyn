@@ -7,6 +7,25 @@ import type {
   IEducationRepository,
 } from '#src/use-cases/ports/IEducationRepository.js';
 import type { CreateSkillData, ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type {
+  CreateCertificationData,
+  ICertificationRepository,
+} from '#src/use-cases/ports/ICertificationRepository.js';
+import type {
+  CreateLanguageData,
+  ILanguageRepository,
+} from '#src/use-cases/ports/ILanguageRepository.js';
+import type {
+  CreateProjectData,
+  IProjectRepository,
+} from '#src/use-cases/ports/IProjectRepository.js';
+import type { CreateAwardData, IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
+import {
+  optionalLongText,
+  optionalText,
+  optionalWebUrl,
+  requiredText,
+} from '#src/use-cases/shared/profileEntryFields.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { readLocation, readPhone, readProfileLinks } from '#src/use-cases/shared/profileContact.js';
 import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
@@ -16,7 +35,11 @@ import type {
 } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type {
   IImportCvProfileUseCase,
+  ImportCvAward,
+  ImportCvCertification,
   ImportCvEducation,
+  ImportCvLanguage,
+  ImportCvProject,
   ImportCvContact,
   ImportCvProfileInput,
   ImportCvProfileOutput,
@@ -29,6 +52,10 @@ interface Deps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
   userRepository: IUserRepository;
   transactionManager?: ITransactionManager;
   generateId: () => string;
@@ -63,20 +90,59 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       this.skill(input.userId, entry),
     );
 
+    const certifications = this.checkSection(
+      input.certifications ?? [],
+      CV_IMPORT.MAX_CERTIFICATIONS,
+      'certifications',
+    ).map((entry) => this.certification(input.userId, entry));
+    const languages = this.checkSection(
+      input.languages ?? [],
+      CV_IMPORT.MAX_LANGUAGES,
+      'languages',
+    ).map((entry) => this.language(input.userId, entry));
+    const projects = this.checkSection(
+      input.projects ?? [],
+      CV_IMPORT.MAX_PROJECTS,
+      'projects',
+    ).map((entry) => this.project(input.userId, entry));
+    const awards = this.checkSection(input.awards ?? [], CV_IMPORT.MAX_AWARDS, 'awards').map(
+      (entry) => this.award(input.userId, entry),
+    );
+
     const user = await this.deps.userRepository.findById(input.userId);
     if (!user) throw new NotFoundError('User not found');
     const contactFill = fillEmptyContact(user, input.contact);
     const filledContact = Object.keys(contactFill) as ImportCvProfileOutput['filledContact'];
 
-    if (workExperiences.length + educations.length + skills.length + filledContact.length === 0) {
+    const imported =
+      workExperiences.length +
+      educations.length +
+      skills.length +
+      certifications.length +
+      languages.length +
+      projects.length +
+      awards.length;
+    if (imported + filledContact.length === 0) {
       throw new ValidationError('Select at least one item to import');
     }
 
     // Checked before the first write so a CV that does not fit is refused whole.
-    const [haveWork, haveEducation, haveSkills] = await Promise.all([
+    const [
+      haveWork,
+      haveEducation,
+      haveSkills,
+      haveCertifications,
+      haveLanguages,
+      haveProjects,
+      haveAwards,
+    ] = await Promise.all([
       this.deps.workExperienceRepository.findAllByUserId(input.userId),
       this.deps.educationRepository.findAllByUserId(input.userId),
       this.deps.skillRepository.findAllByUserId(input.userId),
+      this.deps.certificationRepository.findAllByUserId(input.userId),
+      this.deps.languageRepository.findAllByUserId(input.userId),
+      this.deps.projectRepository.findAllByUserId(input.userId),
+      this.deps.awardRepository.findAllByUserId(input.userId),
     ]);
     assertRoomFor(
       haveWork.length,
@@ -91,11 +157,34 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       'education entries',
     );
     assertRoomFor(haveSkills.length, skills.length, CONTENT_LIMITS.SKILLS_PER_USER, 'skills');
+    assertRoomFor(
+      haveCertifications.length,
+      certifications.length,
+      CONTENT_LIMITS.CERTIFICATIONS_PER_USER,
+      'certifications',
+    );
+    assertRoomFor(
+      haveLanguages.length,
+      languages.length,
+      CONTENT_LIMITS.LANGUAGES_PER_USER,
+      'languages',
+    );
+    assertRoomFor(
+      haveProjects.length,
+      projects.length,
+      CONTENT_LIMITS.PROJECTS_PER_USER,
+      'projects',
+    );
+    assertRoomFor(haveAwards.length, awards.length, CONTENT_LIMITS.AWARDS_PER_USER, 'awards');
 
     await runInTransaction(this.deps.transactionManager, async () => {
       for (const data of workExperiences) await this.deps.workExperienceRepository.create(data);
       for (const data of educations) await this.deps.educationRepository.create(data);
       for (const data of skills) await this.deps.skillRepository.create(data);
+      for (const data of certifications) await this.deps.certificationRepository.create(data);
+      for (const data of languages) await this.deps.languageRepository.create(data);
+      for (const data of projects) await this.deps.projectRepository.create(data);
+      for (const data of awards) await this.deps.awardRepository.create(data);
       if (filledContact.length > 0)
         await this.deps.userRepository.update(input.userId, contactFill);
     });
@@ -104,6 +193,10 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       workExperiences: workExperiences.length,
       educations: educations.length,
       skills: skills.length,
+      certifications: certifications.length,
+      languages: languages.length,
+      projects: projects.length,
+      awards: awards.length,
       filledContact,
     };
   }
@@ -140,6 +233,61 @@ export class ImportCvProfileUseCase implements IImportCvProfileUseCase {
       startDate,
       endDate,
       description: optional(entry.description, CV_IMPORT.DESCRIPTION_MAX_CHARS, 'Description'),
+    };
+  }
+
+  private certification(userId: string, entry: ImportCvCertification): CreateCertificationData {
+    const issuedAt = believableOrNull(entry.issuedAt, 'Issue date');
+    const expiresAt = believableOrNull(entry.expiresAt, 'Expiry date');
+    if (issuedAt && expiresAt && expiresAt < issuedAt) {
+      throw new ValidationError('Expiry date must not be before the issue date');
+    }
+    return {
+      id: this.deps.generateId(),
+      userId,
+      name: requiredText(entry.name, 'certification name'),
+      issuer: optionalText(entry.issuer, 'issuer'),
+      issuedAt,
+      expiresAt,
+      credentialUrl: optionalWebUrl(entry.credentialUrl, 'credential link'),
+    };
+  }
+
+  private language(userId: string, entry: ImportCvLanguage): CreateLanguageData {
+    return {
+      id: this.deps.generateId(),
+      userId,
+      name: requiredText(entry.name, 'language'),
+      proficiency: optionalText(entry.proficiency, 'level'),
+    };
+  }
+
+  private project(userId: string, entry: ImportCvProject): CreateProjectData {
+    const startDate = believableOrNull(entry.startDate, 'Start date');
+    const endDate = believableOrNull(entry.endDate, 'End date');
+    if (startDate && endDate && endDate < startDate) {
+      throw new ValidationError('End date must not be before the start date');
+    }
+    return {
+      id: this.deps.generateId(),
+      userId,
+      name: requiredText(entry.name, 'project name'),
+      role: optionalText(entry.role, 'role'),
+      url: optionalWebUrl(entry.url, 'project link'),
+      startDate,
+      endDate,
+      description: optionalLongText(entry.description, 'description'),
+    };
+  }
+
+  private award(userId: string, entry: ImportCvAward): CreateAwardData {
+    return {
+      id: this.deps.generateId(),
+      userId,
+      title: requiredText(entry.title, 'award title'),
+      issuer: optionalText(entry.issuer, 'issuer'),
+      date: believableOrNull(entry.date, 'Date'),
+      description: optionalLongText(entry.description, 'description'),
     };
   }
 
@@ -197,6 +345,13 @@ function dateRange(
   assertBelievable(endDate, 'End date');
   if (endDate < startDate) throw new ValidationError('End date must not be before the start date');
   return { startDate, endDate };
+}
+
+/** An optional date the review step may have cleared: null stays null, anything else must be believable. */
+function believableOrNull(date: Date | null | undefined, label: string): Date | null {
+  if (date == null) return null;
+  assertBelievable(date, label);
+  return date;
 }
 
 function assertBelievable(date: Date, label: string): void {

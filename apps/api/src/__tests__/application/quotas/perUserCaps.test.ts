@@ -14,6 +14,10 @@ import {
   makeEducationRepository,
   makeSkill,
   makeSkillRepository,
+  makeCertificationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
+  makeAwardRepository,
   makeWorkExperience,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -352,6 +356,10 @@ describe('per-user caps (JEF-339)', () => {
           findAllByUserId: vi.fn().mockResolvedValue(rows(() => makeEducation(), have.edu)),
           create: vi.fn().mockImplementation(async (d) => d),
         }),
+        certificationRepository: makeCertificationRepository(),
+        languageRepository: makeLanguageRepository(),
+        projectRepository: makeProjectRepository(),
+        awardRepository: makeAwardRepository(),
         skillRepository: makeSkillRepository({
           findAllByUserId: vi.fn().mockResolvedValue(rows(() => makeSkill(), have.skills)),
           create: vi.fn().mockImplementation(async (d) => d),

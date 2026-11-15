@@ -348,6 +348,10 @@ export const IMPORT_CV_PROFILE = `
       workExperiences
       educations
       skills
+      certifications
+      languages
+      projects
+      awards
     }
   }
 `;
