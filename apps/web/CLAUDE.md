@@ -87,6 +87,19 @@ The API's per-resource ceilings (`contentQuota`, `apps/api/src/use-cases/quotas/
 - **A component that renders a `QuotaHint` needs a `QueryClientProvider`,** and its request shares the test's `gqlClient` mock; suites about something else stub `#/lib/contentQuota` (see `NewApplicationPage.test.tsx`).
 - Where the application cap is hit, the new-application form adds a note that Trash still counts until it is purged.
 
+## Form actions (JEF-612)
+
+New and converted forms use React 19 `<form action>`, not `onSubmit` plus `preventDefault` and a hand-written `useState(false)` for pending.
+
+- **The button reads the form.** `SubmitButton` (`@trakwyn/ui`) uses `useFormStatus`: inside a `<form action>` it disables itself, shows a spinner and the `pendingLabel`, and sets `aria-busy`. It needs no `submitting` prop. A disabled default button also stops Enter from submitting again, so a double click or double Enter reaches the action once. `pending` forces the look for a form still on `onSubmit` (`FormActions` passes it through for the profile sections not converted yet).
+- **react-hook-form forms use `useFormAction(form, submit)`** (`lib/useFormAction.ts`). It wraps `form.handleSubmit` in `useActionState`: `submit` runs only when the schema validates, returns the error message to show (or null), and `state.error` is what the form renders (`{state.error && <Alert>…`). Spread `formProps` on the `<form>`. Do not use `form.setError('root')` or `formState.isSubmitting` any more.
+- **React resets the form after an action, which breaks react-hook-form.** The DOM fields go blank while react-hook-form keeps the old values, so a failed save would lose what the user typed. `formProps.ref` cancels that reset with a native `reset` listener. It has to be a native listener on a stable ref: React calls `form.reset()` itself during commit and never fires `onReset` for it, and a ref callback re-created each render is detached just before the reset. A form that wants a blank slate after success calls `form.reset(...)` in `submit`.
+- **Mutations stay `useMutation`.** The action calls `mutateAsync` so `onMutate`, cache invalidation and `mutation.error` work as before. If the error is already shown from `mutation.error` (the profile sections' `createError`), catch it in `submit` rather than returning it too.
+- **No react-hook-form (`McpAuthorizePage`):** use `useActionState` directly, read `FormData`, and tell several submit buttons apart with `name`/`value` (`decision=approve|deny`).
+- **Not converted, and not form submissions:** drag and drop, toggles, bulk actions, the chat composer (`ChatConversationView`, a stream).
+- **Converted:** `AddLlmApiKeyForm`, `StepUpPasswordForm`, `McpAuthorizePage` and `CertificationsSection`.
+- **Still on `onSubmit`** (follow-up PRs, in this order): the other six profile sections (`WorkExperienceSection`, `EducationSection`, `SkillsSection`, `ProjectsSection`, `AwardsSection`, `LanguagesSection`, which already share `FormActions`), the other forms under `settings/-components/`, the offers page, the application forms, `JdImportPanel`, `LlmApiKeyRow`, the auth pages. Some of their pending flags (`saving`, `loading`) can simply become `useMutation().isPending` or go away; check each.
+
 ## Error reporting and analytics
 
 PostHog is off by default, autocapture and replay are off, and every event is scrubbed. The rules and the Terraform split are in `src/lib/analytics/CLAUDE.md`; the server-side half (Vercel function errors) is in `src/server/CLAUDE.md`. Read them before adding an event, a PostHog setting or a server error path.

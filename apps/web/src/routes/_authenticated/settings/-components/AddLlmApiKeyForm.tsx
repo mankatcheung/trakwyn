@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, FormLabel, Input, Select } from '@trakwyn/ui';
+import { Alert, Button, FormLabel, Input, Select, SubmitButton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import {
   CUSTOM_LLM_PROVIDER,
   SAVE_LLM_API_KEY,
@@ -69,7 +70,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
     }
   }, [providerValues, form, provider, providerOptions]);
 
-  const onSave = async (data: LlmApiKeyForm) => {
+  const { state, formProps } = useFormAction(form, async (data) => {
     try {
       await gqlClient.request(SAVE_LLM_API_KEY, {
         provider: data.provider,
@@ -80,12 +81,11 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
       form.reset({ provider: data.provider, apiKey: '', model: '', baseUrl: '' });
       await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
       onSaved?.();
+      return null;
     } catch (err) {
-      form.setError('root', {
-        message: extractGqlError(err) ?? t('integrations.saveApiKeyFailed'),
-      });
+      return extractGqlError(err) ?? t('integrations.saveApiKeyFailed');
     }
-  };
+  });
 
   // Testing the form's unsaved values, before Save (JEF-247).
   const [testing, setTesting] = useState(false);
@@ -124,7 +124,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
   const errors = form.formState.errors;
 
   return (
-    <form onSubmit={form.handleSubmit(onSave)} className="space-y-3">
+    <form {...formProps} className="space-y-3">
       <div>
         <FormLabel>{t('integrations.providerLabel')}</FormLabel>
         <Select {...form.register('provider')}>
@@ -201,12 +201,12 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
           />
         </div>
       )}
-      {errors.root && <Alert>{errors.root.message}</Alert>}
+      {state.error && <Alert>{state.error}</Alert>}
       {testResult && <TestResultLine result={testResult} />}
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? t('applicationForm.saving') : t('integrations.addKey')}
-        </Button>
+        <SubmitButton pendingLabel={t('applicationForm.saving')}>
+          {t('integrations.addKey')}
+        </SubmitButton>
         <Button type="button" variant="secondary" onClick={onTest} disabled={!canTest || testing}>
           {testing ? t('integrations.testingKey') : t('integrations.testKey')}
         </Button>

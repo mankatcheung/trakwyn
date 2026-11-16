@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockGqlRequest } = vi.hoisted(() => ({ mockGqlRequest: vi.fn() }));
@@ -46,6 +46,58 @@ describe('CertificationsSection (JEF-592)', () => {
     render(<CertificationsSection />, { wrapper: Wrapper });
 
     expect(await screen.findByText('No certifications added yet.')).toBeInTheDocument();
+  });
+
+  it('keeps the form open and filled, with the Add button pending, while the save runs (JEF-612)', async () => {
+    let finish!: (value: unknown) => void;
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('query Certifications'))
+        return Promise.resolve({ certifications: [cert] });
+      return new Promise((resolve) => (finish = resolve));
+    });
+    render(<CertificationsSection />, { wrapper: Wrapper });
+    await screen.findByText('AWS Certified Solutions Architect');
+
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    const name = document.querySelector<HTMLInputElement>('input[name="name"]')!;
+    fireEvent.change(name, { target: { value: 'CKA' } });
+    const form = name.closest('form')!;
+    // A double click is two submits in a row; only the first may reach the API.
+    fireEvent.submit(form);
+    await screen.findByRole('button', { name: 'Saving…' });
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    expect(name.value).toBe('CKA');
+    finish({});
+
+    await waitFor(() => expect(document.querySelector('input[name="name"]')).toBeNull());
+    expect(
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('createCertification')),
+    ).toHaveLength(1);
+  });
+
+  it('shows the API error and keeps what was typed when the save fails (JEF-612)', async () => {
+    mockGqlRequest.mockImplementation((query: string) => {
+      if (query.includes('query Certifications'))
+        return Promise.resolve({ certifications: [cert] });
+      return Promise.reject({
+        response: {
+          errors: [
+            { message: 'Certification limit reached', extensions: { code: 'QUOTA_EXCEEDED' } },
+          ],
+        },
+      });
+    });
+    render(<CertificationsSection />, { wrapper: Wrapper });
+    await screen.findByText('AWS Certified Solutions Architect');
+
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    const name = document.querySelector<HTMLInputElement>('input[name="name"]')!;
+    fireEvent.change(name, { target: { value: 'CKA' } });
+    fireEvent.submit(name.closest('form')!);
+
+    expect(await screen.findByText(/Certification limit reached/)).toBeInTheDocument();
+    expect(document.querySelector<HTMLInputElement>('input[name="name"]')!.value).toBe('CKA');
+    expect(within(name.closest('form')!).getByRole('button', { name: 'Add' })).toBeEnabled();
   });
 
   it('adds one, sending blank optional fields as null', async () => {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Alert, Button, Card } from '@trakwyn/ui';
+import { Alert, Button, Card, SubmitButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { QuotaHint } from '#/components/QuotaHint';
@@ -67,7 +67,8 @@ export function FieldError({ message }: { message?: string }) {
 }
 
 interface FormActionsProps {
-  submitting: boolean;
+  /** For an `onSubmit` form. A `<form action>` needs nothing: the button reads its status. */
+  submitting?: boolean;
   editing: boolean;
   onCancel: () => void;
 }
@@ -76,13 +77,9 @@ export function FormActions({ submitting, editing, onCancel }: FormActionsProps)
   const { t } = useLocale();
   return (
     <div className="flex items-center gap-2">
-      <Button type="submit" disabled={submitting}>
-        {submitting
-          ? t('applicationForm.saving')
-          : editing
-            ? t('experience.update')
-            : t('common.add')}
-      </Button>
+      <SubmitButton pending={submitting} pendingLabel={t('applicationForm.saving')}>
+        {editing ? t('experience.update') : t('common.add')}
+      </SubmitButton>
       <Button variant="ghost" onClick={onCancel}>
         {t('common.cancel')}
       </Button>

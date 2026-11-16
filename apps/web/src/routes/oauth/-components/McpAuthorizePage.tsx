@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { useLocale } from '#/lib/i18n';
-import { Button } from '@trakwyn/ui';
+import { SubmitButton } from '@trakwyn/ui';
 
 export function McpAuthorizePage() {
   const { t } = useLocale();
@@ -12,7 +12,6 @@ export function McpAuthorizePage() {
   // API that this decision came from a consent screen the user was shown.
   const [consentToken, setConsentToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const query = new URLSearchParams(search);
@@ -39,28 +38,32 @@ export function McpAuthorizePage() {
       .catch(() => setError('Unable to load the authorization request.'));
   }, [search]);
 
-  const submit = async (approved: boolean) => {
-    if (!consentToken) return;
-    setSubmitting(true);
-    try {
-      const response = await fetch(`${API_ORIGIN}/oauth/authorize/approve`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...search, approved, consent_token: consentToken }),
-      });
-      const body = (await response.json()) as { redirect_to?: string; error?: string };
-      if (!response.ok || !body.redirect_to) {
-        setError(body.error ?? 'Unable to complete authorization.');
-        return;
+  // Allow and Deny are the form's two submitters; the one pressed arrives in
+  // the FormData as `decision`. A pending form here means "waiting for the API".
+  const [submitError, submit] = useActionState(
+    async (_previous: string | null, formData: FormData): Promise<string | null> => {
+      if (!consentToken) return null;
+      const approved = formData.get('decision') === 'approve';
+      try {
+        const response = await fetch(`${API_ORIGIN}/oauth/authorize/approve`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...search, approved, consent_token: consentToken }),
+        });
+        const body = (await response.json()) as { redirect_to?: string; error?: string };
+        if (!response.ok || !body.redirect_to) {
+          return body.error ?? 'Unable to complete authorization.';
+        }
+        window.location.assign(body.redirect_to);
+        return null;
+      } catch {
+        return 'Unable to complete authorization.';
       }
-      window.location.assign(body.redirect_to);
-    } catch {
-      setError('Unable to complete authorization.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+    null,
+  );
+  const shownError = error ?? submitError;
 
   const loginReturnTo = `/oauth/authorize?${new URLSearchParams(search).toString()}`;
 
@@ -70,10 +73,10 @@ export function McpAuthorizePage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {t('mcp.authorizeTitle')}
         </h1>
-        {error ? (
+        {shownError ? (
           <div className="mt-4 space-y-4">
-            <p className="text-sm text-red-600">{error}</p>
-            {error.startsWith('Sign in') && (
+            <p className="text-sm text-red-600">{shownError}</p>
+            {shownError.startsWith('Sign in') && (
               <Link
                 to="/login"
                 search={{ returnTo: loginReturnTo }}
@@ -91,14 +94,14 @@ export function McpAuthorizePage() {
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {t('mcp.requestedScope')} <strong>{search.scope}</strong>
             </p>
-            <div className="flex gap-3">
-              <Button onClick={() => submit(false)} disabled={submitting} variant="secondary">
+            <form action={submit} className="flex gap-3">
+              <SubmitButton name="decision" value="deny" variant="secondary">
                 {t('common.cancel', { defaultValue: 'Deny' })}
-              </Button>
-              <Button onClick={() => submit(true)} disabled={submitting}>
+              </SubmitButton>
+              <SubmitButton name="decision" value="approve">
                 {t('mcp.allowAccess')}
-              </Button>
-            </div>
+              </SubmitButton>
+            </form>
           </div>
         ) : (
           <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">

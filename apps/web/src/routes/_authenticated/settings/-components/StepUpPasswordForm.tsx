@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { useFormAction } from '#/lib/useFormAction';
+import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import {
   REAUTHENTICATE,
   reauthSchema,
@@ -24,7 +25,7 @@ export function StepUpPasswordForm({
   const form = useForm<ReauthForm>({ resolver: zodResolver(reauthSchema) });
   const [totpRequired, setTotpRequired] = useState(false);
 
-  const onSubmit = async (data: ReauthForm) => {
+  const { state, formProps } = useFormAction(form, async (data) => {
     try {
       const res = await gqlClient.request<{ reauthenticate: ReauthenticateResult }>(
         REAUTHENTICATE,
@@ -32,18 +33,17 @@ export function StepUpPasswordForm({
       );
       if (res.reauthenticate.totpRequired) {
         setTotpRequired(true);
-        return;
+        return null;
       }
       onSuccess();
+      return null;
     } catch (err) {
-      form.setError('root', {
-        message: extractGqlError(err) ?? t('stepUpReauth.verificationFailed'),
-      });
+      return extractGqlError(err) ?? t('stepUpReauth.verificationFailed');
     }
-  };
+  });
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+    <form {...formProps} className="space-y-3">
       <div>
         <FormLabel>{t('auth.password')}</FormLabel>
         <Input
@@ -73,18 +73,14 @@ export function StepUpPasswordForm({
           )}
         </div>
       )}
-      {form.formState.errors.root && <Alert>{form.formState.errors.root.message}</Alert>}
+      {state.error && <Alert>{state.error}</Alert>}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="link" onClick={onCancel}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting
-            ? t('auth.verifying')
-            : totpRequired
-              ? t('stepUpReauth.verifyCode')
-              : t('security.confirm')}
-        </Button>
+        <SubmitButton pendingLabel={t('auth.verifying')}>
+          {totpRequired ? t('stepUpReauth.verifyCode') : t('security.confirm')}
+        </SubmitButton>
       </div>
     </form>
   );

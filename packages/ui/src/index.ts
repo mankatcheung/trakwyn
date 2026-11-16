@@ -27,6 +27,9 @@ export type { MenuProps, MenuItem, MenuAlign } from './Menu';
 export { useIsWideViewport } from './useIsWideViewport';
 export type { WideViewportBreakpoint } from './useIsWideViewport';
 
+export { SubmitButton } from './SubmitButton';
+export type { SubmitButtonProps } from './SubmitButton';
+
 export { FormLabel } from './FormLabel';
 export type { FormLabelProps, FormLabelSize } from './FormLabel';
 
