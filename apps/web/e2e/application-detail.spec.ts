@@ -149,10 +149,12 @@ test.describe('Application detail page', () => {
 
     await openTab(page, 'Cover letters');
     await expect(page.getByText('No cover letters yet')).toBeVisible();
-    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
+    // A tab you have left stays mounted but hidden (JEF-611), so "not shown",
+    // not "not in the DOM".
+    await expect(page.getByText('only-a-resume.txt')).not.toBeVisible();
 
     await openTab(page, 'Other documents');
     await expect(page.getByText('No other documents yet')).toBeVisible();
-    await expect(page.getByText('only-a-resume.txt')).toHaveCount(0);
+    await expect(page.getByText('only-a-resume.txt')).not.toBeVisible();
   });
 });

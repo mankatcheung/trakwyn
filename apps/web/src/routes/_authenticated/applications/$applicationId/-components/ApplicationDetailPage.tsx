@@ -1,6 +1,6 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { ArrowLeftIcon, MoreHorizontalIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { deleteApplicationWithUndo } from '../../-deleteWithUndo';
@@ -15,18 +15,11 @@ import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { TrashedApplicationView } from './TrashedApplicationView';
 import type { HealthScore } from './HealthScorePanel';
 import { ApplicationJobInfo } from './ApplicationJobInfo';
-import { ResumeGapsPanel } from './ResumeGapsPanel';
-import { OverviewTab } from './OverviewTab';
 import { ApplicationActionsSheet } from './ApplicationActionsSheet';
 import { ACTIONS_TRIGGER_CLASS, ApplicationActionsMenu } from './ApplicationActionsMenu';
 import { SectionIndex } from './SectionIndex';
 import { SectionNav } from './SectionNav';
-import { NotesTab } from './NotesTab';
-import { ActivityTab } from './ActivityTab';
-import { InterviewsTab } from './InterviewsTab';
-import { ContactsTab } from './ContactsTab';
-import { DocumentList } from './DocumentList';
-import { CompanyBriefingTab } from './CompanyBriefingTab';
+import { SectionPanes } from './SectionPanes';
 import {
   sectionById,
   type ApiSectionCounts,
@@ -94,7 +87,15 @@ export function ApplicationDetailPage() {
   // wrong about than simply saying where we are.
   const goToSearch = (search: { section?: SectionId }) =>
     navigate({ to: '/applications/$applicationId', params: { applicationId }, search });
-  const openSectionAt = (id: SectionId) => goToSearch({ section: id });
+  // A section switch is navigation, so it is a transition (JEF-611): the section
+  // you are on stays on screen and interactive until the next one has rendered,
+  // and `isSwitching` lets the nav show that the click was taken. Async so the
+  // flag lasts until the router has settled, not just the first render.
+  const [isSwitching, startSwitch] = useTransition();
+  const openSectionAt = (id: SectionId) =>
+    startSwitch(async () => {
+      await goToSearch({ section: id });
+    });
   const backToIndex = () => goToSearch({});
 
   const {
@@ -266,52 +267,6 @@ export function ApplicationDetailPage() {
     },
   };
 
-  const sectionContent = (
-    <>
-      {activeSection === 'overview' && <OverviewTab app={app} healthScore={healthScore} />}
-      {activeSection === 'notes' && (
-        <NotesTab applicationId={applicationId} enabled={canLoadPanels} />
-      )}
-      {activeSection === 'interviews' && (
-        <InterviewsTab applicationId={applicationId} company={app.company} role={app.role} />
-      )}
-      {activeSection === 'contacts' && <ContactsTab applicationId={applicationId} />}
-      {activeSection === 'activity' && <ActivityTab applicationId={applicationId} />}
-      {activeSection === 'cover-letters' && (
-        <DocumentList applicationId={applicationId} category="cover_letter" />
-      )}
-      {activeSection === 'resumes' && (
-        <>
-          <ResumeGapsPanel applicationId={applicationId} />
-          <DocumentList applicationId={applicationId} category="resume" />
-        </>
-      )}
-      {activeSection === 'other-documents' && (
-        <DocumentList applicationId={applicationId} category="other" />
-      )}
-      {activeSection === 'company-briefing' && <CompanyBriefingTab applicationId={applicationId} />}
-      {activeSection === 'offers' && (
-        <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {t('applicationDetail.offerComparisonTitle')}
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {t('applicationDetail.offerComparisonDescription')}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/applications/$applicationId/offers"
-              params={{ applicationId }}
-              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              {t('applicationDetail.manageOffers')}
-            </Link>
-          </div>
-        </div>
-      )}
-    </>
-  );
-
   return (
     <div className={PAGE_WIDTH}>
       {/*
@@ -388,7 +343,12 @@ export function ApplicationDetailPage() {
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <SectionNav active={activeSection} counts={counts} onOpen={openSectionAt} />
+        <SectionNav
+          active={activeSection}
+          counts={counts}
+          pending={isSwitching}
+          onOpen={openSectionAt}
+        />
 
         {/* Phone: the index and a section are separate screens. Desktop: only the section. */}
         {!openSection && <SectionIndex counts={counts} onOpen={openSectionAt} />}
@@ -399,7 +359,13 @@ export function ApplicationDetailPage() {
           first drill-down has nothing to wait for.
         */}
         <div className={`min-w-0 flex-1 ${openSection ? '' : 'hidden md:block'}`}>
-          {sectionContent}
+          <SectionPanes
+            active={activeSection}
+            applicationId={applicationId}
+            app={app}
+            healthScore={healthScore}
+            canLoadPanels={canLoadPanels}
+          />
         </div>
       </div>
 

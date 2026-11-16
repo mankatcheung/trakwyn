@@ -6,6 +6,8 @@ import { SECTION_GROUPS, type SectionCounts, type SectionDef, type SectionId } f
 interface SectionNavProps {
   active: SectionId;
   counts?: SectionCounts;
+  /** A section switch is in flight: the old section is still showing. */
+  pending?: boolean;
   onOpen: (id: SectionId) => void;
 }
 
@@ -16,7 +18,7 @@ interface SectionNavProps {
  * count outgrew the page between 1024px and 1280px and the bar had to scroll
  * sideways, so the sidebar is back (JEF-411).
  */
-export function SectionNav({ active, counts, onOpen }: SectionNavProps) {
+export function SectionNav({ active, counts, pending = false, onOpen }: SectionNavProps) {
   const { t } = useLocale();
   const ref = useRef<HTMLElement>(null);
 
@@ -37,6 +39,7 @@ export function SectionNav({ active, counts, onOpen }: SectionNavProps) {
       ref={ref}
       className="sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 md:flex dark:border-gray-700 dark:bg-gray-800"
       aria-label={t('applicationDetail.sectionNavAria')}
+      aria-busy={pending}
     >
       {SECTION_GROUPS.map((group) => (
         <div key={group.titleKey} className="flex flex-col gap-0.5">
@@ -55,7 +58,7 @@ export function SectionNav({ active, counts, onOpen }: SectionNavProps) {
                 aria-current={isActive ? 'page' : undefined}
                 className={`${section.wideOnly ? 'hidden lg:flex' : 'flex'} items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                    ? `bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ${pending ? 'animate-pulse' : ''}`
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
                 }`}
               >
