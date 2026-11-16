@@ -87,18 +87,63 @@ The API's per-resource ceilings (`contentQuota`, `apps/api/src/use-cases/quotas/
 - **A component that renders a `QuotaHint` needs a `QueryClientProvider`,** and its request shares the test's `gqlClient` mock; suites about something else stub `#/lib/contentQuota` (see `NewApplicationPage.test.tsx`).
 - Where the application cap is hit, the new-application form adds a note that Trash still counts until it is purged.
 
-## Form actions (JEF-612)
+## Data and forms: which tool when (JEF-612)
 
-New and converted forms use React 19 `<form action>`, not `onSubmit` plus `preventDefault` and a hand-written `useState(false)` for pending.
+The rules for any component that reads data, writes data or has a form. The reasons are below each table; the code is the proof.
 
-- **The button reads the form.** `SubmitButton` (`@trakwyn/ui`) uses `useFormStatus`: inside a `<form action>` it disables itself, shows a spinner and the `pendingLabel`, and sets `aria-busy`. It needs no `submitting` prop. A disabled default button also stops Enter from submitting again, so a double click or double Enter reaches the action once. `pending` forces the look for a form still on `onSubmit` (`FormActions` passes it through for the profile sections not converted yet).
-- **react-hook-form forms use `useFormAction(form, submit)`** (`lib/useFormAction.ts`). It wraps `form.handleSubmit` in `useActionState`: `submit` runs only when the schema validates, returns the error message to show (or null), and `state.error` is what the form renders (`{state.error && <Alert>…`). Spread `formProps` on the `<form>`. Do not use `form.setError('root')` or `formState.isSubmitting` any more.
-- **React resets the form after an action, which breaks react-hook-form.** The DOM fields go blank while react-hook-form keeps the old values, so a failed save would lose what the user typed. `formProps.ref` cancels that reset with a native `reset` listener. It has to be a native listener on a stable ref: React calls `form.reset()` itself during commit and never fires `onReset` for it, and a ref callback re-created each render is detached just before the reset. A form that wants a blank slate after success calls `form.reset(...)` in `submit`.
-- **Mutations stay `useMutation`.** The action calls `mutateAsync` so `onMutate`, cache invalidation and `mutation.error` work as before. If the error is already shown from `mutation.error` (the profile sections' `createError`), catch it in `submit` rather than returning it too.
-- **No react-hook-form (`McpAuthorizePage`):** use `useActionState` directly, read `FormData`, and tell several submit buttons apart with `name`/`value` (`decision=approve|deny`).
-- **Not converted, and not form submissions:** drag and drop, toggles, bulk actions, the chat composer (`ChatConversationView`, a stream).
-- **Converted:** `AddLlmApiKeyForm`, `StepUpPasswordForm`, `McpAuthorizePage` and `CertificationsSection`.
-- **Still on `onSubmit`** (follow-up PRs, in this order): the other six profile sections (`WorkExperienceSection`, `EducationSection`, `SkillsSection`, `ProjectsSection`, `AwardsSection`, `LanguagesSection`, which already share `FormActions`), the other forms under `settings/-components/`, the offers page, the application forms, `JdImportPanel`, `LlmApiKeyRow`, the auth pages. Some of their pending flags (`saving`, `loading`) can simply become `useMutation().isPending` or go away; check each.
+### Reading data: TanStack Query, always
+
+| Situation                                                                                                       | Use                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| A page's main data (dashboard, applications list, board, trash, detail, offers, calendar, analytics, assistant) | A route `loader` with `queryClient.query({ ...xxxQueryOptions, staleTime: 'static' })`, and `useQuery(xxxQueryOptions)` in the component |
+| Secondary data (a panel, a card, a tab)                                                                         | `useQuery` only                                                                                                                          |
+| Data needed only after the user acts (an open dialog, the chat dock)                                            | `useQuery` with `enabled`                                                                                                                |
+| A read that gates navigation (session, email verification, onboarding)                                          | `beforeLoad` plus a helper that writes into the cache (`lib/sessionGate.ts`)                                                             |
+
+- **Define each query once** with `queryOptions({ queryKey, queryFn })` and share it between the loader and the component. Give each distinct query its own key, even when two widgets read similar data (a shared key once served the dashboard's stale result to the calendar page).
+- **Catch an error the page should show itself in the loader** (`PLAN_REQUIRED` in `offers.tsx`). An uncaught loader error replaces the whole app, sidebar included.
+- **No `gqlClient.request` for a read in a component body or effect.** No `ensureQueryData` (deprecated, lint fails).
+
+### Writing data
+
+| Situation                                                                                                                                                  | Use                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| The write changes data some query shows (applications, profile, settings, keys, documents, offers, contacts, interviews)                                   | **`useMutation`** with invalidation in `onSuccess`. A form action calls `mutateAsync`. |
+| Auth and one-off flows with nothing cached (login, register, forgot and reset password, step-up, account-deletion confirm and cancel, resend verification) | A direct `gqlClient.request` is fine                                                   |
+| Optimistic update or undo                                                                                                                                  | `useMutation` with `onMutate` and rollback                                             |
+
+- **No hand-written `invalidateQueries` after a direct call.** If a write needs invalidation, it is a mutation.
+- **Show an error from one place:** `mutation.error` (when the page already renders it, as `ProfileSection` does with `createError`) or the action's `state.error`. In the first case the action catches the rejection and returns nothing.
+- **Plain `fetch`** only where GraphQL cannot do the job: chat SSE (`lib/chatStream.ts`), CV import multipart (`lib/cvImport.ts`), signed-URL uploads, OAuth consent, the VAPID key, the GraphQL client's own refresh. A new one needs a comment saying why.
+
+### Forms
+
+| The form                                                      | Use                                                                                                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Has a field that can fail validation, **even a single field** | **react-hook-form + zod**, submitted with `useFormAction` and `SubmitButton`                                                       |
+| Has no real fields (approve or deny, confirm, trigger)        | **`useActionState`** reading `FormData`, with `SubmitButton`. Tell several buttons apart with `name`/`value` (`McpAuthorizePage`). |
+| A button that fires a request, outside any form               | No form: a `useMutation` and its `isPending`                                                                                       |
+| A client-only edit with no request (the editor link field)    | Local `useState`                                                                                                                   |
+
+- **Always a real `<form>` element.** Never submit from a button's `onClick` (Enter would not submit and `useFormStatus` would not work), and never define a form component inside another component's render.
+- **Not in new code:** `onSubmit` with `preventDefault`, `useState(false)` for pending, `formState.isSubmitting`, `form.setError('root')` for a server error.
+- **Read values with `useWatch({ control, name })`, not `form.watch()`.** `watch` is incompatible with the React Compiler and forced `AddLlmApiKeyForm` to opt out.
+- **`SubmitButton` (`@trakwyn/ui`) reads the form's status** with `useFormStatus`: it disables itself, shows a spinner and the `pendingLabel`, and sets `aria-busy`. A disabled default button also stops Enter from submitting again, so a double click or double Enter reaches the action once. `pending` forces the look for a form still on `onSubmit`.
+- **`useFormAction(form, submit)`** (`lib/useFormAction.ts`) wraps `form.handleSubmit` in `useActionState`. `submit` runs only when the schema validates and returns the error message to show (or null); `state.error` is rendered as `{state.error && <Alert>…`. Spread `formProps` on the `<form>`.
+- **React resets a form's fields after an action, which breaks react-hook-form.** The DOM goes blank while react-hook-form keeps the old values, so a failed save would lose what the user typed. `formProps.ref` cancels that with a native `reset` listener. It has to be native and on a stable ref: React calls `form.reset()` itself during commit and never fires `onReset` for it, and a ref callback re-created each render is detached just before the reset. A form that wants a blank slate after success calls `form.reset(...)` in `submit`.
+- **Out of scope for form actions:** drag and drop, toggles, bulk actions, the chat composer (`ChatConversationView`, a stream).
+
+### Still to convert (follow-up PRs under JEF-612)
+
+Forms still on `onSubmit` or plain state, and writes still on direct calls where cached data changes:
+
+1. The auth pages (`LoginPage` ×2, `RegisterPage`, `ForgotPasswordPage`, `ResetPasswordPage`). Their requests stay direct.
+2. `NewApplicationPage`, `EditApplicationPage` (and their writes to `useMutation`).
+3. `SettingsProfilePage`, `SettingsSecurityPage`, `SettingsAiPage` (saves to `useMutation`).
+4. Plain-`useState` forms with real fields: `OfferForm`, the `VerifyEmailRequiredPage` change-email form, `InterviewQuestionsPanel`, `MockQuestionsPanel`.
+5. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
+6. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
+7. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).
 
 ## Error reporting and analytics
 
@@ -109,7 +154,7 @@ PostHog is off by default, autocapture and replay are off, and every event is sc
 The compiler runs in dev, the build and Vitest (`reactCompiler.ts`, shared by `vite.config.ts` and `vitest.config.ts`) in `infer` mode: it memoizes every component and hook it can prove safe and skips the rest without failing the build.
 
 - **No new `useMemo`, `useCallback` or `memo`** unless a comment says why (a value read by non-React code, a third-party prop that needs a stable identity). Existing ones stay until a follow-up PR removes them area by area.
-- **The `react-hooks` lint rules are the compiler's rules** (`recommended` preset). A component that breaks one is skipped. Fix it, or opt out with `'use no memo'` as the first statement and a comment on the reason, plus a scoped `eslint-disable` for that rule (the plugin still reports in opted-out code). Current opt-outs: `useDebouncedCallback`, `useInfiniteScrollSentinel`, `CaptchaWidget`, `DocumentDraftEditor` (ref written or read during render), `ContactsTab`, `InterviewsTab` (a form component defined inside render), `NotificationPopover` (`window.location.href` in a handler), `AddLlmApiKeyForm` (react-hook-form `watch`).
+- **The `react-hooks` lint rules are the compiler's rules** (`recommended` preset). A component that breaks one is skipped. Fix it, or opt out with `'use no memo'` as the first statement and a comment on the reason, plus a scoped `eslint-disable` for that rule (the plugin still reports in opted-out code). Current opt-outs: `useDebouncedCallback`, `useInfiniteScrollSentinel`, `CaptchaWidget`, `DocumentDraftEditor` (ref written or read during render), `ContactsTab`, `InterviewsTab` (a form component defined inside render), `NotificationPopover` (`window.location.href` in a handler).
 - `react-hooks/set-state-in-effect` is a warning, not an error: the compiler does not skip a component for it, and the existing mount-time effects are left alone.
 - To compile only components marked `'use memo'`, set `COMPILATION_MODE` to `annotation` in `reactCompiler.ts`.
 
