@@ -148,12 +148,19 @@ export function LanguagesSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <FormLabel>{t('experience.languageNameLabel')}</FormLabel>
-              <Input {...form.register('name')} invalid={!!errors.name} placeholder="French" />
+              <Input
+                {...form.register('name')}
+                invalid={!!errors.name}
+                placeholder={t('experience.languageNamePlaceholder')}
+              />
               <FieldError message={errors.name?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.languageLevelLabel')}</FormLabel>
-              <Input {...form.register('proficiency')} placeholder="Fluent" />
+              <Input
+                {...form.register('proficiency')}
+                placeholder={t('experience.languageLevelPlaceholder')}
+              />
             </div>
           </div>
           {errors.root?.message && <Alert>{errors.root.message}</Alert>}

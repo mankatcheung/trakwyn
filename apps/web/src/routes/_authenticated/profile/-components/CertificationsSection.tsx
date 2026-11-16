@@ -171,12 +171,19 @@ export function CertificationsSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <FormLabel>{t('experience.certificationNameLabel')}</FormLabel>
-              <Input {...form.register('name')} invalid={!!errors.name} />
+              <Input
+                {...form.register('name')}
+                invalid={!!errors.name}
+                placeholder={t('experience.certificationNamePlaceholder')}
+              />
               <FieldError message={errors.name?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.certificationIssuerLabel')}</FormLabel>
-              <Input {...form.register('issuer')} />
+              <Input
+                {...form.register('issuer')}
+                placeholder={t('experience.certificationIssuerPlaceholder')}
+              />
             </div>
             <div>
               <FormLabel>{t('experience.certificationIssuedLabel')}</FormLabel>

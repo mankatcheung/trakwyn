@@ -156,12 +156,19 @@ export function SkillsSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <FormLabel>{t('experience.skillLabel')}</FormLabel>
-              <Input {...form.register('name')} invalid={!!errors.name} placeholder="TypeScript" />
+              <Input
+                {...form.register('name')}
+                invalid={!!errors.name}
+                placeholder={t('experience.skillPlaceholder')}
+              />
               <FieldError message={errors.name?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.categoryLabel')}</FormLabel>
-              <Input {...form.register('category')} placeholder="Language" />
+              <Input
+                {...form.register('category')}
+                placeholder={t('experience.categoryPlaceholder')}
+              />
             </div>
             <div>
               <FormLabel>{t('experience.proficiencyLabel')}</FormLabel>

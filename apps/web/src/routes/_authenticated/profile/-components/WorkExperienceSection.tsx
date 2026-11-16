@@ -178,7 +178,7 @@ export function WorkExperienceSection() {
               <Input
                 {...form.register('company')}
                 invalid={!!errors.company}
-                placeholder="Acme Corp"
+                placeholder={t('experience.companyPlaceholder')}
               />
               <FieldError message={errors.company?.message} />
             </div>
@@ -187,13 +187,16 @@ export function WorkExperienceSection() {
               <Input
                 {...form.register('title')}
                 invalid={!!errors.title}
-                placeholder="Software Engineer"
+                placeholder={t('experience.jobTitlePlaceholder')}
               />
               <FieldError message={errors.title?.message} />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <FormLabel>{t('experience.locationLabel')}</FormLabel>
-              <Input {...form.register('location')} placeholder="San Francisco, CA" />
+              <Input
+                {...form.register('location')}
+                placeholder={t('experience.locationPlaceholder')}
+              />
             </div>
             <div>
               <FormLabel>{t('experience.startDateLabel')}</FormLabel>

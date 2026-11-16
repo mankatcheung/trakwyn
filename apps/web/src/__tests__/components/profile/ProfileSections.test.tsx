@@ -48,6 +48,27 @@ describe('CertificationsSection (JEF-592)', () => {
     expect(await screen.findByText('No certifications added yet.')).toBeInTheDocument();
   });
 
+  it('hints at what to enter in the name, issuer and URL fields (JEF-614)', async () => {
+    render(<CertificationsSection />, { wrapper: Wrapper });
+    await screen.findByText('AWS Certified Solutions Architect');
+
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    const form = document.querySelector('form')!;
+
+    expect(form.querySelector('input[name="name"]')).toHaveAttribute(
+      'placeholder',
+      'AWS Certified Solutions Architect',
+    );
+    expect(form.querySelector('input[name="issuer"]')).toHaveAttribute(
+      'placeholder',
+      'Amazon Web Services',
+    );
+    expect(form.querySelector('input[name="credentialUrl"]')).toHaveAttribute(
+      'placeholder',
+      'https://',
+    );
+  });
+
   it('adds one, sending blank optional fields as null', async () => {
     render(<CertificationsSection />, { wrapper: Wrapper });
     await screen.findByText('AWS Certified Solutions Architect');
