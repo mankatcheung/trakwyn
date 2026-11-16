@@ -95,3 +95,10 @@ conventions and PR rules; this skill sequences them. Where they differ, follow
     link. Verify the PDF comment is on the issue. The user reviews PRs
     directly and does not merge from the CLI, so do not merge. Do not set the
     issue to Done; that happens after the merge or when the user asks.
+
+11. **Stop what you started.** Dev servers, watchers, vitest workers, Playwright
+    browsers and simulators from steps 4, 6 and 7 must not outlive the job.
+    From the worktree run `pnpm stop:worktree` and confirm it lists nothing
+    left (`pnpm stop:worktree --dry-run`). Start servers with
+    `run_in_background` so they can be stopped, and never with `nohup`,
+    `disown` or a trailing `&`.

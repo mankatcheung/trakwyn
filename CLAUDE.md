@@ -138,6 +138,9 @@ cp apps/web/.env.example apps/web/.env
   An unchecked "tests" item means the issue isn't done.
 
 - **Clean up processes you start.** Stop any dev server, watcher, emulator or browser you launched before you finish. Start long-running commands with `run_in_background` so they can be stopped, never with `nohup`, `disown` or a trailing `&`, which detach them from the session.
+  - **Why it matters:** a server left behind when a shell call is cut off is re-parented to launchd and runs for days. `tsx watch` also outlives a crashed server (it waits for the next file change), so one that lost the port race idles forever. The dev ports are fixed (API 3001, web 3000), so a stale server from another worktree is also what Playwright's `reuseExistingServer` silently tests against.
+  - **Before you finish,** run `pnpm stop:worktree --dry-run` from the worktree, then `pnpm stop:worktree`. It stops dev servers, watchers, vitest workers and Playwright browsers whose command line or working directory is inside this worktree, refuses to run in the main checkout, and never touches its own ancestors. A project `SessionEnd` hook (`.claude/settings.json`) runs it as a backstop.
+  - `pnpm dev` for the API fails fast if the port is taken, and says which process holds it.
 - **PRs:** push and open one when the work is done. The user reviews PRs directly and does not merge from the CLI.
 - **CI security checks (JEF-477):**
   - Actions are referenced by major version (`actions/checkout@v4`). Renovate's `github-actions` manager bumps them in one weekly PR.

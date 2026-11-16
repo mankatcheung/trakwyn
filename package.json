@@ -16,6 +16,7 @@
     "db:generate": "turbo run db:generate --filter=@trakwyn/api",
     "db:migrate": "turbo run db:migrate --filter=@trakwyn/api",
     "setup:worktree": "bash scripts/setup-worktree.sh",
+    "stop:worktree": "bash scripts/stop-worktree-processes.sh",
     "prepare": "husky"
   },
   "devDependencies": {
