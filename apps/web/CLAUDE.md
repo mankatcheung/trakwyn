@@ -100,6 +100,13 @@ The compiler runs in dev, the build and Vitest (`reactCompiler.ts`, shared by `v
 - `react-hooks/set-state-in-effect` is a warning, not an error: the compiler does not skip a component for it, and the existing mount-time effects are left alone.
 - To compile only components marked `'use memo'`, set `COMPILATION_MODE` to `annotation` in `reactCompiler.ts`.
 
+## Concurrent React (JEF-611)
+
+- **Navigation → `useTransition`** with an async callback (`ApplicationDetailPage` section switch): the old view stays live and `isPending` marks the nav busy.
+- **Local filtering of a list already in memory → `useDeferredValue`**, input bound to the live value. None yet: search here drives server queries.
+- **Input that triggers a request or an autosave → debounce.** A deferred value sends every request.
+- **State worth keeping across views → `<Activity>`** (`SectionPanes`: opened once, then hidden, not unmounted). Hidden drops effects, so queries stop refetching.
+
 ## Tests
 
 `gqlClient`- and router-mocked component tests live under `src/__tests__/components/`.
