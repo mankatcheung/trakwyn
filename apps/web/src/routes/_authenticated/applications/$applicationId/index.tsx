@@ -9,6 +9,6 @@ export const Route = createFileRoute('/_authenticated/applications/$applicationI
   // rather than the application (JEF-208).
   validateSearch: sectionSearchSchema,
   loader: ({ context: { queryClient }, params: { applicationId } }) =>
-    queryClient.ensureQueryData(applicationQueryOptions(applicationId)),
+    queryClient.query({ ...applicationQueryOptions(applicationId), staleTime: 'static' }),
   component: ApplicationDetailPage,
 });

@@ -14,9 +14,12 @@ export const Route = createFileRoute('/_authenticated/assistant/')({
   loader: async ({ context: { queryClient }, deps }) => {
     // The bounded list for the sidebar, not the full history — the rail
     // only ever renders ten threads (JEF-229).
-    await queryClient.ensureQueryData(recentConversationsQueryOptions());
+    await queryClient.query({ ...recentConversationsQueryOptions(), staleTime: 'static' });
     if (deps.conversation) {
-      await queryClient.ensureQueryData(chatHistoryQueryOptions(deps.conversation));
+      await queryClient.query({
+        ...chatHistoryQueryOptions(deps.conversation),
+        staleTime: 'static',
+      });
     }
   },
   component: AssistantPage,

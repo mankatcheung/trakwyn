@@ -67,7 +67,7 @@ export function DocumentVersionOutcomesPanel() {
                 >
                   {DOCUMENT_TYPE_LABEL[o.documentType] ?? o.documentType}
                 </span>
-                <span className="min-w-[9rem] flex-1 text-sm break-words text-gray-900 sm:min-w-0 sm:truncate dark:text-gray-100">
+                <span className="min-w-36 flex-1 text-sm wrap-break-word text-gray-900 sm:min-w-0 sm:truncate dark:text-gray-100">
                   {generated
                     ? t('documentOutcomes.generatedLabel')
                     : (o.version ?? (

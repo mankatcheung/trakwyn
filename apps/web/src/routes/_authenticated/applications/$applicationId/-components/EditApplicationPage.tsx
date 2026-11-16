@@ -31,7 +31,7 @@ const schema = z.object({
   company: z.string().min(1, 'Company is required'),
   role: z.string().min(1, 'Role is required'),
   status: z.enum(APPLICATION_STATUSES),
-  jobUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  jobUrl: z.url('Must be a valid URL').optional().or(z.literal('')),
   location: z.string().optional(),
   salaryRange: z.string().optional(),
   description: z.string().optional(),

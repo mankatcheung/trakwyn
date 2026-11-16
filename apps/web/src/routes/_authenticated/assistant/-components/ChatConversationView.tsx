@@ -224,7 +224,7 @@ export function ChatConversationView({
     }
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     void handleSend(input);
   };

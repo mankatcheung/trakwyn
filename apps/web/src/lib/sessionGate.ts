@@ -47,7 +47,7 @@ function freshData<T>(key: readonly unknown[], staleMs: (data: T) => number): T 
  */
 export function checkSessionGate(): Promise<SessionGate> {
   // The router can run the guard more than once at the same moment (initial
-  // load, hydration); those calls share one request, as `fetchQuery` did.
+  // load, hydration); those calls share one request, as `query` does.
   inFlight ??= readSessionGate().finally(() => {
     inFlight = null;
   });

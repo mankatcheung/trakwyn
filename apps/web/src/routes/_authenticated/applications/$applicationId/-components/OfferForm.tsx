@@ -45,7 +45,7 @@ export function OfferForm({ initialData, onSubmit, onCancel, loading }: OfferFor
     notes: initialData?.notes ?? '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };

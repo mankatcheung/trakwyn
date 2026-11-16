@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { useLocale } from '#/lib/i18n';
@@ -82,7 +82,7 @@ export function StepUpWithoutPassword({
     }
   };
 
-  const verify = async (event: FormEvent) => {
+  const verify = async (event: SubmitEvent) => {
     event.preventDefault();
     setError(null);
     setVerifying(true);

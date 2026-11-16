@@ -10,7 +10,7 @@ import { useLocale } from '#/lib/i18n';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.email('Invalid email'),
 });
 type FormValues = z.infer<typeof schema>;
 

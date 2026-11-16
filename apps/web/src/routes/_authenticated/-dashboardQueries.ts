@@ -144,17 +144,17 @@ export type {
 /**
  * Starts the dashboard's four queries together. The `/_authenticated` guard
  * calls this without waiting, alongside its gate check; the loader calls it
- * again and gets the same in-flight requests (`ensureQueryData` dedupes).
+ * again and gets the same in-flight requests (`query` dedupes in-flight requests).
  */
 export function prefetchDashboard(
   queryClient: QueryClient,
   { speculative }: { speculative: boolean },
 ): Promise<unknown> {
   const started = Promise.all([
-    queryClient.ensureQueryData(applicationsQueryOptions),
-    queryClient.ensureQueryData(calendarEventsQueryOptions),
-    queryClient.ensureQueryData(weeklyApplicationGoalQueryOptions),
-    queryClient.ensureQueryData(onboardingChecklistQueryOptions),
+    queryClient.query({ ...applicationsQueryOptions, staleTime: 'static' }),
+    queryClient.query({ ...calendarEventsQueryOptions, staleTime: 'static' }),
+    queryClient.query({ ...weeklyApplicationGoalQueryOptions, staleTime: 'static' }),
+    queryClient.query({ ...onboardingChecklistQueryOptions, staleTime: 'static' }),
   ]);
   // A speculative start must never surface as an unhandled rejection: the
   // loader repeats the call and reports the failure.

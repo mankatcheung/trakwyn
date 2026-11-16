@@ -113,7 +113,7 @@ function SaveStatusIndicator({ status }: { status: SaveStatus }) {
         <button
           type="button"
           onClick={status.onRetry}
-          className="rounded px-1 font-medium text-blue-700 underline hover:text-blue-900 dark:text-blue-400"
+          className="rounded-sm px-1 font-medium text-blue-700 underline hover:text-blue-900 dark:text-blue-400"
         >
           {t('documents.editor.saveState.retry')}
         </button>
@@ -139,7 +139,7 @@ function LanguageSelect({
       onChange={(event) => {
         if (isDocumentLanguage(event.target.value)) onChange(event.target.value);
       }}
-      className="max-w-40 truncate rounded border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
+      className="max-w-40 truncate rounded-sm border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
     >
       {DOCUMENT_LANGUAGES.map((language) => (
         <option key={language.tag} value={language.tag}>
