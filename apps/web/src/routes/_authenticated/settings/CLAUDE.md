@@ -8,8 +8,7 @@ Loaded when working under `apps/web/src/routes/_authenticated/settings`. The res
 - **The list is what can run, not what was saved.** The API returns it without entries that could not run today, so the card never shows a provider the call would skip. Where the data goes is spelled out per row ("Your messages go to OpenAI", "Uses your monthly credits").
 - **The chat says what answers now.** `routes/_authenticated/assistant/-runsOn.ts` is the one place that decides it, from the first entry of the order that can run (Trakwyn AI cannot on a plan without it), for the header, the history page and the dock picker. A chat is not locked to the key it started on, so the provider stored on the conversation is only the answer while the order is unknown or empty. Nothing is shown until the settings load, and for an order that leads with Trakwyn AI until billing status does too, so a row never flashes a provider that is about to change. A new chat is created with no provider.
 - **The notice names either side of a switch.** `providerEntryLabel` turns an order entry (`trakwyn` or a key id) into a name. The SSE `fallback` event now also covers failures during the call, not only a limit.
-- The queries are inline strings in `routes/_authenticated/settings/-components/shared.ts` and no `.graphql` document reads these fields, so there is no codegen change. The deprecated `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited` are no longer read here.
-- Mobile mirrors this (`AiProviderOrderCard`, `AiCreditsCard`, `settings/lib/aiProviderOrder.ts`, and a notice in `ChatScreen`).
+- The deprecated `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited` are no longer read here.
 
 ## Hosted AI in the UI (JEF-451)
 
