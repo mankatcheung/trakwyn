@@ -133,6 +133,7 @@ function downloadIcs(content: string, company: string, role: string) {
   URL.revokeObjectURL(url);
 }
 
+/* eslint-disable react-hooks/static-components -- opted out below with 'use no memo'; the reason is there */
 export function InterviewsTab({
   applicationId,
   company,
@@ -142,6 +143,9 @@ export function InterviewsTab({
   company: string;
   role: string;
 }) {
+  // Defines the RoundForm component inside render (static-components); hoist it before compiling this.
+  'use no memo';
+
   const { t } = useLocale();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);

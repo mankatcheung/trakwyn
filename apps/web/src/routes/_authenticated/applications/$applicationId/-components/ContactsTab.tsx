@@ -67,7 +67,11 @@ function contactToForm(c: Contact): ContactFormState {
   };
 }
 
+/* eslint-disable react-hooks/static-components -- opted out below with 'use no memo'; the reason is there */
 export function ContactsTab({ applicationId }: { applicationId: string }) {
+  // Defines the ContactForm component inside render (static-components); hoist it before compiling this.
+  'use no memo';
+
   const { t } = useLocale();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);

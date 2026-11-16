@@ -1,9 +1,10 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 import viteReact from '@vitejs/plugin-react';
+import { reactCompiler } from './reactCompiler';
 
 export default defineConfig({
-  plugins: [viteReact()],
+  plugins: [viteReact(), reactCompiler()],
   resolve: {
     alias: {
       '#/': resolve(import.meta.dirname, 'src') + '/',

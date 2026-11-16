@@ -264,6 +264,7 @@ describe('table keyboard and compatibility (JEF-582)', () => {
         ],
         content: original,
       });
+      // eslint-disable-next-line react-hooks/globals -- test harness captures the editor for assertions
       if (e) editor = e;
       return e ? <EditorContent editor={e} /> : null;
     }

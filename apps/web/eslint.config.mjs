@@ -57,11 +57,19 @@ export default tseslint.config(
     },
   },
   {
+    // `recommended` carries rules-of-hooks, exhaustive-deps and the React
+    // Compiler rules (JEF-610): code that breaks them is what the compiler
+    // skips or miscompiles, so they are errors, not hints.
     plugins: { 'react-hooks': reactHooks },
     settings: { react: { version: 'detect' } },
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
+      ...reactHooks.configs.flat.recommended.rules,
       'react-hooks/exhaustive-deps': 'warn',
+      // The compiler does not skip a component for this one; it is a style
+      // rule. 15 existing effects set state on mount (hydration, media
+      // queries, storage reads). A warning keeps them visible without a
+      // refactor in the enablement PR (JEF-610); new code should avoid it.
+      'react-hooks/set-state-in-effect': 'warn',
       '@typescript-eslint/no-explicit-any': ['warn', { ignoreRestArgs: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },

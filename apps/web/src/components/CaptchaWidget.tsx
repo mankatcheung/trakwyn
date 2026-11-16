@@ -61,7 +61,11 @@ interface CaptchaWidgetProps {
  * no site key is configured. A parent that has spent the token remounts this
  * (a new `key`) to get a fresh one.
  */
+/* eslint-disable react-hooks/refs -- opted out below with 'use no memo'; the reason is there */
 export function CaptchaWidget({ onToken }: CaptchaWidgetProps) {
+  // Writes a ref during render so the Turnstile callback reaches the latest onToken; the compiler rejects that.
+  'use no memo';
+
   const containerRef = useRef<HTMLDivElement>(null);
   const onTokenRef = useRef(onToken);
   onTokenRef.current = onToken;
