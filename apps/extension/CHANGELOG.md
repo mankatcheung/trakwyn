@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.5.0...clipper-v1.6.0) (2026-11-16)
+
+
+### Features
+
+* store the full job posting text and tailor resumes, match and letters from it (JEF-591) ([#1437](https://github.com/mankatcheung/trakwyn/issues/1437)) ([4989a4d](https://github.com/mankatcheung/trakwyn/commit/4989a4dab6c219aed004178de94d497f9fef6322))
+
 ## [1.5.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.4.1...clipper-v1.5.0) (2026-11-05)
 
 
