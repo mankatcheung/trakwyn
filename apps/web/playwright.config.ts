@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { apiOrigin, webOrigin, webPort } from './devPorts';
 
 // Locally the specs run against the dev servers (reusing ones already up). CI
 // serves the built output instead (JEF-487): no first-request compilation, and
@@ -9,7 +10,7 @@ const apiCommand = process.env.CI
   ? 'pnpm --filter @trakwyn/api start'
   : 'pnpm --filter @trakwyn/api dev';
 const webCommand = process.env.CI
-  ? 'pnpm --filter @trakwyn/web preview --port 3000 --strictPort'
+  ? `pnpm --filter @trakwyn/web preview --port ${webPort} --strictPort`
   : 'pnpm --filter @trakwyn/web dev';
 
 export default defineConfig({
@@ -36,7 +37,7 @@ export default defineConfig({
       ]
     : 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: webOrigin,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -49,14 +50,14 @@ export default defineConfig({
   webServer: [
     {
       command: apiCommand,
-      url: 'http://localhost:3001/graphql',
+      url: `${apiOrigin}/graphql`,
       reuseExistingServer: !process.env.CI,
       env: process.env.CI ? { ...process.env, STORAGE_PROVIDER: 'local' } : undefined,
       timeout: 30_000,
     },
     {
       command: webCommand,
-      url: 'http://localhost:3000',
+      url: webOrigin,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },

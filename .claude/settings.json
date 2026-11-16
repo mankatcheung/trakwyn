@@ -1,0 +1,18 @@
+{
+  "env": {
+    "VITEST_MAX_WORKERS": "4"
+  },
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/scripts/stop-worktree-processes.sh\" ] && bash \"$CLAUDE_PROJECT_DIR/scripts/stop-worktree-processes.sh\" --quiet || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { apiOrigin, webOrigin } from './devPorts';
 
 // Marketing screenshots (JEF-528). A separate config with its own testDir keeps
 // the capture out of the e2e run (`playwright.config.ts` only reads ./e2e).
@@ -10,12 +11,12 @@ export default defineConfig({
   timeout: 120_000,
   workers: 1,
   reporter: 'list',
-  use: { baseURL: 'http://localhost:3000' },
+  use: { baseURL: webOrigin },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
       command: 'pnpm --filter @trakwyn/api dev',
-      url: 'http://localhost:3001/graphql',
+      url: `${apiOrigin}/graphql`,
       // Plans must not be enforced, or analytics shows the locked preview.
       env: { ...process.env, PLANS_ENFORCED: 'false' } as Record<string, string>,
       reuseExistingServer: false,
@@ -23,7 +24,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter @trakwyn/web dev',
-      url: 'http://localhost:3000',
+      url: webOrigin,
       reuseExistingServer: false,
       timeout: 60_000,
     },

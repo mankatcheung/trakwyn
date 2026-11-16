@@ -1,8 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { apiOrigin } from '../devPorts';
 import { createApplication } from './helpers/applications';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
 
-const FAKE_LLM_URL = 'http://localhost:3001/llm-test/fake/chat/completions';
+const FAKE_LLM_URL = `${apiOrigin}/llm-test/fake/chat/completions`;
 const FAKE_REPLY = 'Fake assistant reply for e2e testing.';
 
 /**

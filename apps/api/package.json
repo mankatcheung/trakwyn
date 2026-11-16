@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "dev": "tsx watch -C development src/index.ts",
+    "dev": "node scripts/assertPortFree.mjs && tsx watch -C development src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node --enable-source-maps --import ./dist/instrumentation.js dist/index.js",
