@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next, I18nextProvider, useTranslation } from 'react-i18next';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, use, useEffect, useMemo, useState } from 'react';
 import en from '#/i18n/en.json';
 
 export const SUPPORTED_LOCALES = ['en', 'en-GB', 'zh-HK', 'zh-TW', 'zh-CN'] as const;
@@ -235,11 +235,11 @@ function LocaleContextBridge({
   value: LocaleContextValue;
   children: React.ReactNode;
 }) {
-  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+  return <LocaleContext value={value}>{children}</LocaleContext>;
 }
 
 export function useLocale(): LocaleContextValue {
-  const context = useContext(LocaleContext);
+  const context = use(LocaleContext);
   const { i18n, t } = useTranslation();
   const locale = normalizeLocale(i18n.language);
   // Memoized so callers can safely put `t`/the returned object in a useEffect

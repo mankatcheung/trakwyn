@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, use, useEffect, useMemo, useState } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { type ColorScheme, type ThemeColors, type ThemeMode, getColorsForScheme } from './colors';
 import { getThemeMode, setThemeMode as persistThemeMode } from './themeStorage';
@@ -39,11 +39,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [mode, resolvedScheme],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext value={value}>{children}</ThemeContext>;
 }
 
 export function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext);
+  const context = use(ThemeContext);
   if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 }

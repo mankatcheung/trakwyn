@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, use, useState } from 'react';
 
 /**
  * Global UI state for the desktop chat dock (JEF-133) — which conversations
@@ -72,7 +72,7 @@ export function ChatDockProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ChatDockContext.Provider
+    <ChatDockContext
       value={{
         sections,
         expanded,
@@ -85,12 +85,12 @@ export function ChatDockProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-    </ChatDockContext.Provider>
+    </ChatDockContext>
   );
 }
 
 export function useChatDock(): ChatDockContextValue {
-  const ctx = useContext(ChatDockContext);
+  const ctx = use(ChatDockContext);
   if (!ctx) throw new Error('useChatDock must be used within a ChatDockProvider');
   return ctx;
 }

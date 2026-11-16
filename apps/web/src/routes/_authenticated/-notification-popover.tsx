@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -63,16 +63,19 @@ export function NotificationPopover({
     });
   }, [anchorRef]);
 
+  // An Effect Event reads the latest onClose, so the listener is not re-added
+  // each time the parent passes a new callback.
+  const handlePointerDown = useEffectEvent((event: MouseEvent) => {
+    const target = event.target as Node;
+    if (anchorRef.current?.contains(target)) return;
+    if (panelRef.current?.contains(target)) return;
+    onClose();
+  });
+
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target as Node;
-      if (anchorRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
-      onClose();
-    }
     document.addEventListener('mousedown', handlePointerDown);
     return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [anchorRef, onClose]);
+  }, []);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['notifications', 'recent'],
