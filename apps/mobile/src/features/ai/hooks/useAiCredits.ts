@@ -13,7 +13,8 @@ export type AiFeature =
   | 'mockAnswer'
   | 'talkingPoints'
   | 'companyBriefing'
-  | 'resumeMatch';
+  | 'resumeMatch'
+  | 'postingRequirements';
 
 export interface UseAiCredits {
   /** True when the next AI call is answered by Trakwyn AI and so spends credits. */

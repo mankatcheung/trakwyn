@@ -153,3 +153,32 @@ export interface CompanyBriefing {
   sources: CompanySource[];
   generatedAt: string;
 }
+
+/** What an application's posting asks for, as the API read it (JEF-593). */
+export interface PostingRequirements {
+  id: string;
+  applicationId: string;
+  mustHave: string[];
+  niceToHave: string[];
+  keywords: string[];
+  seniority: string | null;
+  generatedAt: string;
+  /** The posting was edited after these were read. */
+  isStale: boolean;
+}
+
+export interface RoleWithoutMetrics {
+  workExperienceId: string;
+  company: string;
+  title: string;
+  /** The description as stored, which an answer is appended to. */
+  description: string | null;
+}
+
+/** What would strengthen a resume for an application, as the API worked it out (JEF-594). */
+export interface ResumeGaps {
+  /** False when the posting's requirements have not been read yet. */
+  requirementsRead: boolean;
+  requirementGaps: string[];
+  rolesWithoutMetrics: RoleWithoutMetrics[];
+}

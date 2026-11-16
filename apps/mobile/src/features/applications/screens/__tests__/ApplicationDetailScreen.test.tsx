@@ -12,6 +12,15 @@ jest.mock('../../hooks/useApplicationMutations', () => ({
   useUpdateApplication: jest.fn(),
 }));
 jest.mock('../../hooks/useSectionCounts', () => ({ useSectionCounts: jest.fn() }));
+// Each card has its own test and its own queries; here they only need to be placed on the screen.
+jest.mock('../../components/PostingRequirementsCard', () => {
+  const { Text } = require('react-native');
+  return { PostingRequirementsCard: () => <Text testID="posting-requirements-card-stub" /> };
+});
+jest.mock('../../components/ResumeGapsCard', () => {
+  const { Text } = require('react-native');
+  return { ResumeGapsCard: () => <Text testID="resume-gaps-card-stub" /> };
+});
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
   useLocalSearchParams: jest.fn(),
@@ -94,6 +103,23 @@ describe('ApplicationDetailScreen', () => {
 
     await waitFor(() => expect(getByText('Backend Engineer')).toBeTruthy());
     expect(getByText('Acme · Remote · $100k-$120k')).toBeTruthy();
+  });
+
+  it('places the posting requirements and the resume gap questions on the screen', async () => {
+    mockedUseApplication.mockReturnValue({
+      data: application,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseApplicationHealthScore.mockReturnValue({ data: undefined } as never);
+    mockedUseDeleteApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+    mockedUseUpdateApplication.mockReturnValue({ mutate: jest.fn(), isPending: false } as never);
+
+    const { findByTestId } = await renderScreen();
+
+    expect(await findByTestId('posting-requirements-card-stub')).toBeTruthy();
+    expect(await findByTestId('resume-gaps-card-stub')).toBeTruthy();
   });
 
   it('expands a long description via the show more toggle', async () => {

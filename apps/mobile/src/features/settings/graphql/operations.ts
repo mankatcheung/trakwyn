@@ -425,3 +425,142 @@ export const STORAGE_USAGE_QUERY = `
     me { storageUsedBytes storageLimitBytes }
   }
 `;
+
+// Profile sections added in JEF-592: certifications, languages, projects and awards.
+
+export const CERTIFICATIONS_QUERY = `
+  query Certifications {
+    certifications {
+      id
+      name
+      issuer
+      issuedAt
+      expiresAt
+      credentialUrl
+    }
+  }
+`;
+
+export const CREATE_CERTIFICATION_MUTATION = `
+  mutation CreateCertification($input: CreateCertificationInput!) {
+    createCertification(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UPDATE_CERTIFICATION_MUTATION = `
+  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {
+    updateCertification(id: $id, input: $input) {
+      id
+    }
+  }
+`;
+
+export const DELETE_CERTIFICATION_MUTATION = `
+  mutation DeleteCertification($id: ID!) {
+    deleteCertification(id: $id)
+  }
+`;
+
+export const LANGUAGES_QUERY = `
+  query Languages {
+    languages {
+      id
+      name
+      proficiency
+    }
+  }
+`;
+
+export const CREATE_LANGUAGE_MUTATION = `
+  mutation CreateLanguage($input: CreateLanguageInput!) {
+    createLanguage(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UPDATE_LANGUAGE_MUTATION = `
+  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {
+    updateLanguage(id: $id, input: $input) {
+      id
+    }
+  }
+`;
+
+export const DELETE_LANGUAGE_MUTATION = `
+  mutation DeleteLanguage($id: ID!) {
+    deleteLanguage(id: $id)
+  }
+`;
+
+export const PROJECTS_QUERY = `
+  query Projects {
+    projects {
+      id
+      name
+      role
+      url
+      startDate
+      endDate
+      description
+    }
+  }
+`;
+
+export const CREATE_PROJECT_MUTATION = `
+  mutation CreateProject($input: CreateProjectInput!) {
+    createProject(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UPDATE_PROJECT_MUTATION = `
+  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {
+    updateProject(id: $id, input: $input) {
+      id
+    }
+  }
+`;
+
+export const DELETE_PROJECT_MUTATION = `
+  mutation DeleteProject($id: ID!) {
+    deleteProject(id: $id)
+  }
+`;
+
+export const AWARDS_QUERY = `
+  query Awards {
+    awards {
+      id
+      title
+      issuer
+      date
+      description
+    }
+  }
+`;
+
+export const CREATE_AWARD_MUTATION = `
+  mutation CreateAward($input: CreateAwardInput!) {
+    createAward(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UPDATE_AWARD_MUTATION = `
+  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {
+    updateAward(id: $id, input: $input) {
+      id
+    }
+  }
+`;
+
+export const DELETE_AWARD_MUTATION = `
+  mutation DeleteAward($id: ID!) {
+    deleteAward(id: $id)
+  }
+`;
