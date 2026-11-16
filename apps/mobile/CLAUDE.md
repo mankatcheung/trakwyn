@@ -39,6 +39,11 @@ Create new on the Resumes and Cover letters screens (`useCreateOrOpenDraft`) ope
 - **Credits:** `useAiCredits` reads the `llmApiKeys` query (`me.aiCredits.costs`, `me.aiProviderOrder`). The cost and credits-left lines show only when Trakwyn AI answers. Never copy the weights into the app.
 - The old `generateResume` and `generateCoverLetter` mutations are still on the API for older app versions, but this app no longer calls them.
 
+## Profile sections, posting requirements and gaps (JEF-600)
+
+- **Profile:** `ExperienceScreen` only lists sections. Work experience, education and skills each have a file in `src/features/settings/components/experience/`. Certifications, languages, projects and awards are four thin configs over one `ProfileEntrySection` (a field list drives the list rows and the form sheet), with their hooks in `hooks/useProfileSections.ts`. Dates are typed as `YYYY-MM-DD`, and a blank optional field is sent as `null` on update so clearing it on the phone clears it on web too. A failed save shows inside the form sheet, which covers the section behind it.
+- **Application detail:** `PostingRequirementsCard` and `ResumeGapsCard` sit under the job info, collapsed. Opening a card never calls AI; only the Read button does (`postingRequirements` credit cost, `AiCreditsExhaustedNotice` when the credits are spent). The gap answers go to the same API as web: yes adds a skill, a figure is appended to the role's description, and no is remembered by `dismissResumeGap`, so web stops asking too.
+
 ## Content quotas (JEF-494)
 
 Same behaviour as web (`apps/web/CLAUDE.md`): `features/quota/` has the hand-written `ContentQuota` document, `useQuotaState`/`useQuotaFull` and `QuotaHint`, which stays silent below 80%. Each capped screen passes the length of the list it already holds, and `FloatingActionButton` takes `disabled` at the cap. The create errors already go through `getErrorMessage`, so a lost race shows the API's message. Call `useQuotaFull` above any early return (`rules-of-hooks`), and stub `features/quota/hooks/useQuotaState` in a screen test that has no query client. The `ContentQuota` document is checked by `graphqlDocuments.test.ts`.

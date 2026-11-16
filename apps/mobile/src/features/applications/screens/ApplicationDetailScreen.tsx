@@ -20,6 +20,8 @@ import { HealthScoreCard } from '../components/HealthScoreCard';
 import { ApplicationInfoChips } from '../components/ApplicationInfoChips';
 import { SectionIndexList } from '../components/SectionIndexList';
 import { CollapsibleDescription } from '../components/CollapsibleDescription';
+import { PostingRequirementsCard } from '../components/PostingRequirementsCard';
+import { ResumeGapsCard } from '../components/ResumeGapsCard';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
@@ -182,6 +184,9 @@ export function ApplicationDetailScreen() {
           <Text style={styles.link}>{application.jobUrl}</Text>
         </Pressable>
       ) : null}
+
+      <PostingRequirementsCard applicationId={applicationId} />
+      <ResumeGapsCard applicationId={applicationId} />
 
       <SectionIndexList
         counts={sectionCounts}

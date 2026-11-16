@@ -173,5 +173,39 @@
       "ghosted": "Ghosted",
       "companyAlwaysShown": "Company is always shown"
     }
+  },
+  "postingRequirements": {
+    "title": "What this role asks for",
+    "read": "Read requirements",
+    "readAgain": "Read again",
+    "reading": "Reading…",
+    "notRead": "Read the posting with AI to list its requirements and keywords. CVs you generate here are tailored against them.",
+    "stale": "The posting has changed since these were read. Read it again for an up-to-date list.",
+    "none": "This posting states no specific requirements.",
+    "mustHave": "Must have",
+    "niceToHave": "Nice to have",
+    "keywords": "Keywords",
+    "readOn": "Read {{date}}"
+  },
+  "resumeGaps": {
+    "title": "Strengthen this CV",
+    "intro": "AI only writes what your profile shows. Answer these and your next CV for this role can say more.",
+    "notRead": "Read the posting’s requirements above to see what it asks for that your profile does not show.",
+    "requirementsHeading": "The posting asks for these",
+    "haveYouUsed": "Have you used",
+    "yesAddSkill": "Yes, add to my skills",
+    "no": "No",
+    "addSkillLabel": "Yes, add {{skill}} to my skills",
+    "dismissSkillLabel": "No, I have not used {{skill}}",
+    "metricsHeading": "Roles with no numbers",
+    "roleHasNoNumbers": "{{title}} at {{company}} has no numbers yet. Add one result with a figure:",
+    "metricPlaceholder": "e.g. Led a team of 5, cut load time by 30%",
+    "addToProfile": "Add to profile",
+    "skip": "Skip",
+    "skipRoleLabel": "Skip {{title}} at {{company}}",
+    "needsNumber": "Include a number, such as a team size, an amount or a percentage.",
+    "descriptionFull": "This role’s description is full. Shorten it on your profile first.",
+    "saved": "Saved to your profile. Generate a new CV to use it.",
+    "saveFailedTitle": "Could not save"
   }
 }

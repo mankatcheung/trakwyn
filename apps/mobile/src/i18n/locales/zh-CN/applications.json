@@ -172,5 +172,39 @@
       "ghosted": "已读不回",
       "companyAlwaysShown": "公司始终显示"
     }
+  },
+  "postingRequirements": {
+    "title": "这个职位的要求",
+    "read": "读取要求",
+    "readAgain": "重新读取",
+    "reading": "读取中…",
+    "notRead": "用 AI 读取职位发布内容，列出其中的要求和关键词。你在这里生成的简历会按这些要求来定制。",
+    "stale": "职位内容在读取后已更改。请重新读取以获得最新列表。",
+    "none": "这则职位没有写明具体要求。",
+    "mustHave": "必备条件",
+    "niceToHave": "加分条件",
+    "keywords": "关键词",
+    "readOn": "读取于 {{date}}"
+  },
+  "resumeGaps": {
+    "title": "让这份简历更有力",
+    "intro": "AI 只会写出你个人资料里有的内容。回答这些问题，下一份针对这个职位的简历就能写得更充分。",
+    "notRead": "请先读取上方的职位要求，才能看到职位要求而你的资料尚未体现的内容。",
+    "requirementsHeading": "职位要求这些",
+    "haveYouUsed": "你用过",
+    "yesAddSkill": "用过，加入我的技能",
+    "no": "没有",
+    "addSkillLabel": "用过，把 {{skill}} 加入我的技能",
+    "dismissSkillLabel": "没有用过 {{skill}}",
+    "metricsHeading": "没有数字的经历",
+    "roleHasNoNumbers": "{{company}} 的 {{title}} 还没有数字。请补充一项带数字的成果：",
+    "metricPlaceholder": "例如：带领 5 人团队，加载时间缩短 30%",
+    "addToProfile": "加入资料",
+    "skip": "跳过",
+    "skipRoleLabel": "跳过 {{company}} 的 {{title}}",
+    "needsNumber": "请包含一个数字，例如团队人数、金额或百分比。",
+    "descriptionFull": "这段经历的描述已满，请先在个人资料中缩短。",
+    "saved": "已保存到你的个人资料。重新生成简历即可使用。",
+    "saveFailedTitle": "无法保存"
   }
 }

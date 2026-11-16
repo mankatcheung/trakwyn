@@ -219,3 +219,65 @@ export interface CreateSkillInput {
   category?: string;
   proficiency?: string;
 }
+
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  credentialUrl: string | null;
+}
+
+export interface CreateCertificationInput {
+  name: string;
+  issuer?: string | null;
+  issuedAt?: string | null;
+  expiresAt?: string | null;
+  credentialUrl?: string | null;
+}
+
+export interface Language {
+  id: string;
+  name: string;
+  proficiency: string | null;
+}
+
+export interface CreateLanguageInput {
+  name: string;
+  proficiency?: string | null;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  role: string | null;
+  url: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+}
+
+export interface CreateProjectInput {
+  name: string;
+  role?: string | null;
+  url?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  description?: string | null;
+}
+
+export interface Award {
+  id: string;
+  title: string;
+  issuer: string | null;
+  date: string | null;
+  description: string | null;
+}
+
+export interface CreateAwardInput {
+  title: string;
+  issuer?: string | null;
+  date?: string | null;
+  description?: string | null;
+}

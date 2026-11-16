@@ -172,5 +172,39 @@
       "ghosted": "已讀不回",
       "companyAlwaysShown": "公司名稱一律顯示"
     }
+  },
+  "postingRequirements": {
+    "title": "這個職缺的要求",
+    "read": "讀取要求",
+    "readAgain": "重新讀取",
+    "reading": "讀取中…",
+    "notRead": "用 AI 讀取職缺內容，列出其中的要求和關鍵字。你在這裡產生的履歷會依這些要求來調整。",
+    "stale": "職缺內容在讀取後已變更。請重新讀取以取得最新清單。",
+    "none": "這則職缺沒有寫明具體要求。",
+    "mustHave": "必備條件",
+    "niceToHave": "加分條件",
+    "keywords": "關鍵字",
+    "readOn": "讀取於 {{date}}"
+  },
+  "resumeGaps": {
+    "title": "讓這份履歷更有力",
+    "intro": "AI 只會寫出你個人資料裡有的內容。回答這些問題，下一份針對這個職缺的履歷就能寫得更充分。",
+    "notRead": "請先讀取上方的職缺要求，才能看到職缺要求而你的資料尚未呈現的內容。",
+    "requirementsHeading": "職缺要求這些",
+    "haveYouUsed": "你用過",
+    "yesAddSkill": "用過，加入我的技能",
+    "no": "沒有",
+    "addSkillLabel": "用過，把 {{skill}} 加入我的技能",
+    "dismissSkillLabel": "沒有用過 {{skill}}",
+    "metricsHeading": "沒有數字的經歷",
+    "roleHasNoNumbers": "{{company}} 的 {{title}} 還沒有數字。請補充一項帶數字的成果：",
+    "metricPlaceholder": "例如：帶領 5 人團隊，載入時間縮短 30%",
+    "addToProfile": "加入資料",
+    "skip": "略過",
+    "skipRoleLabel": "略過 {{company}} 的 {{title}}",
+    "needsNumber": "請包含一個數字，例如團隊人數、金額或百分比。",
+    "descriptionFull": "這段經歷的描述已滿，請先在個人資料中縮短。",
+    "saved": "已儲存到你的個人資料。重新產生履歷即可使用。",
+    "saveFailedTitle": "無法儲存"
   }
 }

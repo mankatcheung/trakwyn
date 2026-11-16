@@ -22,6 +22,31 @@ jest.mock('../../hooks/useExperience', () => ({
   useDeleteSkill: jest.fn(),
 }));
 
+// The four sections added in JEF-592 are covered by ProfileEntrySections.test.tsx.
+jest.mock('../../hooks/useProfileSections', () => {
+  const list = () => ({ data: [], isLoading: false });
+  const create = () => ({ mutateAsync: jest.fn(), isPending: false });
+  const remove = () => ({ mutate: jest.fn() });
+  return {
+    useCertifications: list,
+    useCreateCertification: create,
+    useUpdateCertification: create,
+    useDeleteCertification: remove,
+    useLanguages: list,
+    useCreateLanguage: create,
+    useUpdateLanguage: create,
+    useDeleteLanguage: remove,
+    useProjects: list,
+    useCreateProject: create,
+    useUpdateProject: create,
+    useDeleteProject: remove,
+    useAwards: list,
+    useCreateAward: create,
+    useUpdateAward: create,
+    useDeleteAward: remove,
+  };
+});
+
 jest.mock('../../../../theme/ThemeContext', () => ({ useTheme: jest.fn() }));
 import {
   useCreateEducation,

@@ -16,6 +16,10 @@ export function DocumentVersionOutcomesSection() {
     cover_letter: t('documentType.coverLetter'),
   };
 
+  // The API names a version it generated itself `Generated`; show it as the product does.
+  const versionLabel = (version: string | null): string =>
+    version === 'Generated' ? t('generatedDocumentVersion') : (version ?? '—');
+
   if (isLoading) return <ActivityIndicator color={colors.primary} />;
   if (!data) return null;
 
@@ -33,7 +37,7 @@ export function DocumentVersionOutcomesSection() {
         data.map((o) => (
           <RatioBar
             key={`${o.documentType}::${o.version ?? ''}`}
-            label={`${documentTypeLabel[o.documentType] ?? o.documentType}: ${o.version ?? '—'}`}
+            label={`${documentTypeLabel[o.documentType] ?? o.documentType}: ${versionLabel(o.version)}`}
             meta={`${o.interviewCount}/${o.applicationCount}`}
             percent={o.interviewRate}
             color="#a855f7"
