@@ -14,7 +14,7 @@ import {
 } from '../src/lib/screenshots';
 
 // Real screenshots from the seeded demo account (JEF-528). Run with
-// `pnpm --filter @trakwyn/web screenshots`; see apps/web/CLAUDE.md.
+// `pnpm --filter @trakwyn/web screenshots`; see apps/web/e2e/CLAUDE.md.
 // Kept in step with apps/api/src/seed/index.ts, which the web app cannot import.
 const DEMO_EMAIL = 'demo@trakwyn.app';
 const DEMO_PASSWORD = 'demo1234';
