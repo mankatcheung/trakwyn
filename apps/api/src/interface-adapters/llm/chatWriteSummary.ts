@@ -4,7 +4,7 @@ import type { WriteToolName } from '#src/interface-adapters/llm/toolCatalogue.js
 export interface SummaryTarget {
   /** "Acme / Frontend Engineer" for the application the write is about. */
   application?: string;
-  /** The name of the contact, skill, education or work experience being changed. */
+  /** The name of the contact, profile entry (skill, education, work experience, certification, language, project, award) being changed. */
   record?: string;
   /** The round's type, when the write is about an interview round. */
   roundType?: string;
@@ -19,6 +19,13 @@ function clip(text: string): string {
 
 function str(value: unknown): string | undefined {
   return typeof value === 'string' && value ? value : undefined;
+}
+
+/** The four-digit year of an ISO date argument, when it parses. */
+function yearOf(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : String(date.getUTCFullYear());
 }
 
 function changed(args: Record<string, unknown>, idKey: string): string {
@@ -98,5 +105,31 @@ export function summarizeChatWrite(
       return `Add work experience: ${str(args.title)} at ${str(args.company)}`;
     case 'update_work_experience':
       return `Update work experience at ${target.record ?? ''}${changed(args, 'workExperienceId')}`;
+    case 'create_certification': {
+      const issuer = str(args.issuer);
+      const year = yearOf(args.issuedAt);
+      const details = [issuer, year].filter(Boolean).join(', ');
+      return `Add certification ${str(args.name)}${details ? `, ${details}` : ''}`;
+    }
+    case 'update_certification':
+      return `Update certification ${target.record ?? ''}${changed(args, 'certificationId')}`;
+    case 'create_language': {
+      const proficiency = str(args.proficiency);
+      return `Add language ${str(args.name)}${proficiency ? ` (${proficiency})` : ''}`;
+    }
+    case 'update_language':
+      return `Update language ${target.record ?? ''}${changed(args, 'languageId')}`;
+    case 'create_project': {
+      const role = str(args.role);
+      return `Add project ${str(args.name)}${role ? ` (${role})` : ''}`;
+    }
+    case 'update_project':
+      return `Update project ${target.record ?? ''}${changed(args, 'projectId')}`;
+    case 'create_award': {
+      const details = [str(args.issuer), yearOf(args.date)].filter(Boolean).join(', ');
+      return `Add award ${str(args.title)}${details ? `, ${details}` : ''}`;
+    }
+    case 'update_award':
+      return `Update award ${target.record ?? ''}${changed(args, 'awardId')}`;
   }
 }

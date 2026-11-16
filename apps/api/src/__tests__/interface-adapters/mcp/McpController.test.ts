@@ -26,6 +26,14 @@ import type { IGenerateMockAnswerUseCase } from '#src/use-cases/mockInterviewQue
 import type { ICreateMockInterviewQuestionUseCase } from '#src/use-cases/mockInterviewQuestions/ICreateMockInterviewQuestionUseCase.js';
 import type { ICreateSkillUseCase } from '#src/use-cases/skill/ICreateSkillUseCase.js';
 import type { IUpdateSkillUseCase } from '#src/use-cases/skill/IUpdateSkillUseCase.js';
+import type { ICreateCertificationUseCase } from '#src/use-cases/certification/ICreateCertificationUseCase.js';
+import type { IUpdateCertificationUseCase } from '#src/use-cases/certification/IUpdateCertificationUseCase.js';
+import type { ICreateLanguageUseCase } from '#src/use-cases/language/ICreateLanguageUseCase.js';
+import type { IUpdateLanguageUseCase } from '#src/use-cases/language/IUpdateLanguageUseCase.js';
+import type { ICreateProjectUseCase } from '#src/use-cases/project/ICreateProjectUseCase.js';
+import type { IUpdateProjectUseCase } from '#src/use-cases/project/IUpdateProjectUseCase.js';
+import type { ICreateAwardUseCase } from '#src/use-cases/award/ICreateAwardUseCase.js';
+import type { IUpdateAwardUseCase } from '#src/use-cases/award/IUpdateAwardUseCase.js';
 import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEducationUseCase.js';
 import type { IUpdateEducationUseCase } from '#src/use-cases/education/IUpdateEducationUseCase.js';
 import type { ICreateWorkExperienceUseCase } from '#src/use-cases/workExperience/ICreateWorkExperienceUseCase.js';
@@ -45,7 +53,11 @@ import type { GetApplicationChannelAnalyticsUseCase } from '#src/use-cases/appli
 import type { GetInterviewRoundAnalyticsUseCase } from '#src/use-cases/interviewRounds/GetInterviewRoundAnalyticsUseCase.js';
 import type { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAnalyticsUseCase.js';
 import {
+  makeAwardRepository,
+  makeCertificationRepository,
   makeEducationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
   makeSkillRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -94,6 +106,14 @@ const makeDeps = () => ({
   createMockInterviewQuestionUseCase: { execute: vi.fn() } as ICreateMockInterviewQuestionUseCase,
   createSkillUseCase: { execute: vi.fn() } as ICreateSkillUseCase,
   updateSkillUseCase: { execute: vi.fn() } as IUpdateSkillUseCase,
+  createCertificationUseCase: { execute: vi.fn() } as ICreateCertificationUseCase,
+  updateCertificationUseCase: { execute: vi.fn() } as IUpdateCertificationUseCase,
+  createLanguageUseCase: { execute: vi.fn() } as ICreateLanguageUseCase,
+  updateLanguageUseCase: { execute: vi.fn() } as IUpdateLanguageUseCase,
+  createProjectUseCase: { execute: vi.fn() } as ICreateProjectUseCase,
+  updateProjectUseCase: { execute: vi.fn() } as IUpdateProjectUseCase,
+  createAwardUseCase: { execute: vi.fn() } as ICreateAwardUseCase,
+  updateAwardUseCase: { execute: vi.fn() } as IUpdateAwardUseCase,
   createEducationUseCase: { execute: vi.fn() } as ICreateEducationUseCase,
   updateEducationUseCase: { execute: vi.fn() } as IUpdateEducationUseCase,
   createWorkExperienceUseCase: { execute: vi.fn() } as ICreateWorkExperienceUseCase,
@@ -101,6 +121,10 @@ const makeDeps = () => ({
   workExperienceRepository: makeWorkExperienceRepository(),
   educationRepository: makeEducationRepository(),
   skillRepository: makeSkillRepository(),
+  certificationRepository: makeCertificationRepository(),
+  languageRepository: makeLanguageRepository(),
+  projectRepository: makeProjectRepository(),
+  awardRepository: makeAwardRepository(),
   toolCallObserver: makeToolCallObserver(),
   // Roomy enough that no other test in this file meets the limit.
   mcpToolCallReadRateLimiter: new RateLimiter(10_000, 60_000),
@@ -284,6 +308,14 @@ describe('McpController', () => {
           update_education: 'idempotent',
           create_work_experience: '',
           update_work_experience: 'idempotent',
+          create_certification: '',
+          update_certification: 'idempotent',
+          create_language: '',
+          update_language: 'idempotent',
+          create_project: '',
+          update_project: 'idempotent',
+          create_award: '',
+          update_award: 'idempotent',
         });
       });
 
@@ -941,6 +973,109 @@ describe('McpController', () => {
       });
     });
 
+    describe('certification, language, project and award write tools (JEF-601)', () => {
+      it.each([
+        ['create_certification', { issuer: 'AWS' }],
+        ['update_certification', { name: 'x' }],
+        ['create_language', {}],
+        ['update_language', { name: 'x' }],
+        ['create_project', {}],
+        ['update_project', { name: 'x' }],
+        ['create_award', {}],
+        ['update_award', { title: 'x' }],
+      ] as const)('%s refuses a call missing its required argument', async (tool, args) => {
+        const { body } = await controller.handle(
+          rpc('tools/call', { name: tool, arguments: args }),
+          USER_ID,
+          'full',
+        );
+        expect(body).toMatchObject({ error: { code: JSON_RPC_ERROR.INVALID_PARAMS } });
+      });
+
+      it.each([
+        [
+          'create_certification',
+          'createCertificationUseCase',
+          {
+            name: 'AWS SAA',
+            issuer: 'Amazon',
+            issuedAt: '2024-03-01',
+            credentialUrl: 'https://x.y',
+          },
+          {
+            name: 'AWS SAA',
+            issuer: 'Amazon',
+            issuedAt: new Date('2024-03-01'),
+            credentialUrl: 'https://x.y',
+          },
+        ],
+        [
+          'update_certification',
+          'updateCertificationUseCase',
+          { certificationId: 'c1', expiresAt: '2027-03-01' },
+          { id: 'c1', expiresAt: new Date('2027-03-01') },
+        ],
+        [
+          'create_language',
+          'createLanguageUseCase',
+          { name: 'Spanish', proficiency: 'fluent' },
+          { name: 'Spanish', proficiency: 'fluent' },
+        ],
+        [
+          'update_language',
+          'updateLanguageUseCase',
+          { languageId: 'l1', proficiency: 'native' },
+          { id: 'l1', proficiency: 'native' },
+        ],
+        [
+          'create_project',
+          'createProjectUseCase',
+          { name: 'Trakwyn', role: 'Founder', startDate: '2025-01-01' },
+          { name: 'Trakwyn', role: 'Founder', startDate: new Date('2025-01-01') },
+        ],
+        [
+          'update_project',
+          'updateProjectUseCase',
+          { projectId: 'p1', endDate: '2026-01-01' },
+          { id: 'p1', endDate: new Date('2026-01-01') },
+        ],
+        [
+          'create_award',
+          'createAwardUseCase',
+          { title: 'Hackathon winner', date: '2023-06-01' },
+          { title: 'Hackathon winner', date: new Date('2023-06-01') },
+        ],
+        [
+          'update_award',
+          'updateAwardUseCase',
+          { awardId: 'a1', issuer: 'ACM' },
+          { id: 'a1', issuer: 'ACM' },
+        ],
+      ] as const)('%s maps its arguments onto %s', async (tool, dep, args, expected) => {
+        vi.mocked(deps[dep].execute).mockResolvedValue({} as never);
+
+        await controller.handle(
+          rpc('tools/call', { name: tool, arguments: args }),
+          USER_ID,
+          'full',
+        );
+
+        expect(deps[dep].execute).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: USER_ID, ...expected }),
+        );
+      });
+
+      it('refuses the writes to a read-only token', async () => {
+        const { body } = await controller.handle(
+          rpc('tools/call', { name: 'create_certification', arguments: { name: 'AWS SAA' } }),
+          USER_ID,
+          'read',
+        );
+        expect(body).toMatchObject({ error: expect.anything() });
+        expect(deps.createCertificationUseCase.execute).not.toHaveBeenCalled();
+      });
+    });
+
     describe('profile write tools (JEF-176)', () => {
       it('create_skill requires a name', async () => {
         const { body } = await controller.handle(
@@ -1250,6 +1385,27 @@ describe('McpController', () => {
       });
     });
 
+    it.each([
+      ['list_certifications', 'certificationRepository'],
+      ['list_languages', 'languageRepository'],
+      ['list_projects', 'projectRepository'],
+      ['list_awards', 'awardRepository'],
+    ] as const)('%s returns the caller’s rows from %s (JEF-601)', async (tool, repo) => {
+      const rows = [{ id: 'row-1' }];
+      vi.mocked(deps[repo].findAllByUserId).mockResolvedValue(rows as never);
+
+      const { body } = await controller.handle(
+        rpc('tools/call', { name: tool, arguments: {} }),
+        USER_ID,
+        'read',
+      );
+
+      expect(deps[repo].findAllByUserId).toHaveBeenCalledWith(USER_ID);
+      expect(body).toMatchObject({
+        result: { content: [{ type: 'text', text: JSON.stringify(rows) }] },
+      });
+    });
+
     it('calls list_skills and returns the result', async () => {
       const skills = [{ id: 'skill-1', name: 'TypeScript' }];
       vi.mocked(deps.skillRepository.findAllByUserId).mockResolvedValue(skills as never);
@@ -1287,7 +1443,12 @@ describe('McpController', () => {
     });
 
     it('covers the repository-backed tools, which have no use-case span of their own', async () => {
-      for (const name of ['list_work_experiences', 'list_educations', 'list_skills']) {
+      for (const name of [
+        'list_work_experiences',
+        'list_educations',
+        'list_skills',
+        'list_certifications',
+      ]) {
         await call(name, {});
       }
 
@@ -1295,6 +1456,7 @@ describe('McpController', () => {
         ['list_work_experiences', ['succeeded']],
         ['list_educations', ['succeeded']],
         ['list_skills', ['succeeded']],
+        ['list_certifications', ['succeeded']],
       ]);
     });
 

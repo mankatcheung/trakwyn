@@ -14,7 +14,7 @@ export interface CandidateBackgroundDeps extends UserProfileRepositories {
 
 export interface CandidateBackgroundRequest {
   userId: string;
-  /** Send the user's profile (work experience, education, skills) to the model. */
+  /** Send the user's profile (work experience, education, skills, certifications, projects) to the model. */
   useProfile: boolean;
   /** One of the user's own documents whose text is sent to the model. */
   documentId?: string;
@@ -56,6 +56,7 @@ export async function buildCandidateBackground(
         // profile whose role lines and skills alone run past it.
         formatUserProfile(profile, {
           maxChars: AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS,
+          leaveOut: ['languages', 'awards'],
         }).slice(0, AI_PROMPT_INPUT.MOCK_INTERVIEW_PROFILE_MAX_CHARS)
       : '';
   const documentText =

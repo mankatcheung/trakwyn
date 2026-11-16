@@ -19,7 +19,11 @@ import { makeUser } from '#src/__tests__/helpers/mocks/user.js';
 import { makeApplication } from '#src/__tests__/helpers/mocks/jobs.js';
 import { makeToolCallObserver } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import {
+  makeAwardRepository,
+  makeCertificationRepository,
   makeEducationRepository,
+  makeLanguageRepository,
+  makeProjectRepository,
   makeSkillRepository,
   makeWorkExperienceRepository,
 } from '#src/__tests__/helpers/mocks/profile.js';
@@ -47,6 +51,10 @@ function makeToolDeps() {
     workExperienceRepository: makeWorkExperienceRepository(),
     educationRepository: makeEducationRepository(),
     skillRepository: makeSkillRepository(),
+    certificationRepository: makeCertificationRepository(),
+    languageRepository: makeLanguageRepository(),
+    projectRepository: makeProjectRepository(),
+    awardRepository: makeAwardRepository(),
     toolCallObserver: makeToolCallObserver(),
     chatWriteTools: makeChatWriteTools(),
     chatActionProposalRepository: makeChatActionProposalRepository(),
@@ -153,6 +161,36 @@ describe('executeChatTool observation (JEF-365)', () => {
   it('offers no delete to chat', () => {
     expect(CHAT_TOOLS.map((t) => t.name)).not.toContain('trash_application');
     expect(CHAT_TOOLS.filter((t) => 'destructive' in t && t.destructive)).toEqual([]);
+  });
+
+  it.each([
+    ['list_certifications', 'certificationRepository'],
+    ['list_languages', 'languageRepository'],
+    ['list_projects', 'projectRepository'],
+    ['list_awards', 'awardRepository'],
+  ] as const)('%s reads the caller’s rows from %s (JEF-601)', async (tool, repo) => {
+    const deps = makeToolDeps();
+    vi.mocked(deps[repo].findAllByUserId).mockResolvedValue([{ id: 'row-1' }] as never);
+
+    const result = await executeChatTool(
+      toolCall(tool),
+      'user-1',
+      'conv-1',
+      deps as unknown as ChatToolDeps,
+    );
+
+    expect(deps[repo].findAllByUserId).toHaveBeenCalledWith('user-1');
+    expect(result).toEqual([{ id: 'row-1' }]);
+    expect(deps.toolCallObserver.calls[0]?.reports).toEqual(['succeeded']);
+  });
+
+  it('offers chat the profile writes but no delete for them (JEF-601)', () => {
+    const names = CHAT_TOOLS.map((t) => t.name);
+    for (const kind of ['certification', 'language', 'project', 'award']) {
+      expect(names).toContain(`create_${kind}`);
+      expect(names).toContain(`update_${kind}`);
+      expect(names).not.toContain(`delete_${kind}`);
+    }
   });
 
   it('reports success with the compacted result the model receives', async () => {

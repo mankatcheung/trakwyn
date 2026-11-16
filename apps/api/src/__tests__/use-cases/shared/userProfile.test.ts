@@ -185,3 +185,31 @@ describe('formatUserProfile descriptions (JEF-590)', () => {
     expect(out).not.toContain('ddd');
   });
 });
+
+describe('formatUserProfile leaveOut (JEF-601)', () => {
+  const profile = {
+    workExperiences: [],
+    educations: [],
+    skills: [],
+    certifications: [{ name: 'CKA', issuer: 'Linux Foundation', issuedAt: null, expiresAt: null }],
+    projects: [{ name: 'Trakwyn', role: null, startDate: null, endDate: null, description: null }],
+    languages: [{ name: 'Spanish', proficiency: 'fluent' }],
+    awards: [{ title: 'Hackathon winner', issuer: null, date: null, description: null }],
+  } as unknown as UserProfile;
+
+  it('keeps every section by default', () => {
+    const out = formatUserProfile(profile);
+    expect(out).toContain('Certifications:');
+    expect(out).toContain('Projects:');
+    expect(out).toContain('Languages:');
+    expect(out).toContain('Awards:');
+  });
+
+  it('drops languages and awards but keeps certifications and projects', () => {
+    const out = formatUserProfile(profile, { leaveOut: ['languages', 'awards'] });
+    expect(out).toContain('- CKA (Linux Foundation)');
+    expect(out).toContain('- Trakwyn');
+    expect(out).not.toContain('Spanish');
+    expect(out).not.toContain('Hackathon winner');
+  });
+});

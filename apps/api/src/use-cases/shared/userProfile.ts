@@ -97,6 +97,13 @@ export interface FormatUserProfileOptions {
    * (JEF-590). Without it nothing is cut.
    */
   maxChars?: number;
+  /**
+   * Sections to leave out of the block. A cover letter and a mock interview
+   * cite certifications and projects as evidence, but languages and awards
+   * only when a posting asks for them, so they skip those two rather than
+   * pay for them on every call (JEF-601). A resume keeps everything.
+   */
+  leaveOut?: readonly ('languages' | 'awards')[];
 }
 
 type DatedEntry = WorkExperience | Education;
@@ -229,15 +236,10 @@ export function formatUserProfile(
   profile: UserProfile,
   options: FormatUserProfileOptions = {},
 ): string {
-  const {
-    workExperiences,
-    educations,
-    skills,
-    certifications = [],
-    languages = [],
-    projects = [],
-    awards = [],
-  } = profile;
+  const { workExperiences, educations, skills, certifications = [], projects = [] } = profile;
+  const leftOut = new Set(options.leaveOut ?? []);
+  const languages = leftOut.has('languages') ? [] : (profile.languages ?? []);
+  const awards = leftOut.has('awards') ? [] : (profile.awards ?? []);
   const sections = (describe: (line: string, entry: DatedEntry) => string[]): string[] => [
     ...(workExperiences.length > 0
       ? [
