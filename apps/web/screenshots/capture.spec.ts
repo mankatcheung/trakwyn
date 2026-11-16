@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import sharp from 'sharp';
+import { apiOrigin } from '../devPorts';
 import {
   SCREENSHOT_SCALE,
   SCREENSHOT_SCREENS,
@@ -17,7 +18,7 @@ import {
 // Kept in step with apps/api/src/seed/index.ts, which the web app cannot import.
 const DEMO_EMAIL = 'demo@trakwyn.app';
 const DEMO_PASSWORD = 'demo1234';
-const API_URL = 'http://localhost:3001/graphql';
+const API_URL = `${apiOrigin}/graphql`;
 const THEME_STORAGE_KEY = 'theme';
 const COOKIE_CONSENT_KEY = 'trakwyn_cookie_consent';
 /** An interviewing application in the seed with notes and a tailored resume. */

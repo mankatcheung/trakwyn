@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { apiOrigin } from '../devPorts';
 import { registerAndLogin, uniqueEmail } from './helpers/auth';
 import { createApplication, openTab } from './helpers/applications';
 
@@ -9,7 +10,7 @@ const VIEWPORTS = [
   { name: 'narrow', width: 390, height: 844 },
 ] as const;
 
-const FAKE_LLM_URL = 'http://localhost:3001/llm-test/fake/chat/completions';
+const FAKE_LLM_URL = `${apiOrigin}/llm-test/fake/chat/completions`;
 const SHOT_DIR = process.env.QA_SCREENSHOT_DIR;
 
 async function shot(page: Page, name: string) {

@@ -53,6 +53,58 @@ for app in api web; do
   echo "wrote apps/$app/.env"
 done
 
+# Dev-server ports (one pair per worktree). The main checkout and CI use web
+# 3000 / API 3001, so two agents in two worktrees could not both run the dev
+# servers, e2e tests or screenshots. Give this worktree its own pair instead:
+# stable (derived from the worktree name, so a re-run keeps it), and moved past
+# any pair a sibling worktree already uses. apps/api/.env carries the API's port
+# and the origins CORS and OAuth redirects are checked against; apps/web/.env
+# carries both ports for the vite proxy and Playwright (apps/web/devPorts.ts).
+set_env() { # set_env KEY VALUE FILE: replace the line, or append it
+  local key="$1" value="$2" file="$3" tmp
+  [ -f "$file" ] || return 0
+  tmp="$(mktemp)"
+  awk -v k="$key" -v v="$value" -F= '
+    $1 == k { print k "=" v; done = 1; next }
+    { print }
+    END { if (!done) print k "=" v }' "$file" > "$tmp" && cat "$tmp" > "$file"
+  rm -f "$tmp"
+}
+env_value() { # env_value KEY FILE
+  [ -f "$2" ] && sed -n "s/^$1=//p" "$2" | head -1 || true
+}
+
+PORT_MIN=3100
+PORT_SLOTS=400 # pairs: web = PORT_MIN + 2n, API = web + 1
+used_web_ports=" "
+for sibling in "$MAIN_ROOT"/.claude/worktrees/*/; do
+  [ -d "$sibling" ] || continue
+  [ "$(cd "$sibling" && pwd -P)" = "$(pwd -P)" ] && continue
+  used_web_ports="$used_web_ports$(env_value WEB_PORT "$sibling/apps/web/.env") "
+done
+
+WEB_PORT_VALUE="$(env_value WEB_PORT apps/web/.env)"
+if [ -z "$WEB_PORT_VALUE" ]; then
+  slot=$(( $(basename "$WORKTREE_ROOT" | cksum | cut -d' ' -f1) % PORT_SLOTS ))
+  for _ in $(seq 1 "$PORT_SLOTS"); do
+    candidate=$(( PORT_MIN + slot * 2 ))
+    case "$used_web_ports" in
+      *" $candidate "*) slot=$(( (slot + 1) % PORT_SLOTS )) ;;
+      *) break ;;
+    esac
+  done
+  WEB_PORT_VALUE="$candidate"
+fi
+API_PORT_VALUE=$(( WEB_PORT_VALUE + 1 ))
+
+set_env WEB_PORT "$WEB_PORT_VALUE" apps/web/.env
+set_env API_PORT "$API_PORT_VALUE" apps/web/.env
+set_env PORT "$API_PORT_VALUE" apps/api/.env
+set_env CORS_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env
+set_env WEB_APP_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env
+set_env API_ORIGIN "http://localhost:$API_PORT_VALUE" apps/api/.env
+echo "dev ports: web $WEB_PORT_VALUE, API $API_PORT_VALUE"
+
 # Per-install Terraform config (terraform.tfvars, and the .envrc that holds
 # each provider token) is gitignored, so a new worktree has none of it. Link it
 # from the main checkout instead of copying: the main checkout stays the one
@@ -101,4 +153,5 @@ echo "Seeding local database..."
 (cd apps/api && npx tsx --env-file=.env src/seed.ts)
 
 echo
+echo "Dev servers: web http://localhost:$WEB_PORT_VALUE, API http://localhost:$API_PORT_VALUE (this worktree's own ports)."
 echo "Worktree ready. Demo login: demo@trakwyn.app (see apps/api/src/seed.ts for the password)."
