@@ -17,6 +17,10 @@ import type { ICreateEducationUseCase } from '#src/use-cases/education/ICreateEd
 import type { IUpdateEducationUseCase } from '#src/use-cases/education/IUpdateEducationUseCase.js';
 import type { ICreateWorkExperienceUseCase } from '#src/use-cases/workExperience/ICreateWorkExperienceUseCase.js';
 import type { IUpdateWorkExperienceUseCase } from '#src/use-cases/workExperience/IUpdateWorkExperienceUseCase.js';
+import {
+  PROFILE_WRITE_HANDLERS,
+  type ProfileWriteToolDeps,
+} from '#src/interface-adapters/mcp/profileWriteHandlers.js';
 import type { McpActor } from '#src/use-cases/shared/mcpActor.js';
 import {
   INTERVIEW_ROUND_OUTCOMES,
@@ -33,7 +37,7 @@ import {
 } from '#src/interface-adapters/mcp/toolArgs.js';
 
 /** The use cases behind the write tools; resolved from the Cradle by name. */
-export interface WriteToolDeps {
+export interface WriteToolDeps extends ProfileWriteToolDeps {
   createApplicationUseCase: ICreateApplicationUseCase;
   updateApplicationUseCase: IUpdateApplicationUseCase;
   deleteApplicationUseCase: IDeleteApplicationUseCase;
@@ -371,6 +375,8 @@ export const WRITE_TOOL_HANDLERS: Record<WriteToolName, WriteToolHandler> = {
       }),
     };
   },
+
+  ...PROFILE_WRITE_HANDLERS,
 };
 
 /**

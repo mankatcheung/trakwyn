@@ -3,6 +3,10 @@ import type { Contact } from '#src/domain/contact/Contact.js';
 import type { InterviewRound } from '#src/domain/interviewRound/InterviewRound.js';
 import type { Note } from '#src/domain/note/Note.js';
 import type { Offer } from '#src/domain/offer/Offer.js';
+import type { Award } from '#src/domain/award/Award.js';
+import type { Certification } from '#src/domain/certification/Certification.js';
+import type { Language } from '#src/domain/language/Language.js';
+import type { Project } from '#src/domain/project/Project.js';
 import type { Skill } from '#src/domain/skill/Skill.js';
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
 
@@ -275,6 +279,55 @@ export const SKILLS: Skill[] = [
     name: 'Go',
     category: null,
     proficiency: 'intermediate',
+    createdAt: CREATED,
+  },
+];
+
+export const CERTIFICATIONS: Certification[] = [
+  {
+    id: 'cert-1',
+    userId: CHAT_USER_ID,
+    name: 'Certified Kubernetes Administrator',
+    issuer: 'Linux Foundation',
+    issuedAt: new Date('2024-05-01T00:00:00Z'),
+    expiresAt: new Date('2027-05-01T00:00:00Z'),
+    credentialUrl: null,
+    createdAt: CREATED,
+  },
+];
+
+export const LANGUAGES: Language[] = [
+  {
+    id: 'lang-1',
+    userId: CHAT_USER_ID,
+    name: 'Portuguese',
+    proficiency: 'fluent',
+    createdAt: CREATED,
+  },
+];
+
+export const PROJECTS: Project[] = [
+  {
+    id: 'proj-1',
+    userId: CHAT_USER_ID,
+    name: 'Open-source release pipeline',
+    role: 'Maintainer',
+    url: null,
+    startDate: new Date('2023-02-01T00:00:00Z'),
+    endDate: null,
+    description: null,
+    createdAt: CREATED,
+  },
+];
+
+export const AWARDS: Award[] = [
+  {
+    id: 'award-1',
+    userId: CHAT_USER_ID,
+    title: 'Engineering Excellence Award',
+    issuer: 'Lumen Freight',
+    date: new Date('2025-01-01T00:00:00Z'),
+    description: null,
     createdAt: CREATED,
   },
 ];

@@ -17,6 +17,11 @@ function build() {
     skillRepository: { findById: vi.fn().mockResolvedValue(null) },
     educationRepository: { findById: vi.fn().mockResolvedValue(null) },
     workExperienceRepository: { findById: vi.fn().mockResolvedValue(null) },
+    certificationRepository: { findById: vi.fn().mockResolvedValue(null) },
+    languageRepository: { findById: vi.fn().mockResolvedValue(null) },
+    projectRepository: { findById: vi.fn().mockResolvedValue(null) },
+    awardRepository: { findById: vi.fn().mockResolvedValue(null) },
+    createCertificationUseCase: { execute: vi.fn().mockResolvedValue({ id: 'c-new' }) },
     updateApplicationUseCase: { execute: vi.fn().mockResolvedValue({ id: 'app-1' }) },
     createOfferUseCase: { execute: vi.fn() },
   };
@@ -98,6 +103,51 @@ describe('ChatWriteTools', () => {
       expect(err.code).toBe('NOT_FOUND');
     });
 
+    it.each([
+      ['update_certification', 'certificationId', 'certificationRepository'],
+      ['update_language', 'languageId', 'languageRepository'],
+      ['update_project', 'projectId', 'projectRepository'],
+      ['update_award', 'awardId', 'awardRepository'],
+    ] as const)(
+      "%s refuses another user's record, and a missing one (JEF-601)",
+      async (tool, key, repo) => {
+        const { tools, deps } = build();
+
+        deps[repo].findById.mockResolvedValue({ id: 'r1', userId: 'other', name: 'x', title: 'x' });
+        const foreign = await tools.prepare(tool, { [key]: 'r1' }, 'user-1').catch((e) => e);
+        deps[repo].findById.mockResolvedValue(null);
+        const missing = await tools.prepare(tool, { [key]: 'r1' }, 'user-1').catch((e) => e);
+
+        expect(foreign.code).toBe('NOT_FOUND');
+        expect(missing.code).toBe('NOT_FOUND');
+      },
+    );
+
+    it('proposes a certification without saving it, and applies it only on confirm (JEF-601)', async () => {
+      const { tools, deps } = build();
+
+      const prepared = await tools.prepare(
+        'create_certification',
+        { name: 'AWS Solutions Architect', issuer: 'Amazon', issuedAt: '2024-03-01', junk: 'x' },
+        'user-1',
+      );
+
+      expect(prepared.summary).toBe('Add certification AWS Solutions Architect, Amazon, 2024');
+      expect(prepared.args).not.toHaveProperty('junk');
+      expect(deps.createCertificationUseCase.execute).not.toHaveBeenCalled();
+
+      await tools.apply('create_certification', prepared.args, 'user-1');
+
+      expect(deps.createCertificationUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(deps.createCertificationUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          name: 'AWS Solutions Architect',
+          issuedAt: new Date('2024-03-01'),
+        }),
+      );
+    });
+
     it('refuses a bad status, a missing required field and a wrong type', async () => {
       const { tools } = build();
 
@@ -172,6 +222,58 @@ describe('ChatWriteTools', () => {
       expect((invalid as { code: string }).code).toBe('VALIDATION');
       expect((delete_ as { code: string }).code).toBe('VALIDATION');
     });
+  });
+});
+
+describe('summarizeChatWrite profile sections (JEF-601)', () => {
+  it.each([
+    ['create_certification', { name: 'CKA' }, {}, 'Add certification CKA'],
+    [
+      'create_language',
+      { name: 'Spanish', proficiency: 'fluent' },
+      {},
+      'Add language Spanish (fluent)',
+    ],
+    ['create_language', { name: 'French' }, {}, 'Add language French'],
+    ['create_project', { name: 'Trakwyn', role: 'Founder' }, {}, 'Add project Trakwyn (Founder)'],
+    [
+      'create_award',
+      { title: 'Hackathon winner', issuer: 'ACM', date: '2023-06-01' },
+      {},
+      'Add award Hackathon winner, ACM, 2023',
+    ],
+    [
+      'update_certification',
+      { certificationId: 'c1', expiresAt: '2027-01-01' },
+      { record: 'CKA' },
+      'Update certification CKA (expiresAt)',
+    ],
+    [
+      'update_language',
+      { languageId: 'l1', proficiency: 'native' },
+      { record: 'Spanish' },
+      'Update language Spanish (proficiency)',
+    ],
+    [
+      'update_project',
+      { projectId: 'p1', endDate: '2026-01-01' },
+      { record: 'Trakwyn' },
+      'Update project Trakwyn (endDate)',
+    ],
+    [
+      'update_award',
+      { awardId: 'a1', issuer: 'IEEE' },
+      { record: 'Hackathon winner' },
+      'Update award Hackathon winner (issuer)',
+    ],
+  ] as const)('%s reads as one line', (tool, args, target, expected) => {
+    expect(summarizeChatWrite(tool, args, target)).toBe(expected);
+  });
+
+  it('leaves out a date that does not parse rather than printing NaN', () => {
+    expect(summarizeChatWrite('create_certification', { name: 'CKA', issuedAt: 'soon' }, {})).toBe(
+      'Add certification CKA',
+    );
   });
 });
 

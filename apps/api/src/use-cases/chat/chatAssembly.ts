@@ -21,6 +21,10 @@ import type { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAna
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { LLMMessage, LLMToolCall } from '#src/use-cases/ports/ILLMProvider.js';
 import type { IToolCallObserver } from '#src/use-cases/ports/IToolCallObserver.js';
 import type { IChatWriteTools } from '#src/use-cases/ports/IChatWriteTools.js';
@@ -78,6 +82,10 @@ export interface ChatToolDeps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
   toolCallObserver: IToolCallObserver;
   chatWriteTools: IChatWriteTools;
   chatActionProposalRepository: IChatActionProposalRepository;
@@ -237,6 +245,14 @@ async function dispatchChatTool(
       return await deps.educationRepository.findAllByUserId(userId);
     case 'list_skills':
       return await deps.skillRepository.findAllByUserId(userId);
+    case 'list_certifications':
+      return await deps.certificationRepository.findAllByUserId(userId);
+    case 'list_languages':
+      return await deps.languageRepository.findAllByUserId(userId);
+    case 'list_projects':
+      return await deps.projectRepository.findAllByUserId(userId);
+    case 'list_awards':
+      return await deps.awardRepository.findAllByUserId(userId);
     case 'list_documents':
       return await deps.getDocumentsUseCase.execute({ userId, applicationId });
     case 'list_offers':

@@ -19,6 +19,10 @@ import type { GetOfferAnalyticsUseCase } from '#src/use-cases/offers/GetOfferAna
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
 import { ERROR_CODES } from '#src/use-cases/errors/errorCodes.js';
 import { API_TOKEN_SCOPE } from '#src/use-cases/constants.js';
@@ -99,6 +103,10 @@ interface Deps extends WriteToolDeps {
   workExperienceRepository: IWorkExperienceRepository;
   educationRepository: IEducationRepository;
   skillRepository: ISkillRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
   toolCallObserver: IToolCallObserver;
   /** `tools/call` budgets (JEF-465): reads and writes are counted apart. */
   mcpToolCallReadRateLimiter: IRateLimiter;
@@ -357,6 +365,18 @@ export class McpController {
           break;
         case 'list_skills':
           result = await this.deps.skillRepository.findAllByUserId(userId);
+          break;
+        case 'list_certifications':
+          result = await this.deps.certificationRepository.findAllByUserId(userId);
+          break;
+        case 'list_languages':
+          result = await this.deps.languageRepository.findAllByUserId(userId);
+          break;
+        case 'list_projects':
+          result = await this.deps.projectRepository.findAllByUserId(userId);
+          break;
+        case 'list_awards':
+          result = await this.deps.awardRepository.findAllByUserId(userId);
           break;
         case 'list_documents':
           if (!toStr(args.applicationId)) {
