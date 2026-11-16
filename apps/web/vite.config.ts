@@ -7,6 +7,7 @@ import { nitro } from 'nitro/vite';
 
 import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { reactCompiler } from './reactCompiler';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 // PostHog tags every event with `release` (lib/analytics). Vite only exposes
@@ -89,6 +90,8 @@ const config = defineConfig(({ command }) => ({
         ]
       : []),
     viteReact(),
+    // Must follow viteReact(): the compiler runs on the JSX it hands over.
+    reactCompiler(),
     // `ANALYZE=1 pnpm build` writes dist/stats.html (JEF-537): a treemap of
     // what lands in each chunk, to check what the dashboard's first paint pulls.
     // `ANALYZE=json` writes the raw data (dist/stats.json) instead. Dev-only and

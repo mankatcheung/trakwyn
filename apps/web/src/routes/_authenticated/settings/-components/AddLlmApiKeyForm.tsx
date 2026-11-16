@@ -46,7 +46,11 @@ interface AddLlmApiKeyFormProps {
  * custom provider), with a test of the unsaved values before saving (JEF-247).
  * Shared by Settings → AI and the welcome flow's AI step (JEF-460).
  */
+/* eslint-disable react-hooks/incompatible-library -- opted out below with 'use no memo'; the reason is there */
 export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormProps) {
+  // react-hook-form watch() returns values the compiler cannot memoize safely (incompatible-library).
+  'use no memo';
+
   const { t } = useLocale();
   const qc = useQueryClient();
 

@@ -27,6 +27,7 @@ const RECENT_LIMIT = 5;
  * was — the same class of problem the old backdrop modal already portaled
  * around.
  */
+/* eslint-disable react-hooks/immutability -- opted out below with 'use no memo'; the reason is there */
 export function NotificationPopover({
   anchorRef,
   onClose,
@@ -34,6 +35,9 @@ export function NotificationPopover({
   anchorRef: React.RefObject<HTMLElement | null>;
   onClose: () => void;
 }) {
+  // Assigns window.location.href in a click handler, which the compiler reads as mutating a value it owns.
+  'use no memo';
+
   const { t } = useLocale();
   const qc = useQueryClient();
   const panelRef = useRef<HTMLDivElement>(null);

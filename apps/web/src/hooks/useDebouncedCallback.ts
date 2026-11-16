@@ -5,10 +5,14 @@ export type DebouncedCallback<T extends (...args: any[]) => void> = T & {
   flush: () => void;
 };
 
+/* eslint-disable react-hooks/refs -- opted out below with 'use no memo'; the reason is there */
 export function useDebouncedCallback<T extends (...args: any[]) => void>(
   callback: T,
   delay: number,
 ): DebouncedCallback<T> {
+  // Writes a ref during render so the latest callback is always called; the compiler rejects that. Calling it from a timer is the point of the hook.
+  'use no memo';
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingArgsRef = useRef<Parameters<T> | null>(null);
   const callbackRef = useRef(callback);

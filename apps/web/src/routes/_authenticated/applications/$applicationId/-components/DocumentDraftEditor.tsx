@@ -96,6 +96,7 @@ interface DocumentDraftEditorProps {
   saveStatus?: SaveStatus;
 }
 
+/* eslint-disable react-hooks/refs -- opted out below with 'use no memo'; the reason is there */
 export function DocumentDraftEditor({
   contentJson,
   onUpdate,
@@ -108,6 +109,9 @@ export function DocumentDraftEditor({
   language,
   saveStatus,
 }: DocumentDraftEditorProps) {
+  // Tiptap reads placeholder and translate refs from callbacks it holds; the compiler flags those as refs read during render.
+  'use no memo';
+
   let initialContent;
   try {
     initialContent = JSON.parse(contentJson);
