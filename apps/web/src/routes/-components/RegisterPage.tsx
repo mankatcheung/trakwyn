@@ -17,7 +17,7 @@ import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/ana
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.email('Invalid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 type FormValues = z.infer<typeof schema>;

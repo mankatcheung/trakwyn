@@ -39,6 +39,9 @@ export default tseslint.config(
       // rule would enforce inside a class string is order-independent anyway;
       // revisit only if prettier-plugin-tailwindcss ever replaces Prettier.
       'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
+      // A class Tailwind has renamed or dropped (v3 `rounded` is `rounded-sm`
+      // in v4) is a regression the moment it lands, so it fails lint (JEF-615).
+      'better-tailwindcss/no-deprecated-classes': 'error',
       // Component classes hand-written in styles.css as plain CSS (not
       // @utility, so the Tailwind compiler can't see them) — route/page
       // transitions, sidebar entrance animations, theme toggle.
@@ -72,6 +75,24 @@ export default tseslint.config(
       'react-hooks/set-state-in-effect': 'warn',
       '@typescript-eslint/no-explicit-any': ['warn', { ignoreRestArgs: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // JEF-615: a call to an API its library marks `@deprecated` is an error.
+    // TypeScript and the editor show the strike-through but `tsc` and the
+    // build stay silent, so deprecations piled up unseen (TanStack Query's
+    // `ensureQueryData`, React's `FormEvent`, zod's `.email()`, recharts'
+    // `Cell`). The rule reads type information, so this block is the one
+    // that makes `pnpm lint` type-aware; tsconfig.json includes every file.
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-deprecated': 'error',
     },
   },
   {

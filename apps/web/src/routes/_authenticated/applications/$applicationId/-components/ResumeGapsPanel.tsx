@@ -128,7 +128,7 @@ function RoleRow({ role, actions }: { role: RoleWithoutMetrics; actions: Actions
   const busy = actions.addMetric.isPending || actions.dismiss.isPending;
   const inputId = `resume-gap-metric-${role.workExperienceId}`;
 
-  const submit = (event: React.FormEvent) => {
+  const submit = (event: React.SubmitEvent) => {
     event.preventDefault();
     const text = line.trim();
     // Without a figure the role would come straight back as the same question.

@@ -4,6 +4,6 @@ import { KanbanBoard } from './-board-page';
 
 export const Route = createFileRoute('/_authenticated/applications/board')({
   loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(boardApplicationsQueryOptions),
+    queryClient.query({ ...boardApplicationsQueryOptions, staleTime: 'static' }),
   component: KanbanBoard,
 });

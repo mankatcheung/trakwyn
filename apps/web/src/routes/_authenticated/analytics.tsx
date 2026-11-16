@@ -3,6 +3,7 @@ import { analyticsQueryOptions } from './-analytics-queries';
 import { AnalyticsPage } from './-analytics-page';
 
 export const Route = createFileRoute('/_authenticated/analytics')({
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(analyticsQueryOptions),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.query({ ...analyticsQueryOptions, staleTime: 'static' }),
   component: AnalyticsPage,
 });

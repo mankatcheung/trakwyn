@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import {
@@ -18,9 +18,20 @@ const p = (text: string, bold = false) =>
         content: [{ type: 'text', text, ...(bold ? { marks: [{ type: 'bold' }] } : {}) }],
       };
 
+const editors: Editor[] = [];
+
 function makeEditor(content: object[]) {
-  return new Editor({ extensions: [StarterKit], content: { type: 'doc', content } });
+  const editor = new Editor({ extensions: [StarterKit], content: { type: 'doc', content } });
+  editors.push(editor);
+  return editor;
 }
+
+// An undestroyed editor leaves ProseMirror's DOM observer timer running, which
+// can fire after the jsdom environment is gone and fail the run with
+// "document is not defined".
+afterAll(() => {
+  editors.splice(0).forEach((editor) => editor.destroy());
+});
 
 /** The start position of the text node `needle` in the document. */
 function posOf(editor: Editor, needle: string): number {

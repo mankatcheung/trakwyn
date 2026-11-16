@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
 import { ERROR_CODES } from '#/constants';
@@ -75,7 +75,7 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
     }
   };
 
-  const changeEmail = async (event: FormEvent) => {
+  const changeEmail = async (event: SubmitEvent) => {
     event.preventDefault();
     setChangeBusy(true);
     setChangeNotice(null);

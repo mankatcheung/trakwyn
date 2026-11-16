@@ -6,6 +6,6 @@ import { trashedApplicationsQueryOptions } from './-trash-queries';
 // nanoid strings, which never collide with "trash".
 export const Route = createFileRoute('/_authenticated/applications/trash')({
   loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(trashedApplicationsQueryOptions()),
+    queryClient.query({ ...trashedApplicationsQueryOptions(), staleTime: 'static' }),
   component: TrashPage,
 });

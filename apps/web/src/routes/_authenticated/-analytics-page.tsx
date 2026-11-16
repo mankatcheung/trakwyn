@@ -1,5 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  Rectangle,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  type BarShapeProps,
+} from 'recharts';
 import { ErrorState } from '#/components/ErrorState';
 import { LockedAnalyticsSample } from '#/components/LockedAnalyticsSample';
 import { LockedFeatureOverlay } from '#/components/LockedFeaturePreview';
@@ -33,6 +42,14 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: '#ef4444',
   withdrawn: '#6b7280',
 };
+
+const DEFAULT_STATUS_COLOR = '#3b82f6';
+
+/** One funnel bar, filled by its stage (recharts' `Cell` is deprecated). */
+function FunnelBarShape(props: BarShapeProps) {
+  const status = (props.payload as { status?: string } | undefined)?.status;
+  return <Rectangle {...props} fill={(status && STATUS_COLORS[status]) || DEFAULT_STATUS_COLOR} />;
+}
 
 function isoWeek(date: Date): string {
   const d = new Date(date);
@@ -211,11 +228,12 @@ export function AnalyticsPage() {
                 tick={{ fontSize: 11, fill: '#9ca3af' }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]} name={t('applications.title')}>
-                {funnelData.map((entry) => (
-                  <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#3b82f6'} />
-                ))}
-              </Bar>
+              <Bar
+                dataKey="count"
+                radius={[0, 4, 4, 0]}
+                name={t('applications.title')}
+                shape={FunnelBarShape}
+              />
             </BarChart>
           </ResponsiveContainer>
         )}

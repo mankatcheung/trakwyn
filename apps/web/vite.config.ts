@@ -1,6 +1,6 @@
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
-import { apiOrigin, webPort } from './devPorts';
-import { guideRouteRules } from '../../content/src/node';
+import { apiOrigin, webPort } from './devPorts.ts';
+import { guideRouteRules } from '../../content/src/node.ts';
 import { devtools } from '@tanstack/devtools-vite';
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -8,7 +8,7 @@ import { nitro } from 'nitro/vite';
 
 import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { reactCompiler } from './reactCompiler';
+import { reactCompiler } from './reactCompiler.ts';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 // PostHog tags every event with `release` (lib/analytics). Vite only exposes

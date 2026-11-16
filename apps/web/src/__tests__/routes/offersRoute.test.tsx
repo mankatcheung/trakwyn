@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('#/graphql/client', () => ({ gqlClient: {} }));
 
 interface LoaderOpts {
-  context: { queryClient: { ensureQueryData: (options: unknown) => Promise<unknown> } };
+  context: { queryClient: { query: (options: unknown) => Promise<unknown> } };
 }
 
 async function loadLoader(): Promise<(opts: LoaderOpts) => Promise<unknown>> {
@@ -22,8 +22,8 @@ const gqlError = (code: string) => ({
   response: { errors: [{ message: 'nope', extensions: { code } }] },
 });
 
-const run = async (ensureQueryData: LoaderOpts['context']['queryClient']['ensureQueryData']) =>
-  (await loadLoader())({ context: { queryClient: { ensureQueryData } } });
+const run = async (query: LoaderOpts['context']['queryClient']['query']) =>
+  (await loadLoader())({ context: { queryClient: { query } } });
 
 describe('the offers route loader (JEF-344)', () => {
   it('lets the page render when the offers need Pro, so it can show the upgrade prompt in the app shell', async () => {
@@ -44,5 +44,13 @@ describe('the offers route loader (JEF-344)', () => {
 
   it('is happy with offers it could load', async () => {
     await expect(run(vi.fn().mockResolvedValue([]))).resolves.not.toThrow();
+  });
+
+  it('serves cached offers without refetching them on navigation', async () => {
+    const query = vi.fn().mockResolvedValue([]);
+
+    await run(query);
+
+    expect(query).toHaveBeenCalledWith(expect.objectContaining({ staleTime: 'static' }));
   });
 });
