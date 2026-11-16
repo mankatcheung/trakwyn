@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { useBillingStatus } from '#/lib/billingStatus';
 import { useEmailVerification } from '#/lib/emailVerification';
@@ -33,7 +33,7 @@ export function SettingsDangerZonePage() {
   const [sent, setSent] = useState(false);
   const matches = email.length > 0 && typed.trim().toLowerCase() === email.toLowerCase();
 
-  const onRequest = async (event: FormEvent) => {
+  const onRequest = async (event: SubmitEvent) => {
     event.preventDefault();
     if (!matches) return;
     setBusy(true);

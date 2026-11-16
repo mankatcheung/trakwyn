@@ -95,7 +95,8 @@ const calendarEventsQueryOptions = queryOptions({
 });
 
 export const Route = createFileRoute('/_authenticated/calendar')({
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(calendarEventsQueryOptions),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.query({ ...calendarEventsQueryOptions, staleTime: 'static' }),
   component: CalendarPage,
 });
 

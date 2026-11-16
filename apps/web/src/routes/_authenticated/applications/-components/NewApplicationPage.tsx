@@ -21,7 +21,7 @@ import { POSTING_TEXT_MAX_CHARS, PostingTextField } from './PostingTextField';
 const schema = z.object({
   company: z.string().min(1, 'Company is required'),
   role: z.string().min(1, 'Role is required'),
-  jobUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  jobUrl: z.url('Must be a valid URL').optional().or(z.literal('')),
   location: z.string().optional(),
   salaryRange: z.string().optional(),
   description: z.string().optional(),

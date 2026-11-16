@@ -269,7 +269,7 @@ export const gqlClient = new GraphQLClient(GQL_CLIENT_URL, {
 // graphql-request has no retry hook, and `responseMiddleware` cannot replace
 // the result, so without this the request that hit the expired access token
 // still rejects after a successful refresh. Route loaders (the dashboard's
-// `ensureQueryData`) have no query to invalidate, so that rejection reached the
+// `query`) have no query to invalidate, so that rejection reached the
 // root error boundary and PostHog as a crash. Retried once; a second
 // UNAUTHORIZED is not tagged again by a failed refresh, and surfaces.
 const sendRequest = gqlClient.request.bind(gqlClient) as (...args: unknown[]) => Promise<unknown>;

@@ -72,7 +72,7 @@ export function useCreateOrOpenDraft(applicationId: string, type: DraftType): Cr
     setPending(true);
     setError(null);
     try {
-      const { documentDrafts } = await qc.fetchQuery({
+      const { documentDrafts } = await qc.query({
         ...documentDraftsQueryOptions(applicationId),
         staleTime: 0,
       });

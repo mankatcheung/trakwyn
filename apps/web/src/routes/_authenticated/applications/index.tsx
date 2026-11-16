@@ -127,8 +127,9 @@ export const Route = createFileRoute('/_authenticated/applications/')({
     likelyGhosted: search.likelyGhosted,
   }),
   loader: ({ context: { queryClient }, deps }) =>
-    queryClient.ensureInfiniteQueryData(
-      applicationsPageQueryOptions(deps.status, deps.starred, '', deps.likelyGhosted),
-    ),
+    queryClient.infiniteQuery({
+      ...applicationsPageQueryOptions(deps.status, deps.starred, '', deps.likelyGhosted),
+      staleTime: 'static',
+    }),
   component: ApplicationsPage,
 });

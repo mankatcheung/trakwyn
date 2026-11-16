@@ -57,7 +57,7 @@ const emailVerificationQueryOptions = {
  */
 export async function checkEmailVerification(): Promise<EmailVerificationState | null> {
   try {
-    return await queryClient.fetchQuery(emailVerificationQueryOptions);
+    return await queryClient.query(emailVerificationQueryOptions);
   } catch {
     return null;
   }

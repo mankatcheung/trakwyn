@@ -6,7 +6,7 @@ import { OffersPage } from './-offers-page';
 export const Route = createFileRoute('/_authenticated/offers')({
   loader: async ({ context: { queryClient } }) => {
     try {
-      await queryClient.ensureQueryData(myOffersQueryOptions);
+      await queryClient.query({ ...myOffersQueryOptions, staleTime: 'static' });
     } catch (error) {
       // Offers are a Pro feature (JEF-344). A loader error replaces the whole
       // app, sidebar included, with the crash screen; the page already renders

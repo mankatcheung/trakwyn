@@ -7,7 +7,7 @@ import {
   parseGuide,
   type BacklogEntry,
   type Guide,
-} from './index';
+} from './index.ts';
 
 /** Node-only: the repo's `content/` folder. Browser code uses import.meta.glob. */
 // `import.meta.dirname` first: under jsdom (Vitest) `import.meta.url` is not a file URL.

@@ -56,7 +56,7 @@ const onboardingStateQueryOptions = {
  */
 export async function checkOnboarding(): Promise<OnboardingState | null> {
   try {
-    return await queryClient.fetchQuery(onboardingStateQueryOptions);
+    return await queryClient.query(onboardingStateQueryOptions);
   } catch {
     return null;
   }

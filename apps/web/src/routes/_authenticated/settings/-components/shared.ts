@@ -423,12 +423,12 @@ export const emailSchema = z.object({
   // Optional: an account with no password steps up instead (JEF-463). The
   // page requires it when `me.hasPassword`, and so does the API.
   currentPassword: z.string().optional(),
-  newEmail: z.string().email('Invalid email'),
+  newEmail: z.email('Invalid email'),
 });
 
 export const backupEmailSchema = z.object({
   currentPassword: z.string().optional(),
-  backupEmail: z.string().email('Invalid email'),
+  backupEmail: z.email('Invalid email'),
 });
 
 export const removeBackupEmailSchema = z.object({
@@ -487,7 +487,7 @@ export const llmApiKeySchema = z
     const isCustom = data.provider === CUSTOM_LLM_PROVIDER;
     if (isCustom && !data.model?.trim()) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'Required for a custom provider',
         path: ['model'],
       });
@@ -495,20 +495,20 @@ export const llmApiKeySchema = z
     if (isCustom) {
       if (!data.baseUrl?.trim()) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Required for a custom provider',
           path: ['baseUrl'],
         });
       } else if (!/^https?:\/\//.test(data.baseUrl.trim())) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: 'Must start with http:// or https://',
           path: ['baseUrl'],
         });
       }
     } else if (data.baseUrl?.trim()) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'Only valid for a custom provider',
         path: ['baseUrl'],
       });

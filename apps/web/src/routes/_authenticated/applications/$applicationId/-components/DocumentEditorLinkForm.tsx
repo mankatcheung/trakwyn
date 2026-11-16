@@ -38,7 +38,7 @@ export function DocumentEditorLinkForm({
     <form
       role="group"
       aria-label={t('documents.editor.link')}
-      className="flex flex-wrap items-center gap-1.5 border-t border-gray-200 px-1.5 py-1.5 dark:border-gray-700"
+      className="flex flex-wrap items-center gap-1.5 border-t border-gray-200 p-1.5 dark:border-gray-700"
       onSubmit={(event) => {
         event.preventDefault();
         apply();

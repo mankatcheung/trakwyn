@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useState, type SubmitEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownIcon,
@@ -57,7 +57,7 @@ function MockQuestionForm({
   const questionId = `mock-question-${useId()}`;
   const answerId = `mock-answer-${useId()}`;
 
-  const submit = (e: FormEvent) => {
+  const submit = (e: SubmitEvent) => {
     e.preventDefault();
     onSubmit(form);
   };
