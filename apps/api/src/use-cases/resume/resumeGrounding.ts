@@ -10,7 +10,7 @@ import type {
 } from '#src/domain/resume/ResumeContent.js';
 import type { Education } from '#src/domain/education/Education.js';
 import type { WorkExperience } from '#src/domain/workExperience/WorkExperience.js';
-import { AiResponseInvalidError } from '#src/use-cases/errors/DomainError.js';
+import { nameKey } from '#src/use-cases/resume/nameKey.js';
 import { formatProfileMonth, type UserProfile } from '#src/use-cases/shared/userProfile.js';
 
 /*
@@ -24,51 +24,12 @@ import { formatProfileMonth, type UserProfile } from '#src/use-cases/shared/user
  * not checked here; the eval judge covers it.
  */
 
+export { assertGrounded } from '#src/use-cases/resume/assertGrounded.js';
+export { nameKey } from '#src/use-cases/resume/nameKey.js';
+
 /** Compared loosely: rewording is allowed, inventing is not. */
 const normalize = (value: string) => value.trim().toLowerCase();
 
-/**
- * Every employer and institution in the output must be one the user entered.
- *
- * A model that adds a job is not producing a worse draft, it is producing a
- * document that is harmful to send — so this refuses rather than filtering the
- * invented entries out, which would hand back a plausible resume with no sign
- * anything had gone wrong.
- */
-export function assertGrounded(resume: ResumeContent, profile: UserProfile): void {
-  const companies = new Set(profile.workExperiences.map((w) => normalize(w.company)));
-  const institutions = new Set(profile.educations.map((e) => normalize(e.institution)));
-
-  const inventedEmployer = resume.experience.find((e) => !companies.has(normalize(e.company)));
-  const inventedSchool = resume.education.find((e) => !institutions.has(normalize(e.institution)));
-
-  const certifications = new Set(profile.certifications.map((c) => normalize(c.name)));
-  const languages = new Set(profile.languages.map((l) => normalize(l.name)));
-  const inventedCertification = (resume.certifications ?? []).find(
-    (c) => !certifications.has(normalize(c.name)),
-  );
-  const inventedLanguage = (resume.languages ?? []).find((l) => !languages.has(normalize(l.name)));
-
-  const projects = new Set(profile.projects.map((p) => normalize(p.name)));
-  const awards = new Set(profile.awards.map((a) => normalize(a.title)));
-  const inventedProject = (resume.projects ?? []).find((p) => !projects.has(normalize(p.name)));
-  const inventedAward = (resume.awards ?? []).find((a) => !awards.has(normalize(a.title)));
-
-  if (
-    inventedEmployer ||
-    inventedSchool ||
-    inventedCertification ||
-    inventedLanguage ||
-    inventedProject ||
-    inventedAward
-  ) {
-    throw new AiResponseInvalidError(
-      'The AI produced a resume containing experience you have not recorded — nothing was saved. Please try again.',
-    );
-  }
-}
-
-/** How many of the model's facts were replaced or removed, for the log line. Counts only, never text. */
 export interface ProfileFactCorrections {
   periods: number;
   titles: number;
@@ -137,7 +98,7 @@ function groundExperience(
 ): ResumeExperienceEntry[] {
   const taken = new Set<WorkExperience>();
   return entries.map((entry) => {
-    const sameCompany = rows.filter((row) => normalize(row.company) === normalize(entry.company));
+    const sameCompany = rows.filter((row) => nameKey(row.company) === nameKey(entry.company));
     const row = takeRow(
       sameCompany,
       taken,
@@ -163,7 +124,7 @@ function groundEducation(
   const taken = new Set<Education>();
   return entries.map((entry) => {
     const sameSchool = rows.filter(
-      (row) => normalize(row.institution) === normalize(entry.institution),
+      (row) => nameKey(row.institution) === nameKey(entry.institution),
     );
     const qualification = normalize(entry.qualification ?? '');
     const row = takeRow(
@@ -268,8 +229,8 @@ function groundCertifications(
 ): ResumeCertificationEntry[] {
   const seen = new Set<string>();
   return entries.flatMap((entry) => {
-    const key = normalize(entry.name);
-    const row = profile.certifications.find((c) => normalize(c.name) === key);
+    const key = nameKey(entry.name);
+    const row = profile.certifications.find((c) => nameKey(c.name) === key);
     if (!row || seen.has(key)) return [];
     seen.add(key);
     return [
@@ -289,8 +250,8 @@ function groundProjects(
 ): ResumeProjectEntry[] {
   const seen = new Set<string>();
   return entries.flatMap((entry) => {
-    const key = normalize(entry.name);
-    const row = profile.projects.find((p) => normalize(p.name) === key);
+    const key = nameKey(entry.name);
+    const row = profile.projects.find((p) => nameKey(p.name) === key);
     if (!row || seen.has(key)) return [];
     seen.add(key);
     return [
@@ -313,8 +274,8 @@ function groundAwards(
 ): ResumeAwardEntry[] {
   const seen = new Set<string>();
   return entries.flatMap((entry) => {
-    const key = normalize(entry.title);
-    const row = profile.awards.find((a) => normalize(a.title) === key);
+    const key = nameKey(entry.title);
+    const row = profile.awards.find((a) => nameKey(a.title) === key);
     if (!row || seen.has(key)) return [];
     seen.add(key);
     return [
@@ -334,8 +295,8 @@ function groundLanguages(
 ): ResumeLanguageEntry[] {
   const seen = new Set<string>();
   return entries.flatMap((entry) => {
-    const key = normalize(entry.name);
-    const row = profile.languages.find((l) => normalize(l.name) === key);
+    const key = nameKey(entry.name);
+    const row = profile.languages.find((l) => nameKey(l.name) === key);
     if (!row || seen.has(key)) return [];
     seen.add(key);
     return [{ name: row.name, ...(row.proficiency ? { proficiency: row.proficiency } : {}) }];
