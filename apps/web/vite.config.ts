@@ -1,4 +1,5 @@
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
+import { apiOrigin, webPort } from './devPorts';
 import { guideRouteRules } from '../../content/src/node';
 import { devtools } from '@tanstack/devtools-vite';
 
@@ -112,13 +113,17 @@ const config = defineConfig(({ command }) => ({
   server: {
     // content/ sits at the repo root, outside apps/web (JEF-531).
     fs: { allow: [searchForWorkspaceRoot(process.cwd())] },
+    // Per checkout (devPorts.ts), so parallel worktrees do not share a port.
+    // strictPort: a taken port fails instead of drifting, which would break CORS.
+    port: webPort,
+    strictPort: true,
     proxy: {
-      '/graphql': { target: 'http://localhost:3001', changeOrigin: true },
-      '/auth': { target: 'http://localhost:3001', changeOrigin: true },
-      '/oauth': { target: 'http://localhost:3001', changeOrigin: true },
-      '/chat/stream': { target: 'http://localhost:3001', changeOrigin: true },
+      '/graphql': { target: apiOrigin, changeOrigin: true },
+      '/auth': { target: apiOrigin, changeOrigin: true },
+      '/oauth': { target: apiOrigin, changeOrigin: true },
+      '/chat/stream': { target: apiOrigin, changeOrigin: true },
       // Exact enough not to catch the web app's own /profile routes.
-      '/profile/cv-import': { target: 'http://localhost:3001', changeOrigin: true },
+      '/profile/cv-import': { target: apiOrigin, changeOrigin: true },
     },
   },
 }));

@@ -115,7 +115,7 @@ The compiler runs in dev, the build and Vitest (`reactCompiler.ts`, shared by `v
 
 `pnpm --filter @trakwyn/web screenshots` regenerates `public/screenshots/<screen>-<light|dark>.webp` from the seeded demo account. The images are committed, like `public/og-image.png`; CI does not regenerate them.
 
-- **Stop `pnpm dev` first.** The script seeds the database (`db:seed`), and a PGlite database cannot be opened by two processes. `playwright.screenshots.config.ts` never reuses a running server, so it starts its own API and web server and fails on a busy port 3000/3001.
+- **Stop `pnpm dev` first.** The script seeds the database (`db:seed`), and a PGlite database cannot be opened by two processes. `playwright.screenshots.config.ts` never reuses a running server, so it starts its own API and web server and fails on a busy port. The ports are this checkout's own (`devPorts.ts`: 3000/3001 in the main checkout, the pair `pnpm setup:worktree` assigned in a worktree), so another worktree's servers do not block it.
 - **Plans must not be enforced.** The config starts the API with `PLANS_ENFORCED=false`; otherwise analytics shows the locked preview. The spec refuses to capture that preview.
 - **Only the demo account is photographed.** After signing in the spec asks the API who `me` is and stops unless it is `demo@trakwyn.app`. It also stops with a message when the API is unreachable.
 - **`src/lib/screenshots.ts` is the manifest** (name, per-screen viewport, size, alt-text i18n key). Images are 2x the viewport and must stay under 150 KB; `screenshots.test.ts` checks that each file exists, matches its size and fits the budget. Add a screen there, then rerun the script.

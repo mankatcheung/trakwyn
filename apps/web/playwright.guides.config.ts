@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { apiOrigin, webOrigin, webPort } from './devPorts';
 
 // Guide scripts (JEF-532): content/guides/en/<slug>/guide.ts walks one guide's
 // steps and takes its screenshots. Run through `pnpm guides:verify` (steps only)
@@ -13,7 +14,7 @@ const apiCommand = process.env.CI
   ? 'pnpm --filter @trakwyn/api start'
   : 'pnpm --filter @trakwyn/api dev';
 const webCommand = process.env.CI
-  ? 'pnpm --filter @trakwyn/web preview --port 3000 --strictPort'
+  ? `pnpm --filter @trakwyn/web preview --port ${webPort} --strictPort`
   : 'pnpm --filter @trakwyn/web dev';
 
 export default defineConfig({
@@ -25,7 +26,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   outputDir: 'test-results/guides',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: webOrigin,
     // 1280 x 800 at 1.25x is the 1600 x 1000 the guide images are.
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1.25,
@@ -36,7 +37,7 @@ export default defineConfig({
   webServer: [
     {
       command: apiCommand,
-      url: 'http://localhost:3001/graphql',
+      url: `${apiOrigin}/graphql`,
       reuseExistingServer: false,
       env: {
         ...process.env,
@@ -49,7 +50,7 @@ export default defineConfig({
     },
     {
       command: webCommand,
-      url: 'http://localhost:3000',
+      url: webOrigin,
       reuseExistingServer: false,
       timeout: 60_000,
     },
