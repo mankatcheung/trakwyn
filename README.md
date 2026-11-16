@@ -131,6 +131,10 @@ All are scoped to the authenticated user — a token can never read another acco
 | `list_work_experiences` | —                                          |
 | `list_educations`       | —                                          |
 | `list_skills`           | —                                          |
+| `list_certifications`   | —                                          |
+| `list_languages`        | —                                          |
+| `list_projects`         | —                                          |
+| `list_awards`           | —                                          |
 | `list_documents`        | `applicationId`                            |
 | `list_offers`           | `applicationId`                            |
 | `list_activity`         | `applicationId`                            |
@@ -158,6 +162,14 @@ A full-access token also reaches these write tools, which create, update or tras
 | `update_education`       | `educationId`                   |
 | `create_work_experience` | `company`, `title`, `startDate` |
 | `update_work_experience` | `workExperienceId`              |
+| `create_certification`   | `name`                          |
+| `update_certification`   | `certificationId`               |
+| `create_language`        | `name`                          |
+| `update_language`        | `languageId`                    |
+| `create_project`         | `name`                          |
+| `update_project`         | `projectId`                     |
+| `create_award`           | `title`                         |
+| `update_award`           | `awardId`                       |
 
 `trash_application` moves the application to Trash, where it can be restored from the web app for 30 days. Nothing is permanently deleted over MCP. `create_offer` needs a plan with offers and answers `PLAN_REQUIRED` (in `error.data.code`) otherwise.
 

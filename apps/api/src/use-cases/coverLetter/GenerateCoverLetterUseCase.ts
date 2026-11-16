@@ -96,6 +96,7 @@ export class GenerateCoverLetterUseCase {
     ]);
     const profile = formatUserProfile(userProfile, {
       maxChars: AI_PROMPT_INPUT.PROFILE_MAX_CHARS,
+      leaveOut: ['languages', 'awards'],
     });
     const context = formatApplicationContext({ notes, briefing });
 

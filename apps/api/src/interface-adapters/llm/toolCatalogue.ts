@@ -1,3 +1,7 @@
+import {
+  PROFILE_READ_TOOLS,
+  PROFILE_WRITE_TOOLS,
+} from '#src/interface-adapters/llm/profileToolDefinitions.js';
 import { PAGINATION } from '#src/use-cases/constants.js';
 import type { LLMToolDefinition } from '#src/use-cases/ports/ILLMProvider.js';
 import type {
@@ -162,7 +166,7 @@ export const TOOL_CATALOGUE = [
         useProfile: {
           type: 'boolean',
           description:
-            "Set true to ground the result in the user's profile (work experience, education, skills). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
+            "Set true to ground the result in the user's profile (work experience, education, skills, certifications, projects). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
         },
         documentId: {
           type: 'string',
@@ -189,7 +193,7 @@ export const TOOL_CATALOGUE = [
         useProfile: {
           type: 'boolean',
           description:
-            "Set true to ground the result in the user's profile (work experience, education, skills). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
+            "Set true to ground the result in the user's profile (work experience, education, skills, certifications, projects). It is sent to the user's own AI provider, so only set it when the user wants that. Default false.",
         },
         documentId: {
           type: 'string',
@@ -252,6 +256,7 @@ export const TOOL_CATALOGUE = [
       properties: {},
     },
   },
+  ...PROFILE_READ_TOOLS,
   {
     access: 'read',
     name: 'list_documents',
@@ -637,6 +642,7 @@ export const TOOL_CATALOGUE = [
       required: ['workExperienceId'],
     },
   },
+  ...PROFILE_WRITE_TOOLS,
 ] as const;
 
 /** A single entry in {@link TOOL_CATALOGUE}. */

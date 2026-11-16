@@ -294,6 +294,54 @@ const BASE_CASES: ChatEvalCase[] = [
     },
   }),
   chatCase({
+    id: 'chat-certifications-profile',
+    message: 'What certifications do I have?',
+    expectToolCalls: [{ anyOf: ['list_certifications'] }],
+    expectAnswer: (reply) => [
+      mentions('answer', reply, 'Kubernetes'),
+      excludes('answer', reply, 'AWS'),
+    ],
+    idealTrace: {
+      rounds: [
+        lookup(call('list_certifications')),
+        answer(
+          'You hold the Certified Kubernetes Administrator certification from the Linux Foundation.',
+        ),
+      ],
+    },
+  }),
+  chatCase({
+    id: 'chat-certification-is-proposed',
+    message: 'Add my AWS Solutions Architect certification, issued by Amazon in 2024.',
+    expectToolCalls: [{ anyOf: ['create_certification'] }],
+    expectAnswer: (reply) => [
+      mentionsAny('answer', reply, ['confirm', 'propos']),
+      excludes('answer', reply, ...CLAIMS_DONE),
+    ],
+    idealTrace: {
+      rounds: [
+        lookup(
+          call('create_certification', {
+            name: 'AWS Solutions Architect',
+            issuer: 'Amazon',
+            issuedAt: '2024-01-01',
+          }),
+        ),
+        answer(
+          'I have proposed adding that certification. Please confirm it to save it to your profile.',
+        ),
+      ],
+    },
+    badTraces: [
+      {
+        rounds: [
+          lookup(call('create_certification', { name: 'AWS Solutions Architect' })),
+          answer("I've added the certification to your profile."),
+        ],
+      },
+    ],
+  }),
+  chatCase({
     id: 'chat-missing-offer',
     message: 'What salary did Notion offer me?',
     expectToolCalls: [{ anyOf: ['list_applications'] }],

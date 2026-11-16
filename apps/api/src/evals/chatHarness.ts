@@ -10,11 +10,15 @@ import { CHAT } from '#src/use-cases/constants.js';
 import {
   ANALYTICS,
   APPLICATIONS,
+  AWARDS,
+  CERTIFICATIONS,
   CHAT_USER_ID,
   CONTACTS,
   INTERVIEW_ROUNDS,
+  LANGUAGES,
   NOTES,
   OFFERS,
+  PROJECTS,
   SKILLS,
   WORK_EXPERIENCES,
 } from '#src/evals/fixtures/chatWorld.js';
@@ -150,6 +154,10 @@ function worldDeps(proposals: ChatProposal[]): ChatToolDeps {
     workExperienceRepository: { findAllByUserId: async () => WORK_EXPERIENCES },
     educationRepository: { findAllByUserId: async () => [] },
     skillRepository: { findAllByUserId: async () => SKILLS },
+    certificationRepository: { findAllByUserId: async () => CERTIFICATIONS },
+    languageRepository: { findAllByUserId: async () => LANGUAGES },
+    projectRepository: { findAllByUserId: async () => PROJECTS },
+    awardRepository: { findAllByUserId: async () => AWARDS },
     toolCallObserver: passthroughObserver,
     chatWriteTools: {
       has: (name: string) => WRITE_TOOL_NAMES.has(name),

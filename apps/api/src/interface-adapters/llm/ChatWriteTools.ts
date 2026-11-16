@@ -6,6 +6,10 @@ import type { IContactRepository } from '#src/use-cases/ports/IContactRepository
 import type { IInterviewRoundRepository } from '#src/use-cases/ports/IInterviewRoundRepository.js';
 import type { IOfferRepository } from '#src/use-cases/ports/IOfferRepository.js';
 import type { ISkillRepository } from '#src/use-cases/ports/ISkillRepository.js';
+import type { ICertificationRepository } from '#src/use-cases/ports/ICertificationRepository.js';
+import type { ILanguageRepository } from '#src/use-cases/ports/ILanguageRepository.js';
+import type { IProjectRepository } from '#src/use-cases/ports/IProjectRepository.js';
+import type { IAwardRepository } from '#src/use-cases/ports/IAwardRepository.js';
 import type { IEducationRepository } from '#src/use-cases/ports/IEducationRepository.js';
 import type { IWorkExperienceRepository } from '#src/use-cases/ports/IWorkExperienceRepository.js';
 import type { IChatWriteTools, PreparedChatWrite } from '#src/use-cases/ports/IChatWriteTools.js';
@@ -29,6 +33,10 @@ interface Deps extends WriteToolDeps {
   skillRepository: ISkillRepository;
   educationRepository: IEducationRepository;
   workExperienceRepository: IWorkExperienceRepository;
+  certificationRepository: ICertificationRepository;
+  languageRepository: ILanguageRepository;
+  projectRepository: IProjectRepository;
+  awardRepository: IAwardRepository;
 }
 
 const NOT_FOUND = (what: string) => new NotFoundError(`${what} not found`);
@@ -134,6 +142,30 @@ export class ChatWriteTools implements IChatWriteTools {
       const work = await this.deps.workExperienceRepository.findById(workExperienceId);
       if (!work || work.userId !== userId) throw NOT_FOUND('Work experience');
       target.record = work.company;
+    }
+    const certificationId = id('certificationId');
+    if (certificationId) {
+      const certification = await this.deps.certificationRepository.findById(certificationId);
+      if (!certification || certification.userId !== userId) throw NOT_FOUND('Certification');
+      target.record = certification.name;
+    }
+    const languageId = id('languageId');
+    if (languageId) {
+      const language = await this.deps.languageRepository.findById(languageId);
+      if (!language || language.userId !== userId) throw NOT_FOUND('Language');
+      target.record = language.name;
+    }
+    const projectId = id('projectId');
+    if (projectId) {
+      const project = await this.deps.projectRepository.findById(projectId);
+      if (!project || project.userId !== userId) throw NOT_FOUND('Project');
+      target.record = project.name;
+    }
+    const awardId = id('awardId');
+    if (awardId) {
+      const award = await this.deps.awardRepository.findById(awardId);
+      if (!award || award.userId !== userId) throw NOT_FOUND('Award');
+      target.record = award.title;
     }
     return target;
   }
