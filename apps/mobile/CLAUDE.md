@@ -46,7 +46,7 @@ Create new on the Resumes and Cover letters screens (`useCreateOrOpenDraft`) ope
 
 ## Content quotas (JEF-494)
 
-Same behaviour as web (`apps/web/CLAUDE.md`): `features/quota/` has the hand-written `ContentQuota` document, `useQuotaState`/`useQuotaFull` and `QuotaHint`, which stays silent below 80%. Each capped screen passes the length of the list it already holds, and `FloatingActionButton` takes `disabled` at the cap. The create errors already go through `getErrorMessage`, so a lost race shows the API's message. Call `useQuotaFull` above any early return (`rules-of-hooks`), and stub `features/quota/hooks/useQuotaState` in a screen test that has no query client. The `ContentQuota` document is checked by `graphqlDocuments.test.ts`.
+Same behaviour as web (`apps/web/src/lib/CLAUDE.md`): `features/quota/` has the hand-written `ContentQuota` document, `useQuotaState`/`useQuotaFull` and `QuotaHint`, which stays silent below 80%. Each capped screen passes the length of the list it already holds, and `FloatingActionButton` takes `disabled` at the cap. The create errors already go through `getErrorMessage`, so a lost race shows the API's message. Call `useQuotaFull` above any early return (`rules-of-hooks`), and stub `features/quota/hooks/useQuotaState` in a screen test that has no query client. The `ContentQuota` document is checked by `graphqlDocuments.test.ts`.
 
 ## Error reporting (JEF-349)
 
