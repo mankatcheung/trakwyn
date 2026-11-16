@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 type KeyCombo = {
   key: string;
@@ -26,28 +26,27 @@ export function formatKeyCombo(combo: KeyCombo): string {
 }
 
 export function useHotkeys(combo: KeyCombo, handler: HotkeyHandler, enabled = true) {
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!enabled) return;
+  // An Effect Event always reads the latest combo, handler and enabled, so the
+  // listener below registers once instead of on every render.
+  const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (!enabled) return;
 
-      const keyMatch = e.key.toLowerCase() === combo.key.toLowerCase();
-      const ctrlMatch = combo.ctrl ? e.ctrlKey || e.metaKey : !e.ctrlKey && !e.metaKey;
-      const metaMatch = combo.meta ? e.metaKey || e.ctrlKey : !e.metaKey && !e.ctrlKey;
-      const shiftMatch = combo.shift ? e.shiftKey : !e.shiftKey;
-      const altMatch = combo.alt ? e.altKey : !e.altKey;
+    const keyMatch = e.key.toLowerCase() === combo.key.toLowerCase();
+    const ctrlMatch = combo.ctrl ? e.ctrlKey || e.metaKey : !e.ctrlKey && !e.metaKey;
+    const metaMatch = combo.meta ? e.metaKey || e.ctrlKey : !e.metaKey && !e.ctrlKey;
+    const shiftMatch = combo.shift ? e.shiftKey : !e.shiftKey;
+    const altMatch = combo.alt ? e.altKey : !e.altKey;
 
-      if (keyMatch && ctrlMatch && metaMatch && shiftMatch && altMatch) {
-        e.preventDefault();
-        handler(e);
-      }
-    },
-    [combo, handler, enabled],
-  );
+    if (keyMatch && ctrlMatch && metaMatch && shiftMatch && altMatch) {
+      e.preventDefault();
+      handler(e);
+    }
+  });
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  }, []);
 }
 
 export function useIsMac(): boolean {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, use, useEffect, useMemo, useState } from 'react';
 import i18n from './index';
 import {
   SUPPORTED_LANGUAGES,
@@ -47,11 +47,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     [mode, resolvedLanguage],
   );
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  return <LanguageContext value={value}>{children}</LanguageContext>;
 }
 
 export function useLanguage(): LanguageContextValue {
-  const context = useContext(LanguageContext);
+  const context = use(LanguageContext);
   if (!context) throw new Error('useLanguage must be used within a LanguageProvider');
   return context;
 }
