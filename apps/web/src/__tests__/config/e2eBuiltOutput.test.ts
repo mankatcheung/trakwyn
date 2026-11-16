@@ -26,7 +26,8 @@ describe('e2e runs against built output in CI', () => {
   it('starts built servers in CI and dev servers locally', () => {
     const config = read('playwright.config.ts');
     expect(config).toContain("'pnpm --filter @trakwyn/api start'");
-    expect(config).toContain("'pnpm --filter @trakwyn/web preview --port 3000 --strictPort'");
+    // The port comes from devPorts.ts: 3000 in CI, this worktree's own locally.
+    expect(config).toContain('`pnpm --filter @trakwyn/web preview --port ${webPort} --strictPort`');
     expect(config).toContain("'pnpm --filter @trakwyn/api dev'");
     expect(config).toContain("'pnpm --filter @trakwyn/web dev'");
   });
