@@ -39,6 +39,7 @@ Rules, held by `src/__tests__/config/webStructure.test.ts`:
 - A route imports only `features/*/pages/*`, the shared root and `graphql/`. A few older routes still import a feature's `components/`, `lib/` or `graphql/`; each is named in the test, and the list can only shrink.
 - The shared root never imports `features/`. A feature may import the shared root and another feature's `lib/` or `components/`.
 - No `features/**/index.ts` barrel files. Import from the file that defines it.
+- A source file is at most 400 lines, the API's limit (generated files and tests are exempt). One over it needs an `OVERSIZED_BY_DESIGN` entry with a reason; remove the entry when the file shrinks (JEF-636).
 
 `pnpm build && pnpm --filter @trakwyn/web check:chunks` fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
 

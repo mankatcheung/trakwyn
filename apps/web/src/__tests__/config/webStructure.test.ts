@@ -18,6 +18,8 @@ import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listIm
  *   - The shared root (what stays in `components/`, `hooks/`, `lib/` …) never
  *     imports a feature.
  *   - A feature folder has no `index.ts` barrel.
+ *   - A source file is at most 400 lines unless `OVERSIZED_BY_DESIGN` says why (JEF-636),
+ *     the same limit and the same list as `apps/api`'s `fileSize.test.ts`.
  */
 
 const WEB_ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -105,6 +107,37 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
 const ROOT_IMPORTS_OF_FEATURES = new Set([
   'components/ErrorState.tsx imports features/plans/components/UpgradePrompt.tsx',
 ]);
+
+/** Lines above which a source file must justify itself below. */
+const MAX_LINES = 400;
+
+/**
+ * Over the limit for now, with the reason. Unlike the API's list these are not
+ * cohesive tables: each is waiting for its split in JEF-636, one PR per area,
+ * and each PR removes its entries. The list can only shrink.
+ */
+const OVERSIZED_BY_DESIGN: Record<string, string> = {
+  'features/settings/lib/shared.ts':
+    'Holds the helpers for ai/, security/, integrations/ and account/ in one file named "shared". JEF-636 splits it by the subfolder that uses each part and renames the pieces.',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx':
+    'The route still holds its whole page. JEF-636 moves the UI to features/documents/pages/DraftEditPage.tsx and leaves only route wiring here.',
+  'features/profile/components/cv-import/CvImportReview.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/interviews/components/InterviewsTab.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/applications/pages/ApplicationsPage.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/app-shell/components/AuthenticatedLayout.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/profile/graphql/profileQueries.ts':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/applications/pages/BoardPage.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/interviews/components/mock/MockQuestionsPanel.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+  'features/marketing/pages/AiMcpSetupPage.tsx':
+    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
+};
 
 function walk(dir: string, prefix = ''): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
@@ -214,5 +247,44 @@ describe('web src structure', () => {
     const barrels = files.filter((file) => /^features\/.+\/index\.tsx?$/.test(file));
 
     expect(barrels, 'import from the file that defines it').toEqual([]);
+  });
+
+  describe('file size', () => {
+    const sized = () =>
+      files
+        .filter((file) => isCode(file) && !isTest(file) && !isGenerated(file))
+        .map((id) => ({ id, lines: readFileSync(join(SRC, id), 'utf8').split('\n').length }))
+        .filter(({ lines }) => lines > MAX_LINES);
+
+    it(`keeps every source file to ${MAX_LINES} lines unless it is listed`, () => {
+      const unlisted = sized()
+        .filter(({ id }) => !(id in OVERSIZED_BY_DESIGN))
+        .map(({ id, lines }) => `${id} (${lines} lines)`);
+
+      expect(unlisted, 'split the file, or add it to OVERSIZED_BY_DESIGN with a reason').toEqual(
+        [],
+      );
+    });
+
+    it('has no stale entries in the oversized list', () => {
+      const over = new Set(sized().map(({ id }) => id));
+
+      expect(
+        Object.keys(OVERSIZED_BY_DESIGN).filter((id) => !over.has(id)),
+        'the file is under the limit now: remove it from OVERSIZED_BY_DESIGN',
+      ).toEqual([]);
+    });
+
+    it('gives a real reason for every exemption', () => {
+      expect(
+        Object.entries(OVERSIZED_BY_DESIGN)
+          .filter(([, reason]) => reason.trim().length < 40)
+          .map(([id]) => id),
+      ).toEqual([]);
+    });
+
+    it('walked a realistic number of files', () => {
+      expect(files.filter(isCode).length).toBeGreaterThan(300);
+    });
   });
 });
