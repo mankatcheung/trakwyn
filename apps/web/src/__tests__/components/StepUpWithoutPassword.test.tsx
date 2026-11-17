@@ -73,10 +73,22 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
   });
 
   it('verifies once on a double click', async () => {
+    // The verify request stays open until after the second click. If it
+    // resolved at once, the form could be ready again by then and a slow
+    // machine would see a second, legitimate submit.
+    let release: (value: unknown) => void = () => {};
+    mockGqlRequest.mockImplementation((query: string) =>
+      query.includes('RequestStepUpCode')
+        ? Promise.resolve({ requestStepUpCode: true })
+        : new Promise((resolve) => {
+            release = resolve;
+          }),
+    );
     const { input, onSuccess } = await openCodeForm();
 
     await userEvent.type(input, '123456');
     await userEvent.dblClick(verifyButton());
+    release({ verifyStepUpCode: true });
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1), { timeout: 4000 });
     const verifies = mockGqlRequest.mock.calls.filter(([q]) =>
