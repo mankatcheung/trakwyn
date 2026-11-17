@@ -1,36 +1,21 @@
 import { UnlinkIcon, CheckIcon, LogOutIcon, BanIcon } from 'lucide-react';
-import { Alert, Button, Card, FormLabel, Input, Skeleton } from '@trakwyn/ui';
+import { Alert, Button, Card, Skeleton } from '@trakwyn/ui';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { oauthErrorKey } from '#/lib/oauthError';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { OAuthProviderLogo } from '#/components/OAuthProviderLogo';
 import {
-  UPDATE_PASSWORD,
   LINKED_OAUTH_ACCOUNTS_QUERY,
   UNLINK_OAUTH_ACCOUNT,
   TOTP_ENABLED_QUERY,
-  BEGIN_TOTP_SETUP,
-  CONFIRM_TOTP_SETUP,
-  DISABLE_TOTP,
-  REGENERATE_TOTP_BACKUP_CODES,
   SESSIONS_QUERY,
   REVOKE_SESSION,
   REVOKE_OTHER_SESSIONS,
   SECURITY_ACTIVITY,
-  passwordSchema,
-  totpBeginSchema,
-  totpConfirmSchema,
-  totpDisableSchema,
-  type PasswordForm,
-  type TotpBeginForm,
-  type TotpConfirmForm,
-  type TotpDisableForm,
   type TotpSetup,
   type LinkedOAuthAccount,
   type Session,
@@ -38,26 +23,19 @@ import {
   describeDevice,
   extractGqlError,
 } from './shared';
-import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
+import { useStepUpReauth } from './useStepUpReauth';
+import { PasswordUpdateForm } from './PasswordUpdateForm';
+import {
+  TotpBeginForm,
+  TotpConfirmForm,
+  TotpDisableForm,
+  RegenerateBackupCodesForm,
+} from './TwoFactorForms';
 
 export function SettingsSecurityPage() {
   const { t } = useLocale();
   const qc = useQueryClient();
   const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
-
-  // Password form
-  const passwordForm = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
-  const onUpdatePassword = async ({ currentPassword, newPassword }: PasswordForm) => {
-    try {
-      await withStepUp(() => gqlClient.request(UPDATE_PASSWORD, { currentPassword, newPassword }));
-      passwordForm.reset();
-    } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      passwordForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.passwordUpdateFailed'),
-      });
-    }
-  };
 
   // Linked OAuth accounts
   const { data: linkedAccountsData, isLoading: linkedAccountsLoading } = useQuery({
@@ -90,72 +68,6 @@ export function SettingsSecurityPage() {
   const totpEnabled = totpData?.totpEnabled ?? false;
   const [totpSetup, setTotpSetup] = useState<TotpSetup | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
-
-  const totpBeginForm = useForm<TotpBeginForm>({ resolver: zodResolver(totpBeginSchema) });
-  const onBeginTotpSetup = async (data: TotpBeginForm) => {
-    try {
-      const res = await gqlClient.request<{ beginTotpSetup: TotpSetup }>(BEGIN_TOTP_SETUP, data);
-      setTotpSetup(res.beginTotpSetup);
-      totpBeginForm.reset();
-    } catch (err) {
-      totpBeginForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.startTwoFactorFailed'),
-      });
-    }
-  };
-
-  const totpConfirmForm = useForm<TotpConfirmForm>({ resolver: zodResolver(totpConfirmSchema) });
-  const onConfirmTotpSetup = async (data: TotpConfirmForm) => {
-    try {
-      const res = await gqlClient.request<{ confirmTotpSetup: { backupCodes: string[] } }>(
-        CONFIRM_TOTP_SETUP,
-        data,
-      );
-      setTotpSetup(null);
-      setBackupCodes(res.confirmTotpSetup.backupCodes);
-      totpConfirmForm.reset();
-      await qc.invalidateQueries({ queryKey: ['totpEnabled'] });
-    } catch (err) {
-      totpConfirmForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.invalidCode'),
-      });
-    }
-  };
-
-  const totpDisableForm = useForm<TotpDisableForm>({ resolver: zodResolver(totpDisableSchema) });
-  const regenerateBackupCodesForm = useForm<TotpDisableForm>({
-    resolver: zodResolver(totpDisableSchema),
-  });
-  const onDisableTotp = async (data: TotpDisableForm) => {
-    try {
-      await gqlClient.request(DISABLE_TOTP, data);
-      totpDisableForm.reset();
-      setBackupCodes(null);
-      await qc.invalidateQueries({ queryKey: ['totpEnabled'] });
-    } catch (err) {
-      totpDisableForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.disableTwoFactorFailed'),
-      });
-    }
-  };
-
-  const onRegenerateBackupCodes = async (data: TotpDisableForm) => {
-    try {
-      const result = await withStepUp(() =>
-        gqlClient.request<{ regenerateTotpBackupCodes: { backupCodes: string[] } }>(
-          REGENERATE_TOTP_BACKUP_CODES,
-          { currentPassword: data.password },
-        ),
-      );
-      setBackupCodes(result.regenerateTotpBackupCodes.backupCodes);
-      regenerateBackupCodesForm.reset();
-    } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      regenerateBackupCodesForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.regenerateBackupCodesFailed'),
-      });
-    }
-  };
 
   // Active sessions
   const { data: sessionsData } = useQuery({
@@ -214,61 +126,7 @@ export function SettingsSecurityPage() {
             {t('security.passwordDescription')}
           </p>
         </div>
-        <form onSubmit={passwordForm.handleSubmit(onUpdatePassword)} className="space-y-3">
-          <div>
-            <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-            <Input
-              type="password"
-              {...passwordForm.register('currentPassword')}
-              invalid={!!passwordForm.formState.errors.currentPassword}
-              placeholder="••••••••"
-            />
-            {passwordForm.formState.errors.currentPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {passwordForm.formState.errors.currentPassword.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('security.newPasswordLabel')}</FormLabel>
-            <Input
-              type="password"
-              {...passwordForm.register('newPassword')}
-              invalid={!!passwordForm.formState.errors.newPassword}
-              placeholder="••••••••"
-            />
-            {passwordForm.formState.errors.newPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {passwordForm.formState.errors.newPassword.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('security.confirmNewPasswordLabel')}</FormLabel>
-            <Input
-              type="password"
-              {...passwordForm.register('confirmPassword')}
-              invalid={!!passwordForm.formState.errors.confirmPassword}
-              placeholder="••••••••"
-            />
-            {passwordForm.formState.errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {passwordForm.formState.errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-          {passwordForm.formState.errors.root && (
-            <Alert>{passwordForm.formState.errors.root.message}</Alert>
-          )}
-          {passwordForm.formState.isSubmitSuccessful && !passwordForm.formState.errors.root && (
-            <p className="text-sm text-green-600">{t('security.passwordUpdated')}</p>
-          )}
-          <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-            {passwordForm.formState.isSubmitting
-              ? t('applicationForm.saving')
-              : t('security.updatePassword')}
-          </Button>
-        </form>
+        <PasswordUpdateForm withStepUp={withStepUp} />
       </Card>
 
       {/* ── Linked accounts ── */}
@@ -375,74 +233,8 @@ export function SettingsSecurityPage() {
           </div>
         ) : totpEnabled ? (
           <>
-            <form onSubmit={totpDisableForm.handleSubmit(onDisableTotp)} className="space-y-3">
-              <p className="text-sm text-green-600">{t('security.twoFactorEnabled')}</p>
-              <div>
-                <FormLabel>{t('security.confirmPasswordToDisableLabel')}</FormLabel>
-                <Input
-                  type="password"
-                  {...totpDisableForm.register('password')}
-                  invalid={!!totpDisableForm.formState.errors.password}
-                  placeholder="••••••••"
-                />
-                {totpDisableForm.formState.errors.password && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {totpDisableForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
-              {totpDisableForm.formState.errors.root && (
-                <Alert>{totpDisableForm.formState.errors.root.message}</Alert>
-              )}
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={totpDisableForm.formState.isSubmitting}
-              >
-                {totpDisableForm.formState.isSubmitting
-                  ? t('security.disabling')
-                  : t('security.disable2fa')}
-              </Button>
-            </form>
-            <form
-              onSubmit={regenerateBackupCodesForm.handleSubmit(onRegenerateBackupCodes)}
-              className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {t('security.regenerateBackupCodesTitle')}
-                </p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('security.regenerateBackupCodesDescription')}
-                </p>
-              </div>
-              <div>
-                <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-                <Input
-                  type="password"
-                  {...regenerateBackupCodesForm.register('password')}
-                  invalid={!!regenerateBackupCodesForm.formState.errors.password}
-                  placeholder="••••••••"
-                />
-                {regenerateBackupCodesForm.formState.errors.password && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {regenerateBackupCodesForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
-              {regenerateBackupCodesForm.formState.errors.root && (
-                <Alert>{regenerateBackupCodesForm.formState.errors.root.message}</Alert>
-              )}
-              <button
-                type="submit"
-                disabled={regenerateBackupCodesForm.formState.isSubmitting}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-200 disabled:opacity-60 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
-              >
-                {regenerateBackupCodesForm.formState.isSubmitting
-                  ? t('security.regenerating')
-                  : t('security.regenerateBackupCodes')}
-              </button>
-            </form>
+            <TotpDisableForm onDisabled={() => setBackupCodes(null)} />
+            <RegenerateBackupCodesForm withStepUp={withStepUp} onRegenerated={setBackupCodes} />
           </>
         ) : totpSetup ? (
           <div className="space-y-3">
@@ -457,57 +249,15 @@ export function SettingsSecurityPage() {
             <p className="font-mono text-xs break-all text-gray-500 dark:text-gray-400">
               {totpSetup.secret}
             </p>
-            <form onSubmit={totpConfirmForm.handleSubmit(onConfirmTotpSetup)} className="space-y-3">
-              <div>
-                <FormLabel>{t('security.enterCodeLabel')}</FormLabel>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  {...totpConfirmForm.register('code')}
-                  invalid={!!totpConfirmForm.formState.errors.code}
-                  placeholder="123456"
-                />
-                {totpConfirmForm.formState.errors.code && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {totpConfirmForm.formState.errors.code.message}
-                  </p>
-                )}
-              </div>
-              {totpConfirmForm.formState.errors.root && (
-                <Alert>{totpConfirmForm.formState.errors.root.message}</Alert>
-              )}
-              <Button type="submit" disabled={totpConfirmForm.formState.isSubmitting}>
-                {totpConfirmForm.formState.isSubmitting
-                  ? t('security.confirming')
-                  : t('security.confirm')}
-              </Button>
-            </form>
+            <TotpConfirmForm
+              onConfirmed={(codes) => {
+                setTotpSetup(null);
+                setBackupCodes(codes);
+              }}
+            />
           </div>
         ) : (
-          <form onSubmit={totpBeginForm.handleSubmit(onBeginTotpSetup)} className="space-y-3">
-            <div>
-              <FormLabel>{t('security.confirmPasswordToEnableLabel')}</FormLabel>
-              <Input
-                type="password"
-                {...totpBeginForm.register('password')}
-                invalid={!!totpBeginForm.formState.errors.password}
-                placeholder="••••••••"
-              />
-              {totpBeginForm.formState.errors.password && (
-                <p className="mt-1 text-xs text-red-600">
-                  {totpBeginForm.formState.errors.password.message}
-                </p>
-              )}
-            </div>
-            {totpBeginForm.formState.errors.root && (
-              <Alert>{totpBeginForm.formState.errors.root.message}</Alert>
-            )}
-            <Button type="submit" disabled={totpBeginForm.formState.isSubmitting}>
-              {totpBeginForm.formState.isSubmitting
-                ? t('security.starting')
-                : t('security.enable2fa')}
-            </Button>
-          </form>
+          <TotpBeginForm onBegun={setTotpSetup} />
         )}
       </Card>
 

@@ -31,7 +31,10 @@ describe('QuestionEntryForm (JEF-619)', () => {
     save();
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit).toHaveBeenCalledWith({ question: 'Why us?', answer: 'Because.' });
+    expect(onSubmit).toHaveBeenCalledWith(
+      { question: 'Why us?', answer: 'Because.' },
+      expect.anything(),
+    );
   });
 
   it('starts from the values it is given', () => {

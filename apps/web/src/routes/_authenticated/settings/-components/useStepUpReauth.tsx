@@ -9,6 +9,14 @@ import { StepUpWithoutPassword, type ReauthProvider } from './StepUpWithoutPassw
 /** Thrown to the caller of `withStepUp` when the user dismisses the reauth dialog instead of completing it. */
 export const STEP_UP_CANCELLED = 'step-up-cancelled';
 
+/** True when `err` is the user dismissing the reauth dialog: a form shows no message for it. */
+export function isStepUpCancelled(err: unknown): boolean {
+  return err instanceof Error && err.message === STEP_UP_CANCELLED;
+}
+
+/** `withStepUp` from `useStepUpReauth`, as a form component receives it. */
+export type WithStepUp = <T>(fn: () => Promise<T>) => Promise<T>;
+
 /** How the API says this user can step up (JEF-463), in the order to offer them. */
 const STEP_UP_METHODS = `query StepUpMethods { me { stepUpMethods } }`;
 
