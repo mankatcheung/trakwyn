@@ -25,6 +25,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { Route } from '#/routes/_authenticated/applications/$applicationId/offers/index';
+import { gqlText } from '../helpers/gqlText';
 
 const OffersPage = (Route as unknown as { component: ComponentType }).component;
 
@@ -64,11 +65,12 @@ function renderPage() {
 }
 
 const callsTo = (name: string) =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(name));
+  mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(name));
 
 /** Answers the list query from `list()` and every other request from `others`. */
 function serve(list: () => unknown[], others: Record<string, unknown> = {}) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((document: unknown) => {
+    const query = gqlText(document);
     if (query.includes('query Offers')) return Promise.resolve({ offers: list() });
     for (const [name, value] of Object.entries(others)) {
       if (query.includes(name)) {
@@ -165,8 +167,8 @@ describe('OffersPage', () => {
 
     it('creates once on a double click', async () => {
       let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('CreateOffer')
+      mockGqlRequest.mockImplementation((document: unknown) =>
+        gqlText(document).includes('CreateOffer')
           ? new Promise((resolve) => {
               release = resolve;
             })
@@ -267,8 +269,8 @@ describe('OffersPage', () => {
 
     it('updates once on a double click', async () => {
       let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('UpdateOffer')
+      mockGqlRequest.mockImplementation((document: unknown) =>
+        gqlText(document).includes('UpdateOffer')
           ? new Promise((resolve) => {
               release = resolve;
             })
@@ -306,6 +308,15 @@ describe('OffersPage', () => {
       await waitFor(() => {
         expect(callsTo('DeleteOffer')[0][1]).toEqual({ id: 'offer-1' });
       });
+      // The API's `deleteOffer(id:)` is a `String!`; declaring `$id: ID!` made it
+      // answer 400 (JEF-637), so the document's variable type is pinned here.
+      const [document] = callsTo('DeleteOffer')[0];
+      const variable = (
+        document as {
+          definitions: { variableDefinitions: { type: { type: { name: { value: string } } } }[] }[];
+        }
+      ).definitions[0].variableDefinitions[0];
+      expect(variable.type.type.name.value).toBe('String');
       expect(await screen.findByText(/no offers yet/i)).toBeInTheDocument();
 
       vi.unstubAllGlobals();

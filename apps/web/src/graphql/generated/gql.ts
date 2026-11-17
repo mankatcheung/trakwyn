@@ -38,6 +38,12 @@ type Documents = {
   '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
   '\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n': typeof types.OnboardingChecklistDocument;
   '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n': typeof types.DismissOnboardingChecklistDocument;
+  '\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n': typeof types.MyOffersDocument;
+  '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n': typeof types.CompareOffersDocument;
+  '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.OffersDocument;
+  '\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n': typeof types.CreateOfferDocument;
+  '\n  mutation UpdateOffer($input: UpdateOfferInput!) {\n    updateOffer(input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateOfferDocument;
+  '\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n': typeof types.DeleteOfferDocument;
 };
 const documents: Documents = {
   'mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}':
@@ -88,6 +94,18 @@ const documents: Documents = {
     types.OnboardingChecklistDocument,
   '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n':
     types.DismissOnboardingChecklistDocument,
+  '\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n':
+    types.MyOffersDocument,
+  '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n':
+    types.CompareOffersDocument,
+  '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.OffersDocument,
+  '\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n':
+    types.CreateOfferDocument,
+  '\n  mutation UpdateOffer($input: UpdateOfferInput!) {\n    updateOffer(input: $input) {\n      id\n    }\n  }\n':
+    types.UpdateOfferDocument,
+  '\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n':
+    types.DeleteOfferDocument,
 };
 
 /**
@@ -248,6 +266,42 @@ export function graphql(
 export function graphql(
   source: '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n',
 ): (typeof documents)['\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n',
+): (typeof documents)['\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateOffer($input: UpdateOfferInput!) {\n    updateOffer(input: $input) {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateOffer($input: UpdateOfferInput!) {\n    updateOffer(input: $input) {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

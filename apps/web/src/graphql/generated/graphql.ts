@@ -3319,6 +3319,103 @@ export type DismissOnboardingChecklistMutation = {
   dismissOnboardingChecklist?: boolean | null;
 };
 
+export type MyOffersQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MyOffersQuery = {
+  __typename?: 'Query';
+  myOffers?: Array<{
+    __typename?: 'OfferWithApplication';
+    company?: string | null;
+    role?: string | null;
+    offer?: {
+      __typename?: 'Offer';
+      id?: string | null;
+      applicationId?: string | null;
+      baseSalary?: number | null;
+      bonus?: number | null;
+      equity?: string | null;
+      benefits?: string | null;
+      costOfLivingAdjustment?: number | null;
+      currency?: string | null;
+      period?: string | null;
+      notes?: string | null;
+    } | null;
+  }> | null;
+};
+
+export type CompareOffersMutationVariables = Exact<{
+  offerIds: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+export type CompareOffersMutation = {
+  __typename?: 'Mutation';
+  compareOffers?: Array<{
+    __typename?: 'OfferComparison';
+    company?: string | null;
+    role?: string | null;
+    normalizedYearlySalary?: number | null;
+    totalCompensation?: number | null;
+    offer?: {
+      __typename?: 'Offer';
+      id?: string | null;
+      baseSalary?: number | null;
+      bonus?: number | null;
+      equity?: string | null;
+      benefits?: string | null;
+      costOfLivingAdjustment?: number | null;
+      currency?: string | null;
+      period?: string | null;
+    } | null;
+  }> | null;
+};
+
+export type OffersQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type OffersQuery = {
+  __typename?: 'Query';
+  offers?: Array<{
+    __typename?: 'Offer';
+    id?: string | null;
+    applicationId?: string | null;
+    baseSalary?: number | null;
+    bonus?: number | null;
+    equity?: string | null;
+    benefits?: string | null;
+    costOfLivingAdjustment?: number | null;
+    currency?: string | null;
+    period?: string | null;
+    notes?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type CreateOfferMutationVariables = Exact<{
+  input: CreateOfferInput;
+}>;
+
+export type CreateOfferMutation = {
+  __typename?: 'Mutation';
+  createOffer?: { __typename?: 'Offer'; id?: string | null } | null;
+};
+
+export type UpdateOfferMutationVariables = Exact<{
+  input: UpdateOfferInput;
+}>;
+
+export type UpdateOfferMutation = {
+  __typename?: 'Mutation';
+  updateOffer?: { __typename?: 'Offer'; id?: string | null } | null;
+};
+
+export type DeleteOfferMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+export type DeleteOfferMutation = { __typename?: 'Mutation'; deleteOffer?: boolean | null };
+
 export const CreateApplicationDocument = {
   kind: 'Document',
   definitions: [
@@ -6345,3 +6442,285 @@ export const DismissOnboardingChecklistDocument = {
   DismissOnboardingChecklistMutation,
   DismissOnboardingChecklistMutationVariables
 >;
+export const MyOffersDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'MyOffers' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'myOffers' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'offer' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'baseSalary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'bonus' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'equity' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'benefits' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'costOfLivingAdjustment' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'period' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MyOffersQuery, MyOffersQueryVariables>;
+export const CompareOffersDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CompareOffers' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'offerIds' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'compareOffers' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'offerIds' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'offerIds' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'offer' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'baseSalary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'bonus' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'equity' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'benefits' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'costOfLivingAdjustment' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'period' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'normalizedYearlySalary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalCompensation' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CompareOffersMutation, CompareOffersMutationVariables>;
+export const OffersDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Offers' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'offers' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'baseSalary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'bonus' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'equity' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'benefits' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'costOfLivingAdjustment' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'period' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OffersQuery, OffersQueryVariables>;
+export const CreateOfferDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateOffer' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateOfferInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createOffer' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateOfferMutation, CreateOfferMutationVariables>;
+export const UpdateOfferDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateOffer' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateOfferInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateOffer' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateOfferMutation, UpdateOfferMutationVariables>;
+export const DeleteOfferDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteOffer' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteOffer' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteOfferMutation, DeleteOfferMutationVariables>;
