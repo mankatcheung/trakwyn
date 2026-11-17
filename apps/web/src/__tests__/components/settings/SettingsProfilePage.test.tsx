@@ -58,6 +58,10 @@ const defaultResponse = {
   },
 };
 
+/** The account has loaded: the profile form is rebuilt with its saved values at that point. */
+const meLoaded = () =>
+  waitFor(() => expect(screen.queryByTestId('current-email-loading')).not.toBeInTheDocument());
+
 describe('SettingsProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,9 +95,7 @@ describe('SettingsProfilePage', () => {
 
     it('calls updateProfile mutation with trimmed values', async () => {
       render(<SettingsProfilePage />, { wrapper: Wrapper });
-      await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-      );
+      await meLoaded();
       mockGqlRequest.mockResolvedValue({ updateProfile: true });
 
       const saveBtn = screen.getByRole('button', { name: /save profile/i });
@@ -144,9 +146,7 @@ describe('SettingsProfilePage', () => {
 
       it('saves them, one link per line', async () => {
         render(<SettingsProfilePage />, { wrapper: Wrapper });
-        await waitFor(() =>
-          expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-        );
+        await meLoaded();
         mockGqlRequest.mockResolvedValue({ updateProfile: true });
 
         fireEvent.change(screen.getByPlaceholderText('+44 20 7946 0958'), {
@@ -204,9 +204,7 @@ describe('SettingsProfilePage', () => {
         ],
       ])('refuses invalid %s without calling the API', async (_n, label, value, message) => {
         render(<SettingsProfilePage />, { wrapper: Wrapper });
-        await waitFor(() =>
-          expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-        );
+        await meLoaded();
         mockGqlRequest.mockClear();
 
         fireEvent.change(screen.getByPlaceholderText(label), { target: { value } });
@@ -252,9 +250,7 @@ describe('SettingsProfilePage', () => {
 
     it('shows error message on profile update failure', async () => {
       render(<SettingsProfilePage />, { wrapper: Wrapper });
-      await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-      );
+      await meLoaded();
       mockGqlRequest.mockRejectedValue({
         response: { errors: [{ message: 'Invalid timezone' }] },
       });
@@ -294,9 +290,7 @@ describe('SettingsProfilePage', () => {
       });
 
       render(<SettingsProfilePage />, { wrapper: Wrapper });
-      await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-      );
+      await meLoaded();
 
       selectAvatarFile();
 
@@ -330,9 +324,7 @@ describe('SettingsProfilePage', () => {
       });
 
       render(<SettingsProfilePage />, { wrapper: Wrapper });
-      await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-      );
+      await meLoaded();
 
       selectAvatarFile();
 
@@ -360,9 +352,7 @@ describe('SettingsProfilePage', () => {
 
     it('does not show a Remove button when there is no avatar', async () => {
       render(<SettingsProfilePage />, { wrapper: Wrapper });
-      await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Me')),
-      );
+      await meLoaded();
 
       expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
     });
