@@ -24,7 +24,7 @@ vi.mock('#/graphql/client', () => ({
 
 import { NewApplicationPage } from '#/routes/_authenticated/applications/-components/NewApplicationPage';
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: false,
     needsSetup: false,

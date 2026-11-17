@@ -20,7 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 vi.mock('#/lib/downloadUrl', () => ({ downloadUrl: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn() } }));
-vi.mock('#/routes/_authenticated/applications/$applicationId/-components/AiHelperPanel', () => ({
+vi.mock('#/features/documents/components/AiHelperPanel', () => ({
   AiHelperPanel: () => null,
 }));
 vi.mock(

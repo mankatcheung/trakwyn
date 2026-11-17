@@ -31,7 +31,7 @@ vi.mock('#/lib/undoToast', () => ({
 
 import { MockQuestionsPanel } from '#/routes/_authenticated/applications/$applicationId/-components/MockQuestionsPanel';
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,

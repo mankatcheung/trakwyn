@@ -16,7 +16,7 @@ import { CompanyBriefingTab } from '#/routes/_authenticated/applications/$applic
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,
@@ -26,7 +26,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
     refresh: () => Promise.resolve(),
   }),
 }));
-vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });

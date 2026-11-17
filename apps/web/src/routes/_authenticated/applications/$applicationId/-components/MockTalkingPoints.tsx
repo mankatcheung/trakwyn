@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { SparklesIcon } from 'lucide-react';
 import { Button } from '@trakwyn/ui';
-import { AiActionBar } from '#/components/ai/AiActionBar';
-import { AiPromptInput } from '#/components/ai/AiPromptInput';
+import { AiActionBar } from '#/features/ai/components/AiActionBar';
+import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { AiGeneratedBadge } from './AiGeneratedBadge';
+import { AiGeneratedBadge } from '../../../../../features/ai/components/AiGeneratedBadge';
 import { MockBackgroundPicker, type MockBackground } from './MockBackgroundPicker';
 import { readRememberedUseProfile } from './mockBackgroundChoice';
 import {

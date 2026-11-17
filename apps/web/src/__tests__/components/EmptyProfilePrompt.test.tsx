@@ -26,8 +26,8 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
-vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: false,
     needsSetup: false,
@@ -37,7 +37,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
   }),
 }));
 
-import { AiHelperPanel } from '#/routes/_authenticated/applications/$applicationId/-components/AiHelperPanel';
+import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
 
 interface Profile {
   workExperiences?: { id: string }[];

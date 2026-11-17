@@ -54,7 +54,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,
@@ -65,7 +65,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
   }),
 }));
 
-vi.mock('#/components/AiCreditsMeter', () => ({
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({
   AiCreditsMeter: () => <p>credits meter</p>,
 }));
 

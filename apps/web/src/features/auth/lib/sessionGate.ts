@@ -4,7 +4,7 @@ import {
   EMAIL_VERIFICATION_KEY,
   type EmailVerificationState,
 } from '#/features/verification/lib/emailVerification';
-import { ONBOARDING_STATE_KEY, type OnboardingState } from '#/lib/onboarding';
+import { ONBOARDING_STATE_KEY, type OnboardingState } from '#/features/onboarding/lib/onboarding';
 
 /**
  * Everything the authenticated shell asks before a child route loads (JEF-535):

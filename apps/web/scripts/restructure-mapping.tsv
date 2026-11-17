@@ -8,7 +8,7 @@ __tests__/components/AiCreditsMeter.test.tsx	features/ai/components/__tests__/Ai
 __tests__/components/AiDemoSection.test.tsx	features/marketing/components/__tests__/AiDemoSection.test.tsx
 __tests__/components/AiErrorMessage.test.tsx	features/ai/components/__tests__/AiErrorMessage.test.tsx
 __tests__/components/AiFeedbackControl.test.tsx	features/ai/components/__tests__/AiFeedbackControl.test.tsx
-__tests__/components/AiHelperPanel.test.tsx	features/ai/components/__tests__/AiHelperPanel.test.tsx
+__tests__/components/AiHelperPanel.test.tsx	features/documents/components/__tests__/AiHelperPanel.test.tsx
 __tests__/components/AiMcpSetupPage.test.tsx	features/marketing/pages/__tests__/AiMcpSetupPage.test.tsx
 __tests__/components/AnalyticsPage.test.tsx	features/analytics/pages/__tests__/AnalyticsPage.test.tsx
 __tests__/components/ApplicationCapNotice.test.tsx	features/quota/components/__tests__/ApplicationCapNotice.test.tsx
@@ -450,7 +450,7 @@ routes/_authenticated/analytics.tsx	routes/_authenticated/analytics.tsx
 routes/_authenticated/applications/$applicationId/-application-query.ts	features/application-detail/graphql/applicationQuery.ts
 routes/_authenticated/applications/$applicationId/-components/ActivityTab.tsx	features/application-detail/components/tabs/ActivityTab.tsx
 routes/_authenticated/applications/$applicationId/-components/AiGeneratedBadge.tsx	features/ai/components/AiGeneratedBadge.tsx
-routes/_authenticated/applications/$applicationId/-components/AiHelperPanel.tsx	features/ai/components/AiHelperPanel.tsx
+routes/_authenticated/applications/$applicationId/-components/AiHelperPanel.tsx	features/documents/components/AiHelperPanel.tsx
 routes/_authenticated/applications/$applicationId/-components/ApplicationActionsMenu.tsx	features/application-detail/components/header/ApplicationActionsMenu.tsx
 routes/_authenticated/applications/$applicationId/-components/ApplicationActionsSheet.tsx	features/application-detail/components/header/ApplicationActionsSheet.tsx
 routes/_authenticated/applications/$applicationId/-components/ApplicationDetailPage.tsx	features/application-detail/pages/ApplicationDetailPage.tsx

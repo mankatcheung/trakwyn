@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { Button } from '@trakwyn/ui';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
 import type { InlineAiRequest } from '#/lib/editor/aiActions';
