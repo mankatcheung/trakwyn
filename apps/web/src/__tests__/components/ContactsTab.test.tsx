@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
@@ -166,6 +167,117 @@ describe('ContactsTab', () => {
         expect.stringContaining('DeleteContact'),
         expect.objectContaining({ id: 'contact-1' }),
       );
+    });
+  });
+
+  describe('the contact form (JEF-621)', () => {
+    async function openAddForm() {
+      render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
+      await screen.findByText('No contacts yet.');
+      fireEvent.click(screen.getByRole('button', { name: /add contact/i }));
+      return screen.getByPlaceholderText('Jane Smith');
+    }
+    const createCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('CreateContact'));
+
+    it('is a real form', async () => {
+      mockGqlRequest.mockResolvedValue({ contacts: [] });
+      const nameInput = await openAddForm();
+      expect(nameInput.closest('form')).not.toBeNull();
+    });
+
+    it('asks for a name and sends nothing while it is blank', async () => {
+      mockGqlRequest.mockResolvedValue({ contacts: [] });
+      await openAddForm();
+
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+      expect(await screen.findByText('Required')).toBeInTheDocument();
+      expect(createCalls()).toHaveLength(0);
+    });
+
+    it('submits on Enter', async () => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        Promise.resolve(
+          query.includes('CreateContact')
+            ? { createContact: { ...mockContact, id: 'contact-2' } }
+            : { contacts: [] },
+        ),
+      );
+      const nameInput = await openAddForm();
+
+      await userEvent.type(nameInput, 'Enter Contact{Enter}');
+
+      await waitFor(() => expect(createCalls()).toHaveLength(1));
+      expect(createCalls()[0][1]).toEqual(expect.objectContaining({ name: 'Enter Contact' }));
+    });
+
+    it('creates once on a double click', async () => {
+      let release: (value: unknown) => void = () => {};
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('CreateContact')
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.resolve({ contacts: [] }),
+      );
+      const nameInput = await openAddForm();
+      fireEvent.change(nameInput, { target: { value: 'Double' } });
+
+      const save = screen.getByRole('button', { name: /^save$/i });
+      fireEvent.click(save);
+      await waitFor(() => expect(createCalls()).toHaveLength(1));
+      fireEvent.click(save);
+      release({ createContact: { ...mockContact, id: 'contact-2' } });
+
+      await waitFor(() => expect(screen.queryByPlaceholderText('Jane Smith')).toBeNull());
+      expect(createCalls()).toHaveLength(1);
+    });
+
+    it('shows a failed save under the form and keeps what was typed', async () => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('CreateContact')
+          ? Promise.reject({
+              response: {
+                errors: [{ message: 'Contact limit reached', extensions: { code: 'VALIDATION' } }],
+              },
+            })
+          : Promise.resolve({ contacts: [] }),
+      );
+      const nameInput = await openAddForm();
+      fireEvent.change(nameInput, { target: { value: 'Kept' } });
+
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+      expect(await screen.findByText('Contact limit reached')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Jane Smith')).toHaveValue('Kept');
+    });
+
+    it('closes the form on Cancel without saving', async () => {
+      mockGqlRequest.mockResolvedValue({ contacts: [] });
+      await openAddForm();
+
+      fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+      expect(screen.queryByPlaceholderText('Jane Smith')).toBeNull();
+      expect(createCalls()).toHaveLength(0);
+    });
+
+    it('starts the edit form from the contact and closes it on Cancel', async () => {
+      mockGqlRequest.mockResolvedValue({ contacts: [mockContact] });
+      render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
+      await screen.findByText('Jane Recruiter');
+      const card = screen
+        .getByText('Jane Recruiter')
+        .closest('div[class*="bg-white"]') as HTMLElement;
+      fireEvent.click(within(card).getAllByRole('button')[0]);
+
+      expect(await screen.findByDisplayValue('jane@example.com')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Met at a conference')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+      expect(screen.queryByDisplayValue('jane@example.com')).toBeNull();
+      expect(screen.getByText('Jane Recruiter')).toBeInTheDocument();
     });
   });
 });

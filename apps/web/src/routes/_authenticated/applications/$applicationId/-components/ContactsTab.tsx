@@ -1,13 +1,27 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CheckIcon, EditIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
+import { useFormAction } from '#/lib/useFormAction';
 import { QuotaHint } from '#/components/QuotaHint';
 import { useQuotaState } from '#/lib/contentQuota';
-import { Button, Card, EmptyState, FormLabel, Input, Skeleton, Textarea } from '@trakwyn/ui';
+import {
+  Alert,
+  Button,
+  Card,
+  EmptyState,
+  FormLabel,
+  Input,
+  Skeleton,
+  SubmitButton,
+  Textarea,
+} from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
 const CONTACTS_QUERY = `
   query Contacts($applicationId: ID!) {
@@ -43,14 +57,16 @@ type Contact = {
   updatedAt: string;
 };
 
-type ContactFormState = {
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  linkedinUrl: string;
-  notes: string;
-};
+const contactSchema = z.object({
+  name: z.string().trim().min(1, 'Required'),
+  role: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  linkedinUrl: z.string(),
+  notes: z.string(),
+});
+
+type ContactFormState = z.infer<typeof contactSchema>;
 
 function emptyContactForm(): ContactFormState {
   return { name: '', role: '', email: '', phone: '', linkedinUrl: '', notes: '' };
@@ -67,16 +83,101 @@ function contactToForm(c: Contact): ContactFormState {
   };
 }
 
-/* eslint-disable react-hooks/static-components -- opted out below with 'use no memo'; the reason is there */
-export function ContactsTab({ applicationId }: { applicationId: string }) {
-  // Defines the ContactForm component inside render (static-components); hoist it before compiling this.
-  'use no memo';
+interface ContactFormProps {
+  initial: ContactFormState;
+  /** Saves the contact. A rejection is shown under the form and keeps what was typed. */
+  onSave: (values: ContactFormState) => Promise<unknown>;
+  onCancel: () => void;
+}
 
+function ContactForm({ initial, onSave, onCancel }: ContactFormProps) {
+  const { t } = useLocale();
+  const form = useForm<ContactFormState>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: initial,
+  });
+  const { register } = form;
+  const nameError = form.formState.errors.name;
+
+  const { state, formProps } = useFormAction(form, async (values) => {
+    try {
+      await onSave(values);
+    } catch (error) {
+      return getErrorMessage(error);
+    }
+  });
+
+  return (
+    <form {...formProps}>
+      <Card className="space-y-3 p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <FormLabel size="xs">{t('contacts.nameLabel')}</FormLabel>
+            <Input {...register('name')} placeholder="Jane Smith" aria-invalid={!!nameError} />
+            {nameError && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {nameError.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <FormLabel size="xs">{t('contacts.roleLabel')}</FormLabel>
+            <Input {...register('role')} placeholder="Technical Recruiter" />
+          </div>
+          <div>
+            <FormLabel size="xs">{t('contacts.emailLabel')}</FormLabel>
+            <Input type="email" {...register('email')} placeholder="jane@company.com" />
+          </div>
+          <div>
+            <FormLabel size="xs">{t('contacts.phoneLabel')}</FormLabel>
+            <Input {...register('phone')} placeholder="+1 555 000 0000" />
+          </div>
+        </div>
+        <div>
+          <FormLabel size="xs">{t('contacts.linkedinUrlLabel')}</FormLabel>
+          <Input {...register('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
+        </div>
+        <div>
+          <FormLabel size="xs">{t('contacts.notesLabel')}</FormLabel>
+          <Textarea
+            {...register('notes')}
+            className="h-20"
+            placeholder={t('contacts.notesPlaceholder')}
+          />
+        </div>
+        {state.error && <Alert>{state.error}</Alert>}
+        <div className="flex justify-end gap-2">
+          <SubmitButton
+            size="sm"
+            pendingLabel={t('applicationForm.saving')}
+            aria-label={t('common.save')}
+          >
+            <span className="flex items-center gap-1">
+              <CheckIcon size={14} /> <span className="hidden sm:inline">{t('common.save')}</span>
+            </span>
+          </SubmitButton>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            aria-label={t('common.cancel')}
+          >
+            <span className="flex items-center gap-1">
+              <XIcon size={14} /> <span className="hidden sm:inline">{t('common.cancel')}</span>
+            </span>
+          </Button>
+        </div>
+      </Card>
+    </form>
+  );
+}
+
+export function ContactsTab({ applicationId }: { applicationId: string }) {
   const { t } = useLocale();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [form, setForm] = useState<ContactFormState>(emptyContactForm());
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts', applicationId],
@@ -122,10 +223,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
     onError: (_err, _f, context) => {
       if (context?.prev) qc.setQueryData(['contacts', applicationId], context.prev);
     },
-    onSuccess: () => {
-      setShowForm(false);
-      setForm(emptyContactForm());
-    },
+    onSuccess: () => setShowForm(false),
     onSettled: () => invalidate(),
   });
 
@@ -171,91 +269,6 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
   const contacts = data?.contacts ?? [];
   const contactsFull = useQuotaState('contacts', contacts.length)?.level === 'full';
 
-  const ContactForm = ({
-    onSubmit,
-    onCancel,
-    submitting,
-  }: {
-    onSubmit: () => void;
-    onCancel: () => void;
-    submitting: boolean;
-  }) => (
-    <Card className="space-y-3 p-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <FormLabel size="xs">{t('contacts.nameLabel')}</FormLabel>
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Jane Smith"
-          />
-        </div>
-        <div>
-          <FormLabel size="xs">{t('contacts.roleLabel')}</FormLabel>
-          <Input
-            value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-            placeholder="Technical Recruiter"
-          />
-        </div>
-        <div>
-          <FormLabel size="xs">{t('contacts.emailLabel')}</FormLabel>
-          <Input
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="jane@company.com"
-          />
-        </div>
-        <div>
-          <FormLabel size="xs">{t('contacts.phoneLabel')}</FormLabel>
-          <Input
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="+1 555 000 0000"
-          />
-        </div>
-      </div>
-      <div>
-        <FormLabel size="xs">{t('contacts.linkedinUrlLabel')}</FormLabel>
-        <Input
-          value={form.linkedinUrl}
-          onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
-          placeholder="https://linkedin.com/in/..."
-        />
-      </div>
-      <div>
-        <FormLabel size="xs">{t('contacts.notesLabel')}</FormLabel>
-        <Textarea
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          className="h-20"
-          placeholder={t('contacts.notesPlaceholder')}
-        />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button
-          size="sm"
-          onClick={onSubmit}
-          disabled={!form.name.trim() || submitting}
-          aria-label={t('common.save')}
-        >
-          <span className="flex items-center gap-1">
-            <CheckIcon size={14} />{' '}
-            <span className="hidden sm:inline">
-              {submitting ? t('applicationForm.saving') : t('common.save')}
-            </span>
-          </span>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onCancel} aria-label={t('common.cancel')}>
-          <span className="flex items-center gap-1">
-            <XIcon size={14} /> <span className="hidden sm:inline">{t('common.cancel')}</span>
-          </span>
-        </Button>
-      </div>
-    </Card>
-  );
-
   return (
     <div className="space-y-4">
       {!showForm && !editingContact && (
@@ -263,10 +276,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
           <Button
             size="sm"
             disabled={contactsFull}
-            onClick={() => {
-              setShowForm(true);
-              setForm(emptyContactForm());
-            }}
+            onClick={() => setShowForm(true)}
             aria-label={t('contacts.addContact')}
           >
             <span className="flex items-center gap-1.5">
@@ -279,20 +289,11 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
       )}
 
       {showForm && (
-        <>
-          <ContactForm
-            onSubmit={() => {
-              if (form.name.trim()) createContact.mutate(form);
-            }}
-            onCancel={() => setShowForm(false)}
-            submitting={createContact.isPending}
-          />
-          {createContact.isError && (
-            <p role="alert" className="text-xs text-red-600">
-              {getErrorMessage(createContact.error)}
-            </p>
-          )}
-        </>
+        <ContactForm
+          initial={emptyContactForm()}
+          onSave={(values) => createContact.mutateAsync(values)}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       {isLoading ? (
@@ -308,9 +309,9 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
         <Card key={contact.id} className="p-4">
           {editingContact?.id === contact.id ? (
             <ContactForm
-              onSubmit={() => updateContact.mutate({ id: contact.id, f: form })}
+              initial={contactToForm(contact)}
+              onSave={(values) => updateContact.mutateAsync({ id: contact.id, f: values })}
               onCancel={() => setEditingContact(null)}
-              submitting={updateContact.isPending}
             />
           ) : (
             <div className="flex items-start justify-between gap-3">
@@ -354,10 +355,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
               </div>
               <div className="flex shrink-0 gap-1">
                 <button
-                  onClick={() => {
-                    setEditingContact(contact);
-                    setForm(contactToForm(contact));
-                  }}
+                  onClick={() => setEditingContact(contact)}
                   className="rounded-sm p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                 >
                   <EditIcon size={14} />

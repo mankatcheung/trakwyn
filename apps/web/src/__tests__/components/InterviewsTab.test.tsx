@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
@@ -220,6 +221,121 @@ describe('InterviewsTab', () => {
         expect.stringContaining('DeleteInterviewRound'),
         expect.objectContaining({ id: 'round-1' }),
       );
+    });
+  });
+
+  describe('the round form (JEF-621)', () => {
+    const createCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('CreateInterviewRound'));
+    const updateCalls = () =>
+      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('UpdateInterviewRound'));
+
+    async function openAddForm() {
+      render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+      await screen.findByText('No interview rounds yet.');
+      fireEvent.click(screen.getByRole('button', { name: /add interview round/i }));
+      return screen.getByRole('button', { name: /^save$/i });
+    }
+
+    it('is a real form', async () => {
+      mockGqlRequest.mockResolvedValue({ interviewRounds: [] });
+      const save = await openAddForm();
+      expect(save.closest('form')).not.toBeNull();
+      expect(save).toHaveAttribute('type', 'submit');
+    });
+
+    it('submits on Enter', async () => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        Promise.resolve(
+          query.includes('CreateInterviewRound')
+            ? { createInterviewRound: { ...mockRound, id: 'round-2' } }
+            : { interviewRounds: [] },
+        ),
+      );
+      await openAddForm();
+
+      await userEvent.type(screen.getByPlaceholderText('Name or team'), 'Sam{Enter}');
+
+      await waitFor(() => expect(createCalls()).toHaveLength(1));
+      expect(createCalls()[0][1]).toEqual({
+        input: expect.objectContaining({ interviewerName: 'Sam' }),
+      });
+    });
+
+    it('creates once on a double click', async () => {
+      let release: (value: unknown) => void = () => {};
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('CreateInterviewRound')
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.resolve({ interviewRounds: [] }),
+      );
+      const save = await openAddForm();
+
+      fireEvent.click(save);
+      await waitFor(() => expect(createCalls()).toHaveLength(1));
+      fireEvent.click(save);
+      release({ createInterviewRound: { ...mockRound, id: 'round-2' } });
+
+      await waitFor(() => expect(screen.queryByRole('button', { name: /^save$/i })).toBeNull());
+      expect(createCalls()).toHaveLength(1);
+    });
+
+    it('shows a failed save under the form and keeps what was typed', async () => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('CreateInterviewRound')
+          ? Promise.reject({
+              response: {
+                errors: [{ message: 'Round limit reached', extensions: { code: 'VALIDATION' } }],
+              },
+            })
+          : Promise.resolve({ interviewRounds: [] }),
+      );
+      const save = await openAddForm();
+      fireEvent.change(screen.getByDisplayValue('Phone'), { target: { value: 'onsite' } });
+
+      fireEvent.click(save);
+
+      expect(await screen.findByText('Round limit reached')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Onsite')).toBeInTheDocument();
+    });
+
+    it('closes the form on Cancel without saving', async () => {
+      mockGqlRequest.mockResolvedValue({ interviewRounds: [] });
+      await openAddForm();
+
+      fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+      expect(screen.queryByRole('button', { name: /^save$/i })).toBeNull();
+      expect(createCalls()).toHaveLength(0);
+    });
+
+    it('edits a round from its current values', async () => {
+      mockGqlRequest.mockImplementation((query: string) =>
+        Promise.resolve(
+          query.includes('UpdateInterviewRound')
+            ? { updateInterviewRound: { ...mockRound, outcome: 'passed' } }
+            : { interviewRounds: [mockRound] },
+        ),
+      );
+      render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+      await screen.findByText('with Alex Kim');
+      const card = screen
+        .getByText('with Alex Kim')
+        .closest('div[class*="bg-white"]') as HTMLElement;
+      fireEvent.click(within(card).getAllByRole('button')[0]);
+
+      expect(await screen.findByDisplayValue('Alex Kim')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Discuss system design')).toBeInTheDocument();
+      fireEvent.change(screen.getByDisplayValue('Pending'), { target: { value: 'passed' } });
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+      await waitFor(() => expect(updateCalls()).toHaveLength(1));
+      expect(updateCalls()[0][1]).toEqual({
+        id: 'round-1',
+        input: expect.objectContaining({ type: 'technical', outcome: 'passed' }),
+      });
     });
   });
 });
