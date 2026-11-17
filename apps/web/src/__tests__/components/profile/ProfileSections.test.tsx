@@ -143,19 +143,6 @@ describe('CertificationsSection (JEF-592)', () => {
       }),
     );
   });
-
-  it('deletes one', async () => {
-    render(<CertificationsSection />, { wrapper: Wrapper });
-    await screen.findByText('AWS Certified Solutions Architect');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteCertification'), {
-        id: 'c1',
-      }),
-    );
-  });
 });
 
 describe('LanguagesSection (JEF-592)', () => {

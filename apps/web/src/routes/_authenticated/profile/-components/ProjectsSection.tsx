@@ -16,6 +16,7 @@ import {
   type Project,
 } from './profileQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
+import { deleteProfileItemWithUndo } from './deleteProfileItemWithUndo';
 
 export const PROJECTS_SECTION_ID = 'projects';
 
@@ -102,10 +103,16 @@ export function ProjectsSection() {
     },
   });
 
-  const remove = useMutation({
-    mutationFn: (id: string) => gqlClient.request(DELETE_PROJECT, { id }),
-    onSuccess: invalidate,
-  });
+  // A hard delete behind an undo toast (JEF-625): the row leaves the list at
+  // once, and the request goes out when the toast closes.
+  const remove = (id: string) =>
+    deleteProfileItemWithUndo({
+      qc,
+      queryKey: projectsQueryOptions.queryKey,
+      id,
+      document: DELETE_PROJECT,
+      message: t('profile.itemDeletedToast'),
+    });
 
   // The mutations keep the request, the cache invalidation and `createError`
   // (shown by ProfileSection); the action only awaits them, so the submit
@@ -175,7 +182,7 @@ export function ProjectsSection() {
                   icon={<Trash2Icon size={12} />}
                   variant="danger"
                   size="sm"
-                  onClick={() => remove.mutate(project.id)}
+                  onClick={() => remove(project.id)}
                 />
               </div>
             </li>

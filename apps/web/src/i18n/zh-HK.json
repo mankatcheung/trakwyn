@@ -750,6 +750,7 @@
   "profile.title": "我嘅履歷",
   "profile.description": "你嘅工作經驗、教育背景同技能。履歷、求職信同 AI 助手都會根據你喺呢度填寫嘅資料撰寫。",
   "profile.sectionsNavLabel": "履歷分項",
+  "profile.itemDeletedToast": "已從個人資料中刪除",
   "cvImport.button": "由履歷匯入",
   "cvImport.title": "由履歷匯入",
   "cvImport.intro": "上載你嘅履歷，AI 會讀取當中嘅工作經驗、教育背景同技能。加入之前，你可以先檢查晒所有內容。",

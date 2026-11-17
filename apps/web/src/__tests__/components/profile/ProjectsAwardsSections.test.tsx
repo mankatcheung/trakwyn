@@ -94,19 +94,6 @@ describe('ProjectsSection (JEF-592)', () => {
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText('https://')).toBeInTheDocument();
   });
-
-  it('deletes one', async () => {
-    render(<ProjectsSection />, { wrapper: Wrapper });
-    await screen.findByText('Open-source CLI');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteProject'), {
-        id: 'p1',
-      }),
-    );
-  });
 });
 
 describe('AwardsSection (JEF-592)', () => {

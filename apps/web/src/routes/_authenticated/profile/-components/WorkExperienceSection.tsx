@@ -16,6 +16,7 @@ import {
   type WorkExperience,
 } from './profileQueries';
 import { ENTRY_CLASS, FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
+import { deleteProfileItemWithUndo } from './deleteProfileItemWithUndo';
 
 export const WORK_EXPERIENCE_SECTION_ID = 'work-experience';
 
@@ -99,10 +100,16 @@ export function WorkExperienceSection() {
     },
   });
 
-  const remove = useMutation({
-    mutationFn: (id: string) => gqlClient.request(DELETE_WORK_EXPERIENCE, { id }),
-    onSuccess: invalidate,
-  });
+  // A hard delete behind an undo toast (JEF-625): the row leaves the list at
+  // once, and the request goes out when the toast closes.
+  const remove = (id: string) =>
+    deleteProfileItemWithUndo({
+      qc,
+      queryKey: workExperiencesQueryOptions.queryKey,
+      id,
+      document: DELETE_WORK_EXPERIENCE,
+      message: t('profile.itemDeletedToast'),
+    });
 
   // The mutations keep the request, the cache invalidation and `createError`
   // (shown by ProfileSection); the action only awaits them, so the submit
@@ -172,7 +179,7 @@ export function WorkExperienceSection() {
               label={t('common.delete')}
               icon={<Trash2Icon size={14} />}
               variant="danger"
-              onClick={() => remove.mutate(we.id)}
+              onClick={() => remove(we.id)}
             />
           </div>
         </div>

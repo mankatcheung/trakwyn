@@ -750,6 +750,7 @@
   "profile.title": "我的简历",
   "profile.description": "你的工作经历、教育经历和技能。简历、求职信和 AI 助手都会根据你在这里填写的内容撰写。",
   "profile.sectionsNavLabel": "简历分项",
+  "profile.itemDeletedToast": "已从个人资料中删除",
   "cvImport.button": "从简历导入",
   "cvImport.title": "从简历导入",
   "cvImport.intro": "上传你的简历，AI 会读取其中的工作经历、教育经历和技能。添加之前，你可以先检查所有内容。",

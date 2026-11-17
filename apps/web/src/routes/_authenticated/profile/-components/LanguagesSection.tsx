@@ -16,6 +16,7 @@ import {
   type Language,
 } from './profileQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
+import { deleteProfileItemWithUndo } from './deleteProfileItemWithUndo';
 
 export const LANGUAGES_SECTION_ID = 'languages';
 
@@ -77,10 +78,16 @@ export function LanguagesSection() {
     },
   });
 
-  const remove = useMutation({
-    mutationFn: (id: string) => gqlClient.request(DELETE_LANGUAGE, { id }),
-    onSuccess: invalidate,
-  });
+  // A hard delete behind an undo toast (JEF-625): the row leaves the list at
+  // once, and the request goes out when the toast closes.
+  const remove = (id: string) =>
+    deleteProfileItemWithUndo({
+      qc,
+      queryKey: languagesQueryOptions.queryKey,
+      id,
+      document: DELETE_LANGUAGE,
+      message: t('profile.itemDeletedToast'),
+    });
 
   // The mutations keep the request, the cache invalidation and `createError`
   // (shown by ProfileSection); the action only awaits them, so the submit
@@ -144,7 +151,7 @@ export function LanguagesSection() {
                 icon={<Trash2Icon size={12} />}
                 variant="danger"
                 size="sm"
-                onClick={() => remove.mutate(language.id)}
+                onClick={() => remove(language.id)}
               />
             </div>
           ))}
