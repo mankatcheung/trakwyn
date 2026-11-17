@@ -1,4 +1,4 @@
-// Hand-written to match apps/web's apps/web/src/routes/_authenticated/-notification-inbox.tsx
+// Hand-written to match apps/web's apps/web/src/features/notifications/components/NotificationInbox.tsx
 // field-for-field — see ../../applications/graphql/operations.ts for why these
 // stay hand-typed rather than codegen'd.
 
