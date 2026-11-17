@@ -94,7 +94,9 @@ describe('DashboardPage', () => {
   });
 
   it('gives the weekly goal progressbar an accessible name', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((document: unknown) => {
+      // A typed document is an AST, not a string; its JSON carries the names.
+      const query = JSON.stringify(document);
       if (query.includes('WeeklyApplicationGoal')) {
         return Promise.resolve({
           weeklyApplicationGoal: { currentWeekCount: 2, weeklyApplicationGoal: 5, streakWeeks: 1 },
@@ -115,7 +117,9 @@ describe('DashboardPage', () => {
   it('renders an Upcoming section for future interviews and follow-ups only', async () => {
     const future = new Date(Date.now() + 86_400_000).toISOString();
     const past = new Date(Date.now() - 86_400_000).toISOString();
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((document: unknown) => {
+      // A typed document is an AST, not a string; its JSON carries the names.
+      const query = JSON.stringify(document);
       if (query.includes('calendarEvents')) {
         return Promise.resolve({
           calendarEvents: [

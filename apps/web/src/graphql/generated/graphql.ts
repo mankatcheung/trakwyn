@@ -58,6 +58,19 @@ export type AiCredits = {
   used?: Maybe<Scalars['Int']['output']>;
 };
 
+export type AiFeedbackRating = 'DOWN' | 'UP';
+
+export type AiFeedbackReason =
+  'IGNORED_MY_REQUEST' | 'NOT_USEFUL' | 'OTHER' | 'UNSAFE_OR_INAPPROPRIATE' | 'WRONG_OR_MADE_UP';
+
+export type AiFeedbackTarget = 'CHAT_MESSAGE' | 'DOCUMENT_DRAFT';
+
+export type AiRating = {
+  __typename?: 'AiRating';
+  rating?: Maybe<AiFeedbackRating>;
+  reason?: Maybe<AiFeedbackReason>;
+};
+
 export type AnswerSource = 'ai' | 'user';
 
 export type ApiToken = {
@@ -139,6 +152,17 @@ export type AtsScore = {
   score?: Maybe<Scalars['Int']['output']>;
 };
 
+export type Award = {
+  __typename?: 'Award';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  date?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  issuer?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 /** A page at the payment provider to send the browser to (JEF-426). Use it once; it expires. */
 export type BillingRedirect = {
   __typename?: 'BillingRedirect';
@@ -177,6 +201,18 @@ export type CalendarEvent = {
 
 export type CalendarEventType = 'applied' | 'followUp' | 'interview';
 
+export type Certification = {
+  __typename?: 'Certification';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  credentialUrl?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  issuedAt?: Maybe<Scalars['String']['output']>;
+  issuer?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type ChatActionProposal = {
   __typename?: 'ChatActionProposal';
   error?: Maybe<Scalars['String']['output']>;
@@ -195,6 +231,14 @@ export type CompanyBriefing = {
   content?: Maybe<Scalars['String']['output']>;
   generatedAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  sources?: Maybe<Array<CompanySource>>;
+};
+
+export type CompanySource = {
+  __typename?: 'CompanySource';
+  publishedAt?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
 };
 
 export type ConfirmDocumentInput = {
@@ -293,12 +337,28 @@ export type CreateApplicationInput = {
   followUpAt?: InputMaybe<Scalars['String']['input']>;
   jobUrl?: InputMaybe<Scalars['String']['input']>;
   location?: InputMaybe<Scalars['String']['input']>;
+  postingText?: InputMaybe<Scalars['String']['input']>;
   role: Scalars['String']['input'];
   salaryRange?: InputMaybe<Scalars['String']['input']>;
   source?: InputMaybe<Scalars['String']['input']>;
   starred?: InputMaybe<Scalars['Boolean']['input']>;
   status?: InputMaybe<ApplicationStatus>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type CreateAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
 };
 
 export type CreateDocumentDraftInput = {
@@ -335,6 +395,11 @@ export type CreateInterviewRoundInput = {
   type?: InputMaybe<InterviewRoundType>;
 };
 
+export type CreateLanguageInput = {
+  name: Scalars['String']['input'];
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CreateMockInterviewQuestionInput = {
   answer?: InputMaybe<Scalars['String']['input']>;
   answerSource?: InputMaybe<AnswerSource>;
@@ -352,6 +417,15 @@ export type CreateOfferInput = {
   equity?: InputMaybe<Scalars['String']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
   period?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateShareLinkPayload = {
@@ -405,16 +479,29 @@ export type Document = {
 
 export type DocumentDraft = {
   __typename?: 'DocumentDraft';
+  aiGenerated?: Maybe<Scalars['Boolean']['output']>;
   aiInstructions?: Maybe<Scalars['String']['output']>;
   applicationId?: Maybe<Scalars['ID']['output']>;
   contentJson?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  myRating?: Maybe<AiRating>;
   plainText?: Maybe<Scalars['String']['output']>;
   sourceDocumentId?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
   type?: Maybe<Scalars['String']['output']>;
   updatedAt?: Maybe<Scalars['String']['output']>;
+};
+
+export type DocumentDraftVersion = {
+  __typename?: 'DocumentDraftVersion';
+  characterCount?: Maybe<Scalars['Int']['output']>;
+  contentJson?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  draftId?: Maybe<Scalars['ID']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  plainText?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
 };
 
 export type DocumentVersionOutcome = {
@@ -492,6 +579,27 @@ export type HealthScoreCriterion = {
   points?: Maybe<Scalars['Int']['output']>;
 };
 
+export type ImportCvAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+export type ImportCvCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
+export type ImportCvContactInput = {
+  links?: InputMaybe<Array<Scalars['String']['input']>>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ImportCvEducationInput = {
   degree?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -501,17 +609,41 @@ export type ImportCvEducationInput = {
   startDate: Scalars['String']['input'];
 };
 
+export type ImportCvLanguageInput = {
+  name: Scalars['String']['input'];
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ImportCvProfileInput = {
+  awards?: InputMaybe<Array<ImportCvAwardInput>>;
+  certifications?: InputMaybe<Array<ImportCvCertificationInput>>;
+  contact?: InputMaybe<ImportCvContactInput>;
   educations: Array<ImportCvEducationInput>;
+  languages?: InputMaybe<Array<ImportCvLanguageInput>>;
+  projects?: InputMaybe<Array<ImportCvProjectInput>>;
   skills: Array<ImportCvSkillInput>;
   workExperiences: Array<ImportCvWorkExperienceInput>;
 };
 
 export type ImportCvProfileResult = {
   __typename?: 'ImportCvProfileResult';
+  awards?: Maybe<Scalars['Int']['output']>;
+  certifications?: Maybe<Scalars['Int']['output']>;
   educations?: Maybe<Scalars['Int']['output']>;
+  filledContact?: Maybe<Array<Scalars['String']['output']>>;
+  languages?: Maybe<Scalars['Int']['output']>;
+  projects?: Maybe<Scalars['Int']['output']>;
   skills?: Maybe<Scalars['Int']['output']>;
   workExperiences?: Maybe<Scalars['Int']['output']>;
+};
+
+export type ImportCvProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ImportCvSkillInput = {
@@ -597,6 +729,8 @@ export type JobApplication = {
   jobUrl?: Maybe<Scalars['String']['output']>;
   likelyGhosted?: Maybe<Scalars['Boolean']['output']>;
   location?: Maybe<Scalars['String']['output']>;
+  /** The full job posting text, when captured. AI features read it in preference to the description. */
+  postingText?: Maybe<Scalars['String']['output']>;
   purgeAt?: Maybe<Scalars['String']['output']>;
   role?: Maybe<Scalars['String']['output']>;
   salaryRange?: Maybe<Scalars['String']['output']>;
@@ -606,6 +740,15 @@ export type JobApplication = {
   status?: Maybe<ApplicationStatus>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
   updatedAt?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
+export type Language = {
+  __typename?: 'Language';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  proficiency?: Maybe<Scalars['String']['output']>;
   userId?: Maybe<Scalars['ID']['output']>;
 };
 
@@ -666,6 +809,7 @@ export type Message = {
   content?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  myRating?: Maybe<AiRating>;
   proposals?: Maybe<Array<ChatActionProposal>>;
   role?: Maybe<Scalars['String']['output']>;
 };
@@ -713,6 +857,7 @@ export type Mutation = {
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
   /** Cancels the signed-in account’s scheduled deletion. Without a session, pass the token from the mailed link instead. */
   cancelAccountDeletion?: Maybe<Scalars['Boolean']['output']>;
+  clearAiOutputRating?: Maybe<Scalars['Boolean']['output']>;
   compareOffers?: Maybe<Array<OfferComparison>>;
   /** Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals. */
   completeOnboarding?: Maybe<Scalars['Boolean']['output']>;
@@ -728,19 +873,24 @@ export type Mutation = {
   confirmTotpSetup?: Maybe<ConfirmTotpSetupResult>;
   createApiToken?: Maybe<CreateApiTokenPayload>;
   createApplication?: Maybe<JobApplication>;
+  createAward?: Maybe<Award>;
   /** Opens the payment provider's page to manage or cancel. Fails until the user has paid once. */
   createBillingPortalSession?: Maybe<BillingRedirect>;
+  createCertification?: Maybe<Certification>;
   /** Starts a purchase of Pro. Refuses an active subscriber, who would pay twice for the same time. */
   createCheckoutSession?: Maybe<BillingRedirect>;
   createContact?: Maybe<Contact>;
   createConversation?: Maybe<Conversation>;
   createDocumentDraft?: Maybe<DocumentDraft>;
+  createDocumentDraftVersion?: Maybe<DocumentDraftVersion>;
   createEducation?: Maybe<Education>;
   createInterviewQuestion?: Maybe<InterviewQuestion>;
   createInterviewRound?: Maybe<InterviewRound>;
+  createLanguage?: Maybe<Language>;
   createMockInterviewQuestion?: Maybe<MockInterviewQuestion>;
   createNote?: Maybe<Note>;
   createOffer?: Maybe<Offer>;
+  createProject?: Maybe<Project>;
   createShareLink?: Maybe<CreateShareLinkPayload>;
   createSkill?: Maybe<Skill>;
   createWorkExperience?: Maybe<WorkExperience>;
@@ -748,6 +898,8 @@ export type Mutation = {
   deleteAccount?: Maybe<Scalars['Boolean']['output']>;
   deleteApiToken?: Maybe<Scalars['Boolean']['output']>;
   deleteApplication?: Maybe<Scalars['Boolean']['output']>;
+  deleteAward?: Maybe<Scalars['Boolean']['output']>;
+  deleteCertification?: Maybe<Scalars['Boolean']['output']>;
   deleteContact?: Maybe<Scalars['Boolean']['output']>;
   deleteConversation?: Maybe<Scalars['Boolean']['output']>;
   deleteDocument?: Maybe<Scalars['Boolean']['output']>;
@@ -755,20 +907,26 @@ export type Mutation = {
   deleteEducation?: Maybe<Scalars['Boolean']['output']>;
   deleteInterviewQuestion?: Maybe<Scalars['Boolean']['output']>;
   deleteInterviewRound?: Maybe<Scalars['Boolean']['output']>;
+  deleteLanguage?: Maybe<Scalars['Boolean']['output']>;
   deleteLlmApiKey?: Maybe<Scalars['Boolean']['output']>;
   deleteMockInterviewQuestion?: Maybe<Scalars['Boolean']['output']>;
   deleteNote?: Maybe<Scalars['Boolean']['output']>;
   deleteOffer?: Maybe<Scalars['Boolean']['output']>;
+  deleteProject?: Maybe<Scalars['Boolean']['output']>;
   deleteShareLink?: Maybe<Scalars['Boolean']['output']>;
   deleteSkill?: Maybe<Scalars['Boolean']['output']>;
   deleteWorkExperience?: Maybe<Scalars['Boolean']['output']>;
   disableTotp?: Maybe<Scalars['Boolean']['output']>;
   dismissChatAction?: Maybe<ChatActionProposal>;
   dismissOnboardingChecklist?: Maybe<Scalars['Boolean']['output']>;
+  /** Answer "no" to one resume gap question for an application, so it is not asked again. Returns the questions that are left. */
+  dismissResumeGap?: Maybe<ResumeGaps>;
   emptyTrash?: Maybe<EmptyTrashResult>;
   exchangeMobileOAuthCode?: Maybe<MobileAuthPayload>;
   exportDocumentDraftToPdf?: Maybe<Document>;
   extractDocumentText?: Maybe<ExtractDocumentTextPayload>;
+  /** Read what an application’s posting asks for, with AI, and save it. Returns the saved list without a call when the posting has not changed. */
+  extractPostingRequirements?: Maybe<PostingRequirements>;
   generateCompanyBriefing?: Maybe<CompanyBriefing>;
   generateCoverLetter?: Maybe<DocumentDraft>;
   /** Generates content for an existing draft from the application and the profile. Saves nothing and creates no draft. */
@@ -791,6 +949,7 @@ export type Mutation = {
   permanentlyDeleteApplication?: Maybe<Scalars['Boolean']['output']>;
   /** Rewords the text the editor holds (which may be unsaved) and returns it as markdown. Saves nothing. */
   polishDocumentDraft: PolishDocumentDraftResult;
+  rateAiOutput?: Maybe<AiRating>;
   reauthenticate?: Maybe<LoginResult>;
   reauthenticateMobile?: Maybe<MobileLoginResult>;
   recordCookieConsent?: Maybe<Scalars['Boolean']['output']>;
@@ -820,6 +979,7 @@ export type Mutation = {
   resendVerificationEmail?: Maybe<Scalars['Boolean']['output']>;
   resetPassword?: Maybe<Scalars['Boolean']['output']>;
   restoreApplication?: Maybe<Scalars['Boolean']['output']>;
+  restoreDocumentDraftVersion?: Maybe<DocumentDraft>;
   revokeMcpOAuthGrant?: Maybe<Scalars['Boolean']['output']>;
   revokeOtherSessions?: Maybe<Scalars['Boolean']['output']>;
   revokeSession?: Maybe<Scalars['Boolean']['output']>;
@@ -840,17 +1000,21 @@ export type Mutation = {
   unlinkOAuthAccount?: Maybe<Scalars['Boolean']['output']>;
   unregisterPushSubscription?: Maybe<Scalars['Boolean']['output']>;
   updateApplication?: Maybe<JobApplication>;
+  updateAward?: Maybe<Award>;
+  updateCertification?: Maybe<Certification>;
   updateContact?: Maybe<Contact>;
   updateDocumentDraftContent?: Maybe<DocumentDraft>;
   updateEducation?: Maybe<Education>;
   updateInterviewQuestion?: Maybe<InterviewQuestion>;
   updateInterviewRound?: Maybe<InterviewRound>;
+  updateLanguage?: Maybe<Language>;
   updateMockInterviewQuestion?: Maybe<MockInterviewQuestion>;
   updateNote?: Maybe<Note>;
   updateNotificationPreferences?: Maybe<Scalars['Boolean']['output']>;
   updateOffer?: Maybe<Offer>;
   updatePassword?: Maybe<Scalars['Boolean']['output']>;
   updateProfile?: Maybe<Scalars['Boolean']['output']>;
+  updateProject?: Maybe<Project>;
   updateSkill?: Maybe<Skill>;
   updateWorkExperience?: Maybe<WorkExperience>;
   verifyEmail?: Maybe<Scalars['Boolean']['output']>;
@@ -885,6 +1049,11 @@ export type MutationBulkUpdateApplicationsArgs = {
 
 export type MutationCancelAccountDeletionArgs = {
   token?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type MutationClearAiOutputRatingArgs = {
+  targetId: Scalars['ID']['input'];
+  targetKind: AiFeedbackTarget;
 };
 
 export type MutationCompareOffersArgs = {
@@ -945,6 +1114,14 @@ export type MutationCreateApplicationArgs = {
   input: CreateApplicationInput;
 };
 
+export type MutationCreateAwardArgs = {
+  input: CreateAwardInput;
+};
+
+export type MutationCreateCertificationArgs = {
+  input: CreateCertificationInput;
+};
+
 export type MutationCreateCheckoutSessionArgs = {
   plan: CheckoutPlan;
 };
@@ -968,6 +1145,10 @@ export type MutationCreateDocumentDraftArgs = {
   input: CreateDocumentDraftInput;
 };
 
+export type MutationCreateDocumentDraftVersionArgs = {
+  draftId: Scalars['ID']['input'];
+};
+
 export type MutationCreateEducationArgs = {
   input: CreateEducationInput;
 };
@@ -978,6 +1159,10 @@ export type MutationCreateInterviewQuestionArgs = {
 
 export type MutationCreateInterviewRoundArgs = {
   input: CreateInterviewRoundInput;
+};
+
+export type MutationCreateLanguageArgs = {
+  input: CreateLanguageInput;
 };
 
 export type MutationCreateMockInterviewQuestionArgs = {
@@ -991,6 +1176,10 @@ export type MutationCreateNoteArgs = {
 
 export type MutationCreateOfferArgs = {
   input: CreateOfferInput;
+};
+
+export type MutationCreateProjectArgs = {
+  input: CreateProjectInput;
 };
 
 export type MutationCreateShareLinkArgs = {
@@ -1014,6 +1203,14 @@ export type MutationDeleteApiTokenArgs = {
 };
 
 export type MutationDeleteApplicationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type MutationDeleteAwardArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type MutationDeleteCertificationArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -1045,6 +1242,10 @@ export type MutationDeleteInterviewRoundArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationDeleteLanguageArgs = {
+  id: Scalars['ID']['input'];
+};
+
 export type MutationDeleteLlmApiKeyArgs = {
   provider: Scalars['String']['input'];
 };
@@ -1059,6 +1260,10 @@ export type MutationDeleteNoteArgs = {
 
 export type MutationDeleteOfferArgs = {
   id: Scalars['String']['input'];
+};
+
+export type MutationDeleteProjectArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type MutationDeleteShareLinkArgs = {
@@ -1081,6 +1286,11 @@ export type MutationDismissChatActionArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationDismissResumeGapArgs = {
+  applicationId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+};
+
 export type MutationExchangeMobileOAuthCodeArgs = {
   code: Scalars['String']['input'];
   codeVerifier: Scalars['String']['input'];
@@ -1092,6 +1302,10 @@ export type MutationExportDocumentDraftToPdfArgs = {
 
 export type MutationExtractDocumentTextArgs = {
   documentId: Scalars['ID']['input'];
+};
+
+export type MutationExtractPostingRequirementsArgs = {
+  applicationId: Scalars['ID']['input'];
 };
 
 export type MutationGenerateCompanyBriefingArgs = {
@@ -1192,6 +1406,13 @@ export type MutationPolishDocumentDraftArgs = {
   draftId: Scalars['ID']['input'];
   instructions?: InputMaybe<Scalars['String']['input']>;
   plainText: Scalars['String']['input'];
+};
+
+export type MutationRateAiOutputArgs = {
+  rating: AiFeedbackRating;
+  reason?: InputMaybe<AiFeedbackReason>;
+  targetId: Scalars['ID']['input'];
+  targetKind: AiFeedbackTarget;
 };
 
 export type MutationReauthenticateArgs = {
@@ -1297,6 +1518,10 @@ export type MutationRestoreApplicationArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationRestoreDocumentDraftVersionArgs = {
+  versionId: Scalars['ID']['input'];
+};
+
 export type MutationRevokeMcpOAuthGrantArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1353,6 +1578,16 @@ export type MutationUpdateApplicationArgs = {
   input: UpdateApplicationInput;
 };
 
+export type MutationUpdateAwardArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAwardInput;
+};
+
+export type MutationUpdateCertificationArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateCertificationInput;
+};
+
 export type MutationUpdateContactArgs = {
   email?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
@@ -1380,6 +1615,11 @@ export type MutationUpdateInterviewQuestionArgs = {
 export type MutationUpdateInterviewRoundArgs = {
   id: Scalars['ID']['input'];
   input: UpdateInterviewRoundInput;
+};
+
+export type MutationUpdateLanguageArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateLanguageInput;
 };
 
 export type MutationUpdateMockInterviewQuestionArgs = {
@@ -1412,10 +1652,18 @@ export type MutationUpdatePasswordArgs = {
 export type MutationUpdateProfileArgs = {
   customAiPrompt?: InputMaybe<Scalars['String']['input']>;
   llmFallbackWhenLimited?: InputMaybe<Scalars['Boolean']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  profileLinks?: InputMaybe<Array<Scalars['String']['input']>>;
   targetRole?: InputMaybe<Scalars['String']['input']>;
   timezone?: InputMaybe<Scalars['String']['input']>;
   useCrossApplicationContext?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type MutationUpdateProjectArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateProjectInput;
 };
 
 export type MutationUpdateSkillArgs = {
@@ -1534,6 +1782,8 @@ export type ParsedJobDescription = {
   company?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   location?: Maybe<Scalars['String']['output']>;
+  /** The posting as written, for the application's postingText field. */
+  postingText?: Maybe<Scalars['String']['output']>;
   role?: Maybe<Scalars['String']['output']>;
   salary?: Maybe<Scalars['String']['output']>;
 };
@@ -1588,6 +1838,32 @@ export type PolishDocumentDraftResult = {
   markdown: Scalars['String']['output'];
 };
 
+/** What an application’s job posting asks for, read from its text by AI. */
+export type PostingRequirements = {
+  __typename?: 'PostingRequirements';
+  applicationId?: Maybe<Scalars['ID']['output']>;
+  generatedAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  isStale?: Maybe<Scalars['Boolean']['output']>;
+  keywords?: Maybe<Array<Scalars['String']['output']>>;
+  mustHave?: Maybe<Array<Scalars['String']['output']>>;
+  niceToHave?: Maybe<Array<Scalars['String']['output']>>;
+  seniority?: Maybe<Scalars['String']['output']>;
+};
+
+export type Project = {
+  __typename?: 'Project';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  endDate?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  role?: Maybe<Scalars['String']['output']>;
+  startDate?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   activityLogs?: Maybe<Array<ActivityLog>>;
@@ -1597,9 +1873,11 @@ export type Query = {
   applicationHealthScore?: Maybe<ApplicationHealthScore>;
   applications?: Maybe<Array<JobApplication>>;
   applicationsPage?: Maybe<ApplicationConnection>;
+  awards?: Maybe<Array<Award>>;
   /** Where the signed-in user stands against their plan's limits. */
   billingStatus?: Maybe<BillingStatus>;
   calendarEvents?: Maybe<Array<CalendarEvent>>;
+  certifications?: Maybe<Array<Certification>>;
   chatHistory?: Maybe<Array<Message>>;
   companyBriefing?: Maybe<CompanyBriefing>;
   contacts?: Maybe<Array<Contact>>;
@@ -1607,6 +1885,8 @@ export type Query = {
   contentQuota?: Maybe<ContentQuota>;
   conversations?: Maybe<Array<Conversation>>;
   documentDraft?: Maybe<DocumentDraft>;
+  documentDraftVersion?: Maybe<DocumentDraftVersion>;
+  documentDraftVersions?: Maybe<Array<DocumentDraftVersion>>;
   documentDrafts?: Maybe<Array<DocumentDraft>>;
   documentVersionOutcomes?: Maybe<Array<DocumentVersionOutcome>>;
   documents?: Maybe<Array<Document>>;
@@ -1615,6 +1895,7 @@ export type Query = {
   interviewQuestions?: Maybe<Array<InterviewQuestion>>;
   interviewRoundAnalytics?: Maybe<InterviewRoundAnalytics>;
   interviewRounds?: Maybe<Array<InterviewRound>>;
+  languages?: Maybe<Array<Language>>;
   linkedOAuthAccounts?: Maybe<Array<LinkedOAuthAccount>>;
   llmApiKeys?: Maybe<Array<LlmApiKey>>;
   llmUsageSummary?: Maybe<Array<LlmUsageSummary>>;
@@ -1628,8 +1909,13 @@ export type Query = {
   notificationsPage?: Maybe<NotificationConnection>;
   offerAnalytics?: Maybe<OfferAnalytics>;
   offers?: Maybe<Array<Offer>>;
+  /** The saved requirements for an application’s posting, or null when it has not been read. Never calls AI. */
+  postingRequirements?: Maybe<PostingRequirements>;
+  projects?: Maybe<Array<Project>>;
   responseTimeAnalytics?: Maybe<ResponseTimeAnalytics>;
   resumeAtsScores?: Maybe<Array<AtsScore>>;
+  /** What would strengthen a resume for this application. Never calls AI. */
+  resumeGaps?: Maybe<ResumeGaps>;
   resumeMatches?: Maybe<Array<ResumeMatch>>;
   searchConversations?: Maybe<Array<Conversation>>;
   securityActivity?: Maybe<Array<SecurityActivityItem>>;
@@ -1689,6 +1975,14 @@ export type QueryDocumentDraftArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type QueryDocumentDraftVersionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type QueryDocumentDraftVersionsArgs = {
+  draftId: Scalars['ID']['input'];
+};
+
 export type QueryDocumentDraftsArgs = {
   applicationId: Scalars['ID']['input'];
 };
@@ -1722,7 +2016,15 @@ export type QueryOffersArgs = {
   applicationId: Scalars['ID']['input'];
 };
 
+export type QueryPostingRequirementsArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
 export type QueryResumeAtsScoresArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
+export type QueryResumeGapsArgs = {
   applicationId: Scalars['ID']['input'];
 };
 
@@ -1751,6 +2053,15 @@ export type ResponseTimeAnalytics = {
   timeToFirstResponse?: Maybe<TimeToResponseStat>;
 };
 
+/** Questions that would strengthen a resume for an application: what the posting asks for that the profile does not show, and roles with no numbers. */
+export type ResumeGaps = {
+  __typename?: 'ResumeGaps';
+  requirementGaps?: Maybe<Array<Scalars['String']['output']>>;
+  /** False when the posting’s requirements have not been read yet. */
+  requirementsRead?: Maybe<Scalars['Boolean']['output']>;
+  rolesWithoutMetrics?: Maybe<Array<RoleWithoutMetrics>>;
+};
+
 export type ResumeMatch = {
   __typename?: 'ResumeMatch';
   applicationId?: Maybe<Scalars['ID']['output']>;
@@ -1764,6 +2075,15 @@ export type ResumeMatch = {
   missingKeywords?: Maybe<Array<Scalars['String']['output']>>;
   score?: Maybe<Scalars['Int']['output']>;
   summary?: Maybe<Scalars['String']['output']>;
+};
+
+/** A work experience whose description holds no number. */
+export type RoleWithoutMetrics = {
+  __typename?: 'RoleWithoutMetrics';
+  company?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  workExperienceId?: Maybe<Scalars['ID']['output']>;
 };
 
 export type RoundsToTerminalStat = {
@@ -1864,6 +2184,7 @@ export type UpdateApplicationInput = {
   followUpAt?: InputMaybe<Scalars['String']['input']>;
   jobUrl?: InputMaybe<Scalars['String']['input']>;
   location?: InputMaybe<Scalars['String']['input']>;
+  postingText?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   salaryRange?: InputMaybe<Scalars['String']['input']>;
   source?: InputMaybe<Scalars['String']['input']>;
@@ -1872,11 +2193,27 @@ export type UpdateApplicationInput = {
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+export type UpdateAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateDocumentDraftContentInput = {
   aiInstructions?: InputMaybe<Scalars['String']['input']>;
   contentJson: Scalars['String']['input'];
   draftId: Scalars['ID']['input'];
   plainText: Scalars['String']['input'];
+  replacedByAi?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateEducationInput = {
@@ -1902,6 +2239,11 @@ export type UpdateInterviewRoundInput = {
   type?: InputMaybe<InterviewRoundType>;
 };
 
+export type UpdateLanguageInput = {
+  name?: InputMaybe<Scalars['String']['input']>;
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateMockInterviewQuestionInput = {
   answer?: InputMaybe<Scalars['String']['input']>;
   answerSource?: InputMaybe<AnswerSource>;
@@ -1918,6 +2260,15 @@ export type UpdateOfferInput = {
   notes?: InputMaybe<Scalars['String']['input']>;
   offerId: Scalars['ID']['input'];
   period?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateSkillInput = {
@@ -1964,10 +2315,13 @@ export type User = {
   id?: Maybe<Scalars['ID']['output']>;
   /** @deprecated Use aiProviderOrder (JEF-503). Kept for apps already in the stores. */
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
+  location?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
   onboardingCompletedAt?: Maybe<Scalars['String']['output']>;
   onboardingGoals?: Maybe<Array<OnboardingGoal>>;
+  phone?: Maybe<Scalars['String']['output']>;
+  profileLinks?: Maybe<Array<Scalars['String']['output']>>;
   /** How this user confirms it is them before a sensitive change, in the order to offer them (JEF-463). */
   stepUpMethods?: Maybe<Array<StepUpMethod>>;
   storageLimitBytes?: Maybe<Scalars['Float']['output']>;
@@ -1997,6 +2351,104 @@ export type WorkExperience = {
   title?: Maybe<Scalars['String']['output']>;
   updatedAt?: Maybe<Scalars['String']['output']>;
   userId?: Maybe<Scalars['ID']['output']>;
+};
+
+export type ActivityLogsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ActivityLogsQuery = {
+  __typename?: 'Query';
+  activityLogs?: Array<{
+    __typename?: 'ActivityLog';
+    id?: string | null;
+    applicationId?: string | null;
+    actorId?: string | null;
+    eventType?: string | null;
+    payload?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type CreateContactMutationVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  role?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  linkedinUrl?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type CreateContactMutation = {
+  __typename?: 'Mutation';
+  createContact?: {
+    __typename?: 'Contact';
+    id?: string | null;
+    applicationId?: string | null;
+    name?: string | null;
+    role?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    linkedinUrl?: string | null;
+    notes?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type UpdateContactMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  linkedinUrl?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type UpdateContactMutation = {
+  __typename?: 'Mutation';
+  updateContact?: {
+    __typename?: 'Contact';
+    id?: string | null;
+    applicationId?: string | null;
+    name?: string | null;
+    role?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    linkedinUrl?: string | null;
+    notes?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type DeleteContactMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteContactMutation = { __typename?: 'Mutation'; deleteContact?: boolean | null };
+
+export type ContactsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ContactsQuery = {
+  __typename?: 'Query';
+  contacts?: Array<{
+    __typename?: 'Contact';
+    id?: string | null;
+    applicationId?: string | null;
+    name?: string | null;
+    role?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    linkedinUrl?: string | null;
+    notes?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
 };
 
 export type CreateApplicationMutationVariables = Exact<{
@@ -2061,6 +2513,74 @@ export type DeleteApplicationMutation = {
   deleteApplication?: boolean | null;
 };
 
+export type ApplicationsQueryVariables = Exact<{
+  status?: InputMaybe<ApplicationStatus>;
+}>;
+
+export type ApplicationsQuery = {
+  __typename?: 'Query';
+  applications?: Array<{
+    __typename?: 'JobApplication';
+    id?: string | null;
+    company?: string | null;
+    role?: string | null;
+    status?: ApplicationStatus | null;
+    jobUrl?: string | null;
+    location?: string | null;
+    salaryRange?: string | null;
+    appliedAt?: string | null;
+    starred?: boolean | null;
+    source?: string | null;
+    followUpAt?: string | null;
+    tags?: Array<string> | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type ApplicationQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type ApplicationQuery = {
+  __typename?: 'Query';
+  application?: {
+    __typename?: 'JobApplication';
+    id?: string | null;
+    company?: string | null;
+    role?: string | null;
+    status?: ApplicationStatus | null;
+    jobUrl?: string | null;
+    location?: string | null;
+    salaryRange?: string | null;
+    description?: string | null;
+    appliedAt?: string | null;
+    starred?: boolean | null;
+    source?: string | null;
+    followUpAt?: string | null;
+    tags?: Array<string> | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type ParseJobDescriptionMutationVariables = Exact<{
+  text?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type ParseJobDescriptionMutation = {
+  __typename?: 'Mutation';
+  parseJobDescription?: {
+    __typename?: 'ParsedJobDescription';
+    company?: string | null;
+    role?: string | null;
+    location?: string | null;
+    salary?: string | null;
+    description?: string | null;
+  } | null;
+};
+
 export type RegisterMutationVariables = Exact<{
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -2101,65 +2621,77 @@ export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
 
 export type LogoutMutation = { __typename?: 'Mutation'; logout?: boolean | null };
 
-export type CreateContactMutationVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
-  role?: InputMaybe<Scalars['String']['input']>;
-  email?: InputMaybe<Scalars['String']['input']>;
-  phone?: InputMaybe<Scalars['String']['input']>;
-  linkedinUrl?: InputMaybe<Scalars['String']['input']>;
-  notes?: InputMaybe<Scalars['String']['input']>;
-}>;
+export type DashboardApplicationsQueryVariables = Exact<{ [key: string]: never }>;
 
-export type CreateContactMutation = {
-  __typename?: 'Mutation';
-  createContact?: {
-    __typename?: 'Contact';
+export type DashboardApplicationsQuery = {
+  __typename?: 'Query';
+  applications?: Array<{
+    __typename?: 'JobApplication';
+    id?: string | null;
+    company?: string | null;
+    role?: string | null;
+    status?: ApplicationStatus | null;
+    starred?: boolean | null;
+    followUpAt?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type DashboardCalendarEventsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type DashboardCalendarEventsQuery = {
+  __typename?: 'Query';
+  calendarEvents?: Array<{
+    __typename?: 'CalendarEvent';
     id?: string | null;
     applicationId?: string | null;
-    name?: string | null;
+    company?: string | null;
     role?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    linkedinUrl?: string | null;
-    notes?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
+    type?: CalendarEventType | null;
+    date?: string | null;
+    interviewRoundType?: InterviewRoundType | null;
+  }> | null;
+};
+
+export type WeeklyApplicationGoalQueryVariables = Exact<{ [key: string]: never }>;
+
+export type WeeklyApplicationGoalQuery = {
+  __typename?: 'Query';
+  weeklyApplicationGoal?: {
+    __typename?: 'WeeklyApplicationGoal';
+    weeklyApplicationGoal?: number | null;
+    currentWeekCount?: number | null;
+    currentWeekStart?: string | null;
+    streakWeeks?: number | null;
   } | null;
 };
 
-export type UpdateContactMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  name?: InputMaybe<Scalars['String']['input']>;
-  role?: InputMaybe<Scalars['String']['input']>;
-  email?: InputMaybe<Scalars['String']['input']>;
-  phone?: InputMaybe<Scalars['String']['input']>;
-  linkedinUrl?: InputMaybe<Scalars['String']['input']>;
-  notes?: InputMaybe<Scalars['String']['input']>;
-}>;
+export type OnboardingChecklistQueryVariables = Exact<{ [key: string]: never }>;
 
-export type UpdateContactMutation = {
-  __typename?: 'Mutation';
-  updateContact?: {
-    __typename?: 'Contact';
-    id?: string | null;
-    applicationId?: string | null;
-    name?: string | null;
-    role?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    linkedinUrl?: string | null;
-    notes?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
+export type OnboardingChecklistQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    onboardingChecklistDismissedAt?: string | null;
+    onboardingGoals?: Array<OnboardingGoal> | null;
+    aiCredits?: {
+      __typename?: 'AiCredits';
+      used?: number | null;
+      limit?: number | null;
+      bonusRemaining?: number | null;
+    } | null;
   } | null;
+  apiTokens?: Array<{ __typename?: 'ApiToken'; id?: string | null }> | null;
+  llmApiKeys?: Array<{ __typename?: 'LlmApiKey'; provider?: string | null }> | null;
+  workExperiences?: Array<{ __typename?: 'WorkExperience'; id?: string | null }> | null;
 };
 
-export type DeleteContactMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
+export type DismissOnboardingChecklistMutationVariables = Exact<{ [key: string]: never }>;
 
-export type DeleteContactMutation = { __typename?: 'Mutation'; deleteContact?: boolean | null };
+export type DismissOnboardingChecklistMutation = {
+  __typename?: 'Mutation';
+  dismissOnboardingChecklist?: boolean | null;
+};
 
 export type RequestUploadUrlMutationVariables = Exact<{
   input: RequestUploadUrlInput;
@@ -2201,141 +2733,25 @@ export type DeleteDocumentMutationVariables = Exact<{
 
 export type DeleteDocumentMutation = { __typename?: 'Mutation'; deleteDocument?: boolean | null };
 
-export type CreateWorkExperienceMutationVariables = Exact<{
-  input: CreateWorkExperienceInput;
+export type DocumentsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
 }>;
 
-export type CreateWorkExperienceMutation = {
-  __typename?: 'Mutation';
-  createWorkExperience?: {
-    __typename?: 'WorkExperience';
+export type DocumentsQuery = {
+  __typename?: 'Query';
+  documents?: Array<{
+    __typename?: 'Document';
     id?: string | null;
-    company?: string | null;
-    title?: string | null;
-    location?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-    description?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  } | null;
-};
-
-export type UpdateWorkExperienceMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  input: UpdateWorkExperienceInput;
-}>;
-
-export type UpdateWorkExperienceMutation = {
-  __typename?: 'Mutation';
-  updateWorkExperience?: {
-    __typename?: 'WorkExperience';
-    id?: string | null;
-    company?: string | null;
-    title?: string | null;
-    location?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-    description?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  } | null;
-};
-
-export type DeleteWorkExperienceMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-export type DeleteWorkExperienceMutation = {
-  __typename?: 'Mutation';
-  deleteWorkExperience?: boolean | null;
-};
-
-export type CreateEducationMutationVariables = Exact<{
-  input: CreateEducationInput;
-}>;
-
-export type CreateEducationMutation = {
-  __typename?: 'Mutation';
-  createEducation?: {
-    __typename?: 'Education';
-    id?: string | null;
-    institution?: string | null;
-    degree?: string | null;
-    field?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-    description?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  } | null;
-};
-
-export type UpdateEducationMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  input: UpdateEducationInput;
-}>;
-
-export type UpdateEducationMutation = {
-  __typename?: 'Mutation';
-  updateEducation?: {
-    __typename?: 'Education';
-    id?: string | null;
-    institution?: string | null;
-    degree?: string | null;
-    field?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-    description?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  } | null;
-};
-
-export type DeleteEducationMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-export type DeleteEducationMutation = { __typename?: 'Mutation'; deleteEducation?: boolean | null };
-
-export type CreateSkillMutationVariables = Exact<{
-  input: CreateSkillInput;
-}>;
-
-export type CreateSkillMutation = {
-  __typename?: 'Mutation';
-  createSkill?: {
-    __typename?: 'Skill';
-    id?: string | null;
+    applicationId?: string | null;
     name?: string | null;
-    category?: string | null;
-    proficiency?: string | null;
+    mimeType?: string | null;
+    sizeBytes?: number | null;
+    url?: string | null;
+    documentType?: string | null;
+    version?: string | null;
     createdAt?: string | null;
-  } | null;
+  }> | null;
 };
-
-export type UpdateSkillMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  input: UpdateSkillInput;
-}>;
-
-export type UpdateSkillMutation = {
-  __typename?: 'Mutation';
-  updateSkill?: {
-    __typename?: 'Skill';
-    id?: string | null;
-    name?: string | null;
-    category?: string | null;
-    proficiency?: string | null;
-    createdAt?: string | null;
-  } | null;
-};
-
-export type DeleteSkillMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-export type DeleteSkillMutation = { __typename?: 'Mutation'; deleteSkill?: boolean | null };
 
 export type CreateInterviewQuestionMutationVariables = Exact<{
   input: CreateInterviewQuestionInput;
@@ -2391,6 +2807,24 @@ export type ReorderInterviewQuestionsMutationVariables = Exact<{
 export type ReorderInterviewQuestionsMutation = {
   __typename?: 'Mutation';
   reorderInterviewQuestions?: Array<{
+    __typename?: 'InterviewQuestion';
+    id?: string | null;
+    interviewRoundId?: string | null;
+    question?: string | null;
+    answer?: string | null;
+    position?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type InterviewQuestionsQueryVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
+}>;
+
+export type InterviewQuestionsQuery = {
+  __typename?: 'Query';
+  interviewQuestions?: Array<{
     __typename?: 'InterviewQuestion';
     id?: string | null;
     interviewRoundId?: string | null;
@@ -2458,21 +2892,27 @@ export type DeleteInterviewRoundMutation = {
   deleteInterviewRound?: boolean | null;
 };
 
-export type ParseJobDescriptionMutationVariables = Exact<{
-  text?: InputMaybe<Scalars['String']['input']>;
-  url?: InputMaybe<Scalars['String']['input']>;
+export type InterviewRoundsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
 }>;
 
-export type ParseJobDescriptionMutation = {
-  __typename?: 'Mutation';
-  parseJobDescription?: {
-    __typename?: 'ParsedJobDescription';
-    company?: string | null;
-    role?: string | null;
-    location?: string | null;
-    salary?: string | null;
-    description?: string | null;
-  } | null;
+export type InterviewRoundsQuery = {
+  __typename?: 'Query';
+  interviewRounds?: Array<{
+    __typename?: 'InterviewRound';
+    id?: string | null;
+    applicationId?: string | null;
+    type?: InterviewRoundType | null;
+    scheduledAt?: string | null;
+    completedAt?: string | null;
+    interviewerName?: string | null;
+    notes?: string | null;
+    outcome?: InterviewRoundOutcome | null;
+    questionCount?: number | null;
+    mockQuestionCount?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
 };
 
 export type CreateMockInterviewQuestionMutationVariables = Exact<{
@@ -2618,6 +3058,25 @@ export type GenerateMockTalkingPointsMutation = {
   } | null;
 };
 
+export type MockInterviewQuestionsQueryVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
+}>;
+
+export type MockInterviewQuestionsQuery = {
+  __typename?: 'Query';
+  mockInterviewQuestions?: Array<{
+    __typename?: 'MockInterviewQuestion';
+    id?: string | null;
+    interviewRoundId?: string | null;
+    question?: string | null;
+    answer?: string | null;
+    answerSource?: AnswerSource | null;
+    position?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
 export type CreateNoteMutationVariables = Exact<{
   applicationId: Scalars['ID']['input'];
   content: Scalars['String']['input'];
@@ -2658,114 +3117,157 @@ export type DeleteNoteMutationVariables = Exact<{
 
 export type DeleteNoteMutation = { __typename?: 'Mutation'; deleteNote?: boolean | null };
 
-export type ActivityLogsQueryVariables = Exact<{
+export type NotesQueryVariables = Exact<{
   applicationId: Scalars['ID']['input'];
 }>;
 
-export type ActivityLogsQuery = {
+export type NotesQuery = {
   __typename?: 'Query';
-  activityLogs?: Array<{
-    __typename?: 'ActivityLog';
+  notes?: Array<{
+    __typename?: 'Note';
     id?: string | null;
     applicationId?: string | null;
-    actorId?: string | null;
-    eventType?: string | null;
-    payload?: string | null;
-    createdAt?: string | null;
-  }> | null;
-};
-
-export type ApplicationsQueryVariables = Exact<{
-  status?: InputMaybe<ApplicationStatus>;
-}>;
-
-export type ApplicationsQuery = {
-  __typename?: 'Query';
-  applications?: Array<{
-    __typename?: 'JobApplication';
-    id?: string | null;
-    company?: string | null;
-    role?: string | null;
-    status?: ApplicationStatus | null;
-    jobUrl?: string | null;
-    location?: string | null;
-    salaryRange?: string | null;
-    appliedAt?: string | null;
-    starred?: boolean | null;
-    source?: string | null;
-    followUpAt?: string | null;
-    tags?: Array<string> | null;
+    content?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
   }> | null;
 };
 
-export type ApplicationQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+export type CreateWorkExperienceMutationVariables = Exact<{
+  input: CreateWorkExperienceInput;
 }>;
 
-export type ApplicationQuery = {
-  __typename?: 'Query';
-  application?: {
-    __typename?: 'JobApplication';
+export type CreateWorkExperienceMutation = {
+  __typename?: 'Mutation';
+  createWorkExperience?: {
+    __typename?: 'WorkExperience';
     id?: string | null;
     company?: string | null;
-    role?: string | null;
-    status?: ApplicationStatus | null;
-    jobUrl?: string | null;
+    title?: string | null;
     location?: string | null;
-    salaryRange?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
     description?: string | null;
-    appliedAt?: string | null;
-    starred?: boolean | null;
-    source?: string | null;
-    followUpAt?: string | null;
-    tags?: Array<string> | null;
     createdAt?: string | null;
     updatedAt?: string | null;
   } | null;
 };
 
-export type ContactsQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
+export type UpdateWorkExperienceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateWorkExperienceInput;
 }>;
 
-export type ContactsQuery = {
-  __typename?: 'Query';
-  contacts?: Array<{
-    __typename?: 'Contact';
+export type UpdateWorkExperienceMutation = {
+  __typename?: 'Mutation';
+  updateWorkExperience?: {
+    __typename?: 'WorkExperience';
     id?: string | null;
-    applicationId?: string | null;
-    name?: string | null;
-    role?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    linkedinUrl?: string | null;
-    notes?: string | null;
+    company?: string | null;
+    title?: string | null;
+    location?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    description?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
-  }> | null;
+  } | null;
 };
 
-export type DocumentsQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
+export type DeleteWorkExperienceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
 }>;
 
-export type DocumentsQuery = {
-  __typename?: 'Query';
-  documents?: Array<{
-    __typename?: 'Document';
-    id?: string | null;
-    applicationId?: string | null;
-    name?: string | null;
-    mimeType?: string | null;
-    sizeBytes?: number | null;
-    url?: string | null;
-    documentType?: string | null;
-    version?: string | null;
-    createdAt?: string | null;
-  }> | null;
+export type DeleteWorkExperienceMutation = {
+  __typename?: 'Mutation';
+  deleteWorkExperience?: boolean | null;
 };
+
+export type CreateEducationMutationVariables = Exact<{
+  input: CreateEducationInput;
+}>;
+
+export type CreateEducationMutation = {
+  __typename?: 'Mutation';
+  createEducation?: {
+    __typename?: 'Education';
+    id?: string | null;
+    institution?: string | null;
+    degree?: string | null;
+    field?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    description?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type UpdateEducationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateEducationInput;
+}>;
+
+export type UpdateEducationMutation = {
+  __typename?: 'Mutation';
+  updateEducation?: {
+    __typename?: 'Education';
+    id?: string | null;
+    institution?: string | null;
+    degree?: string | null;
+    field?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    description?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type DeleteEducationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteEducationMutation = { __typename?: 'Mutation'; deleteEducation?: boolean | null };
+
+export type CreateSkillMutationVariables = Exact<{
+  input: CreateSkillInput;
+}>;
+
+export type CreateSkillMutation = {
+  __typename?: 'Mutation';
+  createSkill?: {
+    __typename?: 'Skill';
+    id?: string | null;
+    name?: string | null;
+    category?: string | null;
+    proficiency?: string | null;
+    createdAt?: string | null;
+  } | null;
+};
+
+export type UpdateSkillMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateSkillInput;
+}>;
+
+export type UpdateSkillMutation = {
+  __typename?: 'Mutation';
+  updateSkill?: {
+    __typename?: 'Skill';
+    id?: string | null;
+    name?: string | null;
+    category?: string | null;
+    proficiency?: string | null;
+    createdAt?: string | null;
+  } | null;
+};
+
+export type DeleteSkillMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteSkillMutation = { __typename?: 'Mutation'; deleteSkill?: boolean | null };
 
 export type WorkExperiencesQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -2817,218 +3319,17 @@ export type SkillsQuery = {
   }> | null;
 };
 
-export type InterviewQuestionsQueryVariables = Exact<{
-  interviewRoundId: Scalars['ID']['input'];
-}>;
-
-export type InterviewQuestionsQuery = {
-  __typename?: 'Query';
-  interviewQuestions?: Array<{
-    __typename?: 'InterviewQuestion';
-    id?: string | null;
-    interviewRoundId?: string | null;
-    question?: string | null;
-    answer?: string | null;
-    position?: number | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
-};
-
-export type InterviewRoundsQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
-}>;
-
-export type InterviewRoundsQuery = {
-  __typename?: 'Query';
-  interviewRounds?: Array<{
-    __typename?: 'InterviewRound';
-    id?: string | null;
-    applicationId?: string | null;
-    type?: InterviewRoundType | null;
-    scheduledAt?: string | null;
-    completedAt?: string | null;
-    interviewerName?: string | null;
-    notes?: string | null;
-    outcome?: InterviewRoundOutcome | null;
-    questionCount?: number | null;
-    mockQuestionCount?: number | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
-};
-
-export type MockInterviewQuestionsQueryVariables = Exact<{
-  interviewRoundId: Scalars['ID']['input'];
-}>;
-
-export type MockInterviewQuestionsQuery = {
-  __typename?: 'Query';
-  mockInterviewQuestions?: Array<{
-    __typename?: 'MockInterviewQuestion';
-    id?: string | null;
-    interviewRoundId?: string | null;
-    question?: string | null;
-    answer?: string | null;
-    answerSource?: AnswerSource | null;
-    position?: number | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
-};
-
-export type NotesQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
-}>;
-
-export type NotesQuery = {
-  __typename?: 'Query';
-  notes?: Array<{
-    __typename?: 'Note';
-    id?: string | null;
-    applicationId?: string | null;
-    content?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
-};
-
-export const CreateApplicationDocument = {
+export const ActivityLogsDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'CreateApplication' },
+      operation: 'query',
+      name: { kind: 'Name', value: 'ActivityLogs' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateApplicationInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'createApplication' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<CreateApplicationMutation, CreateApplicationMutationVariables>;
-export const UpdateApplicationDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'UpdateApplication' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateApplicationInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'updateApplication' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<UpdateApplicationMutation, UpdateApplicationMutationVariables>;
-export const DeleteApplicationDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'DeleteApplication' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -3040,138 +3341,23 @@ export const DeleteApplicationDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'deleteApplication' },
+            name: { kind: 'Name', value: 'activityLogs' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<DeleteApplicationMutation, DeleteApplicationMutationVariables>;
-export const RegisterDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'Register' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'register' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'email' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'password' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'captchaToken' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
-export const LoginDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'Login' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'login' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'email' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'password' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'captchaToken' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'success' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'totpRequired' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'accessToken' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'actorId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'eventType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'payload' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
               ],
             },
           },
@@ -3179,97 +3365,7 @@ export const LoginDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
-export const LoginWithTotpDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'LoginWithTotp' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'loginWithTotp' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'email' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'password' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'code' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<LoginWithTotpMutation, LoginWithTotpMutationVariables>;
-export const RefreshTokenDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'RefreshToken' },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'refreshToken' } }],
-      },
-    },
-  ],
-} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;
-export const LogoutDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'Logout' },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'logout' } }],
-      },
-    },
-  ],
-} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
+} as unknown as DocumentNode<ActivityLogsQuery, ActivityLogsQueryVariables>;
 export const CreateContactDocument = {
   kind: 'Document',
   definitions: [
@@ -3531,6 +3627,766 @@ export const DeleteContactDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteContactMutation, DeleteContactMutationVariables>;
+export const ContactsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Contacts' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'contacts' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'phone' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'linkedinUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ContactsQuery, ContactsQueryVariables>;
+export const CreateApplicationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateApplication' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateApplicationInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createApplication' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateApplicationMutation, CreateApplicationMutationVariables>;
+export const UpdateApplicationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateApplication' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateApplicationInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateApplication' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateApplicationMutation, UpdateApplicationMutationVariables>;
+export const DeleteApplicationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteApplication' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteApplication' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteApplicationMutation, DeleteApplicationMutationVariables>;
+export const ApplicationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Applications' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ApplicationStatus' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'applications' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'status' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ApplicationsQuery, ApplicationsQueryVariables>;
+export const ApplicationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Application' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'application' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ApplicationQuery, ApplicationQueryVariables>;
+export const ParseJobDescriptionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ParseJobDescription' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'text' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'url' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'parseJobDescription' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'text' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'text' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'url' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'url' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'salary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ParseJobDescriptionMutation, ParseJobDescriptionMutationVariables>;
+export const RegisterDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'Register' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'register' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'captchaToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
+export const LoginDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'Login' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'login' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'captchaToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'success' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'totpRequired' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'accessToken' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
+export const LoginWithTotpDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'LoginWithTotp' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'loginWithTotp' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'code' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LoginWithTotpMutation, LoginWithTotpMutationVariables>;
+export const RefreshTokenDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RefreshToken' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'refreshToken' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;
+export const LogoutDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'Logout' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'logout' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
+export const DashboardApplicationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DashboardApplications' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'applications' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DashboardApplicationsQuery, DashboardApplicationsQueryVariables>;
+export const DashboardCalendarEventsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DashboardCalendarEvents' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'calendarEvents' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'date' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundType' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DashboardCalendarEventsQuery, DashboardCalendarEventsQueryVariables>;
+export const WeeklyApplicationGoalDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'WeeklyApplicationGoal' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'weeklyApplicationGoal' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'weeklyApplicationGoal' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'currentWeekCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'currentWeekStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'streakWeeks' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<WeeklyApplicationGoalQuery, WeeklyApplicationGoalQueryVariables>;
+export const OnboardingChecklistDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'OnboardingChecklist' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingChecklistDismissedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingGoals' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'aiCredits' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'used' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'bonusRemaining' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'apiTokens' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'llmApiKeys' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'provider' } }],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'workExperiences' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OnboardingChecklistQuery, OnboardingChecklistQueryVariables>;
+export const DismissOnboardingChecklistDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DismissOnboardingChecklist' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'dismissOnboardingChecklist' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DismissOnboardingChecklistMutation,
+  DismissOnboardingChecklistMutationVariables
+>;
 export const RequestUploadUrlDocument = {
   kind: 'Document',
   definitions: [
@@ -3661,130 +4517,17 @@ export const DeleteDocumentDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteDocumentMutation, DeleteDocumentMutationVariables>;
-export const CreateWorkExperienceDocument = {
+export const DocumentsDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'CreateWorkExperience' },
+      operation: 'query',
+      name: { kind: 'Name', value: 'Documents' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateWorkExperienceInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'createWorkExperience' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<CreateWorkExperienceMutation, CreateWorkExperienceMutationVariables>;
-export const UpdateWorkExperienceDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'UpdateWorkExperience' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateWorkExperienceInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'updateWorkExperience' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<UpdateWorkExperienceMutation, UpdateWorkExperienceMutationVariables>;
-export const DeleteWorkExperienceDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'DeleteWorkExperience' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -3796,206 +4539,25 @@ export const DeleteWorkExperienceDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'deleteWorkExperience' },
+            name: { kind: 'Name', value: 'documents' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<DeleteWorkExperienceMutation, DeleteWorkExperienceMutationVariables>;
-export const CreateEducationDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'CreateEducation' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateEducationInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'createEducation' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'institution' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'degree' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'field' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<CreateEducationMutation, CreateEducationMutationVariables>;
-export const UpdateEducationDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'UpdateEducation' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateEducationInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'updateEducation' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'institution' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'degree' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'field' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<UpdateEducationMutation, UpdateEducationMutationVariables>;
-export const DeleteEducationDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'DeleteEducation' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'deleteEducation' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<DeleteEducationMutation, DeleteEducationMutationVariables>;
-export const CreateSkillDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'CreateSkill' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateSkillInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'createSkill' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'proficiency' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mimeType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sizeBytes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'version' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
               ],
             },
@@ -4004,102 +4566,7 @@ export const CreateSkillDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<CreateSkillMutation, CreateSkillMutationVariables>;
-export const UpdateSkillDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'UpdateSkill' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateSkillInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'updateSkill' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'proficiency' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<UpdateSkillMutation, UpdateSkillMutationVariables>;
-export const DeleteSkillDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'DeleteSkill' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'deleteSkill' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<DeleteSkillMutation, DeleteSkillMutationVariables>;
+} as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
 export const CreateInterviewQuestionDocument = {
   kind: 'Document',
   definitions: [
@@ -4330,6 +4797,54 @@ export const ReorderInterviewQuestionsDocument = {
   ReorderInterviewQuestionsMutation,
   ReorderInterviewQuestionsMutationVariables
 >;
+export const InterviewQuestionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'InterviewQuestions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'interviewQuestions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'interviewRoundId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<InterviewQuestionsQuery, InterviewQuestionsQueryVariables>;
 export const CreateInterviewRoundDocument = {
   kind: 'Document',
   definitions: [
@@ -4485,23 +5000,21 @@ export const DeleteInterviewRoundDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteInterviewRoundMutation, DeleteInterviewRoundMutationVariables>;
-export const ParseJobDescriptionDocument = {
+export const InterviewRoundsDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'ParseJobDescription' },
+      operation: 'query',
+      name: { kind: 'Name', value: 'InterviewRounds' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'text' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'url' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
         },
       ],
       selectionSet: {
@@ -4509,27 +5022,29 @@ export const ParseJobDescriptionDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'parseJobDescription' },
+            name: { kind: 'Name', value: 'interviewRounds' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'text' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'text' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'url' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'url' } },
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salary' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scheduledAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'outcome' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'questionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mockQuestionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
             },
           },
@@ -4537,7 +5052,7 @@ export const ParseJobDescriptionDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<ParseJobDescriptionMutation, ParseJobDescriptionMutationVariables>;
+} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
 export const CreateMockInterviewQuestionDocument = {
   kind: 'Document',
   definitions: [
@@ -5047,6 +5562,55 @@ export const GenerateMockTalkingPointsDocument = {
   GenerateMockTalkingPointsMutation,
   GenerateMockTalkingPointsMutationVariables
 >;
+export const MockInterviewQuestionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'MockInterviewQuestions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mockInterviewQuestions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'interviewRoundId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answerSource' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MockInterviewQuestionsQuery, MockInterviewQuestionsQueryVariables>;
 export const CreateNoteDocument = {
   kind: 'Document',
   definitions: [
@@ -5201,13 +5765,13 @@ export const DeleteNoteDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteNoteMutation, DeleteNoteMutationVariables>;
-export const ActivityLogsDocument = {
+export const NotesDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'ActivityLogs' },
+      name: { kind: 'Name', value: 'Notes' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
@@ -5223,7 +5787,7 @@ export const ActivityLogsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'activityLogs' },
+            name: { kind: 'Name', value: 'notes' },
             arguments: [
               {
                 kind: 'Argument',
@@ -5236,60 +5800,7 @@ export const ActivityLogsDocument = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'actorId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'eventType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'payload' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<ActivityLogsQuery, ActivityLogsQueryVariables>;
-export const ApplicationsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Applications' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ApplicationStatus' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'applications' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'status' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'content' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
@@ -5299,14 +5810,127 @@ export const ApplicationsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<ApplicationsQuery, ApplicationsQueryVariables>;
-export const ApplicationDocument = {
+} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
+export const CreateWorkExperienceDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Application' },
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateWorkExperience' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateWorkExperienceInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createWorkExperience' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateWorkExperienceMutation, CreateWorkExperienceMutationVariables>;
+export const UpdateWorkExperienceDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateWorkExperience' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateWorkExperienceInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateWorkExperience' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateWorkExperienceMutation, UpdateWorkExperienceMutationVariables>;
+export const DeleteWorkExperienceDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteWorkExperience' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
@@ -5322,7 +5946,7 @@ export const ApplicationDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'application' },
+            name: { kind: 'Name', value: 'deleteWorkExperience' },
             arguments: [
               {
                 kind: 'Argument',
@@ -5330,22 +5954,52 @@ export const ApplicationDocument = {
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
               },
             ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteWorkExperienceMutation, DeleteWorkExperienceMutationVariables>;
+export const CreateEducationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateEducation' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateEducationInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createEducation' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'institution' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'degree' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'field' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
@@ -5355,18 +6009,81 @@ export const ApplicationDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<ApplicationQuery, ApplicationQueryVariables>;
-export const ContactsDocument = {
+} as unknown as DocumentNode<CreateEducationMutation, CreateEducationMutationVariables>;
+export const UpdateEducationDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Contacts' },
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateEducation' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateEducationInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateEducation' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'institution' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'degree' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'field' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateEducationMutation, UpdateEducationMutationVariables>;
+export const DeleteEducationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteEducation' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -5378,27 +6095,58 @@ export const ContactsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'contacts' },
+            name: { kind: 'Name', value: 'deleteEducation' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteEducationMutation, DeleteEducationMutationVariables>;
+export const CreateSkillDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateSkill' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateSkillInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createSkill' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'phone' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'linkedinUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'proficiency' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
             },
           },
@@ -5406,18 +6154,77 @@ export const ContactsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<ContactsQuery, ContactsQueryVariables>;
-export const DocumentsDocument = {
+} as unknown as DocumentNode<CreateSkillMutation, CreateSkillMutationVariables>;
+export const UpdateSkillDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Documents' },
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateSkill' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateSkillInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateSkill' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'proficiency' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateSkillMutation, UpdateSkillMutationVariables>;
+export const DeleteSkillDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteSkill' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -5429,34 +6236,20 @@ export const DocumentsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'documents' },
+            name: { kind: 'Name', value: 'deleteSkill' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
               },
             ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'mimeType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'sizeBytes' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'documentType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'version' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-              ],
-            },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
+} as unknown as DocumentNode<DeleteSkillMutation, DeleteSkillMutationVariables>;
 export const WorkExperiencesDocument = {
   kind: 'Document',
   definitions: [
@@ -5552,199 +6345,3 @@ export const SkillsDocument = {
     },
   ],
 } as unknown as DocumentNode<SkillsQuery, SkillsQueryVariables>;
-export const InterviewQuestionsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'InterviewQuestions' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'interviewQuestions' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'interviewRoundId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<InterviewQuestionsQuery, InterviewQuestionsQueryVariables>;
-export const InterviewRoundsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'InterviewRounds' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'interviewRounds' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'scheduledAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewerName' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'outcome' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'questionCount' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'mockQuestionCount' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
-export const MockInterviewQuestionsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'MockInterviewQuestions' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'mockInterviewQuestions' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'interviewRoundId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answerSource' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<MockInterviewQuestionsQuery, MockInterviewQuestionsQueryVariables>;
-export const NotesDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Notes' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'notes' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'content' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;

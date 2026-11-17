@@ -1,9 +1,11 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
-import type { OnboardingGoal } from '#/features/onboarding/lib/onboarding';
+import { graphql } from '#/graphql/generated';
+import type { Resolved } from '#/graphql/resolved';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 
-const APPLICATIONS_QUERY = `
-  query Applications {
+const APPLICATIONS_QUERY = graphql(`
+  query DashboardApplications {
     applications {
       id
       company
@@ -14,9 +16,9 @@ const APPLICATIONS_QUERY = `
       createdAt
     }
   }
-`;
+`);
 
-const CALENDAR_EVENTS_QUERY = `
+const CALENDAR_EVENTS_QUERY = graphql(`
   query DashboardCalendarEvents {
     calendarEvents {
       id
@@ -28,9 +30,9 @@ const CALENDAR_EVENTS_QUERY = `
       interviewRoundType
     }
   }
-`;
+`);
 
-const WEEKLY_APPLICATION_GOAL_QUERY = `
+const WEEKLY_APPLICATION_GOAL_QUERY = graphql(`
   query WeeklyApplicationGoal {
     weeklyApplicationGoal {
       weeklyApplicationGoal
@@ -39,9 +41,9 @@ const WEEKLY_APPLICATION_GOAL_QUERY = `
       streakWeeks
     }
   }
-`;
+`);
 
-const ONBOARDING_CHECKLIST_QUERY = `
+const ONBOARDING_CHECKLIST_QUERY = graphql(`
   query OnboardingChecklist {
     me {
       onboardingChecklistDismissedAt
@@ -62,76 +64,52 @@ const ONBOARDING_CHECKLIST_QUERY = `
       id
     }
   }
-`;
+`);
 
-export const DISMISS_ONBOARDING_CHECKLIST = `
+export const DISMISS_ONBOARDING_CHECKLIST = graphql(`
   mutation DismissOnboardingChecklist {
     dismissOnboardingChecklist
   }
-`;
+`);
 
-type Application = {
-  id: string;
-  company: string;
-  role: string;
-  status: string;
-  starred: boolean;
-  followUpAt?: string | null;
-  createdAt: string;
-};
-
-type CalendarEventKind = 'applied' | 'followUp' | 'interview';
-
-type CalendarEvent = {
-  id: string;
-  applicationId: string;
-  company: string;
-  role: string;
-  type: CalendarEventKind;
-  date: string;
-  interviewRoundType: string | null;
-};
+type Application = Resolved<
+  NonNullable<ResultOf<typeof APPLICATIONS_QUERY>['applications']>[number],
+  'followUpAt'
+>;
+type CalendarEvent = Resolved<
+  NonNullable<ResultOf<typeof CALENDAR_EVENTS_QUERY>['calendarEvents']>[number],
+  'interviewRoundType'
+>;
+type CalendarEventKind = CalendarEvent['type'];
+type WeeklyApplicationGoal = Resolved<
+  NonNullable<ResultOf<typeof WEEKLY_APPLICATION_GOAL_QUERY>['weeklyApplicationGoal']>
+>;
+type OnboardingChecklistData = ResultOf<typeof ONBOARDING_CHECKLIST_QUERY>;
 
 export const applicationsQueryOptions = queryOptions({
   queryKey: ['applications'],
-  queryFn: () => gqlClient.request<{ applications: Application[] }>(APPLICATIONS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(APPLICATIONS_QUERY)) as { applications: Application[] },
 });
 
 export const calendarEventsQueryOptions = queryOptions({
   queryKey: ['calendarEvents'],
-  queryFn: () => gqlClient.request<{ calendarEvents: CalendarEvent[] }>(CALENDAR_EVENTS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(CALENDAR_EVENTS_QUERY)) as { calendarEvents: CalendarEvent[] },
 });
 
 export const weeklyApplicationGoalQueryOptions = queryOptions({
   queryKey: ['weeklyApplicationGoal'],
-  queryFn: () =>
-    gqlClient.request<{ weeklyApplicationGoal: WeeklyApplicationGoal }>(
-      WEEKLY_APPLICATION_GOAL_QUERY,
-    ),
+  queryFn: async () =>
+    (await gqlClient.request(WEEKLY_APPLICATION_GOAL_QUERY)) as {
+      weeklyApplicationGoal: WeeklyApplicationGoal;
+    },
 });
 
 export const onboardingChecklistQueryOptions = queryOptions({
   queryKey: ['onboardingChecklist'],
-  queryFn: () => gqlClient.request<OnboardingChecklistData>(ONBOARDING_CHECKLIST_QUERY),
+  queryFn: () => gqlClient.request(ONBOARDING_CHECKLIST_QUERY),
 });
-
-type WeeklyApplicationGoal = {
-  weeklyApplicationGoal: number;
-  currentWeekCount: number;
-  currentWeekStart: string;
-  streakWeeks: number;
-};
-
-type OnboardingChecklistData = {
-  me: {
-    onboardingChecklistDismissedAt: string | null;
-    onboardingGoals?: OnboardingGoal[];
-    aiCredits?: { used: number; limit: number; bonusRemaining: number };
-  } | null;
-  apiTokens: { id: string }[];
-  llmApiKeys: { provider: string }[];
-  workExperiences: { id: string }[];
-};
 
 export type {
   Application,

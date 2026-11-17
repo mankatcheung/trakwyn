@@ -203,8 +203,9 @@ describe('OnboardingChecklist', () => {
     screen.getByLabelText('Dismiss checklist').click();
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('dismissOnboardingChecklist'),
+      // A typed document is an AST, not a string; its JSON carries the names.
+      expect(JSON.stringify(mockGqlRequest.mock.calls[0]?.[0])).toContain(
+        'dismissOnboardingChecklist',
       );
     });
   });
