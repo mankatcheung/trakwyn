@@ -1,33 +1,20 @@
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { UserIcon, Trash2Icon } from 'lucide-react';
+import { UserIcon, Trash2Icon, MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { put as putBlob } from '@vercel/blob/client';
 import { gqlClient } from '#/graphql/client';
-import { Alert, Button, Card, FormLabel, Input, Skeleton, Textarea } from '@trakwyn/ui';
+import { Card, FormLabel, Skeleton } from '@trakwyn/ui';
 import { useTheme, type Theme } from '#/lib/theme';
 import { LOCALE_OPTIONS, useLocale } from '#/lib/i18n';
-import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
-import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { useStepUpReauth } from './useStepUpReauth';
+import { ProfileDetailsForm } from './ProfileDetailsForm';
+import { EmailChangeForm } from './EmailChangeForm';
+import { AddBackupEmailForm, RemoveBackupEmailForm } from './BackupEmailForms';
 import {
   ME_QUERY,
-  REQUEST_EMAIL_CHANGE,
-  REQUEST_ADD_BACKUP_EMAIL,
-  REMOVE_BACKUP_EMAIL,
-  emailSchema,
-  backupEmailSchema,
-  removeBackupEmailSchema,
-  type EmailForm,
-  type BackupEmailForm,
-  type RemoveBackupEmailForm,
   REQUEST_AVATAR_UPLOAD_URL,
   CONFIRM_AVATAR,
   REMOVE_AVATAR,
-  UPDATE_PROFILE,
-  parseProfileLinks,
-  profileSchema,
-  type ProfileForm,
   type Me,
   extractGqlError,
 } from './shared';
@@ -43,51 +30,11 @@ export function SettingsProfilePage() {
     { value: 'system', label: t('profile.themeSystem'), icon: <MonitorIcon size={16} /> },
   ];
 
-  const timezoneOptions = useMemo(() => {
-    try {
-      return Intl.supportedValuesOf('timeZone');
-    } catch {
-      return [];
-    }
-  }, []);
-
-  // Profile form
   const { data: meData, isLoading: meLoading } = useQuery({
     queryKey: ['me'],
     queryFn: () => gqlClient.request<{ me: Me | null }>(ME_QUERY),
   });
   const me = meData?.me;
-  const profileForm = useForm<ProfileForm>({
-    resolver: zodResolver(profileSchema),
-    values: {
-      name: me?.name ?? '',
-      timezone: me?.timezone ?? '',
-      targetRole: me?.targetRole ?? '',
-      phone: me?.phone ?? '',
-      location: me?.location ?? '',
-      profileLinks: (me?.profileLinks ?? []).join('\n'),
-    },
-  });
-  // Schema messages that are i18n keys are translated; the rest are shown as written.
-  const fieldError = (message: string | undefined) =>
-    message?.startsWith('profile.') ? t(message as Parameters<typeof t>[0]) : message;
-  const onUpdateProfile = async (data: ProfileForm) => {
-    try {
-      await gqlClient.request(UPDATE_PROFILE, {
-        name: data.name.trim() || null,
-        timezone: data.timezone.trim() || null,
-        targetRole: data.targetRole.trim() || null,
-        phone: data.phone.trim() || null,
-        location: data.location.trim() || null,
-        profileLinks: parseProfileLinks(data.profileLinks),
-      });
-      await qc.invalidateQueries({ queryKey: ['me'] });
-    } catch (err) {
-      profileForm.setError('root', {
-        message: extractGqlError(err) ?? t('profile.updateProfileFailed'),
-      });
-    }
-  };
 
   // Avatar
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -139,86 +86,10 @@ export function SettingsProfilePage() {
   // steps up instead when the API asks (JEF-463). Unknown while loading,
   // which shows the field, as before.
   const needsPassword = me?.hasPassword !== false;
-  /** The password to send, or false (and a field error) when one is needed and missing. */
-  const passwordFor = (
-    currentPassword: string | undefined,
-    setMissing: () => void,
-  ): string | null | false => {
-    if (!needsPassword) return null;
-    if (!currentPassword) {
-      setMissing();
-      return false;
-    }
-    return currentPassword;
-  };
 
-  // Email form
-  const emailForm = useForm<EmailForm>({ resolver: zodResolver(emailSchema) });
-  const onUpdateEmail = async (data: EmailForm) => {
-    const currentPassword = passwordFor(data.currentPassword, () =>
-      emailForm.setError('currentPassword', { message: 'Required' }),
-    );
-    if (currentPassword === false) return;
-    try {
-      await withStepUp(() =>
-        gqlClient.request(REQUEST_EMAIL_CHANGE, { newEmail: data.newEmail, currentPassword }),
-      );
-      emailForm.reset();
-      emailForm.setError('root', { message: '' });
-    } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      emailForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.emailUpdateFailed'),
-      });
-    }
-  };
-
-  // Backup email recovery. Read off the page's existing ME_QUERY, which
-  // already selects both fields — the moved block brought its own narrower
-  // `SecurityMe` query, now redundant (JEF-204).
+  // Backup email recovery, read off the same ME_QUERY (JEF-204).
   const backupEmail = me?.backupEmail ?? null;
   const backupEmailVerified = Boolean(me?.backupEmailVerifiedAt);
-  const backupEmailForm = useForm<BackupEmailForm>({ resolver: zodResolver(backupEmailSchema) });
-  const removeBackupEmailForm = useForm<RemoveBackupEmailForm>({
-    resolver: zodResolver(removeBackupEmailSchema),
-  });
-  const onAddBackupEmail = async (data: BackupEmailForm) => {
-    const currentPassword = passwordFor(data.currentPassword, () =>
-      backupEmailForm.setError('currentPassword', { message: 'Required' }),
-    );
-    if (currentPassword === false) return;
-    try {
-      await withStepUp(() =>
-        gqlClient.request(REQUEST_ADD_BACKUP_EMAIL, {
-          backupEmail: data.backupEmail,
-          currentPassword,
-        }),
-      );
-      backupEmailForm.reset();
-      await qc.invalidateQueries({ queryKey: ['me'] });
-    } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      backupEmailForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.addBackupEmailFailed'),
-      });
-    }
-  };
-  const onRemoveBackupEmail = async (data: RemoveBackupEmailForm) => {
-    const currentPassword = passwordFor(data.currentPassword, () =>
-      removeBackupEmailForm.setError('currentPassword', { message: 'Required' }),
-    );
-    if (currentPassword === false) return;
-    try {
-      await withStepUp(() => gqlClient.request(REMOVE_BACKUP_EMAIL, { currentPassword }));
-      removeBackupEmailForm.reset();
-      await qc.invalidateQueries({ queryKey: ['me'] });
-    } catch (err) {
-      if (err instanceof Error && err.message === STEP_UP_CANCELLED) return;
-      removeBackupEmailForm.setError('root', {
-        message: extractGqlError(err) ?? t('security.removeBackupEmailFailed'),
-      });
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -278,116 +149,9 @@ export function SettingsProfilePage() {
           </div>
         </div>
 
-        <form onSubmit={profileForm.handleSubmit(onUpdateProfile)} className="space-y-3">
-          <div>
-            <FormLabel>{t('profile.nameLabel')}</FormLabel>
-            <Input
-              type="text"
-              {...profileForm.register('name')}
-              invalid={!!profileForm.formState.errors.name}
-              placeholder="Jane Doe"
-            />
-            {profileForm.formState.errors.name && (
-              <p className="mt-1 text-xs text-red-600">
-                {profileForm.formState.errors.name.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('profile.timezoneLabel')}</FormLabel>
-            <Input
-              type="text"
-              list="timezone-options"
-              {...profileForm.register('timezone')}
-              invalid={!!profileForm.formState.errors.timezone}
-              placeholder="America/Los_Angeles"
-            />
-            <datalist id="timezone-options">
-              {timezoneOptions.map((tz) => (
-                <option key={tz} value={tz} />
-              ))}
-            </datalist>
-            {profileForm.formState.errors.timezone && (
-              <p className="mt-1 text-xs text-red-600">
-                {profileForm.formState.errors.timezone.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('profile.targetRoleLabel')}</FormLabel>
-            <Input
-              type="text"
-              {...profileForm.register('targetRole')}
-              invalid={!!profileForm.formState.errors.targetRole}
-              placeholder="Senior Product Designer"
-            />
-            {profileForm.formState.errors.targetRole && (
-              <p className="mt-1 text-xs text-red-600">
-                {profileForm.formState.errors.targetRole.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('profile.phoneLabel')}</FormLabel>
-            <Input
-              type="tel"
-              autoComplete="tel"
-              {...profileForm.register('phone')}
-              invalid={!!profileForm.formState.errors.phone}
-              placeholder="+44 20 7946 0958"
-            />
-            {profileForm.formState.errors.phone && (
-              <p className="mt-1 text-xs text-red-600">
-                {fieldError(profileForm.formState.errors.phone.message)}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('profile.locationLabel')}</FormLabel>
-            <Input
-              type="text"
-              autoComplete="address-level2"
-              {...profileForm.register('location')}
-              invalid={!!profileForm.formState.errors.location}
-              placeholder="London, UK"
-            />
-            {profileForm.formState.errors.location && (
-              <p className="mt-1 text-xs text-red-600">
-                {profileForm.formState.errors.location.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <FormLabel>{t('profile.profileLinksLabel')}</FormLabel>
-            <Textarea
-              rows={3}
-              {...profileForm.register('profileLinks')}
-              invalid={!!profileForm.formState.errors.profileLinks}
-              placeholder={'https://www.linkedin.com/in/jane-doe\nhttps://janedoe.dev'}
-              aria-describedby="profile-links-hint"
-            />
-            <p id="profile-links-hint" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {t('profile.profileLinksHint')}
-            </p>
-            {profileForm.formState.errors.profileLinks && (
-              <p className="mt-1 text-xs text-red-600">
-                {fieldError(profileForm.formState.errors.profileLinks.message)}
-              </p>
-            )}
-          </div>
-          {profileForm.formState.errors.root?.message && (
-            <Alert>{profileForm.formState.errors.root.message}</Alert>
-          )}
-          {profileForm.formState.isSubmitSuccessful &&
-            !profileForm.formState.errors.root?.message && (
-              <p className="text-sm text-green-600">{t('profile.profileUpdated')}</p>
-            )}
-          <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-            {profileForm.formState.isSubmitting
-              ? t('applicationForm.saving')
-              : t('profile.saveProfile')}
-          </Button>
-        </form>
+        {/* Keyed by the loaded account: the form is born with the saved values, since a
+            react-hook-form reset after mount is cancelled by `useFormAction`. */}
+        <ProfileDetailsForm key={me?.id ?? 'loading'} me={me} />
       </Card>
 
       {/* ── Email ── */}
@@ -408,47 +172,7 @@ export function SettingsProfilePage() {
             <p className="text-sm text-gray-900 dark:text-gray-100">{me?.email}</p>
           )}
         </div>
-        <form onSubmit={emailForm.handleSubmit(onUpdateEmail)} className="space-y-3">
-          {needsPassword && (
-            <div>
-              <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-              <Input
-                type="password"
-                {...emailForm.register('currentPassword')}
-                invalid={!!emailForm.formState.errors.currentPassword}
-                placeholder="••••••••"
-              />
-              {emailForm.formState.errors.currentPassword && (
-                <p className="mt-1 text-xs text-red-600">
-                  {emailForm.formState.errors.currentPassword.message}
-                </p>
-              )}
-            </div>
-          )}
-          <div>
-            <FormLabel>{t('security.newEmailLabel')}</FormLabel>
-            <Input
-              type="email"
-              {...emailForm.register('newEmail')}
-              invalid={!!emailForm.formState.errors.newEmail}
-              placeholder="you@example.com"
-            />
-            {emailForm.formState.errors.newEmail && (
-              <p className="mt-1 text-xs text-red-600">
-                {emailForm.formState.errors.newEmail.message}
-              </p>
-            )}
-          </div>
-          {emailForm.formState.errors.root?.message && (
-            <Alert>{emailForm.formState.errors.root.message}</Alert>
-          )}
-          {emailForm.formState.isSubmitSuccessful && !emailForm.formState.errors.root?.message && (
-            <p className="text-sm text-green-600">{t('security.emailConfirmationSent')}</p>
-          )}
-          <Button type="submit" disabled={emailForm.formState.isSubmitting}>
-            {emailForm.formState.isSubmitting ? t('security.sending') : t('security.updateEmail')}
-          </Button>
-        </form>
+        <EmailChangeForm needsPassword={needsPassword} withStepUp={withStepUp} />
       </Card>
 
       {/* ── Backup email ── */}
@@ -471,84 +195,10 @@ export function SettingsProfilePage() {
                 {backupEmailVerified ? t('security.verified') : t('security.verificationPending')}
               </span>
             </p>
-            <form
-              onSubmit={removeBackupEmailForm.handleSubmit(onRemoveBackupEmail)}
-              className="space-y-3"
-            >
-              {needsPassword && (
-                <div>
-                  <FormLabel>{t('security.currentPasswordToRemoveLabel')}</FormLabel>
-                  <Input
-                    type="password"
-                    {...removeBackupEmailForm.register('currentPassword')}
-                    invalid={!!removeBackupEmailForm.formState.errors.currentPassword}
-                    placeholder="••••••••"
-                  />
-                  {removeBackupEmailForm.formState.errors.currentPassword && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {removeBackupEmailForm.formState.errors.currentPassword.message}
-                    </p>
-                  )}
-                </div>
-              )}
-              {removeBackupEmailForm.formState.errors.root?.message && (
-                <Alert>{removeBackupEmailForm.formState.errors.root.message}</Alert>
-              )}
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={removeBackupEmailForm.formState.isSubmitting}
-              >
-                {removeBackupEmailForm.formState.isSubmitting
-                  ? t('security.removing')
-                  : t('security.removeBackupEmail')}
-              </Button>
-            </form>
+            <RemoveBackupEmailForm needsPassword={needsPassword} withStepUp={withStepUp} />
           </div>
         ) : (
-          <form onSubmit={backupEmailForm.handleSubmit(onAddBackupEmail)} className="space-y-3">
-            <div>
-              <FormLabel>{t('security.backupEmailLabel')}</FormLabel>
-              <Input
-                type="email"
-                {...backupEmailForm.register('backupEmail')}
-                invalid={!!backupEmailForm.formState.errors.backupEmail}
-                placeholder="backup@example.com"
-              />
-              {backupEmailForm.formState.errors.backupEmail && (
-                <p className="mt-1 text-xs text-red-600">
-                  {backupEmailForm.formState.errors.backupEmail.message}
-                </p>
-              )}
-            </div>
-            {needsPassword && (
-              <div>
-                <FormLabel>{t('security.currentPasswordLabel')}</FormLabel>
-                <Input
-                  type="password"
-                  {...backupEmailForm.register('currentPassword')}
-                  invalid={!!backupEmailForm.formState.errors.currentPassword}
-                  placeholder="••••••••"
-                />
-                {backupEmailForm.formState.errors.currentPassword && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {backupEmailForm.formState.errors.currentPassword.message}
-                  </p>
-                )}
-              </div>
-            )}
-            {backupEmailForm.formState.errors.root?.message && (
-              <Alert>{backupEmailForm.formState.errors.root.message}</Alert>
-            )}
-            {backupEmailForm.formState.isSubmitSuccessful && (
-              <p className="text-sm text-green-600">{t('security.backupEmailVerificationSent')}</p>
-            )}
-            <Button type="submit" disabled={backupEmailForm.formState.isSubmitting}>
-              {backupEmailForm.formState.isSubmitting
-                ? t('security.sending')
-                : t('security.addBackupEmail')}
-            </Button>
-          </form>
+          <AddBackupEmailForm needsPassword={needsPassword} withStepUp={withStepUp} />
         )}
       </Card>
 

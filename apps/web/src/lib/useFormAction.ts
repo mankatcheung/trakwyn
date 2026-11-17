@@ -1,5 +1,5 @@
-import { useActionState } from 'react';
-import type { FieldValues, UseFormReturn } from 'react-hook-form';
+import { useActionState, useState } from 'react';
+import type { DefaultValues, FieldValues, UseFormReturn } from 'react-hook-form';
 
 export interface FormActionState {
   /** The message to show under the form, or null after a clean submit. */
@@ -13,18 +13,47 @@ export type FormActionResult = string | { message: string; code?: string } | nul
 
 const IDLE: FormActionState = { error: null };
 
-const cancelReset = (event: Event) => event.preventDefault();
+/** What `submit` gets besides the validated data. */
+export interface FormActionHelpers<T extends FieldValues> {
+  /**
+   * Empties the form after a successful save: resets react-hook-form to
+   * `values` and the DOM fields with it. `form.reset(values)` alone leaves the
+   * DOM as it was, because the native reset it relies on is cancelled below.
+   */
+  resetFields: (values?: DefaultValues<T>) => void;
+}
 
 /**
- * Ref for the `<form>` that cancels React's own reset. It has to be a native
- * listener on a ref that never changes: React calls `form.reset()` while it
- * commits the action's result, it does not dispatch `onReset` for that, and a
- * ref callback re-created each render is detached just before the reset runs.
+ * The `<form>` ref that cancels React's own reset, and a way to let one
+ * deliberate reset through. The listener has to be native and the ref never
+ * change: React calls `form.reset()` while it commits the action's result, it
+ * does not dispatch `onReset` for that, and a ref callback re-created each
+ * render is detached just before the reset runs.
  */
-function keepFieldsAfterAction(form: HTMLFormElement | null) {
-  if (!form) return;
-  form.addEventListener('reset', cancelReset);
-  return () => form.removeEventListener('reset', cancelReset);
+function createFormGuard() {
+  const guard: { form: HTMLFormElement | null; allowReset: boolean } = {
+    form: null,
+    allowReset: false,
+  };
+  const cancelReset = (event: Event) => {
+    if (!guard.allowReset) event.preventDefault();
+  };
+  return {
+    keepFields(form: HTMLFormElement | null) {
+      guard.form = form;
+      if (!form) return;
+      form.addEventListener('reset', cancelReset);
+      return () => form.removeEventListener('reset', cancelReset);
+    },
+    resetDom() {
+      guard.allowReset = true;
+      try {
+        guard.form?.reset();
+      } finally {
+        guard.allowReset = false;
+      }
+    },
+  };
 }
 
 /**
@@ -38,16 +67,23 @@ function keepFieldsAfterAction(form: HTMLFormElement | null) {
  * React resets a form's DOM fields once its action settles. These inputs are
  * registered with react-hook-form, which would keep the old values while the
  * DOM went blank, so the reset is cancelled and the form decides itself when
- * to clear (`form.reset(...)` in `submit`).
+ * to clear (`resetFields(...)`, passed to `submit`).
  */
 export function useFormAction<T extends FieldValues>(
   form: UseFormReturn<T>,
-  submit: (data: T) => Promise<FormActionResult>,
+  submit: (data: T, helpers: FormActionHelpers<T>) => Promise<FormActionResult>,
 ) {
+  // Created once per form, so React never detaches and re-attaches the listener.
+  const [guard] = useState(createFormGuard);
+
   const [state, action] = useActionState(async (): Promise<FormActionState> => {
     const outcome: { value: Exclude<FormActionResult, void> } = { value: null };
     await form.handleSubmit(async (data) => {
-      outcome.value = (await submit(data)) ?? null;
+      const resetFields = (values?: DefaultValues<T>) => {
+        form.reset(values);
+        guard.resetDom();
+      };
+      outcome.value = (await submit(data, { resetFields })) ?? null;
     })();
     const result = outcome.value;
     if (!result) return IDLE;
@@ -56,5 +92,5 @@ export function useFormAction<T extends FieldValues>(
       : { error: result.message, code: result.code };
   }, IDLE);
 
-  return { state, formProps: { action, ref: keepFieldsAfterAction } };
+  return { state, formProps: { action, ref: guard.keepFields } };
 }

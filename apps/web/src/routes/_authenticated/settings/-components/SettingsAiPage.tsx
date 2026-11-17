@@ -1,16 +1,15 @@
 import { PlusIcon, SparklesIcon } from 'lucide-react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { LlmApiKeyRow } from './LlmApiKeyRow';
 import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
 import { AiProviderOrderCard } from './AiProviderOrderCard';
+import { CustomAiPromptForm } from './CustomAiPromptForm';
 import { useHostedAiAvailable } from '#/lib/aiCredits';
-import { Alert, Button, Card, Checkbox, Skeleton, Textarea } from '@trakwyn/ui';
+import { Alert, Card, Checkbox, Skeleton } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
@@ -19,8 +18,6 @@ import {
   TEST_LLM_API_KEY,
   SET_AI_PROVIDER_ORDER,
   UPDATE_PROFILE,
-  customAiPromptSchema,
-  type CustomAiPromptForm,
   type LlmApiKey,
   type LlmUsageSummary,
   type TestLlmApiKeyResult,
@@ -143,24 +140,6 @@ export function SettingsAiPage() {
       qc.invalidateQueries({ queryKey: ['llmApiKeys'] }),
       qc.invalidateQueries({ queryKey: ['llmUsageSummary'] }),
     ]);
-  };
-
-  // Custom AI prompt
-  const customAiPromptForm = useForm<CustomAiPromptForm>({
-    resolver: zodResolver(customAiPromptSchema),
-    values: { customAiPrompt: llmData?.me.customAiPrompt ?? '' },
-  });
-  const onUpdateCustomAiPrompt = async (data: CustomAiPromptForm) => {
-    try {
-      await gqlClient.request(UPDATE_PROFILE, {
-        customAiPrompt: data.customAiPrompt.trim() || null,
-      });
-      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
-    } catch (err) {
-      customAiPromptForm.setError('root', {
-        message: extractGqlError(err) ?? t('integrations.updateCustomInstructionsFailed'),
-      });
-    }
   };
 
   // Cross-application context (JEF-249)
@@ -320,39 +299,12 @@ export function SettingsAiPage() {
         <p className="mt-1 mb-3.5 text-sm text-gray-500 dark:text-gray-400">
           {t('integrations.customInstructionsHelp')}
         </p>
-        <form onSubmit={customAiPromptForm.handleSubmit(onUpdateCustomAiPrompt)}>
-          <Textarea
-            {...customAiPromptForm.register('customAiPrompt')}
-            invalid={!!customAiPromptForm.formState.errors.customAiPrompt}
-            rows={3}
-            placeholder="e.g. Keep cover letters under 200 words and write in a casual tone."
-          />
-          {customAiPromptForm.formState.errors.customAiPrompt && (
-            <p className="mt-1 text-xs text-red-600">
-              {customAiPromptForm.formState.errors.customAiPrompt.message}
-            </p>
-          )}
-          {customAiPromptForm.formState.errors.root?.message && (
-            <div className="mt-3">
-              <Alert>{customAiPromptForm.formState.errors.root.message}</Alert>
-            </div>
-          )}
-          {customAiPromptForm.formState.isSubmitSuccessful &&
-            !customAiPromptForm.formState.errors.root?.message && (
-              <p className="mt-3 text-sm text-green-600">
-                {t('integrations.customInstructionsUpdated')}
-              </p>
-            )}
-          <Button
-            type="submit"
-            disabled={customAiPromptForm.formState.isSubmitting}
-            className="mt-3.5"
-          >
-            {customAiPromptForm.formState.isSubmitting
-              ? t('applicationForm.saving')
-              : t('integrations.saveInstructions')}
-          </Button>
-        </form>
+        {/* Keyed by load state: the form is born with the saved text, since a
+            react-hook-form reset after mount is cancelled by `useFormAction`. */}
+        <CustomAiPromptForm
+          key={llmKeysLoading ? 'loading' : 'loaded'}
+          customAiPrompt={llmData?.me.customAiPrompt ?? null}
+        />
       </Card>
 
       {/* ── Cross-application context (JEF-249) ── */}
