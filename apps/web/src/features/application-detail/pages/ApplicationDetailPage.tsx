@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useTransition } from 'react';
 import { ArrowLeftIcon, MoreHorizontalIcon } from 'lucide-react';
@@ -34,7 +34,6 @@ import {
   documentDraftsQueryOptions,
   documentsQueryOptions,
 } from '../../documents/graphql/documentQueries';
-import { Route } from '../../../routes/_authenticated/applications/$applicationId/index';
 
 /** Where Overview appears and the page widens to make room for the sidebar (Tailwind `lg`). */
 const WIDE_QUERY = '(min-width: 1024px)';
@@ -64,10 +63,12 @@ const SECTION_COUNTS_QUERY = `
   }
 `;
 
+const route = getRouteApi('/_authenticated/applications/$applicationId/');
+
 export function ApplicationDetailPage() {
   const { t } = useLocale();
-  const { applicationId } = Route.useParams();
-  const { section } = Route.useSearch();
+  const { applicationId } = route.useParams();
+  const { section } = route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [actionsOpen, setActionsOpen] = useState(false);

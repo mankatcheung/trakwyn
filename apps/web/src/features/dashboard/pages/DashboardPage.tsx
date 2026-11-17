@@ -22,7 +22,7 @@ import {
   weeklyApplicationGoalQueryOptions,
   onboardingChecklistQueryOptions,
   type CalendarEventKind,
-} from '../../../routes/_authenticated/dashboard';
+} from '#/features/dashboard/graphql/dashboardQueries';
 
 const UPCOMING_EVENT_ICON: Record<CalendarEventKind, React.ReactNode> = {
   interview: <CalendarIcon size={13} className="shrink-0 text-purple-500" />,

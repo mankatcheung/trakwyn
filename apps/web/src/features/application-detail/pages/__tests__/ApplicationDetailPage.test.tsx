@@ -34,8 +34,7 @@ const { mockNavigate, mockGqlRequest, searchStore } = vi.hoisted(() => {
 vi.mock('@tanstack/react-router', async () => {
   const React = await import('react');
   return {
-    createFileRoute: () => (opts: Record<string, unknown>) => ({
-      ...opts,
+    getRouteApi: () => ({
       useParams: () => ({ applicationId: 'app-test-id' }),
       useSearch: () =>
         React.useSyncExternalStore(searchStore.subscribe, searchStore.get, searchStore.get),

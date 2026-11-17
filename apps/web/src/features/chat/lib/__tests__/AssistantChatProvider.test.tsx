@@ -10,10 +10,8 @@ const { mockGqlRequest, mockStreamChatMessage, mockSearch, mockHostedAi } = vi.h
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: Record<string, unknown>) => ({
-    ...opts,
+  getRouteApi: () => ({
     useSearch: mockSearch,
-    fullPath: '/assistant/',
   }),
   useNavigate: () => vi.fn(),
   Link: ({

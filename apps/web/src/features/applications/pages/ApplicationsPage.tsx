@@ -25,20 +25,22 @@ import {
   XIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Route } from '../../../routes/_authenticated/applications/index';
+import { getRouteApi } from '@tanstack/react-router';
 import {
   applicationsPageQueryKey,
   applicationsPageQueryOptions,
   type Application,
   type ApplicationsPageResult,
-} from '../../../routes/_authenticated/applications/index';
+} from '#/features/applications/graphql/applicationsPageQueries';
 import { StatusSelect } from '#/features/applications/components/StatusSelect';
 import { ApplicationDisplayFieldsPicker } from '#/features/applications/components/ApplicationDisplayFieldsPicker';
 import { useApplicationDisplayFields } from '#/features/applications/lib/applicationDisplayFields';
 
+const route = getRouteApi('/_authenticated/applications/');
+
 function ApplicationsPage() {
   const { t } = useLocale();
-  const { status, starred, likelyGhosted } = Route.useSearch();
+  const { status, starred, likelyGhosted } = route.useSearch();
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

@@ -1,6 +1,6 @@
 import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
 import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '#/lib/i18n';
 import { conversationsQueryOptions, deleteConversationWithUndo } from '#/features/chat/lib/shared';
@@ -8,7 +8,8 @@ import { useChatRunsOn } from '#/features/chat/lib/runsOn';
 import { ChatConversationView } from '../components/ChatConversationView';
 import { HistoryIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { IconButton } from '@trakwyn/ui';
-import { Route } from '../../../routes/_authenticated/assistant/index';
+
+const route = getRouteApi('/_authenticated/assistant/');
 
 export function AssistantPage() {
   const { t } = useLocale();
@@ -17,8 +18,8 @@ export function AssistantPage() {
     t('assistant.suggestedQuestion2'),
     t('assistant.suggestedQuestion3'),
   ];
-  const { conversation: activeId } = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
+  const { conversation: activeId } = route.useSearch();
+  const navigate = useNavigate({ from: '/assistant/' });
   const qc = useQueryClient();
   const hostedAi = useHostedAiAvailable();
 

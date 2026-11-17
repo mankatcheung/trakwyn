@@ -9,7 +9,7 @@ import {
   DISMISS_ONBOARDING_CHECKLIST,
   onboardingChecklistQueryOptions,
   type OnboardingChecklistData,
-} from '../../../routes/_authenticated/dashboard';
+} from '#/features/dashboard/graphql/dashboardQueries';
 
 type ChecklistItemKey = 'application' | 'mcp' | 'tryAi' | 'experience';
 

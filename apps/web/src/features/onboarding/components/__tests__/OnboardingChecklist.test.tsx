@@ -19,7 +19,7 @@ import {
   OnboardingChecklist,
   isRelevantToGoals,
 } from '#/features/onboarding/components/OnboardingChecklist';
-import type { OnboardingChecklistData } from '#/routes/_authenticated/dashboard';
+import type { OnboardingChecklistData } from '#/features/dashboard/graphql/dashboardQueries';
 import type { OnboardingGoal } from '#/features/onboarding/lib/onboarding';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });

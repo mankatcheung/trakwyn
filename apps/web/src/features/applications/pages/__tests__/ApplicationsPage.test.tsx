@@ -16,8 +16,7 @@ const { mockGqlRequest, mockUseSearch, mockToast } = vi.hoisted(() => {
 });
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: Record<string, unknown>) => ({
-    ...opts,
+  getRouteApi: () => ({
     useSearch: mockUseSearch,
   }),
   Link: ({
