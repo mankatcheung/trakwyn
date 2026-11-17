@@ -1,4 +1,4 @@
-import { AI_PROMPT_MAX_LENGTH } from '#/components/ai/AiPromptInput';
+import { AI_PROMPT_MAX_LENGTH } from '#/features/ai/components/AiPromptInput';
 
 /**
  * The inline AI actions on a selection (JEF-583). Each is an `instructions`

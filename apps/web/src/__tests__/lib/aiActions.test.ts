@@ -4,7 +4,7 @@ import {
   INLINE_AI_CUSTOM_MAX_CHARS,
   inlineAiInstructions,
 } from '#/lib/editor/aiActions';
-import { AI_PROMPT_MAX_LENGTH } from '#/components/ai/AiPromptInput';
+import { AI_PROMPT_MAX_LENGTH } from '#/features/ai/components/AiPromptInput';
 
 describe('inline AI actions (JEF-583)', () => {
   it('offers rewrite, shorten, formal and grammar, in that order', () => {

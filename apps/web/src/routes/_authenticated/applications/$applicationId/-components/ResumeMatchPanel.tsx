@@ -3,10 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangleIcon, TargetIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import {

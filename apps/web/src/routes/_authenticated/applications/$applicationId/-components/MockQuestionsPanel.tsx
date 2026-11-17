@@ -15,7 +15,7 @@ import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { showUndoToast } from '#/lib/undoToast';
-import { AiGeneratedBadge } from './AiGeneratedBadge';
+import { AiGeneratedBadge } from '../../../../../features/ai/components/AiGeneratedBadge';
 import { MockAnswerDraft } from './MockAnswerDraft';
 import { MockQuestionGenerator } from './MockQuestionGenerator';
 import { MockTalkingPoints } from './MockTalkingPoints';

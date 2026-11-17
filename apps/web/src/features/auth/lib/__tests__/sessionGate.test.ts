@@ -6,7 +6,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockRequest } }));
 
 import { queryClient } from '#/lib/queryClient';
 import { EMAIL_VERIFICATION_KEY } from '#/features/verification/lib/emailVerification';
-import { ONBOARDING_STATE_KEY } from '#/lib/onboarding';
+import { ONBOARDING_STATE_KEY } from '#/features/onboarding/lib/onboarding';
 import { checkSessionGate, SESSION_GATE_QUERY } from '#/features/auth/lib/sessionGate';
 
 const ME = {

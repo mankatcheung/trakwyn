@@ -18,8 +18,8 @@ import {
   useCheckout,
   type CheckoutPlan,
 } from '#/features/plans/lib/billingCheckout';
-import { useHostedAiAvailable } from '#/lib/aiCredits';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
+import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.

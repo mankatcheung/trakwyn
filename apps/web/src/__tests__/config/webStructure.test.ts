@@ -30,7 +30,7 @@ const SRC = join(WEB_ROOT, 'src');
  * How many files are still at an old path. Lower it in the PR that moves files;
  * it must reach 0, and a new file in an old location can never raise it.
  */
-const STILL_IN_OLD_LOCATIONS = 298;
+const STILL_IN_OLD_LOCATIONS = 197;
 
 /**
  * Route files that reach into a feature's `components/` or `lib/` instead of its
@@ -40,6 +40,21 @@ const STILL_IN_OLD_LOCATIONS = 298;
  */
 const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/__root.tsx imports features/legal/components/CookieConsent.tsx',
+  'routes/__root.tsx imports features/app-shell/components/NavigationProgressBar.tsx',
+  'routes/_authenticated/analytics.tsx imports features/analytics/graphql/analyticsQueries.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/AiHelperPanel.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/ai/lib/aiFeedback.ts',
+  'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/offers/components/OfferForm.tsx',
+  'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/offers/graphql/applicationOffersQueries.ts',
+  'routes/_authenticated/assistant/history.tsx imports features/chat/lib/shared.ts',
+  'routes/_authenticated/assistant/index.tsx imports features/chat/lib/shared.ts',
+  'routes/_authenticated/dashboard.tsx imports features/dashboard/components/DashboardPending.tsx',
+  'routes/_authenticated/dashboard.tsx imports features/dashboard/graphql/dashboardQueries.ts',
+  'routes/_authenticated/offers.tsx imports features/offers/graphql/offersQueries.ts',
+  'routes/_authenticated/route.tsx imports features/onboarding/lib/onboarding.ts',
+  'routes/_authenticated/route.tsx imports features/app-shell/components/AuthenticatedLayout.tsx',
+  'routes/_authenticated/route.tsx imports features/dashboard/graphql/dashboardQueries.ts',
+  'routes/_authenticated/welcome.tsx imports features/onboarding/lib/onboarding.ts',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/quota/components/QuotaHint.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/plans/components/UpgradePrompt.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/quota/lib/contentQuota.ts',

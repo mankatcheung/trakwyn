@@ -27,7 +27,7 @@ vi.mock('#/features/profile/lib/cvImport', async (importOriginal) => ({
   uploadCv: mockUploadCv,
 }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: false,
     needsSetup: false,
@@ -37,7 +37,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
     refresh: () => Promise.resolve(),
   }),
 }));
-vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
 import { CvImportDialog } from '#/features/profile/components/cv-import/CvImportDialog';
 import type { ParsedCvProfile } from '#/features/profile/lib/cvImport';

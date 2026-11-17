@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode } from '#/lib/graphqlError';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { inlineAiInstructions, type InlineAiRequest } from '#/lib/editor/aiActions';
 import {
   describeBlockAt,

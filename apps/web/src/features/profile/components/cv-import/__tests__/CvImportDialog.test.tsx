@@ -37,7 +37,7 @@ import {
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,
@@ -47,7 +47,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
     refresh: () => Promise.resolve(),
   }),
 }));
-vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
 const parsed = (overrides: Partial<ParsedCvProfile> = {}): ParsedCvProfile => ({
   workExperiences: [

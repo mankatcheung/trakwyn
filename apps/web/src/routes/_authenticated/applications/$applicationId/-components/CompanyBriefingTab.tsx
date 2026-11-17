@@ -3,13 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CopyIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
 import { invalidateSectionCounts } from '../-sectionCounts';
 import { Button, Card } from '@trakwyn/ui';
-import { AiActionBar } from '#/components/ai/AiActionBar';
-import { AiPromptInput } from '#/components/ai/AiPromptInput';
+import { AiActionBar } from '#/features/ai/components/AiActionBar';
+import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
 
 const BRIEFING_FIELDS = `id applicationId content sources { url title publishedAt } generatedAt`;
 

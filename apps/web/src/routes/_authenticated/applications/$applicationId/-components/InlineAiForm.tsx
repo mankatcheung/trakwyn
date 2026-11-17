@@ -5,8 +5,8 @@ import { Link } from '@tanstack/react-router';
 import { SubmitButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
-import { AiCreditCost } from '#/components/ai/AiCreditCost';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
+import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
 import {
   INLINE_AI_ACTIONS,
   INLINE_AI_CUSTOM_MAX_CHARS,

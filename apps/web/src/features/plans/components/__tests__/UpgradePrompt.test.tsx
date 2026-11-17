@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 import { UpgradePrompt } from '#/features/plans/components/UpgradePrompt';
 import { ErrorState } from '#/components/ErrorState';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 
 const planRequired = (message: string) => ({
   response: { errors: [{ message, extensions: { code: 'PLAN_REQUIRED' } }] },

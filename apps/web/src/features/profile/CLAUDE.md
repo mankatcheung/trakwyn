@@ -4,7 +4,7 @@ Loaded when working under `apps/web/src/routes/_authenticated/profile`. The rest
 
 ## CV import (JEF-461)
 
-The profile page's "Import from CV" button opens `CvImportDialog` (`routes/_authenticated/profile/-components/`): choose a file, read it, review the entries, save the ticked ones. The API side is in `apps/api/src/use-cases/profile/CLAUDE.md`.
+The profile page's "Import from CV" button opens `CvImportDialog` (`components/cv-import/`): choose a file, read it, review the entries, save the ticked ones. The API side is in `apps/api/src/use-cases/profile/CLAUDE.md`.
 
 - **The upload is a plain `fetch`, not `gqlClient`** (`lib/cvImport.ts`): multipart to `CV_IMPORT_URL`, derived from `VITE_API_URL` like the chat stream's. It sends `credentials: 'include'`, the required `x-trakwyn-upload` header (the API's CSRF guard, which must match its constant) and no `Content-Type`, so the browser adds the multipart boundary. The vite dev proxy has an entry for `/profile/cv-import`, which is exact enough not to catch the web app's own `/profile` routes.
 - **A 401 is refreshed and retried once** through an ordinary GraphQL call, since a plain `fetch` has no refresh of its own and the access token is short-lived; if the refresh fails, `gqlClient` has already signed the user out.
