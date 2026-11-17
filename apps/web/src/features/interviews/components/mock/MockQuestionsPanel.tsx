@@ -1,24 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  EditIcon,
-  PlusIcon,
-  SparklesIcon,
-  Trash2Icon,
-} from 'lucide-react';
-import { Button, IconButton, Skeleton } from '@trakwyn/ui';
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, SparklesIcon } from 'lucide-react';
+import { Button, Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { showUndoToast } from '#/lib/undoToast';
-import { AiGeneratedBadge } from '../../../ai/components/AiGeneratedBadge';
-import { MockAnswerDraft } from './MockAnswerDraft';
 import { MockQuestionGenerator } from './MockQuestionGenerator';
-import { MockTalkingPoints } from './MockTalkingPoints';
+import { MockQuestionCard } from './MockQuestionCard';
 import { readRememberedUseProfile } from '../../lib/mockBackgroundChoice';
 import { MOCK_QUESTION_LIMITS } from '../../lib/interviewQuestionLimits';
 import { QuestionEntryForm } from '../QuestionEntryForm';
@@ -36,9 +25,6 @@ import {
 } from '../../graphql/mockQuestionApi';
 
 const EMPTY_FORM: QuestionFormValues = { question: '', answer: '' };
-
-/** 44px square on a phone; the icon button's own compact size from `sm` up. */
-const ENTRY_ACTION_CLASS = 'h-11 w-11 sm:h-auto sm:w-auto';
 
 /**
  * Practice questions for one interview round: mock questions to prepare with,
@@ -288,110 +274,26 @@ export function MockQuestionsPanel({
                 onCancel={closeForms}
               />
             ) : (
-              <article
+              <MockQuestionCard
                 key={q.id}
-                className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-sm font-semibold wrap-break-word text-gray-900 dark:text-gray-100">
-                      {q.question}
-                    </p>
-                    {q.answer ? (
-                      <>
-                        <p className="text-sm wrap-break-word whitespace-pre-wrap text-gray-700 dark:text-gray-300">
-                          {q.answer}
-                        </p>
-                        {q.answerSource === 'ai' && <AiGeneratedBadge />}
-                      </>
-                    ) : (
-                      draft?.id !== q.id && (
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-500 italic">
-                            {t('interviews.noAnswerYet')}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => startEditing(q.id)}
-                            >
-                              {t('interviews.writeAnswer')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={draftAnswer.isPending}
-                              onClick={() => startDraft(q.id)}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <SparklesIcon size={13} aria-hidden="true" />
-                                {draftAnswer.isPending && draftAnswer.variables === q.id
-                                  ? t('interviews.generating')
-                                  : t('interviews.generateAnswer')}
-                              </span>
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    )}
-                    <MockTalkingPoints
-                      key={q.talkingPoints ?? 'none'}
-                      applicationId={applicationId}
-                      question={q}
-                      onSaved={refresh}
-                    />
-                  </div>
-                  <div className="flex shrink-0 items-center justify-end gap-1 border-t border-gray-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-gray-700">
-                    <IconButton
-                      className={ENTRY_ACTION_CLASS}
-                      label={t('interviews.moveQuestionUp')}
-                      icon={<ArrowUpIcon size={14} />}
-                      size="sm"
-                      disabled={index === 0 || reorder.isPending || reorderLocked}
-                      onClick={() => move(index, -1)}
-                    />
-                    <IconButton
-                      className={ENTRY_ACTION_CLASS}
-                      label={t('interviews.moveQuestionDown')}
-                      icon={<ArrowDownIcon size={14} />}
-                      size="sm"
-                      disabled={
-                        index === questions.length - 1 || reorder.isPending || reorderLocked
-                      }
-                      onClick={() => move(index, 1)}
-                    />
-                    <IconButton
-                      className={ENTRY_ACTION_CLASS}
-                      label={t('interviews.editQuestion')}
-                      icon={<EditIcon size={14} />}
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => startEditing(q.id)}
-                    />
-                    <IconButton
-                      className={ENTRY_ACTION_CLASS}
-                      label={t('interviews.deleteQuestion')}
-                      icon={<Trash2Icon size={14} />}
-                      size="sm"
-                      variant="danger"
-                      onClick={() => remove(q)}
-                    />
-                  </div>
-                </div>
-                {draft?.id === q.id && (
-                  <MockAnswerDraft
-                    key={draft.text}
-                    questionId={q.id}
-                    initialDraft={draft.text}
-                    initialUsedProfile={draft.usedProfile}
-                    saving={saveDraft.isPending}
-                    saveError={saveDraft.isError ? getErrorMessage(saveDraft.error) : null}
-                    onSave={(answer) => saveDraft.mutate({ id: q.id, answer })}
-                    onDiscard={closeForms}
-                  />
-                )}
-              </article>
+                applicationId={applicationId}
+                question={q}
+                index={index}
+                total={questions.length}
+                reorderDisabled={reorder.isPending || reorderLocked}
+                draft={draft?.id === q.id ? draft : null}
+                generatingAnswer={draftAnswer.isPending}
+                generatingForThis={draftAnswer.isPending && draftAnswer.variables === q.id}
+                savingDraft={saveDraft.isPending}
+                saveDraftError={saveDraft.isError ? getErrorMessage(saveDraft.error) : null}
+                onEdit={() => startEditing(q.id)}
+                onGenerateAnswer={() => startDraft(q.id)}
+                onMove={(offset) => move(index, offset)}
+                onDelete={() => remove(q)}
+                onSaveDraft={(answer) => saveDraft.mutate({ id: q.id, answer })}
+                onDiscardDraft={closeForms}
+                onTalkingPointsSaved={refresh}
+              />
             ),
           )}
 

@@ -123,8 +123,6 @@ const OVERSIZED_BY_DESIGN: Record<string, string> = {
     'The route still holds its whole page. JEF-636 moves the UI to features/documents/pages/DraftEditPage.tsx and leaves only route wiring here.',
   'features/profile/components/cv-import/CvImportReview.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
-  'features/interviews/components/InterviewsTab.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/applications/pages/ApplicationsPage.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/app-shell/components/AuthenticatedLayout.tsx':
@@ -132,8 +130,6 @@ const OVERSIZED_BY_DESIGN: Record<string, string> = {
   'features/profile/graphql/profileQueries.ts':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/applications/pages/BoardPage.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
-  'features/interviews/components/mock/MockQuestionsPanel.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/marketing/pages/AiMcpSetupPage.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
