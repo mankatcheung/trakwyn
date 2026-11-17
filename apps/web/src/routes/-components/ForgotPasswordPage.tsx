@@ -7,7 +7,9 @@ import { gqlClient } from '#/graphql/client';
 import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { getErrorMessage } from '#/lib/errors';
+import { useFormAction } from '#/lib/useFormAction';
+import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({
   email: z.email('Invalid email'),
@@ -30,32 +32,35 @@ export function ForgotPasswordPage() {
   const { t } = useLocale();
   const [recoveryMode, setRecoveryMode] = useState<'primary' | 'backup'>('primary');
   const captcha = useCaptcha();
+  const [sent, setSent] = useState(false);
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) });
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+    formState: { errors },
+  } = form;
 
-  const onSubmit = async (data: FormValues) => {
-    // Always resolves — the backend responds identically for known and unknown
-    // emails so this form can't be used to enumerate accounts.
-    if (recoveryMode === 'backup') {
-      await gqlClient.request(REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION, { backupEmail: data.email });
-      return;
-    }
+  const { state, formProps } = useFormAction(form, async (data) => {
+    // The backend responds identically for known and unknown emails, so this
+    // form can't be used to enumerate accounts.
     try {
-      await gqlClient.request(REQUEST_PASSWORD_RESET_MUTATION, {
-        ...data,
-        captchaToken: captcha.token,
-      });
+      if (recoveryMode === 'backup') {
+        await gqlClient.request(REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION, {
+          backupEmail: data.email,
+        });
+      } else {
+        await gqlClient.request(REQUEST_PASSWORD_RESET_MUTATION, {
+          ...data,
+          captchaToken: captcha.token,
+        });
+      }
+      setSent(true);
+      return null;
     } catch (err: unknown) {
       // A captcha token works once, so a refused request needs a fresh one.
-      captcha.reset();
-      throw err;
+      if (recoveryMode === 'primary') captcha.reset();
+      return getErrorMessage(err);
     }
-  };
+  });
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
@@ -71,10 +76,10 @@ export function ForgotPasswordPage() {
           </p>
         </div>
 
-        {isSubmitSuccessful ? (
+        {sent ? (
           <Alert tone="success">{t('forgotPassword.successMessage')}</Alert>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form {...formProps} className="space-y-4">
             <div>
               <FormLabel htmlFor="email">{t('auth.email')}</FormLabel>
               <Input
@@ -91,17 +96,17 @@ export function ForgotPasswordPage() {
               <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />
             )}
 
-            <Button
-              type="submit"
-              disabled={isSubmitting || (recoveryMode === 'primary' && captcha.pending)}
+            {state.error && <Alert>{state.error}</Alert>}
+
+            <SubmitButton
+              disabled={recoveryMode === 'primary' && captcha.pending}
+              pendingLabel={t('security.sending')}
               fullWidth
             >
-              {isSubmitting
-                ? t('security.sending')
-                : recoveryMode === 'backup'
-                  ? t('forgotPassword.sendRecoveryLink')
-                  : t('forgotPassword.sendResetLink')}
-            </Button>
+              {recoveryMode === 'backup'
+                ? t('forgotPassword.sendRecoveryLink')
+                : t('forgotPassword.sendResetLink')}
+            </SubmitButton>
           </form>
         )}
 
