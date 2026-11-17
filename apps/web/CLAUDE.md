@@ -8,7 +8,7 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
   - `/` redirects.
   - `/login` and `/register` are public.
   - `/_authenticated/*` is the protected layout. Its `beforeLoad` redirects to `/login`, then runs one `SessionGate` query that sends an unverified account to `/verify-email-required`, a scheduled deletion to `/account-deletion-scheduled` and a new user to `/welcome`.
-  - It holds `dashboard` and `applications/*`. Why it is a `beforeLoad` and what each redirect exempts: `src/lib/CLAUDE.md`.
+  - It holds `dashboard` and `applications/*`. Why it is a `beforeLoad` and what each redirect exempts: `src/features/verification/CLAUDE.md`.
 - **Styling:** Tailwind v4 via `@tailwindcss/vite`. Shared components come from `packages/ui` (`@trakwyn/ui`, Storybook).
 - **Path alias:** `#/*` maps to `./src/*`.
 - **Dev proxy:** Vite proxies `/graphql` to `http://localhost:3001`, so `VITE_API_URL` defaults to `/graphql`.
@@ -21,7 +21,7 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 
 ## Folder layout (JEF-627)
 
-`src/` is moving from one folder per kind of file to one folder per feature, like `apps/mobile`. The move runs in phases; until it ends, a file may still sit at its old path. `scripts/restructure-mapping.tsv` (old path, new path, relative to `src/`) names every file and where it ends up.
+`src/` has one folder per feature, like `apps/mobile`.
 
 | Kind of file                                                          | Where it goes                                                            |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -33,25 +33,25 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 | A test                                                                | `__tests__/` beside the code it tests                                    |
 | A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                          |
 
-Import rules, held by `src/__tests__/config/webStructure.test.ts`:
+Rules, held by `src/__tests__/config/webStructure.test.ts`:
 
-- A route imports only `features/*/pages/*`, the shared root and `graphql/`.
+- A feature folder holds only `pages`, `components`, `hooks`, `lib`, `graphql`, `__tests__` and a `CLAUDE.md`.
+- A route imports only `features/*/pages/*`, the shared root and `graphql/`. A few older routes still import a feature's `components/`, `lib/` or `graphql/`; each is named in the test, and the list can only shrink.
 - The shared root never imports `features/`. A feature may import the shared root and another feature's `lib/` or `components/`.
 - No `features/**/index.ts` barrel files. Import from the file that defines it.
-- A new file may not go in the root `components/`, `hooks/` or `lib/` unless it is shared, and a shared file needs a row (old path = new path) in the mapping. The list of files still at an old path can only shrink: lower `STILL_IN_OLD_LOCATIONS` in the test in the PR that moves them.
 
-Moving files:
-
-- **`pnpm --filter @trakwyn/web restructure`** (`scripts/move-files.ts`) runs `git mv` for the mapping rows and rewrites every specifier that names a moved file: `#/` and relative `import`/`export … from`, `import()`, `vi.mock`/`doMock`/`importActual`/`importMock`, `import.meta.glob` and `resolve(import.meta.dirname, '…')`. It also updates path mentions in the Markdown files and configs that name `src/…` paths. `--only features/profile/` limits it to rows whose new path starts with that prefix and `--dry-run` lists what would move. It is idempotent: run it again on any branch and it fixes imports that still name an old path. It never touches `apps/mobile` or `apps/extension`.
-- **`pnpm build && pnpm --filter @trakwyn/web check:chunks`** fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
-- `scripts/restructure-mapping.py` generated the mapping from the file list; it is kept so the target tree can be regenerated.
+`pnpm build && pnpm --filter @trakwyn/web check:chunks` fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
 
 ## Where the detail lives
 
 Each file loads only when you work in its directory. Read it before changing that code.
 
 - `src/CLAUDE.md`: reading data, writes and forms.
-- `src/lib/CLAUDE.md`: the email verification wall, the first-run welcome flow, plans and locked previews, content quotas.
+- `src/lib/CLAUDE.md`: an index of the four below (`apps/mobile/CLAUDE.md` links to it).
+- `src/features/verification/CLAUDE.md`: the email verification wall.
+- `src/features/onboarding/CLAUDE.md`: the first-run welcome flow.
+- `src/features/plans/CLAUDE.md`: plans and locked previews.
+- `src/features/quota/CLAUDE.md`: content quotas.
 - `src/lib/analytics/CLAUDE.md`: PostHog events, scrubbing and the Terraform split.
 - `src/server/CLAUDE.md`: Vercel function errors.
 - `src/features/settings/CLAUDE.md`: which AI answers, hosted AI credits, account deletion and step-up.
@@ -84,4 +84,4 @@ Calling a `@deprecated` API fails lint (`no-deprecated`, which makes lint type-a
 
 ## Tests
 
-Tests live in a `__tests__/` folder beside the code they test (`features/profile/components/__tests__/ProfileSections.test.tsx`). `gqlClient`- and router-mocked component tests follow the same rule. Tests of the app as a whole stay under `src/__tests__/{config,content,guides,routes}/`: a `__tests__/` folder inside `routes/` would be read as a route segment. Until the move ends, many component tests are still in `src/__tests__/components/`.
+Tests live in a `__tests__/` folder beside the code they test (`features/profile/components/sections/__tests__/ProfileSections.test.tsx`). `gqlClient`- and router-mocked component tests follow the same rule. Tests of the app as a whole stay under `src/__tests__/{config,content,guides,routes}/`: a `__tests__/` folder inside `routes/` would be read as a route segment.

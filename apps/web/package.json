@@ -21,8 +21,7 @@
     "guides:capture": "e2e/guides/run.sh capture",
     "screenshots": "pnpm --filter @trakwyn/api db:seed && playwright test --config playwright.screenshots.config.ts",
     "typecheck": "tsc --noEmit",
-    "check:chunks": "node scripts/check-chunks.ts",
-    "restructure": "node scripts/move-files.ts"
+    "check:chunks": "node scripts/check-chunks.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

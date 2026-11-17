@@ -9,7 +9,7 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 | A page's main data (dashboard, applications list, board, trash, detail, offers, calendar, analytics, assistant) | A route `loader` with `queryClient.query({ ...xxxQueryOptions, staleTime: 'static' })`, and `useQuery(xxxQueryOptions)` in the component |
 | Secondary data (a panel, a card, a tab)                                                                         | `useQuery` only                                                                                                                          |
 | Data needed only after the user acts (an open dialog, the chat dock)                                            | `useQuery` with `enabled`                                                                                                                |
-| A read that gates navigation (session, email verification, onboarding)                                          | `beforeLoad` plus a helper that writes into the cache (`lib/sessionGate.ts`)                                                             |
+| A read that gates navigation (session, email verification, onboarding)                                          | `beforeLoad` plus a helper that writes into the cache (`features/auth/lib/sessionGate.ts`)                                               |
 
 - **Define each query once** with `queryOptions({ queryKey, queryFn })` and share it between the loader and the component. Give each distinct query its own key, even when two widgets read similar data (a shared key once served the dashboard's stale result to the calendar page).
 - **Catch an error the page should show itself in the loader** (`PLAN_REQUIRED` in `offers.tsx`). An uncaught loader error replaces the whole app, sidebar included.
@@ -25,7 +25,7 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 
 - **No hand-written `invalidateQueries` after a direct call.** If a write needs invalidation, it is a mutation.
 - **Show an error from one place:** `mutation.error` (when the page already renders it, as `ProfileSection` does with `createError`) or the action's `state.error`. In the first case the action catches the rejection and returns nothing.
-- **Plain `fetch`** only where GraphQL cannot do the job: chat SSE (`lib/chatStream.ts`), CV import multipart (`lib/cvImport.ts`), signed-URL uploads, OAuth consent, the VAPID key, the GraphQL client's own refresh. A new one needs a comment saying why.
+- **Plain `fetch`** only where GraphQL cannot do the job: chat SSE (`features/chat/lib/chatStream.ts`), CV import multipart (`features/profile/lib/cvImport.ts`), signed-URL uploads, OAuth consent, the VAPID key, the GraphQL client's own refresh. A new one needs a comment saying why.
 
 ### Forms
 

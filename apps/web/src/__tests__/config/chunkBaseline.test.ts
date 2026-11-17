@@ -6,7 +6,6 @@ import {
   routeChunkName,
   type ChunkBaseline,
 } from '../../../scripts/lib/chunks.ts';
-import { filterMoves, parseMapping } from '../../../scripts/lib/mapping.ts';
 
 const baseline: ChunkBaseline = {
   recordedWith: 'test',
@@ -103,26 +102,5 @@ describe('pickRouteChunks', () => {
       { name: 'analytics', bytes: 9 },
       { name: 'dashboard', bytes: 2 },
     ]);
-  });
-});
-
-describe('mapping', () => {
-  it('parses old and new path and rejects a malformed row', () => {
-    expect(parseMapping('a.ts\tb/a.ts\nc.ts\tc.ts\n')).toEqual([
-      { from: 'a.ts', to: 'b/a.ts' },
-      { from: 'c.ts', to: 'c.ts' },
-    ]);
-    expect(() => parseMapping('only-one-column\n')).toThrow(/not "old<TAB>new"/);
-  });
-
-  it('rejects two files mapped to one path', () => {
-    expect(() => parseMapping('a.ts\tz.ts\nb.ts\tz.ts\n')).toThrow(/same new path twice/);
-  });
-
-  it('filters moves by the prefix of the new path', () => {
-    const rows = parseMapping('a.ts\tfeatures/x/a.ts\nb.ts\tfeatures/y/b.ts\n');
-
-    expect(filterMoves(rows, ['features/x/'])).toEqual([{ from: 'a.ts', to: 'features/x/a.ts' }]);
-    expect(filterMoves(rows, [])).toEqual(rows);
   });
 });
