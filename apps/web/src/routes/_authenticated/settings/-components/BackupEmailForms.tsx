@@ -36,7 +36,7 @@ export function AddBackupEmailForm({ needsPassword, withStepUp }: BackupEmailFor
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
   });
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     setSent(false);
     if (needsPassword && !data.currentPassword) {
       form.setError('currentPassword', { message: 'Required' });
@@ -47,7 +47,7 @@ export function AddBackupEmailForm({ needsPassword, withStepUp }: BackupEmailFor
         backupEmail: data.backupEmail,
         currentPassword: needsPassword ? data.currentPassword : null,
       });
-      form.reset({ backupEmail: '', currentPassword: '' });
+      resetFields({ backupEmail: '', currentPassword: '' });
       setSent(true);
       return null;
     } catch (err) {
@@ -108,14 +108,14 @@ export function RemoveBackupEmailForm({ needsPassword, withStepUp }: BackupEmail
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
   });
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     if (needsPassword && !data.currentPassword) {
       form.setError('currentPassword', { message: 'Required' });
       return null;
     }
     try {
       await remove.mutateAsync({ currentPassword: needsPassword ? data.currentPassword : null });
-      form.reset({ currentPassword: '' });
+      resetFields({ currentPassword: '' });
       return null;
     } catch (err) {
       if (isStepUpCancelled(err)) return null;

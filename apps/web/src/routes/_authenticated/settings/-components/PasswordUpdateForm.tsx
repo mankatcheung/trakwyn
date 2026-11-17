@@ -15,18 +15,23 @@ export function PasswordUpdateForm({ withStepUp }: { withStepUp: WithStepUp }) {
   const form = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
   const errors = form.formState.errors;
 
-  const { state, formProps } = useFormAction(form, async ({ currentPassword, newPassword }) => {
-    setUpdated(false);
-    try {
-      await withStepUp(() => gqlClient.request(UPDATE_PASSWORD, { currentPassword, newPassword }));
-      form.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setUpdated(true);
-      return null;
-    } catch (err) {
-      if (isStepUpCancelled(err)) return null;
-      return extractGqlError(err) ?? t('security.passwordUpdateFailed');
-    }
-  });
+  const { state, formProps } = useFormAction(
+    form,
+    async ({ currentPassword, newPassword }, { resetFields }) => {
+      setUpdated(false);
+      try {
+        await withStepUp(() =>
+          gqlClient.request(UPDATE_PASSWORD, { currentPassword, newPassword }),
+        );
+        resetFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setUpdated(true);
+        return null;
+      } catch (err) {
+        if (isStepUpCancelled(err)) return null;
+        return extractGqlError(err) ?? t('security.passwordUpdateFailed');
+      }
+    },
+  );
 
   return (
     <form {...formProps} className="space-y-3">

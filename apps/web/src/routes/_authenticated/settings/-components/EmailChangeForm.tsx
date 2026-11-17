@@ -24,7 +24,7 @@ export function EmailChangeForm({
   const form = useForm<EmailForm>({ resolver: zodResolver(emailSchema) });
   const errors = form.formState.errors;
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     setSent(false);
     if (needsPassword && !data.currentPassword) {
       form.setError('currentPassword', { message: 'Required' });
@@ -37,7 +37,7 @@ export function EmailChangeForm({
           currentPassword: needsPassword ? data.currentPassword : null,
         }),
       );
-      form.reset({ currentPassword: '', newEmail: '' });
+      resetFields({ currentPassword: '', newEmail: '' });
       setSent(true);
       return null;
     } catch (err) {

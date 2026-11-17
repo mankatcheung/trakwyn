@@ -27,10 +27,10 @@ export function TotpBeginForm({ onBegun }: { onBegun: (setup: TotpSetup) => void
   const form = useForm<TotpBeginForm>({ resolver: zodResolver(totpBeginSchema) });
   const errors = form.formState.errors;
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
       const res = await gqlClient.request<{ beginTotpSetup: TotpSetup }>(BEGIN_TOTP_SETUP, data);
-      form.reset({ password: '' });
+      resetFields({ password: '' });
       onBegun(res.beginTotpSetup);
       return null;
     } catch (err) {
@@ -69,10 +69,10 @@ export function TotpConfirmForm({ onConfirmed }: { onConfirmed: (backupCodes: st
     onSuccess: () => qc.invalidateQueries({ queryKey: ['totpEnabled'] }),
   });
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
       const res = await confirm.mutateAsync(data);
-      form.reset({ code: '' });
+      resetFields({ code: '' });
       onConfirmed(res.confirmTotpSetup.backupCodes);
       return null;
     } catch (err) {
@@ -111,10 +111,10 @@ export function TotpDisableForm({ onDisabled }: { onDisabled: () => void }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['totpEnabled'] }),
   });
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
       await disable.mutateAsync(data);
-      form.reset({ password: '' });
+      resetFields({ password: '' });
       onDisabled();
       return null;
     } catch (err) {
@@ -155,7 +155,7 @@ export function RegenerateBackupCodesForm({
   const form = useForm<TotpDisableForm>({ resolver: zodResolver(totpDisableSchema) });
   const errors = form.formState.errors;
 
-  const { state, formProps } = useFormAction(form, async (data) => {
+  const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
       const result = await withStepUp(() =>
         gqlClient.request<{ regenerateTotpBackupCodes: { backupCodes: string[] } }>(
@@ -163,7 +163,7 @@ export function RegenerateBackupCodesForm({
           { currentPassword: data.password },
         ),
       );
-      form.reset({ password: '' });
+      resetFields({ password: '' });
       onRegenerated(result.regenerateTotpBackupCodes.backupCodes);
       return null;
     } catch (err) {
