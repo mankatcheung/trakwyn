@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +27,6 @@ import {
   POSTING_TEXT_MAX_CHARS,
   PostingTextField,
 } from '../../applications/components/new/PostingTextField';
-import { Route } from '../../../routes/_authenticated/applications/$applicationId/edit';
 
 const APPLICATION_STATUSES = [
   'draft',
@@ -81,9 +80,11 @@ function Field({
   );
 }
 
+const route = getRouteApi('/_authenticated/applications/$applicationId/edit');
+
 export function EditApplicationPage() {
   const { t } = useLocale();
-  const { applicationId } = Route.useParams();
+  const { applicationId } = route.useParams();
   const navigate = useNavigate();
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');

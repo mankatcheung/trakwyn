@@ -13,6 +13,8 @@ import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listIm
  *   - A feature holds only `pages`, `components`, `hooks`, `lib`, `graphql`,
  *     `__tests__` and a `CLAUDE.md`.
  *   - A route reaches a feature only through its `pages/`.
+ *   - A feature never imports `routes/`. A page reads its params and search
+ *     through `getRouteApi('<route id>')`, not by importing the route file.
  *   - The shared root (what stays in `components/`, `hooks/`, `lib/` …) never
  *     imports a feature.
  *   - A feature folder has no `index.ts` barrel.
@@ -44,7 +46,7 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/graphql/applicationQuery.ts',
   'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/lib/sections.ts',
   'routes/_authenticated/applications/board.tsx imports features/applications/graphql/boardQueries.ts',
-  'routes/_authenticated/applications/index.tsx imports features/applications/lib/statusColors.ts',
+  'routes/_authenticated/applications/index.tsx imports features/applications/graphql/applicationsPageQueries.ts',
   'routes/_authenticated/applications/trash.tsx imports features/applications/graphql/trashQueries.ts',
   'routes/__root.tsx imports features/legal/components/CookieConsent.tsx',
   'routes/__root.tsx imports features/app-shell/components/NavigationProgressBar.tsx',
@@ -170,6 +172,21 @@ describe('web src structure', () => {
     expect(
       [...ROUTE_IMPORTS_OF_FEATURE_INTERNALS].filter((entry) => !offenders.includes(entry)),
       'an exemption no longer applies: remove it from ROUTE_IMPORTS_OF_FEATURE_INTERNALS',
+    ).toEqual([]);
+  });
+
+  it('never lets a feature import from routes/', () => {
+    const offenders = files
+      .filter((file) => file.startsWith('features/') && isCode(file))
+      .flatMap((file) =>
+        importTargets(file)
+          .filter((target) => target.startsWith('routes/'))
+          .map((target) => `${file} imports ${target}`),
+      );
+
+    expect(
+      offenders,
+      "read params and search with getRouteApi('<route id>') from @tanstack/react-router",
     ).toEqual([]);
   });
 
