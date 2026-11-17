@@ -30,7 +30,7 @@ const SRC = join(WEB_ROOT, 'src');
  * How many files are still at an old path. Lower it in the PR that moves files;
  * it must reach 0, and a new file in an old location can never raise it.
  */
-const STILL_IN_OLD_LOCATIONS = 197;
+const STILL_IN_OLD_LOCATIONS = 5;
 
 /**
  * Route files that reach into a feature's `components/` or `lib/` instead of its
@@ -39,6 +39,24 @@ const STILL_IN_OLD_LOCATIONS = 197;
  * entries, and a new route import of a feature internal is a failure.
  */
 const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/editor/documentLanguage.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/downloadUrl.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/editor/saveState.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/editor/DocumentDraftEditor.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/editor/DocumentEditorChecks.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/DraftHistoryPanel.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/DraftTitleField.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/ImportDocumentAction.tsx',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/documentQueries.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/draftHistoryQueries.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/resumeAtsQueries.ts',
+  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/resumeMatchQueries.ts',
+  'routes/_authenticated/applications/$applicationId/edit.tsx imports features/application-detail/graphql/applicationQuery.ts',
+  'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/graphql/applicationQuery.ts',
+  'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/lib/sections.ts',
+  'routes/_authenticated/applications/board.tsx imports features/applications/graphql/boardQueries.ts',
+  'routes/_authenticated/applications/index.tsx imports features/applications/lib/statusColors.ts',
+  'routes/_authenticated/applications/trash.tsx imports features/applications/graphql/trashQueries.ts',
   'routes/__root.tsx imports features/legal/components/CookieConsent.tsx',
   'routes/__root.tsx imports features/app-shell/components/NavigationProgressBar.tsx',
   'routes/_authenticated/analytics.tsx imports features/analytics/graphql/analyticsQueries.ts',

@@ -9,7 +9,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
-import { NotesTab } from '#/routes/_authenticated/applications/$applicationId/-components/NotesTab';
+import { NotesTab } from '#/features/notes/components/NotesTab';
 import { quotaLevel } from '#/features/quota/lib/contentQuota';
 
 function Wrapper({ children }: { children: React.ReactNode }) {

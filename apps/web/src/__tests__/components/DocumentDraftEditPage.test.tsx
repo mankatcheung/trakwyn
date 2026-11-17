@@ -22,7 +22,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
-vi.mock('#/lib/downloadUrl', () => ({ downloadUrl: mockDownloadUrl }));
+vi.mock('#/features/documents/lib/downloadUrl', () => ({ downloadUrl: mockDownloadUrl }));
 vi.mock('#/features/documents/components/AiHelperPanel', () => ({
   AiHelperPanel: ({
     onSave,
@@ -38,90 +38,81 @@ vi.mock('#/features/documents/components/AiHelperPanel', () => ({
     </button>
   ),
 }));
-vi.mock(
-  '#/routes/_authenticated/applications/$applicationId/-components/ImportDocumentAction',
-  () => ({
-    ImportDocumentAction: ({
-      onSave,
-    }: {
-      onSave: (json: string, text: string) => Promise<boolean>;
-    }) => <button onClick={() => void onSave('{"imported":true}', 'imported')}>mock import</button>,
-  }),
-);
-vi.mock(
-  '#/routes/_authenticated/applications/$applicationId/-components/DraftHistoryPanel',
-  () => ({
-    DraftHistoryPanel: ({
-      prepare,
-      onRestored,
-      refreshKey,
-    }: {
-      prepare: () => Promise<boolean>;
-      onRestored: (draft: { id: string; contentJson: string; plainText: string }) => void;
-      refreshKey: number;
-    }) => {
-      const [settled, setSettled] = useState('');
-      return (
-        <div data-testid="history-panel" data-refresh={refreshKey}>
-          <button
-            aria-label="mock settle"
-            onClick={() => void prepare().then((ok) => setSettled(String(ok)))}
-          />
-          <output data-testid="settled">{settled}</output>
-          <button
-            aria-label="mock restore"
-            onClick={() =>
-              onRestored({
-                id: 'draft-1',
-                contentJson: '{"type":"doc","content":[{"type":"paragraph"}]}',
-                plainText: 'restored text',
-              })
-            }
-          />
-        </div>
-      );
-    },
-  }),
-);
+vi.mock('#/features/documents/components/ImportDocumentAction', () => ({
+  ImportDocumentAction: ({
+    onSave,
+  }: {
+    onSave: (json: string, text: string) => Promise<boolean>;
+  }) => <button onClick={() => void onSave('{"imported":true}', 'imported')}>mock import</button>,
+}));
+vi.mock('#/features/documents/components/DraftHistoryPanel', () => ({
+  DraftHistoryPanel: ({
+    prepare,
+    onRestored,
+    refreshKey,
+  }: {
+    prepare: () => Promise<boolean>;
+    onRestored: (draft: { id: string; contentJson: string; plainText: string }) => void;
+    refreshKey: number;
+  }) => {
+    const [settled, setSettled] = useState('');
+    return (
+      <div data-testid="history-panel" data-refresh={refreshKey}>
+        <button
+          aria-label="mock settle"
+          onClick={() => void prepare().then((ok) => setSettled(String(ok)))}
+        />
+        <output data-testid="settled">{settled}</output>
+        <button
+          aria-label="mock restore"
+          onClick={() =>
+            onRestored({
+              id: 'draft-1',
+              contentJson: '{"type":"doc","content":[{"type":"paragraph"}]}',
+              plainText: 'restored text',
+            })
+          }
+        />
+      </div>
+    );
+  },
+}));
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 // Stands in for the TipTap editor with an edit still waiting out its save
 // debounce: flushing it is what hands that edit to the page's `onUpdate`.
-vi.mock(
-  '#/routes/_authenticated/applications/$applicationId/-components/DocumentDraftEditor',
-  () => ({
-    DocumentDraftEditor: ({
-      onUpdate,
-      flushRef,
-      editorRef,
-      inlineAi,
-    }: {
-      inlineAi?: { draftId: string; onApplied?: (json: string, text: string) => void };
-      onUpdate: (json: string, text: string) => void;
-      flushRef?: RefObject<(() => void) | null>;
-      editorRef?: RefObject<{
-        getJson: () => string;
-        getText: () => string;
-        replaceContent: (nodes: unknown[]) => void;
-      } | null>;
-    }) => {
-      if (flushRef) flushRef.current = () => onUpdate('{"edited":true}', 'edited');
-      if (editorRef)
-        editorRef.current = {
-          getJson: () => '{"on":"screen"}',
-          getText: () => 'on screen',
-          replaceContent: mockReplaceContent,
-        };
-      return (
-        <div data-testid="editor">
-          <button onClick={() => inlineAi?.onApplied?.('{"inline":true}', 'inline text')}>
-            mock accept inline {inlineAi?.draftId}
-          </button>
-        </div>
-      );
-    },
-  }),
-);
+vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
+  DocumentDraftEditor: ({
+    onUpdate,
+    flushRef,
+    editorRef,
+    inlineAi,
+  }: {
+    inlineAi?: { draftId: string; onApplied?: (json: string, text: string) => void };
+    onUpdate: (json: string, text: string) => void;
+    flushRef?: RefObject<(() => void) | null>;
+    editorRef?: RefObject<{
+      getJson: () => string;
+      getText: () => string;
+      replaceContent: (nodes: unknown[]) => void;
+    } | null>;
+  }) => {
+    if (flushRef) flushRef.current = () => onUpdate('{"edited":true}', 'edited');
+    if (editorRef)
+      editorRef.current = {
+        getJson: () => '{"on":"screen"}',
+        getText: () => 'on screen',
+        replaceContent: mockReplaceContent,
+      };
+    return (
+      <div data-testid="editor">
+        <button onClick={() => inlineAi?.onApplied?.('{"inline":true}', 'inline text')}>
+          mock accept inline {inlineAi?.draftId}
+        </button>
+      </div>
+    );
+  },
+}));
 
 import { Route } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
 

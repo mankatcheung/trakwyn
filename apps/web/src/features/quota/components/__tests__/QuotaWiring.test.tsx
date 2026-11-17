@@ -8,7 +8,7 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { ContactsTab } from '#/routes/_authenticated/applications/$applicationId/-components/ContactsTab';
+import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
 import { ProfileSection } from '#/features/profile/components/sections/ProfileSection';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
