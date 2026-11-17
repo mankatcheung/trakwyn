@@ -69,9 +69,12 @@ function createFormGuard() {
  * DOM went blank, so the reset is cancelled and the form decides itself when
  * to clear (`resetFields(...)`, passed to `submit`).
  */
-export function useFormAction<T extends FieldValues>(
-  form: UseFormReturn<T>,
-  submit: (data: T, helpers: FormActionHelpers<T>) => Promise<FormActionResult>,
+export function useFormAction<TIn extends FieldValues, TOut extends FieldValues = TIn>(
+  // The context type is the form's own business, so any is right here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<TIn, any, TOut>,
+  // `submit` gets the schema's output; `resetFields` takes the fields' input.
+  submit: (data: TOut, helpers: FormActionHelpers<TIn>) => Promise<FormActionResult>,
 ) {
   // Created once per form, so React never detaches and re-attaches the listener.
   const [guard] = useState(createFormGuard);
@@ -79,7 +82,7 @@ export function useFormAction<T extends FieldValues>(
   const [state, action] = useActionState(async (): Promise<FormActionState> => {
     const outcome: { value: Exclude<FormActionResult, void> } = { value: null };
     await form.handleSubmit(async (data) => {
-      const resetFields = (values?: DefaultValues<T>) => {
+      const resetFields = (values?: DefaultValues<TIn>) => {
         form.reset(values);
         guard.resetDom();
       };
