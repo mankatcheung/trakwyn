@@ -1,12 +1,24 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
+import { useFormAction } from '#/lib/useFormAction';
 import { useBillingStatus } from '#/lib/billingStatus';
 import { useEmailVerification } from '#/lib/emailVerification';
 import { useLocale } from '#/lib/i18n';
 import { REQUEST_ACCOUNT_DELETION } from '#/lib/accountDeletion';
-import { Alert, Button, Card, FormLabel, Input } from '@trakwyn/ui';
+import { Alert, Card, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { extractGqlError } from './shared';
-import { useStepUpReauth, STEP_UP_CANCELLED } from './useStepUpReauth';
+import { useStepUpReauth, isStepUpCancelled } from './useStepUpReauth';
+
+const confirmEmailSchema = (email: string) =>
+  z.object({
+    typed: z
+      .string()
+      .refine((value) => email.length > 0 && value.trim().toLowerCase() === email.toLowerCase()),
+  });
+type ConfirmEmailForm = { typed: string };
 
 /**
  * Account deletion, on its own page rather than sitting under Export and
@@ -27,28 +39,26 @@ export function SettingsDangerZonePage() {
   const billing = useBillingStatus();
   const hasSubscription = billing?.plan === 'pro' && billing.planSource === 'subscription';
 
-  const [typed, setTyped] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The sent state switches the card's content, so it stays local.
   const [sent, setSent] = useState(false);
+  const form = useForm<ConfirmEmailForm>({
+    resolver: zodResolver(confirmEmailSchema(email)),
+    defaultValues: { typed: '' },
+  });
+  const typed = useWatch({ control: form.control, name: 'typed' });
   const matches = email.length > 0 && typed.trim().toLowerCase() === email.toLowerCase();
 
-  const onRequest = async (event: SubmitEvent) => {
-    event.preventDefault();
-    if (!matches) return;
-    setBusy(true);
-    setError(null);
+  const { state, formProps } = useFormAction(form, async () => {
     try {
       await withStepUp(() => gqlClient.request(REQUEST_ACCOUNT_DELETION));
       setSent(true);
+      return null;
     } catch (err) {
-      if (!(err instanceof Error && err.message === STEP_UP_CANCELLED)) {
-        setError(extractGqlError(err) ?? t('data.deleteAccountFailed'));
-      }
-    } finally {
-      setBusy(false);
+      // Cancelling the step-up dialog is not a failure.
+      if (isStepUpCancelled(err)) return null;
+      return extractGqlError(err) ?? t('data.deleteAccountFailed');
     }
-  };
+  });
 
   return (
     <div className="space-y-10">
@@ -68,7 +78,7 @@ export function SettingsDangerZonePage() {
         {sent ? (
           <Alert tone="success">{t('data.deleteRequestSent', { email })}</Alert>
         ) : (
-          <form onSubmit={onRequest} className="space-y-3">
+          <form {...formProps} className="space-y-3">
             <div className="max-w-sm">
               <FormLabel htmlFor="delete-confirm-email">
                 {t('data.deleteConfirmEmailLabel', { email })}
@@ -77,15 +87,18 @@ export function SettingsDangerZonePage() {
                 id="delete-confirm-email"
                 type="email"
                 autoComplete="off"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
+                {...form.register('typed')}
                 placeholder={email}
               />
             </div>
-            {error && <Alert>{error}</Alert>}
-            <Button type="submit" variant="destructive" disabled={!matches || busy}>
-              {busy ? t('data.deleting') : t('data.deleteMyAccount')}
-            </Button>
+            {state.error && <Alert>{state.error}</Alert>}
+            <SubmitButton
+              variant="destructive"
+              disabled={!matches}
+              pendingLabel={t('data.deleting')}
+            >
+              {t('data.deleteMyAccount')}
+            </SubmitButton>
           </form>
         )}
       </Card>

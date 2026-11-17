@@ -1,10 +1,20 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import { OAuthProviderLogo } from '#/components/OAuthProviderLogo';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { extractGqlError } from './shared';
+
+/** The emailed code is six digits, like the authenticator code. */
+const stepUpCodeSchema = z.object({
+  code: z.string().trim().length(6, 'Enter the 6-digit code'),
+});
+type StepUpCodeForm = z.infer<typeof stepUpCodeSchema>;
 
 export const START_OAUTH_REAUTH = `
   mutation StartOAuthReauth($provider: OAuthProvider!) {
@@ -55,8 +65,12 @@ export function StepUpWithoutPassword({
   const [redirecting, setRedirecting] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [code, setCode] = useState('');
+  const form = useForm<StepUpCodeForm>({
+    resolver: zodResolver(stepUpCodeSchema),
+    defaultValues: { code: '' },
+  });
+  const code = useWatch({ control: form.control, name: 'code' });
+  const codeError = form.formState.errors.code;
 
   const withProvider = async (provider: ReauthProvider) => {
     setError(null);
@@ -82,18 +96,17 @@ export function StepUpWithoutPassword({
     }
   };
 
-  const verify = async (event: SubmitEvent) => {
-    event.preventDefault();
+  // Nothing cached changes here, so a direct call is fine (step-up).
+  const { state: verifyState, formProps } = useFormAction(form, async (data) => {
     setError(null);
-    setVerifying(true);
     try {
-      await gqlClient.request(VERIFY_STEP_UP_CODE, { code: code.trim() });
+      await gqlClient.request(VERIFY_STEP_UP_CODE, { code: data.code });
       onSuccess();
+      return null;
     } catch (err) {
-      setError(extractGqlError(err) ?? t('stepUpReauth.verificationFailed'));
-      setVerifying(false);
+      return extractGqlError(err) ?? t('stepUpReauth.verificationFailed');
     }
-  };
+  });
 
   return (
     <div className="space-y-4">
@@ -115,7 +128,7 @@ export function StepUpWithoutPassword({
           {codeSent ? t('stepUpReauth.codeSent') : t('stepUpReauth.emailCodeIntro')}
         </p>
         {codeSent ? (
-          <form onSubmit={verify} className="space-y-3">
+          <form {...formProps} className="space-y-3">
             <div>
               <FormLabel htmlFor="step-up-code">{t('stepUpReauth.emailCodeLabel')}</FormLabel>
               <Input
@@ -123,19 +136,20 @@ export function StepUpWithoutPassword({
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                {...form.register('code')}
+                invalid={!!codeError}
                 placeholder="123456"
                 autoFocus
               />
+              {codeError && <p className="mt-1 text-xs text-red-600">{codeError.message}</p>}
             </div>
             <div className="flex flex-wrap justify-between gap-2">
               <Button variant="link" onClick={() => void sendCode()} disabled={sending}>
                 {t('stepUpReauth.resendCode')}
               </Button>
-              <Button type="submit" disabled={verifying || code.trim().length === 0}>
-                {verifying ? t('auth.verifying') : t('stepUpReauth.verifyCode')}
-              </Button>
+              <SubmitButton disabled={code.trim().length === 0} pendingLabel={t('auth.verifying')}>
+                {t('stepUpReauth.verifyCode')}
+              </SubmitButton>
             </div>
           </form>
         ) : (
@@ -145,7 +159,7 @@ export function StepUpWithoutPassword({
         )}
       </div>
 
-      {error && <Alert>{error}</Alert>}
+      {(error ?? verifyState.error) && <Alert>{error ?? verifyState.error}</Alert>}
       <div className="flex justify-end">
         <Button variant="link" onClick={onCancel}>
           {t('common.cancel')}
