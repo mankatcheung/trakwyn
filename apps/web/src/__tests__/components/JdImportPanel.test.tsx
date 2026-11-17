@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render as renderPlain, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { JdImportPanel } from '#/routes/_authenticated/applications/-components/JdImportPanel';
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
@@ -29,6 +30,16 @@ vi.mock('@tanstack/react-router', () => ({
     <a href={to}>{children}</a>
   ),
 }));
+
+// The panel parses through a mutation, which needs a query client.
+const render = (ui: React.ReactElement) =>
+  renderPlain(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}
+    >
+      {ui}
+    </QueryClientProvider>,
+  );
 
 describe('JdImportPanel', () => {
   const onFill = vi.fn();

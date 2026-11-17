@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ComponentType } from 'react';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
@@ -14,6 +15,9 @@ vi.mock('@tanstack/react-router', () => ({
     ...opts,
     useParams: () => ({ applicationId: 'app-1' }),
   }),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -43,14 +47,56 @@ const offer = (overrides: Partial<Record<string, unknown>> = {}) => ({
 const cardFor = (text: string) =>
   screen.getByText(text).closest('div[class*="bg-white"]') as HTMLElement;
 
+const planRequired = {
+  response: {
+    errors: [{ message: 'Offers are a Pro feature.', extensions: { code: 'PLAN_REQUIRED' } }],
+  },
+};
+
+let client: QueryClient;
+
+function renderPage() {
+  return render(
+    <QueryClientProvider client={client}>
+      <OffersPage />
+    </QueryClientProvider>,
+  );
+}
+
+const callsTo = (name: string) =>
+  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(name));
+
+/** Answers the list query from `list()` and every other request from `others`. */
+function serve(list: () => unknown[], others: Record<string, unknown> = {}) {
+  mockGqlRequest.mockImplementation((query: string) => {
+    if (query.includes('query Offers')) return Promise.resolve({ offers: list() });
+    for (const [name, value] of Object.entries(others)) {
+      if (query.includes(name)) {
+        return value instanceof Error || (value as { response?: unknown }).response
+          ? Promise.reject(value)
+          : Promise.resolve(value);
+      }
+    }
+    return Promise.resolve({});
+  });
+}
+
+function fillSalary(value: string) {
+  const salaryInput = screen
+    .getByText('Base Salary *')
+    .parentElement?.querySelector('input') as HTMLInputElement;
+  fireEvent.change(salaryInput, { target: { value } });
+}
+
 describe('OffersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
   it('shows an empty state when there are no offers', async () => {
-    mockGqlRequest.mockResolvedValue({ offers: [] });
-    render(<OffersPage />);
+    serve(() => []);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText(/no offers yet/i)).toBeInTheDocument();
@@ -58,8 +104,8 @@ describe('OffersPage', () => {
   });
 
   it('renders an offer with formatted salary, bonus, equity, benefits, and notes', async () => {
-    mockGqlRequest.mockResolvedValue({ offers: [offer()] });
-    render(<OffersPage />);
+    serve(() => [offer()]);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('$150,000/yr')).toBeInTheDocument();
@@ -70,108 +116,232 @@ describe('OffersPage', () => {
     expect(screen.getByText('Great offer')).toBeInTheDocument();
   });
 
-  it('creates a new offer and refetches the list', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Offers')) return Promise.resolve({ offers: [] });
-      if (query.includes('CreateOffer')) return Promise.resolve({ createOffer: { id: 'offer-2' } });
-      return Promise.resolve({});
-    });
-    render(<OffersPage />);
+  it('shows the upgrade prompt when reading the offers needs Pro', async () => {
+    mockGqlRequest.mockRejectedValue(planRequired);
+    renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText(/no offers yet/i)).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
-
-    const salaryLabel = screen.getByText('Base Salary *');
-    const salaryInput = salaryLabel.parentElement?.querySelector('input') as HTMLInputElement;
-    fireEvent.change(salaryInput, { target: { value: '120000' } });
-
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Offers'))
-        return Promise.resolve({ offers: [offer({ id: 'offer-2', baseSalary: 120000 })] });
-      return Promise.resolve({ createOffer: { id: 'offer-2' } });
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
-
-    await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateOffer'),
-        expect.objectContaining({
-          input: expect.objectContaining({ applicationId: 'app-1', baseSalary: 120000 }),
-        }),
-      );
-    });
+    expect(await screen.findByText(/offers are a pro feature/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /pro includes/i })).toBeInTheDocument();
   });
 
-  it('opens the edit form pre-filled when the edit icon is clicked', async () => {
-    mockGqlRequest.mockResolvedValue({ offers: [offer()] });
-    render(<OffersPage />);
+  describe('create', () => {
+    it('saves the offer and shows it from the refetched list, closing the form', async () => {
+      let saved = false;
+      serve(() => (saved ? [offer({ id: 'offer-2', baseSalary: 120000 })] : []), {
+        CreateOffer: { createOffer: { id: 'offer-2' } },
+      });
+      renderPage();
+      await screen.findByText(/no offers yet/i);
 
-    await waitFor(() => {
-      expect(screen.getByText('$150,000/yr')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
+      fillSalary('120000');
+      saved = true;
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
+
+      expect(await screen.findByText('$120,000/yr', {}, { timeout: 3000 })).toBeInTheDocument();
+      expect(callsTo('CreateOffer')[0][1]).toEqual({
+        input: expect.objectContaining({ applicationId: 'app-1', baseSalary: 120000 }),
+      });
+      expect(screen.queryByText('Base Salary *')).toBeNull();
     });
 
-    const card = cardFor('$150,000/yr');
-    const buttons = within(card).getAllByRole('button');
-    fireEvent.click(buttons[0]);
+    it('refreshes /offers and the tab badge too', async () => {
+      serve(() => [], { CreateOffer: { createOffer: { id: 'offer-2' } } });
+      const invalidate = vi.spyOn(client, 'invalidateQueries');
+      renderPage();
+      await screen.findByText(/no offers yet/i);
 
-    expect(screen.getByText('Edit Offer')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('1000 RSUs')).toBeInTheDocument();
-  });
+      fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
+      fillSalary('120000');
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
 
-  it('deletes an offer after confirming', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Offers')) return Promise.resolve({ offers: [offer()] });
-      if (query.includes('DeleteOffer')) return Promise.resolve({ deleteOffer: true });
-      return Promise.resolve({});
-    });
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    );
-
-    render(<OffersPage />);
-    await waitFor(() => {
-      expect(screen.getByText('$150,000/yr')).toBeInTheDocument();
-    });
-
-    const card = cardFor('$150,000/yr');
-    const buttons = within(card).getAllByRole('button');
-    fireEvent.click(buttons[1]);
-
-    await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DeleteOffer'), {
-        id: 'offer-1',
+      await waitFor(() => {
+        const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
+        expect(keys).toContainEqual(['offers', 'app-1']);
+        expect(keys).toContainEqual(['myOffers']);
+        expect(keys).toContainEqual(['sectionCounts', 'app-1']);
       });
     });
 
-    vi.unstubAllGlobals();
-  });
+    it('creates once on a double click', async () => {
+      let release: (value: unknown) => void = () => {};
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('CreateOffer')
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.resolve({ offers: [] }),
+      );
+      renderPage();
+      await screen.findByText(/no offers yet/i);
+      fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
+      fillSalary('120000');
 
-  it('does not delete when the confirmation is dismissed', async () => {
-    mockGqlRequest.mockResolvedValue({ offers: [offer()] });
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => false),
-    );
+      const save = screen.getByRole('button', { name: /save offer/i });
+      fireEvent.click(save);
+      await waitFor(() => expect(callsTo('CreateOffer')).toHaveLength(1));
+      fireEvent.click(save);
+      release({ createOffer: { id: 'offer-2' } });
 
-    render(<OffersPage />);
-    await waitFor(() => {
-      expect(screen.getByText('$150,000/yr')).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByText('Base Salary *')).toBeNull());
+      expect(callsTo('CreateOffer')).toHaveLength(1);
     });
 
-    const card = cardFor('$150,000/yr');
-    const buttons = within(card).getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    it('shows the API message under the form and keeps it open when the save fails', async () => {
+      serve(() => [], {
+        CreateOffer: {
+          response: {
+            errors: [{ message: 'Offer limit reached', extensions: { code: 'VALIDATION' } }],
+          },
+        },
+      });
+      renderPage();
+      await screen.findByText(/no offers yet/i);
+      fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
+      fillSalary('120000');
 
-    expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('DeleteOffer'),
-      expect.anything(),
-    );
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
 
-    vi.unstubAllGlobals();
+      expect(await screen.findByRole('alert')).toHaveTextContent('Offer limit reached');
+      expect(screen.getByText('Base Salary *')).toBeInTheDocument();
+    });
+
+    it('shows the upgrade prompt, not an alert, when the plan has no offers', async () => {
+      serve(() => [], { CreateOffer: planRequired });
+      renderPage();
+      await screen.findByText(/no offers yet/i);
+      fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
+      fillSalary('120000');
+
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
+
+      expect(await screen.findByText(/offers are a pro feature/i)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /pro includes/i })).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    it('opens the edit form pre-filled when the edit icon is clicked', async () => {
+      serve(() => [offer()]);
+      renderPage();
+      await screen.findByText('$150,000/yr');
+
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
+
+      expect(screen.getByText('Edit Offer')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('1000 RSUs')).toBeInTheDocument();
+    });
+
+    it('saves the change with the offer id and shows the refetched list', async () => {
+      let salary = 150000;
+      serve(() => [offer({ baseSalary: salary })], {
+        UpdateOffer: { updateOffer: { id: 'offer-1' } },
+      });
+      renderPage();
+      await screen.findByText('$150,000/yr');
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
+
+      fillSalary('175000');
+      salary = 175000;
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
+
+      expect(await screen.findByText('$175,000/yr', {}, { timeout: 3000 })).toBeInTheDocument();
+      expect(callsTo('UpdateOffer')[0][1]).toEqual({
+        input: expect.objectContaining({ offerId: 'offer-1', baseSalary: 175000 }),
+      });
+      expect(screen.queryByText('Edit Offer')).toBeNull();
+    });
+
+    it('shows a failed update under the form instead of only logging it', async () => {
+      serve(() => [offer()], { UpdateOffer: planRequired });
+      renderPage();
+      await screen.findByText('$150,000/yr');
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
+
+      fireEvent.click(screen.getByRole('button', { name: /save offer/i }));
+
+      expect(await screen.findByText(/offers are a pro feature/i)).toBeInTheDocument();
+      expect(screen.getByText('Edit Offer')).toBeInTheDocument();
+    });
+
+    it('updates once on a double click', async () => {
+      let release: (value: unknown) => void = () => {};
+      mockGqlRequest.mockImplementation((query: string) =>
+        query.includes('UpdateOffer')
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.resolve({ offers: [offer()] }),
+      );
+      renderPage();
+      await screen.findByText('$150,000/yr');
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
+
+      const save = screen.getByRole('button', { name: /save offer/i });
+      fireEvent.click(save);
+      await waitFor(() => expect(callsTo('UpdateOffer')).toHaveLength(1));
+      fireEvent.click(save);
+      release({ updateOffer: { id: 'offer-1' } });
+
+      await waitFor(() => expect(screen.queryByText('Edit Offer')).toBeNull());
+      expect(callsTo('UpdateOffer')).toHaveLength(1);
+    });
+  });
+
+  describe('delete', () => {
+    it('deletes an offer after confirming and shows the refetched list', async () => {
+      let offers = [offer()];
+      serve(() => offers, { DeleteOffer: { deleteOffer: true } });
+      vi.stubGlobal(
+        'confirm',
+        vi.fn(() => true),
+      );
+      renderPage();
+      await screen.findByText('$150,000/yr');
+
+      offers = [];
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[1]);
+
+      await waitFor(() => {
+        expect(callsTo('DeleteOffer')[0][1]).toEqual({ id: 'offer-1' });
+      });
+      expect(await screen.findByText(/no offers yet/i)).toBeInTheDocument();
+
+      vi.unstubAllGlobals();
+    });
+
+    it('does not delete when the confirmation is dismissed', async () => {
+      serve(() => [offer()]);
+      vi.stubGlobal(
+        'confirm',
+        vi.fn(() => false),
+      );
+      renderPage();
+      await screen.findByText('$150,000/yr');
+
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[1]);
+
+      expect(callsTo('DeleteOffer')).toHaveLength(0);
+
+      vi.unstubAllGlobals();
+    });
+
+    it('shows a failed delete and keeps the offer', async () => {
+      serve(() => [offer()], { DeleteOffer: planRequired });
+      vi.stubGlobal(
+        'confirm',
+        vi.fn(() => true),
+      );
+      renderPage();
+      await screen.findByText('$150,000/yr');
+
+      fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[1]);
+
+      expect(await screen.findByText(/offers are a pro feature/i)).toBeInTheDocument();
+      expect(screen.getByText('$150,000/yr')).toBeInTheDocument();
+
+      vi.unstubAllGlobals();
+    });
   });
 });
