@@ -35,6 +35,7 @@ vi.mock('#/features/documents/components/EmptyProfilePrompt', () => ({
 
 import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
 import type { DocumentEditorHandle } from '#/features/documents/components/editor/DocumentDraftEditor';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const GENERATED_DOC = {
   type: 'doc',
@@ -56,7 +57,8 @@ function makeEditor(text: string) {
 }
 
 function api(overrides: Record<string, () => Promise<unknown>> = {}) {
-  m.request.mockImplementation((query: string) => {
+  m.request.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     for (const [name, fn] of Object.entries(overrides)) if (query.includes(name)) return fn();
     if (query.includes('PolishDocumentDraft'))
       return Promise.resolve({ polishDocumentDraft: { markdown: '# Better\n\n- one\n- two' } });
@@ -120,7 +122,7 @@ function setup({
   return { editor, onSave, rerenderWithText: (text: string) => view.rerender(ui(text)) };
 }
 
-const calls = (name: string) => m.request.mock.calls.filter(([q]) => String(q).includes(name));
+const calls = (name: string) => m.request.mock.calls.filter(([q]) => gqlText(q).includes(name));
 
 describe('AiHelperPanel — empty draft', () => {
   beforeEach(() => {

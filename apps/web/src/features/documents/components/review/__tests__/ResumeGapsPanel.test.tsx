@@ -21,6 +21,7 @@ import {
   appendToDescription,
   type ResumeGaps,
 } from '#/features/documents/graphql/resumeGapsQueries';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const gaps: ResumeGaps = {
   requirementsRead: true,
@@ -98,7 +99,7 @@ describe('ResumeGapsPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Yes, add Terraform to my skills' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('CreateSkill'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CreateSkill'), {
         input: { name: 'Terraform' },
       }),
     );
@@ -119,7 +120,7 @@ describe('ResumeGapsPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'No, I have not used Kafka' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DismissResumeGap'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DismissResumeGap'), {
         applicationId: 'app-1',
         key: 'Kafka',
       }),
@@ -145,7 +146,7 @@ describe('ResumeGapsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to profile' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UpdateWorkExperience'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateWorkExperience'), {
         id: 'we-1',
         input: { description: 'Ran the platform.\n- Led a team of 5' },
       }),
@@ -168,9 +169,9 @@ describe('ResumeGapsPanel', () => {
   });
 
   it('saves once on a double click and clears the field after it saves', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
+    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
       Promise.resolve(
-        query.includes('UpdateWorkExperience')
+        gqlText(queryDoc).includes('UpdateWorkExperience')
           ? { updateWorkExperience: { id: 'we-1' } }
           : { resumeGaps: gaps },
       ),
@@ -185,14 +186,14 @@ describe('ResumeGapsPanel', () => {
 
     await waitFor(() => expect(input).toHaveValue(''));
     const saves = mockGqlRequest.mock.calls.filter(([q]) =>
-      String(q).includes('UpdateWorkExperience'),
+      gqlText(q).includes('UpdateWorkExperience'),
     );
     expect(saves).toHaveLength(1);
   });
 
   it('keeps the typed line and shows the error when the save fails', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('UpdateWorkExperience')
+    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
+      gqlText(queryDoc).includes('UpdateWorkExperience')
         ? Promise.reject(
             Object.assign(new Error('boom'), {
               response: { errors: [{ message: 'Could not save the role.' }] },
@@ -232,7 +233,7 @@ describe('ResumeGapsPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Skip Engineer at Acme' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DismissResumeGap'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DismissResumeGap'), {
         applicationId: 'app-1',
         key: 'role:we-1',
       }),

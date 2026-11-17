@@ -38,6 +38,7 @@ vi.mock('#/features/ai/hooks/useAiCredits', () => ({
 }));
 
 import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 interface Profile {
   workExperiences?: { id: string }[];
@@ -52,7 +53,8 @@ const GENERATED = {
 };
 
 function mockApi({ workExperiences = [], skills = [] }: Profile = {}) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences });
     if (query.includes('Skills')) return Promise.resolve({ skills });
     if (query.includes('GenerateIntoDocumentDraft')) return Promise.resolve(GENERATED);
@@ -92,7 +94,7 @@ function renderPanel(type: 'cover_letter' | 'resume') {
 }
 
 const callsTo = (name: string) =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(name));
+  mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(name));
 
 /** Waits for the profile lists, so a click is judged on what they say. */
 const profileLoaded = async () => {
@@ -168,7 +170,8 @@ describe('EmptyProfilePrompt in the AI helper (JEF-460, JEF-506)', () => {
   });
 
   it('does not hold up generating while the profile is still loading', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('WorkExperiences') || query.includes('query Skills'))
         return new Promise(() => {});
       if (query.includes('GenerateIntoDocumentDraft')) return Promise.resolve(GENERATED);

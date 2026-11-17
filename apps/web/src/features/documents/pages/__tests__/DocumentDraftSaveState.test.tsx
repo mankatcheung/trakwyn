@@ -59,6 +59,7 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
 }));
 
 import { DraftEditPage } from '../DraftEditPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const DRAFT = {
   id: 'draft-1',
@@ -76,12 +77,13 @@ const DRAFT = {
 };
 
 const saves = () =>
-  mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('UpdateDocumentDraftContent'));
+  mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('UpdateDocumentDraftContent'));
 const state = () => screen.getByTestId('state').textContent;
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
 
 function mockApi(save: () => Promise<unknown>) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
     if (query.includes('UpdateDocumentDraftContent')) return save();
     return Promise.resolve({});

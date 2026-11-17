@@ -1,9 +1,8 @@
-/**
- * Draft history (JEF-584). Inline query strings, like the rest of the draft page,
- * so there is no `.graphql` file or codegen step.
- */
+import { graphql } from '#/graphql/generated';
 
-export const DRAFT_VERSIONS_QUERY = `
+/** Draft history (JEF-584). */
+
+export const DRAFT_VERSIONS_QUERY = graphql(`
   query DocumentDraftVersions($draftId: ID!) {
     documentDraftVersions(draftId: $draftId) {
       id
@@ -12,9 +11,9 @@ export const DRAFT_VERSIONS_QUERY = `
       createdAt
     }
   }
-`;
+`);
 
-export const DRAFT_VERSION_QUERY = `
+export const DRAFT_VERSION_QUERY = graphql(`
   query DocumentDraftVersion($id: ID!) {
     documentDraftVersion(id: $id) {
       id
@@ -23,18 +22,18 @@ export const DRAFT_VERSION_QUERY = `
       createdAt
     }
   }
-`;
+`);
 
-export const CREATE_DRAFT_VERSION_MUTATION = `
+export const CREATE_DRAFT_VERSION_MUTATION = graphql(`
   mutation CreateDocumentDraftVersion($draftId: ID!) {
     createDocumentDraftVersion(draftId: $draftId) {
       id
       source
     }
   }
-`;
+`);
 
-export const RESTORE_DRAFT_VERSION_MUTATION = `
+export const RESTORE_DRAFT_VERSION_MUTATION = graphql(`
   mutation RestoreDocumentDraftVersion($versionId: ID!) {
     restoreDocumentDraftVersion(versionId: $versionId) {
       id
@@ -42,7 +41,7 @@ export const RESTORE_DRAFT_VERSION_MUTATION = `
       plainText
     }
   }
-`;
+`);
 
 export type DraftVersionSource = 'autosave' | 'ai' | 'manual' | 'restore';
 

@@ -23,8 +23,9 @@ import { EmptyProfilePrompt } from './EmptyProfilePrompt';
 import { PolishPreview } from './editor/PolishPreview';
 import { requestPolish } from '../graphql/polishApi';
 import { ResumeSourcePicker } from './ResumeSourcePicker';
+import { graphql } from '#/graphql/generated';
 
-const GENERATE_MUTATION = `
+const GENERATE_MUTATION = graphql(`
   mutation GenerateIntoDocumentDraft(
     $draftId: ID!
     $instructions: String
@@ -41,7 +42,7 @@ const GENERATE_MUTATION = `
       plainText
     }
   }
-`;
+`);
 
 export type DraftKind = 'cover_letter' | 'resume';
 

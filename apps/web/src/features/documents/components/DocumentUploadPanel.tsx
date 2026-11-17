@@ -12,7 +12,11 @@ import {
 } from '#/features/documents/lib/documentCategory';
 import { Button, FormLabel, Input, Select } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
-import { documentsQueryKey } from '../graphql/documentQueries';
+import {
+  CONFIRM_DOCUMENT,
+  documentsQueryKey,
+  REQUEST_UPLOAD_URL,
+} from '../graphql/documentQueries';
 import {
   reportStorageFailure,
   uploadProviderOf,
@@ -27,17 +31,6 @@ import {
   useStorageUsage,
   type StorageUsage,
 } from '#/features/settings/lib/storageUsage';
-
-const REQUEST_UPLOAD_URL = `
-  mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
-    requestUploadUrl(input: $input) { uploadUrl storageKey access }
-  }
-`;
-const CONFIRM_DOCUMENT = `
-  mutation ConfirmDocument($input: ConfirmDocumentInput!) {
-    confirmDocument(input: $input) { id applicationId name mimeType sizeBytes url documentType version createdAt }
-  }
-`;
 
 type PendingUpload = {
   storageKey: string;

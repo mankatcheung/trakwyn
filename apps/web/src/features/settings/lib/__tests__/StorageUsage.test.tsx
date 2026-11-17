@@ -25,6 +25,7 @@ import {
   storageLevel,
   storagePercent,
 } from '#/features/settings/lib/storageUsage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const MB = 1024 * 1024;
 
@@ -34,7 +35,8 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 const withUsage = (usedMb: number, limitMb = 100) =>
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('StorageUsage')) {
       return Promise.resolve({
         me: { storageUsedBytes: usedMb * MB, storageLimitBytes: limitMb * MB },
@@ -156,7 +158,7 @@ describe('DocumentUploadPanel storage line', () => {
 
     expect(await screen.findByText(/Document storage is full/)).toBeInTheDocument();
     expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('requestUploadUrl'),
+      gqlContaining('requestUploadUrl'),
       expect.objectContaining({
         input: expect.objectContaining({ applicationId: 'app-1', sizeBytes: 2048 }),
       }),

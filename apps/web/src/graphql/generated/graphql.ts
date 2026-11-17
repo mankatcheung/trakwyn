@@ -2693,6 +2693,69 @@ export type DismissOnboardingChecklistMutation = {
   dismissOnboardingChecklist?: boolean | null;
 };
 
+export type GenerateIntoDocumentDraftMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
+  resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
+  resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+export type GenerateIntoDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  generateIntoDocumentDraft: {
+    __typename?: 'GeneratedDraftContent';
+    contentJson: string;
+    plainText: string;
+  };
+};
+
+export type ExtractDocumentTextMutationVariables = Exact<{
+  documentId: Scalars['ID']['input'];
+}>;
+
+export type ExtractDocumentTextMutation = {
+  __typename?: 'Mutation';
+  extractDocumentText?: { __typename?: 'ExtractDocumentTextPayload'; text?: string | null } | null;
+};
+
+export type DocumentsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type DocumentsQuery = {
+  __typename?: 'Query';
+  documents?: Array<{
+    __typename?: 'Document';
+    id?: string | null;
+    applicationId?: string | null;
+    name?: string | null;
+    mimeType?: string | null;
+    sizeBytes?: number | null;
+    url?: string | null;
+    documentType?: string | null;
+    version?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type DocumentDraftsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type DocumentDraftsQuery = {
+  __typename?: 'Query';
+  documentDrafts?: Array<{
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    applicationId?: string | null;
+    type?: string | null;
+    title?: string | null;
+    plainText?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
 export type RequestUploadUrlMutationVariables = Exact<{
   input: RequestUploadUrlInput;
 }>;
@@ -2733,24 +2796,348 @@ export type DeleteDocumentMutationVariables = Exact<{
 
 export type DeleteDocumentMutation = { __typename?: 'Mutation'; deleteDocument?: boolean | null };
 
-export type DocumentsQueryVariables = Exact<{
+export type DocumentDraftQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DocumentDraftQuery = {
+  __typename?: 'Query';
+  documentDraft?: {
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    applicationId?: string | null;
+    type?: string | null;
+    title?: string | null;
+    contentJson?: string | null;
+    plainText?: string | null;
+    sourceDocumentId?: string | null;
+    aiInstructions?: string | null;
+    aiGenerated?: boolean | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    myRating?: {
+      __typename?: 'AiRating';
+      rating?: AiFeedbackRating | null;
+      reason?: AiFeedbackReason | null;
+    } | null;
+  } | null;
+};
+
+export type UpdateDocumentDraftContentMutationVariables = Exact<{
+  input: UpdateDocumentDraftContentInput;
+}>;
+
+export type UpdateDocumentDraftContentMutation = {
+  __typename?: 'Mutation';
+  updateDocumentDraftContent?: {
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type ExportDocumentDraftToPdfMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+}>;
+
+export type ExportDocumentDraftToPdfMutation = {
+  __typename?: 'Mutation';
+  exportDocumentDraftToPdf?: {
+    __typename?: 'Document';
+    id?: string | null;
+    name?: string | null;
+    url?: string | null;
+  } | null;
+};
+
+export type RenameDocumentDraftMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
+}>;
+
+export type RenameDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  renameDocumentDraft?: {
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    title?: string | null;
+  } | null;
+};
+
+export type DeleteDocumentDraftMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  deleteDocumentDraft?: boolean | null;
+};
+
+export type DocumentDraftVersionsQueryVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+}>;
+
+export type DocumentDraftVersionsQuery = {
+  __typename?: 'Query';
+  documentDraftVersions?: Array<{
+    __typename?: 'DocumentDraftVersion';
+    id?: string | null;
+    source?: string | null;
+    characterCount?: number | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type DocumentDraftVersionQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DocumentDraftVersionQuery = {
+  __typename?: 'Query';
+  documentDraftVersion?: {
+    __typename?: 'DocumentDraftVersion';
+    id?: string | null;
+    source?: string | null;
+    plainText?: string | null;
+    createdAt?: string | null;
+  } | null;
+};
+
+export type CreateDocumentDraftVersionMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+}>;
+
+export type CreateDocumentDraftVersionMutation = {
+  __typename?: 'Mutation';
+  createDocumentDraftVersion?: {
+    __typename?: 'DocumentDraftVersion';
+    id?: string | null;
+    source?: string | null;
+  } | null;
+};
+
+export type RestoreDocumentDraftVersionMutationVariables = Exact<{
+  versionId: Scalars['ID']['input'];
+}>;
+
+export type RestoreDocumentDraftVersionMutation = {
+  __typename?: 'Mutation';
+  restoreDocumentDraftVersion?: {
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    contentJson?: string | null;
+    plainText?: string | null;
+  } | null;
+};
+
+export type PolishDocumentDraftMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+  plainText: Scalars['String']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type PolishDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  polishDocumentDraft: { __typename?: 'PolishDocumentDraftResult'; markdown: string };
+};
+
+export type PostingRequirementsQueryVariables = Exact<{
   applicationId: Scalars['ID']['input'];
 }>;
 
-export type DocumentsQuery = {
+export type PostingRequirementsQuery = {
   __typename?: 'Query';
-  documents?: Array<{
-    __typename?: 'Document';
+  postingRequirements?: {
+    __typename?: 'PostingRequirements';
     id?: string | null;
     applicationId?: string | null;
-    name?: string | null;
-    mimeType?: string | null;
-    sizeBytes?: number | null;
-    url?: string | null;
-    documentType?: string | null;
-    version?: string | null;
-    createdAt?: string | null;
+    mustHave?: Array<string> | null;
+    niceToHave?: Array<string> | null;
+    keywords?: Array<string> | null;
+    seniority?: string | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+  } | null;
+};
+
+export type ExtractPostingRequirementsMutationVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ExtractPostingRequirementsMutation = {
+  __typename?: 'Mutation';
+  extractPostingRequirements?: {
+    __typename?: 'PostingRequirements';
+    id?: string | null;
+    applicationId?: string | null;
+    mustHave?: Array<string> | null;
+    niceToHave?: Array<string> | null;
+    keywords?: Array<string> | null;
+    seniority?: string | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+  } | null;
+};
+
+export type ResumeAtsScoresQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ResumeAtsScoresQuery = {
+  __typename?: 'Query';
+  resumeAtsScores?: Array<{
+    __typename?: 'AtsScore';
+    id?: string | null;
+    applicationId?: string | null;
+    documentDraftId?: string | null;
+    documentId?: string | null;
+    score?: number | null;
+    label?: string | null;
+    readable?: boolean | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+    checks?: Array<{
+      __typename?: 'AtsCheck';
+      id?: string | null;
+      label?: string | null;
+      passed?: boolean | null;
+      points?: number | null;
+      maxPoints?: number | null;
+      hint?: string | null;
+    }> | null;
   }> | null;
+};
+
+export type ComputeResumeAtsScoreMutationVariables = Exact<{
+  documentDraftId?: InputMaybe<Scalars['ID']['input']>;
+  documentId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+export type ComputeResumeAtsScoreMutation = {
+  __typename?: 'Mutation';
+  computeResumeAtsScore?: {
+    __typename?: 'AtsScore';
+    id?: string | null;
+    applicationId?: string | null;
+    documentDraftId?: string | null;
+    documentId?: string | null;
+    score?: number | null;
+    label?: string | null;
+    readable?: boolean | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+    checks?: Array<{
+      __typename?: 'AtsCheck';
+      id?: string | null;
+      label?: string | null;
+      passed?: boolean | null;
+      points?: number | null;
+      maxPoints?: number | null;
+      hint?: string | null;
+    }> | null;
+  } | null;
+};
+
+export type ResumeGapsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ResumeGapsQuery = {
+  __typename?: 'Query';
+  resumeGaps?: {
+    __typename?: 'ResumeGaps';
+    requirementsRead?: boolean | null;
+    requirementGaps?: Array<string> | null;
+    rolesWithoutMetrics?: Array<{
+      __typename?: 'RoleWithoutMetrics';
+      workExperienceId?: string | null;
+      company?: string | null;
+      title?: string | null;
+      description?: string | null;
+    }> | null;
+  } | null;
+};
+
+export type DismissResumeGapMutationVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+}>;
+
+export type DismissResumeGapMutation = {
+  __typename?: 'Mutation';
+  dismissResumeGap?: {
+    __typename?: 'ResumeGaps';
+    requirementsRead?: boolean | null;
+    requirementGaps?: Array<string> | null;
+    rolesWithoutMetrics?: Array<{
+      __typename?: 'RoleWithoutMetrics';
+      workExperienceId?: string | null;
+      company?: string | null;
+      title?: string | null;
+      description?: string | null;
+    }> | null;
+  } | null;
+};
+
+export type ResumeMatchesQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type ResumeMatchesQuery = {
+  __typename?: 'Query';
+  resumeMatches?: Array<{
+    __typename?: 'ResumeMatch';
+    id?: string | null;
+    applicationId?: string | null;
+    documentDraftId?: string | null;
+    documentId?: string | null;
+    score?: number | null;
+    label?: string | null;
+    matchedKeywords?: Array<string> | null;
+    missingKeywords?: Array<string> | null;
+    summary?: string | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+  }> | null;
+};
+
+export type ComputeResumeMatchScoreMutationVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+  documentDraftId?: InputMaybe<Scalars['ID']['input']>;
+  documentId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+export type ComputeResumeMatchScoreMutation = {
+  __typename?: 'Mutation';
+  computeResumeMatchScore?: {
+    __typename?: 'ResumeMatch';
+    id?: string | null;
+    applicationId?: string | null;
+    documentDraftId?: string | null;
+    documentId?: string | null;
+    score?: number | null;
+    label?: string | null;
+    matchedKeywords?: Array<string> | null;
+    missingKeywords?: Array<string> | null;
+    summary?: string | null;
+    generatedAt?: string | null;
+    isStale?: boolean | null;
+  } | null;
+};
+
+export type CreateDocumentDraftMutationVariables = Exact<{
+  input: CreateDocumentDraftInput;
+}>;
+
+export type CreateDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  createDocumentDraft?: {
+    __typename?: 'DocumentDraft';
+    id?: string | null;
+    applicationId?: string | null;
+    type?: string | null;
+    title?: string | null;
+  } | null;
 };
 
 export type InterviewQuestionsQueryVariables = Exact<{
@@ -4486,6 +4873,220 @@ export const DismissOnboardingChecklistDocument = {
   DismissOnboardingChecklistMutation,
   DismissOnboardingChecklistMutationVariables
 >;
+export const GenerateIntoDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'GenerateIntoDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'generateIntoDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'instructions' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'resumeDocumentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'resumeDraftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'contentJson' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GenerateIntoDocumentDraftMutation,
+  GenerateIntoDocumentDraftMutationVariables
+>;
+export const ExtractDocumentTextDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ExtractDocumentText' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'extractDocumentText' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'text' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ExtractDocumentTextMutation, ExtractDocumentTextMutationVariables>;
+export const DocumentsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Documents' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documents' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mimeType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sizeBytes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'version' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
+export const DocumentDraftsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DocumentDrafts' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documentDrafts' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentDraftsQuery, DocumentDraftsQueryVariables>;
 export const RequestUploadUrlDocument = {
   kind: 'Document',
   definitions: [
@@ -4616,13 +5217,510 @@ export const DeleteDocumentDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteDocumentMutation, DeleteDocumentMutationVariables>;
-export const DocumentsDocument = {
+export const DocumentDraftDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'Documents' },
+      name: { kind: 'Name', value: 'DocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'contentJson' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sourceDocumentId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'aiInstructions' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'aiGenerated' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'myRating' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'rating' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentDraftQuery, DocumentDraftQueryVariables>;
+export const UpdateDocumentDraftContentDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateDocumentDraftContent' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'UpdateDocumentDraftContentInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateDocumentDraftContent' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDocumentDraftContentMutation,
+  UpdateDocumentDraftContentMutationVariables
+>;
+export const ExportDocumentDraftToPdfDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ExportDocumentDraftToPdf' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'exportDocumentDraftToPdf' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ExportDocumentDraftToPdfMutation,
+  ExportDocumentDraftToPdfMutationVariables
+>;
+export const RenameDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RenameDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'title' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'renameDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'title' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'title' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RenameDocumentDraftMutation, RenameDocumentDraftMutationVariables>;
+export const DeleteDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteDocumentDraftMutation, DeleteDocumentDraftMutationVariables>;
+export const DocumentDraftVersionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DocumentDraftVersions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documentDraftVersions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'characterCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentDraftVersionsQuery, DocumentDraftVersionsQueryVariables>;
+export const DocumentDraftVersionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DocumentDraftVersion' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documentDraftVersion' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentDraftVersionQuery, DocumentDraftVersionQueryVariables>;
+export const CreateDocumentDraftVersionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateDocumentDraftVersion' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createDocumentDraftVersion' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDocumentDraftVersionMutation,
+  CreateDocumentDraftVersionMutationVariables
+>;
+export const RestoreDocumentDraftVersionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RestoreDocumentDraftVersion' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'versionId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'restoreDocumentDraftVersion' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'versionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'versionId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'contentJson' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RestoreDocumentDraftVersionMutation,
+  RestoreDocumentDraftVersionMutationVariables
+>;
+export const PolishDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'PolishDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'plainText' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'polishDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'plainText' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'plainText' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'instructions' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'markdown' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<PolishDocumentDraftMutation, PolishDocumentDraftMutationVariables>;
+export const PostingRequirementsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'PostingRequirements' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
@@ -4638,7 +5736,7 @@ export const DocumentsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'documents' },
+            name: { kind: 'Name', value: 'postingRequirements' },
             arguments: [
               {
                 kind: 'Argument',
@@ -4651,13 +5749,12 @@ export const DocumentsDocument = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'mimeType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'sizeBytes' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'documentType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'version' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mustHave' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'niceToHave' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'keywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'seniority' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
               ],
             },
           },
@@ -4665,7 +5762,493 @@ export const DocumentsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
+} as unknown as DocumentNode<PostingRequirementsQuery, PostingRequirementsQueryVariables>;
+export const ExtractPostingRequirementsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ExtractPostingRequirements' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'extractPostingRequirements' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mustHave' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'niceToHave' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'keywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'seniority' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ExtractPostingRequirementsMutation,
+  ExtractPostingRequirementsMutationVariables
+>;
+export const ResumeAtsScoresDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ResumeAtsScores' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'resumeAtsScores' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentDraftId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'score' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'readable' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'checks' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'passed' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'points' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maxPoints' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'hint' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ResumeAtsScoresQuery, ResumeAtsScoresQueryVariables>;
+export const ComputeResumeAtsScoreDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ComputeResumeAtsScore' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentDraftId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'computeResumeAtsScore' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentDraftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentDraftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentDraftId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'score' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'readable' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'checks' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'passed' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'points' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maxPoints' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'hint' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ComputeResumeAtsScoreMutation, ComputeResumeAtsScoreMutationVariables>;
+export const ResumeGapsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ResumeGaps' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'resumeGaps' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'requirementsRead' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'requirementGaps' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'rolesWithoutMetrics' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'workExperienceId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ResumeGapsQuery, ResumeGapsQueryVariables>;
+export const DismissResumeGapDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DismissResumeGap' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'key' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dismissResumeGap' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'key' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'key' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'requirementsRead' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'requirementGaps' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'rolesWithoutMetrics' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'workExperienceId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DismissResumeGapMutation, DismissResumeGapMutationVariables>;
+export const ResumeMatchesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ResumeMatches' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'resumeMatches' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentDraftId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'score' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'matchedKeywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'missingKeywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'summary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ResumeMatchesQuery, ResumeMatchesQueryVariables>;
+export const ComputeResumeMatchScoreDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ComputeResumeMatchScore' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentDraftId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'computeResumeMatchScore' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentDraftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentDraftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentDraftId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'score' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'matchedKeywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'missingKeywords' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'summary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isStale' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ComputeResumeMatchScoreMutation,
+  ComputeResumeMatchScoreMutationVariables
+>;
+export const CreateDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateDocumentDraftInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateDocumentDraftMutation, CreateDocumentDraftMutationVariables>;
 export const InterviewQuestionsDocument = {
   kind: 'Document',
   definitions: [

@@ -11,10 +11,11 @@ import {
   type DocumentDraft,
 } from '../graphql/documentQueries';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
+import { graphql } from '#/graphql/generated';
 
 export type DraftType = 'cover_letter' | 'resume';
 
-const CREATE_DRAFT_MUTATION = `
+const CREATE_DRAFT_MUTATION = graphql(`
   mutation CreateDocumentDraft($input: CreateDocumentDraftInput!) {
     createDocumentDraft(input: $input) {
       id
@@ -23,7 +24,7 @@ const CREATE_DRAFT_MUTATION = `
       title
     }
   }
-`;
+`);
 
 /** A draft with nothing in it. An unknown text (a list that did not say) is not blank. */
 export function isBlankDraft(draft: Pick<DocumentDraft, 'plainText'>): boolean {

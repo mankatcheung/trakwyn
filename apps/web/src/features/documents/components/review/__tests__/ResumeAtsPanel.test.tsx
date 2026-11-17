@@ -12,6 +12,7 @@ vi.mock('#/graphql/client', () => ({
 
 import { ResumeAts } from '#/features/documents/components/review/ResumeAtsPanel';
 import type { AtsScore } from '#/features/documents/graphql/resumeAtsQueries';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const goodScore: AtsScore = {
   id: 'ats-1',
@@ -91,7 +92,8 @@ function mockApi({
   computed?: AtsScore;
   computeError?: unknown;
 }) {
-  mockGqlRequest.mockImplementation((document: string) => {
+  mockGqlRequest.mockImplementation((documentDoc: unknown) => {
+    const document = gqlText(documentDoc);
     if (document.includes('mutation ComputeResumeAtsScore')) {
       return computeError
         ? Promise.reject(computeError)
@@ -103,7 +105,7 @@ function mockApi({
 
 const computeCalls = () =>
   mockGqlRequest.mock.calls.filter(([doc]) =>
-    (doc as string).includes('mutation ComputeResumeAtsScore'),
+    gqlText(doc).includes('mutation ComputeResumeAtsScore'),
   );
 
 const checkButton = () => screen.findByRole('button', { name: /check ats/i });

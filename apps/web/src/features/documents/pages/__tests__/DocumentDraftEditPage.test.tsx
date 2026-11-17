@@ -112,6 +112,7 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
 }));
 
 import { DraftEditPage } from '../DraftEditPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const DRAFT = {
   id: 'draft-1',
@@ -135,7 +136,8 @@ type Handlers = {
 };
 
 function mockApi({ save, exportPdf, rename }: Handlers = {}) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
     if (query.includes('UpdateDocumentDraftContent'))
       return save ? save() : Promise.resolve({ updateDocumentDraftContent: { id: 'draft-1' } });
@@ -150,7 +152,7 @@ function mockApi({ save, exportPdf, rename }: Handlers = {}) {
 // The import action reads the application's documents; that is not what these tests are about.
 const operations = () =>
   mockGqlRequest.mock.calls
-    .map(([query]) => /(?:query|mutation) (\w+)/.exec(String(query))?.[1])
+    .map(([query]) => /(?:query|mutation) (\w+)/.exec(gqlText(query))?.[1])
     .filter((name) => name !== 'Documents');
 
 function renderPage() {
@@ -184,7 +186,7 @@ describe('DocumentDraftEditPage — inline AI (JEF-583)', () => {
 
     await waitFor(() => expect(operations()).toContain('UpdateDocumentDraftContent'));
     const call = mockGqlRequest.mock.calls.find(([q]) =>
-      String(q).includes('UpdateDocumentDraftContent'),
+      gqlText(q).includes('UpdateDocumentDraftContent'),
     )!;
     expect(call[1].input).toEqual({
       draftId: 'draft-1',
@@ -204,7 +206,7 @@ describe('DocumentDraftEditPage — inline AI (JEF-583)', () => {
     fireEvent.click(screen.getByRole('button', { name: /retry save/i }));
     await waitFor(() => {
       const last = mockGqlRequest.mock.calls
-        .filter(([q]) => String(q).includes('UpdateDocumentDraftContent'))
+        .filter(([q]) => gqlText(q).includes('UpdateDocumentDraftContent'))
         .at(-1)!;
       expect(last[1].input.aiInstructions).toBe('last prompt');
     });
@@ -325,18 +327,15 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
     fireEvent.click(await screen.findByText(/mock ai save/));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateDocumentDraftContent'),
-        {
-          input: {
-            draftId: 'draft-1',
-            contentJson: '{"ai":true}',
-            plainText: 'ai text',
-            aiInstructions: 'make it short',
-            replacedByAi: true,
-          },
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateDocumentDraftContent'), {
+        input: {
+          draftId: 'draft-1',
+          contentJson: '{"ai":true}',
+          plainText: 'ai text',
+          aiInstructions: 'make it short',
+          replacedByAi: true,
         },
-      ),
+      }),
     );
     expect(
       await screen.findByText(/mock ai save \[ai text\] \[make it short\]/),
@@ -359,19 +358,16 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
     fireEvent.click(screen.getByRole('button', { name: /retry save/i }));
 
     await waitFor(() => expect(screen.queryByText(/could not be saved/i)).not.toBeInTheDocument());
-    expect(mockGqlRequest).toHaveBeenLastCalledWith(
-      expect.stringContaining('UpdateDocumentDraftContent'),
-      {
-        input: {
-          draftId: 'draft-1',
-          contentJson: '{"on":"screen"}',
-          plainText: 'on screen',
-          aiInstructions: 'make it short',
-          // The retry still carries an AI result over the saved content.
-          replacedByAi: true,
-        },
+    expect(mockGqlRequest).toHaveBeenLastCalledWith(gqlContaining('UpdateDocumentDraftContent'), {
+      input: {
+        draftId: 'draft-1',
+        contentJson: '{"on":"screen"}',
+        plainText: 'on screen',
+        aiInstructions: 'make it short',
+        // The retry still carries an AI result over the saved content.
+        replacedByAi: true,
       },
-    );
+    });
   });
 
   it('runs saves one at a time, in order, so an older one cannot land after a newer one', async () => {
@@ -397,7 +393,7 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
 
     await waitFor(() => expect(mockDownloadUrl).toHaveBeenCalled());
     const save = mockGqlRequest.mock.calls.find(([q]) =>
-      String(q).includes('UpdateDocumentDraftContent'),
+      gqlText(q).includes('UpdateDocumentDraftContent'),
     );
     expect(save![1].input).not.toHaveProperty('aiInstructions');
   });
@@ -411,7 +407,7 @@ describe('DocumentDraftEditPage — inline title (JEF-506)', () => {
 
   const titleField = () => screen.findByRole('textbox', { name: /rename draft/i });
   const renameCalls = () =>
-    mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('RenameDocumentDraft'));
+    mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('RenameDocumentDraft'));
 
   it('is an input from the start, showing the title, with the type as placeholder', async () => {
     renderPage();
@@ -533,8 +529,8 @@ describe('DocumentDraftEditPage — import into an empty draft (JEF-506)', () =>
   });
 
   it('hides it once the draft has text', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('query DocumentDraft')
+    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
+      gqlText(queryDoc).includes('query DocumentDraft')
         ? Promise.resolve({ documentDraft: { ...DRAFT, plainText: 'already written' } })
         : Promise.resolve({}),
     );
@@ -548,17 +544,14 @@ describe('DocumentDraftEditPage — import into an empty draft (JEF-506)', () =>
     fireEvent.click(await screen.findByText('mock import'));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateDocumentDraftContent'),
-        {
-          input: {
-            draftId: 'draft-1',
-            contentJson: '{"imported":true}',
-            plainText: 'imported',
-            aiInstructions: 'last prompt',
-          },
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateDocumentDraftContent'), {
+        input: {
+          draftId: 'draft-1',
+          contentJson: '{"imported":true}',
+          plainText: 'imported',
+          aiInstructions: 'last prompt',
         },
-      ),
+      }),
     );
     // Now it has text, so the import goes away.
     await waitFor(() => expect(screen.queryByText('mock import')).not.toBeInTheDocument());
@@ -585,8 +578,10 @@ describe('DocumentDraftEditPage — resume checks (JEF-585)', () => {
   });
 
   it('does not show them for a cover letter', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(query.includes('query DocumentDraft') ? { documentDraft: COVER_LETTER } : {}),
+    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
+      Promise.resolve(
+        gqlText(queryDoc).includes('query DocumentDraft') ? { documentDraft: COVER_LETTER } : {},
+      ),
     );
     renderPage();
     await screen.findByTestId('editor');
@@ -618,16 +613,15 @@ describe('DocumentDraftEditPage — draft history (JEF-584)', () => {
     await clickExport(); // an ordinary save: the editor's pending edit
     await waitFor(() => expect(operations()).toContain('UpdateDocumentDraftContent'));
     const ordinary = mockGqlRequest.mock.calls.find(([q]) =>
-      String(q).includes('UpdateDocumentDraftContent'),
+      gqlText(q).includes('UpdateDocumentDraftContent'),
     )!;
     expect(ordinary[1].input).not.toHaveProperty('replacedByAi');
 
     fireEvent.click(await screen.findByText(/mock ai save/));
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateDocumentDraftContent'),
-        { input: expect.objectContaining({ contentJson: '{"ai":true}', replacedByAi: true }) },
-      ),
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateDocumentDraftContent'), {
+        input: expect.objectContaining({ contentJson: '{"ai":true}', replacedByAi: true }),
+      }),
     );
   });
 

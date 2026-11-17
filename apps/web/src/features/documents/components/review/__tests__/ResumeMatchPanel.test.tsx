@@ -18,6 +18,7 @@ vi.mock('#/graphql/client', () => ({
 
 import { ResumeMatch as ResumeMatchSlot } from '#/features/documents/components/review/ResumeMatchPanel';
 import type { ResumeMatch } from '#/features/documents/graphql/resumeMatchQueries';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
@@ -75,7 +76,8 @@ function mockApi({
   computed?: ResumeMatch;
   computeError?: Error;
 }) {
-  mockGqlRequest.mockImplementation((document: string) => {
+  mockGqlRequest.mockImplementation((documentDoc: unknown) => {
+    const document = gqlText(documentDoc);
     if (document.includes('mutation ComputeResumeMatchScore')) {
       return computeError
         ? Promise.reject(computeError)
@@ -110,7 +112,7 @@ describe('ResumeMatch', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Strong overlap on core skills.')).not.toBeInTheDocument();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('mutation ComputeResumeMatchScore'),
+      gqlContaining('mutation ComputeResumeMatchScore'),
       expect.anything(),
     );
   });
@@ -148,10 +150,11 @@ describe('ResumeMatch', () => {
     fireEvent.click(await chipName(/generate match/i));
 
     expect(await screen.findByText('Strong overlap on core skills.')).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('mutation ComputeResumeMatchScore'),
-      { applicationId: 'app-1', documentDraftId: 'draft-1', documentId: null },
-    );
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('mutation ComputeResumeMatchScore'), {
+      applicationId: 'app-1',
+      documentDraftId: 'draft-1',
+      documentId: null,
+    });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
   });
@@ -164,7 +167,7 @@ describe('ResumeMatch', () => {
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('mutation ComputeResumeMatchScore'),
+        gqlContaining('mutation ComputeResumeMatchScore'),
         { applicationId: 'app-1', documentDraftId: null, documentId: 'doc-1' },
       ),
     );

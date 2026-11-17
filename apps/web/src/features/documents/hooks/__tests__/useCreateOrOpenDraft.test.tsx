@@ -15,6 +15,7 @@ import {
   findBlankDraft,
   useCreateOrOpenDraft,
 } from '#/features/documents/hooks/useCreateOrOpenDraft';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const draft = (id: string, type: string, plainText: string | undefined, updatedAt: string) => ({
   id,
@@ -40,13 +41,15 @@ function api(
   create: () => Promise<unknown> = () =>
     Promise.resolve({ createDocumentDraft: { id: 'created', applicationId: 'app-1' } }),
 ) {
-  mockRequest.mockImplementation((query: string) =>
-    query.includes('CreateDocumentDraft') ? create() : Promise.resolve({ documentDrafts: drafts }),
+  mockRequest.mockImplementation((queryDoc: unknown) =>
+    gqlText(queryDoc).includes('CreateDocumentDraft')
+      ? create()
+      : Promise.resolve({ documentDrafts: drafts }),
   );
 }
 
 const creates = () =>
-  mockRequest.mock.calls.filter(([q]) => String(q).includes('CreateDocumentDraft'));
+  mockRequest.mock.calls.filter(([q]) => gqlText(q).includes('CreateDocumentDraft'));
 const draftsPath = (draftId: string) => ({
   to: '/applications/$applicationId/documents/$draftId',
   params: { applicationId: 'app-1', draftId },
@@ -90,7 +93,7 @@ describe('useCreateOrOpenDraft', () => {
     await act(() => result.current.run());
 
     const lists = mockRequest.mock.calls.filter(([q]) =>
-      String(q).includes('query DocumentDrafts'),
+      gqlText(q).includes('query DocumentDrafts'),
     );
     expect(lists).toHaveLength(2);
   });

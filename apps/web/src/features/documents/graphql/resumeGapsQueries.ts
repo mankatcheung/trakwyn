@@ -1,23 +1,36 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const RESUME_GAPS_FIELDS = `
-  requirementsRead
-  requirementGaps
-  rolesWithoutMetrics { workExperienceId company title description }
-`;
-
-export const RESUME_GAPS_QUERY = `
+export const RESUME_GAPS_QUERY = graphql(`
   query ResumeGaps($applicationId: ID!) {
-    resumeGaps(applicationId: $applicationId) { ${RESUME_GAPS_FIELDS} }
+    resumeGaps(applicationId: $applicationId) {
+      requirementsRead
+      requirementGaps
+      rolesWithoutMetrics {
+        workExperienceId
+        company
+        title
+        description
+      }
+    }
   }
-`;
+`);
 
-export const DISMISS_RESUME_GAP = `
+export const DISMISS_RESUME_GAP = graphql(`
   mutation DismissResumeGap($applicationId: ID!, $key: String!) {
-    dismissResumeGap(applicationId: $applicationId, key: $key) { ${RESUME_GAPS_FIELDS} }
+    dismissResumeGap(applicationId: $applicationId, key: $key) {
+      requirementsRead
+      requirementGaps
+      rolesWithoutMetrics {
+        workExperienceId
+        company
+        title
+        description
+      }
+    }
   }
-`;
+`);
 
 export type RoleWithoutMetrics = {
   workExperienceId: string;

@@ -1,31 +1,55 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 import type { ResumeRef } from './resumeMatchQueries';
 
-const ATS_SCORE_FIELDS = `
-  id
-  applicationId
-  documentDraftId
-  documentId
-  score
-  label
-  readable
-  checks { id label passed points maxPoints hint }
-  generatedAt
-  isStale
-`;
-
-export const RESUME_ATS_SCORES_QUERY = `
+export const RESUME_ATS_SCORES_QUERY = graphql(`
   query ResumeAtsScores($applicationId: ID!) {
-    resumeAtsScores(applicationId: $applicationId) { ${ATS_SCORE_FIELDS} }
+    resumeAtsScores(applicationId: $applicationId) {
+      id
+      applicationId
+      documentDraftId
+      documentId
+      score
+      label
+      readable
+      checks {
+        id
+        label
+        passed
+        points
+        maxPoints
+        hint
+      }
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
-export const COMPUTE_RESUME_ATS_SCORE = `
+export const COMPUTE_RESUME_ATS_SCORE = graphql(`
   mutation ComputeResumeAtsScore($documentDraftId: ID, $documentId: ID) {
-    computeResumeAtsScore(documentDraftId: $documentDraftId, documentId: $documentId) { ${ATS_SCORE_FIELDS} }
+    computeResumeAtsScore(documentDraftId: $documentDraftId, documentId: $documentId) {
+      id
+      applicationId
+      documentDraftId
+      documentId
+      score
+      label
+      readable
+      checks {
+        id
+        label
+        passed
+        points
+        maxPoints
+        hint
+      }
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
 export type AtsCheck = {
   id: string;
