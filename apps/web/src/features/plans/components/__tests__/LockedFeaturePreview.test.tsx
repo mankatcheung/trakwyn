@@ -28,6 +28,7 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
 import { LockedFeaturePreview } from '#/features/plans/components/LockedFeaturePreview';
 import { AnalyticsPage } from '#/features/analytics/pages/AnalyticsPage';
 import { OffersPage } from '#/features/offers/pages/OffersPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -45,7 +46,8 @@ const features = (locked: boolean) => ({
 
 /** Answers each query by name; `locked` is what the API says about the plan's features. */
 function serve(locked: boolean) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((document: unknown) => {
+    const query = gqlText(document);
     if (query.includes('BillingStatus')) {
       return Promise.resolve({ billingStatus: { enforced: true, features: features(locked) } });
     }
@@ -121,9 +123,8 @@ describe('AnalyticsPage plan gating', () => {
     // Nothing of the real page sits beside the lock: no real panels, no gated or per-panel requests.
     expect(screen.queryByText('Interview round outcomes')).not.toBeInTheDocument();
     expect(screen.queryByText('Time to respond')).not.toBeInTheDocument();
-    expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('offerAnalytics'),
-      expect.anything(),
+    expect(mockGqlRequest.mock.calls.some(([doc]) => gqlText(doc).includes('offerAnalytics'))).toBe(
+      false,
     );
   });
 
@@ -159,9 +160,9 @@ describe('OffersPage plan gating', () => {
   });
 
   it('shows no preview where plans are not enforced', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
+    mockGqlRequest.mockImplementation((document: unknown) =>
       Promise.resolve(
-        query.includes('BillingStatus')
+        gqlText(document).includes('BillingStatus')
           ? { billingStatus: { enforced: false, features: features(false) } }
           : { myOffers: [] },
       ),

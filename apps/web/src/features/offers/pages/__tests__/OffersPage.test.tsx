@@ -15,6 +15,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { OffersPage } from '#/features/offers/pages/OffersPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -95,7 +96,8 @@ describe('OffersPage', () => {
   });
 
   it('renders a comparison table with the best offer highlighted first', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((document: unknown) => {
+      const query = gqlText(document);
       if (query.includes('MyOffers')) return Promise.resolve({ myOffers: [offerA, offerB] });
       if (query.includes('CompareOffers')) {
         return Promise.resolve({
@@ -129,9 +131,10 @@ describe('OffersPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /compare \(2\)/i }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('CompareOffers'), {
-        offerIds: ['offer-a', 'offer-b'],
-      });
+      const call = mockGqlRequest.mock.calls.find(([doc]) =>
+        gqlText(doc).includes('CompareOffers'),
+      );
+      expect(call?.[1]).toEqual({ offerIds: ['offer-a', 'offer-b'] });
     });
 
     await waitFor(() => {
