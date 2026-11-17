@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CalendarIcon, CheckIcon, EditIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
+import { useFormAction } from '#/lib/useFormAction';
 import { QuotaHint } from '#/components/QuotaHint';
 import { useQuotaState } from '#/lib/contentQuota';
 import {
+  Alert,
   Button,
   Card,
   EmptyState,
@@ -15,6 +20,7 @@ import {
   Input,
   Select,
   Skeleton,
+  SubmitButton,
   Textarea,
 } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../-sectionCounts';
@@ -58,13 +64,15 @@ type InterviewRound = {
   updatedAt: string;
 };
 
-type RoundFormState = {
-  type: string;
-  scheduledAt: string;
-  interviewerName: string;
-  notes: string;
-  outcome: string;
-};
+const roundSchema = z.object({
+  type: z.string(),
+  scheduledAt: z.string(),
+  interviewerName: z.string(),
+  notes: z.string(),
+  outcome: z.string(),
+});
+
+type RoundFormState = z.infer<typeof roundSchema>;
 
 const ROUND_TYPES = ['phone', 'technical', 'onsite', 'hr', 'other'] as const;
 const ROUND_OUTCOMES = ['pending', 'passed', 'failed', 'cancelled'] as const;
@@ -78,6 +86,16 @@ const OUTCOME_STYLES: Record<string, string> = {
 
 function emptyForm(): RoundFormState {
   return { type: 'phone', scheduledAt: '', interviewerName: '', notes: '', outcome: 'pending' };
+}
+
+function roundToForm(r: InterviewRound): RoundFormState {
+  return {
+    type: r.type,
+    scheduledAt: r.scheduledAt ? r.scheduledAt.slice(0, 16) : '',
+    interviewerName: r.interviewerName ?? '',
+    notes: r.notes ?? '',
+    outcome: r.outcome,
+  };
 }
 
 function generateIcs(rounds: InterviewRound[], company: string, role: string): string {
@@ -133,7 +151,87 @@ function downloadIcs(content: string, company: string, role: string) {
   URL.revokeObjectURL(url);
 }
 
-/* eslint-disable react-hooks/static-components -- opted out below with 'use no memo'; the reason is there */
+interface RoundFormProps {
+  initial: RoundFormState;
+  /** Saves the round. A rejection is shown under the form and keeps what was typed. */
+  onSave: (values: RoundFormState) => Promise<unknown>;
+  onCancel: () => void;
+}
+
+function RoundForm({ initial, onSave, onCancel }: RoundFormProps) {
+  const { t } = useLocale();
+  const form = useForm<RoundFormState>({
+    resolver: zodResolver(roundSchema),
+    defaultValues: initial,
+  });
+  const { register } = form;
+
+  const { state, formProps } = useFormAction(form, async (values) => {
+    try {
+      await onSave(values);
+    } catch (error) {
+      return getErrorMessage(error);
+    }
+  });
+
+  return (
+    <form {...formProps}>
+      <Card className="space-y-3 p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <FormLabel size="xs">{t('interviews.typeLabel')}</FormLabel>
+            <Select {...register('type')}>
+              {ROUND_TYPES.map((roundType) => (
+                <option key={roundType} value={roundType}>
+                  {t(`interviews.${roundType}`)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <FormLabel size="xs">{t('interviews.outcomeLabel')}</FormLabel>
+            <Select {...register('outcome')}>
+              {ROUND_OUTCOMES.map((outcome) => (
+                <option key={outcome} value={outcome}>
+                  {t(`interviews.${outcome}`)}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <div>
+          <FormLabel size="xs">{t('interviews.scheduledAtLabel')}</FormLabel>
+          <Input type="datetime-local" {...register('scheduledAt')} />
+        </div>
+        <div>
+          <FormLabel size="xs">{t('interviews.interviewerLabel')}</FormLabel>
+          <Input
+            {...register('interviewerName')}
+            placeholder={t('interviews.interviewerPlaceholder')}
+          />
+        </div>
+        <div>
+          <FormLabel size="xs">{t('interviews.notesLabel')}</FormLabel>
+          <Textarea
+            {...register('notes')}
+            className="h-20"
+            placeholder={t('interviews.notesPlaceholder')}
+          />
+        </div>
+        {state.error && <Alert>{state.error}</Alert>}
+        <div className="flex justify-end gap-2">
+          <SubmitButton size="sm" pendingLabel={t('applicationForm.saving')}>
+            {t('common.save')}
+          </SubmitButton>
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </Card>
+    </form>
+  );
+}
+
 export function InterviewsTab({
   applicationId,
   company,
@@ -143,14 +241,10 @@ export function InterviewsTab({
   company: string;
   role: string;
 }) {
-  // Defines the RoundForm component inside render (static-components); hoist it before compiling this.
-  'use no memo';
-
   const { t } = useLocale();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingRound, setEditingRound] = useState<InterviewRound | null>(null);
-  const [form, setForm] = useState<RoundFormState>(emptyForm());
 
   const { data, isLoading } = useQuery({
     queryKey: ['interviewRounds', applicationId],
@@ -205,10 +299,7 @@ export function InterviewsTab({
     onError: (_err, _f, context) => {
       if (context?.prev) qc.setQueryData(['interviewRounds', applicationId], context.prev);
     },
-    onSuccess: () => {
-      setShowForm(false);
-      setForm(emptyForm());
-    },
+    onSuccess: () => setShowForm(false),
     onSettled: () => invalidate(),
   });
 
@@ -260,100 +351,11 @@ export function InterviewsTab({
   const rounds = data?.interviewRounds ?? [];
   const roundsFull = useQuotaState('interviewRounds', rounds.length)?.level === 'full';
 
-  const openEdit = (r: InterviewRound) => {
-    setEditingRound(r);
-    setForm({
-      type: r.type,
-      scheduledAt: r.scheduledAt ? r.scheduledAt.slice(0, 16) : '',
-      interviewerName: r.interviewerName ?? '',
-      notes: r.notes ?? '',
-      outcome: r.outcome,
-    });
-  };
-
-  const RoundForm = ({
-    onSubmit,
-    onCancel,
-    submitting,
-  }: {
-    onSubmit: () => void;
-    onCancel: () => void;
-    submitting: boolean;
-  }) => (
-    <Card className="space-y-3 p-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <FormLabel size="xs">{t('interviews.typeLabel')}</FormLabel>
-          <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            {ROUND_TYPES.map((roundType) => (
-              <option key={roundType} value={roundType}>
-                {t(`interviews.${roundType}`)}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <FormLabel size="xs">{t('interviews.outcomeLabel')}</FormLabel>
-          <Select
-            value={form.outcome}
-            onChange={(e) => setForm({ ...form, outcome: e.target.value })}
-          >
-            {ROUND_OUTCOMES.map((outcome) => (
-              <option key={outcome} value={outcome}>
-                {t(`interviews.${outcome}`)}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
-      <div>
-        <FormLabel size="xs">{t('interviews.scheduledAtLabel')}</FormLabel>
-        <Input
-          type="datetime-local"
-          value={form.scheduledAt}
-          onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
-        />
-      </div>
-      <div>
-        <FormLabel size="xs">{t('interviews.interviewerLabel')}</FormLabel>
-        <Input
-          value={form.interviewerName}
-          onChange={(e) => setForm({ ...form, interviewerName: e.target.value })}
-          placeholder={t('interviews.interviewerPlaceholder')}
-        />
-      </div>
-      <div>
-        <FormLabel size="xs">{t('interviews.notesLabel')}</FormLabel>
-        <Textarea
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          className="h-20"
-          placeholder={t('interviews.notesPlaceholder')}
-        />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button size="sm" onClick={onSubmit} disabled={submitting}>
-          {submitting ? t('applicationForm.saving') : t('common.save')}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-      </div>
-    </Card>
-  );
-
   return (
     <div className="space-y-4">
       {!showForm && !editingRound && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            disabled={roundsFull}
-            onClick={() => {
-              setShowForm(true);
-              setForm(emptyForm());
-            }}
-          >
+          <Button size="sm" disabled={roundsFull} onClick={() => setShowForm(true)}>
             <span className="flex items-center gap-1.5">
               <PlusIcon size={14} /> {t('interviews.addInterviewRound')}
             </span>
@@ -374,18 +376,11 @@ export function InterviewsTab({
       )}
 
       {showForm && (
-        <>
-          <RoundForm
-            onSubmit={() => createRound.mutate(form)}
-            onCancel={() => setShowForm(false)}
-            submitting={createRound.isPending}
-          />
-          {createRound.isError && (
-            <p role="alert" className="text-xs text-red-600">
-              {getErrorMessage(createRound.error)}
-            </p>
-          )}
-        </>
+        <RoundForm
+          initial={emptyForm()}
+          onSave={(values) => createRound.mutateAsync(values)}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       {isLoading ? (
@@ -405,9 +400,9 @@ export function InterviewsTab({
         <Card key={round.id} className="p-4">
           {editingRound?.id === round.id ? (
             <RoundForm
-              onSubmit={() => updateRound.mutate({ id: round.id, f: form })}
+              initial={roundToForm(round)}
+              onSave={(values) => updateRound.mutateAsync({ id: round.id, f: values })}
               onCancel={() => setEditingRound(null)}
-              submitting={updateRound.isPending}
             />
           ) : (
             <>
@@ -442,7 +437,7 @@ export function InterviewsTab({
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <button
-                    onClick={() => openEdit(round)}
+                    onClick={() => setEditingRound(round)}
                     className="rounded-sm p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                   >
                     <EditIcon size={14} />
