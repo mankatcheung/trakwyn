@@ -1,11 +1,12 @@
 import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useQueryClient } from '@tanstack/react-query';
+import { useForm, useWatch } from 'react-hook-form';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, FormLabel, Input, Select } from '@trakwyn/ui';
+import { Alert, Button, FormLabel, Input, Select, SubmitButton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import {
   CUSTOM_LLM_PROVIDER,
   SAVE_LLM_API_KEY,
@@ -46,11 +47,7 @@ interface AddLlmApiKeyFormProps {
  * custom provider), with a test of the unsaved values before saving (JEF-247).
  * Shared by Settings → AI and the welcome flow's AI step (JEF-460).
  */
-/* eslint-disable react-hooks/incompatible-library -- opted out below with 'use no memo'; the reason is there */
 export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormProps) {
-  // react-hook-form watch() returns values the compiler cannot memoize safely (incompatible-library).
-  'use no memo';
-
   const { t } = useLocale();
   const qc = useQueryClient();
 
@@ -58,7 +55,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
     resolver: zodResolver(llmApiKeySchema),
     defaultValues: { provider: 'openrouter', apiKey: '', model: '', baseUrl: '' },
   });
-  const provider = form.watch('provider');
+  const provider = useWatch({ control: form.control, name: 'provider' });
   const isCustomProvider = provider === CUSTOM_LLM_PROVIDER;
   const dataUseUrl = llmProviderDataUseUrl(provider);
   const providerValues = providerOptions.map((o) => o.value).join(',');
@@ -69,28 +66,35 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
     }
   }, [providerValues, form, provider, providerOptions]);
 
-  const onSave = async (data: LlmApiKeyForm) => {
-    try {
-      await gqlClient.request(SAVE_LLM_API_KEY, {
+  const save = useMutation({
+    mutationFn: (data: LlmApiKeyForm) =>
+      gqlClient.request(SAVE_LLM_API_KEY, {
         provider: data.provider,
         apiKey: data.apiKey,
         model: data.model?.trim() || undefined,
         baseUrl: data.baseUrl?.trim() || undefined,
-      });
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['llmApiKeys'] }),
+  });
+
+  const { state, formProps } = useFormAction(form, async (data) => {
+    try {
+      await save.mutateAsync(data);
       form.reset({ provider: data.provider, apiKey: '', model: '', baseUrl: '' });
-      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
       onSaved?.();
+      return null;
     } catch (err) {
-      form.setError('root', {
-        message: extractGqlError(err) ?? t('integrations.saveApiKeyFailed'),
-      });
+      return extractGqlError(err) ?? t('integrations.saveApiKeyFailed');
     }
-  };
+  });
 
   // Testing the form's unsaved values, before Save (JEF-247).
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestLlmApiKeyResult | null>(null);
-  const [apiKey, model, baseUrl] = form.watch(['apiKey', 'model', 'baseUrl']);
+  const [apiKey, model, baseUrl] = useWatch({
+    control: form.control,
+    name: ['apiKey', 'model', 'baseUrl'],
+  });
   const canTest = !!apiKey?.trim() && (!isCustomProvider || (!!model?.trim() && !!baseUrl?.trim()));
   // Editing the form after a test invalidates that result — don't leave a
   // stale "Connection works" showing against a key the user has since changed.
@@ -124,7 +128,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
   const errors = form.formState.errors;
 
   return (
-    <form onSubmit={form.handleSubmit(onSave)} className="space-y-3">
+    <form {...formProps} className="space-y-3">
       <div>
         <FormLabel>{t('integrations.providerLabel')}</FormLabel>
         <Select {...form.register('provider')}>
@@ -201,12 +205,12 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
           />
         </div>
       )}
-      {errors.root && <Alert>{errors.root.message}</Alert>}
+      {state.error && <Alert>{state.error}</Alert>}
       {testResult && <TestResultLine result={testResult} />}
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? t('applicationForm.saving') : t('integrations.addKey')}
-        </Button>
+        <SubmitButton pendingLabel={t('applicationForm.saving')}>
+          {t('integrations.addKey')}
+        </SubmitButton>
         <Button type="button" variant="secondary" onClick={onTest} disabled={!canTest || testing}>
           {testing ? t('integrations.testingKey') : t('integrations.testKey')}
         </Button>

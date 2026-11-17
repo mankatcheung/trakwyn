@@ -99,6 +99,55 @@ describe('McpAuthorizePage', () => {
     expect(JSON.parse(String(options.body))).toMatchObject({ approved: false });
   });
 
+  it('disables both buttons while the decision is sent, and a double click sends it once', async () => {
+    let finish!: (response: Response) => void;
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { client_name: 'Claude Desktop', consent_token: 'consent-1' }),
+    );
+    fetchMock.mockReturnValueOnce(new Promise<Response>((resolve) => (finish = resolve)));
+    render(<McpAuthorizePage />);
+    await screen.findByText('Claude Desktop');
+
+    await userEvent.dblClick(screen.getByRole('button', { name: /allow access/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /allow access/i })).toBeDisabled(),
+    );
+    expect(screen.getByRole('button', { name: /deny|cancel/i })).toBeDisabled();
+    finish(jsonResponse(200, { redirect_to: 'http://localhost:6274/callback?code=abc' }));
+
+    await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+    // One GET for the consent screen, one POST for the decision.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the API error when the decision is refused', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { client_name: 'Claude Desktop', consent_token: 'consent-1' }),
+    );
+    fetchMock.mockResolvedValueOnce(jsonResponse(400, { error: 'consent_expired' }));
+    render(<McpAuthorizePage />);
+    await screen.findByText('Claude Desktop');
+
+    await userEvent.click(screen.getByRole('button', { name: /allow access/i }));
+
+    expect(await screen.findByText('consent_expired')).toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('shows a generic error when the request itself fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { client_name: 'Claude Desktop', consent_token: 'consent-1' }),
+    );
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    render(<McpAuthorizePage />);
+    await screen.findByText('Claude Desktop');
+
+    await userEvent.click(screen.getByRole('button', { name: /allow access/i }));
+
+    expect(await screen.findByText('Unable to complete authorization.')).toBeInTheDocument();
+  });
+
   it('offers a sign-in link back to this same authorization request when signed out', async () => {
     fetchMock.mockResolvedValue(jsonResponse(401, { error: 'login_required' }));
 

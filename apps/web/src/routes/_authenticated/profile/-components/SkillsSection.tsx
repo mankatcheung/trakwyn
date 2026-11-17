@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { PencilIcon, Trash2Icon, WrenchIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import { Alert, FormLabel, IconButton, Input, Select, Skeleton } from '@trakwyn/ui';
 import {
   CREATE_SKILL,
@@ -88,6 +89,18 @@ export function SkillsSection() {
     onSuccess: invalidate,
   });
 
+  // The mutations keep the request, the cache invalidation and `createError`
+  // (shown by ProfileSection); the action only awaits them, so the submit
+  // button stays pending until the request settles. A failure is already on
+  // the mutation, so it is not returned as a second message.
+  const { formProps } = useFormAction(form, async (values) => {
+    try {
+      await (editing ? update.mutateAsync(values) : create.mutateAsync(values));
+    } catch {
+      // Surfaced through the mutation's `error`.
+    }
+  });
+
   return (
     <ProfileSection
       id={SKILLS_SECTION_ID}
@@ -147,12 +160,7 @@ export function SkillsSection() {
       )}
 
       {formOpen && (
-        <form
-          onSubmit={form.handleSubmit((values) =>
-            editing ? update.mutate(values) : create.mutate(values),
-          )}
-          className={FORM_CLASS}
-        >
+        <form {...formProps} className={FORM_CLASS}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <FormLabel>{t('experience.skillLabel')}</FormLabel>
@@ -182,11 +190,7 @@ export function SkillsSection() {
             </div>
           </div>
           {errors.root?.message && <Alert>{errors.root.message}</Alert>}
-          <FormActions
-            submitting={form.formState.isSubmitting}
-            editing={!!editing}
-            onCancel={closeForm}
-          />
+          <FormActions editing={!!editing} onCancel={closeForm} />
         </form>
       )}
     </ProfileSection>
