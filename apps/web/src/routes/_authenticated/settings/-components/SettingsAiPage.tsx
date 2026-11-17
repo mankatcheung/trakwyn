@@ -8,7 +8,7 @@ import { LlmApiKeyRow } from './LlmApiKeyRow';
 import { AddLlmApiKeyForm } from './AddLlmApiKeyForm';
 import { AiProviderOrderCard } from './AiProviderOrderCard';
 import { CustomAiPromptForm } from './CustomAiPromptForm';
-import { useHostedAiAvailable } from '#/lib/aiCredits';
+import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
 import { Alert, Card, Checkbox, Skeleton } from '@trakwyn/ui';
 import {
   LLM_API_KEYS_QUERY,

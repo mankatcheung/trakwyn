@@ -4,8 +4,8 @@ import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
-import { AiCreditCost } from '#/components/ai/AiCreditCost';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
+import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
 import { Spinner } from '@trakwyn/ui';
 import {
   EXTRACT_POSTING_REQUIREMENTS,

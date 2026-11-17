@@ -5,7 +5,7 @@ import { JdImportPanel } from '#/routes/_authenticated/applications/-components/
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,
@@ -15,7 +15,7 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
     refresh: () => Promise.resolve(),
   }),
 }));
-vi.mock('#/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
+vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),

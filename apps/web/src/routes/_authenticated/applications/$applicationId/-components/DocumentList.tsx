@@ -3,8 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileTextIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
 import { storageUsageQueryKey, useStorageUsage } from '#/lib/storageUsage';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { useLocale } from '#/lib/i18n';
 import { documentCategory, type DocumentCategory } from '#/lib/documentCategory';
 import {

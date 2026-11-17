@@ -4,9 +4,9 @@ import { useMutation } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode, AI_NOT_CONFIGURED_CODE } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
-import { AiCreditCost } from '#/components/ai/AiCreditCost';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { SparklesIcon } from 'lucide-react';
 import { Button, Input, Textarea } from '@trakwyn/ui';
 

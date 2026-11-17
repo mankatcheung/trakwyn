@@ -18,7 +18,7 @@ vi.mock('#/graphql/client', () => ({
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
-vi.mock('#/components/ai/hooks/useAiCredits', () => ({
+vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
     onTrakwynAi: credits.onTrakwynAi,
     needsSetup: false,

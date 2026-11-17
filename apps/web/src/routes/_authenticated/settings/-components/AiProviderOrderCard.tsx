@@ -1,6 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, XIcon } from 'lucide-react';
 import { Alert, Card, IconButton } from '@trakwyn/ui';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { useLocale } from '#/lib/i18n';
 import {
   TRAKWYN_ENTRY,

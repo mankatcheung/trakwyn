@@ -123,7 +123,7 @@ describe('Accessibility audits', () => {
       mockGqlRequest.mockResolvedValue({ me: { avatarUrl: null } });
       const { ThemeProvider } = await import('#/lib/theme');
       const { AuthenticatedLayout } =
-        await import('#/routes/_authenticated/-components/AuthenticatedLayout');
+        await import('#/features/app-shell/components/AuthenticatedLayout');
 
       function AuthWrapper({ children }: { children: React.ReactNode }) {
         return (
@@ -140,7 +140,7 @@ describe('Accessibility audits', () => {
   describe('DashboardPage', () => {
     it('has no detectable a11y violations', async () => {
       mockGqlRequest.mockResolvedValue({ applications: [] });
-      const { DashboardPage } = await import('#/routes/_authenticated/-components/DashboardPage');
+      const { DashboardPage } = await import('#/features/dashboard/pages/DashboardPage');
       await checkA11y(<DashboardPage />);
     });
   });

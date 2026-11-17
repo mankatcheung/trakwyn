@@ -3,10 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LockIcon, UploadIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, Button, Modal, Spinner } from '@trakwyn/ui';
-import { AiErrorMessage } from '#/components/AiErrorMessage';
-import { AiCreditCost } from '#/components/ai/AiCreditCost';
-import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
-import { AiCreditsMeter } from '#/components/AiCreditsMeter';
+import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
+import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
+import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
+import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { ERROR_CODES } from '#/constants';
 import { gqlClient } from '#/graphql/client';
 import {

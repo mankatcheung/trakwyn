@@ -26,8 +26,8 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
 }));
 
 import { LockedFeaturePreview } from '#/features/plans/components/LockedFeaturePreview';
-import { AnalyticsPage } from '#/routes/_authenticated/-analytics-page';
-import { OffersPage } from '#/routes/_authenticated/-offers-page';
+import { AnalyticsPage } from '#/features/analytics/pages/AnalyticsPage';
+import { OffersPage } from '#/features/offers/pages/OffersPage';
 
 function Wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
