@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.17.0...web-v0.18.0) (2026-11-17)
+
+
+### Features
+
+* enable the React Compiler in the web app (JEF-610) ([#1468](https://github.com/mankatcheung/trakwyn/issues/1468)) ([7650342](https://github.com/mankatcheung/trakwyn/commit/765034295595490d8f5809e7dfde6ff5ea3eb0b2))
+* keep section state and use a transition on the application detail page (JEF-611) ([#1471](https://github.com/mankatcheung/trakwyn/issues/1471)) ([dbd1c57](https://github.com/mankatcheung/trakwyn/commit/dbd1c57dd674f65c6af8fd2dba854e9578ff27bf))
+* React 19 form actions for the profile, API-key, step-up and MCP forms, plus data and form rules (JEF-612) ([#1473](https://github.com/mankatcheung/trakwyn/issues/1473)) ([e9d1aa8](https://github.com/mankatcheung/trakwyn/commit/e9d1aa8119e6d1cb7c9a401c6f121e179a7716cb))
+
+
+### Bug Fixes
+
+* destroy editors in the selectionRange test so CI stops failing on a stray timer ([#1474](https://github.com/mankatcheung/trakwyn/issues/1474)) ([eb69d67](https://github.com/mankatcheung/trakwyn/commit/eb69d67536606d8454761bb654c1c71447cf5288))
+* **web:** add profile form placeholders and pair date fields (JEF-614) ([#1488](https://github.com/mankatcheung/trakwyn/issues/1488)) ([0c18d14](https://github.com/mankatcheung/trakwyn/commit/0c18d143e11248e68a42b57f4f4b0b3974bf9e59))
+* **web:** hold the verify request open in the step-up double click test ([#1496](https://github.com/mankatcheung/trakwyn/issues/1496)) ([209188b](https://github.com/mankatcheung/trakwyn/commit/209188b4d86b686529d017c414b45fa1044f51f7))
+* **web:** wait for the Add button after a failed certification save ([#1497](https://github.com/mankatcheung/trakwyn/issues/1497)) ([d3396a5](https://github.com/mankatcheung/trakwyn/commit/d3396a5abecc84f55b971e39ad5cd8cbb5da9526))
+
 ## [0.17.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.16.0...web-v0.17.0) (2026-11-16)
 
 
