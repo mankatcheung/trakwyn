@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import type { AiFeature } from '#/lib/billingStatus';
+import type { AiFeature } from '#/features/plans/lib/billingStatus';
 import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { AiCreditCost } from './AiCreditCost';
 import { useAiCredits } from './hooks/useAiCredits';

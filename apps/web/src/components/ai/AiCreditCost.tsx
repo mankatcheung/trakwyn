@@ -1,5 +1,5 @@
 import { useLocale } from '#/lib/i18n';
-import type { AiFeature } from '#/lib/billingStatus';
+import type { AiFeature } from '#/features/plans/lib/billingStatus';
 import { useAiCredits } from './hooks/useAiCredits';
 
 interface AiCreditCostProps {

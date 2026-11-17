@@ -10,11 +10,14 @@ import {
   preloadShortcutCheatSheet,
 } from '#/components/LazyShortcutCheatSheet';
 import { LogoMark } from '#/components/LogoMark';
-import { LegalFooterLinks } from '#/components/LegalFooterLinks';
+import { LegalFooterLinks } from '#/features/legal/components/LegalFooterLinks';
 import { ChatDockProvider } from '#/lib/chatDock';
 import { ChatDockFooter } from '../-chat-dock-footer';
 import { LazyChatDockFloatingWindow } from './LazyChatDockFloatingWindow';
-import { NotificationInboxButton, NotificationInboxLink } from '../-notification-inbox';
+import {
+  NotificationInboxButton,
+  NotificationInboxLink,
+} from '../../../features/notifications/components/NotificationInbox';
 import { AssistantNavConversations } from './AssistantNavConversations';
 import { useLocale } from '#/lib/i18n';
 import { consumeOAuthRegistration } from '#/lib/analytics';

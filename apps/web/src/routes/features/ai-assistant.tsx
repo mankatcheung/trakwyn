@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { FeatureAiAssistantPage } from './-components/FeatureAiAssistantPage';
+import { FeatureAiAssistantPage } from '../../features/marketing/pages/FeatureAiAssistantPage';
 
 const TITLE = 'AI Job Search Assistant — Trakwyn';
 const DESCRIPTION =

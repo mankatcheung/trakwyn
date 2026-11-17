@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { oauthErrorKey } from '#/lib/oauthError';
+import { oauthErrorKey } from '#/features/auth/lib/oauthError';
 import { API_ORIGIN } from '#/lib/apiOrigin';
-import { OAuthProviderLogo } from '#/components/OAuthProviderLogo';
+import { OAuthProviderLogo } from '#/features/auth/components/OAuthProviderLogo';
 import {
   LINKED_OAUTH_ACCOUNTS_QUERY,
   UNLINK_OAUTH_ACCOUNT,

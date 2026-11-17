@@ -14,7 +14,7 @@ import {
 import { z } from 'zod';
 import { Button, Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import { sameOriginPath } from '#/lib/returnTo';
+import { sameOriginPath } from '#/features/auth/lib/returnTo';
 import { CvImportDialog } from './-components/CvImportDialog';
 import {
   WORK_EXPERIENCE_SECTION_ID,

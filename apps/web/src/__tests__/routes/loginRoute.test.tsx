@@ -10,7 +10,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 // The page component is not what's under test here — the beforeLoad guard is.
-vi.mock('#/routes/-components/LoginPage', () => ({ LoginPage: () => null }));
+vi.mock('#/features/auth/pages/LoginPage', () => ({ LoginPage: () => null }));
 
 type RedirectError = Error & { redirectOpts?: { to: string } };
 

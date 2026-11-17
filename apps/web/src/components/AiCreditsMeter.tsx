@@ -1,6 +1,6 @@
 import { useLocale } from '#/lib/i18n';
 import { aiCreditsView, isLowOnCredits } from '#/lib/aiCredits';
-import { useBillingStatus } from '#/lib/billingStatus';
+import { useBillingStatus } from '#/features/plans/lib/billingStatus';
 
 interface AiCreditsMeterProps {
   /** `full` is the settings meter with a bar; `hint` is the one-line assistant note, shown only when low. */

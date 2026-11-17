@@ -11,8 +11,8 @@ import {
 } from 'recharts';
 import { ErrorState } from '#/components/ErrorState';
 import { LockedAnalyticsSample } from '#/components/LockedAnalyticsSample';
-import { LockedFeatureOverlay } from '#/components/LockedFeaturePreview';
-import { useFeatureLocked } from '#/lib/billingStatus';
+import { LockedFeatureOverlay } from '#/features/plans/components/LockedFeaturePreview';
+import { useFeatureLocked } from '#/features/plans/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';

@@ -4,9 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, Card, FormLabel, Input } from '@trakwyn/ui';
-import { UpgradePrompt } from '#/components/UpgradePrompt';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { UpgradePrompt } from '#/features/plans/components/UpgradePrompt';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import { PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import {
   SHARE_LINKS_QUERY,

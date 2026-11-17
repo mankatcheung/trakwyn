@@ -1,6 +1,6 @@
 import { PlusIcon } from 'lucide-react';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import type { DocumentDraft } from '../-documentQueries';
 import {

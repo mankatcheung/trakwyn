@@ -89,21 +89,21 @@ describe('Accessibility audits', () => {
 
   describe('LoginPage', () => {
     it('has no detectable a11y violations', async () => {
-      const { LoginPage } = await import('#/routes/-components/LoginPage');
+      const { LoginPage } = await import('#/features/auth/pages/LoginPage');
       await checkA11y(<LoginPage />);
     });
   });
 
   describe('RegisterPage', () => {
     it('has no detectable a11y violations', async () => {
-      const { RegisterPage } = await import('#/routes/-components/RegisterPage');
+      const { RegisterPage } = await import('#/features/auth/pages/RegisterPage');
       await checkA11y(<RegisterPage />);
     });
   });
 
   describe('ForgotPasswordPage', () => {
     it('has no detectable a11y violations', async () => {
-      const { ForgotPasswordPage } = await import('#/routes/-components/ForgotPasswordPage');
+      const { ForgotPasswordPage } = await import('#/features/auth/pages/ForgotPasswordPage');
       await checkA11y(<ForgotPasswordPage />);
     });
   });
@@ -111,7 +111,7 @@ describe('Accessibility audits', () => {
   describe('ResetPasswordPage', () => {
     it('has no detectable a11y violations', async () => {
       mockUseSearch.mockReturnValue({ token: 'valid-token' });
-      const { ResetPasswordPage } = await import('#/routes/-components/ResetPasswordPage');
+      const { ResetPasswordPage } = await import('#/features/auth/pages/ResetPasswordPage');
       await checkA11y(<ResetPasswordPage />);
     });
   });

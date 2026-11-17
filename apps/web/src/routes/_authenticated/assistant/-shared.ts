@@ -1,7 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
-import { contentQuotaQueryKey } from '#/lib/contentQuota';
+import { contentQuotaQueryKey } from '#/features/quota/lib/contentQuota';
 import type { AiRating } from '#/lib/aiFeedback';
 import { toast } from 'sonner';
 

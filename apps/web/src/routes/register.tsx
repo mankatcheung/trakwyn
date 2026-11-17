@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
-import { RegisterPage } from './-components/RegisterPage';
+import { RegisterPage } from '../features/auth/pages/RegisterPage';
 
 export const Route = createFileRoute('/register')({
   // See routes/index.tsx for why this must be ssr: false.

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { FeatureAnalyticsPage } from './-components/FeatureAnalyticsPage';
+import { FeatureAnalyticsPage } from '../../features/marketing/pages/FeatureAnalyticsPage';
 
 const TITLE = 'Job Search Analytics & Insights — Trakwyn';
 const DESCRIPTION =

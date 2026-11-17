@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useState, useEffect, useMemo } from 'react';
 import { deleteApplicationsWithUndo } from '../-deleteWithUndo';
-import { ApplicationCapNotice } from '#/components/ApplicationCapNotice';
+import { ApplicationCapNotice } from '#/features/quota/components/ApplicationCapNotice';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
 import { Card, Checkbox, EmptyState, Skeleton, Spinner } from '@trakwyn/ui';

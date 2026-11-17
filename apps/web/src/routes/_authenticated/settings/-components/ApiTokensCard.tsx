@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useBillingStatus } from '#/lib/billingStatus';
+import { useBillingStatus } from '#/features/plans/lib/billingStatus';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select } from '@trakwyn/ui';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import {
   API_TOKENS_QUERY,
   CREATE_API_TOKEN,

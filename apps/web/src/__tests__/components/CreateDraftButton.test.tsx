@@ -14,13 +14,13 @@ vi.mock(
     return { ...actual, useCreateOrOpenDraft: () => state.hook };
   },
 );
-vi.mock('#/lib/contentQuota', () => ({
+vi.mock('#/features/quota/lib/contentQuota', () => ({
   useQuotaState: (_resource: string, used?: number) => {
     state.used.push(used);
     return { level: state.level };
   },
 }));
-vi.mock('#/components/QuotaHint', () => ({
+vi.mock('#/features/quota/components/QuotaHint', () => ({
   QuotaHint: ({ used }: { used?: number }) => {
     state.used.push(used);
     return null;

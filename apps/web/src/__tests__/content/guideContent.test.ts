@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { extractImages, guideFrontmatterSchema, parseGuide } from '@trakwyn/content';
 import { CONTENT_ROOT, GUIDES_DIR, listGuides } from '@trakwyn/content/node';
-import { GUIDE_IMAGE_HEIGHT, GUIDE_IMAGE_WIDTH } from '#/components/marketing/GuideMarkdown';
+import { GUIDE_IMAGE_HEIGHT, GUIDE_IMAGE_WIDTH } from '#/features/guides/components/GuideMarkdown';
 
 /** The size and format rules in content/README.md (JEF-531). */
 const MAX_IMAGE_BYTES = 300 * 1024;

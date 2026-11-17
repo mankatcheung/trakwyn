@@ -7,8 +7,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useFormAction } from '#/hooks/useFormAction';
 import { getErrorMessage } from '#/lib/errors';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
 import {

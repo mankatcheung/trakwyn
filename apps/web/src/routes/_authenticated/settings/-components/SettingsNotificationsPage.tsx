@@ -6,9 +6,9 @@ import {
   UPDATE_NOTIFICATION_PREFERENCES,
   type NotificationPreferences,
 } from './shared';
-import { usePushNotifications } from '#/hooks/usePushNotifications';
+import { usePushNotifications } from '#/features/notifications/hooks/usePushNotifications';
 import { useLocale } from '#/lib/i18n';
-import { QuotaHint } from '#/components/QuotaHint';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { Card, Checkbox, Select, Skeleton } from '@trakwyn/ui';
 
 export function SettingsNotificationsPage() {

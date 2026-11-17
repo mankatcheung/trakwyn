@@ -12,7 +12,7 @@ import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
 import { markdownToTiptapNodes, type TiptapNode } from '#/lib/markdownToTiptapDoc';
-import type { AiFeature } from '#/lib/billingStatus';
+import type { AiFeature } from '#/features/plans/lib/billingStatus';
 import type { DocumentEditorHandle } from './DocumentDraftEditor';
 import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
 import { PolishPreview } from './PolishPreview';

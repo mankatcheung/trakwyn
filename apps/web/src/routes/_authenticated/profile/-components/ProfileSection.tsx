@@ -3,8 +3,8 @@ import { PlusIcon } from 'lucide-react';
 import { Alert, Button, Card, SubmitButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState, type QuotaResource } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState, type QuotaResource } from '#/features/quota/lib/contentQuota';
 
 interface ProfileSectionProps {
   id: string;
