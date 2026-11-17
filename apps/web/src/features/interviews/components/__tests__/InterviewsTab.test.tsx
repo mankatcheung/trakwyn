@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
@@ -123,7 +124,7 @@ describe('InterviewsTab', () => {
     await screen.findByRole('button', { name: '3 questions' });
 
     expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('mockQuestionCount'),
+      gqlContaining('mockQuestionCount'),
       expect.anything(),
     );
   });
@@ -131,9 +132,9 @@ describe('InterviewsTab', () => {
   it.each(['passed', 'failed', 'cancelled'])(
     'still offers the questions for a round whose outcome is %s',
     async (outcome) => {
-      mockGqlRequest.mockImplementation((query: string) =>
+      mockGqlRequest.mockImplementation((query: unknown) =>
         Promise.resolve(
-          query.includes('query InterviewQuestions')
+          gqlText(query).includes('query InterviewQuestions')
             ? {
                 interviewQuestions: [
                   {
@@ -175,8 +176,8 @@ describe('InterviewsTab', () => {
   });
 
   it('creates a new interview round', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('CreateInterviewRound')) {
+    mockGqlRequest.mockImplementation((query: unknown) => {
+      if (gqlText(query).includes('CreateInterviewRound')) {
         return Promise.resolve({ createInterviewRound: { ...mockRound, id: 'round-2' } });
       }
       return Promise.resolve({ interviewRounds: [] });
@@ -192,7 +193,7 @@ describe('InterviewsTab', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateInterviewRound'),
+        gqlContaining('CreateInterviewRound'),
         expect.objectContaining({
           input: expect.objectContaining({ applicationId: 'app-1', type: 'phone' }),
         }),
@@ -201,8 +202,8 @@ describe('InterviewsTab', () => {
   });
 
   it('deletes an interview round', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('DeleteInterviewRound')) {
+    mockGqlRequest.mockImplementation((query: unknown) => {
+      if (gqlText(query).includes('DeleteInterviewRound')) {
         return Promise.resolve({ deleteInterviewRound: true });
       }
       return Promise.resolve({ interviewRounds: [mockRound] });
@@ -218,7 +219,7 @@ describe('InterviewsTab', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteInterviewRound'),
+        gqlContaining('DeleteInterviewRound'),
         expect.objectContaining({ id: 'round-1' }),
       );
     });
@@ -226,9 +227,9 @@ describe('InterviewsTab', () => {
 
   describe('the round form (JEF-621)', () => {
     const createCalls = () =>
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('CreateInterviewRound'));
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('CreateInterviewRound'));
     const updateCalls = () =>
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('UpdateInterviewRound'));
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('UpdateInterviewRound'));
 
     async function openAddForm() {
       render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
@@ -245,9 +246,9 @@ describe('InterviewsTab', () => {
     });
 
     it('submits on Enter', async () => {
-      mockGqlRequest.mockImplementation((query: string) =>
+      mockGqlRequest.mockImplementation((query: unknown) =>
         Promise.resolve(
-          query.includes('CreateInterviewRound')
+          gqlText(query).includes('CreateInterviewRound')
             ? { createInterviewRound: { ...mockRound, id: 'round-2' } }
             : { interviewRounds: [] },
         ),
@@ -264,8 +265,8 @@ describe('InterviewsTab', () => {
 
     it('creates once on a double click', async () => {
       let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('CreateInterviewRound')
+      mockGqlRequest.mockImplementation((query: unknown) =>
+        gqlText(query).includes('CreateInterviewRound')
           ? new Promise((resolve) => {
               release = resolve;
             })
@@ -283,8 +284,8 @@ describe('InterviewsTab', () => {
     });
 
     it('shows a failed save under the form and keeps what was typed', async () => {
-      mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('CreateInterviewRound')
+      mockGqlRequest.mockImplementation((query: unknown) =>
+        gqlText(query).includes('CreateInterviewRound')
           ? Promise.reject({
               response: {
                 errors: [{ message: 'Round limit reached', extensions: { code: 'VALIDATION' } }],
@@ -312,9 +313,9 @@ describe('InterviewsTab', () => {
     });
 
     it('edits a round from its current values', async () => {
-      mockGqlRequest.mockImplementation((query: string) =>
+      mockGqlRequest.mockImplementation((query: unknown) =>
         Promise.resolve(
-          query.includes('UpdateInterviewRound')
+          gqlText(query).includes('UpdateInterviewRound')
             ? { updateInterviewRound: { ...mockRound, outcome: 'passed' } }
             : { interviewRounds: [mockRound] },
         ),

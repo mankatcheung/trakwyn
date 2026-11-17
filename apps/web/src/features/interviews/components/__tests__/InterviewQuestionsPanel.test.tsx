@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -59,23 +60,23 @@ const THREE_QUESTIONS = [
   makeQuestion({ id: 'q3', question: 'Third question', answer: 'Third answer', position: 2 }),
 ];
 
-function mockApi(questions = THREE_QUESTIONS, extra?: (query: string) => unknown) {
-  mockGqlRequest.mockImplementation((query: string) => {
+function mockApi(questions = THREE_QUESTIONS, extra?: (query: unknown) => unknown) {
+  mockGqlRequest.mockImplementation((query: unknown) => {
     const handled = extra?.(query);
     if (handled !== undefined) return handled;
-    if (query.includes('query InterviewQuestions')) {
+    if (gqlText(query).includes('query InterviewQuestions')) {
       return Promise.resolve({ interviewQuestions: questions });
     }
-    if (query.includes('CreateInterviewQuestion')) {
+    if (gqlText(query).includes('CreateInterviewQuestion')) {
       return Promise.resolve({ createInterviewQuestion: makeQuestion({ id: 'q-new' }) });
     }
-    if (query.includes('UpdateInterviewQuestion')) {
+    if (gqlText(query).includes('UpdateInterviewQuestion')) {
       return Promise.resolve({ updateInterviewQuestion: makeQuestion() });
     }
-    if (query.includes('ReorderInterviewQuestions')) {
+    if (gqlText(query).includes('ReorderInterviewQuestions')) {
       return Promise.resolve({ reorderInterviewQuestions: questions });
     }
-    if (query.includes('DeleteInterviewQuestion')) {
+    if (gqlText(query).includes('DeleteInterviewQuestion')) {
       return Promise.resolve({ deleteInterviewQuestion: true });
     }
     return Promise.resolve({});
@@ -135,15 +136,14 @@ describe('InterviewQuestionsPanel', () => {
       expect(screen.getByText('Third answer')).toBeInTheDocument();
       expect(screen.getByText(/No response recorded yet/)).toBeInTheDocument();
       expect(screen.getByText('3 of 50')).toBeInTheDocument();
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('query InterviewQuestions'),
-        { interviewRoundId: 'round-1' },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('query InterviewQuestions'), {
+        interviewRoundId: 'round-1',
+      });
     });
 
     it('shows the error when the questions cannot be loaded', async () => {
       mockApi(THREE_QUESTIONS, (query) =>
-        query.includes('query InterviewQuestions')
+        gqlText(query).includes('query InterviewQuestions')
           ? Promise.reject({ response: { errors: [{ message: 'Forbidden' }] } })
           : undefined,
       );
@@ -164,10 +164,9 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('CreateInterviewQuestion'),
-          { input: { interviewRoundId: 'round-1', question: 'Why us?' } },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CreateInterviewQuestion'), {
+          input: { interviewRoundId: 'round-1', question: 'Why us?' },
+        });
       });
     });
 
@@ -182,10 +181,9 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('CreateInterviewQuestion'),
-          { input: { interviewRoundId: 'round-1', question: 'Why us?', answer: 'The product.' } },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CreateInterviewQuestion'), {
+          input: { interviewRoundId: 'round-1', question: 'Why us?', answer: 'The product.' },
+        });
       });
     });
 
@@ -205,7 +203,7 @@ describe('InterviewQuestionsPanel', () => {
 
     it('keeps what was typed when the save fails', async () => {
       mockApi(THREE_QUESTIONS, (query) =>
-        query.includes('CreateInterviewQuestion')
+        gqlText(query).includes('CreateInterviewQuestion')
           ? Promise.reject({
               response: {
                 errors: [{ message: 'Try again later', extensions: { code: 'VALIDATION' } }],
@@ -238,7 +236,7 @@ describe('InterviewQuestionsPanel', () => {
 
     it("shows the server's message when the round is full", async () => {
       mockApi(THREE_QUESTIONS, (query) =>
-        query.includes('CreateInterviewQuestion')
+        gqlText(query).includes('CreateInterviewQuestion')
           ? Promise.reject({
               response: {
                 errors: [
@@ -278,10 +276,10 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('UpdateInterviewQuestion'),
-          { id: 'q1', input: { question: 'Reworded', answer: 'New answer' } },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateInterviewQuestion'), {
+          id: 'q1',
+          input: { question: 'Reworded', answer: 'New answer' },
+        });
       });
     });
 
@@ -293,16 +291,16 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('UpdateInterviewQuestion'),
-          { id: 'q1', input: { question: 'First question', answer: null } },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateInterviewQuestion'), {
+          id: 'q1',
+          input: { question: 'First question', answer: null },
+        });
       });
     });
 
     it("does not show one question's failed save on another question's form", async () => {
       mockApi(THREE_QUESTIONS, (query) =>
-        query.includes('UpdateInterviewQuestion')
+        gqlText(query).includes('UpdateInterviewQuestion')
           ? Promise.reject({
               response: {
                 errors: [
@@ -340,11 +338,11 @@ describe('InterviewQuestionsPanel', () => {
       // Once the delete has gone through, the server no longer lists the question.
       let deleted = false;
       mockApi(THREE_QUESTIONS, (query) => {
-        if (query.includes('DeleteInterviewQuestion')) {
+        if (gqlText(query).includes('DeleteInterviewQuestion')) {
           deleted = true;
           return Promise.resolve({ deleteInterviewQuestion: true });
         }
-        if (query.includes('query InterviewQuestions') && deleted) {
+        if (gqlText(query).includes('query InterviewQuestions') && deleted) {
           return Promise.resolve({
             interviewQuestions: THREE_QUESTIONS.filter((q) => q.id !== 'q2'),
           });
@@ -359,10 +357,9 @@ describe('InterviewQuestionsPanel', () => {
         expect(screen.queryByText('Second question')).not.toBeInTheDocument();
       });
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('DeleteInterviewQuestion'),
-          { id: 'q2' },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DeleteInterviewQuestion'), {
+          id: 'q2',
+        });
       });
     });
   });
@@ -391,7 +388,7 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('CreateInterviewQuestion'),
+          gqlContaining('CreateInterviewQuestion'),
           expect.anything(),
         );
       });
@@ -430,10 +427,10 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Move question down' })[0]);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('ReorderInterviewQuestions'),
-          { interviewRoundId: 'round-1', orderedIds: ['q2', 'q1', 'q3'] },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ReorderInterviewQuestions'), {
+          interviewRoundId: 'round-1',
+          orderedIds: ['q2', 'q1', 'q3'],
+        });
       });
     });
 
@@ -443,10 +440,10 @@ describe('InterviewQuestionsPanel', () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Move question up' })[2]);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('ReorderInterviewQuestions'),
-          { interviewRoundId: 'round-1', orderedIds: ['q1', 'q3', 'q2'] },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ReorderInterviewQuestions'), {
+          interviewRoundId: 'round-1',
+          orderedIds: ['q1', 'q3', 'q2'],
+        });
       });
     });
 

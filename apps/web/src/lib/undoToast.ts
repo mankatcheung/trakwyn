@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 import i18next from 'i18next';
+import { print, type DocumentNode } from 'graphql';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { forgetPendingOperation, rememberPendingOperation } from '#/lib/pendingOperations';
@@ -10,9 +11,11 @@ type UndoToastOptions = {
   /**
    * The request to send once the window closes. Taken as data rather than a
    * callback so it can be written to storage and replayed after a refresh —
-   * an opaque `onExecute` could not survive the page.
+   * an opaque `onExecute` could not survive the page. A typed document
+   * (`graphql()`) is accepted too; it is printed to text first, because that is
+   * what is stored and replayed.
    */
-  operation: { document: string; variables?: Record<string, unknown> };
+  operation: { document: string | DocumentNode; variables?: Record<string, unknown> };
   onUndo: () => void;
   /** Cache work once the request resolves, either way (usually invalidation). */
   onSettled?: () => void;
@@ -43,12 +46,14 @@ export function showUndoToast({
   onUndo,
   onSettled,
 }: UndoToastOptions) {
-  const pendingId = rememberPendingOperation(operation.document, operation.variables);
+  const document =
+    typeof operation.document === 'string' ? operation.document : print(operation.document);
+  const pendingId = rememberPendingOperation(document, operation.variables);
 
   const timer = setTimeout(() => {
     void (async () => {
       try {
-        await gqlClient.request(operation.document, operation.variables);
+        await gqlClient.request(document, operation.variables);
       } catch (error) {
         toast.error(getErrorMessage(error));
       } finally {

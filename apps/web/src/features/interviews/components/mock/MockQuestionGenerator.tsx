@@ -50,17 +50,14 @@ export function MockQuestionGenerator({
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
 
   const generate = useMutation({
-    mutationFn: () =>
-      gqlClient.request<{ generateMockInterviewQuestions: GeneratedQuestions }>(
-        GENERATE_MOCK_QUESTIONS,
-        {
-          interviewRoundId: roundId,
-          prompt: prompt.trim() || null,
-          count: MOCK_QUESTION_LIMITS.GENERATE_COUNT,
-          useProfile: background.useProfile,
-          documentId: background.documentId,
-        },
-      ),
+    mutationFn: async () =>
+      (await gqlClient.request(GENERATE_MOCK_QUESTIONS, {
+        interviewRoundId: roundId,
+        prompt: prompt.trim() || null,
+        count: MOCK_QUESTION_LIMITS.GENERATE_COUNT,
+        useProfile: background.useProfile,
+        documentId: background.documentId,
+      })) as { generateMockInterviewQuestions: GeneratedQuestions },
     onSuccess: (data) => {
       const next = data.generateMockInterviewQuestions;
       setResult(next);

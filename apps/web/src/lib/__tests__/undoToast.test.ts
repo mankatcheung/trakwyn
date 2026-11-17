@@ -11,6 +11,7 @@ const { mockGqlRequest, mockToast } = vi.hoisted(() => {
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 vi.mock('sonner', () => ({ toast: mockToast }));
 
+import { parse } from 'graphql';
 import { showUndoToast } from '#/lib/undoToast';
 import { replayPendingOperations } from '#/lib/pendingOperations';
 
@@ -45,6 +46,51 @@ describe('showUndoToast', () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     expect(mockGqlRequest).toHaveBeenCalledWith(deleteNote.document, deleteNote.variables);
+  });
+
+  describe('with a typed document', () => {
+    // `graphql()` hands back an AST; storage and replay deal in text.
+    const typedDelete = {
+      document: parse('mutation DeleteNote($id: ID!) { deleteNote(id: $id) }'),
+      variables: { id: 'n1' },
+    };
+
+    it('sends the printed document once the window closes', async () => {
+      showUndoToast({ message: 'Note deleted', operation: typedDelete, onUndo: vi.fn() });
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(mockGqlRequest).toHaveBeenCalledTimes(1);
+      const [sent, variables] = mockGqlRequest.mock.calls[0];
+      expect(typeof sent).toBe('string');
+      expect(sent).toContain('mutation DeleteNote($id: ID!)');
+      expect(sent).toContain('deleteNote(id: $id)');
+      expect(variables).toEqual({ id: 'n1' });
+    });
+
+    it('records the printed text, so a reload can replay it', async () => {
+      showUndoToast({ message: 'Note deleted', operation: typedDelete, onUndo: vi.fn() });
+
+      const [record] = stored() as { document: unknown; variables: unknown }[];
+      expect(typeof record.document).toBe('string');
+      expect(record.document).toContain('deleteNote(id: $id)');
+
+      // Standing in for a refresh: the timer is gone, the record is not.
+      vi.clearAllTimers();
+      await replayPendingOperations();
+
+      expect(mockGqlRequest).toHaveBeenCalledWith(record.document, { id: 'n1' });
+    });
+
+    it('sends nothing after Undo', async () => {
+      showUndoToast({ message: 'Note deleted', operation: typedDelete, onUndo: vi.fn() });
+
+      clickUndo();
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(mockGqlRequest).not.toHaveBeenCalled();
+      expect(stored()).toHaveLength(0);
+    });
   });
 
   it('records the operation durably while it waits', () => {

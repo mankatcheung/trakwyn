@@ -1,81 +1,28 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { CalendarIcon, CheckIcon, EditIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
-import { getErrorMessage } from '#/lib/errors';
-import { useFormAction } from '#/hooks/useFormAction';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { useQuotaState } from '#/features/quota/lib/contentQuota';
-import {
-  Alert,
-  Button,
-  Card,
-  EmptyState,
-  FormLabel,
-  Input,
-  Select,
-  Skeleton,
-  SubmitButton,
-  Textarea,
-} from '@trakwyn/ui';
+import { Button, Card, EmptyState, Skeleton } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
+import {
+  CREATE_ROUND,
+  DELETE_ROUND,
+  UPDATE_ROUND,
+  interviewRoundsQueryKey,
+  interviewRoundsQueryOptions,
+  type InterviewRound,
+  type InterviewRoundsData,
+} from '../graphql/interviewRoundQueries';
+import { buildOptimisticRound, isOptimisticRound } from '../lib/optimisticRound';
+import { downloadIcs, generateIcs } from '../lib/roundCalendarExport';
+import { emptyForm, roundToForm, type RoundFormState } from '../lib/roundForm';
 import { InterviewQuestionsPanel } from './InterviewQuestionsPanel';
 import { MockQuestionsPanel } from './mock/MockQuestionsPanel';
-const INTERVIEW_ROUNDS_QUERY = `
-  query InterviewRounds($applicationId: ID!) {
-    interviewRounds(applicationId: $applicationId) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
-    }
-  }
-`;
-const CREATE_ROUND = `
-  mutation CreateInterviewRound($input: CreateInterviewRoundInput!) {
-    createInterviewRound(input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
-    }
-  }
-`;
-const UPDATE_ROUND = `
-  mutation UpdateInterviewRound($id: ID!, $input: UpdateInterviewRoundInput!) {
-    updateInterviewRound(id: $id, input: $input) {
-      id applicationId type scheduledAt completedAt interviewerName notes outcome questionCount mockQuestionCount createdAt updatedAt
-    }
-  }
-`;
-const DELETE_ROUND = `mutation DeleteInterviewRound($id: ID!) { deleteInterviewRound(id: $id) }`;
-
-type InterviewRound = {
-  id: string;
-  applicationId: string;
-  type: string;
-  scheduledAt?: string | null;
-  completedAt?: string | null;
-  interviewerName?: string | null;
-  notes?: string | null;
-  outcome: string;
-  questionCount: number;
-  mockQuestionCount: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const roundSchema = z.object({
-  type: z.string(),
-  scheduledAt: z.string(),
-  interviewerName: z.string(),
-  notes: z.string(),
-  outcome: z.string(),
-});
-
-type RoundFormState = z.infer<typeof roundSchema>;
-
-const ROUND_TYPES = ['phone', 'technical', 'onsite', 'hr', 'other'] as const;
-const ROUND_OUTCOMES = ['pending', 'passed', 'failed', 'cancelled'] as const;
+import { RoundForm } from './RoundForm';
 
 const OUTCOME_STYLES: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
@@ -83,154 +30,6 @@ const OUTCOME_STYLES: Record<string, string> = {
   failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   cancelled: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
 };
-
-function emptyForm(): RoundFormState {
-  return { type: 'phone', scheduledAt: '', interviewerName: '', notes: '', outcome: 'pending' };
-}
-
-function roundToForm(r: InterviewRound): RoundFormState {
-  return {
-    type: r.type,
-    scheduledAt: r.scheduledAt ? r.scheduledAt.slice(0, 16) : '',
-    interviewerName: r.interviewerName ?? '',
-    notes: r.notes ?? '',
-    outcome: r.outcome,
-  };
-}
-
-function generateIcs(rounds: InterviewRound[], company: string, role: string): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const toIcsDate = (iso: string) => {
-    const d = new Date(iso);
-    return (
-      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}` +
-      `T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
-    );
-  };
-  const endDate = (iso: string) => {
-    const d = new Date(new Date(iso).getTime() + 60 * 60 * 1000);
-    return (
-      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}` +
-      `T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
-    );
-  };
-  const esc = (s: string) => s.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
-
-  const events = rounds
-    .filter((r) => r.scheduledAt)
-    .map((r) =>
-      [
-        'BEGIN:VEVENT',
-        `UID:${r.id}@trakwyn`,
-        `DTSTART:${toIcsDate(r.scheduledAt!)}`,
-        `DTEND:${endDate(r.scheduledAt!)}`,
-        `SUMMARY:${esc(`${r.type.charAt(0).toUpperCase() + r.type.slice(1)} interview — ${role} at ${company}`)}`,
-        `DESCRIPTION:${esc([r.interviewerName && `Interviewer: ${r.interviewerName}`, r.notes].filter(Boolean).join('\n'))}`,
-        'END:VEVENT',
-      ].join('\r\n'),
-    );
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Trakwyn//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    ...events,
-    'END:VCALENDAR',
-  ].join('\r\n');
-}
-
-function downloadIcs(content: string, company: string, role: string) {
-  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `interview-${company.replace(/\s+/g, '-').toLowerCase()}-${role.replace(/\s+/g, '-').toLowerCase()}.ics`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-interface RoundFormProps {
-  initial: RoundFormState;
-  /** Saves the round. A rejection is shown under the form and keeps what was typed. */
-  onSave: (values: RoundFormState) => Promise<unknown>;
-  onCancel: () => void;
-}
-
-function RoundForm({ initial, onSave, onCancel }: RoundFormProps) {
-  const { t } = useLocale();
-  const form = useForm<RoundFormState>({
-    resolver: zodResolver(roundSchema),
-    defaultValues: initial,
-  });
-  const { register } = form;
-
-  const { state, formProps } = useFormAction(form, async (values) => {
-    try {
-      await onSave(values);
-    } catch (error) {
-      return getErrorMessage(error);
-    }
-  });
-
-  return (
-    <form {...formProps}>
-      <Card className="space-y-3 p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <FormLabel size="xs">{t('interviews.typeLabel')}</FormLabel>
-            <Select {...register('type')}>
-              {ROUND_TYPES.map((roundType) => (
-                <option key={roundType} value={roundType}>
-                  {t(`interviews.${roundType}`)}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <FormLabel size="xs">{t('interviews.outcomeLabel')}</FormLabel>
-            <Select {...register('outcome')}>
-              {ROUND_OUTCOMES.map((outcome) => (
-                <option key={outcome} value={outcome}>
-                  {t(`interviews.${outcome}`)}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-        <div>
-          <FormLabel size="xs">{t('interviews.scheduledAtLabel')}</FormLabel>
-          <Input type="datetime-local" {...register('scheduledAt')} />
-        </div>
-        <div>
-          <FormLabel size="xs">{t('interviews.interviewerLabel')}</FormLabel>
-          <Input
-            {...register('interviewerName')}
-            placeholder={t('interviews.interviewerPlaceholder')}
-          />
-        </div>
-        <div>
-          <FormLabel size="xs">{t('interviews.notesLabel')}</FormLabel>
-          <Textarea
-            {...register('notes')}
-            className="h-20"
-            placeholder={t('interviews.notesPlaceholder')}
-          />
-        </div>
-        {state.error && <Alert>{state.error}</Alert>}
-        <div className="flex justify-end gap-2">
-          <SubmitButton size="sm" pendingLabel={t('applicationForm.saving')}>
-            {t('common.save')}
-          </SubmitButton>
-          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
-        </div>
-      </Card>
-    </form>
-  );
-}
 
 export function InterviewsTab({
   applicationId,
@@ -246,16 +45,11 @@ export function InterviewsTab({
   const [showForm, setShowForm] = useState(false);
   const [editingRound, setEditingRound] = useState<InterviewRound | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['interviewRounds', applicationId],
-    queryFn: () =>
-      gqlClient.request<{ interviewRounds: InterviewRound[] }>(INTERVIEW_ROUNDS_QUERY, {
-        applicationId,
-      }),
-  });
+  const roundsKey = interviewRoundsQueryKey(applicationId);
+  const { data, isLoading } = useQuery(interviewRoundsQueryOptions(applicationId));
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['interviewRounds', applicationId] });
+    qc.invalidateQueries({ queryKey: roundsKey });
     invalidateSectionCounts(qc, applicationId);
   };
 
@@ -272,32 +66,16 @@ export function InterviewsTab({
         },
       }),
     onMutate: async (f) => {
-      await qc.cancelQueries({ queryKey: ['interviewRounds', applicationId] });
-      const prev = qc.getQueryData<{ interviewRounds: InterviewRound[] }>([
-        'interviewRounds',
-        applicationId,
-      ]);
-      const optimistic: InterviewRound = {
-        id: `__tmp_${Date.now()}`,
-        applicationId,
-        type: f.type,
-        scheduledAt: f.scheduledAt || null,
-        interviewerName: f.interviewerName || null,
-        notes: f.notes || null,
-        outcome: f.outcome,
-        questionCount: 0,
-        mockQuestionCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      qc.setQueryData<{ interviewRounds: InterviewRound[] }>(
-        ['interviewRounds', applicationId],
-        (old) => ({ interviewRounds: [...(old?.interviewRounds ?? []), optimistic] }),
-      );
+      await qc.cancelQueries({ queryKey: roundsKey });
+      const prev = qc.getQueryData<InterviewRoundsData>(roundsKey);
+      const optimistic = buildOptimisticRound(applicationId, f);
+      qc.setQueryData<InterviewRoundsData>(roundsKey, (old) => ({
+        interviewRounds: [...(old?.interviewRounds ?? []), optimistic],
+      }));
       return { prev };
     },
     onError: (_err, _f, context) => {
-      if (context?.prev) qc.setQueryData(['interviewRounds', applicationId], context.prev);
+      if (context?.prev) qc.setQueryData(roundsKey, context.prev);
     },
     onSuccess: () => setShowForm(false),
     onSettled: () => invalidate(),
@@ -316,33 +94,27 @@ export function InterviewsTab({
         },
       }),
     onMutate: async ({ id, f }) => {
-      await qc.cancelQueries({ queryKey: ['interviewRounds', applicationId] });
-      const prev = qc.getQueryData<{ interviewRounds: InterviewRound[] }>([
-        'interviewRounds',
-        applicationId,
-      ]);
-      qc.setQueryData<{ interviewRounds: InterviewRound[] }>(
-        ['interviewRounds', applicationId],
-        (old) => ({
-          interviewRounds: (old?.interviewRounds ?? []).map((r) =>
-            r.id === id
-              ? {
-                  ...r,
-                  type: f.type,
-                  scheduledAt: f.scheduledAt || null,
-                  interviewerName: f.interviewerName || null,
-                  notes: f.notes || null,
-                  outcome: f.outcome,
-                  updatedAt: new Date().toISOString(),
-                }
-              : r,
-          ),
-        }),
-      );
+      await qc.cancelQueries({ queryKey: roundsKey });
+      const prev = qc.getQueryData<InterviewRoundsData>(roundsKey);
+      qc.setQueryData<InterviewRoundsData>(roundsKey, (old) => ({
+        interviewRounds: (old?.interviewRounds ?? []).map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                type: f.type,
+                scheduledAt: f.scheduledAt || null,
+                interviewerName: f.interviewerName || null,
+                notes: f.notes || null,
+                outcome: f.outcome,
+                updatedAt: new Date().toISOString(),
+              }
+            : r,
+        ),
+      }));
       return { prev };
     },
     onError: (_err, _vars, context) => {
-      if (context?.prev) qc.setQueryData(['interviewRounds', applicationId], context.prev);
+      if (context?.prev) qc.setQueryData(roundsKey, context.prev);
     },
     onSuccess: () => setEditingRound(null),
     onSettled: () => invalidate(),
@@ -444,22 +216,16 @@ export function InterviewsTab({
                   </button>
                   <button
                     onClick={() => {
-                      const snapshot = qc.getQueryData<{ interviewRounds: InterviewRound[] }>([
-                        'interviewRounds',
-                        applicationId,
-                      ]);
-                      qc.setQueryData<{ interviewRounds: InterviewRound[] }>(
-                        ['interviewRounds', applicationId],
-                        (prev) => ({
-                          interviewRounds: (prev?.interviewRounds ?? []).filter(
-                            (r) => r.id !== round.id,
-                          ),
-                        }),
-                      );
+                      const snapshot = qc.getQueryData<InterviewRoundsData>(roundsKey);
+                      qc.setQueryData<InterviewRoundsData>(roundsKey, (prev) => ({
+                        interviewRounds: (prev?.interviewRounds ?? []).filter(
+                          (r) => r.id !== round.id,
+                        ),
+                      }));
                       showUndoToast({
                         message: t('interviews.interviewRoundDeletedToast'),
                         operation: { document: DELETE_ROUND, variables: { id: round.id } },
-                        onUndo: () => qc.setQueryData(['interviewRounds', applicationId], snapshot),
+                        onUndo: () => qc.setQueryData(roundsKey, snapshot),
                         onSettled: invalidate,
                       });
                     }}
@@ -469,7 +235,7 @@ export function InterviewsTab({
                   </button>
                 </div>
               </div>
-              {!round.id.startsWith('__tmp_') && (
+              {!isOptimisticRound(round) && (
                 <>
                   <InterviewQuestionsPanel
                     applicationId={applicationId}
