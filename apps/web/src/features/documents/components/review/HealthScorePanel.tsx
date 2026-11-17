@@ -11,6 +11,7 @@ export type HealthScoreCriterion = {
 };
 export type HealthScore = { score: number; label: string; criteria: HealthScoreCriterion[] };
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export const SCORE_COLORS = {
   green: {
     ring: 'text-green-500',
@@ -38,6 +39,7 @@ export const SCORE_COLORS = {
   },
 } as const;
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function scoreColor(score: number): keyof typeof SCORE_COLORS {
   if (score >= 91) return 'green';
   if (score >= 71) return 'blue';

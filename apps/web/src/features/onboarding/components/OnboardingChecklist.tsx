@@ -25,6 +25,7 @@ interface ChecklistItem {
  * (JEF-460). No goals stored (skipped, or an account from before the flow)
  * keeps every item, as before.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function isRelevantToGoals(
   key: ChecklistItemKey,
   goals: readonly OnboardingGoal[],

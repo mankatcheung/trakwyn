@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- ChatDockProvider and useChatDock share one context; keeping them together keeps the context private. */
 import { createContext, use, useState } from 'react';
 
 /**

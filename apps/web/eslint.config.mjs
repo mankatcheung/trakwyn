@@ -1,6 +1,7 @@
 import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import i18next from 'eslint-plugin-i18next';
 import prettierConfig from 'eslint-config-prettier';
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
@@ -75,6 +76,20 @@ export default tseslint.config(
       'react-hooks/set-state-in-effect': 'warn',
       '@typescript-eslint/no-explicit-any': ['warn', { ignoreRestArgs: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // JEF-639: Fast Refresh only hot-swaps a file that exports nothing but
+    // components; one that also exports a hook or helper reloads the page and
+    // loses state. Hooks live in `src/hooks/` (or next to their feature).
+    //
+    // Route modules (`src/routes/**` not prefixed `-`) are skipped: TanStack
+    // Router's plugin splits and refreshes them, and they must export `Route`.
+    files: ['src/**/*.tsx'],
+    ignores: ['src/routes/**/*.tsx', '!src/routes/**/-*/**', '!src/routes/**/-*.tsx'],
+    plugins: { 'react-refresh': reactRefresh },
+    rules: {
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
     },
   },
   {

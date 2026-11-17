@@ -20,6 +20,7 @@ interface FaqSectionProps {
  * JSON for a `<script type="application/ld+json">` tag. `<` is escaped so an
  * answer containing `</script>` cannot end the tag early.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function serializeJsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }

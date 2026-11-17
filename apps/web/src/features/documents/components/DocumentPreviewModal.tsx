@@ -4,6 +4,7 @@ import { IconButton, Modal } from '@trakwyn/ui';
 
 const PREVIEWABLE_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function isPreviewableMimeType(mimeType: string): boolean {
   return PREVIEWABLE_MIME_TYPES.includes(mimeType);
 }

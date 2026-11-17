@@ -61,6 +61,7 @@ interface PriceOption {
 
 const MONTHLY_PRICE_KEY = 'pricing.monthlyPrice';
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export const OPTIONS: PriceOption[] = [
   {
     nameKey: 'pricing.monthlyName',
@@ -84,11 +85,13 @@ export const OPTIONS: PriceOption[] = [
 ];
 
 /** The amount in a display string such as "$29" (the i18n keys stay the single source of prices). */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function priceAmount(display: string): number {
   return Number(display.replace(/[^0-9.]/g, ''));
 }
 
 /** Per-month cost of a payment covering `months`, and the percentage saved against paying monthly. */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function derivePassPricing(price: number, months: number, monthlyPrice: number) {
   const perMonth = price / months;
   return { perMonth, savePercent: Math.round((1 - perMonth / monthlyPrice) * 100) };

@@ -17,10 +17,12 @@ import {
 } from '#/features/documents/lib/editor/markdownToTiptapDoc';
 import type { AiFeature } from '#/features/plans/lib/billingStatus';
 import type { DocumentEditorHandle } from './editor/DocumentDraftEditor';
-import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
+import { useIsProfileEmpty } from '../hooks/useIsProfileEmpty';
+import { useResumeSourceChoice } from '../hooks/useResumeSourceChoice';
+import { EmptyProfilePrompt } from './EmptyProfilePrompt';
 import { PolishPreview } from './editor/PolishPreview';
 import { requestPolish } from '../graphql/polishApi';
-import { ResumeSourcePicker, useResumeSourceChoice } from './ResumeSourcePicker';
+import { ResumeSourcePicker } from './ResumeSourcePicker';
 
 const GENERATE_MUTATION = `
   mutation GenerateIntoDocumentDraft(

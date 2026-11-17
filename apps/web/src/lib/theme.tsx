@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- ThemeProvider and useTheme share one context; keeping them together keeps the context private. */
 import { createContext, use, useEffect, useState } from 'react';
 
 export type Theme = 'light' | 'dark' | 'system';
