@@ -14,7 +14,8 @@ import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
 import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/analytics';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { useFormAction } from '#/lib/useFormAction';
+import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({
   email: z.email('Invalid email'),
@@ -31,19 +32,16 @@ const REGISTER_MUTATION = `
 export function RegisterPage() {
   const { t } = useLocale();
   const captcha = useCaptcha();
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) });
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+    formState: { errors },
+  } = form;
 
   const startedReported = useRef(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
-  const onSubmit = async ({ email, password }: FormValues) => {
+  const { state, formProps } = useFormAction(form, async ({ email, password }) => {
     try {
       await gqlClient.request<{ register: string }>(REGISTER_MUTATION, {
         email,
@@ -53,13 +51,13 @@ export function RegisterPage() {
       await queryClient.resetQueries();
       captureEvent(ANALYTICS_EVENTS.REGISTER_COMPLETED, { method: 'password' });
       setRegisteredEmail(email);
+      return null;
     } catch (err: unknown) {
       // A captcha token works once, whatever the outcome of the request.
       captcha.reset();
-      const msg = extractGqlError(err) ?? t('registerPage.registrationFailed');
-      setError('root', { message: msg });
+      return extractGqlError(err) ?? t('registerPage.registrationFailed');
     }
-  };
+  });
 
   const reportStarted = () => {
     if (startedReported.current) return;
@@ -150,7 +148,7 @@ export function RegisterPage() {
           <AuthDivider label={t('registerPage.orSignUpWithEmail')} />
 
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            {...formProps}
             // Focus events bubble in React, so this fires on the first field only.
             onFocus={reportStarted}
             className="space-y-4"
@@ -181,11 +179,15 @@ export function RegisterPage() {
 
             <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />
 
-            {errors.root && <Alert>{errors.root.message}</Alert>}
+            {state.error && <Alert>{state.error}</Alert>}
 
-            <Button type="submit" disabled={isSubmitting || captcha.pending} fullWidth>
-              {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
-            </Button>
+            <SubmitButton
+              disabled={captcha.pending}
+              pendingLabel={t('auth.creatingAccount')}
+              fullWidth
+            >
+              {t('auth.createAccount')}
+            </SubmitButton>
           </form>
 
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">

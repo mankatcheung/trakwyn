@@ -17,7 +17,8 @@ import { LegalFooterLinks } from '#/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
 import { oauthErrorKey } from '#/lib/oauthError';
 import { safeReturnTo } from '#/lib/returnTo';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { useFormAction } from '#/lib/useFormAction';
+import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({
   email: z.email('Invalid email'),
@@ -61,26 +62,24 @@ export function LoginPage() {
   const [captchaNeeded, setCaptchaNeeded] = useState(false);
   const captcha = useCaptcha();
 
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) });
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+    formState: { errors },
+  } = form;
 
-  const onSubmit = async (data: FormValues) => {
+  const { state, formProps } = useFormAction(form, async (data) => {
     try {
       const res = await gqlClient.request<{
         login: { success: boolean; totpRequired: boolean; accessToken: string | null };
       }>(LOGIN_MUTATION, { ...data, captchaToken: captcha.token });
       if (res.login.totpRequired) {
         setPendingCredentials(data);
-        return;
+        return null;
       }
       await queryClient.resetQueries();
       await navigate({ to: destination as '/dashboard' });
+      return null;
     } catch (err: unknown) {
       // A captcha token works once, whatever the outcome of the request.
       if (captchaNeeded) captcha.reset();
@@ -89,16 +88,13 @@ export function LoginPage() {
         // The API asks for a captcha only after repeated failures, so the
         // widget appears now rather than on every sign-in.
         setCaptchaNeeded(true);
-        setError('root', {
-          message: t(
-            code === ERROR_CODES.CAPTCHA_REQUIRED ? 'auth.captchaRequired' : 'auth.captchaFailed',
-          ),
-        });
-        return;
+        return t(
+          code === ERROR_CODES.CAPTCHA_REQUIRED ? 'auth.captchaRequired' : 'auth.captchaFailed',
+        );
       }
-      setError('root', { message: getErrorMessage(err) });
+      return getErrorMessage(err);
     }
-  };
+  });
 
   if (pendingCredentials) {
     return (
@@ -136,7 +132,7 @@ export function LoginPage() {
 
           <AuthDivider label={t('auth.orSignInWithEmail')} />
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form {...formProps} className="space-y-4">
             <div>
               <FormLabel>{t('auth.email')}</FormLabel>
               <Input
@@ -168,9 +164,9 @@ export function LoginPage() {
               )}
             </div>
 
-            {errors.root && (
+            {state.error && (
               <Alert>
-                {errors.root.message?.includes('register') ? (
+                {state.error.includes('register') ? (
                   <>
                     {t('auth.noAccountFound')}{' '}
                     <Link to="/register" className="font-medium underline hover:text-red-700">
@@ -179,20 +175,20 @@ export function LoginPage() {
                     {t('auth.createOne')}
                   </>
                 ) : (
-                  (errors.root.message ?? '')
+                  state.error
                 )}
               </Alert>
             )}
 
             {captchaNeeded && <CaptchaWidget key={captcha.widgetKey} onToken={captcha.setToken} />}
 
-            <Button
-              type="submit"
-              disabled={isSubmitting || (captchaNeeded && captcha.pending)}
+            <SubmitButton
+              disabled={captchaNeeded && captcha.pending}
+              pendingLabel={t('auth.signingIn')}
               fullWidth
             >
-              {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
-            </Button>
+              {t('auth.signIn')}
+            </SubmitButton>
           </form>
         </div>
         <LegalFooterLinks />
@@ -212,16 +208,13 @@ function TotpStep({
 }) {
   const { t } = useLocale();
   const navigate = useNavigate();
+  const form = useForm<TotpFormValues>({ resolver: zodResolver(totpSchema) });
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<TotpFormValues>({
-    resolver: zodResolver(totpSchema),
-  });
+    formState: { errors },
+  } = form;
 
-  const onSubmit = async (data: TotpFormValues) => {
+  const { state, formProps } = useFormAction(form, async (data) => {
     try {
       await gqlClient.request<{ loginWithTotp: string }>(LOGIN_WITH_TOTP_MUTATION, {
         ...credentials,
@@ -229,10 +222,11 @@ function TotpStep({
       });
       await queryClient.resetQueries();
       await navigate({ to: destination as '/dashboard' });
+      return null;
     } catch (err: unknown) {
-      setError('root', { message: getErrorMessage(err) });
+      return getErrorMessage(err);
     }
-  };
+  });
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
@@ -251,7 +245,7 @@ function TotpStep({
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form {...formProps} className="space-y-4">
             <div>
               <FormLabel>{t('auth.code')}</FormLabel>
               <Input
@@ -264,25 +258,11 @@ function TotpStep({
               {errors.code && <p className="mt-1 text-xs text-red-600">{errors.code.message}</p>}
             </div>
 
-            {errors.root && (
-              <Alert>
-                {errors.root.message?.includes('register') ? (
-                  <>
-                    {t('auth.noAccountFound')}{' '}
-                    <Link to="/register" className="font-medium underline hover:text-red-700">
-                      {t('auth.register')}
-                    </Link>{' '}
-                    {t('auth.createOne')}
-                  </>
-                ) : (
-                  (errors.root.message ?? '')
-                )}
-              </Alert>
-            )}
+            {state.error && <Alert>{state.error}</Alert>}
 
-            <Button type="submit" disabled={isSubmitting} fullWidth>
-              {isSubmitting ? t('auth.verifying') : t('auth.verify')}
-            </Button>
+            <SubmitButton pendingLabel={t('auth.verifying')} fullWidth>
+              {t('auth.verify')}
+            </SubmitButton>
           </form>
 
           <Button variant="link" size="sm" onClick={onBack}>

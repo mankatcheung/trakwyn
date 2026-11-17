@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { useState } from 'react';
+import { useFormAction } from '#/lib/useFormAction';
+import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z
   .object({
@@ -34,24 +36,23 @@ function extractGqlError(err: unknown): string | null {
 export function ResetPasswordPage() {
   const { t } = useLocale();
   const { token } = useSearch({ from: '/reset-password' });
+  const [done, setDone] = useState(false);
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) });
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-    setError,
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+    formState: { errors },
+  } = form;
 
-  const onSubmit = async (data: FormValues) => {
-    if (!token) return;
+  const { state, formProps } = useFormAction(form, async (data) => {
+    if (!token) return null;
     try {
       await gqlClient.request(RESET_PASSWORD_MUTATION, { token, newPassword: data.newPassword });
+      setDone(true);
+      return null;
     } catch (err: unknown) {
-      const msg = extractGqlError(err) ?? t('resetPassword.resetFailed');
-      setError('root', { message: msg });
+      return extractGqlError(err) ?? t('resetPassword.resetFailed');
     }
-  };
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
@@ -64,10 +65,10 @@ export function ResetPasswordPage() {
 
         {!token ? (
           <Alert>{t('resetPassword.invalidLink')}</Alert>
-        ) : isSubmitSuccessful ? (
+        ) : done ? (
           <Alert tone="success">{t('resetPassword.success')}</Alert>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form {...formProps} className="space-y-4">
             <div>
               <FormLabel>{t('security.newPasswordLabel')}</FormLabel>
               <Input
@@ -94,11 +95,11 @@ export function ResetPasswordPage() {
               )}
             </div>
 
-            {errors.root && <Alert>{errors.root.message}</Alert>}
+            {state.error && <Alert>{state.error}</Alert>}
 
-            <Button type="submit" disabled={isSubmitting} fullWidth>
-              {isSubmitting ? t('resetPassword.resetting') : t('resetPassword.resetPassword')}
-            </Button>
+            <SubmitButton pendingLabel={t('resetPassword.resetting')} fullWidth>
+              {t('resetPassword.resetPassword')}
+            </SubmitButton>
           </form>
         )}
 
