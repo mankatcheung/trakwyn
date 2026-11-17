@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockNavigate, mockGqlRequest } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -21,10 +22,6 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-vi.mock('#/lib/queryClient', () => ({
-  queryClient: { invalidateQueries: vi.fn() },
-}));
-
 import { NewApplicationPage } from '#/routes/_authenticated/applications/-components/NewApplicationPage';
 
 vi.mock('#/components/ai/hooks/useAiCredits', () => ({
@@ -38,19 +35,38 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
   }),
 }));
 
+const makeClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+
+let client: QueryClient;
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
+const renderPage = () => render(<NewApplicationPage />, { wrapper: Wrapper });
+
+function fillRequired() {
+  fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
+  fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
+    target: { value: 'Engineer' },
+  });
+}
+
 describe('NewApplicationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    client = makeClient();
   });
 
   it('renders company and role inputs', () => {
-    render(<NewApplicationPage />);
+    renderPage();
     expect(screen.getByPlaceholderText('Acme Corp')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Senior Engineer')).toBeInTheDocument();
   });
 
   it('shows validation error when company is empty', async () => {
-    render(<NewApplicationPage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
@@ -60,7 +76,7 @@ describe('NewApplicationPage', () => {
   });
 
   it('shows validation error when role is empty', async () => {
-    render(<NewApplicationPage />);
+    renderPage();
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), {
       target: { value: 'Acme Corp' },
     });
@@ -74,7 +90,7 @@ describe('NewApplicationPage', () => {
 
   it('submits the form with company and role', async () => {
     mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), {
       target: { value: 'Acme Corp' },
@@ -96,7 +112,7 @@ describe('NewApplicationPage', () => {
 
   it('navigates to application detail after successful creation', async () => {
     mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), {
       target: { value: 'Acme Corp' },
@@ -124,7 +140,7 @@ describe('NewApplicationPage', () => {
         ],
       },
     });
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
     fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
@@ -143,7 +159,7 @@ describe('NewApplicationPage', () => {
 
   it('shows error on API failure', async () => {
     mockGqlRequest.mockRejectedValue(new Error('network error'));
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), {
       target: { value: 'Acme Corp' },
@@ -161,7 +177,7 @@ describe('NewApplicationPage', () => {
 
   it('sends the full job posting when one is entered (JEF-591)', async () => {
     mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
     fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
@@ -184,7 +200,7 @@ describe('NewApplicationPage', () => {
 
   it('leaves the posting out of the request when the field is empty (JEF-591)', async () => {
     mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
-    render(<NewApplicationPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText('Acme Corp'), { target: { value: 'Acme Corp' } });
     fireEvent.change(screen.getByPlaceholderText('Senior Engineer'), {
@@ -198,10 +214,65 @@ describe('NewApplicationPage', () => {
   });
 
   it('explains what the full posting is used for (JEF-591)', () => {
-    render(<NewApplicationPage />);
+    renderPage();
 
     expect(screen.getByLabelText('Full job posting')).toHaveAccessibleDescription(
       /tailor your resume, cover letter and match score/i,
     );
+  });
+
+  it('invalidates the applications list after a create', async () => {
+    mockGqlRequest.mockResolvedValue({ createApplication: { id: 'new-1' } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    renderPage();
+
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['applications'] });
+  });
+
+  it('offers the plan page when a plan feature is required', async () => {
+    mockGqlRequest.mockRejectedValue({
+      response: {
+        errors: [{ message: 'Tags need Pro', extensions: { code: 'PLAN_REQUIRED' } }],
+      },
+    });
+    renderPage();
+
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByText('Tags need Pro')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'See what Pro includes' })).toBeInTheDocument();
+  });
+
+  it('keeps what was typed when the API fails', async () => {
+    mockGqlRequest.mockRejectedValue(new Error('network error'));
+    renderPage();
+
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await screen.findByText('Something went wrong. Please try again.');
+    expect(screen.getByPlaceholderText('Acme Corp')).toHaveValue('Acme Corp');
+    expect(screen.getByPlaceholderText('Senior Engineer')).toHaveValue('Engineer');
+  });
+
+  it('creates one application on a double click', async () => {
+    let resolve!: (value: unknown) => void;
+    mockGqlRequest.mockReturnValue(new Promise((r) => (resolve = r)));
+    renderPage();
+
+    fillRequired();
+    const button = screen.getByRole('button', { name: /save/i });
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    fireEvent.click(button);
+
+    resolve({ createApplication: { id: 'new-1' } });
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+    expect(mockGqlRequest).toHaveBeenCalledTimes(1);
   });
 });
