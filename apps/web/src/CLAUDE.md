@@ -49,7 +49,6 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 Forms still on `onSubmit` or plain state, and writes still on direct calls where cached data changes:
 
 1. `SettingsProfilePage`, `SettingsSecurityPage`, `SettingsAiPage` (saves to `useMutation`).
-2. Plain-`useState` forms with real fields: `OfferForm`, the `VerifyEmailRequiredPage` change-email form, `InterviewQuestionsPanel`, `MockQuestionsPanel`.
-3. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
-4. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
-5. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).
+2. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
+3. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
+4. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).
