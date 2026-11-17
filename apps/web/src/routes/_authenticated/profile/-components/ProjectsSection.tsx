@@ -188,12 +188,19 @@ export function ProjectsSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <FormLabel>{t('experience.projectNameLabel')}</FormLabel>
-              <Input {...form.register('name')} invalid={!!errors.name} />
+              <Input
+                {...form.register('name')}
+                invalid={!!errors.name}
+                placeholder={t('experience.projectNamePlaceholder')}
+              />
               <FieldError message={errors.name?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.projectRoleLabel')}</FormLabel>
-              <Input {...form.register('role')} />
+              <Input
+                {...form.register('role')}
+                placeholder={t('experience.projectRolePlaceholder')}
+              />
             </div>
             <div>
               <FormLabel>{t('experience.projectStartLabel')}</FormLabel>
@@ -209,7 +216,11 @@ export function ProjectsSection() {
             </div>
             <div className="sm:col-span-2">
               <FormLabel>{t('experience.descriptionLabel')}</FormLabel>
-              <Textarea {...form.register('description')} rows={4} />
+              <Textarea
+                {...form.register('description')}
+                rows={4}
+                placeholder={t('experience.projectDescriptionPlaceholder')}
+              />
             </div>
           </div>
           {errors.root?.message && <Alert>{errors.root.message}</Alert>}

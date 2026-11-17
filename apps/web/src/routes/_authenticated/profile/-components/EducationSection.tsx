@@ -186,17 +186,17 @@ export function EducationSection() {
               <Input
                 {...form.register('institution')}
                 invalid={!!errors.institution}
-                placeholder="MIT"
+                placeholder={t('experience.institutionPlaceholder')}
               />
               <FieldError message={errors.institution?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.degreeLabel')}</FormLabel>
-              <Input {...form.register('degree')} placeholder="B.S." />
+              <Input {...form.register('degree')} placeholder={t('experience.degreePlaceholder')} />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <FormLabel>{t('experience.fieldLabel')}</FormLabel>
-              <Input {...form.register('field')} placeholder="Computer Science" />
+              <Input {...form.register('field')} placeholder={t('experience.fieldPlaceholder')} />
             </div>
             <div>
               <FormLabel>{t('experience.startDateLabel')}</FormLabel>

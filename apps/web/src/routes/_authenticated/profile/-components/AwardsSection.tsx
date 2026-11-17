@@ -167,20 +167,31 @@ export function AwardsSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <FormLabel>{t('experience.awardTitleLabel')}</FormLabel>
-              <Input {...form.register('title')} invalid={!!errors.title} />
+              <Input
+                {...form.register('title')}
+                invalid={!!errors.title}
+                placeholder={t('experience.awardTitlePlaceholder')}
+              />
               <FieldError message={errors.title?.message} />
             </div>
             <div>
               <FormLabel>{t('experience.awardIssuerLabel')}</FormLabel>
-              <Input {...form.register('issuer')} />
+              <Input
+                {...form.register('issuer')}
+                placeholder={t('experience.awardIssuerPlaceholder')}
+              />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <FormLabel>{t('experience.awardDateLabel')}</FormLabel>
               <Input type="date" {...form.register('date')} />
             </div>
             <div className="sm:col-span-2">
               <FormLabel>{t('experience.descriptionLabel')}</FormLabel>
-              <Textarea {...form.register('description')} rows={3} />
+              <Textarea
+                {...form.register('description')}
+                rows={3}
+                placeholder={t('experience.awardDescriptionPlaceholder')}
+              />
             </div>
           </div>
           {errors.root?.message && <Alert>{errors.root.message}</Alert>}

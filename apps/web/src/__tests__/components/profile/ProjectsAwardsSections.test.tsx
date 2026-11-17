@@ -81,6 +81,20 @@ describe('ProjectsSection (JEF-592)', () => {
     );
   });
 
+  it('hints at what to enter in the name, role and description fields (JEF-614)', async () => {
+    render(<ProjectsSection />, { wrapper: Wrapper });
+    await screen.findByText('Open-source CLI');
+
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    expect(screen.getByPlaceholderText('Personal finance app')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Lead developer')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('What it does, what you built and the result...'),
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('https://')).toBeInTheDocument();
+  });
+
   it('deletes one', async () => {
     render(<ProjectsSection />, { wrapper: Wrapper });
     await screen.findByText('Open-source CLI');
@@ -109,6 +123,19 @@ describe('AwardsSection (JEF-592)', () => {
 
     expect(await screen.findByText('Engineering Excellence Award')).toBeInTheDocument();
     expect(screen.getByText('Acme · 2022-06')).toBeInTheDocument();
+  });
+
+  it('hints at what to enter in the title, issuer and description fields (JEF-614)', async () => {
+    render(<AwardsSection />, { wrapper: Wrapper });
+    await screen.findByText('Engineering Excellence Award');
+
+    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    expect(screen.getByPlaceholderText('Employee of the Year')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Acme Corp')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Why you received it, what it recognised...'),
+    ).toBeInTheDocument();
   });
 
   it('adds one', async () => {
