@@ -13,10 +13,7 @@ const { mockGqlRequest, mockNavigate, mockDownloadUrl, mockToastSuccess, mockRep
   }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: Record<string, unknown>) => ({
-    ...opts,
-    useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }),
-  }),
+  getRouteApi: () => ({ useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }) }),
   useNavigate: () => mockNavigate,
   useBlocker: vi.fn(),
 }));
@@ -114,12 +111,7 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
   },
 }));
 
-import { Route } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
-
-// The route file does not export its component (see the note there), so the
-// mocked `createFileRoute` hands it back through the route options.
-const DocumentDraftEditPage = (Route as unknown as { component: () => React.JSX.Element })
-  .component;
+import { DraftEditPage } from '../DraftEditPage';
 
 const DRAFT = {
   id: 'draft-1',
@@ -166,7 +158,7 @@ function renderPage() {
   const invalidate = vi.spyOn(client, 'invalidateQueries');
   render(
     <QueryClientProvider client={client}>
-      <DocumentDraftEditPage />
+      <DraftEditPage />
     </QueryClientProvider>,
   );
   return { invalidate };

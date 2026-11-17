@@ -10,10 +10,7 @@ const { mockGqlRequest, mockUseBlocker } = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: Record<string, unknown>) => ({
-    ...opts,
-    useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }),
-  }),
+  getRouteApi: () => ({ useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }) }),
   useNavigate: () => vi.fn(),
   useBlocker: mockUseBlocker,
 }));
@@ -61,9 +58,7 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
   },
 }));
 
-import { Route } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
-
-const Page = (Route as unknown as { component: () => React.JSX.Element }).component;
+import { DraftEditPage } from '../DraftEditPage';
 
 const DRAFT = {
   id: 'draft-1',
@@ -96,7 +91,7 @@ function mockApi(save: () => Promise<unknown>) {
 async function renderPage() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <Page />
+      <DraftEditPage />
     </QueryClientProvider>,
   );
   await screen.findByTestId('state');
