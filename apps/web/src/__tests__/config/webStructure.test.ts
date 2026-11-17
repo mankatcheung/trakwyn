@@ -30,7 +30,7 @@ const SRC = join(WEB_ROOT, 'src');
  * How many files are still at an old path. Lower it in the PR that moves files;
  * it must reach 0, and a new file in an old location can never raise it.
  */
-const STILL_IN_OLD_LOCATIONS = 537;
+const STILL_IN_OLD_LOCATIONS = 501;
 
 /** Folders that held files by kind. A file here must be named in the mapping. */
 const PER_KIND_FOLDERS = [

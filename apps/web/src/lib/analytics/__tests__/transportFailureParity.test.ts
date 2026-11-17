@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const WEB_COPY = resolve(import.meta.dirname, '../../../lib/analytics/transportFailure.ts');
+const WEB_COPY = resolve(import.meta.dirname, '../transportFailure.ts');
 const MOBILE_COPY = resolve(
   import.meta.dirname,
   '../../../../../mobile/src/lib/analytics/transportFailure.ts',

@@ -17,7 +17,7 @@ import { LegalFooterLinks } from '#/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
 import { oauthErrorKey } from '#/lib/oauthError';
 import { safeReturnTo } from '#/lib/returnTo';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({

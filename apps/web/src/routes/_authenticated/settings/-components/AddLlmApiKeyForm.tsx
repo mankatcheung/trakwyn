@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, FormLabel, Input, Select, SubmitButton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import {
   CUSTOM_LLM_PROVIDER,
   SAVE_LLM_API_KEY,

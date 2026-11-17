@@ -7,7 +7,7 @@ import {
   type ApplicationDisplayField,
   type ApplicationDisplayFields,
 } from '#/lib/applicationDisplayFields';
-import { useMediaQuery } from '#/lib/useMediaQuery';
+import { useMediaQuery } from '#/hooks/useMediaQuery';
 
 const FIELD_LABEL_KEYS: Record<ApplicationDisplayField, string> = {
   role: 'applications.displayFields.role',

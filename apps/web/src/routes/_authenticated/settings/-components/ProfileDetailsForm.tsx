@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, FormLabel, Input, SubmitButton, Textarea } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import {
   UPDATE_PROFILE,
   parseProfileLinks,

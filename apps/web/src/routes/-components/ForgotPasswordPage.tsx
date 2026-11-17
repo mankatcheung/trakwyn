@@ -8,7 +8,7 @@ import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({

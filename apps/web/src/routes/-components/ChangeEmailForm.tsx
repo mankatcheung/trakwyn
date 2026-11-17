@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import {
   REQUEST_EMAIL_CHANGE,
   extractGqlError,

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { SubmitButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
 import { AiCreditCost } from '#/components/ai/AiCreditCost';
 import {

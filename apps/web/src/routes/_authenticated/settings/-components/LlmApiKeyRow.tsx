@@ -7,7 +7,7 @@ import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, ZapIcon } from 'lucide-re
 import { Alert, Button, Input, Menu, SubmitButton, type MenuItem } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import {
   LLM_PROVIDER_AVATAR,
   LLM_PROVIDER_LABEL,

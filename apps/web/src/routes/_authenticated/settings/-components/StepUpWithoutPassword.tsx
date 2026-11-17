@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { OAuthProviderLogo } from '#/components/OAuthProviderLogo';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { extractGqlError } from './shared';

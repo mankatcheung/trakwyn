@@ -3,7 +3,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { useBillingStatus } from '#/lib/billingStatus';
 import { useEmailVerification } from '#/lib/emailVerification';
 import { useLocale } from '#/lib/i18n';

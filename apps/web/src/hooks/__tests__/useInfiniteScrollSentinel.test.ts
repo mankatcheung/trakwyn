@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useInfiniteScrollSentinel } from '#/lib/useInfiniteScrollSentinel';
+import { useInfiniteScrollSentinel } from '#/hooks/useInfiniteScrollSentinel';
 
 class FakeIntersectionObserver implements IntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
