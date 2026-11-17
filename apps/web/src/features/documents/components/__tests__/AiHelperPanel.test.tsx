@@ -24,18 +24,15 @@ vi.mock('#/features/ai/hooks/useAiCredits', () => ({
     refresh: m.refresh,
   }),
 }));
-vi.mock(
-  '#/routes/_authenticated/applications/$applicationId/-components/EmptyProfilePrompt',
-  () => ({
-    useIsProfileEmpty: () => m.profileEmpty,
-    EmptyProfilePrompt: ({ onGenerateAnyway }: { onGenerateAnyway: () => void }) => (
-      <button onClick={onGenerateAnyway} aria-label="Generate anyway" />
-    ),
-  }),
-);
+vi.mock('#/features/documents/components/EmptyProfilePrompt', () => ({
+  useIsProfileEmpty: () => m.profileEmpty,
+  EmptyProfilePrompt: ({ onGenerateAnyway }: { onGenerateAnyway: () => void }) => (
+    <button onClick={onGenerateAnyway} aria-label="Generate anyway" />
+  ),
+}));
 
 import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
-import type { DocumentEditorHandle } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentDraftEditor';
+import type { DocumentEditorHandle } from '#/features/documents/components/editor/DocumentDraftEditor';
 
 const GENERATED_DOC = {
   type: 'doc',

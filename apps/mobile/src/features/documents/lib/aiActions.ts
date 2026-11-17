@@ -3,7 +3,7 @@
  * for the existing Polish action, so the API, its prompt, its credit cost and
  * its rate limit are the ones the AI helper sheet already uses.
  *
- * Twin of apps/web's `lib/editor/aiActions.ts` (JEF-583): keep the instruction
+ * Twin of apps/web's `features/documents/lib/editor/aiActions.ts` (JEF-583): keep the instruction
  * strings identical. `aiActions.test.ts` here and web's test pin them.
  */
 export const AI_PROMPT_MAX_LENGTH = 500;

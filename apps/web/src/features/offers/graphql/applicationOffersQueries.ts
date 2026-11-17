@@ -1,7 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { myOffersQueryOptions } from './offersQueries';
-import { invalidateSectionCounts } from '../../../routes/_authenticated/applications/$applicationId/-sectionCounts';
+import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
 
 const OFFERS_QUERY = `
   query Offers($applicationId: ID!) {

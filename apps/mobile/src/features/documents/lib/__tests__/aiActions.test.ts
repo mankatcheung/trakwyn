@@ -14,7 +14,7 @@ describe('selection AI presets', () => {
     }
   });
 
-  // Twin of apps/web/src/lib/editor/aiActions.ts: the strings must stay identical.
+  // Twin of apps/web/src/features/documents/lib/editor/aiActions.ts: the strings must stay identical.
   it('keeps the same instruction text as web', () => {
     expect(SELECTION_AI_ACTIONS.map((a) => [a.id, a.instruction])).toEqual([
       [

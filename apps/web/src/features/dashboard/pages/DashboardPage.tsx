@@ -13,7 +13,7 @@ import {
   PlusIcon,
   StarIcon,
 } from 'lucide-react';
-import { StatusBadge } from '../../../routes/_authenticated/-components/StatusBadge';
+import { StatusBadge } from '../../applications/components/StatusBadge';
 import { OnboardingChecklist } from '../../onboarding/components/OnboardingChecklist';
 import { CvProfileSummaryCard } from '../components/CvProfileSummaryCard';
 import {

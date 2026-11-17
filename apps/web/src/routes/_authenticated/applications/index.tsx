@@ -3,11 +3,11 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { z } from 'zod';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
-import { ApplicationsPage } from './-components/ApplicationsPage';
+import { ApplicationsPage } from '../../../features/applications/pages/ApplicationsPage';
 
 const PAGE_SIZE = 20;
 
-import { APPLICATION_STATUSES } from '#/lib/statusColors';
+import { APPLICATION_STATUSES } from '#/features/applications/lib/statusColors';
 
 const searchSchema = z.object({
   status: z.string().optional(),

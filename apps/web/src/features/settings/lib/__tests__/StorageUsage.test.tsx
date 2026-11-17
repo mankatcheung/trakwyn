@@ -18,7 +18,7 @@ vi.mock('#/lib/analytics', () => ({
 }));
 
 import { StorageCard } from '#/features/settings/components/account/StorageCard';
-import { DocumentUploadPanel } from '#/routes/_authenticated/applications/$applicationId/-components/DocumentUploadPanel';
+import { DocumentUploadPanel } from '#/features/documents/components/DocumentUploadPanel';
 import {
   formatMegabytes,
   formatStorageSize,

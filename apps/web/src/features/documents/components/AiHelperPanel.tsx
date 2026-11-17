@@ -11,19 +11,16 @@ import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
-import { markdownToTiptapNodes, type TiptapNode } from '#/lib/markdownToTiptapDoc';
+import {
+  markdownToTiptapNodes,
+  type TiptapNode,
+} from '#/features/documents/lib/editor/markdownToTiptapDoc';
 import type { AiFeature } from '#/features/plans/lib/billingStatus';
-import type { DocumentEditorHandle } from '../../../routes/_authenticated/applications/$applicationId/-components/DocumentDraftEditor';
-import {
-  EmptyProfilePrompt,
-  useIsProfileEmpty,
-} from '../../../routes/_authenticated/applications/$applicationId/-components/EmptyProfilePrompt';
-import { PolishPreview } from '../../../routes/_authenticated/applications/$applicationId/-components/PolishPreview';
-import { requestPolish } from '../../../routes/_authenticated/applications/$applicationId/-polishApi';
-import {
-  ResumeSourcePicker,
-  useResumeSourceChoice,
-} from '../../../routes/_authenticated/applications/$applicationId/-components/ResumeSourcePicker';
+import type { DocumentEditorHandle } from './editor/DocumentDraftEditor';
+import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
+import { PolishPreview } from './editor/PolishPreview';
+import { requestPolish } from '../graphql/polishApi';
+import { ResumeSourcePicker, useResumeSourceChoice } from './ResumeSourcePicker';
 
 const GENERATE_MUTATION = `
   mutation GenerateIntoDocumentDraft(
