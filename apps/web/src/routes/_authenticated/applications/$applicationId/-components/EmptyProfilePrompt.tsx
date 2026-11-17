@@ -6,7 +6,7 @@ import { useLocale } from '#/lib/i18n';
 import {
   skillsQueryOptions,
   workExperiencesQueryOptions,
-} from '../../../profile/-components/profileQueries';
+} from '../../../../../features/profile/graphql/profileQueries';
 
 /**
  * Whether the user has neither work experience nor skills, which is what

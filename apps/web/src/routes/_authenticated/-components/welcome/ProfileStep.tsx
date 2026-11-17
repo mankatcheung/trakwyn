@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
-import { WorkExperienceSection } from '../../profile/-components/WorkExperienceSection';
-import { SkillsSection } from '../../profile/-components/SkillsSection';
+import { WorkExperienceSection } from '../../../../features/profile/components/sections/WorkExperienceSection';
+import { SkillsSection } from '../../../../features/profile/components/sections/SkillsSection';
 
 /**
  * The quick profile step, for AI goals only. It is the profile page's own

@@ -30,7 +30,7 @@ const SRC = join(WEB_ROOT, 'src');
  * How many files are still at an old path. Lower it in the PR that moves files;
  * it must reach 0, and a new file in an old location can never raise it.
  */
-const STILL_IN_OLD_LOCATIONS = 379;
+const STILL_IN_OLD_LOCATIONS = 298;
 
 /**
  * Route files that reach into a feature's `components/` or `lib/` instead of its
@@ -44,6 +44,17 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/plans/components/UpgradePrompt.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/quota/lib/contentQuota.ts',
   'routes/_authenticated/profile/index.tsx imports features/auth/lib/returnTo.ts',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/cv-import/CvImportDialog.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/WorkExperienceSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/EducationSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/SkillsSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/CertificationsSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/LanguagesSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/ProjectsSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/AwardsSection.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/components/CompletenessMeter.tsx',
+  'routes/_authenticated/profile/index.tsx imports features/profile/lib/profileCompleteness.ts',
+  'routes/_authenticated/profile/index.tsx imports features/profile/hooks/useProfileData.ts',
   'routes/_authenticated/route.tsx imports features/auth/lib/sessionGate.ts',
   'routes/account-deletion-scheduled.tsx imports features/verification/lib/emailVerification.ts',
   'routes/guides/$slug.tsx imports features/guides/lib/guideFeeds.ts',

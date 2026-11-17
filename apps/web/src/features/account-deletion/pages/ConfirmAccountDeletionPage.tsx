@@ -4,7 +4,7 @@ import { Alert, Button } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
-import { extractGqlError } from '#/routes/_authenticated/settings/-components/shared';
+import { extractGqlError } from '#/features/settings/lib/shared';
 import {
   CONFIRM_ACCOUNT_DELETION,
   DELETION_DATE_FORMAT,

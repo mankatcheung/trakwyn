@@ -1,0 +1,323 @@
+import { PlusIcon, SparklesIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { gqlClient } from '#/graphql/client';
+import { useLocale } from '#/lib/i18n';
+import { LlmApiKeyRow } from '../components/ai/LlmApiKeyRow';
+import { AddLlmApiKeyForm } from '../components/ai/AddLlmApiKeyForm';
+import { AiProviderOrderCard } from '../components/ai/AiProviderOrderCard';
+import { CustomAiPromptForm } from '../components/ai/CustomAiPromptForm';
+import { useHostedAiAvailable } from '#/lib/aiCredits';
+import { Alert, Card, Checkbox, Skeleton } from '@trakwyn/ui';
+import {
+  LLM_API_KEYS_QUERY,
+  LLM_USAGE_SUMMARY_QUERY,
+  DELETE_LLM_API_KEY,
+  TEST_LLM_API_KEY,
+  SET_AI_PROVIDER_ORDER,
+  UPDATE_PROFILE,
+  type LlmApiKey,
+  type LlmUsageSummary,
+  type TestLlmApiKeyResult,
+  LLM_PROVIDER_OPTIONS,
+  extractGqlError,
+} from '../lib/shared';
+
+/**
+ * Bring-your-own-key AI settings: provider keys, which providers answer and in
+ * what order, and the custom instructions appended to every prompt. The
+ * target for every "add your API key" prompt scattered through the app.
+ */
+export function SettingsAiPage() {
+  const { t } = useLocale();
+  const qc = useQueryClient();
+  const hostedAi = useHostedAiAvailable();
+
+  // AI API keys
+  const { data: llmData, isLoading: llmKeysLoading } = useQuery({
+    queryKey: ['llmApiKeys'],
+    queryFn: () =>
+      gqlClient.request<{
+        llmApiKeys: LlmApiKey[];
+        me: {
+          aiProviderOrder: string[];
+          customAiPrompt: string | null;
+          useCrossApplicationContext: boolean;
+        };
+      }>(LLM_API_KEYS_QUERY),
+  });
+  const llmApiKeys = llmData?.llmApiKeys ?? [];
+
+  // Usage summary (JEF-250) — separate query so a slow/failed usage lookup
+  // never blocks the keys list itself from rendering.
+  const { data: usageData } = useQuery({
+    queryKey: ['llmUsageSummary'],
+    queryFn: () =>
+      gqlClient.request<{ llmUsageSummary: LlmUsageSummary[] }>(LLM_USAGE_SUMMARY_QUERY),
+  });
+  const usageByProvider = new Map((usageData?.llmUsageSummary ?? []).map((s) => [s.provider, s]));
+  const configuredProviders = new Set(llmApiKeys.map((k) => k.provider));
+  const availableProviderOptions = LLM_PROVIDER_OPTIONS.filter(
+    (o) => !configuredProviders.has(o.value),
+  );
+  // Progressive disclosure (redesign): once at least one provider is
+  // connected, the add-key form stays collapsed behind an "Add provider"
+  // button rather than always sitting open — a manual toggle overrides the
+  // "open when there's nothing configured yet" default in both directions.
+  const [addProviderOverride, setAddProviderOverride] = useState<boolean | null>(null);
+  const addProviderOpen = addProviderOverride ?? llmApiKeys.length === 0;
+
+  const [removingProvider, setRemovingProvider] = useState<string | null>(null);
+  const [llmKeyListError, setLlmKeyListError] = useState<string | null>(null);
+  const onRemoveLlmApiKey = async (provider: string) => {
+    setRemovingProvider(provider);
+    setLlmKeyListError(null);
+    try {
+      await gqlClient.request(DELETE_LLM_API_KEY, { provider });
+      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
+    } catch (err) {
+      setLlmKeyListError(extractGqlError(err) ?? t('integrations.removeApiKeyFailed'));
+    } finally {
+      setRemovingProvider(null);
+    }
+  };
+
+  // Testing a saved key (JEF-247) — separate pending/result state per
+  // provider row, so testing one key doesn't disturb another's last result.
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [savedKeyTestResults, setSavedKeyTestResults] = useState<
+    Record<string, TestLlmApiKeyResult>
+  >({});
+  const onTestSavedLlmApiKey = async (provider: string) => {
+    setTestingProvider(provider);
+    setSavedKeyTestResults((prev) => {
+      const next = { ...prev };
+      delete next[provider];
+      return next;
+    });
+    try {
+      const data = await gqlClient.request<{ testLlmApiKey: TestLlmApiKeyResult }>(
+        TEST_LLM_API_KEY,
+        { provider },
+      );
+      setSavedKeyTestResults((prev) => ({ ...prev, [provider]: data.testLlmApiKey }));
+    } catch (err) {
+      setSavedKeyTestResults((prev) => ({
+        ...prev,
+        [provider]: { ok: false, error: extractGqlError(err) ?? t('integrations.testKeyFailed') },
+      }));
+    } finally {
+      setTestingProvider(null);
+    }
+  };
+
+  // Which AI answers (JEF-503): each change is saved as the whole list.
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const onChangeOrder = async (order: string[]) => {
+    setSavingOrder(true);
+    setOrderError(null);
+    try {
+      await gqlClient.request(SET_AI_PROVIDER_ORDER, { order });
+      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
+    } catch (err) {
+      setOrderError(extractGqlError(err) ?? t('aiOrder.updateFailed'));
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  // Closing unmounts the form, which discards whatever was typed into it.
+  const closeAddProviderForm = () => setAddProviderOverride(false);
+
+  // Cross-application context (JEF-249)
+  const [crossAppContextError, setCrossAppContextError] = useState<string | null>(null);
+  const [updatingCrossAppContext, setUpdatingCrossAppContext] = useState(false);
+  const onToggleCrossApplicationContext = async (checked: boolean) => {
+    setUpdatingCrossAppContext(true);
+    setCrossAppContextError(null);
+    try {
+      await gqlClient.request(UPDATE_PROFILE, { useCrossApplicationContext: checked });
+      await qc.invalidateQueries({ queryKey: ['llmApiKeys'] });
+    } catch (err) {
+      setCrossAppContextError(
+        extractGqlError(err) ?? t('integrations.crossApplicationContextUpdateFailed'),
+      );
+    } finally {
+      setUpdatingCrossAppContext(false);
+    }
+  };
+
+  return (
+    <div className="space-y-10">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-900 dark:bg-blue-900/20">
+        <div className="flex items-center gap-3">
+          <SparklesIcon className="size-4.5 shrink-0 text-blue-700 dark:text-blue-400" />
+          <p className="text-sm text-blue-900 dark:text-blue-300">
+            {t('guides.aiMcpSetup.bannerAiText')}
+          </p>
+        </div>
+        <Link
+          to="/ai-mcp-setup"
+          className="shrink-0 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
+        >
+          {t('guides.aiMcpSetup.bannerLink')}
+        </Link>
+      </div>
+
+      {/* ── Which AI answers, in order; Trakwyn AI is Pro only for now (JEF-451, JEF-503) ── */}
+      {llmKeysLoading ? (
+        <Card className="p-5">
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </Card>
+      ) : (
+        <AiProviderOrderCard
+          order={llmData?.me.aiProviderOrder ?? []}
+          keys={llmApiKeys}
+          hostedAi={hostedAi}
+          busy={savingOrder}
+          error={orderError}
+          onChange={onChangeOrder}
+        />
+      )}
+      {hostedAi === false && (
+        <Card className="p-5">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('aiSource.proTitle')}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('aiSource.proOnly')}</p>
+          <Link
+            to="/settings/plan"
+            className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-400"
+          >
+            {t('aiCredits.upgrade')}
+          </Link>
+        </Card>
+      )}
+
+      {/* ── AI features ── */}
+      <Card className="overflow-hidden">
+        <div className="px-5 pt-5 pb-1">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('integrations.aiFeaturesTitle')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('integrations.aiFeaturesDescription')}
+          </p>
+        </div>
+
+        {llmKeyListError && (
+          <div className="px-5 pt-3">
+            <Alert>{llmKeyListError}</Alert>
+          </div>
+        )}
+
+        {llmKeysLoading ? (
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-14 w-full rounded-lg" />
+            <Skeleton className="h-10 w-40 rounded-lg" />
+          </div>
+        ) : (
+          <>
+            {llmApiKeys.length > 0 && (
+              <div className="mt-4 border-t border-gray-100 dark:border-gray-700/60">
+                {llmApiKeys.map((key) => (
+                  <LlmApiKeyRow
+                    key={key.provider}
+                    llmApiKey={key}
+                    usage={usageByProvider.get(key.provider)}
+                    testResult={savedKeyTestResults[key.provider]}
+                    busy={testingProvider === key.provider || removingProvider === key.provider}
+                    onTest={() => onTestSavedLlmApiKey(key.provider)}
+                    onRemove={() => onRemoveLlmApiKey(key.provider)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="p-5">
+              {availableProviderOptions.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t('integrations.allProvidersConfigured')}
+                </p>
+              ) : addProviderOpen ? (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                  {llmApiKeys.length > 0 && (
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {t('integrations.addProvider')}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={closeAddProviderForm}
+                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </div>
+                  )}
+                  <AddLlmApiKeyForm
+                    providerOptions={availableProviderOptions}
+                    onSaved={() => setAddProviderOverride(false)}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddProviderOverride(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  <PlusIcon size={15} />
+                  {t('integrations.addProvider')}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* ── Custom instructions ── */}
+      <Card className="p-5">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          {t('integrations.customInstructionsLabel')}
+        </h2>
+        <p className="mt-1 mb-3.5 text-sm text-gray-500 dark:text-gray-400">
+          {t('integrations.customInstructionsHelp')}
+        </p>
+        {/* Keyed by load state: the form is born with the saved text, since a
+            react-hook-form reset after mount is cancelled by `useFormAction`. */}
+        <CustomAiPromptForm
+          key={llmKeysLoading ? 'loading' : 'loaded'}
+          customAiPrompt={llmData?.me.customAiPrompt ?? null}
+        />
+      </Card>
+
+      {/* ── Cross-application context (JEF-249) ── */}
+      <Card className="p-5">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {t('integrations.crossApplicationContextLabel')}
+            </h2>
+            <p className="mt-1 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+              {t('integrations.crossApplicationContextHelp')}
+            </p>
+          </div>
+          <Checkbox
+            id="use-cross-application-context"
+            aria-label={t('integrations.crossApplicationContextLabel')}
+            checked={llmData?.me.useCrossApplicationContext ?? false}
+            disabled={updatingCrossAppContext}
+            onChange={(e) => onToggleCrossApplicationContext(e.target.checked)}
+          />
+        </div>
+        {crossAppContextError && (
+          <div className="mt-3">
+            <Alert>{crossAppContextError}</Alert>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

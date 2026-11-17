@@ -5,7 +5,7 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
 import { EMAIL_VERIFICATION_KEY } from '#/features/verification/lib/emailVerification';
-import { extractGqlError } from '#/routes/_authenticated/settings/-components/shared';
+import { extractGqlError } from '#/features/settings/lib/shared';
 import {
   CANCEL_ACCOUNT_DELETION,
   DELETION_DATE_FORMAT,

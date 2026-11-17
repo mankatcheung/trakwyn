@@ -164,7 +164,7 @@ describe('Accessibility audits', () => {
       });
       const { ThemeProvider } = await import('#/lib/theme');
       const { SettingsNotificationsPage } =
-        await import('#/routes/_authenticated/settings/-components/SettingsNotificationsPage');
+        await import('#/features/settings/pages/SettingsNotificationsPage');
 
       function SettingsWrapper({ children }: { children: React.ReactNode }) {
         return (

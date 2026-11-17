@@ -5,10 +5,7 @@ import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
-import {
-  REQUEST_EMAIL_CHANGE,
-  extractGqlError,
-} from '#/routes/_authenticated/settings/-components/shared';
+import { REQUEST_EMAIL_CHANGE, extractGqlError } from '#/features/settings/lib/shared';
 
 const changeEmailSchema = z.object({
   newEmail: z.email('Enter a valid email address'),

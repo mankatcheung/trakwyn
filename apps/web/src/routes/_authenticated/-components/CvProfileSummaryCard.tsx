@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { IdCardIcon, PencilIcon } from 'lucide-react';
 import { Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import { CompletenessMeter } from '../profile/-components/CompletenessMeter';
-import { profileCompleteness } from '../profile/-components/profileCompleteness';
-import type { WorkExperience } from '../profile/-components/profileQueries';
-import { useProfileData } from '../profile/-components/useProfileData';
+import { CompletenessMeter } from '../../../features/profile/components/CompletenessMeter';
+import { profileCompleteness } from '../../../features/profile/lib/profileCompleteness';
+import type { WorkExperience } from '../../../features/profile/graphql/profileQueries';
+import { useProfileData } from '../../../features/profile/hooks/useProfileData';
 
 // Dates are ISO strings, so they order correctly as text; a role still held
 // sorts as if it ends after every real end date.

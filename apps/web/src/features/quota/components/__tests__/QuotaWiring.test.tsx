@@ -9,7 +9,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ContactsTab } from '#/routes/_authenticated/applications/$applicationId/-components/ContactsTab';
-import { ProfileSection } from '#/routes/_authenticated/profile/-components/ProfileSection';
+import { ProfileSection } from '#/features/profile/components/sections/ProfileSection';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
