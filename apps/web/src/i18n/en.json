@@ -776,6 +776,7 @@
   "profile.title": "My profile",
   "profile.description": "Your work experience, education and skills. Resumes, cover letters and the assistant are written from what you add here.",
   "profile.sectionsNavLabel": "Profile sections",
+  "profile.itemDeletedToast": "Deleted from your profile",
   "cvImport.button": "Import from CV",
   "cvImport.title": "Import from your CV",
   "cvImport.intro": "Upload your CV and AI will read your work experience, education and skills. You review everything before it is added.",

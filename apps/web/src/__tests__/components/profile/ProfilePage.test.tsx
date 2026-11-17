@@ -135,7 +135,7 @@ describe('ProfilePage', () => {
     });
   });
 
-  it('deletes a work experience entry', async () => {
+  it('removes a work experience entry at once and holds the delete for the undo window (JEF-625)', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
       if (query.includes('WorkExperiences')) {
         return Promise.resolve({
@@ -169,10 +169,13 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DeleteWorkExperience'), {
-        id: 'we-1',
-      });
+      expect(screen.queryByText('Software Engineer at Acme Corp')).not.toBeInTheDocument();
     });
+    // The request goes out when the undo toast closes (ProfileSectionsDeleteUndo.test.tsx).
+    expect(mockGqlRequest).not.toHaveBeenCalledWith(
+      expect.stringContaining('DeleteWorkExperience'),
+      expect.anything(),
+    );
   });
 
   it('creates a new skill via the form', async () => {
