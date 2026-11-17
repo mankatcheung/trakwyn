@@ -24,15 +24,15 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 
 `src/` has one folder per feature, like `apps/mobile`.
 
-| Kind of file                                                          | Where it goes                                                            |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| A route (`createFileRoute`, loader, `beforeLoad`)                     | `routes/`, kept thin: it renders a page                                  |
-| A route-only helper                                                   | `routes/…/-name.ts(x)` (the `-` prefix hides it from the router)         |
-| A page and what only it uses                                          | `features/<name>/pages/`, `components/`, `hooks/`, `lib/`                |
-| A GraphQL document                                                    | `features/<name>/graphql/<name>.queries.graphql` or `.mutations.graphql` |
-| Used by more than one feature                                         | the shared root: `components/`, `hooks/`, `lib/`                         |
-| A test                                                                | `__tests__/` beside the code it tests                                    |
-| A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                          |
+| Kind of file                                                          | Where it goes                                                                                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| A route (`createFileRoute`, loader, `beforeLoad`)                     | `routes/`, kept thin: it renders a page                                                                           |
+| A route-only helper                                                   | `routes/…/-name.ts(x)` (the `-` prefix hides it from the router)                                                  |
+| A page and what only it uses                                          | `features/<name>/pages/`, `components/`, `hooks/`, `lib/`                                                         |
+| A GraphQL document                                                    | a `graphql()` call in `features/<name>/graphql/<name>Queries.ts` (JEF-637; older ones are still `.graphql` files) |
+| Used by more than one feature                                         | the shared root: `components/`, `hooks/`, `lib/`                                                                  |
+| A test                                                                | `__tests__/` beside the code it tests                                                                             |
+| A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                                                                   |
 
 Rules, held by `src/__tests__/config/webStructure.test.ts`:
 
