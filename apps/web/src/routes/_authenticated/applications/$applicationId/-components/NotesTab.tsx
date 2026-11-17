@@ -157,17 +157,25 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
               />
               <div className="mt-2 flex justify-end gap-2">
                 <button
-                  onClick={() => updateNote.mutate({ id: note.id, content: editingNote.content })}
-                  aria-label={t('common.save')}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white"
+                  onClick={() => {
+                    const content = editingNote.content.trim();
+                    if (content) updateNote.mutate({ id: note.id, content });
+                  }}
+                  disabled={!editingNote.content.trim() || updateNote.isPending}
+                  aria-label={updateNote.isPending ? t('applicationForm.saving') : t('common.save')}
+                  aria-busy={updateNote.isPending}
+                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <CheckIcon size={14} />{' '}
-                  <span className="hidden sm:inline">{t('common.save')}</span>
+                  <span className="hidden sm:inline">
+                    {updateNote.isPending ? t('applicationForm.saving') : t('common.save')}
+                  </span>
                 </button>
                 <button
                   onClick={() => setEditingNote(null)}
+                  disabled={updateNote.isPending}
                   aria-label={t('common.cancel')}
-                  className="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                  className="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <XIcon size={14} /> <span className="hidden sm:inline">{t('common.cancel')}</span>
                 </button>
