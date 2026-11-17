@@ -1,4 +1,4 @@
-// Ported from apps/web's apps/web/src/routes/_authenticated/-analytics-page.tsx —
+// Ported from apps/web's apps/web/src/features/analytics/pages/AnalyticsPage.tsx —
 // same ISO-week bucketing and funnel/rate derivations, kept as pure
 // functions so they're unit-testable independent of the chart rendering.
 import { APPLICATION_STATUSES, type ApplicationStatus } from '../../applications/types';

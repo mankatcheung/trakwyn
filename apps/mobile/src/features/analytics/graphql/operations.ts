@@ -1,5 +1,5 @@
-// Hand-written to match apps/web's apps/web/src/routes/_authenticated/
-// -analytics-* and -*-analytics-* modules field-for-field — see
+// Hand-written to match apps/web's apps/web/src/features/analytics/graphql/*
+// modules field-for-field — see
 // ../../applications/graphql/operations.ts for why these stay hand-typed
 // rather than codegen'd.
 
