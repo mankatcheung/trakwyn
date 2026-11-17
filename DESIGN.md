@@ -54,7 +54,7 @@ The one brand color. `blue-600` is the primary action surface; `blue-700` is its
 
 `Badge` (`packages/ui/src/Badge.tsx`) is the canonical set of tag/status pill colors — **9 tones**: `gray`, `slate`, `blue`, `purple`, `yellow`, `orange`, `green`, `red`, `emerald`. Don't reach past this list for a new pill color without a real reason.
 
-**Application status has one canonical color map, and only one.** `apps/web/src/lib/statusColors.ts` is the single source of truth for every status's `Badge` tone, dot color, and board-column accent — draft (gray), applied (blue), interviewing (purple), offered (orange), accepted (green), rejected (red), withdrawn (slate). Before this map existed, the board and the status badge each carried their own mapping and disagreed on three of seven statuses; the same application changed color depending on which screen you looked at. **Anything that colors a status reads this map** — never hand-pick a color for a status inline. And per that file's own rule: **color is never the only cue** — every surface using these colors also shows the localized status text next to it.
+**Application status has one canonical color map, and only one.** `apps/web/src/features/applications/lib/statusColors.ts` is the single source of truth for every status's `Badge` tone, dot color, and board-column accent — draft (gray), applied (blue), interviewing (purple), offered (orange), accepted (green), rejected (red), withdrawn (slate). Before this map existed, the board and the status badge each carried their own mapping and disagreed on three of seven statuses; the same application changed color depending on which screen you looked at. **Anything that colors a status reads this map** — never hand-pick a color for a status inline. And per that file's own rule: **color is never the only cue** — every surface using these colors also shows the localized status text next to it.
 
 ## Typography
 
@@ -142,7 +142,7 @@ Dark mode is a **`.dark` class toggle** (`@custom-variant dark (&:where(.dark, .
 - Stay on Tailwind's stock color and spacing scale — no arbitrary hex values, no custom spacing steps.
 - Write every color pairing with its `dark:` counterpart in the same class list.
 - Lay out sibling elements with `flex`/`grid` + `gap-*`, not margins between them.
-- Read `apps/web/src/lib/statusColors.ts` before touching anything that colors an application status — there is exactly one map.
+- Read `apps/web/src/features/applications/lib/statusColors.ts` before touching anything that colors an application status — there is exactly one map.
 - Pair a color with text/an icon for anything meaningful (status, error, success) — never color alone.
 - Draw icons as inline stroke SVG (lucide-react) at a consistent weight.
 

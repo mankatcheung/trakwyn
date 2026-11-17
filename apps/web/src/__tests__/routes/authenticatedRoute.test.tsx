@@ -7,9 +7,9 @@ const { mockHasSessionCookie, mockCheckSessionGate, mockPrefetchDashboard } = vi
 }));
 
 // Only the network read is replaced; which paths are exempt is the real rule.
-vi.mock('#/lib/sessionGate', () => ({ checkSessionGate: mockCheckSessionGate }));
+vi.mock('#/features/auth/lib/sessionGate', () => ({ checkSessionGate: mockCheckSessionGate }));
 
-vi.mock('#/routes/_authenticated/-dashboardQueries', () => ({
+vi.mock('#/features/dashboard/graphql/dashboardQueries', () => ({
   prefetchDashboard: mockPrefetchDashboard,
 }));
 
@@ -20,7 +20,7 @@ vi.mock('#/graphql/client', () => ({
 
 // The layout pulls in the whole authenticated app; the guard is what's
 // under test here.
-vi.mock('#/routes/_authenticated/-components/AuthenticatedLayout', () => ({
+vi.mock('#/features/app-shell/components/AuthenticatedLayout', () => ({
   AuthenticatedLayout: () => null,
 }));
 

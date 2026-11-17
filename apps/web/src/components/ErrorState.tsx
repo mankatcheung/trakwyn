@@ -1,5 +1,5 @@
 import { AlertTriangleIcon, RefreshCwIcon } from 'lucide-react';
-import { UpgradePrompt } from '#/components/UpgradePrompt';
+import { UpgradePrompt } from '#/features/plans/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';

@@ -1,0 +1,201 @@
+{
+  "recordedWith": "pnpm build (vite build, vercel preset)",
+  "routeChunks": [
+    {
+      "name": "_draftId",
+      "bytes": 745108
+    },
+    {
+      "name": "_slug",
+      "bytes": 6120
+    },
+    {
+      "name": "accessibility",
+      "bytes": 2668
+    },
+    {
+      "name": "account-deletion-scheduled",
+      "bytes": 2358
+    },
+    {
+      "name": "ai",
+      "bytes": 22041
+    },
+    {
+      "name": "ai-assistant",
+      "bytes": 4761
+    },
+    {
+      "name": "ai-mcp-setup",
+      "bytes": 25453
+    },
+    {
+      "name": "analytics",
+      "bytes": 3971
+    },
+    {
+      "name": "analytics",
+      "bytes": 377453
+    },
+    {
+      "name": "authorize",
+      "bytes": 2801
+    },
+    {
+      "name": "board",
+      "bytes": 63193
+    },
+    {
+      "name": "calendar",
+      "bytes": 8417
+    },
+    {
+      "name": "cancel-account-deletion",
+      "bytes": 1308
+    },
+    {
+      "name": "confirm-account-deletion",
+      "bytes": 1695
+    },
+    {
+      "name": "confirm-backup-email",
+      "bytes": 1966
+    },
+    {
+      "name": "confirm-email-change",
+      "bytes": 2235
+    },
+    {
+      "name": "danger-zone",
+      "bytes": 3219
+    },
+    {
+      "name": "dashboard",
+      "bytes": 15925
+    },
+    {
+      "name": "data",
+      "bytes": 4771
+    },
+    {
+      "name": "edit",
+      "bytes": 7173
+    },
+    {
+      "name": "forgot-password",
+      "bytes": 3719
+    },
+    {
+      "name": "history",
+      "bytes": 237
+    },
+    {
+      "name": "history",
+      "bytes": 6224
+    },
+    {
+      "name": "integrations",
+      "bytes": 14049
+    },
+    {
+      "name": "login",
+      "bytes": 10171
+    },
+    {
+      "name": "new",
+      "bytes": 11635
+    },
+    {
+      "name": "notifications",
+      "bytes": 6106
+    },
+    {
+      "name": "notifications",
+      "bytes": 8676
+    },
+    {
+      "name": "offers",
+      "bytes": 5962
+    },
+    {
+      "name": "offers",
+      "bytes": 14940
+    },
+    {
+      "name": "plan",
+      "bytes": 14590
+    },
+    {
+      "name": "pricing",
+      "bytes": 13559
+    },
+    {
+      "name": "privacy",
+      "bytes": 11952
+    },
+    {
+      "name": "profile",
+      "bytes": 18868
+    },
+    {
+      "name": "profile",
+      "bytes": 48418
+    },
+    {
+      "name": "register",
+      "bytes": 11017
+    },
+    {
+      "name": "reset-password",
+      "bytes": 3349
+    },
+    {
+      "name": "resume-cover-letter",
+      "bytes": 5666
+    },
+    {
+      "name": "route",
+      "bytes": 2959
+    },
+    {
+      "name": "route",
+      "bytes": 27225
+    },
+    {
+      "name": "security",
+      "bytes": 25093
+    },
+    {
+      "name": "share",
+      "bytes": 3765
+    },
+    {
+      "name": "terms",
+      "bytes": 8269
+    },
+    {
+      "name": "tracking",
+      "bytes": 5109
+    },
+    {
+      "name": "trash",
+      "bytes": 252
+    },
+    {
+      "name": "trash",
+      "bytes": 11413
+    },
+    {
+      "name": "verify-email",
+      "bytes": 2325
+    },
+    {
+      "name": "verify-email-required",
+      "bytes": 6423
+    },
+    {
+      "name": "welcome",
+      "bytes": 10847
+    }
+  ]
+}

@@ -1,0 +1,246 @@
+import { Trash2Icon, CopyIcon, CheckIcon, PlusIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { gqlClient } from '#/graphql/client';
+import { useLocale } from '#/lib/i18n';
+import { useBillingStatus } from '#/features/plans/lib/billingStatus';
+import { Alert, Badge, Button, Card, FormLabel, Input, Select } from '@trakwyn/ui';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
+import {
+  API_TOKENS_QUERY,
+  CREATE_API_TOKEN,
+  DELETE_API_TOKEN,
+  type ApiToken,
+  type ApiTokenScope,
+  type CreateApiTokenPayload,
+  extractGqlError,
+} from '../../lib/shared';
+
+export function ApiTokensCard() {
+  const { t } = useLocale();
+  const qc = useQueryClient();
+
+  const billingStatus = useBillingStatus();
+
+  const { data: apiTokensData } = useQuery({
+    queryKey: ['apiTokens'],
+    queryFn: () => gqlClient.request<{ apiTokens: ApiToken[] }>(API_TOKENS_QUERY),
+  });
+  const apiTokens = apiTokensData?.apiTokens ?? [];
+  const apiTokensFull = useQuotaState('apiTokens', apiTokens.length)?.level === 'full';
+  const [apiTokenFormOverride, setApiTokenFormOverride] = useState<boolean | null>(null);
+  const apiTokenFormOpen = apiTokenFormOverride ?? apiTokens.length === 0;
+  const [newApiToken, setNewApiToken] = useState<CreateApiTokenPayload | null>(null);
+  const [apiTokenName, setApiTokenName] = useState('');
+  // Defaults to read-only: it's what the MCP server needs (POST /mcp accepts
+  // either scope), and full read+write access to the GraphQL API should be a
+  // deliberate choice rather than what you get by not choosing (JEF-170).
+  const [apiTokenScope, setApiTokenScope] = useState<ApiTokenScope>('read');
+  const [creatingApiToken, setCreatingApiToken] = useState(false);
+  const [apiTokenError, setApiTokenError] = useState<string | null>(null);
+
+  const onCreateApiToken = async () => {
+    if (!apiTokenName.trim()) return;
+    setCreatingApiToken(true);
+    setApiTokenError(null);
+    try {
+      const res = await gqlClient.request<{ createApiToken: CreateApiTokenPayload }>(
+        CREATE_API_TOKEN,
+        {
+          name: apiTokenName.trim(),
+          scope: apiTokenScope,
+        },
+      );
+      setNewApiToken(res.createApiToken);
+      setApiTokenName('');
+      setApiTokenScope('read');
+      setApiTokenFormOverride(null);
+      await qc.invalidateQueries({ queryKey: ['apiTokens'] });
+    } catch (err) {
+      setApiTokenError(extractGqlError(err) ?? t('integrations.createTokenFailed'));
+    } finally {
+      setCreatingApiToken(false);
+    }
+  };
+
+  const [deletingApiTokenId, setDeletingApiTokenId] = useState<string | null>(null);
+  const onDeleteApiToken = async (id: string) => {
+    setDeletingApiTokenId(id);
+    try {
+      await gqlClient.request(DELETE_API_TOKEN, { id });
+      await qc.invalidateQueries({ queryKey: ['apiTokens'] });
+    } catch (err) {
+      setApiTokenError(extractGqlError(err) ?? t('integrations.deleteTokenFailed'));
+    } finally {
+      setDeletingApiTokenId(null);
+    }
+  };
+
+  return (
+    <Card className="space-y-4 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('integrations.apiTokensTitle')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('integrations.apiTokensDescription')}
+          </p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t('integrations.mcpHint')}{' '}
+            <a
+              href="https://github.com/mankatcheung/trakwyn#mcp-server"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {t('integrations.mcpHintLink')}
+            </a>
+          </p>
+          {billingStatus?.enforced && !billingStatus.features.apiAccess && (
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {t('integrations.tokenFreePlanNote')}
+            </p>
+          )}
+          <QuotaHint resource="apiTokens" used={apiTokens.length} className="mt-1" />
+        </div>
+        {!apiTokenFormOpen && !newApiToken && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setApiTokenFormOverride(true)}
+            disabled={apiTokensFull}
+            className="shrink-0"
+          >
+            <span className="flex items-center gap-1.5">
+              <PlusIcon size={14} />{' '}
+              <span className="hidden sm:inline">{t('integrations.newToken')}</span>
+            </span>
+          </Button>
+        )}
+      </div>
+
+      {newApiToken && (
+        <div className="space-y-3">
+          <p className="text-sm text-green-600">{t('integrations.tokenCreatedNote')}</p>
+          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+            <code className="flex-1 font-mono text-sm break-all text-gray-900 dark:text-gray-100">
+              {newApiToken.token}
+            </code>
+            <Button
+              variant="link"
+              onClick={() => {
+                navigator.clipboard.writeText(newApiToken.token);
+              }}
+              aria-label={t('integrations.copyTokenAria')}
+              className="shrink-0"
+            >
+              <span className="flex items-center gap-1">
+                <CopyIcon size={14} /> <span className="hidden sm:inline">{t('common.copy')}</span>
+              </span>
+            </Button>
+          </div>
+          <Button onClick={() => setNewApiToken(null)} aria-label={t('common.done')}>
+            <span className="flex items-center gap-1.5">
+              <CheckIcon size={14} /> <span className="hidden sm:inline">{t('common.done')}</span>
+            </span>
+          </Button>
+        </div>
+      )}
+
+      {!newApiToken && apiTokenFormOpen && (
+        <>
+          {apiTokenError && <Alert>{apiTokenError}</Alert>}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <FormLabel>{t('integrations.tokenNameLabel')}</FormLabel>
+              <Input
+                type="text"
+                value={apiTokenName}
+                onChange={(e) => setApiTokenName(e.target.value)}
+                placeholder="e.g. CI pipeline"
+              />
+            </div>
+            <div className="sm:w-56">
+              <FormLabel>{t('integrations.tokenScopeLabel')}</FormLabel>
+              <Select
+                value={apiTokenScope}
+                onChange={(e) => setApiTokenScope(e.target.value as ApiTokenScope)}
+                aria-label={t('integrations.tokenScopeLabel')}
+              >
+                <option value="read">{t('integrations.scopeRead')}</option>
+                <option value="full">{t('integrations.scopeFull')}</option>
+              </Select>
+            </div>
+            <Button
+              onClick={onCreateApiToken}
+              disabled={creatingApiToken || !apiTokenName.trim() || apiTokensFull}
+            >
+              {creatingApiToken ? t('integrations.creating') : t('integrations.createToken')}
+            </Button>
+            {apiTokens.length > 0 && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setApiTokenFormOverride(false);
+                  setApiTokenName('');
+                  setApiTokenError(null);
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {apiTokenScope === 'read'
+              ? t('integrations.scopeReadHelp')
+              : t('integrations.scopeFullHelp')}
+          </p>
+        </>
+      )}
+
+      {apiTokens.length > 0 && (
+        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+          {apiTokens.map((token) => (
+            <li key={token.id} className="flex items-center justify-between gap-4 px-3 py-2">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="truncate">{token.name}</span>
+                  <Badge tone={token.scope === 'read' ? 'gray' : 'yellow'}>
+                    {token.scope === 'read'
+                      ? t('integrations.scopeRead')
+                      : t('integrations.scopeFull')}
+                  </Badge>
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t('integrations.createdOn', {
+                    date: new Date(token.createdAt).toLocaleDateString(),
+                  })}
+                  {token.lastUsedAt &&
+                    ` · ${t('integrations.lastUsedSuffix', { date: new Date(token.lastUsedAt).toLocaleDateString() })}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onDeleteApiToken(token.id)}
+                disabled={deletingApiTokenId === token.id}
+                aria-label={t('integrations.revokeTokenAria')}
+                className="flex shrink-0 items-center gap-1 text-xs text-red-600 hover:underline disabled:opacity-60"
+              >
+                <Trash2Icon size={14} />{' '}
+                <span className="hidden sm:inline">
+                  {deletingApiTokenId === token.id
+                    ? t('integrations.deleting')
+                    : t('integrations.revoke')}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}

@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasSessionCookie } from '#/graphql/client';
-import { needsWelcome } from '#/lib/onboarding';
-import { checkSessionGate, type SessionGate } from '#/lib/sessionGate';
-import { AuthenticatedLayout } from './-components/AuthenticatedLayout';
-import { prefetchDashboard } from './-dashboardQueries';
+import { needsWelcome } from '#/features/onboarding/lib/onboarding';
+import { checkSessionGate, type SessionGate } from '#/features/auth/lib/sessionGate';
+import { AuthenticatedLayout } from '../../features/app-shell/components/AuthenticatedLayout';
+import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';
 
 export const Route = createFileRoute('/_authenticated')({
   // See routes/index.tsx for why this must be ssr: false.

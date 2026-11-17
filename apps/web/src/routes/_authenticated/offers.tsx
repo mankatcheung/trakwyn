@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
-import { myOffersQueryOptions } from './-offers-queries';
-import { OffersPage } from './-offers-page';
+import { myOffersQueryOptions } from '../../features/offers/graphql/offersQueries';
+import { OffersPage } from '../../features/offers/pages/OffersPage';
 
 export const Route = createFileRoute('/_authenticated/offers')({
   loader: async ({ context: { queryClient } }) => {
