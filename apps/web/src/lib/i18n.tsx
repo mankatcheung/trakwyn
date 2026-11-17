@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- LocaleProvider and useLocale share one context, and the locale constants/helpers are the provider's own vocabulary; splitting them would scatter one module. */
 import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next, I18nextProvider, useTranslation } from 'react-i18next';

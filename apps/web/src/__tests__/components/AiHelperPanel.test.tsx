@@ -24,10 +24,10 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
     refresh: m.refresh,
   }),
 }));
+vi.mock('#/hooks/useIsProfileEmpty', () => ({ useIsProfileEmpty: () => m.profileEmpty }));
 vi.mock(
   '#/routes/_authenticated/applications/$applicationId/-components/EmptyProfilePrompt',
   () => ({
-    useIsProfileEmpty: () => m.profileEmpty,
     EmptyProfilePrompt: ({ onGenerateAnyway }: { onGenerateAnyway: () => void }) => (
       <button onClick={onGenerateAnyway} aria-label="Generate anyway" />
     ),

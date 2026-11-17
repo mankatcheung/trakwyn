@@ -12,6 +12,7 @@ import { useProfileData } from '../profile/-components/useProfileData';
 const STILL_HELD_END_DATE = '9999-12-31';
 
 /** A role still held beats any that ended; otherwise the one that ended most recently. */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function latestRole(workExperiences: readonly WorkExperience[]): WorkExperience | null {
   const endKey = (we: WorkExperience) => we.endDate ?? STILL_HELD_END_DATE;
   return (

@@ -58,6 +58,7 @@ export type NotificationsPageResult = {
   };
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export const NOTIFICATION_ICON: Record<NotificationType, React.ReactNode> = {
   interview_reminder: <CalendarIcon size={16} className="text-blue-500" />,
   follow_up_reminder: <ClockIcon size={16} className="text-amber-500" />,
@@ -83,6 +84,7 @@ export function NotificationRowSkeleton() {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function timeAgo(
   iso: string,
   t: (key: string, options?: Record<string, number>) => string,

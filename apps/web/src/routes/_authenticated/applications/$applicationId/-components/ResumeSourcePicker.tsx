@@ -1,25 +1,10 @@
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FormLabel, Select } from '@trakwyn/ui';
 import { documentCategory } from '#/lib/documentCategory';
+import { DRAFT_PREFIX, FILE_PREFIX } from '#/hooks/useResumeSourceChoice';
 import { useLocale } from '#/lib/i18n';
 import { documentDraftsQueryOptions, documentsQueryOptions } from '../-documentQueries';
-
-const FILE_PREFIX = 'file:';
-const DRAFT_PREFIX = 'draft:';
-
-export interface ResumeSourceIds {
-  resumeDocumentId: string | null;
-  resumeDraftId: string | null;
-}
-
-/** The picker's value ("file:<id>" or "draft:<id>") as the ids the API takes. */
-export function resumeSourceIds(choice: string): ResumeSourceIds {
-  return {
-    resumeDocumentId: choice.startsWith(FILE_PREFIX) ? choice.slice(FILE_PREFIX.length) : null,
-    resumeDraftId: choice.startsWith(DRAFT_PREFIX) ? choice.slice(DRAFT_PREFIX.length) : null,
-  };
-}
 
 interface ResumeSourcePickerProps {
   applicationId: string;
@@ -86,10 +71,4 @@ export function ResumeSourcePicker({
       </Select>
     </div>
   );
-}
-
-/** State for the picker, so a panel can hold the choice without knowing its encoding. */
-export function useResumeSourceChoice() {
-  const [choice, setChoice] = useState('');
-  return { choice, setChoice, ids: resumeSourceIds(choice) };
 }

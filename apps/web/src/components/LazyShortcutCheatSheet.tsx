@@ -5,6 +5,7 @@ const loadCheatSheet = () =>
 const ShortcutCheatSheet = lazy(loadCheatSheet);
 
 /** Starts fetching the cheat sheet's code, e.g. when the user hovers its button. */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export function preloadShortcutCheatSheet(): void {
   void loadCheatSheet();
 }

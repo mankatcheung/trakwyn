@@ -12,6 +12,7 @@ import { EDUCATION_SECTION_ID } from './EducationSection';
 import { SKILLS_SECTION_ID } from './SkillsSection';
 
 /** Which profile page section completes each check. */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component export; move to its own file when next touched (JEF-639).
 export const CHECK_SECTION: Record<ProfileCheck, string> = {
   role: WORK_EXPERIENCE_SECTION_ID,
   roleDescription: WORK_EXPERIENCE_SECTION_ID,

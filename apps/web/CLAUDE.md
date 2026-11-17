@@ -35,6 +35,10 @@ Each file loads only when you work in its directory. Read it before changing tha
 
 PostHog is off by default, autocapture and replay are off, and every event is scrubbed. The rules and the Terraform split are in `src/lib/analytics/CLAUDE.md`; the server-side half (Vercel function errors) is in `src/server/CLAUDE.md`. Read them before adding an event, a PostHog setting or a server error path.
 
+## Hooks and Fast Refresh (JEF-639)
+
+Fast Refresh only hot-swaps a file that exports nothing but components, so a component file that also exports a hook reloads the page and loses state. Put exported hooks in `src/hooks/use*.ts`, not in a component file. `react-refresh/only-export-components` (`eslint.config.mjs`) holds this for components outside route modules; a provider that must export its hook, or a helper that cannot move yet, carries a scoped `eslint-disable` with a reason. Route modules are exempt.
+
 ## React Compiler (JEF-610)
 
 The compiler runs in dev, the build and Vitest (`reactCompiler.ts`, shared by `vite.config.ts` and `vitest.config.ts`) in `infer` mode: it memoizes every component and hook it can prove safe and skips the rest without failing the build.

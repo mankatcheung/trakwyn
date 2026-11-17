@@ -14,10 +14,12 @@ import { useLocale } from '#/lib/i18n';
 import { markdownToTiptapNodes, type TiptapNode } from '#/lib/markdownToTiptapDoc';
 import type { AiFeature } from '#/lib/billingStatus';
 import type { DocumentEditorHandle } from './DocumentDraftEditor';
-import { EmptyProfilePrompt, useIsProfileEmpty } from './EmptyProfilePrompt';
+import { useIsProfileEmpty } from '#/hooks/useIsProfileEmpty';
+import { useResumeSourceChoice } from '#/hooks/useResumeSourceChoice';
+import { EmptyProfilePrompt } from './EmptyProfilePrompt';
 import { PolishPreview } from './PolishPreview';
 import { requestPolish } from '../-polishApi';
-import { ResumeSourcePicker, useResumeSourceChoice } from './ResumeSourcePicker';
+import { ResumeSourcePicker } from './ResumeSourcePicker';
 
 const GENERATE_MUTATION = `
   mutation GenerateIntoDocumentDraft(

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- a hook that owns the dialog it renders (via its returned element); the dialog is private to it. */
 import { useEffect, useState } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
