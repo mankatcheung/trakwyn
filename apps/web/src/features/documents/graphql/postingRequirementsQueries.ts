@@ -1,28 +1,36 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const POSTING_REQUIREMENTS_FIELDS = `
-  id
-  applicationId
-  mustHave
-  niceToHave
-  keywords
-  seniority
-  generatedAt
-  isStale
-`;
-
-export const POSTING_REQUIREMENTS_QUERY = `
+export const POSTING_REQUIREMENTS_QUERY = graphql(`
   query PostingRequirements($applicationId: ID!) {
-    postingRequirements(applicationId: $applicationId) { ${POSTING_REQUIREMENTS_FIELDS} }
+    postingRequirements(applicationId: $applicationId) {
+      id
+      applicationId
+      mustHave
+      niceToHave
+      keywords
+      seniority
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
-export const EXTRACT_POSTING_REQUIREMENTS = `
+export const EXTRACT_POSTING_REQUIREMENTS = graphql(`
   mutation ExtractPostingRequirements($applicationId: ID!) {
-    extractPostingRequirements(applicationId: $applicationId) { ${POSTING_REQUIREMENTS_FIELDS} }
+    extractPostingRequirements(applicationId: $applicationId) {
+      id
+      applicationId
+      mustHave
+      niceToHave
+      keywords
+      seniority
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
 /** What an application's posting asks for, as the API read it (JEF-593). */
 export type PostingRequirements = {

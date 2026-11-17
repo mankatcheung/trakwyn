@@ -31,6 +31,7 @@ vi.mock('#/features/ai/hooks/useAiCredits', () => ({
 
 import { PostingRequirementsPanel } from '#/features/documents/components/review/PostingRequirementsPanel';
 import type { PostingRequirements } from '#/features/documents/graphql/postingRequirementsQueries';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const saved: PostingRequirements = {
   id: 'req-1',
@@ -80,7 +81,7 @@ describe('PostingRequirementsPanel', () => {
 
     expect(await screen.findByRole('button', { name: 'Read requirements' })).toBeEnabled();
     expect(screen.getByText(/tailored against them/)).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('PostingRequirements'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('PostingRequirements'), {
       applicationId: 'app-1',
     });
   });
@@ -116,10 +117,9 @@ describe('PostingRequirementsPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Read requirements' }));
 
     expect(await screen.findByText('PostgreSQL in production')).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenLastCalledWith(
-      expect.stringContaining('ExtractPostingRequirements'),
-      { applicationId: 'app-1' },
-    );
+    expect(mockGqlRequest).toHaveBeenLastCalledWith(gqlContaining('ExtractPostingRequirements'), {
+      applicationId: 'app-1',
+    });
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 

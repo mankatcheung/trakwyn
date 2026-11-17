@@ -1,13 +1,24 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-export const DOCUMENTS_QUERY = `
+export const DOCUMENTS_QUERY = graphql(`
   query Documents($applicationId: ID!) {
-    documents(applicationId: $applicationId) { id applicationId name mimeType sizeBytes url documentType version createdAt }
+    documents(applicationId: $applicationId) {
+      id
+      applicationId
+      name
+      mimeType
+      sizeBytes
+      url
+      documentType
+      version
+      createdAt
+    }
   }
-`;
+`);
 
-export const DOCUMENT_DRAFTS_QUERY = `
+export const DOCUMENT_DRAFTS_QUERY = graphql(`
   query DocumentDrafts($applicationId: ID!) {
     documentDrafts(applicationId: $applicationId) {
       id
@@ -19,7 +30,39 @@ export const DOCUMENT_DRAFTS_QUERY = `
       updatedAt
     }
   }
-`;
+`);
+
+export const REQUEST_UPLOAD_URL = graphql(`
+  mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
+    requestUploadUrl(input: $input) {
+      uploadUrl
+      storageKey
+      access
+    }
+  }
+`);
+
+export const CONFIRM_DOCUMENT = graphql(`
+  mutation ConfirmDocument($input: ConfirmDocumentInput!) {
+    confirmDocument(input: $input) {
+      id
+      applicationId
+      name
+      mimeType
+      sizeBytes
+      url
+      documentType
+      version
+      createdAt
+    }
+  }
+`);
+
+export const DELETE_DOCUMENT = graphql(`
+  mutation DeleteDocument($id: ID!) {
+    deleteDocument(id: $id)
+  }
+`);
 
 export type Document = {
   id: string;

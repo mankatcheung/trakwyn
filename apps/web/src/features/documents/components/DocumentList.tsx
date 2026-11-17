@@ -22,15 +22,14 @@ import { DocumentUploadPanel, StorageLeft } from './DocumentUploadPanel';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
 import {
   documentDraftsQueryKey,
+  DELETE_DOCUMENT,
   documentDraftsQueryOptions,
   documentsQueryKey,
   documentsQueryOptions,
   type Document,
   type DocumentDraft,
 } from '../graphql/documentQueries';
-
-const DELETE_DOCUMENT = `mutation DeleteDocument($id: ID!) { deleteDocument(id: $id) }`;
-const DELETE_DRAFT = `mutation DeleteDocumentDraft($id: ID!) { deleteDocumentDraft(id: $id) }`;
+import { DELETE_DRAFT_MUTATION as DELETE_DRAFT } from '../graphql/draftEditQueries';
 
 const EMPTY_MESSAGE_KEY: Record<DocumentCategory, string> = {
   cover_letter: 'documents.emptyCoverLetters',

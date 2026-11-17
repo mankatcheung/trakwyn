@@ -11,6 +11,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 import { DraftHistoryPanel } from '#/features/documents/components/DraftHistoryPanel';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const VERSIONS = [
   { id: 'v3', source: 'ai', characterCount: 1200, createdAt: '2026-11-13T12:00:00.000Z' },
@@ -25,12 +26,13 @@ type Handlers = {
 };
 
 function mockApi({ versions = VERSIONS, save, restore }: Handlers = {}) {
-  mockGqlRequest.mockImplementation((query: string, vars?: { id?: string }) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown, vars?: { id?: string }) => {
+    const query = gqlText(queryDoc);
     if (query.includes('query DocumentDraftVersions'))
       return typeof versions === 'function'
         ? versions()
         : Promise.resolve({ documentDraftVersions: versions });
-    if (query.includes('query DocumentDraftVersion('))
+    if (/query DocumentDraftVersion(?!s)/.test(query))
       return Promise.resolve({
         documentDraftVersion: {
           id: vars?.id,
@@ -74,7 +76,7 @@ function renderPanel(props: Partial<React.ComponentProps<typeof DraftHistoryPane
 }
 
 const operations = () =>
-  mockGqlRequest.mock.calls.map(([query]) => /(?:query|mutation) (\w+)/.exec(String(query))?.[1]);
+  mockGqlRequest.mock.calls.map(([query]) => /(?:query|mutation) (\w+)/.exec(gqlText(query))?.[1]);
 
 describe('DraftHistoryPanel (JEF-584)', () => {
   beforeEach(() => {

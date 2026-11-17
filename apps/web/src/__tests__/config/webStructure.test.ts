@@ -32,18 +32,6 @@ const SRC = join(WEB_ROOT, 'src');
  * entries, and a new route import of a feature internal is a failure.
  */
 const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/editor/documentLanguage.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/downloadUrl.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/lib/editor/saveState.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/editor/DocumentDraftEditor.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/editor/DocumentEditorChecks.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/DraftHistoryPanel.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/DraftTitleField.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/ImportDocumentAction.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/documentQueries.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/draftHistoryQueries.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/resumeAtsQueries.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/graphql/resumeMatchQueries.ts',
   'routes/_authenticated/applications/$applicationId/edit.tsx imports features/application-detail/graphql/applicationQuery.ts',
   'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/graphql/applicationQuery.ts',
   'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/lib/sections.ts',
@@ -53,8 +41,6 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/__root.tsx imports features/legal/components/CookieConsent.tsx',
   'routes/__root.tsx imports features/app-shell/components/NavigationProgressBar.tsx',
   'routes/_authenticated/analytics.tsx imports features/analytics/graphql/analyticsQueries.ts',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/documents/components/AiHelperPanel.tsx',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx imports features/ai/lib/aiFeedback.ts',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/offers/components/OfferForm.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/offers/graphql/applicationOffersQueries.ts',
   'routes/_authenticated/assistant/history.tsx imports features/chat/lib/shared.ts',
@@ -119,8 +105,6 @@ const MAX_LINES = 400;
 const OVERSIZED_BY_DESIGN: Record<string, string> = {
   'features/settings/lib/shared.ts':
     'Holds the helpers for ai/, security/, integrations/ and account/ in one file named "shared". JEF-636 splits it by the subfolder that uses each part and renames the pieces.',
-  'routes/_authenticated/applications/$applicationId/documents/$draftId.tsx':
-    'The route still holds its whole page. JEF-636 moves the UI to features/documents/pages/DraftEditPage.tsx and leaves only route wiring here.',
   'features/profile/components/cv-import/CvImportReview.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/applications/pages/ApplicationsPage.tsx':

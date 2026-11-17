@@ -1,12 +1,13 @@
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-export const POLISH_MUTATION = `
+export const POLISH_MUTATION = graphql(`
   mutation PolishDocumentDraft($draftId: ID!, $plainText: String!, $instructions: String) {
     polishDocumentDraft(draftId: $draftId, plainText: $plainText, instructions: $instructions) {
       markdown
     }
   }
-`;
+`);
 
 /**
  * Asks the Polish action for a revision of `plainText` (JEF-506). It saves

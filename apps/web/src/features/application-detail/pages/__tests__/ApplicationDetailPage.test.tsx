@@ -78,6 +78,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { ApplicationDetailPage } from '#/features/application-detail/pages/ApplicationDetailPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -128,7 +129,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders application company and role when data loads', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
     });
@@ -141,7 +143,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders application metadata', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
     });
@@ -154,7 +157,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders existing notes', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
       return Promise.resolve({ application: mockApp });
     });
@@ -166,7 +170,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('submits a new note', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('CreateNote')) {
         return Promise.resolve({
           createNote: {
@@ -193,7 +198,7 @@ describe('ApplicationDetailPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateNote'),
+        gqlContaining('CreateNote'),
         expect.objectContaining({ content: 'New note content' }),
       );
     });
@@ -201,7 +206,8 @@ describe('ApplicationDetailPage', () => {
 
   describe('overview (JEF-403)', () => {
     const loadApp = () =>
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
       });
@@ -265,7 +271,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('shows the notes tab and the three document tabs, with no combined Documents tab', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
     });
@@ -285,7 +292,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('switches to the other documents tab and offers an Upload file button', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Documents')) return Promise.resolve({ documents: [] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
@@ -317,7 +325,8 @@ describe('ApplicationDetailPage', () => {
       url: 'https://example.com/resume.pdf',
       createdAt: '2024-01-02T00:00:00.000Z',
     };
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Documents')) return Promise.resolve({ documents: [mockDoc] });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
@@ -372,7 +381,8 @@ describe('ApplicationDetailPage', () => {
     };
 
     it('opens an inline PDF preview when the file name is pressed (PDF)', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
@@ -399,7 +409,8 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('opens an inline image preview when the file name is pressed (image)', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockImageDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
@@ -421,7 +432,8 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('closes the preview modal when the close button is clicked', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
@@ -446,7 +458,8 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('offers Download, not Preview, in the more menu for non-previewable documents (e.g. .docx)', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxDoc] });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
@@ -481,7 +494,8 @@ describe('ApplicationDetailPage', () => {
     };
 
     const openResumes = async (documents: unknown[]) => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Documents')) return Promise.resolve({ documents });
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
@@ -497,7 +511,8 @@ describe('ApplicationDetailPage', () => {
     };
 
     it('has no standalone Resume Match section', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('Notes')) return Promise.resolve({ notes: [] });
         return Promise.resolve({ application: mockApp });
       });
@@ -520,7 +535,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('enters edit mode for a note', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
       return Promise.resolve({ application: mockApp });
     });
@@ -544,7 +560,8 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('saves an edited note', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('UpdateNote'))
         return Promise.resolve({
           updateNote: { ...mockNotes[0], content: 'Updated note' },
@@ -575,14 +592,15 @@ describe('ApplicationDetailPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateNote'),
+        gqlContaining('UpdateNote'),
         expect.objectContaining({ id: 'note-1', content: 'Updated note' }),
       );
     });
   });
 
   it('deletes a note', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('DeleteNote')) return Promise.resolve({ deleteNote: true });
       if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
       return Promise.resolve({ application: mockApp });
@@ -601,14 +619,15 @@ describe('ApplicationDetailPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteNote'),
+        gqlContaining('DeleteNote'),
         expect.objectContaining({ id: 'note-1' }),
       );
     });
   });
 
   it('deletes the application and leaves the page at once, without an undo window', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('DeleteApplication')) return Promise.resolve({ deleteApplication: true });
       if (query.includes('Notes')) return Promise.resolve({ notes: [] });
       return Promise.resolve({ application: mockApp });
@@ -632,7 +651,7 @@ describe('ApplicationDetailPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteApplication'),
+        gqlContaining('DeleteApplication'),
         expect.objectContaining({ id: 'app-test-id' }),
       );
     });
@@ -652,7 +671,8 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     extra: (query: string) => unknown = () => undefined,
     sectionCounts: typeof counts = counts,
   ) =>
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       const custom = extra(query);
       if (custom !== undefined) return custom;
       if (query.includes('ApplicationSectionCounts'))
@@ -743,7 +763,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
     const countsCalls = () =>
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('ApplicationSectionCounts'))
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('ApplicationSectionCounts'))
         .length;
     await waitFor(() => expect(countsCalls()).toBe(1));
 
@@ -871,7 +891,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({ id: 'app-test-id', input: { starred: true } }),
       ),
     );
@@ -904,7 +924,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({ id: 'app-test-id', input: { status: 'interviewing' } }),
       ),
     );
@@ -959,7 +979,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
     const countsCalls = () =>
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('ApplicationSectionCounts'))
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('ApplicationSectionCounts'))
         .length;
     await waitFor(() => expect(countsCalls()).toBe(1));
 
@@ -1033,7 +1053,8 @@ describe('ApplicationDetailPage — trashed application', () => {
   });
 
   it('restores from the banner', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('RestoreApplication'))
         return Promise.resolve({ restoreApplication: true });
       return Promise.resolve({ application: trashedApp });
@@ -1046,14 +1067,15 @@ describe('ApplicationDetailPage — trashed application', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RestoreApplication'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RestoreApplication'), {
         id: 'app-test-id',
       }),
     );
   });
 
   it('permanently deletes from the banner and returns to Trash', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('PermanentlyDeleteApplication'))
         return Promise.resolve({ permanentlyDeleteApplication: true });
       return Promise.resolve({ application: trashedApp });
@@ -1092,7 +1114,8 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
   beforeEach(() => {
     vi.clearAllMocks();
     searchStore.set({});
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('UpdateApplication'))
         return Promise.resolve({ updateApplication: { id: 'app-test-id' } });
       if (query.includes('DeleteApplication')) return Promise.resolve({ deleteApplication: true });
@@ -1140,7 +1163,7 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({ id: 'app-test-id', input: { starred: true } }),
       ),
     );
@@ -1175,7 +1198,7 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
 
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({ id: 'app-test-id', input: { status: 'interviewing' } }),
       ),
     );
@@ -1190,7 +1213,7 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Applied' }));
 
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('UpdateApplication'),
+      gqlContaining('UpdateApplication'),
       expect.anything(),
     );
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -1227,7 +1250,7 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/applications' });
     await waitFor(() =>
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteApplication'),
+        gqlContaining('DeleteApplication'),
         expect.objectContaining({ id: 'app-test-id' }),
       ),
     );

@@ -76,6 +76,7 @@ vi.mock('#/lib/analytics', () => ({
 }));
 
 import { DocumentList } from '#/features/documents/components/DocumentList';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -106,7 +107,8 @@ const mockDraft = {
 };
 
 function mockResponses(overrides?: { documents?: unknown[]; documentDrafts?: unknown[] }) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('DocumentDrafts')) {
       return Promise.resolve({ documentDrafts: overrides?.documentDrafts ?? [] });
     }
@@ -148,12 +150,13 @@ describe('DocumentList', () => {
     const link = screen.getByText('My cover letter').closest('a')!;
     expect(link).toHaveAttribute(
       'href',
-      expect.stringContaining('/applications/$applicationId/documents/$draftId'),
+      gqlContaining('/applications/$applicationId/documents/$draftId'),
     );
   });
 
   it('deletes a document', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('DeleteDocument')) return Promise.resolve({ deleteDocument: true });
       if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
       return Promise.resolve({ documents: [mockDoc] });
@@ -167,14 +170,15 @@ describe('DocumentList', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteDocument'),
+        gqlContaining('DeleteDocument'),
         expect.objectContaining({ id: 'doc-1' }),
       );
     });
   });
 
   it('shows the server quota message when an upload is rejected', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
       if (query.includes('RequestUploadUrl')) {
         return Promise.reject({
@@ -231,7 +235,8 @@ describe('DocumentList', () => {
       requestUploadUrl?: () => Promise<unknown>;
       confirmDocument?: () => Promise<unknown>;
     } = {}) {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
         if (query.includes('RequestUploadUrl')) {
           return requestUploadUrl
@@ -467,7 +472,8 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
   });
 
   it('Create new opens the editor of the new draft instead of linking to a form', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('CreateDocumentDraft'))
         return Promise.resolve({ createDocumentDraft: { id: 'new-1', applicationId: 'app-1' } });
       if (query.includes('query DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
@@ -487,7 +493,8 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
 
   describe('upload type', () => {
     const uploadWithin = async (category: 'cover_letter' | 'resume' | 'other') => {
-      mockGqlRequest.mockImplementation((query: string) => {
+      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+        const query = gqlText(queryDoc);
         if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
         if (query.includes('RequestUploadUrl'))
           return Promise.resolve({ requestUploadUrl: { uploadUrl: 'tok', storageKey: 'k' } });
@@ -519,7 +526,7 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
         fireEvent.click(screen.getByRole('button', { name: /confirm upload/i }));
         await waitFor(() =>
           expect(mockGqlRequest).toHaveBeenCalledWith(
-            expect.stringContaining('ConfirmDocument'),
+            gqlContaining('ConfirmDocument'),
             expect.objectContaining({
               input: expect.objectContaining({ documentType: category }),
             }),
@@ -753,7 +760,8 @@ describe('DocumentList toolbar and rows (JEF-510)', () => {
   });
 
   function mockWithStorage(documents: unknown[]) {
-    mockGqlRequest.mockImplementation((query: string) => {
+    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+      const query = gqlText(queryDoc);
       if (query.includes('StorageUsage')) {
         return Promise.resolve({
           me: { storageUsedBytes: 30 * MB, storageLimitBytes: 100 * MB },

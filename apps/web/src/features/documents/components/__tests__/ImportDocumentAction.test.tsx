@@ -7,6 +7,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockRequest } }));
 
 import { ImportDocumentAction } from '#/features/documents/components/ImportDocumentAction';
 import type { DocumentEditorHandle } from '#/features/documents/components/editor/DocumentDraftEditor';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const DOCS = [
   { id: 'd-1', name: 'old-cv.pdf', documentType: 'resume' },
@@ -14,8 +15,8 @@ const DOCS = [
 ];
 
 function api(extract: () => Promise<unknown>, documents = DOCS) {
-  mockRequest.mockImplementation((query: string) =>
-    query.includes('ExtractDocumentText') ? extract() : Promise.resolve({ documents }),
+  mockRequest.mockImplementation((queryDoc: unknown) =>
+    gqlText(queryDoc).includes('ExtractDocumentText') ? extract() : Promise.resolve({ documents }),
   );
 }
 
@@ -61,10 +62,7 @@ describe('ImportDocumentAction', () => {
     api(() => Promise.resolve({}), []);
     setup();
     await waitFor(() =>
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.stringContaining('Documents'),
-        expect.anything(),
-      ),
+      expect(mockRequest).toHaveBeenCalledWith(gqlContaining('Documents'), expect.anything()),
     );
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
@@ -85,7 +83,7 @@ describe('ImportDocumentAction', () => {
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith('{"on":"screen"}', 'Line one\n\nLine two'),
     );
-    expect(mockRequest).toHaveBeenCalledWith(expect.stringContaining('ExtractDocumentText'), {
+    expect(mockRequest).toHaveBeenCalledWith(gqlContaining('ExtractDocumentText'), {
       documentId: 'd-1',
     });
     const nodes = vi.mocked(editor.replaceContent).mock.calls[0]![0];

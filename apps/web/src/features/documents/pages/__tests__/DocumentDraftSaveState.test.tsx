@@ -10,10 +10,7 @@ const { mockGqlRequest, mockUseBlocker } = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: Record<string, unknown>) => ({
-    ...opts,
-    useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }),
-  }),
+  getRouteApi: () => ({ useParams: () => ({ applicationId: 'app-1', draftId: 'draft-1' }) }),
   useNavigate: () => vi.fn(),
   useBlocker: mockUseBlocker,
 }));
@@ -61,9 +58,8 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
   },
 }));
 
-import { Route } from '#/routes/_authenticated/applications/$applicationId/documents/$draftId';
-
-const Page = (Route as unknown as { component: () => React.JSX.Element }).component;
+import { DraftEditPage } from '../DraftEditPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const DRAFT = {
   id: 'draft-1',
@@ -81,12 +77,13 @@ const DRAFT = {
 };
 
 const saves = () =>
-  mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('UpdateDocumentDraftContent'));
+  mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('UpdateDocumentDraftContent'));
 const state = () => screen.getByTestId('state').textContent;
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
 
 function mockApi(save: () => Promise<unknown>) {
-  mockGqlRequest.mockImplementation((query: string) => {
+  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
+    const query = gqlText(queryDoc);
     if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
     if (query.includes('UpdateDocumentDraftContent')) return save();
     return Promise.resolve({});
@@ -96,7 +93,7 @@ function mockApi(save: () => Promise<unknown>) {
 async function renderPage() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <Page />
+      <DraftEditPage />
     </QueryClientProvider>,
   );
   await screen.findByTestId('state');

@@ -1,35 +1,46 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const RESUME_MATCH_FIELDS = `
-  id
-  applicationId
-  documentDraftId
-  documentId
-  score
-  label
-  matchedKeywords
-  missingKeywords
-  summary
-  generatedAt
-  isStale
-`;
-
-export const RESUME_MATCHES_QUERY = `
+export const RESUME_MATCHES_QUERY = graphql(`
   query ResumeMatches($applicationId: ID!) {
-    resumeMatches(applicationId: $applicationId) { ${RESUME_MATCH_FIELDS} }
+    resumeMatches(applicationId: $applicationId) {
+      id
+      applicationId
+      documentDraftId
+      documentId
+      score
+      label
+      matchedKeywords
+      missingKeywords
+      summary
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
-export const COMPUTE_RESUME_MATCH_SCORE = `
+export const COMPUTE_RESUME_MATCH_SCORE = graphql(`
   mutation ComputeResumeMatchScore($applicationId: ID!, $documentDraftId: ID, $documentId: ID) {
     computeResumeMatchScore(
       applicationId: $applicationId
       documentDraftId: $documentDraftId
       documentId: $documentId
-    ) { ${RESUME_MATCH_FIELDS} }
+    ) {
+      id
+      applicationId
+      documentDraftId
+      documentId
+      score
+      label
+      matchedKeywords
+      missingKeywords
+      summary
+      generatedAt
+      isStale
+    }
   }
-`;
+`);
 
 export type ResumeMatch = {
   id: string;
