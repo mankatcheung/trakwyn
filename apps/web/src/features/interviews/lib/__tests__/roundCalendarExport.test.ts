@@ -3,7 +3,7 @@ import { downloadIcs, generateIcs } from '#/features/interviews/lib/roundCalenda
 
 const scheduled = {
   id: 'round-1',
-  type: 'technical',
+  type: 'technical' as const,
   scheduledAt: '2024-06-01T15:00:00.000Z',
   interviewerName: 'Alex Kim',
   notes: 'Discuss system design',

@@ -11,11 +11,13 @@ import { invalidateSectionCounts } from '../../application-detail/lib/sectionCou
 import {
   CREATE_ROUND,
   DELETE_ROUND,
-  INTERVIEW_ROUNDS_QUERY,
   UPDATE_ROUND,
+  interviewRoundsQueryKey,
+  interviewRoundsQueryOptions,
   type InterviewRound,
   type InterviewRoundsData,
 } from '../graphql/interviewRoundQueries';
+import { buildOptimisticRound, isOptimisticRound } from '../lib/optimisticRound';
 import { downloadIcs, generateIcs } from '../lib/roundCalendarExport';
 import { emptyForm, roundToForm, type RoundFormState } from '../lib/roundForm';
 import { InterviewQuestionsPanel } from './InterviewQuestionsPanel';
@@ -43,16 +45,11 @@ export function InterviewsTab({
   const [showForm, setShowForm] = useState(false);
   const [editingRound, setEditingRound] = useState<InterviewRound | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['interviewRounds', applicationId],
-    queryFn: () =>
-      gqlClient.request<InterviewRoundsData>(INTERVIEW_ROUNDS_QUERY, {
-        applicationId,
-      }),
-  });
+  const roundsKey = interviewRoundsQueryKey(applicationId);
+  const { data, isLoading } = useQuery(interviewRoundsQueryOptions(applicationId));
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['interviewRounds', applicationId] });
+    qc.invalidateQueries({ queryKey: roundsKey });
     invalidateSectionCounts(qc, applicationId);
   };
 
@@ -69,28 +66,16 @@ export function InterviewsTab({
         },
       }),
     onMutate: async (f) => {
-      await qc.cancelQueries({ queryKey: ['interviewRounds', applicationId] });
-      const prev = qc.getQueryData<InterviewRoundsData>(['interviewRounds', applicationId]);
-      const optimistic: InterviewRound = {
-        id: `__tmp_${Date.now()}`,
-        applicationId,
-        type: f.type,
-        scheduledAt: f.scheduledAt || null,
-        interviewerName: f.interviewerName || null,
-        notes: f.notes || null,
-        outcome: f.outcome,
-        questionCount: 0,
-        mockQuestionCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      qc.setQueryData<InterviewRoundsData>(['interviewRounds', applicationId], (old) => ({
+      await qc.cancelQueries({ queryKey: roundsKey });
+      const prev = qc.getQueryData<InterviewRoundsData>(roundsKey);
+      const optimistic = buildOptimisticRound(applicationId, f);
+      qc.setQueryData<InterviewRoundsData>(roundsKey, (old) => ({
         interviewRounds: [...(old?.interviewRounds ?? []), optimistic],
       }));
       return { prev };
     },
     onError: (_err, _f, context) => {
-      if (context?.prev) qc.setQueryData(['interviewRounds', applicationId], context.prev);
+      if (context?.prev) qc.setQueryData(roundsKey, context.prev);
     },
     onSuccess: () => setShowForm(false),
     onSettled: () => invalidate(),
@@ -109,9 +94,9 @@ export function InterviewsTab({
         },
       }),
     onMutate: async ({ id, f }) => {
-      await qc.cancelQueries({ queryKey: ['interviewRounds', applicationId] });
-      const prev = qc.getQueryData<InterviewRoundsData>(['interviewRounds', applicationId]);
-      qc.setQueryData<InterviewRoundsData>(['interviewRounds', applicationId], (old) => ({
+      await qc.cancelQueries({ queryKey: roundsKey });
+      const prev = qc.getQueryData<InterviewRoundsData>(roundsKey);
+      qc.setQueryData<InterviewRoundsData>(roundsKey, (old) => ({
         interviewRounds: (old?.interviewRounds ?? []).map((r) =>
           r.id === id
             ? {
@@ -129,7 +114,7 @@ export function InterviewsTab({
       return { prev };
     },
     onError: (_err, _vars, context) => {
-      if (context?.prev) qc.setQueryData(['interviewRounds', applicationId], context.prev);
+      if (context?.prev) qc.setQueryData(roundsKey, context.prev);
     },
     onSuccess: () => setEditingRound(null),
     onSettled: () => invalidate(),
@@ -231,22 +216,16 @@ export function InterviewsTab({
                   </button>
                   <button
                     onClick={() => {
-                      const snapshot = qc.getQueryData<InterviewRoundsData>([
-                        'interviewRounds',
-                        applicationId,
-                      ]);
-                      qc.setQueryData<InterviewRoundsData>(
-                        ['interviewRounds', applicationId],
-                        (prev) => ({
-                          interviewRounds: (prev?.interviewRounds ?? []).filter(
-                            (r) => r.id !== round.id,
-                          ),
-                        }),
-                      );
+                      const snapshot = qc.getQueryData<InterviewRoundsData>(roundsKey);
+                      qc.setQueryData<InterviewRoundsData>(roundsKey, (prev) => ({
+                        interviewRounds: (prev?.interviewRounds ?? []).filter(
+                          (r) => r.id !== round.id,
+                        ),
+                      }));
                       showUndoToast({
                         message: t('interviews.interviewRoundDeletedToast'),
                         operation: { document: DELETE_ROUND, variables: { id: round.id } },
-                        onUndo: () => qc.setQueryData(['interviewRounds', applicationId], snapshot),
+                        onUndo: () => qc.setQueryData(roundsKey, snapshot),
                         onSettled: invalidate,
                       });
                     }}
@@ -256,7 +235,7 @@ export function InterviewsTab({
                   </button>
                 </div>
               </div>
-              {!round.id.startsWith('__tmp_') && (
+              {!isOptimisticRound(round) && (
                 <>
                   <InterviewQuestionsPanel
                     applicationId={applicationId}

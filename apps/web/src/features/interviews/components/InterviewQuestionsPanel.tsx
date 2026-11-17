@@ -18,42 +18,18 @@ import { showUndoToast } from '#/lib/undoToast';
 import { INTERVIEW_QUESTION_LIMITS } from '../lib/interviewQuestionLimits';
 import { QuestionEntryForm } from './QuestionEntryForm';
 import type { QuestionFormValues } from '../lib/questionFormSchema';
+import {
+  CREATE_QUESTION,
+  DELETE_QUESTION,
+  REORDER_QUESTIONS,
+  UPDATE_QUESTION,
+  interviewQuestionsQueryKey,
+  interviewQuestionsQueryOptions,
+  type InterviewQuestion,
+  type InterviewQuestionsData,
+} from '../graphql/interviewQuestionQueries';
+import { interviewRoundsQueryKey } from '../graphql/interviewRoundQueries';
 
-const QUESTION_FIELDS = 'id interviewRoundId question answer position createdAt updatedAt';
-
-const INTERVIEW_QUESTIONS_QUERY = `
-  query InterviewQuestions($interviewRoundId: ID!) {
-    interviewQuestions(interviewRoundId: $interviewRoundId) { ${QUESTION_FIELDS} }
-  }
-`;
-const CREATE_QUESTION = `
-  mutation CreateInterviewQuestion($input: CreateInterviewQuestionInput!) {
-    createInterviewQuestion(input: $input) { ${QUESTION_FIELDS} }
-  }
-`;
-const UPDATE_QUESTION = `
-  mutation UpdateInterviewQuestion($id: ID!, $input: UpdateInterviewQuestionInput!) {
-    updateInterviewQuestion(id: $id, input: $input) { ${QUESTION_FIELDS} }
-  }
-`;
-const DELETE_QUESTION = `mutation DeleteInterviewQuestion($id: ID!) { deleteInterviewQuestion(id: $id) }`;
-const REORDER_QUESTIONS = `
-  mutation ReorderInterviewQuestions($interviewRoundId: ID!, $orderedIds: [ID!]!) {
-    reorderInterviewQuestions(interviewRoundId: $interviewRoundId, orderedIds: $orderedIds) { ${QUESTION_FIELDS} }
-  }
-`;
-
-type InterviewQuestion = {
-  id: string;
-  interviewRoundId: string;
-  question: string;
-  answer: string | null;
-  position: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type QuestionsData = { interviewQuestions: InterviewQuestion[] };
 const EMPTY_FORM: QuestionFormValues = { question: '', answer: '' };
 
 /** 44px square on a phone; the icon button's own compact size from `sm` up. */
@@ -83,14 +59,12 @@ export function InterviewQuestionsPanel({
   // cache, stops a refetch in that window from bringing the row back.
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
 
-  const questionsKey = ['interviewQuestions', roundId];
-  const roundsKey = ['interviewRounds', applicationId];
+  const questionsKey = interviewQuestionsQueryKey(roundId);
+  const roundsKey = interviewRoundsQueryKey(applicationId);
   const panelId = `interview-questions-${roundId}`;
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: questionsKey,
-    queryFn: () =>
-      gqlClient.request<QuestionsData>(INTERVIEW_QUESTIONS_QUERY, { interviewRoundId: roundId }),
+    ...interviewQuestionsQueryOptions(roundId),
     enabled: expanded,
   });
   const questions = (data?.interviewQuestions ?? []).filter((q) => !pendingDeletes.includes(q.id));
@@ -153,8 +127,8 @@ export function InterviewQuestionsPanel({
       gqlClient.request(REORDER_QUESTIONS, { interviewRoundId: roundId, orderedIds }),
     onMutate: async (orderedIds) => {
       await qc.cancelQueries({ queryKey: questionsKey });
-      const prev = qc.getQueryData<QuestionsData>(questionsKey);
-      qc.setQueryData<QuestionsData>(questionsKey, (old) => ({
+      const prev = qc.getQueryData<InterviewQuestionsData>(questionsKey);
+      qc.setQueryData<InterviewQuestionsData>(questionsKey, (old) => ({
         interviewQuestions: orderedIds
           .map((id) => old?.interviewQuestions.find((q) => q.id === id))
           .filter((q): q is InterviewQuestion => q !== undefined),

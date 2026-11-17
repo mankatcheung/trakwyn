@@ -13,3 +13,17 @@ export function gqlText(document: unknown): string {
   const heads = definitions.map((d) => `${d.operation ?? ''} ${d.name?.value ?? ''}`.trim());
   return `${heads.join('\n')}\n${JSON.stringify(document)}`;
 }
+
+/**
+ * `expect.stringContaining` for the document argument of a `gqlClient.request`
+ * call: `expect(request).toHaveBeenCalledWith(gqlContaining('CreateOffer'), vars)`
+ * holds whether the call site passed a string or a typed document.
+ */
+export function gqlContaining(fragment: string) {
+  return {
+    asymmetricMatch: (document: unknown) => gqlText(document).includes(fragment),
+    getExpectedType: () => 'string',
+    toAsymmetricMatcher: () => `GqlContaining<${fragment}>`,
+    toString: () => `GqlContaining<${fragment}>`,
+  };
+}

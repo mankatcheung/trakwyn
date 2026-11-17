@@ -47,12 +47,12 @@ export function MockAnswerDraft({
   const draftId = `answer-draft-${useId()}`;
 
   const regenerate = useMutation({
-    mutationFn: () =>
-      gqlClient.request<{ generateMockInterviewAnswer: GeneratedAnswer }>(GENERATE_MOCK_ANSWER, {
+    mutationFn: async () =>
+      (await gqlClient.request(GENERATE_MOCK_ANSWER, {
         mockInterviewQuestionId: questionId,
         prompt: instructions.trim() || null,
         useProfile: readRememberedUseProfile(false),
-      }),
+      })) as { generateMockInterviewAnswer: GeneratedAnswer },
     onSuccess: (data) => {
       setDraft(data.generateMockInterviewAnswer.answer);
       setUsedProfile(data.generateMockInterviewAnswer.usedProfile);

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -95,32 +96,32 @@ const RESUME_DOCUMENT = {
   createdAt: '2024-01-01T00:00:00.000Z',
 };
 
-function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
-  mockGqlRequest.mockImplementation((query: string) => {
+function mockApi(questions = QUESTIONS, extra?: (query: unknown) => unknown) {
+  mockGqlRequest.mockImplementation((query: unknown) => {
     const handled = extra?.(query);
     if (handled !== undefined) return handled;
-    if (query.includes('query MockInterviewQuestions')) {
+    if (gqlText(query).includes('query MockInterviewQuestions')) {
       return Promise.resolve({ mockInterviewQuestions: questions });
     }
-    if (query.includes('CreateMockInterviewQuestion')) {
+    if (gqlText(query).includes('CreateMockInterviewQuestion')) {
       return Promise.resolve({ createMockInterviewQuestion: makeQuestion({ id: 'q-new' }) });
     }
-    if (query.includes('UpdateMockInterviewQuestion')) {
+    if (gqlText(query).includes('UpdateMockInterviewQuestion')) {
       return Promise.resolve({ updateMockInterviewQuestion: makeQuestion() });
     }
-    if (query.includes('ReorderMockInterviewQuestions')) {
+    if (gqlText(query).includes('ReorderMockInterviewQuestions')) {
       return Promise.resolve({ reorderMockInterviewQuestions: questions });
     }
-    if (query.includes('DeleteMockInterviewQuestion')) {
+    if (gqlText(query).includes('DeleteMockInterviewQuestion')) {
       return Promise.resolve({ deleteMockInterviewQuestion: true });
     }
-    if (query.includes('query Documents')) {
+    if (gqlText(query).includes('query Documents')) {
       return Promise.resolve({ documents: [RESUME_DOCUMENT] });
     }
-    if (query.includes('GenerateMockInterviewQuestions')) {
+    if (gqlText(query).includes('GenerateMockInterviewQuestions')) {
       return Promise.resolve({ generateMockInterviewQuestions: GENERATED });
     }
-    if (query.includes('GenerateMockTalkingPoints')) {
+    if (gqlText(query).includes('GenerateMockTalkingPoints')) {
       return Promise.resolve({
         generateMockTalkingPoints: {
           nothingRelevant: false,
@@ -135,7 +136,7 @@ function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
         },
       });
     }
-    if (query.includes('GenerateMockInterviewAnswer')) {
+    if (gqlText(query).includes('GenerateMockInterviewAnswer')) {
       return Promise.resolve({
         generateMockInterviewAnswer: {
           answer: 'A drafted answer.',
@@ -153,7 +154,7 @@ function mockApi(questions = QUESTIONS, extra?: (query: string) => unknown) {
 const props = { applicationId: 'app-1', roundId: 'round-1', mockQuestionCount: 3 };
 
 const callsTo = (fragment: string) =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(fragment));
+  mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(fragment));
 
 async function openPanel(overrides: Partial<typeof props> = {}) {
   render(<MockQuestionsPanel {...props} {...overrides} />, { wrapper: Wrapper });
@@ -189,10 +190,9 @@ describe('MockQuestionsPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: '3 practice questions' }));
       await screen.findByText('First question');
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('query MockInterviewQuestions'),
-        { interviewRoundId: 'round-1' },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('query MockInterviewQuestions'), {
+        interviewRoundId: 'round-1',
+      });
     });
   });
 
@@ -270,10 +270,9 @@ describe('MockQuestionsPanel', () => {
       fireEvent.click(card.querySelector('button[aria-label="Delete question"]')!);
 
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('DeleteMockInterviewQuestion'),
-          { id: 'q1' },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DeleteMockInterviewQuestion'), {
+          id: 'q1',
+        }),
       );
     });
   });
@@ -365,7 +364,7 @@ describe('MockQuestionsPanel', () => {
       [{ usedJobDescription: false, usedBriefing: true }, /no job description yet/i],
     ])('says so when the AI had little to work from (%j)', async (used, note) => {
       mockApi(QUESTIONS, (query) =>
-        query.includes('GenerateMockInterviewQuestions')
+        gqlText(query).includes('GenerateMockInterviewQuestions')
           ? Promise.resolve({ generateMockInterviewQuestions: { ...GENERATED, ...used } })
           : undefined,
       );
@@ -378,7 +377,7 @@ describe('MockQuestionsPanel', () => {
 
     it('shows the API’s message, such as a missing AI key, and keeps the prompt', async () => {
       mockApi(QUESTIONS, (query) =>
-        query.includes('GenerateMockInterviewQuestions')
+        gqlText(query).includes('GenerateMockInterviewQuestions')
           ? Promise.reject({
               response: {
                 errors: [
@@ -542,7 +541,7 @@ describe('MockQuestionsPanel', () => {
 
       it('says nothing was relevant instead of showing made-up bullets', async () => {
         mockApi(QUESTIONS, (query) =>
-          query.includes('GenerateMockTalkingPoints')
+          gqlText(query).includes('GenerateMockTalkingPoints')
             ? Promise.resolve({
                 generateMockTalkingPoints: {
                   nothingRelevant: true,
@@ -575,7 +574,7 @@ describe('MockQuestionsPanel', () => {
 
       it('shows the API’s message, such as a missing AI key', async () => {
         mockApi(QUESTIONS, (query) =>
-          query.includes('GenerateMockTalkingPoints')
+          gqlText(query).includes('GenerateMockTalkingPoints')
             ? Promise.reject({
                 response: {
                   errors: [
@@ -641,7 +640,7 @@ describe('MockQuestionsPanel', () => {
     it('regenerating replaces the draft text', async () => {
       await startDraft();
       mockApi(QUESTIONS, (query) =>
-        query.includes('GenerateMockInterviewAnswer')
+        gqlText(query).includes('GenerateMockInterviewAnswer')
           ? Promise.resolve({
               generateMockInterviewAnswer: {
                 answer: 'A second attempt.',
@@ -659,7 +658,7 @@ describe('MockQuestionsPanel', () => {
 
     it('shows the API’s message when the draft cannot be generated', async () => {
       mockApi(QUESTIONS, (query) =>
-        query.includes('GenerateMockInterviewAnswer')
+        gqlText(query).includes('GenerateMockInterviewAnswer')
           ? Promise.reject({
               response: {
                 errors: [

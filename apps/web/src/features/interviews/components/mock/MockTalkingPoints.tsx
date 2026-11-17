@@ -48,16 +48,13 @@ export function MockTalkingPoints({
   const [instructions, setInstructions] = useState('');
 
   const generate = useMutation({
-    mutationFn: () =>
-      gqlClient.request<{ generateMockTalkingPoints: GeneratedTalkingPoints }>(
-        GENERATE_MOCK_TALKING_POINTS,
-        {
-          mockInterviewQuestionId: question.id,
-          prompt: instructions.trim() || null,
-          useProfile: background.useProfile,
-          documentId: background.documentId,
-        },
-      ),
+    mutationFn: async () =>
+      (await gqlClient.request(GENERATE_MOCK_TALKING_POINTS, {
+        mockInterviewQuestionId: question.id,
+        prompt: instructions.trim() || null,
+        useProfile: background.useProfile,
+        documentId: background.documentId,
+      })) as { generateMockTalkingPoints: GeneratedTalkingPoints },
     onSuccess: (data) => {
       const result = data.generateMockTalkingPoints;
       setNothingRelevant(result.nothingRelevant);

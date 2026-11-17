@@ -16,13 +16,15 @@ import {
   CREATE_MOCK_QUESTION,
   DELETE_MOCK_QUESTION,
   GENERATE_MOCK_ANSWER,
-  MOCK_QUESTIONS_QUERY,
   REORDER_MOCK_QUESTIONS,
   UPDATE_MOCK_QUESTION,
+  mockQuestionsQueryKey,
+  mockQuestionsQueryOptions,
   type GeneratedAnswer,
   type MockQuestion,
   type MockQuestionsData,
 } from '../../graphql/mockQuestionApi';
+import { interviewRoundsQueryKey } from '../../graphql/interviewRoundQueries';
 
 const EMPTY_FORM: QuestionFormValues = { question: '', answer: '' };
 
@@ -53,14 +55,12 @@ export function MockQuestionsPanel({
   // closes, so the ids are held here rather than edited out of the cache.
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
 
-  const questionsKey = ['mockInterviewQuestions', roundId];
-  const roundsKey = ['interviewRounds', applicationId];
+  const questionsKey = mockQuestionsQueryKey(roundId);
+  const roundsKey = interviewRoundsQueryKey(applicationId);
   const panelId = `mock-questions-${roundId}`;
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: questionsKey,
-    queryFn: () =>
-      gqlClient.request<MockQuestionsData>(MOCK_QUESTIONS_QUERY, { interviewRoundId: roundId }),
+    ...mockQuestionsQueryOptions(roundId),
     enabled: expanded,
   });
   const questions = (data?.mockInterviewQuestions ?? []).filter(
@@ -128,11 +128,11 @@ export function MockQuestionsPanel({
   });
 
   const draftAnswer = useMutation({
-    mutationFn: (id: string) =>
-      gqlClient.request<{ generateMockInterviewAnswer: GeneratedAnswer }>(GENERATE_MOCK_ANSWER, {
+    mutationFn: async (id: string) =>
+      (await gqlClient.request(GENERATE_MOCK_ANSWER, {
         mockInterviewQuestionId: id,
         useProfile: readRememberedUseProfile(false),
-      }),
+      })) as { generateMockInterviewAnswer: GeneratedAnswer },
     onSuccess: (result, id) =>
       setDraft({
         id,

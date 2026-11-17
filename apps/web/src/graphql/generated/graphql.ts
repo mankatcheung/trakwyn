@@ -2753,6 +2753,24 @@ export type DocumentsQuery = {
   }> | null;
 };
 
+export type InterviewQuestionsQueryVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
+}>;
+
+export type InterviewQuestionsQuery = {
+  __typename?: 'Query';
+  interviewQuestions?: Array<{
+    __typename?: 'InterviewQuestion';
+    id?: string | null;
+    interviewRoundId?: string | null;
+    question?: string | null;
+    answer?: string | null;
+    position?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
 export type CreateInterviewQuestionMutationVariables = Exact<{
   input: CreateInterviewQuestionInput;
 }>;
@@ -2818,19 +2836,24 @@ export type ReorderInterviewQuestionsMutation = {
   }> | null;
 };
 
-export type InterviewQuestionsQueryVariables = Exact<{
-  interviewRoundId: Scalars['ID']['input'];
+export type InterviewRoundsQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
 }>;
 
-export type InterviewQuestionsQuery = {
+export type InterviewRoundsQuery = {
   __typename?: 'Query';
-  interviewQuestions?: Array<{
-    __typename?: 'InterviewQuestion';
+  interviewRounds?: Array<{
+    __typename?: 'InterviewRound';
     id?: string | null;
-    interviewRoundId?: string | null;
-    question?: string | null;
-    answer?: string | null;
-    position?: number | null;
+    applicationId?: string | null;
+    type?: InterviewRoundType | null;
+    scheduledAt?: string | null;
+    completedAt?: string | null;
+    interviewerName?: string | null;
+    notes?: string | null;
+    outcome?: InterviewRoundOutcome | null;
+    questionCount?: number | null;
+    mockQuestionCount?: number | null;
     createdAt?: string | null;
     updatedAt?: string | null;
   }> | null;
@@ -2892,24 +2915,22 @@ export type DeleteInterviewRoundMutation = {
   deleteInterviewRound?: boolean | null;
 };
 
-export type InterviewRoundsQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
+export type MockInterviewQuestionsQueryVariables = Exact<{
+  interviewRoundId: Scalars['ID']['input'];
 }>;
 
-export type InterviewRoundsQuery = {
+export type MockInterviewQuestionsQuery = {
   __typename?: 'Query';
-  interviewRounds?: Array<{
-    __typename?: 'InterviewRound';
+  mockInterviewQuestions?: Array<{
+    __typename?: 'MockInterviewQuestion';
     id?: string | null;
-    applicationId?: string | null;
-    type?: InterviewRoundType | null;
-    scheduledAt?: string | null;
-    completedAt?: string | null;
-    interviewerName?: string | null;
-    notes?: string | null;
-    outcome?: InterviewRoundOutcome | null;
-    questionCount?: number | null;
-    mockQuestionCount?: number | null;
+    interviewRoundId?: string | null;
+    question?: string | null;
+    answer?: string | null;
+    answerSource?: AnswerSource | null;
+    talkingPoints?: string | null;
+    talkingPointsGeneratedAt?: string | null;
+    position?: number | null;
     createdAt?: string | null;
     updatedAt?: string | null;
   }> | null;
@@ -3056,25 +3077,6 @@ export type GenerateMockTalkingPointsMutation = {
       updatedAt?: string | null;
     } | null;
   } | null;
-};
-
-export type MockInterviewQuestionsQueryVariables = Exact<{
-  interviewRoundId: Scalars['ID']['input'];
-}>;
-
-export type MockInterviewQuestionsQuery = {
-  __typename?: 'Query';
-  mockInterviewQuestions?: Array<{
-    __typename?: 'MockInterviewQuestion';
-    id?: string | null;
-    interviewRoundId?: string | null;
-    question?: string | null;
-    answer?: string | null;
-    answerSource?: AnswerSource | null;
-    position?: number | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
 };
 
 export type CreateNoteMutationVariables = Exact<{
@@ -4664,6 +4666,54 @@ export const DocumentsDocument = {
     },
   ],
 } as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
+export const InterviewQuestionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'InterviewQuestions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'interviewQuestions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'interviewRoundId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<InterviewQuestionsQuery, InterviewQuestionsQueryVariables>;
 export const CreateInterviewQuestionDocument = {
   kind: 'Document',
   definitions: [
@@ -4894,17 +4944,17 @@ export const ReorderInterviewQuestionsDocument = {
   ReorderInterviewQuestionsMutation,
   ReorderInterviewQuestionsMutationVariables
 >;
-export const InterviewQuestionsDocument = {
+export const InterviewRoundsDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'InterviewQuestions' },
+      name: { kind: 'Name', value: 'InterviewRounds' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -4916,22 +4966,27 @@ export const InterviewQuestionsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'interviewQuestions' },
+            name: { kind: 'Name', value: 'interviewRounds' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'interviewRoundId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scheduledAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'outcome' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'questionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mockQuestionCount' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
@@ -4941,7 +4996,7 @@ export const InterviewQuestionsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<InterviewQuestionsQuery, InterviewQuestionsQueryVariables>;
+} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
 export const CreateInterviewRoundDocument = {
   kind: 'Document',
   definitions: [
@@ -5097,17 +5152,17 @@ export const DeleteInterviewRoundDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteInterviewRoundMutation, DeleteInterviewRoundMutationVariables>;
-export const InterviewRoundsDocument = {
+export const MockInterviewQuestionsDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'InterviewRounds' },
+      name: { kind: 'Name', value: 'MockInterviewQuestions' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -5119,27 +5174,25 @@ export const InterviewRoundsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'interviewRounds' },
+            name: { kind: 'Name', value: 'mockInterviewQuestions' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+                name: { kind: 'Name', value: 'interviewRoundId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'scheduledAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewerName' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'outcome' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'questionCount' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'mockQuestionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'answerSource' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'talkingPoints' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'talkingPointsGeneratedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
               ],
@@ -5149,7 +5202,7 @@ export const InterviewRoundsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<InterviewRoundsQuery, InterviewRoundsQueryVariables>;
+} as unknown as DocumentNode<MockInterviewQuestionsQuery, MockInterviewQuestionsQueryVariables>;
 export const CreateMockInterviewQuestionDocument = {
   kind: 'Document',
   definitions: [
@@ -5659,55 +5712,6 @@ export const GenerateMockTalkingPointsDocument = {
   GenerateMockTalkingPointsMutation,
   GenerateMockTalkingPointsMutationVariables
 >;
-export const MockInterviewQuestionsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'MockInterviewQuestions' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'mockInterviewQuestions' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'interviewRoundId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'interviewRoundId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'question' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answer' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'answerSource' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'position' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<MockInterviewQuestionsQuery, MockInterviewQuestionsQueryVariables>;
 export const CreateNoteDocument = {
   kind: 'Document',
   definitions: [

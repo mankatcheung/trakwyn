@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { InterviewRound } from '#/features/interviews/graphql/interviewRoundQueries';
 import {
   ROUND_OUTCOMES,
   ROUND_TYPES,
@@ -7,7 +8,7 @@ import {
   roundToForm,
 } from '#/features/interviews/lib/roundForm';
 
-const round = {
+const round: InterviewRound = {
   id: 'round-1',
   applicationId: 'app-1',
   type: 'onsite',
@@ -58,7 +59,7 @@ describe('roundToForm', () => {
 
   it('turns missing optional fields into empty strings', () => {
     expect(
-      roundToForm({ ...round, scheduledAt: null, interviewerName: undefined, notes: null }),
+      roundToForm({ ...round, scheduledAt: null, interviewerName: null, notes: null }),
     ).toMatchObject({ scheduledAt: '', interviewerName: '', notes: '' });
   });
 });
