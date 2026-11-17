@@ -37,7 +37,7 @@ export function EmailChangeForm({
           currentPassword: needsPassword ? data.currentPassword : null,
         }),
       );
-      form.reset();
+      form.reset({ currentPassword: '', newEmail: '' });
       setSent(true);
       return null;
     } catch (err) {

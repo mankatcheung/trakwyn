@@ -47,7 +47,7 @@ export function AddBackupEmailForm({ needsPassword, withStepUp }: BackupEmailFor
         backupEmail: data.backupEmail,
         currentPassword: needsPassword ? data.currentPassword : null,
       });
-      form.reset();
+      form.reset({ backupEmail: '', currentPassword: '' });
       setSent(true);
       return null;
     } catch (err) {
@@ -115,7 +115,7 @@ export function RemoveBackupEmailForm({ needsPassword, withStepUp }: BackupEmail
     }
     try {
       await remove.mutateAsync({ currentPassword: needsPassword ? data.currentPassword : null });
-      form.reset();
+      form.reset({ currentPassword: '' });
       return null;
     } catch (err) {
       if (isStepUpCancelled(err)) return null;

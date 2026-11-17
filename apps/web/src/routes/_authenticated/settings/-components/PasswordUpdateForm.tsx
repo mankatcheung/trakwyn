@@ -19,7 +19,7 @@ export function PasswordUpdateForm({ withStepUp }: { withStepUp: WithStepUp }) {
     setUpdated(false);
     try {
       await withStepUp(() => gqlClient.request(UPDATE_PASSWORD, { currentPassword, newPassword }));
-      form.reset();
+      form.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setUpdated(true);
       return null;
     } catch (err) {

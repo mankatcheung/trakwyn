@@ -30,7 +30,7 @@ export function TotpBeginForm({ onBegun }: { onBegun: (setup: TotpSetup) => void
   const { state, formProps } = useFormAction(form, async (data) => {
     try {
       const res = await gqlClient.request<{ beginTotpSetup: TotpSetup }>(BEGIN_TOTP_SETUP, data);
-      form.reset();
+      form.reset({ password: '' });
       onBegun(res.beginTotpSetup);
       return null;
     } catch (err) {
@@ -72,7 +72,7 @@ export function TotpConfirmForm({ onConfirmed }: { onConfirmed: (backupCodes: st
   const { state, formProps } = useFormAction(form, async (data) => {
     try {
       const res = await confirm.mutateAsync(data);
-      form.reset();
+      form.reset({ code: '' });
       onConfirmed(res.confirmTotpSetup.backupCodes);
       return null;
     } catch (err) {
@@ -114,7 +114,7 @@ export function TotpDisableForm({ onDisabled }: { onDisabled: () => void }) {
   const { state, formProps } = useFormAction(form, async (data) => {
     try {
       await disable.mutateAsync(data);
-      form.reset();
+      form.reset({ password: '' });
       onDisabled();
       return null;
     } catch (err) {
@@ -163,7 +163,7 @@ export function RegenerateBackupCodesForm({
           { currentPassword: data.password },
         ),
       );
-      form.reset();
+      form.reset({ password: '' });
       onRegenerated(result.regenerateTotpBackupCodes.backupCodes);
       return null;
     } catch (err) {

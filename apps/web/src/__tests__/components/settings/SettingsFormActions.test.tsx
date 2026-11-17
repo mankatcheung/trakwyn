@@ -85,6 +85,8 @@ interface FormCase {
   pending: string;
   /** The GraphQL document the submit sends. */
   document: string;
+  /** A field that is empty again after a successful save, for forms that clear themselves. */
+  clearsOnSuccess?: string;
 }
 
 const CASES: FormCase[] = [
@@ -103,6 +105,7 @@ const CASES: FormCase[] = [
     submit: 'Update email',
     pending: 'Sending…',
     document: REQUEST_EMAIL_CHANGE,
+    clearsOnSuccess: 'newEmail',
   },
   {
     name: 'add backup email',
@@ -111,6 +114,7 @@ const CASES: FormCase[] = [
     submit: 'Add backup email',
     pending: 'Sending…',
     document: REQUEST_ADD_BACKUP_EMAIL,
+    clearsOnSuccess: 'backupEmail',
   },
   {
     name: 'remove backup email',
@@ -119,6 +123,7 @@ const CASES: FormCase[] = [
     submit: 'Remove backup email',
     pending: 'Removing…',
     document: REMOVE_BACKUP_EMAIL,
+    clearsOnSuccess: 'currentPassword',
   },
   {
     name: 'password',
@@ -131,6 +136,7 @@ const CASES: FormCase[] = [
     submit: 'Update password',
     pending: 'Saving…',
     document: UPDATE_PASSWORD,
+    clearsOnSuccess: 'newPassword',
   },
   {
     name: 'two-factor begin',
@@ -139,6 +145,7 @@ const CASES: FormCase[] = [
     submit: 'Enable 2FA',
     pending: 'Starting…',
     document: BEGIN_TOTP_SETUP,
+    clearsOnSuccess: 'password',
   },
   {
     name: 'two-factor confirm',
@@ -147,6 +154,7 @@ const CASES: FormCase[] = [
     submit: 'Confirm',
     pending: 'Confirming…',
     document: CONFIRM_TOTP_SETUP,
+    clearsOnSuccess: 'code',
   },
   {
     name: 'two-factor disable',
@@ -155,6 +163,7 @@ const CASES: FormCase[] = [
     submit: 'Disable 2FA',
     pending: 'Disabling…',
     document: DISABLE_TOTP,
+    clearsOnSuccess: 'password',
   },
   {
     name: 'regenerate backup codes',
@@ -163,6 +172,7 @@ const CASES: FormCase[] = [
     submit: 'Regenerate backup codes',
     pending: 'Regenerating…',
     document: REGENERATE_TOTP_BACKUP_CODES,
+    clearsOnSuccess: 'password',
   },
   {
     name: 'custom AI instructions',
