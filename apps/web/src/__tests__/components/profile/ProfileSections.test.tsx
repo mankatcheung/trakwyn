@@ -97,7 +97,8 @@ describe('CertificationsSection (JEF-592)', () => {
 
     expect(await screen.findByText(/Certification limit reached/)).toBeInTheDocument();
     expect(document.querySelector<HTMLInputElement>('input[name="name"]')!.value).toBe('CKA');
-    expect(within(name.closest('form')!).getByRole('button', { name: 'Add' })).toBeEnabled();
+    // The error renders before the mutation settles, so the button is still "Saving…" for a tick.
+    expect(await within(name.closest('form')!).findByRole('button', { name: 'Add' })).toBeEnabled();
   });
 
   it('hints at what to enter in the name, issuer and URL fields (JEF-614)', async () => {
