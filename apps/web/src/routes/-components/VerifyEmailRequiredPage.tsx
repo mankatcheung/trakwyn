@@ -1,6 +1,6 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Alert, Button, FormLabel, Input } from '@trakwyn/ui';
+import { Alert, Button } from '@trakwyn/ui';
 import { ERROR_CODES } from '#/constants';
 import { gqlClient } from '#/graphql/client';
 import { LogoMark } from '#/components/LogoMark';
@@ -13,7 +13,7 @@ import {
   RESEND_VERIFICATION_EMAIL,
   useEmailVerification,
 } from '#/lib/emailVerification';
-import { REQUEST_EMAIL_CHANGE } from '#/routes/_authenticated/settings/-components/shared';
+import { ChangeEmailForm } from './ChangeEmailForm';
 
 const LOGOUT_MUTATION = `mutation { logout }`;
 
@@ -37,10 +37,7 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
   const [checkNotice, setCheckNotice] = useState<Notice>(null);
 
   const [changing, setChanging] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [changeNotice, setChangeNotice] = useState<Notice>(null);
-  const [changeBusy, setChangeBusy] = useState(false);
 
   const resend = async () => {
     setSending(true);
@@ -72,31 +69,6 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
       }
     } finally {
       setChecking(false);
-    }
-  };
-
-  const changeEmail = async (event: SubmitEvent) => {
-    event.preventDefault();
-    setChangeBusy(true);
-    setChangeNotice(null);
-    try {
-      await gqlClient.request(REQUEST_EMAIL_CHANGE, { currentPassword, newEmail });
-      setChangeNotice({
-        tone: 'success',
-        text: t('verifyRequired.changeEmailSent', { email: newEmail }),
-      });
-      setChanging(false);
-      setCurrentPassword('');
-      setNewEmail('');
-    } catch (err) {
-      const message =
-        typeof err === 'object' && err !== null && 'response' in err
-          ? (err as { response?: { errors?: Array<{ message?: string }> } }).response?.errors?.[0]
-              ?.message
-          : undefined;
-      setChangeNotice({ tone: 'error', text: message ?? t('verifyRequired.changeEmailFailed') });
-    } finally {
-      setChangeBusy(false);
     }
   };
 
@@ -145,47 +117,24 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
           </div>
 
           {changing ? (
-            <form
-              onSubmit={changeEmail}
-              className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700"
-            >
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t('verifyRequired.changeEmailIntro')}
-              </p>
-              <div>
-                <FormLabel htmlFor="verify-new-email">{t('security.newEmailLabel')}</FormLabel>
-                <Input
-                  id="verify-new-email"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <FormLabel htmlFor="verify-current-password">
-                  {t('security.currentPasswordLabel')}
-                </FormLabel>
-                <Input
-                  id="verify-current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={changeBusy}>
-                  {t('verifyRequired.changeEmailSubmit')}
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => setChanging(false)}>
-                  {t('common.cancel')}
-                </Button>
-              </div>
-            </form>
+            <ChangeEmailForm
+              onSent={(sent) => {
+                setChangeNotice({
+                  tone: 'success',
+                  text: t('verifyRequired.changeEmailSent', { email: sent }),
+                });
+                setChanging(false);
+              }}
+              onCancel={() => setChanging(false)}
+            />
           ) : (
-            <Button variant="link" onClick={() => setChanging(true)}>
+            <Button
+              variant="link"
+              onClick={() => {
+                setChangeNotice(null);
+                setChanging(true);
+              }}
+            >
               {t('verifyRequired.changeEmail')}
             </Button>
           )}

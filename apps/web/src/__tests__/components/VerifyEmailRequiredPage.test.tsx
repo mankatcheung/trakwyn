@@ -216,6 +216,57 @@ describe('verification wall (JEF-438)', () => {
       expect(await screen.findByText('Invalid password')).toBeVisible();
     });
 
+    it('keeps the typed address and password when the change is refused', async () => {
+      await openForm();
+      mockGqlRequest.mockRejectedValue({ response: { errors: [{ message: 'Invalid password' }] } });
+
+      fireEvent.change(screen.getByLabelText('New email'), {
+        target: { value: 'right@example.com' },
+      });
+      fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'wrong' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Send link to this address' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Invalid password');
+      expect(screen.getByLabelText('New email')).toHaveValue('right@example.com');
+      expect(screen.getByLabelText('Current password')).toHaveValue('wrong');
+    });
+
+    it('validates the address and password before sending anything', async () => {
+      await openForm();
+      mockGqlRequest.mockClear();
+
+      fireEvent.change(screen.getByLabelText('New email'), { target: { value: 'not-an-email' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Send link to this address' }));
+
+      expect(await screen.findByText('Enter a valid email address')).toBeInTheDocument();
+      expect(screen.getByText('Enter your current password')).toBeInTheDocument();
+      expect(requestsMatching('RequestEmailChange')).toHaveLength(0);
+    });
+
+    it('sends the request once when the button is double clicked', async () => {
+      await openForm();
+      let finish: (value: unknown) => void = () => {};
+      mockGqlRequest.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+
+      fireEvent.change(screen.getByLabelText('New email'), {
+        target: { value: 'right@example.com' },
+      });
+      fireEvent.change(screen.getByLabelText('Current password'), {
+        target: { value: 'hunter2hunter2' },
+      });
+      const button = screen.getByRole('button', { name: 'Send link to this address' });
+      fireEvent.click(button);
+      fireEvent.click(button);
+
+      await waitFor(() => expect(requestsMatching('RequestEmailChange')).toHaveLength(1));
+      expect(button).toBeDisabled();
+      finish({ requestEmailChange: true });
+      expect(
+        await screen.findByText('Check right@example.com for a link to confirm the new address.'),
+      ).toBeVisible();
+      expect(requestsMatching('RequestEmailChange')).toHaveLength(1);
+    });
+
     it('closes the form on cancel', async () => {
       await openForm();
 

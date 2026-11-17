@@ -40,9 +40,11 @@ function keepFieldsAfterAction(form: HTMLFormElement | null) {
  * DOM went blank, so the reset is cancelled and the form decides itself when
  * to clear (`form.reset(...)` in `submit`).
  */
-export function useFormAction<T extends FieldValues>(
-  form: UseFormReturn<T>,
-  submit: (data: T) => Promise<FormActionResult>,
+export function useFormAction<TIn extends FieldValues, TOut extends FieldValues = TIn>(
+  // The context type is the form's own business, so any is right here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: UseFormReturn<TIn, any, TOut>,
+  submit: (data: TOut) => Promise<FormActionResult>,
 ) {
   const [state, action] = useActionState(async (): Promise<FormActionState> => {
     const outcome: { value: Exclude<FormActionResult, void> } = { value: null };
