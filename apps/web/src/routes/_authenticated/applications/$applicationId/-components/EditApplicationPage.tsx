@@ -3,15 +3,24 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
-import { queryClient } from '#/lib/queryClient';
+import { useFormAction } from '#/lib/useFormAction';
 import { getErrorMessage } from '#/lib/errors';
 import { QuotaHint } from '#/components/QuotaHint';
 import { useQuotaState } from '#/lib/contentQuota';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
-import { Alert, Button, Checkbox, FormLabel, Input, Select, Skeleton, Textarea } from '@trakwyn/ui';
+import {
+  Alert,
+  Checkbox,
+  FormLabel,
+  Input,
+  Select,
+  Skeleton,
+  SubmitButton,
+  Textarea,
+} from '@trakwyn/ui';
 import { JdImportPanel } from '../../-components/JdImportPanel';
 import { applicationQueryOptions } from '../-application-query';
 import { POSTING_TEXT_MAX_CHARS, PostingTextField } from '../../-components/PostingTextField';
@@ -86,13 +95,8 @@ export function EditApplicationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app?.tags?.join(',')]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-    setValue,
-  } = useForm<FormValues>({
+  const queryClient = useQueryClient();
+  const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     values: app
       ? {
@@ -111,31 +115,46 @@ export function EditApplicationPage() {
       : undefined,
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const {
+    register,
+    formState: { errors },
+    setValue,
+  } = form;
+
+  const update = useMutation({
+    mutationFn: (input: Record<string, unknown>) =>
+      gqlClient.request(UPDATE_MUTATION, { id: applicationId, input }),
+    // The list and this application's own detail both show what was edited.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['applications'] }),
+        queryClient.invalidateQueries({ queryKey: ['application', applicationId] }),
+      ]),
+  });
+
+  const { state, formProps } = useFormAction(form, async (data) => {
+    const input = {
+      company: data.company,
+      role: data.role,
+      status: data.status,
+      ...(data.jobUrl ? { jobUrl: data.jobUrl } : {}),
+      ...(data.location ? { location: data.location } : {}),
+      ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
+      ...(data.description ? { description: data.description } : {}),
+      // Sent every time, so emptying the field clears a stale posting.
+      postingText: data.postingText?.trim() ? data.postingText.trim() : null,
+      ...(data.source ? { source: data.source } : { source: null }),
+      ...(data.followUpAt ? { followUpAt: data.followUpAt } : { followUpAt: null }),
+      starred: data.starred ?? false,
+      tags,
+    };
     try {
-      const input = {
-        company: data.company,
-        role: data.role,
-        status: data.status,
-        ...(data.jobUrl ? { jobUrl: data.jobUrl } : {}),
-        ...(data.location ? { location: data.location } : {}),
-        ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
-        ...(data.description ? { description: data.description } : {}),
-        // Sent every time, so emptying the field clears a stale posting.
-        postingText: data.postingText?.trim() ? data.postingText.trim() : null,
-        ...(data.source ? { source: data.source } : { source: null }),
-        ...(data.followUpAt ? { followUpAt: data.followUpAt } : { followUpAt: null }),
-        starred: data.starred ?? false,
-        tags,
-      };
-      await gqlClient.request(UPDATE_MUTATION, { id: applicationId, input });
-      await queryClient.invalidateQueries({ queryKey: ['applications'] });
-      await queryClient.invalidateQueries({ queryKey: ['application', applicationId] });
+      await update.mutateAsync(input);
       await navigate({ to: '/applications/$applicationId', params: { applicationId } });
     } catch (err) {
-      setError('root', { message: getErrorMessage(err) });
+      return getErrorMessage(err);
     }
-  };
+  });
 
   if (!app)
     return (
@@ -170,7 +189,7 @@ export function EditApplicationPage() {
       />
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        {...formProps}
         className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -273,12 +292,12 @@ export function EditApplicationPage() {
           </label>
         </div>
 
-        {errors.root && <Alert>{errors.root.message}</Alert>}
+        {state.error && <Alert>{state.error}</Alert>}
 
         <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t('applicationForm.saving') : t('applicationForm.saveChanges')}
-          </Button>
+          <SubmitButton pendingLabel={t('applicationForm.saving')}>
+            {t('applicationForm.saveChanges')}
+          </SubmitButton>
           <a
             href={`/applications/${applicationId}`}
             className="px-5 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"

@@ -4,7 +4,12 @@ import type { FieldValues, UseFormReturn } from 'react-hook-form';
 export interface FormActionState {
   /** The message to show under the form, or null after a clean submit. */
   error: string | null;
+  /** The API error code behind `error`, when `submit` returned one (e.g. `PLAN_REQUIRED`). */
+  code?: string;
 }
+
+/** What `submit` may return: a message, a message with its code, or nothing for success. */
+export type FormActionResult = string | { message: string; code?: string } | null | void;
 
 const IDLE: FormActionState = { error: null };
 
@@ -26,7 +31,8 @@ function keepFieldsAfterAction(form: HTMLFormElement | null) {
  * Props that make a react-hook-form form a React 19 form action (JEF-612).
  *
  * `submit` runs only when the schema validates and returns an error message
- * to show, or null/undefined on success. Pending state is not returned: read
+ * to show (a plain string, or `{ message, code }` when the form must tell
+ * one kind of error from another), or null/undefined on success. Pending state is not returned: read
  * it with `useFormStatus` (the `SubmitButton` from `@trakwyn/ui` does).
  *
  * React resets a form's DOM fields once its action settles. These inputs are
@@ -36,14 +42,18 @@ function keepFieldsAfterAction(form: HTMLFormElement | null) {
  */
 export function useFormAction<T extends FieldValues>(
   form: UseFormReturn<T>,
-  submit: (data: T) => Promise<string | null | void>,
+  submit: (data: T) => Promise<FormActionResult>,
 ) {
   const [state, action] = useActionState(async (): Promise<FormActionState> => {
-    let error: string | null = null;
+    const outcome: { value: Exclude<FormActionResult, void> } = { value: null };
     await form.handleSubmit(async (data) => {
-      error = (await submit(data)) ?? null;
+      outcome.value = (await submit(data)) ?? null;
     })();
-    return error === null ? IDLE : { error };
+    const result = outcome.value;
+    if (!result) return IDLE;
+    return typeof result === 'string'
+      ? { error: result }
+      : { error: result.message, code: result.code };
   }, IDLE);
 
   return { state, formProps: { action, ref: keepFieldsAfterAction } };

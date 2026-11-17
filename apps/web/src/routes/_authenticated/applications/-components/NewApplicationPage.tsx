@@ -1,10 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
-import { queryClient } from '#/lib/queryClient';
+import { useFormAction } from '#/lib/useFormAction';
 import { ERROR_CODES } from '#/constants';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';
@@ -14,7 +15,7 @@ import { getGqlErrorCode } from '#/lib/graphqlError';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
 import { StarIcon, XIcon } from 'lucide-react';
-import { Alert, Button, Checkbox, FormLabel, Input, Textarea } from '@trakwyn/ui';
+import { Alert, Checkbox, FormLabel, Input, SubmitButton, Textarea } from '@trakwyn/ui';
 import { JdImportPanel } from './JdImportPanel';
 import { POSTING_TEXT_MAX_CHARS, PostingTextField } from './PostingTextField';
 
@@ -65,49 +66,51 @@ export function NewApplicationPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const tagsFull = useQuotaState('tags', tags.length)?.level === 'full';
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-    setValue,
-  } = useForm<FormValues>({
+  const queryClient = useQueryClient();
+  const form = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+  const {
+    register,
+    formState: { errors },
+    setValue,
+  } = form;
 
-  const onSubmit = async (data: FormValues) => {
+  const create = useMutation({
+    mutationFn: (input: Record<string, unknown>) =>
+      gqlClient.request<{ createApplication: { id: string } }>(CREATE_MUTATION, { input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['applications'] }),
+  });
+
+  const { state, formProps } = useFormAction(form, async (data) => {
+    const input = {
+      company: data.company,
+      role: data.role,
+      ...(data.jobUrl ? { jobUrl: data.jobUrl } : {}),
+      ...(data.location ? { location: data.location } : {}),
+      ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
+      ...(data.description ? { description: data.description } : {}),
+      ...(data.postingText?.trim() ? { postingText: data.postingText.trim() } : {}),
+      ...(data.source ? { source: data.source } : {}),
+      ...(data.followUpAt ? { followUpAt: data.followUpAt } : {}),
+      starred: data.starred ?? false,
+      tags,
+    };
     try {
-      const input = {
-        company: data.company,
-        role: data.role,
-        ...(data.jobUrl ? { jobUrl: data.jobUrl } : {}),
-        ...(data.location ? { location: data.location } : {}),
-        ...(data.salaryRange ? { salaryRange: data.salaryRange } : {}),
-        ...(data.description ? { description: data.description } : {}),
-        ...(data.postingText?.trim() ? { postingText: data.postingText.trim() } : {}),
-        ...(data.source ? { source: data.source } : {}),
-        ...(data.followUpAt ? { followUpAt: data.followUpAt } : {}),
-        starred: data.starred ?? false,
-        tags,
-      };
-      const result = await gqlClient.request<{ createApplication: { id: string } }>(
-        CREATE_MUTATION,
-        { input },
-      );
+      const result = await create.mutateAsync(input);
       // What was created, never what it contains — no company, role or
       // description leaves the device (JEF-349).
       captureEvent(ANALYTICS_EVENTS.APPLICATION_CREATED, { has_tags: tags.length > 0 });
-      await queryClient.invalidateQueries({ queryKey: ['applications'] });
       await navigate({
         to: '/applications/$applicationId',
         params: { applicationId: result.createApplication.id },
       });
     } catch (err) {
-      // The code rides along as the error `type`, so the render below can tell
-      // "you are at your plan's limit" from a failure.
-      setError('root', { type: getGqlErrorCode(err) ?? 'error', message: getErrorMessage(err) });
+      // The code rides along so the render below can tell "you are at your
+      // plan's limit" from a failure.
+      return { message: getErrorMessage(err), code: getGqlErrorCode(err) };
     }
-  };
+  });
 
   return (
     <div className="mx-auto max-w-2xl p-4 sm:p-8">
@@ -135,7 +138,7 @@ export function NewApplicationPage() {
       />
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        {...formProps}
         className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -237,25 +240,24 @@ export function NewApplicationPage() {
           </label>
         </div>
 
-        {errors.root &&
-          (errors.root.type === ERROR_CODES.QUOTA_EXCEEDED ||
-          errors.root.type === ERROR_CODES.PLAN_REQUIRED ? (
+        {state.error &&
+          (state.code === ERROR_CODES.QUOTA_EXCEEDED || state.code === ERROR_CODES.PLAN_REQUIRED ? (
             <div className="space-y-2">
-              <UpgradePrompt message={errors.root.message ?? ''} />
+              <UpgradePrompt message={state.error} />
               {/* Trashed applications are not freed until they are purged, which is the
                   dead end users hit with a full list and an apparently empty board (JEF-494). */}
-              {errors.root.type === ERROR_CODES.QUOTA_EXCEEDED && (
+              {state.code === ERROR_CODES.QUOTA_EXCEEDED && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t('quota.trashNote')}</p>
               )}
             </div>
           ) : (
-            <Alert>{errors.root.message}</Alert>
+            <Alert>{state.error}</Alert>
           ))}
 
         <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t('applicationForm.saving') : t('applicationForm.saveApplication')}
-          </Button>
+          <SubmitButton pendingLabel={t('applicationForm.saving')}>
+            {t('applicationForm.saveApplication')}
+          </SubmitButton>
           <a
             href="/applications"
             className="px-5 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"

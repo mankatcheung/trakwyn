@@ -40,7 +40,7 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 - **Not in new code:** `onSubmit` with `preventDefault`, `useState(false)` for pending, `formState.isSubmitting`, `form.setError('root')` for a server error.
 - **Read values with `useWatch({ control, name })`, not `form.watch()`.** `watch` is incompatible with the React Compiler and forced `AddLlmApiKeyForm` to opt out.
 - **`SubmitButton` (`@trakwyn/ui`) reads the form's status** with `useFormStatus`: it disables itself, shows a spinner and the `pendingLabel`, and sets `aria-busy`. A disabled default button also stops Enter from submitting again, so a double click or double Enter reaches the action once. `pending` forces the look for a form still on `onSubmit`.
-- **`useFormAction(form, submit)`** (`lib/useFormAction.ts`) wraps `form.handleSubmit` in `useActionState`. `submit` runs only when the schema validates and returns the error message to show (or null); `state.error` is rendered as `{state.error && <Alert>…`. Spread `formProps` on the `<form>`.
+- **`useFormAction(form, submit)`** (`lib/useFormAction.ts`) wraps `form.handleSubmit` in `useActionState`. `submit` runs only when the schema validates and returns the error message to show (or null), or `{ message, code }` when the form must tell a plan error from a failure (`NewApplicationPage` renders `UpgradePrompt` for `state.code`); `state.error` is rendered as `{state.error && <Alert>…`. Spread `formProps` on the `<form>`.
 - **React resets a form's fields after an action, which breaks react-hook-form.** The DOM goes blank while react-hook-form keeps the old values, so a failed save would lose what the user typed. `formProps.ref` cancels that with a native `reset` listener. It has to be native and on a stable ref: React calls `form.reset()` itself during commit and never fires `onReset` for it, and a ref callback re-created each render is detached just before the reset. A form that wants a blank slate after success calls `form.reset(...)` in `submit`.
 - **Out of scope for form actions:** drag and drop, toggles, bulk actions, the chat composer (`ChatConversationView`, a stream).
 
@@ -48,9 +48,8 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 
 Forms still on `onSubmit` or plain state, and writes still on direct calls where cached data changes:
 
-1. `NewApplicationPage`, `EditApplicationPage` (and their writes to `useMutation`).
-2. `SettingsProfilePage`, `SettingsSecurityPage`, `SettingsAiPage` (saves to `useMutation`).
-3. Plain-`useState` forms with real fields: `OfferForm`, the `VerifyEmailRequiredPage` change-email form, `InterviewQuestionsPanel`, `MockQuestionsPanel`.
-4. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
-5. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
-6. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).
+1. `SettingsProfilePage`, `SettingsSecurityPage`, `SettingsAiPage` (saves to `useMutation`).
+2. Plain-`useState` forms with real fields: `OfferForm`, the `VerifyEmailRequiredPage` change-email form, `InterviewQuestionsPanel`, `MockQuestionsPanel`.
+3. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
+4. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
+5. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).

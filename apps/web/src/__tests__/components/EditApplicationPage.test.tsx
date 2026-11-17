@@ -2,10 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { mockNavigate, mockGqlRequest, mockInvalidate } = vi.hoisted(() => ({
+const { mockNavigate, mockGqlRequest } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockGqlRequest: vi.fn(),
-  mockInvalidate: vi.fn(),
 }));
 
 // The quota hint is covered by QuotaHint.test.tsx; here it would add a request of its own.
@@ -26,10 +25,6 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-vi.mock('#/lib/queryClient', () => ({
-  queryClient: { invalidateQueries: mockInvalidate },
-}));
-
 import { EditApplicationPage } from '#/routes/_authenticated/applications/$applicationId/-components/EditApplicationPage';
 
 vi.mock('#/components/ai/hooks/useAiCredits', () => ({
@@ -46,8 +41,10 @@ vi.mock('#/components/ai/hooks/useAiCredits', () => ({
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 
+let client: QueryClient;
+
 function Wrapper({ children }: { children: React.ReactNode }) {
-  return <QueryClientProvider client={makeClient()}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
 const mockApp = {
@@ -67,6 +64,7 @@ const mockApp = {
 describe('EditApplicationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    client = makeClient();
   });
 
   it('shows loading skeleton before data is available', () => {
@@ -139,7 +137,8 @@ describe('EditApplicationPage', () => {
     });
   });
 
-  it('invalidates queries and navigates on successful submit', async () => {
+  it('invalidates the list and the detail, then navigates, on successful submit', async () => {
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
     mockGqlRequest
       .mockResolvedValueOnce({ application: mockApp })
       .mockResolvedValueOnce({ updateApplication: { id: 'app-test-id' } });
@@ -157,7 +156,8 @@ describe('EditApplicationPage', () => {
         expect.objectContaining({ to: '/applications/$applicationId' }),
       );
     });
-    expect(mockInvalidate).toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['applications'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['application', 'app-test-id'] });
   });
 
   it('handles app with null optional fields and valid jobUrl', async () => {
@@ -251,5 +251,42 @@ describe('EditApplicationPage', () => {
         expect.objectContaining({ input: expect.objectContaining({ postingText: null }) }),
       );
     });
+  });
+
+  it('keeps the edited values when the API fails', async () => {
+    mockGqlRequest
+      .mockResolvedValueOnce({ application: mockApp })
+      .mockRejectedValueOnce(new Error('network error'));
+
+    render(<EditApplicationPage />, { wrapper: Wrapper });
+
+    const field = await screen.findByDisplayValue('Stripe');
+    fireEvent.change(field, { target: { value: 'Acme Corp' } });
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await screen.findByText('Something went wrong. Please try again.');
+    expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument();
+  });
+
+  it('saves once on a double click', async () => {
+    let resolve!: (value: unknown) => void;
+    mockGqlRequest
+      .mockResolvedValueOnce({ application: mockApp })
+      .mockReturnValueOnce(new Promise((r) => (resolve = r)));
+
+    render(<EditApplicationPage />, { wrapper: Wrapper });
+
+    await screen.findByDisplayValue('Stripe');
+    const button = screen.getByRole('button', { name: /save changes/i });
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    fireEvent.click(button);
+
+    resolve({ updateApplication: { id: 'app-test-id' } });
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+    const updates = mockGqlRequest.mock.calls.filter(([q]) =>
+      String(q).includes('UpdateApplication'),
+    );
+    expect(updates).toHaveLength(1);
   });
 });
