@@ -1,4 +1,4 @@
-import { useBillingStatus, type AiCredits } from '#/lib/billingStatus';
+import { useBillingStatus, type AiCredits } from '#/features/plans/lib/billingStatus';
 
 /** The assistant mentions credits only below this share left, to avoid nagging (JEF-451). */
 export const LOW_CREDITS_FRACTION = 0.3;

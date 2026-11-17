@@ -1,6 +1,6 @@
 # AI data handling
 
-Where AI-related user data leaves Trakwyn, and which code makes each privacy-policy claim true (JEF-549). The policy text is `legal.privacy.*` in `apps/web/src/i18n/*.json`, rendered by `apps/web/src/routes/-components/PrivacyPage.tsx`. It has not had legal review.
+Where AI-related user data leaves Trakwyn, and which code makes each privacy-policy claim true (JEF-549). The policy text is `legal.privacy.*` in `apps/web/src/i18n/*.json`, rendered by `apps/web/src/features/legal/pages/PrivacyPage.tsx`. It has not had legal review.
 
 **Last checked: 2026-11-11**
 

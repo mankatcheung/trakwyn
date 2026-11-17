@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { aiCreditsView, useHostedAiAvailable, type AiCreditsView } from '#/lib/aiCredits';
-import { billingStatusQueryKey, useBillingStatus, type AiFeature } from '#/lib/billingStatus';
+import {
+  billingStatusQueryKey,
+  useBillingStatus,
+  type AiFeature,
+} from '#/features/plans/lib/billingStatus';
 import { newConversationRunsOn, useLlmSettings } from '#/routes/_authenticated/assistant/-runsOn';
 
 export interface UseAiCredits {

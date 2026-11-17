@@ -4,7 +4,7 @@ import en from '#/i18n/en.json';
 
 const billing = vi.hoisted(() => ({ status: null as unknown }));
 
-vi.mock('#/lib/billingStatus', () => ({ useBillingStatus: () => billing.status }));
+vi.mock('#/features/plans/lib/billingStatus', () => ({ useBillingStatus: () => billing.status }));
 vi.mock('#/lib/i18n', () => ({
   useLocale: () => ({
     locale: 'en',

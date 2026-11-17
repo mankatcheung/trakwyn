@@ -7,7 +7,7 @@ const { mockHasSessionCookie, mockCheckSessionGate, mockPrefetchDashboard } = vi
 }));
 
 // Only the network read is replaced; which paths are exempt is the real rule.
-vi.mock('#/lib/sessionGate', () => ({ checkSessionGate: mockCheckSessionGate }));
+vi.mock('#/features/auth/lib/sessionGate', () => ({ checkSessionGate: mockCheckSessionGate }));
 
 vi.mock('#/routes/_authenticated/-dashboardQueries', () => ({
   prefetchDashboard: mockPrefetchDashboard,

@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasSessionCookie } from '#/graphql/client';
 import { needsWelcome } from '#/lib/onboarding';
-import { checkSessionGate, type SessionGate } from '#/lib/sessionGate';
+import { checkSessionGate, type SessionGate } from '#/features/auth/lib/sessionGate';
 import { AuthenticatedLayout } from './-components/AuthenticatedLayout';
 import { prefetchDashboard } from './-dashboardQueries';
 

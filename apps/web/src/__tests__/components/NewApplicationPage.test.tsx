@@ -8,7 +8,7 @@ const { mockNavigate, mockGqlRequest } = vi.hoisted(() => ({
 }));
 
 // The quota hint is covered by QuotaHint.test.tsx; here it would add a request of its own.
-vi.mock('#/lib/contentQuota', () => ({ useQuotaState: () => null }));
+vi.mock('#/features/quota/lib/contentQuota', () => ({ useQuotaState: () => null }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (opts: unknown) => opts,

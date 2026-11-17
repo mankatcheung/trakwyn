@@ -11,9 +11,13 @@ import {
   type PlanFeatures,
   type PlanTerms,
   type UsageLevel,
-} from '#/lib/billingStatus';
+} from '#/features/plans/lib/billingStatus';
 import { formatStorageSize } from '#/lib/storageUsage';
-import { useBillingPortal, useCheckout, type CheckoutPlan } from '#/lib/billingCheckout';
+import {
+  useBillingPortal,
+  useCheckout,
+  type CheckoutPlan,
+} from '#/features/plans/lib/billingCheckout';
 import { useHostedAiAvailable } from '#/lib/aiCredits';
 import { AiCreditsMeter } from '#/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';

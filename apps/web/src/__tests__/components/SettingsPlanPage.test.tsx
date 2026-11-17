@@ -21,7 +21,7 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
 }));
 
 import { SettingsPlanPage } from '#/routes/_authenticated/settings/-components/SettingsPlanPage';
-import type { BillingStatus } from '#/lib/billingStatus';
+import type { BillingStatus } from '#/features/plans/lib/billingStatus';
 
 const MB = 1024 * 1024;
 const NO_FEATURES = {

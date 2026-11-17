@@ -11,7 +11,7 @@ const state = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('#/lib/billingStatus', () => ({
+vi.mock('#/features/plans/lib/billingStatus', () => ({
   billingStatusQueryKey: ['billingStatus'],
   useBillingStatus: () => state.billing,
 }));

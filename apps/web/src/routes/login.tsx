@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
-import { safeReturnTo } from '#/lib/returnTo';
+import { safeReturnTo } from '#/features/auth/lib/returnTo';
 import { z } from 'zod';
-import { LoginPage } from './-components/LoginPage';
+import { LoginPage } from '../features/auth/pages/LoginPage';
 
 const searchSchema = z.object({
   oauthError: z.string().optional(),

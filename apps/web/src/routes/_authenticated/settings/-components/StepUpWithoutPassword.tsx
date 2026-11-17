@@ -6,7 +6,7 @@ import { gqlClient } from '#/graphql/client';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
-import { OAuthProviderLogo } from '#/components/OAuthProviderLogo';
+import { OAuthProviderLogo } from '#/features/auth/components/OAuthProviderLogo';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { extractGqlError } from './shared';
 

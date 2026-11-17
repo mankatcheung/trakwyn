@@ -9,8 +9,8 @@ import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { useFormAction } from '#/hooks/useFormAction';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import {
   Alert,
   Button,

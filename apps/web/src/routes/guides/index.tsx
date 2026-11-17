@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { GuidesIndexPage } from './-components/GuidesIndexPage';
+import { GuidesIndexPage } from '../../features/guides/pages/GuidesIndexPage';
 
 const TITLE = 'Guides — Trakwyn';
 const DESCRIPTION =

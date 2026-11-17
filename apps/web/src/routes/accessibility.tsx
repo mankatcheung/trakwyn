@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AccessibilityPage } from './-components/AccessibilityPage';
+import { AccessibilityPage } from '../features/legal/pages/AccessibilityPage';
 
 export const Route = createFileRoute('/accessibility')({
   head: () => ({

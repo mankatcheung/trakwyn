@@ -6,8 +6,8 @@ import { showUndoToast } from '#/lib/undoToast';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { Card, Textarea } from '@trakwyn/ui';
-import { QuotaHint } from '#/components/QuotaHint';
-import { useQuotaState } from '#/lib/contentQuota';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import { invalidateSectionCounts } from '../-sectionCounts';
 
 const NOTES_QUERY = `

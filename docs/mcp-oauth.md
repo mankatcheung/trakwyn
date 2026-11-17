@@ -344,13 +344,13 @@ Recorded against the user, visible in account security activity:
 
 ### Where the code lives
 
-|                                                              |                                                                  |
-| ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| `http/routes/mcpOAuth.routes.ts`                             | All eight endpoints; Origin, rate-limit, and consent-token gates |
-| `use-cases/mcpOAuth/`                                        | Register, create code, exchange, rotate, validate, revoke        |
-| `infrastructure/auth/McpOAuthConsentService.ts`              | Signs and verifies consent tokens                                |
-| `infrastructure/db/repositories/DrizzleMcpOAuth*.ts`         | Atomic consume / mark-used / revoke-family                       |
-| `apps/web/src/routes/oauth/-components/McpAuthorizePage.tsx` | The consent screen                                               |
+|                                                         |                                                                  |
+| ------------------------------------------------------- | ---------------------------------------------------------------- |
+| `http/routes/mcpOAuth.routes.ts`                        | All eight endpoints; Origin, rate-limit, and consent-token gates |
+| `use-cases/mcpOAuth/`                                   | Register, create code, exchange, rotate, validate, revoke        |
+| `infrastructure/auth/McpOAuthConsentService.ts`         | Signs and verifies consent tokens                                |
+| `infrastructure/db/repositories/DrizzleMcpOAuth*.ts`    | Atomic consume / mark-used / revoke-family                       |
+| `apps/web/src/features/auth/pages/McpAuthorizePage.tsx` | The consent screen                                               |
 
 ## Deviations from the specs
 

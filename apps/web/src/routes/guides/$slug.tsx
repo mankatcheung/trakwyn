@@ -1,8 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { guidePath } from '#/lib/guideFeeds';
-import { getGuide } from '#/lib/guides';
+import { guidePath } from '#/features/guides/lib/guideFeeds';
+import { getGuide } from '#/features/guides/lib/guides';
 import { marketingHead } from '#/lib/seo';
-import { GuidePage } from './-components/GuidePage';
+import { GuidePage } from '../../features/guides/pages/GuidePage';
 
 export const Route = createFileRoute('/guides/$slug')({
   beforeLoad: ({ params }) => {
