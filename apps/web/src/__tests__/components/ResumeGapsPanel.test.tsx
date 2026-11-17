@@ -156,6 +156,60 @@ describe('ResumeGapsPanel', () => {
     });
   });
 
+  it('keeps Add to profile off while the line is blank', async () => {
+    mockGqlRequest.mockResolvedValue({ resumeGaps: gaps });
+
+    renderPanel();
+    const input = await screen.findByLabelText(/Engineer at Acme has no numbers yet/);
+    expect(screen.getByRole('button', { name: 'Add to profile' })).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: 'Add to profile' })).toBeDisabled();
+  });
+
+  it('saves once on a double click and clears the field after it saves', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      Promise.resolve(
+        query.includes('UpdateWorkExperience')
+          ? { updateWorkExperience: { id: 'we-1' } }
+          : { resumeGaps: gaps },
+      ),
+    );
+
+    renderPanel();
+    const input = await screen.findByLabelText(/Engineer at Acme has no numbers yet/);
+    fireEvent.change(input, { target: { value: 'Led a team of 5' } });
+    const button = screen.getByRole('button', { name: 'Add to profile' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => expect(input).toHaveValue(''));
+    const saves = mockGqlRequest.mock.calls.filter(([q]) =>
+      String(q).includes('UpdateWorkExperience'),
+    );
+    expect(saves).toHaveLength(1);
+  });
+
+  it('keeps the typed line and shows the error when the save fails', async () => {
+    mockGqlRequest.mockImplementation((query: string) =>
+      query.includes('UpdateWorkExperience')
+        ? Promise.reject(
+            Object.assign(new Error('boom'), {
+              response: { errors: [{ message: 'Could not save the role.' }] },
+            }),
+          )
+        : Promise.resolve({ resumeGaps: gaps }),
+    );
+
+    renderPanel();
+    const input = await screen.findByLabelText(/Engineer at Acme has no numbers yet/);
+    fireEvent.change(input, { target: { value: 'Led a team of 5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add to profile' }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(input).toHaveValue('Led a team of 5');
+  });
+
   it('asks for a figure before saving a result without one', async () => {
     mockGqlRequest.mockResolvedValue({ resumeGaps: gaps });
 

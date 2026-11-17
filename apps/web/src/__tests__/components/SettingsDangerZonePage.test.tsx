@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -155,6 +155,26 @@ describe('SettingsDangerZonePage (JEF-463)', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /email me a code/i })).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('••••••••')).toBeNull();
+
+    // Cancelling settles the form action; it must not show an error.
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /continue with google/i })).toBeNull(),
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(deleteButton()).toBeEnabled();
+  });
+
+  it('sends the request once on a double click', async () => {
+    const request = vi.fn(() => Promise.resolve({ requestAccountDeletion: true }));
+    serve({ request });
+    render(<SettingsDangerZonePage />, { wrapper: Wrapper });
+
+    await typeEmail();
+    await userEvent.dblClick(deleteButton());
+
+    expect(await screen.findByText(new RegExp(`Check ${EMAIL}`))).toBeInTheDocument();
+    expect(request).toHaveBeenCalledTimes(1);
   });
 
   it("shows the API's message and stays put when the request is refused", async () => {

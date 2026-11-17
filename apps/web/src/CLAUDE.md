@@ -49,6 +49,6 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 
 Forms still on `onSubmit` or plain state, and writes still on direct calls where cached data changes:
 
-1. Single-field forms, to react-hook-form: `ResumeGapsPanel`, the `StepUpWithoutPassword` code form, `InlineAiForm`, `SettingsDangerZonePage`, `DocumentEditorLinkForm`.
+1. `DocumentEditorLinkForm` stays on local `useState` (client-only edit, no request). The other single-field forms moved in JEF-620.
 2. `ContactsTab` and `InterviewsTab` (no `<form>`, form component defined in render; remove their compiler opt-outs).
 3. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).

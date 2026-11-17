@@ -1,11 +1,15 @@
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SparklesIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { Button, Input } from '@trakwyn/ui';
+import { useFormAction } from '#/lib/useFormAction';
+import { Button, Input, SubmitButton } from '@trakwyn/ui';
 import {
   CREATE_SKILL,
   UPDATE_WORK_EXPERIENCE,
@@ -121,43 +125,52 @@ function RequirementRow({ requirement, actions }: { requirement: string; actions
   );
 }
 
+const metricLineSchema = z.object({ line: z.string().trim().min(1) });
+type MetricLineForm = z.infer<typeof metricLineSchema>;
+
 function RoleRow({ role, actions }: { role: RoleWithoutMetrics; actions: Actions }) {
   const { t } = useLocale();
-  const [line, setLine] = useState('');
-  const [problem, setProblem] = useState<string | null>(null);
+  const form = useForm<MetricLineForm>({
+    resolver: zodResolver(metricLineSchema),
+    defaultValues: { line: '' },
+  });
+  const line = useWatch({ control: form.control, name: 'line' });
   const busy = actions.addMetric.isPending || actions.dismiss.isPending;
   const inputId = `resume-gap-metric-${role.workExperienceId}`;
 
-  const submit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-    const text = line.trim();
+  const { state, formProps } = useFormAction(form, async ({ line: value }, { resetFields }) => {
     // Without a figure the role would come straight back as the same question.
-    if (!/\d/.test(text)) return setProblem(t('resumeGaps.needsNumber'));
-    if (appendToDescription(role.description, text).length > ROLE_DESCRIPTION_MAX_CHARS) {
-      return setProblem(t('resumeGaps.descriptionFull'));
+    if (!/\d/.test(value)) return t('resumeGaps.needsNumber');
+    if (appendToDescription(role.description, value).length > ROLE_DESCRIPTION_MAX_CHARS) {
+      return t('resumeGaps.descriptionFull');
     }
-    setProblem(null);
-    actions.addMetric.mutate({ role, line: text });
-  };
+    try {
+      await actions.addMetric.mutateAsync({ role, line: value });
+      resetFields({ line: '' });
+    } catch {
+      // The panel renders the mutation's error once, below the list.
+    }
+    return null;
+  });
+  const problem = state.error;
 
   return (
     <li className="rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-700">
       <label htmlFor={inputId} className="text-sm text-gray-700 dark:text-gray-300">
         {t('resumeGaps.roleHasNoNumbers', { title: role.title, company: role.company })}
       </label>
-      <form onSubmit={submit} className="mt-2 flex flex-wrap gap-2">
+      <form {...formProps} className="mt-2 flex flex-wrap gap-2">
         <Input
           id={inputId}
-          value={line}
-          onChange={(event) => setLine(event.target.value)}
+          {...form.register('line')}
           placeholder={t('resumeGaps.metricPlaceholder')}
           className="min-w-0 flex-1 basis-56"
           invalid={!!problem}
           aria-describedby={problem ? `${inputId}-problem` : undefined}
         />
-        <Button type="submit" size="sm" variant="secondary" disabled={busy || !line.trim()}>
+        <SubmitButton size="sm" variant="secondary" disabled={busy || !line.trim()}>
           {t('resumeGaps.addToProfile')}
-        </Button>
+        </SubmitButton>
         <Button
           type="button"
           size="sm"

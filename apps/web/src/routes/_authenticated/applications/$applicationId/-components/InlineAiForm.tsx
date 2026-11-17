@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+import { SubmitButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import { useAiCredits } from '#/components/ai/hooks/useAiCredits';
 import { AiCreditCost } from '#/components/ai/AiCreditCost';
 import {
@@ -8,6 +12,11 @@ import {
   INLINE_AI_CUSTOM_MAX_CHARS,
   type InlineAiRequest,
 } from '#/lib/editor/aiActions';
+
+const customInstructionSchema = z.object({
+  instruction: z.string().max(INLINE_AI_CUSTOM_MAX_CHARS),
+});
+type CustomInstructionForm = z.infer<typeof customInstructionSchema>;
 
 /**
  * The actions of the inline AI menu (JEF-583): the four presets and a free-text
@@ -21,7 +30,7 @@ export function InlineAiForm({
   hint,
   autoFocusPrompt,
 }: {
-  onRun: (request: InlineAiRequest) => void;
+  onRun: (request: InlineAiRequest) => void | Promise<void>;
   /** False while there is nothing the actions can replace; `hint` says why. */
   canRun: boolean;
   hint?: string;
@@ -29,9 +38,19 @@ export function InlineAiForm({
 }) {
   const { t } = useLocale();
   const { needsSetup, onTrakwynAi, canAfford } = useAiCredits();
-  const [custom, setCustom] = useState('');
+  const form = useForm<CustomInstructionForm>({
+    resolver: zodResolver(customInstructionSchema),
+    defaultValues: { instruction: '' },
+  });
+  const custom = useWatch({ control: form.control, name: 'instruction' });
   const exhausted = onTrakwynAi && !canAfford('polishDraft');
   const disabled = !canRun || exhausted;
+
+  const { formProps } = useFormAction(form, async ({ instruction }) => {
+    if (disabled || instruction.trim() === '') return null;
+    await onRun({ kind: 'custom', text: instruction });
+    return null;
+  });
 
   if (needsSetup) {
     return (
@@ -46,11 +65,6 @@ export function InlineAiForm({
       </div>
     );
   }
-
-  const submitCustom = () => {
-    if (disabled || custom.trim() === '') return;
-    onRun({ kind: 'custom', text: custom });
-  };
 
   return (
     <div className="w-72 max-w-full space-y-2 p-2">
@@ -71,32 +85,25 @@ export function InlineAiForm({
           </button>
         ))}
       </div>
-      <form
-        className="flex gap-1"
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitCustom();
-        }}
-      >
+      <form {...formProps} className="flex gap-1">
         <input
           type="text"
-          value={custom}
+          {...form.register('instruction')}
           maxLength={INLINE_AI_CUSTOM_MAX_CHARS}
           // Asking for AI from the slash menu starts here.
           autoFocus={autoFocusPrompt}
           disabled={disabled}
-          onChange={(event) => setCustom(event.target.value)}
           aria-label={t('documents.editor.ai.askLabel')}
           placeholder={t('documents.editor.ai.askPlaceholder')}
           className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 placeholder:text-gray-500 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
         />
-        <button
-          type="submit"
+        <SubmitButton
+          size="sm"
           disabled={disabled || custom.trim() === ''}
-          className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="px-2 py-1 text-xs"
         >
           {t('documents.editor.ai.run')}
-        </button>
+        </SubmitButton>
       </form>
       {exhausted ? (
         <p role="alert" className="text-xs text-amber-700 dark:text-amber-400">
