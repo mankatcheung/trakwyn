@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { analyticsQueryOptions } from './-analytics-queries';
-import { AnalyticsPage } from './-analytics-page';
+import { analyticsQueryOptions } from '../../features/analytics/graphql/analyticsQueries';
+import { AnalyticsPage } from '../../features/analytics/pages/AnalyticsPage';
 
 export const Route = createFileRoute('/_authenticated/analytics')({
   loader: ({ context: { queryClient } }) =>

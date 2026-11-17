@@ -1,7 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
-import { checkEmailVerification, useEmailVerification } from '#/lib/emailVerification';
-import { AccountDeletionScheduledPage } from './-components/AccountDeletionScheduledPage';
+import {
+  checkEmailVerification,
+  useEmailVerification,
+} from '#/features/verification/lib/emailVerification';
+import { AccountDeletionScheduledPage } from '../features/account-deletion/pages/AccountDeletionScheduledPage';
 
 /**
  * The full page a signed-in account scheduled for deletion gets in place of

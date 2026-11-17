@@ -10,14 +10,14 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: {},
 }));
 
-vi.mock('#/lib/emailVerification', () => ({
+vi.mock('#/features/verification/lib/emailVerification', () => ({
   checkEmailVerification: mockCheckEmailVerification,
   useEmailVerification: vi.fn(),
 }));
 
 // The page is covered by VerifyEmailRequiredPage.test.tsx; the guard is what's
 // under test here.
-vi.mock('#/routes/-components/VerifyEmailRequiredPage', () => ({
+vi.mock('#/features/verification/pages/VerifyEmailRequiredPage', () => ({
   VerifyEmailRequiredPage: () => null,
 }));
 

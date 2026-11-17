@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { McpAuthorizePage } from './-components/McpAuthorizePage';
+import { McpAuthorizePage } from '../../features/auth/pages/McpAuthorizePage';
 
 const searchSchema = z.object({
   client_id: z.string(),

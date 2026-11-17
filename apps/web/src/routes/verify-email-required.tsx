@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
-import { checkEmailVerification, useEmailVerification } from '#/lib/emailVerification';
-import { VerifyEmailRequiredPage } from './-components/VerifyEmailRequiredPage';
+import {
+  checkEmailVerification,
+  useEmailVerification,
+} from '#/features/verification/lib/emailVerification';
+import { VerifyEmailRequiredPage } from '../features/verification/pages/VerifyEmailRequiredPage';
 
 /**
  * The full-page reminder for a signed-in user whose email is not verified

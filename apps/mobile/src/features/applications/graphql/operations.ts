@@ -1,4 +1,4 @@
-// Hand-written to match apps/web's apps/web/src/graphql/{queries,mutations}/applications.graphql
+// Hand-written to match apps/web's apps/web/src/features/applications/graphql/applications.{queries,mutations}.graphql
 // field-for-field. Codegen (JEF-261's stack decision) isn't wired up yet for
 // apps/mobile — see the mobile app README/ticket follow-up — so these stay
 // hand-typed in ../types.ts until then.

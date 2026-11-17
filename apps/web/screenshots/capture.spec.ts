@@ -11,7 +11,7 @@ import {
   screenshotFile,
   type ScreenshotName,
   type ScreenshotTheme,
-} from '../src/lib/screenshots';
+} from '../src/features/marketing/lib/screenshots';
 
 // Real screenshots from the seeded demo account (JEF-528). Run with
 // `pnpm --filter @trakwyn/web screenshots`; see apps/web/e2e/CLAUDE.md.

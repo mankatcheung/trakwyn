@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { FeatureTrackingPage } from './-components/FeatureTrackingPage';
+import { FeatureTrackingPage } from '../../features/marketing/pages/FeatureTrackingPage';
 
 const TITLE = 'Application Tracking & Kanban Board — Trakwyn';
 const DESCRIPTION =

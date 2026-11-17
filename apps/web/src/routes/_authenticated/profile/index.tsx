@@ -14,24 +14,39 @@ import {
 import { z } from 'zod';
 import { Button, Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import { sameOriginPath } from '#/lib/returnTo';
-import { CvImportDialog } from './-components/CvImportDialog';
+import { sameOriginPath } from '#/features/auth/lib/returnTo';
+import { CvImportDialog } from '../../../features/profile/components/cv-import/CvImportDialog';
 import {
   WORK_EXPERIENCE_SECTION_ID,
   WorkExperienceSection,
-} from './-components/WorkExperienceSection';
-import { EDUCATION_SECTION_ID, EducationSection } from './-components/EducationSection';
-import { SKILLS_SECTION_ID, SkillsSection } from './-components/SkillsSection';
+} from '../../../features/profile/components/sections/WorkExperienceSection';
+import {
+  EDUCATION_SECTION_ID,
+  EducationSection,
+} from '../../../features/profile/components/sections/EducationSection';
+import {
+  SKILLS_SECTION_ID,
+  SkillsSection,
+} from '../../../features/profile/components/sections/SkillsSection';
 import {
   CERTIFICATIONS_SECTION_ID,
   CertificationsSection,
-} from './-components/CertificationsSection';
-import { LANGUAGES_SECTION_ID, LanguagesSection } from './-components/LanguagesSection';
-import { PROJECTS_SECTION_ID, ProjectsSection } from './-components/ProjectsSection';
-import { AWARDS_SECTION_ID, AwardsSection } from './-components/AwardsSection';
-import { CompletenessMeter } from './-components/CompletenessMeter';
-import { profileCompleteness } from './-components/profileCompleteness';
-import { useProfileData } from './-components/useProfileData';
+} from '../../../features/profile/components/sections/CertificationsSection';
+import {
+  LANGUAGES_SECTION_ID,
+  LanguagesSection,
+} from '../../../features/profile/components/sections/LanguagesSection';
+import {
+  PROJECTS_SECTION_ID,
+  ProjectsSection,
+} from '../../../features/profile/components/sections/ProjectsSection';
+import {
+  AWARDS_SECTION_ID,
+  AwardsSection,
+} from '../../../features/profile/components/sections/AwardsSection';
+import { CompletenessMeter } from '../../../features/profile/components/CompletenessMeter';
+import { profileCompleteness } from '../../../features/profile/lib/profileCompleteness';
+import { useProfileData } from '../../../features/profile/hooks/useProfileData';
 
 const searchSchema = z.object({
   /**

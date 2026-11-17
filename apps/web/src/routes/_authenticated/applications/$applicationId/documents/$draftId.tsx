@@ -4,23 +4,26 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useDocumentLanguage } from '#/lib/editor/documentLanguage';
+import { useDocumentLanguage } from '#/features/documents/lib/editor/documentLanguage';
 import { getErrorMessage } from '#/lib/errors';
-import { downloadUrl } from '#/lib/downloadUrl';
-import { deriveSaveState, hasUnsavedWork } from '#/lib/editor/saveState';
+import { downloadUrl } from '#/features/documents/lib/downloadUrl';
+import { deriveSaveState, hasUnsavedWork } from '#/features/documents/lib/editor/saveState';
 import { useUnsavedChangesGuard } from '#/hooks/useUnsavedChangesGuard';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
-import { DocumentDraftEditor, type DocumentEditorHandle } from '../-components/DocumentDraftEditor';
-import { AiHelperPanel } from '../-components/AiHelperPanel';
-import { DocumentEditorChecks } from '../-components/DocumentEditorChecks';
-import { DraftHistoryPanel } from '../-components/DraftHistoryPanel';
-import { DraftTitleField } from '../-components/DraftTitleField';
-import { ImportDocumentAction } from '../-components/ImportDocumentAction';
-import type { AiRating } from '#/lib/aiFeedback';
-import { documentDraftsQueryKey } from '../-documentQueries';
-import type { RestoredDraft } from '../-draftHistoryQueries';
-import { resumeAtsScoresQueryKey } from '../-resumeAtsQueries';
-import { resumeMatchesQueryKey } from '../-resumeMatchQueries';
+import {
+  DocumentDraftEditor,
+  type DocumentEditorHandle,
+} from '../../../../../features/documents/components/editor/DocumentDraftEditor';
+import { AiHelperPanel } from '../../../../../features/documents/components/AiHelperPanel';
+import { DocumentEditorChecks } from '../../../../../features/documents/components/editor/DocumentEditorChecks';
+import { DraftHistoryPanel } from '../../../../../features/documents/components/DraftHistoryPanel';
+import { DraftTitleField } from '../../../../../features/documents/components/DraftTitleField';
+import { ImportDocumentAction } from '../../../../../features/documents/components/ImportDocumentAction';
+import type { AiRating } from '#/features/ai/lib/aiFeedback';
+import { documentDraftsQueryKey } from '../../../../../features/documents/graphql/documentQueries';
+import type { RestoredDraft } from '../../../../../features/documents/graphql/draftHistoryQueries';
+import { resumeAtsScoresQueryKey } from '../../../../../features/documents/graphql/resumeAtsQueries';
+import { resumeMatchesQueryKey } from '../../../../../features/documents/graphql/resumeMatchQueries';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon, HistoryIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
 

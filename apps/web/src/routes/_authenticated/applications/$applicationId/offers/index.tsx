@@ -6,10 +6,10 @@ import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
 import { ErrorState } from '#/components/ErrorState';
-import { QuotaHint } from '#/components/QuotaHint';
-import { UpgradePrompt } from '#/components/UpgradePrompt';
-import { useQuotaState } from '#/lib/contentQuota';
-import { OfferForm } from '../-components/OfferForm';
+import { QuotaHint } from '#/features/quota/components/QuotaHint';
+import { UpgradePrompt } from '#/features/plans/components/UpgradePrompt';
+import { useQuotaState } from '#/features/quota/lib/contentQuota';
+import { OfferForm } from '../../../../../features/offers/components/OfferForm';
 import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
 import { Alert, EmptyState } from '@trakwyn/ui';
 import {
@@ -20,7 +20,7 @@ import {
   invalidateOffers,
   type ApplicationOffer,
   type OfferInput,
-} from './-offersQueries';
+} from '../../../../../features/offers/graphql/applicationOffersQueries';
 
 export const Route = createFileRoute('/_authenticated/applications/$applicationId/offers/')({
   component: OffersPage,
