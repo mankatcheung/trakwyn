@@ -80,7 +80,7 @@ The Mac must be awake and signed in to `gh` when a task runs. Both tasks depend 
 
 - `content/src/index.ts`: schema and `parseGuide`, safe in the browser.
 - `content/src/node.ts`: Node-only `listGuides()`, used by `apps/web/vite.config.ts` and the tests.
-- `apps/web/src/lib/guides.ts`: the build-time loader (`import.meta.glob`). It fails the build on invalid frontmatter, a duplicate slug or an image with no file.
+- `apps/web/src/features/guides/lib/guides.ts`: the build-time loader (`import.meta.glob`). It fails the build on invalid frontmatter, a duplicate slug or an image with no file.
 
 ## Writing a guide script
 

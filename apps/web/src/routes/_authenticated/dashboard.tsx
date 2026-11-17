@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { DashboardPage } from './-components/DashboardPage';
-import { DashboardPending } from './-components/DashboardPending';
-import { prefetchDashboard } from './-dashboardQueries';
+import { DashboardPage } from '../../features/dashboard/pages/DashboardPage';
+import { DashboardPending } from '../../features/dashboard/components/DashboardPending';
+import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';
 
-export * from './-dashboardQueries';
+export * from '../../features/dashboard/graphql/dashboardQueries';
 
 /** How long the loader may run before the skeleton replaces the old page. */
 const DASHBOARD_PENDING_MS = 150;

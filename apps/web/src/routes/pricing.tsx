@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { PricingPage } from './-components/PricingPage';
+import { PricingPage } from '../features/marketing/pages/PricingPage';
 
 const TITLE = 'Pricing — Trakwyn';
 const DESCRIPTION =

@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { checkOnboarding } from '#/lib/onboarding';
-import { WelcomePage } from './-components/welcome/WelcomePage';
+import { checkOnboarding } from '#/features/onboarding/lib/onboarding';
+import { WelcomePage } from '../../features/onboarding/pages/WelcomePage';
 
 export const Route = createFileRoute('/_authenticated/welcome')({
   // Shown once (JEF-460): someone who has finished or skipped it, arriving by

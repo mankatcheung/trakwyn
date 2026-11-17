@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { AiMcpSetupPage } from './-components/AiMcpSetupPage';
+import { AiMcpSetupPage } from '../features/marketing/pages/AiMcpSetupPage';
 
 const TITLE = 'Connect Your Own AI Key and an MCP Client — Trakwyn';
 const DESCRIPTION =

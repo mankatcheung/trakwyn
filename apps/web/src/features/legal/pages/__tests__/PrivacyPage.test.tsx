@@ -1,0 +1,144 @@
+import { describe, expect, it } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { vi } from 'vitest';
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
+
+import { PrivacyPage } from '#/features/legal/pages/PrivacyPage';
+
+describe('PrivacyPage', () => {
+  it('renders the policy with a heading and a last-updated date', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
+    expect(screen.getByText(/^last updated:/i)).toBeInTheDocument();
+  });
+
+  it('covers what the app actually collects', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { name: 'Account information' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Security and device information' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'AI features, if you use them' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cookies' })).toBeInTheDocument();
+  });
+
+  it('links back to the homepage', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('link', { name: 'Back to Trakwyn' })).toHaveAttribute('href', '/');
+  });
+
+  it('provides a contact email', () => {
+    render(<PrivacyPage />);
+
+    const link = screen.getByRole('link', { name: 'contact@trakwyn.com' });
+    expect(link).toHaveAttribute('href', 'mailto:contact@trakwyn.com');
+  });
+
+  it('describes what the Clipper browser extension reads, stores and sends', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByRole('heading', { name: 'The Trakwyn Clipper browser extension' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/reads the job posting on the page you’re viewing/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Read with AI/)).toBeInTheDocument();
+    expect(screen.getByText(/session storage/i)).toBeInTheDocument();
+    // The opt-in persisted token is disclosed, not only the session copy.
+    expect(screen.getByText(/Keep me signed in/)).toBeInTheDocument();
+    expect(screen.getByText(/local storage/i)).toBeInTheDocument();
+    // The options page and its API address setting are gone (JEF-418).
+    expect(screen.queryByText(/API address/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/anonymous error reports/i)).toBeInTheDocument();
+  });
+
+  it('says the merchant of record processes payment data (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { name: 'Payments' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/our merchant of record, Polar, collects your payment details/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/We never see or store your card number/)).toBeInTheDocument();
+  });
+
+  it('says Polar keeps its own purchase record after the account is deleted (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByText(/Polar keeps its own record of your purchases/)).toBeInTheDocument();
+  });
+
+  it('lists the payment provider among the service providers (JEF-431)', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByText(/our payment provider \(Polar, the merchant of record\)/),
+    ).toBeInTheDocument();
+  });
+  it('names Tavily as the web search sub-processor and says only the company name and site domain are sent (JEF-538)', () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Web search in company briefings' }),
+    ).toBeInTheDocument();
+    const body = screen.getByText(/The search is run by Tavily, our sub-processor/);
+    expect(body).toHaveTextContent(/only the company name from your application/);
+    expect(body).toHaveTextContent(/nothing else about you or your application/);
+    expect(body).toHaveTextContent(/up to three days/);
+  });
+
+  it('names Cloudflare as the only AI sub-processor, with purpose, region and its terms', () => {
+    render(<PrivacyPage />);
+
+    const table = screen.getByRole('table', { name: /ai sub-processors/i });
+    expect(
+      within(table).getByRole('rowheader', { name: 'Cloudflare (Workers AI and AI Gateway)' }),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByRole('rowheader')).toHaveLength(1);
+    expect(within(table).getByRole('link', { name: 'Terms' })).toHaveAttribute(
+      'href',
+      'https://www.cloudflare.com/terms/',
+    );
+    expect(within(table).getByRole('link', { name: 'Data use' })).toHaveAttribute(
+      'href',
+      'https://developers.cloudflare.com/workers-ai/platform/data-usage/',
+    );
+    expect(within(table).queryByText(/Gemini|OpenAI/)).not.toBeInTheDocument();
+    expect(
+      within(table).getByText(/transfers outside the UK and EEA rely on/i),
+    ).toBeInTheDocument();
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Vendor', 'Purpose', 'Region', 'Vendor terms']);
+  });
+
+  it('attributes the training and retention claims to Cloudflare and names its sub-processors', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('heading', { name: 'Trakwyn AI (hosted)' })).toBeInTheDocument();
+    expect(screen.getByText(/not used by us to train/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Cloudflare states that it does not use content processed by Workers AI/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Cloudflare states that Workers AI does not keep your prompts/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/CoreWeave \(United States\) and Nebius \(England\)/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no other AI vendor receives your content/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/to detect abuse/i)).not.toBeInTheDocument();
+  });
+});

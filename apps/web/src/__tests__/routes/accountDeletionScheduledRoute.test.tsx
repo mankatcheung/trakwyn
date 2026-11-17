@@ -7,11 +7,11 @@ const { mockUseEmailVerification } = vi.hoisted(() => ({
 }));
 
 vi.mock('#/graphql/client', () => ({ hasSessionCookie: () => true, gqlClient: {} }));
-vi.mock('#/lib/emailVerification', () => ({
+vi.mock('#/features/verification/lib/emailVerification', () => ({
   checkEmailVerification: vi.fn(),
   useEmailVerification: mockUseEmailVerification,
 }));
-vi.mock('#/routes/-components/AccountDeletionScheduledPage', () => ({
+vi.mock('#/features/account-deletion/pages/AccountDeletionScheduledPage', () => ({
   AccountDeletionScheduledPage: ({ deletionScheduledAt }: { deletionScheduledAt: string }) => (
     <p>scheduled {deletionScheduledAt}</p>
   ),

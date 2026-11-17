@@ -2,7 +2,7 @@
 
 The copy and answers entered in the Chrome Web Store developer dashboard for the Trakwyn Clipper (ID `pnpgngnojencbggokjhpfhmliijakmhe`). Change it here, in a PR, then paste it into the dashboard: the store keeps no history.
 
-`src/__tests__/storeListing.test.ts` holds the limits below, that every manifest permission has a justification, and the asset sizes. The disclosures must match what the extension really does (`CLAUDE.md`) and what the privacy policy says (`apps/web/src/routes/-components/PrivacyPage.tsx`, "The Trakwyn Clipper browser extension"). Change all three together.
+`src/__tests__/storeListing.test.ts` holds the limits below, that every manifest permission has a justification, and the asset sizes. The disclosures must match what the extension really does (`CLAUDE.md`) and what the privacy policy says (`apps/web/src/features/legal/pages/PrivacyPage.tsx`, "The Trakwyn Clipper browser extension"). Change all three together.
 
 ## Store listing tab
 

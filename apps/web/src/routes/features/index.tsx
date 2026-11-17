@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { FeaturesIndexPage } from './-components/FeaturesIndexPage';
+import { FeaturesIndexPage } from '../../features/marketing/pages/FeaturesIndexPage';
 
 const TITLE = 'Features — Trakwyn';
 const DESCRIPTION =

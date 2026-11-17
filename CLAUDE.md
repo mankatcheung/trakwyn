@@ -133,7 +133,7 @@ cp apps/web/.env.example apps/web/.env
   - use-case tests with the `helpers/mocks/<domain>.ts` mocks
   - `createTestDb()` for repositories
   - resolver tests under `__tests__/interface-adapters/resolvers/`
-  - web component tests under `apps/web/src/__tests__/components/`
+  - web component tests in a `__tests__/` folder beside the component, under `apps/web/src/features/<name>/`
 
   An unchecked "tests" item means the issue isn't done.
 

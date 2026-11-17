@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
-import { FeatureResumeCoverLetterPage } from './-components/FeatureResumeCoverLetterPage';
+import { FeatureResumeCoverLetterPage } from '../../features/marketing/pages/FeatureResumeCoverLetterPage';
 
 const TITLE = 'AI Resume & Cover Letter Generator — Trakwyn';
 const DESCRIPTION =

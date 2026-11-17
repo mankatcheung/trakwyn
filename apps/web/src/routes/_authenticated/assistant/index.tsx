@@ -3,8 +3,8 @@ import { z } from 'zod';
 import {
   recentConversationsQueryOptions,
   chatHistoryQueryOptions,
-} from '#/routes/_authenticated/assistant/-shared';
-import { AssistantPage } from './-components/AssistantPage';
+} from '#/features/chat/lib/shared';
+import { AssistantPage } from '../../../features/chat/pages/AssistantPage';
 
 const searchSchema = z.object({ conversation: z.string().optional() });
 
