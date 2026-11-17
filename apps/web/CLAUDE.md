@@ -19,6 +19,33 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 - **Session detection:** `hasSessionCookie()` does a synchronous `document.cookie` read of the non-HttpOnly `trakwyn_logged_in` hint. It is used by `/`, `/login` and `/_authenticated`. These routes set **`ssr: false`**, because TanStack Start does not re-run `beforeLoad` on hydration otherwise. The cookie deploy prerequisites are in `apps/api/CLAUDE.md`.
 - **Codegen:** after changing `.graphql` files or the API schema, run `pnpm codegen` (the API must be running). **Never edit `src/graphql/generated/` by hand.**
 
+## Folder layout (JEF-627)
+
+`src/` is moving from one folder per kind of file to one folder per feature, like `apps/mobile`. The move runs in phases; until it ends, a file may still sit at its old path. `scripts/restructure-mapping.tsv` (old path, new path, relative to `src/`) names every file and where it ends up.
+
+| Kind of file                                                          | Where it goes                                                            |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| A route (`createFileRoute`, loader, `beforeLoad`)                     | `routes/`, kept thin: it renders a page                                  |
+| A route-only helper                                                   | `routes/…/-name.ts(x)` (the `-` prefix hides it from the router)         |
+| A page and what only it uses                                          | `features/<name>/pages/`, `components/`, `hooks/`, `lib/`                |
+| A GraphQL document                                                    | `features/<name>/graphql/<name>.queries.graphql` or `.mutations.graphql` |
+| Used by more than one feature                                         | the shared root: `components/`, `hooks/`, `lib/`                         |
+| A test                                                                | `__tests__/` beside the code it tests                                    |
+| A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                          |
+
+Import rules, held by `src/__tests__/config/webStructure.test.ts`:
+
+- A route imports only `features/*/pages/*`, the shared root and `graphql/`.
+- The shared root never imports `features/`. A feature may import the shared root and another feature's `lib/` or `components/`.
+- No `features/**/index.ts` barrel files. Import from the file that defines it.
+- A new file may not go in the root `components/`, `hooks/` or `lib/` unless it is shared, and a shared file needs a row (old path = new path) in the mapping. The list of files still at an old path can only shrink: lower `STILL_IN_OLD_LOCATIONS` in the test in the PR that moves them.
+
+Moving files:
+
+- **`pnpm --filter @trakwyn/web restructure`** (`scripts/move-files.ts`) runs `git mv` for the mapping rows and rewrites every specifier that names a moved file: `#/` and relative `import`/`export … from`, `import()`, `vi.mock`/`doMock`/`importActual`/`importMock`, `import.meta.glob` and `resolve(import.meta.dirname, '…')`. It also updates path mentions in the Markdown files and configs that name `src/…` paths. `--only features/profile/` limits it to rows whose new path starts with that prefix and `--dry-run` lists what would move. It is idempotent: run it again on any branch and it fixes imports that still name an old path. It never touches `apps/mobile` or `apps/extension`.
+- **`pnpm build && pnpm --filter @trakwyn/web check:chunks`** fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
+- `scripts/restructure-mapping.py` generated the mapping from the file list; it is kept so the target tree can be regenerated.
+
 ## Where the detail lives
 
 Each file loads only when you work in its directory. Read it before changing that code.
@@ -57,4 +84,4 @@ Calling a `@deprecated` API fails lint (`no-deprecated`, which makes lint type-a
 
 ## Tests
 
-`gqlClient`- and router-mocked component tests live under `src/__tests__/components/`.
+Tests live in a `__tests__/` folder beside the code they test (`features/profile/components/__tests__/ProfileSections.test.tsx`). `gqlClient`- and router-mocked component tests follow the same rule. Tests of the app as a whole stay under `src/__tests__/{config,content,guides,routes}/`: a `__tests__/` folder inside `routes/` would be read as a route segment. Until the move ends, many component tests are still in `src/__tests__/components/`.
