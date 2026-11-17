@@ -8,7 +8,7 @@ import { gqlClient } from '#/graphql/client';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Button, Input, SubmitButton } from '@trakwyn/ui';
 import {
   CREATE_SKILL,

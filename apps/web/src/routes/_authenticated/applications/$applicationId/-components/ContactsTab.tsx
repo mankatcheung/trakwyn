@@ -8,7 +8,7 @@ import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { QuotaHint } from '#/components/QuotaHint';
 import { useQuotaState } from '#/lib/contentQuota';
 import {

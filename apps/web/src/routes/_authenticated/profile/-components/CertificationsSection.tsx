@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { AwardIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, FormLabel, IconButton, Input, Skeleton } from '@trakwyn/ui';
 import {
   CREATE_CERTIFICATION,

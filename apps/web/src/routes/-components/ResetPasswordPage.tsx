@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useState } from 'react';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z

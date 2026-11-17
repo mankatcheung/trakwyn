@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
-import { useInfiniteScrollSentinel } from '#/lib/useInfiniteScrollSentinel';
+import { useInfiniteScrollSentinel } from '#/hooks/useInfiniteScrollSentinel';
 import { useLocale } from '#/lib/i18n';
 import { Button, Checkbox, Spinner } from '@trakwyn/ui';
 import { CheckCheckIcon, EyeOffIcon } from 'lucide-react';

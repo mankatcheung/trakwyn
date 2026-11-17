@@ -7,7 +7,7 @@ import { LogoMark } from '#/components/LogoMark';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
-import { useCooldown } from '#/lib/useCooldown';
+import { useCooldown } from '#/hooks/useCooldown';
 import {
   RESEND_COOLDOWN_SECONDS,
   RESEND_VERIFICATION_EMAIL,

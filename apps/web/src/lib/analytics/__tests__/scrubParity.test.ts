@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const WEB_SCRUB = resolve(import.meta.dirname, '../../../lib/analytics/scrub.ts');
+const WEB_SCRUB = resolve(import.meta.dirname, '../scrub.ts');
 const MOBILE_SCRUB = resolve(
   import.meta.dirname,
   '../../../../../mobile/src/lib/analytics/scrub.ts',

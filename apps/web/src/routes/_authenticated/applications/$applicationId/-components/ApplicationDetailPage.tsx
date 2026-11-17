@@ -6,7 +6,7 @@ import { gqlClient } from '#/graphql/client';
 import { deleteApplicationWithUndo } from '../../-deleteWithUndo';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
-import { useMediaQuery } from '#/lib/useMediaQuery';
+import { useMediaQuery } from '#/hooks/useMediaQuery';
 import { Card, Skeleton, useIsWideViewport } from '@trakwyn/ui';
 import { StatusBadge } from '../../../-components/StatusBadge';
 import { applicationQueryOptions, type Application } from '../-application-query';

@@ -14,7 +14,7 @@ import { CaptchaWidget } from '#/components/CaptchaWidget';
 import { useCaptcha } from '#/lib/useCaptcha';
 import { useLocale } from '#/lib/i18n';
 import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/analytics';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 
 const schema = z.object({

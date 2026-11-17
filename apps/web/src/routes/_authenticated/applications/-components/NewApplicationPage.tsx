@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { gqlClient } from '#/graphql/client';
-import { useFormAction } from '#/lib/useFormAction';
+import { useFormAction } from '#/hooks/useFormAction';
 import { ERROR_CODES } from '#/constants';
 import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { getErrorMessage } from '#/lib/errors';

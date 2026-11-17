@@ -9,7 +9,7 @@ import { Card, Checkbox, EmptyState, Skeleton, Spinner } from '@trakwyn/ui';
 import { StatusBadge } from '../../-components/StatusBadge';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { useBulkActions } from '../-useBulkActions';
-import { useInfiniteScrollSentinel } from '#/lib/useInfiniteScrollSentinel';
+import { useInfiniteScrollSentinel } from '#/hooks/useInfiniteScrollSentinel';
 import {
   BriefcaseIcon,
   GhostIcon,
