@@ -58,6 +58,19 @@ export type AiCredits = {
   used?: Maybe<Scalars['Int']['output']>;
 };
 
+export type AiFeedbackRating = 'DOWN' | 'UP';
+
+export type AiFeedbackReason =
+  'IGNORED_MY_REQUEST' | 'NOT_USEFUL' | 'OTHER' | 'UNSAFE_OR_INAPPROPRIATE' | 'WRONG_OR_MADE_UP';
+
+export type AiFeedbackTarget = 'CHAT_MESSAGE' | 'DOCUMENT_DRAFT';
+
+export type AiRating = {
+  __typename?: 'AiRating';
+  rating?: Maybe<AiFeedbackRating>;
+  reason?: Maybe<AiFeedbackReason>;
+};
+
 export type AnswerSource = 'ai' | 'user';
 
 export type ApiToken = {
@@ -139,6 +152,17 @@ export type AtsScore = {
   score?: Maybe<Scalars['Int']['output']>;
 };
 
+export type Award = {
+  __typename?: 'Award';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  date?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  issuer?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 /** A page at the payment provider to send the browser to (JEF-426). Use it once; it expires. */
 export type BillingRedirect = {
   __typename?: 'BillingRedirect';
@@ -177,6 +201,18 @@ export type CalendarEvent = {
 
 export type CalendarEventType = 'applied' | 'followUp' | 'interview';
 
+export type Certification = {
+  __typename?: 'Certification';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  credentialUrl?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  issuedAt?: Maybe<Scalars['String']['output']>;
+  issuer?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type ChatActionProposal = {
   __typename?: 'ChatActionProposal';
   error?: Maybe<Scalars['String']['output']>;
@@ -195,6 +231,14 @@ export type CompanyBriefing = {
   content?: Maybe<Scalars['String']['output']>;
   generatedAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  sources?: Maybe<Array<CompanySource>>;
+};
+
+export type CompanySource = {
+  __typename?: 'CompanySource';
+  publishedAt?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
 };
 
 export type ConfirmDocumentInput = {
@@ -293,12 +337,28 @@ export type CreateApplicationInput = {
   followUpAt?: InputMaybe<Scalars['String']['input']>;
   jobUrl?: InputMaybe<Scalars['String']['input']>;
   location?: InputMaybe<Scalars['String']['input']>;
+  postingText?: InputMaybe<Scalars['String']['input']>;
   role: Scalars['String']['input'];
   salaryRange?: InputMaybe<Scalars['String']['input']>;
   source?: InputMaybe<Scalars['String']['input']>;
   starred?: InputMaybe<Scalars['Boolean']['input']>;
   status?: InputMaybe<ApplicationStatus>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type CreateAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
 };
 
 export type CreateDocumentDraftInput = {
@@ -335,6 +395,11 @@ export type CreateInterviewRoundInput = {
   type?: InputMaybe<InterviewRoundType>;
 };
 
+export type CreateLanguageInput = {
+  name: Scalars['String']['input'];
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CreateMockInterviewQuestionInput = {
   answer?: InputMaybe<Scalars['String']['input']>;
   answerSource?: InputMaybe<AnswerSource>;
@@ -352,6 +417,15 @@ export type CreateOfferInput = {
   equity?: InputMaybe<Scalars['String']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
   period?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateShareLinkPayload = {
@@ -405,16 +479,29 @@ export type Document = {
 
 export type DocumentDraft = {
   __typename?: 'DocumentDraft';
+  aiGenerated?: Maybe<Scalars['Boolean']['output']>;
   aiInstructions?: Maybe<Scalars['String']['output']>;
   applicationId?: Maybe<Scalars['ID']['output']>;
   contentJson?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['ID']['output']>;
+  myRating?: Maybe<AiRating>;
   plainText?: Maybe<Scalars['String']['output']>;
   sourceDocumentId?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
   type?: Maybe<Scalars['String']['output']>;
   updatedAt?: Maybe<Scalars['String']['output']>;
+};
+
+export type DocumentDraftVersion = {
+  __typename?: 'DocumentDraftVersion';
+  characterCount?: Maybe<Scalars['Int']['output']>;
+  contentJson?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  draftId?: Maybe<Scalars['ID']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  plainText?: Maybe<Scalars['String']['output']>;
+  source?: Maybe<Scalars['String']['output']>;
 };
 
 export type DocumentVersionOutcome = {
@@ -492,6 +579,27 @@ export type HealthScoreCriterion = {
   points?: Maybe<Scalars['Int']['output']>;
 };
 
+export type ImportCvAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+export type ImportCvCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+};
+
+export type ImportCvContactInput = {
+  links?: InputMaybe<Array<Scalars['String']['input']>>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ImportCvEducationInput = {
   degree?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -501,17 +609,41 @@ export type ImportCvEducationInput = {
   startDate: Scalars['String']['input'];
 };
 
+export type ImportCvLanguageInput = {
+  name: Scalars['String']['input'];
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ImportCvProfileInput = {
+  awards?: InputMaybe<Array<ImportCvAwardInput>>;
+  certifications?: InputMaybe<Array<ImportCvCertificationInput>>;
+  contact?: InputMaybe<ImportCvContactInput>;
   educations: Array<ImportCvEducationInput>;
+  languages?: InputMaybe<Array<ImportCvLanguageInput>>;
+  projects?: InputMaybe<Array<ImportCvProjectInput>>;
   skills: Array<ImportCvSkillInput>;
   workExperiences: Array<ImportCvWorkExperienceInput>;
 };
 
 export type ImportCvProfileResult = {
   __typename?: 'ImportCvProfileResult';
+  awards?: Maybe<Scalars['Int']['output']>;
+  certifications?: Maybe<Scalars['Int']['output']>;
   educations?: Maybe<Scalars['Int']['output']>;
+  filledContact?: Maybe<Array<Scalars['String']['output']>>;
+  languages?: Maybe<Scalars['Int']['output']>;
+  projects?: Maybe<Scalars['Int']['output']>;
   skills?: Maybe<Scalars['Int']['output']>;
   workExperiences?: Maybe<Scalars['Int']['output']>;
+};
+
+export type ImportCvProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ImportCvSkillInput = {
@@ -597,6 +729,8 @@ export type JobApplication = {
   jobUrl?: Maybe<Scalars['String']['output']>;
   likelyGhosted?: Maybe<Scalars['Boolean']['output']>;
   location?: Maybe<Scalars['String']['output']>;
+  /** The full job posting text, when captured. AI features read it in preference to the description. */
+  postingText?: Maybe<Scalars['String']['output']>;
   purgeAt?: Maybe<Scalars['String']['output']>;
   role?: Maybe<Scalars['String']['output']>;
   salaryRange?: Maybe<Scalars['String']['output']>;
@@ -606,6 +740,15 @@ export type JobApplication = {
   status?: Maybe<ApplicationStatus>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
   updatedAt?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
+export type Language = {
+  __typename?: 'Language';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  proficiency?: Maybe<Scalars['String']['output']>;
   userId?: Maybe<Scalars['ID']['output']>;
 };
 
@@ -666,6 +809,7 @@ export type Message = {
   content?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
+  myRating?: Maybe<AiRating>;
   proposals?: Maybe<Array<ChatActionProposal>>;
   role?: Maybe<Scalars['String']['output']>;
 };
@@ -713,6 +857,7 @@ export type Mutation = {
   bulkUpdateApplications?: Maybe<Array<JobApplication>>;
   /** Cancels the signed-in account’s scheduled deletion. Without a session, pass the token from the mailed link instead. */
   cancelAccountDeletion?: Maybe<Scalars['Boolean']['output']>;
+  clearAiOutputRating?: Maybe<Scalars['Boolean']['output']>;
   compareOffers?: Maybe<Array<OfferComparison>>;
   /** Finish or skip the first-run welcome flow (JEF-460). Skipping passes no goals. */
   completeOnboarding?: Maybe<Scalars['Boolean']['output']>;
@@ -728,19 +873,24 @@ export type Mutation = {
   confirmTotpSetup?: Maybe<ConfirmTotpSetupResult>;
   createApiToken?: Maybe<CreateApiTokenPayload>;
   createApplication?: Maybe<JobApplication>;
+  createAward?: Maybe<Award>;
   /** Opens the payment provider's page to manage or cancel. Fails until the user has paid once. */
   createBillingPortalSession?: Maybe<BillingRedirect>;
+  createCertification?: Maybe<Certification>;
   /** Starts a purchase of Pro. Refuses an active subscriber, who would pay twice for the same time. */
   createCheckoutSession?: Maybe<BillingRedirect>;
   createContact?: Maybe<Contact>;
   createConversation?: Maybe<Conversation>;
   createDocumentDraft?: Maybe<DocumentDraft>;
+  createDocumentDraftVersion?: Maybe<DocumentDraftVersion>;
   createEducation?: Maybe<Education>;
   createInterviewQuestion?: Maybe<InterviewQuestion>;
   createInterviewRound?: Maybe<InterviewRound>;
+  createLanguage?: Maybe<Language>;
   createMockInterviewQuestion?: Maybe<MockInterviewQuestion>;
   createNote?: Maybe<Note>;
   createOffer?: Maybe<Offer>;
+  createProject?: Maybe<Project>;
   createShareLink?: Maybe<CreateShareLinkPayload>;
   createSkill?: Maybe<Skill>;
   createWorkExperience?: Maybe<WorkExperience>;
@@ -748,6 +898,8 @@ export type Mutation = {
   deleteAccount?: Maybe<Scalars['Boolean']['output']>;
   deleteApiToken?: Maybe<Scalars['Boolean']['output']>;
   deleteApplication?: Maybe<Scalars['Boolean']['output']>;
+  deleteAward?: Maybe<Scalars['Boolean']['output']>;
+  deleteCertification?: Maybe<Scalars['Boolean']['output']>;
   deleteContact?: Maybe<Scalars['Boolean']['output']>;
   deleteConversation?: Maybe<Scalars['Boolean']['output']>;
   deleteDocument?: Maybe<Scalars['Boolean']['output']>;
@@ -755,20 +907,26 @@ export type Mutation = {
   deleteEducation?: Maybe<Scalars['Boolean']['output']>;
   deleteInterviewQuestion?: Maybe<Scalars['Boolean']['output']>;
   deleteInterviewRound?: Maybe<Scalars['Boolean']['output']>;
+  deleteLanguage?: Maybe<Scalars['Boolean']['output']>;
   deleteLlmApiKey?: Maybe<Scalars['Boolean']['output']>;
   deleteMockInterviewQuestion?: Maybe<Scalars['Boolean']['output']>;
   deleteNote?: Maybe<Scalars['Boolean']['output']>;
   deleteOffer?: Maybe<Scalars['Boolean']['output']>;
+  deleteProject?: Maybe<Scalars['Boolean']['output']>;
   deleteShareLink?: Maybe<Scalars['Boolean']['output']>;
   deleteSkill?: Maybe<Scalars['Boolean']['output']>;
   deleteWorkExperience?: Maybe<Scalars['Boolean']['output']>;
   disableTotp?: Maybe<Scalars['Boolean']['output']>;
   dismissChatAction?: Maybe<ChatActionProposal>;
   dismissOnboardingChecklist?: Maybe<Scalars['Boolean']['output']>;
+  /** Answer "no" to one resume gap question for an application, so it is not asked again. Returns the questions that are left. */
+  dismissResumeGap?: Maybe<ResumeGaps>;
   emptyTrash?: Maybe<EmptyTrashResult>;
   exchangeMobileOAuthCode?: Maybe<MobileAuthPayload>;
   exportDocumentDraftToPdf?: Maybe<Document>;
   extractDocumentText?: Maybe<ExtractDocumentTextPayload>;
+  /** Read what an application’s posting asks for, with AI, and save it. Returns the saved list without a call when the posting has not changed. */
+  extractPostingRequirements?: Maybe<PostingRequirements>;
   generateCompanyBriefing?: Maybe<CompanyBriefing>;
   generateCoverLetter?: Maybe<DocumentDraft>;
   /** Generates content for an existing draft from the application and the profile. Saves nothing and creates no draft. */
@@ -791,6 +949,7 @@ export type Mutation = {
   permanentlyDeleteApplication?: Maybe<Scalars['Boolean']['output']>;
   /** Rewords the text the editor holds (which may be unsaved) and returns it as markdown. Saves nothing. */
   polishDocumentDraft: PolishDocumentDraftResult;
+  rateAiOutput?: Maybe<AiRating>;
   reauthenticate?: Maybe<LoginResult>;
   reauthenticateMobile?: Maybe<MobileLoginResult>;
   recordCookieConsent?: Maybe<Scalars['Boolean']['output']>;
@@ -820,6 +979,7 @@ export type Mutation = {
   resendVerificationEmail?: Maybe<Scalars['Boolean']['output']>;
   resetPassword?: Maybe<Scalars['Boolean']['output']>;
   restoreApplication?: Maybe<Scalars['Boolean']['output']>;
+  restoreDocumentDraftVersion?: Maybe<DocumentDraft>;
   revokeMcpOAuthGrant?: Maybe<Scalars['Boolean']['output']>;
   revokeOtherSessions?: Maybe<Scalars['Boolean']['output']>;
   revokeSession?: Maybe<Scalars['Boolean']['output']>;
@@ -840,17 +1000,21 @@ export type Mutation = {
   unlinkOAuthAccount?: Maybe<Scalars['Boolean']['output']>;
   unregisterPushSubscription?: Maybe<Scalars['Boolean']['output']>;
   updateApplication?: Maybe<JobApplication>;
+  updateAward?: Maybe<Award>;
+  updateCertification?: Maybe<Certification>;
   updateContact?: Maybe<Contact>;
   updateDocumentDraftContent?: Maybe<DocumentDraft>;
   updateEducation?: Maybe<Education>;
   updateInterviewQuestion?: Maybe<InterviewQuestion>;
   updateInterviewRound?: Maybe<InterviewRound>;
+  updateLanguage?: Maybe<Language>;
   updateMockInterviewQuestion?: Maybe<MockInterviewQuestion>;
   updateNote?: Maybe<Note>;
   updateNotificationPreferences?: Maybe<Scalars['Boolean']['output']>;
   updateOffer?: Maybe<Offer>;
   updatePassword?: Maybe<Scalars['Boolean']['output']>;
   updateProfile?: Maybe<Scalars['Boolean']['output']>;
+  updateProject?: Maybe<Project>;
   updateSkill?: Maybe<Skill>;
   updateWorkExperience?: Maybe<WorkExperience>;
   verifyEmail?: Maybe<Scalars['Boolean']['output']>;
@@ -885,6 +1049,11 @@ export type MutationBulkUpdateApplicationsArgs = {
 
 export type MutationCancelAccountDeletionArgs = {
   token?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type MutationClearAiOutputRatingArgs = {
+  targetId: Scalars['ID']['input'];
+  targetKind: AiFeedbackTarget;
 };
 
 export type MutationCompareOffersArgs = {
@@ -945,6 +1114,14 @@ export type MutationCreateApplicationArgs = {
   input: CreateApplicationInput;
 };
 
+export type MutationCreateAwardArgs = {
+  input: CreateAwardInput;
+};
+
+export type MutationCreateCertificationArgs = {
+  input: CreateCertificationInput;
+};
+
 export type MutationCreateCheckoutSessionArgs = {
   plan: CheckoutPlan;
 };
@@ -968,6 +1145,10 @@ export type MutationCreateDocumentDraftArgs = {
   input: CreateDocumentDraftInput;
 };
 
+export type MutationCreateDocumentDraftVersionArgs = {
+  draftId: Scalars['ID']['input'];
+};
+
 export type MutationCreateEducationArgs = {
   input: CreateEducationInput;
 };
@@ -978,6 +1159,10 @@ export type MutationCreateInterviewQuestionArgs = {
 
 export type MutationCreateInterviewRoundArgs = {
   input: CreateInterviewRoundInput;
+};
+
+export type MutationCreateLanguageArgs = {
+  input: CreateLanguageInput;
 };
 
 export type MutationCreateMockInterviewQuestionArgs = {
@@ -991,6 +1176,10 @@ export type MutationCreateNoteArgs = {
 
 export type MutationCreateOfferArgs = {
   input: CreateOfferInput;
+};
+
+export type MutationCreateProjectArgs = {
+  input: CreateProjectInput;
 };
 
 export type MutationCreateShareLinkArgs = {
@@ -1014,6 +1203,14 @@ export type MutationDeleteApiTokenArgs = {
 };
 
 export type MutationDeleteApplicationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type MutationDeleteAwardArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type MutationDeleteCertificationArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -1045,6 +1242,10 @@ export type MutationDeleteInterviewRoundArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationDeleteLanguageArgs = {
+  id: Scalars['ID']['input'];
+};
+
 export type MutationDeleteLlmApiKeyArgs = {
   provider: Scalars['String']['input'];
 };
@@ -1059,6 +1260,10 @@ export type MutationDeleteNoteArgs = {
 
 export type MutationDeleteOfferArgs = {
   id: Scalars['String']['input'];
+};
+
+export type MutationDeleteProjectArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type MutationDeleteShareLinkArgs = {
@@ -1081,6 +1286,11 @@ export type MutationDismissChatActionArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationDismissResumeGapArgs = {
+  applicationId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+};
+
 export type MutationExchangeMobileOAuthCodeArgs = {
   code: Scalars['String']['input'];
   codeVerifier: Scalars['String']['input'];
@@ -1092,6 +1302,10 @@ export type MutationExportDocumentDraftToPdfArgs = {
 
 export type MutationExtractDocumentTextArgs = {
   documentId: Scalars['ID']['input'];
+};
+
+export type MutationExtractPostingRequirementsArgs = {
+  applicationId: Scalars['ID']['input'];
 };
 
 export type MutationGenerateCompanyBriefingArgs = {
@@ -1192,6 +1406,13 @@ export type MutationPolishDocumentDraftArgs = {
   draftId: Scalars['ID']['input'];
   instructions?: InputMaybe<Scalars['String']['input']>;
   plainText: Scalars['String']['input'];
+};
+
+export type MutationRateAiOutputArgs = {
+  rating: AiFeedbackRating;
+  reason?: InputMaybe<AiFeedbackReason>;
+  targetId: Scalars['ID']['input'];
+  targetKind: AiFeedbackTarget;
 };
 
 export type MutationReauthenticateArgs = {
@@ -1297,6 +1518,10 @@ export type MutationRestoreApplicationArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type MutationRestoreDocumentDraftVersionArgs = {
+  versionId: Scalars['ID']['input'];
+};
+
 export type MutationRevokeMcpOAuthGrantArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1353,6 +1578,16 @@ export type MutationUpdateApplicationArgs = {
   input: UpdateApplicationInput;
 };
 
+export type MutationUpdateAwardArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAwardInput;
+};
+
+export type MutationUpdateCertificationArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateCertificationInput;
+};
+
 export type MutationUpdateContactArgs = {
   email?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
@@ -1380,6 +1615,11 @@ export type MutationUpdateInterviewQuestionArgs = {
 export type MutationUpdateInterviewRoundArgs = {
   id: Scalars['ID']['input'];
   input: UpdateInterviewRoundInput;
+};
+
+export type MutationUpdateLanguageArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateLanguageInput;
 };
 
 export type MutationUpdateMockInterviewQuestionArgs = {
@@ -1412,10 +1652,18 @@ export type MutationUpdatePasswordArgs = {
 export type MutationUpdateProfileArgs = {
   customAiPrompt?: InputMaybe<Scalars['String']['input']>;
   llmFallbackWhenLimited?: InputMaybe<Scalars['Boolean']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  profileLinks?: InputMaybe<Array<Scalars['String']['input']>>;
   targetRole?: InputMaybe<Scalars['String']['input']>;
   timezone?: InputMaybe<Scalars['String']['input']>;
   useCrossApplicationContext?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type MutationUpdateProjectArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateProjectInput;
 };
 
 export type MutationUpdateSkillArgs = {
@@ -1534,6 +1782,8 @@ export type ParsedJobDescription = {
   company?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   location?: Maybe<Scalars['String']['output']>;
+  /** The posting as written, for the application's postingText field. */
+  postingText?: Maybe<Scalars['String']['output']>;
   role?: Maybe<Scalars['String']['output']>;
   salary?: Maybe<Scalars['String']['output']>;
 };
@@ -1588,6 +1838,32 @@ export type PolishDocumentDraftResult = {
   markdown: Scalars['String']['output'];
 };
 
+/** What an application’s job posting asks for, read from its text by AI. */
+export type PostingRequirements = {
+  __typename?: 'PostingRequirements';
+  applicationId?: Maybe<Scalars['ID']['output']>;
+  generatedAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  isStale?: Maybe<Scalars['Boolean']['output']>;
+  keywords?: Maybe<Array<Scalars['String']['output']>>;
+  mustHave?: Maybe<Array<Scalars['String']['output']>>;
+  niceToHave?: Maybe<Array<Scalars['String']['output']>>;
+  seniority?: Maybe<Scalars['String']['output']>;
+};
+
+export type Project = {
+  __typename?: 'Project';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  endDate?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  role?: Maybe<Scalars['String']['output']>;
+  startDate?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   activityLogs?: Maybe<Array<ActivityLog>>;
@@ -1597,9 +1873,11 @@ export type Query = {
   applicationHealthScore?: Maybe<ApplicationHealthScore>;
   applications?: Maybe<Array<JobApplication>>;
   applicationsPage?: Maybe<ApplicationConnection>;
+  awards?: Maybe<Array<Award>>;
   /** Where the signed-in user stands against their plan's limits. */
   billingStatus?: Maybe<BillingStatus>;
   calendarEvents?: Maybe<Array<CalendarEvent>>;
+  certifications?: Maybe<Array<Certification>>;
   chatHistory?: Maybe<Array<Message>>;
   companyBriefing?: Maybe<CompanyBriefing>;
   contacts?: Maybe<Array<Contact>>;
@@ -1607,6 +1885,8 @@ export type Query = {
   contentQuota?: Maybe<ContentQuota>;
   conversations?: Maybe<Array<Conversation>>;
   documentDraft?: Maybe<DocumentDraft>;
+  documentDraftVersion?: Maybe<DocumentDraftVersion>;
+  documentDraftVersions?: Maybe<Array<DocumentDraftVersion>>;
   documentDrafts?: Maybe<Array<DocumentDraft>>;
   documentVersionOutcomes?: Maybe<Array<DocumentVersionOutcome>>;
   documents?: Maybe<Array<Document>>;
@@ -1615,6 +1895,7 @@ export type Query = {
   interviewQuestions?: Maybe<Array<InterviewQuestion>>;
   interviewRoundAnalytics?: Maybe<InterviewRoundAnalytics>;
   interviewRounds?: Maybe<Array<InterviewRound>>;
+  languages?: Maybe<Array<Language>>;
   linkedOAuthAccounts?: Maybe<Array<LinkedOAuthAccount>>;
   llmApiKeys?: Maybe<Array<LlmApiKey>>;
   llmUsageSummary?: Maybe<Array<LlmUsageSummary>>;
@@ -1628,8 +1909,13 @@ export type Query = {
   notificationsPage?: Maybe<NotificationConnection>;
   offerAnalytics?: Maybe<OfferAnalytics>;
   offers?: Maybe<Array<Offer>>;
+  /** The saved requirements for an application’s posting, or null when it has not been read. Never calls AI. */
+  postingRequirements?: Maybe<PostingRequirements>;
+  projects?: Maybe<Array<Project>>;
   responseTimeAnalytics?: Maybe<ResponseTimeAnalytics>;
   resumeAtsScores?: Maybe<Array<AtsScore>>;
+  /** What would strengthen a resume for this application. Never calls AI. */
+  resumeGaps?: Maybe<ResumeGaps>;
   resumeMatches?: Maybe<Array<ResumeMatch>>;
   searchConversations?: Maybe<Array<Conversation>>;
   securityActivity?: Maybe<Array<SecurityActivityItem>>;
@@ -1689,6 +1975,14 @@ export type QueryDocumentDraftArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type QueryDocumentDraftVersionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type QueryDocumentDraftVersionsArgs = {
+  draftId: Scalars['ID']['input'];
+};
+
 export type QueryDocumentDraftsArgs = {
   applicationId: Scalars['ID']['input'];
 };
@@ -1722,7 +2016,15 @@ export type QueryOffersArgs = {
   applicationId: Scalars['ID']['input'];
 };
 
+export type QueryPostingRequirementsArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
 export type QueryResumeAtsScoresArgs = {
+  applicationId: Scalars['ID']['input'];
+};
+
+export type QueryResumeGapsArgs = {
   applicationId: Scalars['ID']['input'];
 };
 
@@ -1751,6 +2053,15 @@ export type ResponseTimeAnalytics = {
   timeToFirstResponse?: Maybe<TimeToResponseStat>;
 };
 
+/** Questions that would strengthen a resume for an application: what the posting asks for that the profile does not show, and roles with no numbers. */
+export type ResumeGaps = {
+  __typename?: 'ResumeGaps';
+  requirementGaps?: Maybe<Array<Scalars['String']['output']>>;
+  /** False when the posting’s requirements have not been read yet. */
+  requirementsRead?: Maybe<Scalars['Boolean']['output']>;
+  rolesWithoutMetrics?: Maybe<Array<RoleWithoutMetrics>>;
+};
+
 export type ResumeMatch = {
   __typename?: 'ResumeMatch';
   applicationId?: Maybe<Scalars['ID']['output']>;
@@ -1764,6 +2075,15 @@ export type ResumeMatch = {
   missingKeywords?: Maybe<Array<Scalars['String']['output']>>;
   score?: Maybe<Scalars['Int']['output']>;
   summary?: Maybe<Scalars['String']['output']>;
+};
+
+/** A work experience whose description holds no number. */
+export type RoleWithoutMetrics = {
+  __typename?: 'RoleWithoutMetrics';
+  company?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  workExperienceId?: Maybe<Scalars['ID']['output']>;
 };
 
 export type RoundsToTerminalStat = {
@@ -1864,6 +2184,7 @@ export type UpdateApplicationInput = {
   followUpAt?: InputMaybe<Scalars['String']['input']>;
   jobUrl?: InputMaybe<Scalars['String']['input']>;
   location?: InputMaybe<Scalars['String']['input']>;
+  postingText?: InputMaybe<Scalars['String']['input']>;
   role?: InputMaybe<Scalars['String']['input']>;
   salaryRange?: InputMaybe<Scalars['String']['input']>;
   source?: InputMaybe<Scalars['String']['input']>;
@@ -1872,11 +2193,27 @@ export type UpdateApplicationInput = {
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+export type UpdateAwardInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateCertificationInput = {
+  credentialUrl?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  issuedAt?: InputMaybe<Scalars['String']['input']>;
+  issuer?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateDocumentDraftContentInput = {
   aiInstructions?: InputMaybe<Scalars['String']['input']>;
   contentJson: Scalars['String']['input'];
   draftId: Scalars['ID']['input'];
   plainText: Scalars['String']['input'];
+  replacedByAi?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateEducationInput = {
@@ -1902,6 +2239,11 @@ export type UpdateInterviewRoundInput = {
   type?: InputMaybe<InterviewRoundType>;
 };
 
+export type UpdateLanguageInput = {
+  name?: InputMaybe<Scalars['String']['input']>;
+  proficiency?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateMockInterviewQuestionInput = {
   answer?: InputMaybe<Scalars['String']['input']>;
   answerSource?: InputMaybe<AnswerSource>;
@@ -1918,6 +2260,15 @@ export type UpdateOfferInput = {
   notes?: InputMaybe<Scalars['String']['input']>;
   offerId: Scalars['ID']['input'];
   period?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProjectInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateSkillInput = {
@@ -1964,10 +2315,13 @@ export type User = {
   id?: Maybe<Scalars['ID']['output']>;
   /** @deprecated Use aiProviderOrder (JEF-503). Kept for apps already in the stores. */
   llmFallbackWhenLimited?: Maybe<Scalars['Boolean']['output']>;
+  location?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   onboardingChecklistDismissedAt?: Maybe<Scalars['String']['output']>;
   onboardingCompletedAt?: Maybe<Scalars['String']['output']>;
   onboardingGoals?: Maybe<Array<OnboardingGoal>>;
+  phone?: Maybe<Scalars['String']['output']>;
+  profileLinks?: Maybe<Array<Scalars['String']['output']>>;
   /** How this user confirms it is them before a sensitive change, in the order to offer them (JEF-463). */
   stepUpMethods?: Maybe<Array<StepUpMethod>>;
   storageLimitBytes?: Maybe<Scalars['Float']['output']>;
@@ -2891,6 +3245,78 @@ export type NotesQuery = {
     createdAt?: string | null;
     updatedAt?: string | null;
   }> | null;
+};
+
+export type DashboardApplicationsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type DashboardApplicationsQuery = {
+  __typename?: 'Query';
+  applications?: Array<{
+    __typename?: 'JobApplication';
+    id?: string | null;
+    company?: string | null;
+    role?: string | null;
+    status?: ApplicationStatus | null;
+    starred?: boolean | null;
+    followUpAt?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type DashboardCalendarEventsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type DashboardCalendarEventsQuery = {
+  __typename?: 'Query';
+  calendarEvents?: Array<{
+    __typename?: 'CalendarEvent';
+    id?: string | null;
+    applicationId?: string | null;
+    company?: string | null;
+    role?: string | null;
+    type?: CalendarEventType | null;
+    date?: string | null;
+    interviewRoundType?: InterviewRoundType | null;
+  }> | null;
+};
+
+export type WeeklyApplicationGoalQueryVariables = Exact<{ [key: string]: never }>;
+
+export type WeeklyApplicationGoalQuery = {
+  __typename?: 'Query';
+  weeklyApplicationGoal?: {
+    __typename?: 'WeeklyApplicationGoal';
+    weeklyApplicationGoal?: number | null;
+    currentWeekCount?: number | null;
+    currentWeekStart?: string | null;
+    streakWeeks?: number | null;
+  } | null;
+};
+
+export type OnboardingChecklistQueryVariables = Exact<{ [key: string]: never }>;
+
+export type OnboardingChecklistQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    onboardingChecklistDismissedAt?: string | null;
+    onboardingGoals?: Array<OnboardingGoal> | null;
+    aiCredits?: {
+      __typename?: 'AiCredits';
+      used?: number | null;
+      limit?: number | null;
+      bonusRemaining?: number | null;
+    } | null;
+  } | null;
+  apiTokens?: Array<{ __typename?: 'ApiToken'; id?: string | null }> | null;
+  llmApiKeys?: Array<{ __typename?: 'LlmApiKey'; provider?: string | null }> | null;
+  workExperiences?: Array<{ __typename?: 'WorkExperience'; id?: string | null }> | null;
+};
+
+export type DismissOnboardingChecklistMutationVariables = Exact<{ [key: string]: never }>;
+
+export type DismissOnboardingChecklistMutation = {
+  __typename?: 'Mutation';
+  dismissOnboardingChecklist?: boolean | null;
 };
 
 export const CreateApplicationDocument = {
@@ -5748,3 +6174,174 @@ export const NotesDocument = {
     },
   ],
 } as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
+export const DashboardApplicationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DashboardApplications' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'applications' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DashboardApplicationsQuery, DashboardApplicationsQueryVariables>;
+export const DashboardCalendarEventsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DashboardCalendarEvents' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'calendarEvents' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'date' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundType' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DashboardCalendarEventsQuery, DashboardCalendarEventsQueryVariables>;
+export const WeeklyApplicationGoalDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'WeeklyApplicationGoal' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'weeklyApplicationGoal' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'weeklyApplicationGoal' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'currentWeekCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'currentWeekStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'streakWeeks' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<WeeklyApplicationGoalQuery, WeeklyApplicationGoalQueryVariables>;
+export const OnboardingChecklistDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'OnboardingChecklist' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingChecklistDismissedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingGoals' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'aiCredits' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'used' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'bonusRemaining' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'apiTokens' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'llmApiKeys' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'provider' } }],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'workExperiences' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OnboardingChecklistQuery, OnboardingChecklistQueryVariables>;
+export const DismissOnboardingChecklistDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DismissOnboardingChecklist' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'dismissOnboardingChecklist' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DismissOnboardingChecklistMutation,
+  DismissOnboardingChecklistMutationVariables
+>;

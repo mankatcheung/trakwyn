@@ -33,6 +33,11 @@ type Documents = {
   'query InterviewRounds($applicationId: ID!) {\n  interviewRounds(applicationId: $applicationId) {\n    id\n    applicationId\n    type\n    scheduledAt\n    completedAt\n    interviewerName\n    notes\n    outcome\n    questionCount\n    mockQuestionCount\n    createdAt\n    updatedAt\n  }\n}': typeof types.InterviewRoundsDocument;
   'query MockInterviewQuestions($interviewRoundId: ID!) {\n  mockInterviewQuestions(interviewRoundId: $interviewRoundId) {\n    id\n    interviewRoundId\n    question\n    answer\n    answerSource\n    position\n    createdAt\n    updatedAt\n  }\n}': typeof types.MockInterviewQuestionsDocument;
   'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}': typeof types.NotesDocument;
+  '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n': typeof types.DashboardApplicationsDocument;
+  '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.DashboardCalendarEventsDocument;
+  '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
+  '\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n': typeof types.OnboardingChecklistDocument;
+  '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n': typeof types.DismissOnboardingChecklistDocument;
 };
 const documents: Documents = {
   'mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}':
@@ -73,6 +78,16 @@ const documents: Documents = {
     types.MockInterviewQuestionsDocument,
   'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}':
     types.NotesDocument,
+  '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n':
+    types.DashboardApplicationsDocument,
+  '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
+    types.DashboardCalendarEventsDocument,
+  '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n':
+    types.WeeklyApplicationGoalDocument,
+  '\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n':
+    types.OnboardingChecklistDocument,
+  '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n':
+    types.DismissOnboardingChecklistDocument,
 };
 
 /**
@@ -203,6 +218,36 @@ export function graphql(
 export function graphql(
   source: 'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}',
 ): (typeof documents)['query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n',
+): (typeof documents)['\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n',
+): (typeof documents)['\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n',
+): (typeof documents)['\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
