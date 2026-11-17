@@ -189,14 +189,40 @@ describe('InterviewQuestionsPanel', () => {
       });
     });
 
-    it('will not save until there is a question', async () => {
+    it('will not save until there is a question, and says so', async () => {
+      await openPanel();
+      mockGqlRequest.mockClear();
+
+      fireEvent.click(screen.getByRole('button', { name: /add question/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(await screen.findByText('Enter a question')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Question'), { target: { value: '   ' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(await screen.findByText('Enter a question')).toBeInTheDocument();
+      expect(mockGqlRequest).not.toHaveBeenCalled();
+    });
+
+    it('keeps what was typed when the save fails', async () => {
+      mockApi(THREE_QUESTIONS, (query) =>
+        query.includes('CreateInterviewQuestion')
+          ? Promise.reject({
+              response: {
+                errors: [{ message: 'Try again later', extensions: { code: 'VALIDATION' } }],
+              },
+            })
+          : undefined,
+      );
       await openPanel();
 
       fireEvent.click(screen.getByRole('button', { name: /add question/i }));
-      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+      fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Why us?' } });
+      fireEvent.change(screen.getByLabelText(/Your response/), { target: { value: 'Because.' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-      fireEvent.change(screen.getByLabelText('Question'), { target: { value: '   ' } });
-      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+      expect(await screen.findByRole('alert')).toHaveTextContent('Try again later');
+      expect(screen.getByLabelText('Question')).toHaveValue('Why us?');
+      expect(screen.getByLabelText(/Your response/)).toHaveValue('Because.');
     });
 
     it('closes the form on cancel without sending anything', async () => {

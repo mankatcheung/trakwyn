@@ -1,4 +1,4 @@
-import { useId, useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownIcon,
@@ -10,12 +10,14 @@ import {
   PlusIcon,
   Trash2Icon,
 } from 'lucide-react';
-import { Button, FormLabel, IconButton, Input, Skeleton, Textarea } from '@trakwyn/ui';
+import { Button, IconButton, Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { showUndoToast } from '#/lib/undoToast';
 import { INTERVIEW_QUESTION_LIMITS } from './interviewQuestionLimits';
+import { QuestionEntryForm } from './QuestionEntryForm';
+import type { QuestionFormValues } from './questionFormSchema';
 
 const QUESTION_FIELDS = 'id interviewRoundId question answer position createdAt updatedAt';
 
@@ -52,84 +54,10 @@ type InterviewQuestion = {
 };
 
 type QuestionsData = { interviewQuestions: InterviewQuestion[] };
-type QuestionFormState = { question: string; answer: string };
-
-const EMPTY_FORM: QuestionFormState = { question: '', answer: '' };
+const EMPTY_FORM: QuestionFormValues = { question: '', answer: '' };
 
 /** 44px square on a phone; the icon button's own compact size from `sm` up. */
 const ENTRY_ACTION_CLASS = 'h-11 w-11 sm:h-auto sm:w-auto';
-
-function QuestionForm({
-  initial,
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
-}: {
-  initial: QuestionFormState;
-  submitting: boolean;
-  error: string | null;
-  onSubmit: (form: QuestionFormState) => void;
-  onCancel: () => void;
-}) {
-  const { t } = useLocale();
-  const [form, setForm] = useState(initial);
-  const questionId = `question-${useId()}`;
-  const answerId = `answer-${useId()}`;
-
-  const submit = (e: SubmitEvent) => {
-    e.preventDefault();
-    onSubmit(form);
-  };
-
-  return (
-    <form
-      onSubmit={submit}
-      className="space-y-3 rounded-lg border-2 border-blue-600 bg-blue-50/40 p-3 dark:bg-blue-900/10"
-    >
-      <div>
-        <FormLabel size="xs" htmlFor={questionId}>
-          {t('interviews.questionLabel')}
-        </FormLabel>
-        <Input
-          id={questionId}
-          value={form.question}
-          maxLength={INTERVIEW_QUESTION_LIMITS.QUESTION_MAX_CHARS}
-          onChange={(e) => setForm({ ...form, question: e.target.value })}
-          placeholder={t('interviews.questionPlaceholder')}
-          autoFocus
-        />
-      </div>
-      <div>
-        <FormLabel size="xs" htmlFor={answerId}>
-          {t('interviews.responseLabel')}{' '}
-          <span className="font-normal text-gray-500">{t('interviews.responseOptional')}</span>
-        </FormLabel>
-        <Textarea
-          id={answerId}
-          value={form.answer}
-          maxLength={INTERVIEW_QUESTION_LIMITS.ANSWER_MAX_CHARS}
-          onChange={(e) => setForm({ ...form, answer: e.target.value })}
-          className="h-24"
-          placeholder={t('interviews.responsePlaceholder')}
-        />
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button type="submit" size="sm" disabled={submitting || !form.question.trim()}>
-          {submitting ? t('applicationForm.saving') : t('common.save')}
-        </Button>
-      </div>
-    </form>
-  );
-}
 
 /**
  * The questions asked in one interview round and how the user answered them.
@@ -178,7 +106,7 @@ export function InterviewQuestionsPanel({
   };
 
   const create = useMutation({
-    mutationFn: (f: QuestionFormState) =>
+    mutationFn: (f: QuestionFormValues) =>
       gqlClient.request(CREATE_QUESTION, {
         input: {
           interviewRoundId: roundId,
@@ -191,7 +119,7 @@ export function InterviewQuestionsPanel({
   });
 
   const update = useMutation({
-    mutationFn: ({ id, f }: { id: string; f: QuestionFormState }) =>
+    mutationFn: ({ id, f }: { id: string; f: QuestionFormValues }) =>
       gqlClient.request(UPDATE_QUESTION, {
         id,
         input: { question: f.question, answer: f.answer.trim() ? f.answer : null },
@@ -199,6 +127,26 @@ export function InterviewQuestionsPanel({
     onSuccess: () => setEditingId(null),
     onSettled: refresh,
   });
+
+  // The form shows a failed save itself, so the action returns the message
+  // instead of throwing it.
+  const saveNew = async (f: QuestionFormValues) => {
+    try {
+      await create.mutateAsync(f);
+      return null;
+    } catch (err) {
+      return getErrorMessage(err);
+    }
+  };
+
+  const saveEdit = async (id: string, f: QuestionFormValues) => {
+    try {
+      await update.mutateAsync({ id, f });
+      return null;
+    } catch (err) {
+      return getErrorMessage(err);
+    }
+  };
 
   const reorder = useMutation({
     mutationFn: (orderedIds: string[]) =>
@@ -241,13 +189,9 @@ export function InterviewQuestionsPanel({
     });
   };
 
-  const stopEditing = () => {
-    update.reset();
-    setEditingId(null);
-  };
+  const stopEditing = () => setEditingId(null);
 
   const startEditing = (id: string) => {
-    update.reset();
     setAdding(false);
     setEditingId(id);
   };
@@ -304,12 +248,14 @@ export function InterviewQuestionsPanel({
 
           {questions.map((q, index) =>
             editingId === q.id ? (
-              <QuestionForm
+              <QuestionEntryForm
                 key={q.id}
+                idPrefix="interview"
                 initial={{ question: q.question, answer: q.answer ?? '' }}
-                submitting={update.isPending}
-                error={update.isError ? getErrorMessage(update.error) : null}
-                onSubmit={(f) => update.mutate({ id: q.id, f })}
+                questionPlaceholder={t('interviews.questionPlaceholder')}
+                answerLabel={t('interviews.responseLabel')}
+                answerPlaceholder={t('interviews.responsePlaceholder')}
+                onSubmit={(f) => saveEdit(q.id, f)}
                 onCancel={stopEditing}
               />
             ) : (
@@ -378,11 +324,13 @@ export function InterviewQuestionsPanel({
           )}
 
           {adding ? (
-            <QuestionForm
+            <QuestionEntryForm
+              idPrefix="interview"
               initial={EMPTY_FORM}
-              submitting={create.isPending}
-              error={create.isError ? getErrorMessage(create.error) : null}
-              onSubmit={(f) => create.mutate(f)}
+              questionPlaceholder={t('interviews.questionPlaceholder')}
+              answerLabel={t('interviews.responseLabel')}
+              answerPlaceholder={t('interviews.responsePlaceholder')}
+              onSubmit={saveNew}
               onCancel={() => setAdding(false)}
             />
           ) : atLimit ? (
@@ -397,7 +345,6 @@ export function InterviewQuestionsPanel({
               size="sm"
               className="w-full"
               onClick={() => {
-                create.reset();
                 setEditingId(null);
                 setAdding(true);
               }}

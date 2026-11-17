@@ -1,4 +1,4 @@
-import { useId, useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownIcon,
@@ -10,7 +10,7 @@ import {
   SparklesIcon,
   Trash2Icon,
 } from 'lucide-react';
-import { Button, FormLabel, IconButton, Input, Skeleton, Textarea } from '@trakwyn/ui';
+import { Button, IconButton, Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
@@ -20,7 +20,9 @@ import { MockAnswerDraft } from './MockAnswerDraft';
 import { MockQuestionGenerator } from './MockQuestionGenerator';
 import { MockTalkingPoints } from './MockTalkingPoints';
 import { readRememberedUseProfile } from './mockBackgroundChoice';
-import { INTERVIEW_QUESTION_LIMITS, MOCK_QUESTION_LIMITS } from './interviewQuestionLimits';
+import { MOCK_QUESTION_LIMITS } from './interviewQuestionLimits';
+import { QuestionEntryForm } from './QuestionEntryForm';
+import type { QuestionFormValues } from './questionFormSchema';
 import {
   CREATE_MOCK_QUESTION,
   DELETE_MOCK_QUESTION,
@@ -33,83 +35,10 @@ import {
   type MockQuestionsData,
 } from './mockQuestionApi';
 
-type FormState = { question: string; answer: string };
-const EMPTY_FORM: FormState = { question: '', answer: '' };
+const EMPTY_FORM: QuestionFormValues = { question: '', answer: '' };
 
 /** 44px square on a phone; the icon button's own compact size from `sm` up. */
 const ENTRY_ACTION_CLASS = 'h-11 w-11 sm:h-auto sm:w-auto';
-
-function MockQuestionForm({
-  initial,
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
-}: {
-  initial: FormState;
-  submitting: boolean;
-  error: string | null;
-  onSubmit: (form: FormState) => void;
-  onCancel: () => void;
-}) {
-  const { t } = useLocale();
-  const [form, setForm] = useState(initial);
-  const questionId = `mock-question-${useId()}`;
-  const answerId = `mock-answer-${useId()}`;
-
-  const submit = (e: SubmitEvent) => {
-    e.preventDefault();
-    onSubmit(form);
-  };
-
-  return (
-    <form
-      onSubmit={submit}
-      className="space-y-3 rounded-lg border-2 border-blue-600 bg-blue-50/40 p-3 dark:bg-blue-900/10"
-    >
-      <div>
-        <FormLabel size="xs" htmlFor={questionId}>
-          {t('interviews.questionLabel')}
-        </FormLabel>
-        <Input
-          id={questionId}
-          value={form.question}
-          maxLength={INTERVIEW_QUESTION_LIMITS.QUESTION_MAX_CHARS}
-          onChange={(e) => setForm({ ...form, question: e.target.value })}
-          placeholder={t('interviews.practiceQuestionPlaceholder')}
-          autoFocus
-        />
-      </div>
-      <div>
-        <FormLabel size="xs" htmlFor={answerId}>
-          {t('interviews.practiceAnswerLabel')}{' '}
-          <span className="font-normal text-gray-500">{t('interviews.responseOptional')}</span>
-        </FormLabel>
-        <Textarea
-          id={answerId}
-          value={form.answer}
-          maxLength={INTERVIEW_QUESTION_LIMITS.ANSWER_MAX_CHARS}
-          onChange={(e) => setForm({ ...form, answer: e.target.value })}
-          className="h-24"
-          placeholder={t('interviews.practiceAnswerPlaceholder')}
-        />
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button type="submit" size="sm" disabled={submitting || !form.question.trim()}>
-          {submitting ? t('applicationForm.saving') : t('common.save')}
-        </Button>
-      </div>
-    </form>
-  );
-}
 
 /**
  * Practice questions for one interview round: mock questions to prepare with,
@@ -162,7 +91,7 @@ export function MockQuestionsPanel({
   };
 
   const create = useMutation({
-    mutationFn: (f: FormState) =>
+    mutationFn: (f: QuestionFormValues) =>
       gqlClient.request(CREATE_MOCK_QUESTION, {
         input: {
           interviewRoundId: roundId,
@@ -176,7 +105,7 @@ export function MockQuestionsPanel({
 
   // Editing sends no `answerSource`, so an AI answer keeps its label.
   const update = useMutation({
-    mutationFn: ({ id, f }: { id: string; f: FormState }) =>
+    mutationFn: ({ id, f }: { id: string; f: QuestionFormValues }) =>
       gqlClient.request(UPDATE_MOCK_QUESTION, {
         id,
         input: { question: f.question, answer: f.answer.trim() ? f.answer : null },
@@ -184,6 +113,26 @@ export function MockQuestionsPanel({
     onSuccess: () => setEditingId(null),
     onSettled: refresh,
   });
+
+  // The form shows a failed save itself, so the action returns the message
+  // instead of throwing it.
+  const saveNew = async (f: QuestionFormValues) => {
+    try {
+      await create.mutateAsync(f);
+      return null;
+    } catch (err) {
+      return getErrorMessage(err);
+    }
+  };
+
+  const saveEdit = async (id: string, f: QuestionFormValues) => {
+    try {
+      await update.mutateAsync({ id, f });
+      return null;
+    } catch (err) {
+      return getErrorMessage(err);
+    }
+  };
 
   const saveDraft = useMutation({
     mutationFn: ({ id, answer }: { id: string; answer: string }) =>
@@ -248,8 +197,6 @@ export function MockQuestionsPanel({
   };
 
   const closeForms = () => {
-    create.reset();
-    update.reset();
     draftAnswer.reset();
     saveDraft.reset();
     setAdding(false);
@@ -330,12 +277,14 @@ export function MockQuestionsPanel({
 
           {questions.map((q, index) =>
             editingId === q.id ? (
-              <MockQuestionForm
+              <QuestionEntryForm
                 key={q.id}
+                idPrefix="mock"
                 initial={{ question: q.question, answer: q.answer ?? '' }}
-                submitting={update.isPending}
-                error={update.isError ? getErrorMessage(update.error) : null}
-                onSubmit={(f) => update.mutate({ id: q.id, f })}
+                questionPlaceholder={t('interviews.practiceQuestionPlaceholder')}
+                answerLabel={t('interviews.practiceAnswerLabel')}
+                answerPlaceholder={t('interviews.practiceAnswerPlaceholder')}
+                onSubmit={(f) => saveEdit(q.id, f)}
                 onCancel={closeForms}
               />
             ) : (
@@ -455,11 +404,13 @@ export function MockQuestionsPanel({
               onClose={() => setGenerating(false)}
             />
           ) : adding ? (
-            <MockQuestionForm
+            <QuestionEntryForm
+              idPrefix="mock"
               initial={EMPTY_FORM}
-              submitting={create.isPending}
-              error={create.isError ? getErrorMessage(create.error) : null}
-              onSubmit={(f) => create.mutate(f)}
+              questionPlaceholder={t('interviews.practiceQuestionPlaceholder')}
+              answerLabel={t('interviews.practiceAnswerLabel')}
+              answerPlaceholder={t('interviews.practiceAnswerPlaceholder')}
+              onSubmit={saveNew}
               onCancel={closeForms}
             />
           ) : atLimit ? (
