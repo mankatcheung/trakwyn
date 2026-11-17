@@ -37,11 +37,8 @@ export function OffersPage() {
     if (selectedIds.length < 2) return;
     setComparing(true);
     try {
-      const res = await gqlClient.request<{ compareOffers: OfferComparison[] }>(
-        COMPARE_OFFERS_MUTATION,
-        { offerIds: selectedIds },
-      );
-      setComparisons(res.compareOffers);
+      const res = await gqlClient.request(COMPARE_OFFERS_MUTATION, { offerIds: selectedIds });
+      setComparisons((res.compareOffers ?? []) as OfferComparison[]);
     } catch (err) {
       console.error('Failed to compare offers:', err);
     } finally {

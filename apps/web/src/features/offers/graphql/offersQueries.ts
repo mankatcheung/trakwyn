@@ -1,7 +1,10 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
+import type { Resolved } from '#/graphql/resolved';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 
-const MY_OFFERS_QUERY = `
+const MY_OFFERS_QUERY = graphql(`
   query MyOffers {
     myOffers {
       company
@@ -20,9 +23,9 @@ const MY_OFFERS_QUERY = `
       }
     }
   }
-`;
+`);
 
-export const COMPARE_OFFERS_MUTATION = `
+export const COMPARE_OFFERS_MUTATION = graphql(`
   mutation CompareOffers($offerIds: [String!]!) {
     compareOffers(offerIds: $offerIds) {
       offer {
@@ -41,36 +44,21 @@ export const COMPARE_OFFERS_MUTATION = `
       totalCompensation
     }
   }
-`;
+`);
 
-export interface Offer {
-  id: string;
-  applicationId: string;
-  baseSalary: number;
-  bonus: number | null;
-  equity: string | null;
-  benefits: string | null;
-  costOfLivingAdjustment: number | null;
-  currency: string;
-  period: string;
-  notes: string | null;
-}
+type MyOfferEntry = NonNullable<ResultOf<typeof MY_OFFERS_QUERY>['myOffers']>[number];
+type ComparedOffer = NonNullable<ResultOf<typeof COMPARE_OFFERS_MUTATION>['compareOffers']>[number];
 
-export interface OfferWithApplication {
-  company: string;
-  role: string;
-  offer: Offer;
-}
+type OfferNullable = 'bonus' | 'equity' | 'benefits' | 'costOfLivingAdjustment' | 'notes';
 
-export interface OfferComparison {
-  offer: Offer;
-  company: string;
-  role: string;
-  normalizedYearlySalary: number;
-  totalCompensation: number;
-}
+export type Offer = Resolved<NonNullable<MyOfferEntry['offer']>, OfferNullable>;
+
+export type OfferWithApplication = Omit<Resolved<MyOfferEntry>, 'offer'> & { offer: Offer };
+
+export type OfferComparison = Omit<Resolved<ComparedOffer>, 'offer'> & { offer: Offer };
 
 export const myOffersQueryOptions = queryOptions({
   queryKey: ['myOffers'],
-  queryFn: () => gqlClient.request<{ myOffers: OfferWithApplication[] }>(MY_OFFERS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(MY_OFFERS_QUERY)) as { myOffers: OfferWithApplication[] },
 });
