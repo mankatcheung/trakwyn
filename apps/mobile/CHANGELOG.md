@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.11.0...mobile-v0.12.0) (2026-11-17)
+
+
+### Features
+
+* **mobile:** bring profile sections, posting requirements and resume gaps to mobile (JEF-600) ([#1455](https://github.com/mankatcheung/trakwyn/issues/1455)) ([4d41e4e](https://github.com/mankatcheung/trakwyn/commit/4d41e4e4a82fc71df765daa45f53455e2b9e617b))
+
 ## [0.11.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.10.0...mobile-v0.11.0) (2026-11-16)
 
 
