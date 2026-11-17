@@ -3,7 +3,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { Alert, Button } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { extractGqlError } from '#/routes/_authenticated/settings/-components/shared';
+import { extractGqlError } from '#/features/settings/lib/shared';
 import { CANCEL_ACCOUNT_DELETION } from '#/features/account-deletion/lib/accountDeletion';
 import { AccountDeletionLayout } from '../components/AccountDeletionLayout';
 

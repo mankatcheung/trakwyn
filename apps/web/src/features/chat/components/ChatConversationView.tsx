@@ -5,7 +5,7 @@ import { streamChatMessage, ChatStreamError } from '#/features/chat/lib/chatStre
 import { CHAT_MESSAGE_MAX_CHARS } from '#/constants';
 import { Link } from '@tanstack/react-router';
 import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
-import { providerEntryLabel } from '#/routes/_authenticated/settings/-components/aiProviderOrder';
+import { providerEntryLabel } from '#/features/settings/lib/aiProviderOrder';
 import { getErrorMessage } from '#/lib/errors';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { contentQuotaQueryKey, useQuotaState } from '#/features/quota/lib/contentQuota';

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileTextIcon, UploadIcon } from 'lucide-react';
 import { showUndoToast } from '#/lib/undoToast';
-import { storageUsageQueryKey, useStorageUsage } from '#/lib/storageUsage';
+import { storageUsageQueryKey, useStorageUsage } from '#/features/settings/lib/storageUsage';
 import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { useLocale } from '#/lib/i18n';

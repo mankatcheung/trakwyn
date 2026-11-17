@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
-import { AddLlmApiKeyForm } from '../../../../routes/_authenticated/settings/-components/AddLlmApiKeyForm';
+import { AddLlmApiKeyForm } from '../../../settings/components/ai/AddLlmApiKeyForm';
 import {
   LLM_API_KEYS_QUERY,
   LLM_PROVIDER_OPTIONS,
   type LlmApiKey,
-} from '../../../../routes/_authenticated/settings/-components/shared';
+} from '../../../settings/lib/shared';
 
 /**
  * The AI key step, for AI goals only: Settings → AI's own add-key form. Once

@@ -54,8 +54,8 @@ Each file loads only when you work in its directory. Read it before changing tha
 - `src/lib/CLAUDE.md`: the email verification wall, the first-run welcome flow, plans and locked previews, content quotas.
 - `src/lib/analytics/CLAUDE.md`: PostHog events, scrubbing and the Terraform split.
 - `src/server/CLAUDE.md`: Vercel function errors.
-- `src/routes/_authenticated/settings/CLAUDE.md`: which AI answers, hosted AI credits, account deletion and step-up.
-- `src/routes/_authenticated/profile/CLAUDE.md`: CV import.
+- `src/features/settings/CLAUDE.md`: which AI answers, hosted AI credits, account deletion and step-up.
+- `src/features/profile/CLAUDE.md`: CV import.
 - `e2e/CLAUDE.md`: marketing screenshots and guide scripts.
 
 ## Error reporting and analytics

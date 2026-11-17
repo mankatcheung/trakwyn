@@ -15,7 +15,7 @@ import {
   UPDATE_WORK_EXPERIENCE,
   skillsQueryOptions,
   workExperiencesQueryOptions,
-} from '#/routes/_authenticated/profile/-components/profileQueries';
+} from '#/features/profile/graphql/profileQueries';
 import {
   DISMISS_RESUME_GAP,
   ROLE_DESCRIPTION_MAX_CHARS,

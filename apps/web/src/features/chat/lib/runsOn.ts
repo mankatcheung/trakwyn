@@ -3,14 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
 import { useLocale } from '#/lib/i18n';
-import {
-  TRAKWYN_ENTRY,
-  providerEntryLabel,
-} from '#/routes/_authenticated/settings/-components/aiProviderOrder';
-import {
-  LLM_API_KEYS_QUERY,
-  type LlmApiKey,
-} from '#/routes/_authenticated/settings/-components/shared';
+import { TRAKWYN_ENTRY, providerEntryLabel } from '#/features/settings/lib/aiProviderOrder';
+import { LLM_API_KEYS_QUERY, type LlmApiKey } from '#/features/settings/lib/shared';
 
 /** The `['llmApiKeys']` query the settings page and the chat surfaces share. */
 export interface LlmSettings {

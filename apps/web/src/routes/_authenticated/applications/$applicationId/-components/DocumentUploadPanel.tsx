@@ -23,7 +23,7 @@ import {
   storageUsageQueryKey,
   useStorageUsage,
   type StorageUsage,
-} from '#/lib/storageUsage';
+} from '#/features/settings/lib/storageUsage';
 
 const REQUEST_UPLOAD_URL = `
   mutation RequestUploadUrl($input: RequestUploadUrlInput!) {
