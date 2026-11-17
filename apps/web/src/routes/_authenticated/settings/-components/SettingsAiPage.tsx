@@ -14,7 +14,6 @@ import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
   DELETE_LLM_API_KEY,
-  SET_LLM_API_KEY_MONTHLY_LIMIT,
   TEST_LLM_API_KEY,
   SET_AI_PROVIDER_ORDER,
   UPDATE_PROFILE,
@@ -132,16 +131,6 @@ export function SettingsAiPage() {
   // Closing unmounts the form, which discards whatever was typed into it.
   const closeAddProviderForm = () => setAddProviderOverride(false);
 
-  // Monthly token limits (JEF-258). Both queries are invalidated: the keys
-  // query holds the ceiling, the usage query decides whether it is reached.
-  const onSaveMonthlyLimit = async (provider: string, monthlyTokenLimit: number | null) => {
-    await gqlClient.request(SET_LLM_API_KEY_MONTHLY_LIMIT, { provider, monthlyTokenLimit });
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ['llmApiKeys'] }),
-      qc.invalidateQueries({ queryKey: ['llmUsageSummary'] }),
-    ]);
-  };
-
   // Cross-application context (JEF-249)
   const [crossAppContextError, setCrossAppContextError] = useState<string | null>(null);
   const [updatingCrossAppContext, setUpdatingCrossAppContext] = useState(false);
@@ -242,9 +231,6 @@ export function SettingsAiPage() {
                     busy={testingProvider === key.provider || removingProvider === key.provider}
                     onTest={() => onTestSavedLlmApiKey(key.provider)}
                     onRemove={() => onRemoveLlmApiKey(key.provider)}
-                    onSaveLimit={(monthlyTokenLimit) =>
-                      onSaveMonthlyLimit(key.provider, monthlyTokenLimit)
-                    }
                   />
                 ))}
               </div>

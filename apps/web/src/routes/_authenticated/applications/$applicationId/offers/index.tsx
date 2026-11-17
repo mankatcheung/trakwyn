@@ -1,154 +1,116 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
+import { getGqlErrorCode, PLAN_REQUIRED_CODE } from '#/lib/graphqlError';
+import { ErrorState } from '#/components/ErrorState';
 import { QuotaHint } from '#/components/QuotaHint';
+import { UpgradePrompt } from '#/components/UpgradePrompt';
 import { useQuotaState } from '#/lib/contentQuota';
 import { OfferForm } from '../-components/OfferForm';
 import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
-import { EmptyState } from '@trakwyn/ui';
-
-const OFFERS_QUERY = `
-  query Offers($applicationId: ID!) {
-    offers(applicationId: $applicationId) {
-      id
-      applicationId
-      baseSalary
-      bonus
-      equity
-      benefits
-      costOfLivingAdjustment
-      currency
-      period
-      notes
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-const CREATE_OFFER_MUTATION = `
-  mutation CreateOffer($input: CreateOfferInput!) {
-    createOffer(input: $input) {
-      id
-    }
-  }
-`;
-
-const UPDATE_OFFER_MUTATION = `
-  mutation UpdateOffer($input: UpdateOfferInput!) {
-    updateOffer(input: $input) {
-      id
-    }
-  }
-`;
-
-const DELETE_OFFER_MUTATION = `
-  mutation DeleteOffer($id: ID!) {
-    deleteOffer(id: $id)
-  }
-`;
-
-interface Offer {
-  id: string;
-  applicationId: string;
-  baseSalary: number;
-  bonus: number | null;
-  equity: string | null;
-  benefits: string | null;
-  costOfLivingAdjustment: number | null;
-  currency: string;
-  period: string;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Alert, EmptyState } from '@trakwyn/ui';
+import {
+  CREATE_OFFER_MUTATION,
+  DELETE_OFFER_MUTATION,
+  UPDATE_OFFER_MUTATION,
+  applicationOffersQueryOptions,
+  invalidateOffers,
+  type ApplicationOffer,
+  type OfferInput,
+} from './-offersQueries';
 
 export const Route = createFileRoute('/_authenticated/applications/$applicationId/offers/')({
   component: OffersPage,
 });
 
+/**
+ * The API's own message, so a race past the cap names the limit (JEF-494). A
+ * plan error is the upgrade prompt rather than an alert (JEF-344).
+ */
+function WriteError({ error }: { error: unknown }) {
+  const message = getErrorMessage(error);
+  if (getGqlErrorCode(error) === PLAN_REQUIRED_CODE) {
+    return <UpgradePrompt message={message} className="mt-2" />;
+  }
+  return (
+    <Alert className="mt-2" role="alert">
+      {message}
+    </Alert>
+  );
+}
+
 function OffersPage() {
   const { t } = useLocale();
   const { applicationId } = Route.useParams();
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [editingOffer, setEditingOffer] = useState<ApplicationOffer | null>(null);
+
+  const {
+    data,
+    isLoading,
+    error: loadError,
+    refetch,
+  } = useQuery(applicationOffersQueryOptions(applicationId));
+  const offers = data?.offers ?? [];
   const offersFull = useQuotaState('offers', offers.length)?.level === 'full';
 
-  useEffect(() => {
-    gqlClient
-      .request<{ offers: Offer[] }>(OFFERS_QUERY, { applicationId })
-      .then((res) => setOffers(res.offers))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [applicationId]);
+  const createOffer = useMutation({
+    mutationFn: (input: OfferInput) =>
+      gqlClient.request(CREATE_OFFER_MUTATION, { input: { applicationId, ...input } }),
+    onSuccess: () => invalidateOffers(qc, applicationId),
+  });
+  const updateOffer = useMutation({
+    mutationFn: ({ offerId, input }: { offerId: string; input: OfferInput }) =>
+      gqlClient.request(UPDATE_OFFER_MUTATION, { input: { offerId, ...input } }),
+    onSuccess: () => invalidateOffers(qc, applicationId),
+  });
+  const removeOffer = useMutation({
+    mutationFn: (id: string) => gqlClient.request(DELETE_OFFER_MUTATION, { id }),
+    onSuccess: () => invalidateOffers(qc, applicationId),
+  });
 
-  const handleCreate = async (data: {
-    baseSalary: number;
-    bonus: number | null;
-    equity: string;
-    benefits: string;
-    costOfLivingAdjustment: number | null;
-    currency: string;
-    period: string;
-    notes: string;
-  }) => {
-    setSaving(true);
-    setCreateError(null);
+  // The error renders from the mutation and the form stays open, so the
+  // rejection is caught here instead of being thrown into the form's action.
+  const handleCreate = async (input: OfferInput) => {
     try {
-      await gqlClient.request(CREATE_OFFER_MUTATION, {
-        input: { applicationId, ...data },
-      });
-      const res = await gqlClient.request<{ offers: Offer[] }>(OFFERS_QUERY, { applicationId });
-      setOffers(res.offers);
+      await createOffer.mutateAsync(input);
       setShowForm(false);
-    } catch (err) {
-      // The API's own message, so a race past the cap names the limit (JEF-494).
-      setCreateError(getErrorMessage(err));
-    } finally {
-      setSaving(false);
+    } catch {
+      // `createOffer.error` renders under the form.
     }
   };
 
-  const handleUpdate = async (data: {
-    baseSalary: number;
-    bonus: number | null;
-    equity: string;
-    benefits: string;
-    costOfLivingAdjustment: number | null;
-    currency: string;
-    period: string;
-    notes: string;
-  }) => {
+  const handleUpdate = async (input: OfferInput) => {
     if (!editingOffer) return;
-    setSaving(true);
     try {
-      await gqlClient.request(UPDATE_OFFER_MUTATION, {
-        input: { offerId: editingOffer.id, ...data },
-      });
-      const res = await gqlClient.request<{ offers: Offer[] }>(OFFERS_QUERY, { applicationId });
-      setOffers(res.offers);
+      await updateOffer.mutateAsync({ offerId: editingOffer.id, input });
       setEditingOffer(null);
-    } catch (err) {
-      console.error('Failed to update offer:', err);
-    } finally {
-      setSaving(false);
+    } catch {
+      // `updateOffer.error` renders under the form.
     }
   };
 
-  const handleDelete = async (offerId: string) => {
+  const handleDelete = (offerId: string) => {
     if (!confirm(t('offers.deleteConfirm'))) return;
-    try {
-      await gqlClient.request(DELETE_OFFER_MUTATION, { id: offerId });
-      setOffers(offers.filter((o) => o.id !== offerId));
-    } catch (err) {
-      console.error('Failed to delete offer:', err);
-    }
+    removeOffer.mutate(offerId);
+  };
+
+  const openCreate = () => {
+    createOffer.reset();
+    updateOffer.reset();
+    setShowForm(true);
+    setEditingOffer(null);
+  };
+
+  const openEdit = (offer: ApplicationOffer) => {
+    createOffer.reset();
+    updateOffer.reset();
+    setEditingOffer(offer);
+    setShowForm(false);
   };
 
   const formatSalary = (amount: number, currency: string, period: string) => {
@@ -164,10 +126,23 @@ function OffersPage() {
     return `${formatted}/hr`;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-sm text-gray-500">{t('offerCompare.loadingOffers')}</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    // The plan gate renders inside the page; any other failure can be retried.
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        {getGqlErrorCode(loadError) === PLAN_REQUIRED_CODE ? (
+          <UpgradePrompt message={getErrorMessage(loadError)} />
+        ) : (
+          <ErrorState error={loadError} onRetry={() => refetch()} />
+        )}
       </div>
     );
   }
@@ -179,11 +154,7 @@ function OffersPage() {
         <div className="flex items-center gap-3">
           <QuotaHint resource="offers" used={offers.length} />
           <button
-            onClick={() => {
-              setShowForm(true);
-              setEditingOffer(null);
-              setCreateError(null);
-            }}
+            onClick={openCreate}
             disabled={offersFull}
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -205,15 +176,15 @@ function OffersPage() {
               setShowForm(false);
               setEditingOffer(null);
             }}
-            loading={saving}
+            loading={createOffer.isPending || updateOffer.isPending}
           />
-          {createError && !editingOffer && (
-            <p role="alert" className="mt-2 text-sm text-red-600">
-              {createError}
-            </p>
-          )}
+          {editingOffer
+            ? updateOffer.error && <WriteError error={updateOffer.error} />
+            : createOffer.error && <WriteError error={createOffer.error} />}
         </div>
       )}
+
+      {removeOffer.error && <WriteError error={removeOffer.error} />}
 
       {offers.length === 0 && !showForm ? (
         <EmptyState className="py-12" message={t('offers.noOffersYet')} />
@@ -253,17 +224,15 @@ function OffersPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      setEditingOffer(offer);
-                      setShowForm(false);
-                    }}
+                    onClick={() => openEdit(offer)}
                     className="p-1.5 text-gray-400 transition-colors hover:text-blue-600"
                   >
                     <PencilIcon className="size-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(offer.id)}
-                    className="p-1.5 text-gray-400 transition-colors hover:text-red-600"
+                    disabled={removeOffer.isPending}
+                    className="p-1.5 text-gray-400 transition-colors hover:text-red-600 disabled:opacity-60"
                   >
                     <TrashIcon className="size-4" />
                   </button>

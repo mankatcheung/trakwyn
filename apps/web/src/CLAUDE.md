@@ -50,4 +50,5 @@ Loaded when working under `apps/web/src`. The rules for any component that reads
 Forms still on `onSubmit` or plain state, and writes still on direct calls where cached data changes:
 
 1. `DocumentEditorLinkForm` stays on local `useState` (client-only edit, no request). The other single-field forms moved in JEF-620.
-2. `offers/index.tsx`, `JdImportPanel`, `LlmApiKeyRow` (writes on direct calls).
+
+The offers tab, the API-key limit editor and `JdImportPanel` moved in JEF-622. `JdImportPanel` parses through a `useMutation` that invalidates nothing (the result fills a form), only for `isPending` and `error`. The offers tab invalidates its own key, `/offers` (`myOffers`) and the section badge through `invalidateOffers`, and shows `PLAN_REQUIRED` from any offer write as `UpgradePrompt`.

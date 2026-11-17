@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode, AI_NOT_CONFIGURED_CODE } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
@@ -31,6 +32,10 @@ interface Props {
   onFill: (data: ParsedJd) => void;
 }
 
+function errorText(err: unknown, t: ReturnType<typeof useLocale>['t']): string {
+  return err instanceof Error ? err.message : t('jdImport.parseFailed');
+}
+
 export function JdImportPanel({ onFill }: Props) {
   const { t } = useLocale();
   const { onTrakwynAi } = useAiCredits();
@@ -38,34 +43,26 @@ export function JdImportPanel({ onFill }: Props) {
   const [mode, setMode] = useState<'text' | 'url'>('text');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [aiNotConfigured, setAiNotConfigured] = useState(false);
   const [filled, setFilled] = useState(false);
 
-  const handleAutoFill = async () => {
-    setError(null);
-    setAiNotConfigured(false);
-    setFilled(false);
-    setLoading(true);
-    try {
-      const vars = mode === 'text' ? { text } : { url };
-      const data = await gqlClient.request<{ parseJobDescription: ParsedJd }>(
-        PARSE_JD_MUTATION,
-        vars,
-      );
+  // Nothing cached changes (the result fills the form), so there is nothing
+  // to invalidate; the mutation is here for its pending and error state.
+  const parse = useMutation({
+    mutationFn: (vars: { text: string } | { url: string }) =>
+      gqlClient.request<{ parseJobDescription: ParsedJd }>(PARSE_JD_MUTATION, vars),
+    onSuccess: (data) => {
       onFill(data.parseJobDescription);
       setFilled(true);
       setTimeout(() => setOpen(false), 800);
-    } catch (err) {
-      if (getGqlErrorCode(err) === AI_NOT_CONFIGURED_CODE) {
-        setAiNotConfigured(true);
-      } else {
-        setError(err instanceof Error ? err.message : t('jdImport.parseFailed'));
-      }
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+  const loading = parse.isPending;
+  const aiNotConfigured = getGqlErrorCode(parse.error) === AI_NOT_CONFIGURED_CODE;
+  const error = parse.error && !aiNotConfigured ? errorText(parse.error, t) : null;
+
+  const handleAutoFill = () => {
+    setFilled(false);
+    parse.mutate(mode === 'text' ? { text } : { url });
   };
 
   const tabClass = (active: boolean) =>

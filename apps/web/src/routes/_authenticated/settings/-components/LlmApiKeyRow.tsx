@@ -1,10 +1,17 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, ZapIcon } from 'lucide-react';
-import { Alert, Button, Input, Menu, type MenuItem } from '@trakwyn/ui';
+import { Alert, Button, Input, Menu, SubmitButton, type MenuItem } from '@trakwyn/ui';
+import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useFormAction } from '#/lib/useFormAction';
 import {
   LLM_PROVIDER_AVATAR,
   LLM_PROVIDER_LABEL,
+  SET_LLM_API_KEY_MONTHLY_LIMIT,
   type LlmApiKey,
   type LlmUsageSummary,
   type TestLlmApiKeyResult,
@@ -22,7 +29,6 @@ export interface LlmApiKeyRowProps {
   busy?: boolean;
   onTest: () => void;
   onRemove: () => void;
-  onSaveLimit: (monthlyTokenLimit: number | null) => Promise<void>;
 }
 
 /**
@@ -47,7 +53,6 @@ export function LlmApiKeyRow({
   busy = false,
   onTest,
   onRemove,
-  onSaveLimit,
 }: LlmApiKeyRowProps) {
   const { t, formatNumber } = useLocale();
   const [editing, setEditing] = useState(false);
@@ -220,14 +225,12 @@ export function LlmApiKeyRow({
 
       {editing && (
         <LimitEditor
+          provider={llmApiKey.provider}
           currentLimit={limit}
           used={used}
           atCeiling={reached}
           onCancel={() => setEditing(false)}
-          onSave={async (value) => {
-            await onSaveLimit(value);
-            setEditing(false);
-          }}
+          onSaved={() => setEditing(false)}
         />
       )}
     </div>
@@ -241,47 +244,78 @@ function nextResetLabel(): string {
 }
 
 interface LimitEditorProps {
+  provider: string;
   currentLimit: number | null;
   used: number;
   atCeiling: boolean;
   onCancel: () => void;
-  onSave: (monthlyTokenLimit: number | null) => Promise<void>;
+  /** Called once the limit is saved and the keys and usage queries are refetched. */
+  onSaved: () => void;
 }
 
 const PRESETS = [500_000, 1_000_000, 2_000_000, 5_000_000];
 
-function LimitEditor({ currentLimit, used, atCeiling, onCancel, onSave }: LimitEditorProps) {
+/** "1,000,000" and "1 000 000" both read as a million. */
+const stripSeparators = (raw: string) => raw.replace(/[\s,]/g, '');
+
+/** An empty field means "no limit", the same thing the No limit preset sends. */
+const limitSchema = (t: ReturnType<typeof useLocale>['t']) =>
+  z.object({
+    limit: z.string().superRefine((raw, ctx) => {
+      const digits = stripSeparators(raw);
+      if (digits === '') return;
+      if (!/^\d+$/.test(digits)) {
+        ctx.addIssue({ code: 'custom', message: t('integrations.limitMustBeWholeNumber') });
+      } else if (Number(digits) < 1) {
+        ctx.addIssue({ code: 'custom', message: t('integrations.limitMustBePositive') });
+      }
+    }),
+  });
+
+type LimitFormValues = z.infer<ReturnType<typeof limitSchema>>;
+
+function LimitEditor({
+  provider,
+  currentLimit,
+  used,
+  atCeiling,
+  onCancel,
+  onSaved,
+}: LimitEditorProps) {
   const { t, formatNumber } = useLocale();
-  const [value, setValue] = useState(currentLimit === null ? '' : String(currentLimit));
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+  const form = useForm<LimitFormValues>({
+    resolver: zodResolver(limitSchema(t)),
+    defaultValues: { limit: currentLimit === null ? '' : String(currentLimit) },
+  });
 
-  const submit = async (raw: string) => {
-    // An empty field means "no limit" — the same thing the No limit preset
-    // sends, so clearing does not need its own button.
-    const trimmed = raw.replace(/[\s,]/g, '');
-    if (trimmed === '') return persist(null);
+  // Both queries are invalidated: the keys query holds the ceiling, the usage
+  // query decides whether it is reached (JEF-258).
+  const save = useMutation({
+    mutationFn: (monthlyTokenLimit: number | null) =>
+      gqlClient.request(SET_LLM_API_KEY_MONTHLY_LIMIT, { provider, monthlyTokenLimit }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ['llmApiKeys'] }),
+        qc.invalidateQueries({ queryKey: ['llmUsageSummary'] }),
+      ]),
+  });
 
-    if (!/^\d+$/.test(trimmed)) return setError(t('integrations.limitMustBeWholeNumber'));
-    const parsed = Number(trimmed);
-    if (parsed < 1) return setError(t('integrations.limitMustBePositive'));
-    return persist(parsed);
-  };
-
-  const persist = async (limit: number | null) => {
-    setError(null);
-    setSaving(true);
+  const { state, formProps } = useFormAction(form, async ({ limit }) => {
+    const digits = stripSeparators(limit);
     try {
-      await onSave(limit);
+      await save.mutateAsync(digits === '' ? null : Number(digits));
+      onSaved();
+      return null;
     } catch {
-      setError(t('integrations.limitUpdateFailed'));
-    } finally {
-      setSaving(false);
+      return t('integrations.limitUpdateFailed');
     }
-  };
+  });
+  const error = form.formState.errors.limit?.message ?? state.error;
 
   return (
-    <div
+    <form
+      {...formProps}
       className={`mt-3 ml-0 rounded-lg border p-4 sm:ml-12 ${
         atCeiling
           ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-900/20'
@@ -302,9 +336,8 @@ function LimitEditor({ currentLimit, used, atCeiling, onCancel, onSave }: LimitE
       </label>
       <Input
         id="monthly-token-limit"
-        value={value}
         inputMode="numeric"
-        onChange={(event) => setValue(event.target.value)}
+        {...form.register('limit')}
         className="max-w-[200px]"
       />
 
@@ -313,7 +346,7 @@ function LimitEditor({ currentLimit, used, atCeiling, onCancel, onSave }: LimitE
           <button
             key={preset}
             type="button"
-            onClick={() => setValue(String(preset))}
+            onClick={() => form.setValue('limit', String(preset))}
             className="rounded-full border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {formatNumber(preset)}
@@ -321,7 +354,7 @@ function LimitEditor({ currentLimit, used, atCeiling, onCancel, onSave }: LimitE
         ))}
         <button
           type="button"
-          onClick={() => setValue('')}
+          onClick={() => form.setValue('limit', '')}
           className="rounded-full border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           {t('integrations.removeLimit')}
@@ -336,13 +369,19 @@ function LimitEditor({ currentLimit, used, atCeiling, onCancel, onSave }: LimitE
       {error && <Alert className="mt-3">{error}</Alert>}
 
       <div className="mt-4 flex items-center gap-2">
-        <Button size="sm" disabled={saving} onClick={() => void submit(value)}>
+        <SubmitButton size="sm" pendingLabel={t('applicationForm.saving')}>
           {atCeiling ? t('integrations.raiseLimitAndResume') : t('integrations.saveLimit')}
-        </Button>
-        <Button variant="secondary" size="sm" disabled={saving} onClick={onCancel}>
+        </SubmitButton>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={save.isPending}
+          onClick={onCancel}
+        >
           {t('integrations.cancelLimit')}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
