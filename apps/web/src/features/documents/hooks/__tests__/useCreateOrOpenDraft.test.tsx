@@ -16,6 +16,10 @@ import {
   useCreateOrOpenDraft,
 } from '#/features/documents/hooks/useCreateOrOpenDraft';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { CREATE_DRAFT_MUTATION } from '#/features/documents/hooks/useCreateOrOpenDraft';
+import { DOCUMENT_DRAFTS_QUERY } from '#/features/documents/graphql/documentQueries';
 
 const draft = (id: string, type: string, plainText: string | undefined, updatedAt: string) => ({
   id,
@@ -38,14 +42,13 @@ function setup(type: 'resume' | 'cover_letter' = 'resume') {
 
 function api(
   drafts: ReturnType<typeof draft>[],
-  create: () => Promise<unknown> = () =>
+  create: () => Promise<ResultOf<typeof CREATE_DRAFT_MUTATION>> = () =>
     Promise.resolve({ createDocumentDraft: { id: 'created', applicationId: 'app-1' } }),
 ) {
-  mockRequest.mockImplementation((queryDoc: unknown) =>
-    gqlText(queryDoc).includes('CreateDocumentDraft')
-      ? create()
-      : Promise.resolve({ documentDrafts: drafts }),
-  );
+  mockGql(mockRequest, [
+    respondWith(CREATE_DRAFT_MUTATION, create),
+    respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: drafts }),
+  ]);
 }
 
 const creates = () =>
@@ -155,7 +158,7 @@ describe('useCreateOrOpenDraft', () => {
   });
 
   it('is pending while running, and a second click creates nothing more', async () => {
-    let finish: (v: unknown) => void = () => {};
+    let finish: (v: ResultOf<typeof CREATE_DRAFT_MUTATION>) => void = () => {};
     api([], () => new Promise((resolve) => (finish = resolve)));
     const { result } = setup();
 
