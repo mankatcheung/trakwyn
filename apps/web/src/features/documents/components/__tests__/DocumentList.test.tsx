@@ -76,7 +76,18 @@ vi.mock('#/lib/analytics', () => ({
 }));
 
 import { DocumentList } from '#/features/documents/components/DocumentList';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  CONFIRM_DOCUMENT,
+  DELETE_DOCUMENT,
+  DOCUMENT_DRAFTS_QUERY,
+  DOCUMENTS_QUERY,
+  REQUEST_UPLOAD_URL,
+} from '#/features/documents/graphql/documentQueries';
+import { CREATE_DRAFT_MUTATION } from '#/features/documents/hooks/useCreateOrOpenDraft';
+import { STORAGE_USAGE_QUERY } from '#/features/settings/graphql/accountQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -85,7 +96,10 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={makeClient()}>{children}</QueryClientProvider>;
 }
 
-const mockDoc = {
+type Doc = NonNullable<ResultOf<typeof DOCUMENTS_QUERY>['documents']>[number];
+type Draft = NonNullable<ResultOf<typeof DOCUMENT_DRAFTS_QUERY>['documentDrafts']>[number];
+
+const mockDoc: Doc = {
   id: 'doc-1',
   applicationId: 'app-1',
   name: 'resume.pdf',
@@ -97,7 +111,7 @@ const mockDoc = {
   createdAt: '2024-01-01T00:00:00.000Z',
 };
 
-const mockDraft = {
+const mockDraft: Draft = {
   id: 'draft-1',
   applicationId: 'app-1',
   type: 'cover_letter',
@@ -106,14 +120,11 @@ const mockDraft = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
-function mockResponses(overrides?: { documents?: unknown[]; documentDrafts?: unknown[] }) {
-  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('DocumentDrafts')) {
-      return Promise.resolve({ documentDrafts: overrides?.documentDrafts ?? [] });
-    }
-    return Promise.resolve({ documents: overrides?.documents ?? [] });
-  });
+function mockResponses(overrides?: { documents?: Doc[]; documentDrafts?: Draft[] }) {
+  mockGql(mockGqlRequest, [
+    respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: overrides?.documentDrafts ?? [] }),
+    respond(DOCUMENTS_QUERY, { documents: overrides?.documents ?? [] }),
+  ]);
 }
 
 describe('DocumentList', () => {
@@ -155,12 +166,11 @@ describe('DocumentList', () => {
   });
 
   it('deletes a document', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('DeleteDocument')) return Promise.resolve({ deleteDocument: true });
-      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-      return Promise.resolve({ documents: [mockDoc] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(DELETE_DOCUMENT, { deleteDocument: true }),
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+      respond(DOCUMENTS_QUERY, { documents: [mockDoc] }),
+    ]);
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
     await screen.findByText('resume.pdf');
@@ -177,23 +187,20 @@ describe('DocumentList', () => {
   });
 
   it('shows the server quota message when an upload is rejected', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-      if (query.includes('RequestUploadUrl')) {
-        return Promise.reject({
-          response: {
-            errors: [
-              {
-                message: 'This application already has the maximum of 10 documents',
-                extensions: { code: 'QUOTA_EXCEEDED' },
-              },
-            ],
-          },
-        });
-      }
-      return Promise.resolve({ documents: [] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+      respondError(REQUEST_UPLOAD_URL, {
+        response: {
+          errors: [
+            {
+              message: 'This application already has the maximum of 10 documents',
+              extensions: { code: 'QUOTA_EXCEEDED' },
+            },
+          ],
+        },
+      }),
+      respond(DOCUMENTS_QUERY, { documents: [] }),
+    ]);
     const { container } = render(<DocumentList applicationId="app-1" category="other" />, {
       wrapper: Wrapper,
     });
@@ -232,30 +239,25 @@ describe('DocumentList', () => {
       uploadUrl?: string;
       /** What the API reports for the token's store; omitted, as an older API would. */
       access?: string;
-      requestUploadUrl?: () => Promise<unknown>;
-      confirmDocument?: () => Promise<unknown>;
+      requestUploadUrl?: () => Promise<ResultOf<typeof REQUEST_UPLOAD_URL>>;
+      confirmDocument?: () => Promise<ResultOf<typeof CONFIRM_DOCUMENT>>;
     } = {}) {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-        if (query.includes('RequestUploadUrl')) {
-          return requestUploadUrl
-            ? requestUploadUrl()
-            : Promise.resolve({
-                requestUploadUrl: {
-                  uploadUrl,
-                  storageKey: STORAGE_KEY,
-                  ...(access === undefined ? {} : { access }),
-                },
-              });
-        }
-        if (query.includes('ConfirmDocument')) {
-          return confirmDocument
-            ? confirmDocument()
-            : Promise.resolve({ confirmDocument: mockDoc });
-        }
-        return Promise.resolve({ documents: [] });
-      });
+      mockGql(mockGqlRequest, [
+        respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+        requestUploadUrl
+          ? respondWith(REQUEST_UPLOAD_URL, requestUploadUrl)
+          : respond(REQUEST_UPLOAD_URL, {
+              requestUploadUrl: {
+                uploadUrl,
+                storageKey: STORAGE_KEY,
+                ...(access === undefined ? {} : { access }),
+              },
+            }),
+        confirmDocument
+          ? respondWith(CONFIRM_DOCUMENT, confirmDocument)
+          : respond(CONFIRM_DOCUMENT, { confirmDocument: mockDoc }),
+        respond(DOCUMENTS_QUERY, { documents: [] }),
+      ]);
     }
 
     async function chooseFile(
@@ -472,13 +474,13 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
   });
 
   it('Create new opens the editor of the new draft instead of linking to a form', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('CreateDocumentDraft'))
-        return Promise.resolve({ createDocumentDraft: { id: 'new-1', applicationId: 'app-1' } });
-      if (query.includes('query DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-      return Promise.resolve({ documents: [] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(CREATE_DRAFT_MUTATION, {
+        createDocumentDraft: { id: 'new-1', applicationId: 'app-1' },
+      }),
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+      respond(DOCUMENTS_QUERY, { documents: [] }),
+    ]);
     render(<DocumentList applicationId="app-1" category="resume" />, { wrapper: Wrapper });
 
     fireEvent.click(await screen.findByRole('button', { name: 'Create new' }));
@@ -493,14 +495,12 @@ describe('DocumentList — one category per tab (JEF-396)', () => {
 
   describe('upload type', () => {
     const uploadWithin = async (category: 'cover_letter' | 'resume' | 'other') => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-        if (query.includes('RequestUploadUrl'))
-          return Promise.resolve({ requestUploadUrl: { uploadUrl: 'tok', storageKey: 'k' } });
-        if (query.includes('ConfirmDocument')) return Promise.resolve({ confirmDocument: mockDoc });
-        return Promise.resolve({ documents: [] });
-      });
+      mockGql(mockGqlRequest, [
+        respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+        respond(REQUEST_UPLOAD_URL, { requestUploadUrl: { uploadUrl: 'tok', storageKey: 'k' } }),
+        respond(CONFIRM_DOCUMENT, { confirmDocument: mockDoc }),
+        respond(DOCUMENTS_QUERY, { documents: [] }),
+      ]);
       mockPutBlob.mockResolvedValue({});
       const { container } = render(<DocumentList applicationId="app-1" category={category} />, {
         wrapper: Wrapper,
@@ -759,17 +759,14 @@ describe('DocumentList toolbar and rows (JEF-510)', () => {
     credits.onTrakwynAi = false;
   });
 
-  function mockWithStorage(documents: unknown[]) {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('StorageUsage')) {
-        return Promise.resolve({
-          me: { storageUsedBytes: 30 * MB, storageLimitBytes: 100 * MB },
-        });
-      }
-      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-      return Promise.resolve({ documents });
-    });
+  function mockWithStorage(documents: Doc[]) {
+    mockGql(mockGqlRequest, [
+      respond(STORAGE_USAGE_QUERY, {
+        me: { storageUsedBytes: 30 * MB, storageLimitBytes: 100 * MB },
+      }),
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+      respond(DOCUMENTS_QUERY, { documents }),
+    ]);
   }
 
   it('shows the credits meter once for the whole Resumes list, not in every row', async () => {
