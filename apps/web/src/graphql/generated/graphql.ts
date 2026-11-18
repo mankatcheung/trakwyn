@@ -3267,31 +3267,6 @@ export type DismissOnboardingChecklistMutation = {
   dismissOnboardingChecklist?: boolean | null;
 };
 
-export type GenerateIntoDocumentDraftMutationVariables = Exact<{
-  draftId: Scalars['ID']['input'];
-  instructions?: InputMaybe<Scalars['String']['input']>;
-  resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
-  resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
-}>;
-
-export type GenerateIntoDocumentDraftMutation = {
-  __typename?: 'Mutation';
-  generateIntoDocumentDraft: {
-    __typename?: 'GeneratedDraftContent';
-    contentJson: string;
-    plainText: string;
-  };
-};
-
-export type ExtractDocumentTextMutationVariables = Exact<{
-  documentId: Scalars['ID']['input'];
-}>;
-
-export type ExtractDocumentTextMutation = {
-  __typename?: 'Mutation';
-  extractDocumentText?: { __typename?: 'ExtractDocumentTextPayload'; text?: string | null } | null;
-};
-
 export type DocumentsQueryVariables = Exact<{
   applicationId: Scalars['ID']['input'];
 }>;
@@ -3502,6 +3477,31 @@ export type RestoreDocumentDraftVersionMutation = {
     contentJson?: string | null;
     plainText?: string | null;
   } | null;
+};
+
+export type GenerateIntoDocumentDraftMutationVariables = Exact<{
+  draftId: Scalars['ID']['input'];
+  instructions?: InputMaybe<Scalars['String']['input']>;
+  resumeDocumentId?: InputMaybe<Scalars['ID']['input']>;
+  resumeDraftId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+export type GenerateIntoDocumentDraftMutation = {
+  __typename?: 'Mutation';
+  generateIntoDocumentDraft: {
+    __typename?: 'GeneratedDraftContent';
+    contentJson: string;
+    plainText: string;
+  };
+};
+
+export type ExtractDocumentTextMutationVariables = Exact<{
+  documentId: Scalars['ID']['input'];
+}>;
+
+export type ExtractDocumentTextMutation = {
+  __typename?: 'Mutation';
+  extractDocumentText?: { __typename?: 'ExtractDocumentTextPayload'; text?: string | null } | null;
 };
 
 export type PolishDocumentDraftMutationVariables = Exact<{
@@ -8262,122 +8262,6 @@ export const DismissOnboardingChecklistDocument = {
   DismissOnboardingChecklistMutation,
   DismissOnboardingChecklistMutationVariables
 >;
-export const GenerateIntoDocumentDraftDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'GenerateIntoDocumentDraft' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'generateIntoDocumentDraft' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'draftId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'instructions' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'resumeDocumentId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'resumeDraftId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'contentJson' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<
-  GenerateIntoDocumentDraftMutation,
-  GenerateIntoDocumentDraftMutationVariables
->;
-export const ExtractDocumentTextDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'ExtractDocumentText' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'extractDocumentText' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'documentId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'text' } }],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<ExtractDocumentTextMutation, ExtractDocumentTextMutationVariables>;
 export const DocumentsDocument = {
   kind: 'Document',
   definitions: [
@@ -9040,6 +8924,122 @@ export const RestoreDocumentDraftVersionDocument = {
   RestoreDocumentDraftVersionMutation,
   RestoreDocumentDraftVersionMutationVariables
 >;
+export const GenerateIntoDocumentDraftDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'GenerateIntoDocumentDraft' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'generateIntoDocumentDraft' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'draftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'draftId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'instructions' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'instructions' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'resumeDocumentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDocumentId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'resumeDraftId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'resumeDraftId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'contentJson' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plainText' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GenerateIntoDocumentDraftMutation,
+  GenerateIntoDocumentDraftMutationVariables
+>;
+export const ExtractDocumentTextDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ExtractDocumentText' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'extractDocumentText' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'documentId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'documentId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'text' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ExtractDocumentTextMutation, ExtractDocumentTextMutationVariables>;
 export const PolishDocumentDraftDocument = {
   kind: 'Document',
   definitions: [
