@@ -14,7 +14,7 @@ import {
   UPDATE_WORK_EXPERIENCE,
   workExperiencesQueryOptions,
   type WorkExperience,
-} from '../../graphql/profileQueries';
+} from '../../graphql/workExperienceQueries';
 import { ENTRY_CLASS, FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

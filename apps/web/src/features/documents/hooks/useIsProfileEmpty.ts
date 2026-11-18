@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  skillsQueryOptions,
-  workExperiencesQueryOptions,
-} from '../../profile/graphql/profileQueries';
+import { skillsQueryOptions } from '#/features/profile/graphql/skillQueries';
+import { workExperiencesQueryOptions } from '#/features/profile/graphql/workExperienceQueries';
 
 /**
  * Whether the user has neither work experience nor skills, which is what

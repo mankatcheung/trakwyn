@@ -96,8 +96,36 @@ type Documents = {
   '\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n': typeof types.DeleteOfferDocument;
   '\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n': typeof types.MyOffersDocument;
   '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n': typeof types.CompareOffersDocument;
-  'mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n  createWorkExperience(input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n  updateWorkExperience(id: $id, input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteWorkExperience($id: ID!) {\n  deleteWorkExperience(id: $id)\n}\n\nmutation CreateEducation($input: CreateEducationInput!) {\n  createEducation(input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n  updateEducation(id: $id, input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteEducation($id: ID!) {\n  deleteEducation(id: $id)\n}\n\nmutation CreateSkill($input: CreateSkillInput!) {\n  createSkill(input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n  updateSkill(id: $id, input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation DeleteSkill($id: ID!) {\n  deleteSkill(id: $id)\n}': typeof types.CreateWorkExperienceDocument;
-  'query WorkExperiences {\n  workExperiences {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Educations {\n  educations {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Skills {\n  skills {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}': typeof types.WorkExperiencesDocument;
+  '\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.AwardsDocument;
+  '\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.CreateAwardDocument;
+  '\n  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {\n    updateAward(id: $id, input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.UpdateAwardDocument;
+  '\n  mutation DeleteAward($id: ID!) {\n    deleteAward(id: $id)\n  }\n': typeof types.DeleteAwardDocument;
+  '\n  query Certifications {\n    certifications {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n': typeof types.CertificationsDocument;
+  '\n  mutation CreateCertification($input: CreateCertificationInput!) {\n    createCertification(input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n': typeof types.CreateCertificationDocument;
+  '\n  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {\n    updateCertification(id: $id, input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n': typeof types.UpdateCertificationDocument;
+  '\n  mutation DeleteCertification($id: ID!) {\n    deleteCertification(id: $id)\n  }\n': typeof types.DeleteCertificationDocument;
+  '\n  mutation ImportCvProfile($input: ImportCvProfileInput!) {\n    importCvProfile(input: $input) {\n      workExperiences\n      educations\n      skills\n      certifications\n      languages\n      projects\n      awards\n    }\n  }\n': typeof types.ImportCvProfileDocument;
+  '\n  query CvImportSession {\n    me {\n      id\n    }\n  }\n': typeof types.CvImportSessionDocument;
+  '\n  query Educations {\n    educations {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.EducationsDocument;
+  '\n  mutation CreateEducation($input: CreateEducationInput!) {\n    createEducation(input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateEducationDocument;
+  '\n  mutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n    updateEducation(id: $id, input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.UpdateEducationDocument;
+  '\n  mutation DeleteEducation($id: ID!) {\n    deleteEducation(id: $id)\n  }\n': typeof types.DeleteEducationDocument;
+  '\n  query Languages {\n    languages {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.LanguagesDocument;
+  '\n  mutation CreateLanguage($input: CreateLanguageInput!) {\n    createLanguage(input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.CreateLanguageDocument;
+  '\n  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {\n    updateLanguage(id: $id, input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.UpdateLanguageDocument;
+  '\n  mutation DeleteLanguage($id: ID!) {\n    deleteLanguage(id: $id)\n  }\n': typeof types.DeleteLanguageDocument;
+  '\n  query Projects {\n    projects {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n': typeof types.ProjectsDocument;
+  '\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n': typeof types.CreateProjectDocument;
+  '\n  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {\n    updateProject(id: $id, input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n': typeof types.UpdateProjectDocument;
+  '\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n': typeof types.DeleteProjectDocument;
+  '\n  query Skills {\n    skills {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.SkillsDocument;
+  '\n  mutation CreateSkill($input: CreateSkillInput!) {\n    createSkill(input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.CreateSkillDocument;
+  '\n  mutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n    updateSkill(id: $id, input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n': typeof types.UpdateSkillDocument;
+  '\n  mutation DeleteSkill($id: ID!) {\n    deleteSkill(id: $id)\n  }\n': typeof types.DeleteSkillDocument;
+  '\n  query WorkExperiences {\n    workExperiences {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.WorkExperiencesDocument;
+  '\n  mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n    createWorkExperience(input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateWorkExperienceDocument;
+  '\n  mutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n    updateWorkExperience(id: $id, input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.UpdateWorkExperienceDocument;
+  '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n': typeof types.DeleteWorkExperienceDocument;
   '\n  query Me {\n    me {\n      id\n      email\n      name\n      timezone\n      targetRole\n      phone\n      location\n      profileLinks\n      avatarUrl\n      backupEmail\n      backupEmailVerifiedAt\n      hasPassword\n    }\n  }\n': typeof types.MeDocument;
   '\n  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {\n    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {\n      uploadUrl\n      storageKey\n    }\n  }\n': typeof types.RequestAvatarUploadUrlDocument;
   '\n  mutation ConfirmAvatar($storageKey: String!, $mimeType: String!, $sizeBytes: Int!) {\n    confirmAvatar(storageKey: $storageKey, mimeType: $mimeType, sizeBytes: $sizeBytes)\n  }\n': typeof types.ConfirmAvatarDocument;
@@ -309,10 +337,65 @@ const documents: Documents = {
     types.MyOffersDocument,
   '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n':
     types.CompareOffersDocument,
-  'mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n  createWorkExperience(input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n  updateWorkExperience(id: $id, input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteWorkExperience($id: ID!) {\n  deleteWorkExperience(id: $id)\n}\n\nmutation CreateEducation($input: CreateEducationInput!) {\n  createEducation(input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n  updateEducation(id: $id, input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteEducation($id: ID!) {\n  deleteEducation(id: $id)\n}\n\nmutation CreateSkill($input: CreateSkillInput!) {\n  createSkill(input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n  updateSkill(id: $id, input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation DeleteSkill($id: ID!) {\n  deleteSkill(id: $id)\n}':
-    types.CreateWorkExperienceDocument,
-  'query WorkExperiences {\n  workExperiences {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Educations {\n  educations {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Skills {\n  skills {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}':
+  '\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n':
+    types.AwardsDocument,
+  '\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n':
+    types.CreateAwardDocument,
+  '\n  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {\n    updateAward(id: $id, input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n':
+    types.UpdateAwardDocument,
+  '\n  mutation DeleteAward($id: ID!) {\n    deleteAward(id: $id)\n  }\n':
+    types.DeleteAwardDocument,
+  '\n  query Certifications {\n    certifications {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n':
+    types.CertificationsDocument,
+  '\n  mutation CreateCertification($input: CreateCertificationInput!) {\n    createCertification(input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n':
+    types.CreateCertificationDocument,
+  '\n  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {\n    updateCertification(id: $id, input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n':
+    types.UpdateCertificationDocument,
+  '\n  mutation DeleteCertification($id: ID!) {\n    deleteCertification(id: $id)\n  }\n':
+    types.DeleteCertificationDocument,
+  '\n  mutation ImportCvProfile($input: ImportCvProfileInput!) {\n    importCvProfile(input: $input) {\n      workExperiences\n      educations\n      skills\n      certifications\n      languages\n      projects\n      awards\n    }\n  }\n':
+    types.ImportCvProfileDocument,
+  '\n  query CvImportSession {\n    me {\n      id\n    }\n  }\n': types.CvImportSessionDocument,
+  '\n  query Educations {\n    educations {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.EducationsDocument,
+  '\n  mutation CreateEducation($input: CreateEducationInput!) {\n    createEducation(input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.CreateEducationDocument,
+  '\n  mutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n    updateEducation(id: $id, input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.UpdateEducationDocument,
+  '\n  mutation DeleteEducation($id: ID!) {\n    deleteEducation(id: $id)\n  }\n':
+    types.DeleteEducationDocument,
+  '\n  query Languages {\n    languages {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.LanguagesDocument,
+  '\n  mutation CreateLanguage($input: CreateLanguageInput!) {\n    createLanguage(input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.CreateLanguageDocument,
+  '\n  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {\n    updateLanguage(id: $id, input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.UpdateLanguageDocument,
+  '\n  mutation DeleteLanguage($id: ID!) {\n    deleteLanguage(id: $id)\n  }\n':
+    types.DeleteLanguageDocument,
+  '\n  query Projects {\n    projects {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n':
+    types.ProjectsDocument,
+  '\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n':
+    types.CreateProjectDocument,
+  '\n  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {\n    updateProject(id: $id, input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n':
+    types.UpdateProjectDocument,
+  '\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n':
+    types.DeleteProjectDocument,
+  '\n  query Skills {\n    skills {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.SkillsDocument,
+  '\n  mutation CreateSkill($input: CreateSkillInput!) {\n    createSkill(input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.CreateSkillDocument,
+  '\n  mutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n    updateSkill(id: $id, input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n':
+    types.UpdateSkillDocument,
+  '\n  mutation DeleteSkill($id: ID!) {\n    deleteSkill(id: $id)\n  }\n':
+    types.DeleteSkillDocument,
+  '\n  query WorkExperiences {\n    workExperiences {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
     types.WorkExperiencesDocument,
+  '\n  mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n    createWorkExperience(input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.CreateWorkExperienceDocument,
+  '\n  mutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n    updateWorkExperience(id: $id, input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.UpdateWorkExperienceDocument,
+  '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n':
+    types.DeleteWorkExperienceDocument,
   '\n  query Me {\n    me {\n      id\n      email\n      name\n      timezone\n      targetRole\n      phone\n      location\n      profileLinks\n      avatarUrl\n      backupEmail\n      backupEmailVerifiedAt\n      hasPassword\n    }\n  }\n':
     types.MeDocument,
   '\n  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {\n    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {\n      uploadUrl\n      storageKey\n    }\n  }\n':
@@ -911,14 +994,182 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n  createWorkExperience(input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n  updateWorkExperience(id: $id, input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteWorkExperience($id: ID!) {\n  deleteWorkExperience(id: $id)\n}\n\nmutation CreateEducation($input: CreateEducationInput!) {\n  createEducation(input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n  updateEducation(id: $id, input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteEducation($id: ID!) {\n  deleteEducation(id: $id)\n}\n\nmutation CreateSkill($input: CreateSkillInput!) {\n  createSkill(input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n  updateSkill(id: $id, input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation DeleteSkill($id: ID!) {\n  deleteSkill(id: $id)\n}',
-): (typeof documents)['mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n  createWorkExperience(input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n  updateWorkExperience(id: $id, input: $input) {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteWorkExperience($id: ID!) {\n  deleteWorkExperience(id: $id)\n}\n\nmutation CreateEducation($input: CreateEducationInput!) {\n  createEducation(input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n  updateEducation(id: $id, input: $input) {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteEducation($id: ID!) {\n  deleteEducation(id: $id)\n}\n\nmutation CreateSkill($input: CreateSkillInput!) {\n  createSkill(input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n  updateSkill(id: $id, input: $input) {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}\n\nmutation DeleteSkill($id: ID!) {\n  deleteSkill(id: $id)\n}'];
+  source: '\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'query WorkExperiences {\n  workExperiences {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Educations {\n  educations {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Skills {\n  skills {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}',
-): (typeof documents)['query WorkExperiences {\n  workExperiences {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Educations {\n  educations {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Skills {\n  skills {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}'];
+  source: '\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {\n    updateAward(id: $id, input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {\n    updateAward(id: $id, input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteAward($id: ID!) {\n    deleteAward(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteAward($id: ID!) {\n    deleteAward(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Certifications {\n    certifications {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query Certifications {\n    certifications {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateCertification($input: CreateCertificationInput!) {\n    createCertification(input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateCertification($input: CreateCertificationInput!) {\n    createCertification(input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {\n    updateCertification(id: $id, input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateCertification($id: ID!, $input: UpdateCertificationInput!) {\n    updateCertification(id: $id, input: $input) {\n      id\n      name\n      issuer\n      issuedAt\n      expiresAt\n      credentialUrl\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteCertification($id: ID!) {\n    deleteCertification(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteCertification($id: ID!) {\n    deleteCertification(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ImportCvProfile($input: ImportCvProfileInput!) {\n    importCvProfile(input: $input) {\n      workExperiences\n      educations\n      skills\n      certifications\n      languages\n      projects\n      awards\n    }\n  }\n',
+): (typeof documents)['\n  mutation ImportCvProfile($input: ImportCvProfileInput!) {\n    importCvProfile(input: $input) {\n      workExperiences\n      educations\n      skills\n      certifications\n      languages\n      projects\n      awards\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query CvImportSession {\n    me {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  query CvImportSession {\n    me {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Educations {\n    educations {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query Educations {\n    educations {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateEducation($input: CreateEducationInput!) {\n    createEducation(input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateEducation($input: CreateEducationInput!) {\n    createEducation(input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n    updateEducation(id: $id, input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateEducation($id: ID!, $input: UpdateEducationInput!) {\n    updateEducation(id: $id, input: $input) {\n      id\n      institution\n      degree\n      field\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteEducation($id: ID!) {\n    deleteEducation(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteEducation($id: ID!) {\n    deleteEducation(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Languages {\n    languages {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query Languages {\n    languages {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateLanguage($input: CreateLanguageInput!) {\n    createLanguage(input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateLanguage($input: CreateLanguageInput!) {\n    createLanguage(input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {\n    updateLanguage(id: $id, input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateLanguage($id: ID!, $input: UpdateLanguageInput!) {\n    updateLanguage(id: $id, input: $input) {\n      id\n      name\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteLanguage($id: ID!) {\n    deleteLanguage(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteLanguage($id: ID!) {\n    deleteLanguage(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Projects {\n    projects {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query Projects {\n    projects {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {\n    updateProject(id: $id, input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateProject($id: ID!, $input: UpdateProjectInput!) {\n    updateProject(id: $id, input: $input) {\n      id\n      name\n      role\n      url\n      startDate\n      endDate\n      description\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Skills {\n    skills {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query Skills {\n    skills {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateSkill($input: CreateSkillInput!) {\n    createSkill(input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateSkill($input: CreateSkillInput!) {\n    createSkill(input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n    updateSkill(id: $id, input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateSkill($id: ID!, $input: UpdateSkillInput!) {\n    updateSkill(id: $id, input: $input) {\n      id\n      name\n      category\n      proficiency\n      createdAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteSkill($id: ID!) {\n    deleteSkill(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteSkill($id: ID!) {\n    deleteSkill(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query WorkExperiences {\n    workExperiences {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query WorkExperiences {\n    workExperiences {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n    createWorkExperience(input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n    createWorkExperience(input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n    updateWorkExperience(id: $id, input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n    updateWorkExperience(id: $id, input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

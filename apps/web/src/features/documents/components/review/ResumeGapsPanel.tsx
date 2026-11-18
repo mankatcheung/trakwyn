@@ -10,12 +10,11 @@ import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Button, Input, SubmitButton } from '@trakwyn/ui';
+import { CREATE_SKILL, skillsQueryOptions } from '#/features/profile/graphql/skillQueries';
 import {
-  CREATE_SKILL,
   UPDATE_WORK_EXPERIENCE,
-  skillsQueryOptions,
   workExperiencesQueryOptions,
-} from '#/features/profile/graphql/profileQueries';
+} from '#/features/profile/graphql/workExperienceQueries';
 import {
   DISMISS_RESUME_GAP,
   ROLE_DESCRIPTION_MAX_CHARS,

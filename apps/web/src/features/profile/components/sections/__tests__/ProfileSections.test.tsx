@@ -8,6 +8,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { CertificationsSection } from '#/features/profile/components/sections/CertificationsSection';
 import { LanguagesSection } from '#/features/profile/components/sections/LanguagesSection';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -28,7 +29,7 @@ describe('CertificationsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Certifications'))
+      if (gqlText(query).includes('query Certifications'))
         return Promise.resolve({ certifications: [cert] });
       return Promise.resolve({});
     });
@@ -51,7 +52,7 @@ describe('CertificationsSection (JEF-592)', () => {
   it('keeps the form open and filled, with the Add button pending, while the save runs (JEF-612)', async () => {
     let finish!: (value: unknown) => void;
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Certifications'))
+      if (gqlText(query).includes('query Certifications'))
         return Promise.resolve({ certifications: [cert] });
       return new Promise((resolve) => (finish = resolve));
     });
@@ -71,13 +72,13 @@ describe('CertificationsSection (JEF-592)', () => {
 
     await waitFor(() => expect(document.querySelector('input[name="name"]')).toBeNull());
     expect(
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('createCertification')),
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('createCertification')),
     ).toHaveLength(1);
   });
 
   it('shows the API error and keeps what was typed when the save fails (JEF-612)', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Certifications'))
+      if (gqlText(query).includes('query Certifications'))
         return Promise.resolve({ certifications: [cert] });
       return Promise.reject({
         response: {
@@ -132,7 +133,7 @@ describe('CertificationsSection (JEF-592)', () => {
     fireEvent.submit(name.closest('form')!);
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('createCertification'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('createCertification'), {
         input: {
           name: 'CKA',
           issuer: null,
@@ -149,7 +150,7 @@ describe('LanguagesSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Languages')) {
+      if (gqlText(query).includes('query Languages')) {
         return Promise.resolve({
           languages: [{ id: 'l1', name: 'French', proficiency: 'Fluent', createdAt: '2024-01-01' }],
         });
@@ -175,7 +176,7 @@ describe('LanguagesSection (JEF-592)', () => {
     fireEvent.submit(name.closest('form')!);
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('createLanguage'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('createLanguage'), {
         input: { name: 'German', proficiency: null },
       }),
     );

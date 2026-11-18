@@ -18,6 +18,7 @@ import {
   CvProfileSummaryCard,
   latestRole,
 } from '#/features/dashboard/components/CvProfileSummaryCard';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -44,9 +45,9 @@ function mockProfile({
   skills = [] as unknown[],
 } = {}) {
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences });
-    if (query.includes('Educations')) return Promise.resolve({ educations });
-    if (query.includes('Skills')) return Promise.resolve({ skills });
+    if (gqlText(query).includes('WorkExperiences')) return Promise.resolve({ workExperiences });
+    if (gqlText(query).includes('Educations')) return Promise.resolve({ educations });
+    if (gqlText(query).includes('Skills')) return Promise.resolve({ skills });
     return Promise.resolve({});
   });
 }

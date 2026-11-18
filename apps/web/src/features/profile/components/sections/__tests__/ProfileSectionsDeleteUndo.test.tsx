@@ -20,6 +20,7 @@ import { LanguagesSection } from '#/features/profile/components/sections/Languag
 import { ProjectsSection } from '#/features/profile/components/sections/ProjectsSection';
 import { SkillsSection } from '#/features/profile/components/sections/SkillsSection';
 import { WorkExperienceSection } from '#/features/profile/components/sections/WorkExperienceSection';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const UNDO_WINDOW_MS = 5000;
 const CREATED_AT = '2024-01-01T00:00:00.000Z';
@@ -154,7 +155,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 /** Delete requests the section sent, as `[document, variables]` pairs. */
 const deleteCalls = (deleteField: string) =>
-  mockGqlRequest.mock.calls.filter(([document]) => String(document).includes(deleteField));
+  mockGqlRequest.mock.calls.filter(([document]) => gqlText(document).includes(deleteField));
 
 describe.each(CASES)('$name: delete with undo (JEF-625)', (c) => {
   let deleted = false;
@@ -166,8 +167,9 @@ describe.each(CASES)('$name: delete with undo (JEF-625)', (c) => {
     mockToast.mockReset();
     deleted = false;
     mockGqlRequest.mockImplementation((document: string) => {
-      if (document.includes(c.query)) return Promise.resolve({ [c.field]: deleted ? [] : [c.row] });
-      if (document.includes(c.deleteField)) {
+      if (gqlText(document).includes(c.query))
+        return Promise.resolve({ [c.field]: deleted ? [] : [c.row] });
+      if (gqlText(document).includes(c.deleteField)) {
         deleted = true;
         return Promise.resolve({ [c.deleteField]: true });
       }

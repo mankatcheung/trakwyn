@@ -39,6 +39,7 @@ vi.mock('#/features/ai/hooks/useAiCredits', () => ({
 }));
 vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
+import { gqlText } from '#/__tests__/helpers/gqlText';
 import { CvImportDialog } from '#/features/profile/components/cv-import/CvImportDialog';
 import type { ParsedCvProfile } from '#/features/profile/lib/cvImport';
 
@@ -144,7 +145,7 @@ describe('CvImportDialog with certifications, languages, projects and awards (JE
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const [document, variables] = mockGqlRequest.mock.calls[0]!;
-    expect(document).toContain('importCvProfile');
+    expect(gqlText(document)).toContain('importCvProfile');
     expect(variables.input).toMatchObject({
       certifications: [{ name: 'CKA', issuer: 'CNCF', issuedAt: '2023-05' }],
       languages: [{ name: 'French', proficiency: 'Fluent' }],

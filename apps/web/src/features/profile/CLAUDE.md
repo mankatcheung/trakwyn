@@ -2,6 +2,12 @@
 
 Loaded when working under `apps/web/src/routes/_authenticated/profile`. The rest of the web notes are in `apps/web/CLAUDE.md`. Paths are relative to `apps/web/src/` unless stated.
 
+## Where things live (JEF-643)
+
+- **The page** is `pages/ProfilePage.tsx`; the route only wires the `returnTo` search param.
+- **Documents** are typed `graphql()` calls in `graphql/`, one file per section (`workExperienceQueries.ts`, `educationQueries.ts`, `skillQueries.ts` and so on), each with its row type and `queryOptions`. `cvImportQueries.ts` holds the import mutation and the session probe.
+- **The CV review** (`components/cv-import/CvImportReview.tsx`) renders one group per section from `review/`: `ExperienceReviewGroups.tsx` (work, education, projects), `CredentialReviewGroups.tsx` (skills, certifications, awards, languages), the shared `ReviewGroup` and the field components.
+
 ## CV import (JEF-461)
 
 The profile page's "Import from CV" button opens `CvImportDialog` (`components/cv-import/`): choose a file, read it, review the entries, save the ticked ones. The API side is in `apps/api/src/use-cases/profile/CLAUDE.md`.

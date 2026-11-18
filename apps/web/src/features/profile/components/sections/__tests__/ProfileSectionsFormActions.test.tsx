@@ -13,6 +13,7 @@ import { LanguagesSection } from '#/features/profile/components/sections/Languag
 import { ProjectsSection } from '#/features/profile/components/sections/ProjectsSection';
 import { SkillsSection } from '#/features/profile/components/sections/SkillsSection';
 import { WorkExperienceSection } from '#/features/profile/components/sections/WorkExperienceSection';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -67,7 +68,7 @@ const CASES: Case[] = [
 ];
 
 function isCreate(query: unknown, createMutation: string) {
-  return String(query).includes(createMutation);
+  return gqlText(query).includes(createMutation);
 }
 
 function openForm() {

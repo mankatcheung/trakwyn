@@ -24,7 +24,8 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
   - **A query with a parameter** gets a key factory and an `xQueryOptions(id)` next to its document (`features/interviews/graphql/interviewRoundQueries.ts`), so the loader, the component and the cache edits share one key.
   - **A form field that maps to an API enum** uses `z.enum` over its values, so the variables type-check against the input type.
   - **`showUndoToast` takes a typed document** and prints it, because what it stores and replays after a refresh is text.
-  - Converted so far: the dashboard, offers, interviews, documents, applications and application detail; the rest are tracked under JEF-636.
+  - **An enum input takes the enum's name** (`OFF`), not the value the API reads back (`off`), so a variable typed from the schema needs a map from the UI value (`DIGEST_FREQUENCY_INPUT` in `SettingsNotificationsPage`).
+  - Converted so far: the dashboard, offers, interviews, documents, applications, application detail, settings and the profile; the rest are tracked under JEF-636.
 
 ## Folder layout (JEF-627)
 

@@ -8,6 +8,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { ProjectsSection } from '#/features/profile/components/sections/ProjectsSection';
 import { AwardsSection } from '#/features/profile/components/sections/AwardsSection';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -38,7 +39,8 @@ describe('ProjectsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Projects')) return Promise.resolve({ projects: [project] });
+      if (gqlText(query).includes('query Projects'))
+        return Promise.resolve({ projects: [project] });
       return Promise.resolve({});
     });
   });
@@ -68,7 +70,7 @@ describe('ProjectsSection (JEF-592)', () => {
     fireEvent.submit(name.closest('form')!);
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('createProject'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('createProject'), {
         input: {
           name: 'Trakwyn',
           role: null,
@@ -100,7 +102,7 @@ describe('AwardsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('query Awards')) return Promise.resolve({ awards: [award] });
+      if (gqlText(query).includes('query Awards')) return Promise.resolve({ awards: [award] });
       return Promise.resolve({});
     });
   });
@@ -135,7 +137,7 @@ describe('AwardsSection (JEF-592)', () => {
     fireEvent.submit(title.closest('form')!);
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('createAward'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('createAward'), {
         input: { title: 'Dean’s List', issuer: null, date: null, description: null },
       }),
     );
