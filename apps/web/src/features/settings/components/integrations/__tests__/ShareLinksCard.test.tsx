@@ -36,6 +36,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { ShareLinksCard } from '#/features/settings/components/integrations/ShareLinksCard';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -63,7 +64,7 @@ describe('ShareLinksCard', () => {
 
     it('offers the plan page when creating a share link needs Pro', async () => {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('mutation CreateShareLink')) {
+        if (gqlText(doc).includes('mutation CreateShareLink')) {
           return Promise.reject(planRequired('Share links is a Pro feature'));
         }
         return Promise.resolve({ shareLinks: [] });
@@ -81,7 +82,7 @@ describe('ShareLinksCard', () => {
 
     it('shows other failures as a plain error, with no upgrade link', async () => {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('mutation CreateShareLink')) {
+        if (gqlText(doc).includes('mutation CreateShareLink')) {
           return Promise.reject({
             response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
           });
@@ -103,10 +104,10 @@ describe('ShareLinksCard', () => {
   describe('progressive disclosure of the create-share-link form (redesign)', () => {
     function respondByOperation(links: Array<Record<string, unknown>> = []) {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('query ShareLinks')) {
+        if (gqlText(doc).includes('query ShareLinks')) {
           return Promise.resolve({ shareLinks: links });
         }
-        if (typeof doc === 'string' && doc.includes('mutation CreateShareLink')) {
+        if (gqlText(doc).includes('mutation CreateShareLink')) {
           return Promise.resolve({
             createShareLink: {
               id: 's1',

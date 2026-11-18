@@ -11,6 +11,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { useStepUpReauth, STEP_UP_CANCELLED } from '#/features/settings/hooks/useStepUpReauth';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const stepUpRequiredError = {
   response: {
@@ -153,7 +154,7 @@ describe('useStepUpReauth', () => {
     /** Answers by operation, so the order the hook asks in does not matter. */
     function serve(handlers: Record<string, () => Promise<unknown>>) {
       mockGqlRequest.mockImplementation((query: string) => {
-        const name = Object.keys(handlers).find((key) => query.includes(key));
+        const name = Object.keys(handlers).find((key) => gqlText(query).includes(key));
         return name ? handlers[name]!() : Promise.reject(new Error(`unexpected: ${query}`));
       });
     }
@@ -205,7 +206,7 @@ describe('useStepUpReauth', () => {
       fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
 
       await waitFor(() => expect(onResolve).toHaveBeenCalledWith('retried'));
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('VerifyStepUpCode'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('VerifyStepUpCode'), {
         code: '123456',
       });
     });

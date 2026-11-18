@@ -10,19 +10,17 @@ import { AiProviderOrderCard } from '../components/ai/AiProviderOrderCard';
 import { CustomAiPromptForm } from '../components/ai/CustomAiPromptForm';
 import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
 import { Alert, Card, Checkbox, Skeleton } from '@trakwyn/ui';
+import { UPDATE_PROFILE } from '../graphql/accountQueries';
 import {
   LLM_API_KEYS_QUERY,
   LLM_USAGE_SUMMARY_QUERY,
   DELETE_LLM_API_KEY,
   TEST_LLM_API_KEY,
   SET_AI_PROVIDER_ORDER,
-  UPDATE_PROFILE,
-  type LlmApiKey,
-  type LlmUsageSummary,
-  type TestLlmApiKeyResult,
-  LLM_PROVIDER_OPTIONS,
-  extractGqlError,
-} from '../lib/shared';
+} from '../graphql/aiQueries';
+import type { LlmApiKey, LlmUsageSummary, TestLlmApiKeyResult } from '../lib/ai/aiTypes';
+import { LLM_PROVIDER_OPTIONS } from '../lib/ai/llmProviders';
+import { extractGqlError } from '../lib/gqlErrors';
 
 /**
  * Bring-your-own-key AI settings: provider keys, which providers answer and in
@@ -38,14 +36,14 @@ export function SettingsAiPage() {
   const { data: llmData, isLoading: llmKeysLoading } = useQuery({
     queryKey: ['llmApiKeys'],
     queryFn: () =>
-      gqlClient.request<{
+      gqlClient.request(LLM_API_KEYS_QUERY) as Promise<{
         llmApiKeys: LlmApiKey[];
         me: {
           aiProviderOrder: string[];
           customAiPrompt: string | null;
           useCrossApplicationContext: boolean;
         };
-      }>(LLM_API_KEYS_QUERY),
+      }>,
   });
   const llmApiKeys = llmData?.llmApiKeys ?? [];
 
@@ -54,7 +52,7 @@ export function SettingsAiPage() {
   const { data: usageData } = useQuery({
     queryKey: ['llmUsageSummary'],
     queryFn: () =>
-      gqlClient.request<{ llmUsageSummary: LlmUsageSummary[] }>(LLM_USAGE_SUMMARY_QUERY),
+      gqlClient.request(LLM_USAGE_SUMMARY_QUERY) as Promise<{ llmUsageSummary: LlmUsageSummary[] }>,
   });
   const usageByProvider = new Map((usageData?.llmUsageSummary ?? []).map((s) => [s.provider, s]));
   const configuredProviders = new Set(llmApiKeys.map((k) => k.provider));
@@ -97,10 +95,9 @@ export function SettingsAiPage() {
       return next;
     });
     try {
-      const data = await gqlClient.request<{ testLlmApiKey: TestLlmApiKeyResult }>(
-        TEST_LLM_API_KEY,
-        { provider },
-      );
+      const data = (await gqlClient.request(TEST_LLM_API_KEY, { provider })) as {
+        testLlmApiKey: TestLlmApiKeyResult;
+      };
       setSavedKeyTestResults((prev) => ({ ...prev, [provider]: data.testLlmApiKey }));
     } catch (err) {
       setSavedKeyTestResults((prev) => ({

@@ -38,6 +38,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsSecurityPage } from '#/features/settings/pages/SettingsSecurityPage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -100,7 +101,7 @@ describe('SettingsSecurityPage', () => {
         expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
       });
       expect(mockGqlRequest).not.toHaveBeenCalledWith(
-        expect.stringContaining('UpdatePassword'),
+        gqlContaining('UpdatePassword'),
         expect.anything(),
       );
     });
@@ -120,7 +121,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(updatePasswordBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UpdatePassword'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdatePassword'), {
           currentPassword: 'currentPass1',
           newPassword: 'newPass1234',
         });
@@ -181,7 +182,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(enableBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('BeginTotpSetup'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('BeginTotpSetup'), {
           password: 'mypassword',
         });
       });
@@ -199,7 +200,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ConfirmTotpSetup'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ConfirmTotpSetup'), {
           code: '654321',
         });
       });
@@ -224,7 +225,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(disableBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DisableTotp'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DisableTotp'), {
           password: 'mypassword',
         });
       });
@@ -272,7 +273,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /revoke session/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RevokeSession'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RevokeSession'), {
           id: 'session-2',
         });
       });
@@ -309,7 +310,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /sign out other sessions/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RevokeOtherSessions'));
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RevokeOtherSessions'));
       });
     });
   });
@@ -317,7 +318,7 @@ describe('SettingsSecurityPage', () => {
   describe('security activity', () => {
     it('renders a login event with device and IP', async () => {
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('SecurityActivity')) {
+        if (gqlText(query).includes('SecurityActivity')) {
           return Promise.resolve({
             securityActivity: [
               {
@@ -343,7 +344,7 @@ describe('SettingsSecurityPage', () => {
 
     it('renders a non-login security event with its label', async () => {
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('SecurityActivity')) {
+        if (gqlText(query).includes('SecurityActivity')) {
           return Promise.resolve({
             securityActivity: [
               {
@@ -373,7 +374,7 @@ describe('SettingsSecurityPage', () => {
       // token theft revoked the user's access, so it's the row they most
       // need to be able to read.
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('SecurityActivity')) {
+        if (gqlText(query).includes('SecurityActivity')) {
           return Promise.resolve({
             securityActivity: [
               {
@@ -409,7 +410,7 @@ describe('SettingsSecurityPage', () => {
 
     it('shows an error message when security activity fails to load', async () => {
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('SecurityActivity')) {
+        if (gqlText(query).includes('SecurityActivity')) {
           return Promise.reject(new Error('network error'));
         }
         return Promise.resolve(defaultResponse);
@@ -471,7 +472,7 @@ describe('SettingsSecurityPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /unlink/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UnlinkOAuthAccount'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UnlinkOAuthAccount'), {
           provider: 'google',
         });
       });
@@ -551,7 +552,7 @@ describe('SettingsSecurityPage', () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText('123456')).toBeInTheDocument();
       });
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UpdatePassword'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdatePassword'), {
         currentPassword: 'currentPass1',
         newPassword: 'newPass1234',
       });

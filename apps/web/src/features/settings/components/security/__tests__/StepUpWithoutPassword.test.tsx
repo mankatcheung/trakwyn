@@ -7,6 +7,7 @@ const { mockGqlRequest } = vi.hoisted(() => ({ mockGqlRequest: vi.fn() }));
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { StepUpWithoutPassword } from '#/features/settings/components/security/StepUpWithoutPassword';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 async function openCodeForm(onSuccess = vi.fn()) {
   render(<StepUpWithoutPassword providers={[]} onSuccess={onSuccess} onCancel={vi.fn()} />);
@@ -20,7 +21,7 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('RequestStepUpCode')
+      gqlText(query).includes('RequestStepUpCode')
         ? Promise.resolve({ requestStepUpCode: true })
         : Promise.resolve({ verifyStepUpCode: true }),
     );
@@ -36,7 +37,7 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
     expect(await screen.findByText('Enter the 6-digit code')).toBeInTheDocument();
     expect(onSuccess).not.toHaveBeenCalled();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('VerifyStepUpCode'),
+      gqlContaining('VerifyStepUpCode'),
       expect.anything(),
     );
   });
@@ -48,14 +49,15 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
     await userEvent.click(verifyButton());
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('VerifyStepUpCode'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('VerifyStepUpCode'), {
       code: '123456',
     });
   });
 
   it("shows the API's message and keeps the typed code when the code is refused", async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('RequestStepUpCode')) return Promise.resolve({ requestStepUpCode: true });
+      if (gqlText(query).includes('RequestStepUpCode'))
+        return Promise.resolve({ requestStepUpCode: true });
       return Promise.reject(
         Object.assign(new Error('bad'), {
           response: { errors: [{ message: 'That code is wrong or expired.' }] },
@@ -78,7 +80,7 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
     // machine would see a second, legitimate submit.
     let release: (value: unknown) => void = () => {};
     mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('RequestStepUpCode')
+      gqlText(query).includes('RequestStepUpCode')
         ? Promise.resolve({ requestStepUpCode: true })
         : new Promise((resolve) => {
             release = resolve;
@@ -92,7 +94,7 @@ describe('StepUpWithoutPassword code form (JEF-620)', () => {
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1), { timeout: 4000 });
     const verifies = mockGqlRequest.mock.calls.filter(([q]) =>
-      String(q).includes('VerifyStepUpCode'),
+      gqlText(q).includes('VerifyStepUpCode'),
     );
     expect(verifies).toHaveLength(1);
   });

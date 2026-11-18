@@ -7,15 +7,14 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { isStepUpCancelled, type WithStepUp } from '../../hooks/useStepUpReauth';
+import { REQUEST_ADD_BACKUP_EMAIL, REMOVE_BACKUP_EMAIL } from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
 import {
-  REQUEST_ADD_BACKUP_EMAIL,
-  REMOVE_BACKUP_EMAIL,
   backupEmailSchema,
   removeBackupEmailSchema,
-  extractGqlError,
   type BackupEmailForm,
   type RemoveBackupEmailForm,
-} from '../../lib/shared';
+} from '../../lib/security/securitySchemas';
 
 interface BackupEmailFormProps {
   needsPassword: boolean;

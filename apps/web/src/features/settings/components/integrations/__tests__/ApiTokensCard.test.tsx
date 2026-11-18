@@ -36,6 +36,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { ApiTokensCard } from '#/features/settings/components/integrations/ApiTokensCard';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -72,7 +73,7 @@ describe('ApiTokensCard', () => {
     const serveBilling = (enforced: boolean, apiAccess: boolean) =>
       mockGqlRequest.mockImplementation((doc: string) =>
         Promise.resolve(
-          typeof doc === 'string' && doc.includes('query BillingStatus')
+          gqlText(doc).includes('query BillingStatus')
             ? { billingStatus: { enforced, features: { apiAccess, mcpAccess: true } } }
             : { apiTokens: [] },
         ),
@@ -108,10 +109,10 @@ describe('ApiTokensCard', () => {
     /** The card issues several queries; resolve each by the operation it names. */
     function respondByOperation(tokens: Array<Record<string, unknown>> = []) {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('query ApiTokens')) {
+        if (gqlText(doc).includes('query ApiTokens')) {
           return Promise.resolve({ apiTokens: tokens });
         }
-        if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
+        if (gqlText(doc).includes('mutation CreateApiToken')) {
           return Promise.resolve({
             createApiToken: {
               id: 't1',
@@ -144,10 +145,10 @@ describe('ApiTokensCard', () => {
       fireEvent.click(screen.getByRole('button', { name: /create token/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('mutation CreateApiToken'),
-          { name: 'my mcp client', scope: 'read' },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('mutation CreateApiToken'), {
+          name: 'my mcp client',
+          scope: 'read',
+        });
       });
     });
 
@@ -161,10 +162,10 @@ describe('ApiTokensCard', () => {
       fireEvent.click(screen.getByRole('button', { name: /create token/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('mutation CreateApiToken'),
-          { name: 'ci', scope: 'full' },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('mutation CreateApiToken'), {
+          name: 'ci',
+          scope: 'full',
+        });
       });
     });
 
@@ -197,10 +198,10 @@ describe('ApiTokensCard', () => {
   describe('progressive disclosure of the create-token form (redesign)', () => {
     function respondByOperation(tokens: Array<Record<string, unknown>> = []) {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('query ApiTokens')) {
+        if (gqlText(doc).includes('query ApiTokens')) {
           return Promise.resolve({ apiTokens: tokens });
         }
-        if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
+        if (gqlText(doc).includes('mutation CreateApiToken')) {
           return Promise.resolve({
             createApiToken: {
               id: 't1',
@@ -284,7 +285,7 @@ describe('ApiTokensCard', () => {
     it('collapses the create-token form again after a successful create', async () => {
       let created = false;
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('query ApiTokens')) {
+        if (gqlText(doc).includes('query ApiTokens')) {
           return Promise.resolve({
             apiTokens: created
               ? [
@@ -299,7 +300,7 @@ describe('ApiTokensCard', () => {
               : [],
           });
         }
-        if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
+        if (gqlText(doc).includes('mutation CreateApiToken')) {
           created = true;
           return Promise.resolve({
             createApiToken: {
@@ -334,7 +335,7 @@ describe('ApiTokensCard', () => {
   describe('Pro features (JEF-344)', () => {
     it('never asks a Free user to upgrade to create an API token (JEF-442)', async () => {
       mockGqlRequest.mockImplementation((doc: string) => {
-        if (typeof doc === 'string' && doc.includes('mutation CreateApiToken')) {
+        if (gqlText(doc).includes('mutation CreateApiToken')) {
           return Promise.reject({
             response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
           });

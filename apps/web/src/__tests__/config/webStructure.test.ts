@@ -103,8 +103,6 @@ const MAX_LINES = 400;
  * and each PR removes its entries. The list can only shrink.
  */
 const OVERSIZED_BY_DESIGN: Record<string, string> = {
-  'features/settings/lib/shared.ts':
-    'Holds the helpers for ai/, security/, integrations/ and account/ in one file named "shared". JEF-636 splits it by the subfolder that uses each part and renames the pieces.',
   'features/profile/components/cv-import/CvImportReview.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/app-shell/components/AuthenticatedLayout.tsx':

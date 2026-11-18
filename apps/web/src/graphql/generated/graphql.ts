@@ -4004,6 +4004,499 @@ export type SkillsQuery = {
   }> | null;
 };
 
+export type MeQueryVariables = Exact<{ [key: string]: never }>;
+
+export type MeQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    id?: string | null;
+    email?: string | null;
+    name?: string | null;
+    timezone?: string | null;
+    targetRole?: string | null;
+    phone?: string | null;
+    location?: string | null;
+    profileLinks?: Array<string> | null;
+    avatarUrl?: string | null;
+    backupEmail?: string | null;
+    backupEmailVerifiedAt?: string | null;
+    hasPassword?: boolean | null;
+  } | null;
+};
+
+export type RequestAvatarUploadUrlMutationVariables = Exact<{
+  filename: Scalars['String']['input'];
+  mimeType: Scalars['String']['input'];
+}>;
+
+export type RequestAvatarUploadUrlMutation = {
+  __typename?: 'Mutation';
+  requestAvatarUploadUrl?: {
+    __typename?: 'UploadUrlPayload';
+    uploadUrl?: string | null;
+    storageKey?: string | null;
+  } | null;
+};
+
+export type ConfirmAvatarMutationVariables = Exact<{
+  storageKey: Scalars['String']['input'];
+  mimeType: Scalars['String']['input'];
+  sizeBytes: Scalars['Int']['input'];
+}>;
+
+export type ConfirmAvatarMutation = { __typename?: 'Mutation'; confirmAvatar?: string | null };
+
+export type RemoveAvatarMutationVariables = Exact<{ [key: string]: never }>;
+
+export type RemoveAvatarMutation = { __typename?: 'Mutation'; removeAvatar?: boolean | null };
+
+export type UpdateProfileMutationVariables = Exact<{
+  name?: InputMaybe<Scalars['String']['input']>;
+  timezone?: InputMaybe<Scalars['String']['input']>;
+  targetRole?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  location?: InputMaybe<Scalars['String']['input']>;
+  profileLinks?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  customAiPrompt?: InputMaybe<Scalars['String']['input']>;
+  useCrossApplicationContext?: InputMaybe<Scalars['Boolean']['input']>;
+  llmFallbackWhenLimited?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+export type UpdateProfileMutation = { __typename?: 'Mutation'; updateProfile?: boolean | null };
+
+export type ExportUserDataQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ExportUserDataQuery = { __typename?: 'Query'; exportUserData?: string | null };
+
+export type ImportUserDataMutationVariables = Exact<{
+  data: Scalars['String']['input'];
+}>;
+
+export type ImportUserDataMutation = {
+  __typename?: 'Mutation';
+  importUserData?: {
+    __typename?: 'ImportSummary';
+    applicationsImported?: number | null;
+    applicationsSkipped?: number | null;
+    notesImported?: number | null;
+    documentsSkipped?: number | null;
+  } | null;
+};
+
+export type NotificationPreferencesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type NotificationPreferencesQuery = {
+  __typename?: 'Query';
+  notificationPreferences?: {
+    __typename?: 'NotificationPreferences';
+    weeklyDigestEnabled?: boolean | null;
+    digestFrequency?: string | null;
+    followUpRemindersEnabled?: boolean | null;
+    pushNotificationsEnabled?: boolean | null;
+    weeklyApplicationGoal?: number | null;
+  } | null;
+};
+
+export type UpdateNotificationPreferencesMutationVariables = Exact<{
+  digestFrequency?: InputMaybe<DigestFrequency>;
+  followUpRemindersEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  pushNotificationsEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  weeklyApplicationGoal?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type UpdateNotificationPreferencesMutation = {
+  __typename?: 'Mutation';
+  updateNotificationPreferences?: boolean | null;
+};
+
+export type StorageUsageQueryVariables = Exact<{ [key: string]: never }>;
+
+export type StorageUsageQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    storageUsedBytes?: number | null;
+    storageLimitBytes?: number | null;
+  } | null;
+};
+
+export type LlmApiKeysQueryVariables = Exact<{ [key: string]: never }>;
+
+export type LlmApiKeysQuery = {
+  __typename?: 'Query';
+  llmApiKeys?: Array<{
+    __typename?: 'LlmApiKey';
+    provider?: string | null;
+    model?: string | null;
+    baseUrl?: string | null;
+    monthlyTokenLimit?: number | null;
+  }> | null;
+  me?: {
+    __typename?: 'User';
+    aiProviderOrder?: Array<string> | null;
+    customAiPrompt?: string | null;
+    useCrossApplicationContext?: boolean | null;
+  } | null;
+};
+
+export type SetAiProviderOrderMutationVariables = Exact<{
+  order: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+export type SetAiProviderOrderMutation = {
+  __typename?: 'Mutation';
+  setAiProviderOrder?: boolean | null;
+};
+
+export type SaveLlmApiKeyMutationVariables = Exact<{
+  provider: Scalars['String']['input'];
+  apiKey: Scalars['String']['input'];
+  model?: InputMaybe<Scalars['String']['input']>;
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type SaveLlmApiKeyMutation = { __typename?: 'Mutation'; saveLlmApiKey?: boolean | null };
+
+export type DeleteLlmApiKeyMutationVariables = Exact<{
+  provider: Scalars['String']['input'];
+}>;
+
+export type DeleteLlmApiKeyMutation = { __typename?: 'Mutation'; deleteLlmApiKey?: boolean | null };
+
+export type SetLlmApiKeyMonthlyLimitMutationVariables = Exact<{
+  provider: Scalars['String']['input'];
+  monthlyTokenLimit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type SetLlmApiKeyMonthlyLimitMutation = {
+  __typename?: 'Mutation';
+  setLlmApiKeyMonthlyLimit?: boolean | null;
+};
+
+export type TestLlmApiKeyMutationVariables = Exact<{
+  provider: Scalars['String']['input'];
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type TestLlmApiKeyMutation = {
+  __typename?: 'Mutation';
+  testLlmApiKey?: {
+    __typename?: 'TestLlmApiKeyResult';
+    ok?: boolean | null;
+    error?: string | null;
+  } | null;
+};
+
+export type LlmUsageSummaryQueryVariables = Exact<{ [key: string]: never }>;
+
+export type LlmUsageSummaryQuery = {
+  __typename?: 'Query';
+  llmUsageSummary?: Array<{
+    __typename?: 'LlmUsageSummary';
+    provider?: string | null;
+    requestCount?: number | null;
+    promptTokens?: number | null;
+    completionTokens?: number | null;
+    cacheReadTokens?: number | null;
+    cacheWriteTokens?: number | null;
+    lastUsedAt?: string | null;
+    monthlyTokenLimit?: number | null;
+    limitReached?: boolean | null;
+  }> | null;
+};
+
+export type ApiTokensQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ApiTokensQuery = {
+  __typename?: 'Query';
+  apiTokens?: Array<{
+    __typename?: 'ApiToken';
+    id?: string | null;
+    name?: string | null;
+    scope?: string | null;
+    lastUsedAt?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type CreateApiTokenMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  scope?: InputMaybe<ApiTokenScope>;
+}>;
+
+export type CreateApiTokenMutation = {
+  __typename?: 'Mutation';
+  createApiToken?: {
+    __typename?: 'CreateApiTokenPayload';
+    id?: string | null;
+    name?: string | null;
+    token?: string | null;
+    scope?: string | null;
+    createdAt?: string | null;
+  } | null;
+};
+
+export type DeleteApiTokenMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteApiTokenMutation = { __typename?: 'Mutation'; deleteApiToken?: boolean | null };
+
+export type McpOAuthGrantsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type McpOAuthGrantsQuery = {
+  __typename?: 'Query';
+  mcpOAuthGrants?: Array<{
+    __typename?: 'McpOAuthGrant';
+    id?: string | null;
+    clientName?: string | null;
+    scope?: string | null;
+    authorizedAt?: string | null;
+    lastUsedAt?: string | null;
+  }> | null;
+};
+
+export type RevokeMcpOAuthGrantMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type RevokeMcpOAuthGrantMutation = {
+  __typename?: 'Mutation';
+  revokeMcpOAuthGrant?: boolean | null;
+};
+
+export type ShareLinksQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ShareLinksQuery = {
+  __typename?: 'Query';
+  shareLinks?: Array<{
+    __typename?: 'ShareLink';
+    id?: string | null;
+    name?: string | null;
+    lastUsedAt?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type CreateShareLinkMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+}>;
+
+export type CreateShareLinkMutation = {
+  __typename?: 'Mutation';
+  createShareLink?: {
+    __typename?: 'CreateShareLinkPayload';
+    id?: string | null;
+    name?: string | null;
+    token?: string | null;
+    createdAt?: string | null;
+  } | null;
+};
+
+export type DeleteShareLinkMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteShareLinkMutation = { __typename?: 'Mutation'; deleteShareLink?: boolean | null };
+
+export type RequestEmailChangeMutationVariables = Exact<{
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
+  newEmail: Scalars['String']['input'];
+}>;
+
+export type RequestEmailChangeMutation = {
+  __typename?: 'Mutation';
+  requestEmailChange?: boolean | null;
+};
+
+export type RequestAddBackupEmailMutationVariables = Exact<{
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
+  backupEmail: Scalars['String']['input'];
+}>;
+
+export type RequestAddBackupEmailMutation = {
+  __typename?: 'Mutation';
+  requestAddBackupEmail?: boolean | null;
+};
+
+export type RemoveBackupEmailMutationVariables = Exact<{
+  currentPassword?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type RemoveBackupEmailMutation = {
+  __typename?: 'Mutation';
+  removeBackupEmail?: boolean | null;
+};
+
+export type UpdatePasswordMutationVariables = Exact<{
+  currentPassword: Scalars['String']['input'];
+  newPassword: Scalars['String']['input'];
+}>;
+
+export type UpdatePasswordMutation = { __typename?: 'Mutation'; updatePassword?: boolean | null };
+
+export type ReauthenticateMutationVariables = Exact<{
+  password: Scalars['String']['input'];
+  code?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type ReauthenticateMutation = {
+  __typename?: 'Mutation';
+  reauthenticate?: {
+    __typename?: 'LoginResult';
+    success?: boolean | null;
+    totpRequired?: boolean | null;
+    accessToken?: string | null;
+  } | null;
+};
+
+export type SecurityActivityQueryVariables = Exact<{ [key: string]: never }>;
+
+export type SecurityActivityQuery = {
+  __typename?: 'Query';
+  securityActivity?: Array<{
+    __typename?: 'SecurityActivityItem';
+    id?: string | null;
+    eventType?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type SessionsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type SessionsQuery = {
+  __typename?: 'Query';
+  sessions?: Array<{
+    __typename?: 'Session';
+    id?: string | null;
+    userAgent?: string | null;
+    ipAddress?: string | null;
+    deviceLabel?: string | null;
+    location?: string | null;
+    lastUsedAt?: string | null;
+    current?: boolean | null;
+  }> | null;
+};
+
+export type RevokeSessionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type RevokeSessionMutation = { __typename?: 'Mutation'; revokeSession?: boolean | null };
+
+export type RevokeOtherSessionsMutationVariables = Exact<{ [key: string]: never }>;
+
+export type RevokeOtherSessionsMutation = {
+  __typename?: 'Mutation';
+  revokeOtherSessions?: boolean | null;
+};
+
+export type TotpEnabledQueryVariables = Exact<{ [key: string]: never }>;
+
+export type TotpEnabledQuery = { __typename?: 'Query'; totpEnabled?: boolean | null };
+
+export type BeginTotpSetupMutationVariables = Exact<{
+  password: Scalars['String']['input'];
+}>;
+
+export type BeginTotpSetupMutation = {
+  __typename?: 'Mutation';
+  beginTotpSetup?: {
+    __typename?: 'TotpSetup';
+    secret?: string | null;
+    otpauthUrl?: string | null;
+    qrCodeDataUrl?: string | null;
+  } | null;
+};
+
+export type ConfirmTotpSetupMutationVariables = Exact<{
+  code: Scalars['String']['input'];
+}>;
+
+export type ConfirmTotpSetupMutation = {
+  __typename?: 'Mutation';
+  confirmTotpSetup?: {
+    __typename?: 'ConfirmTotpSetupResult';
+    backupCodes?: Array<string> | null;
+  } | null;
+};
+
+export type DisableTotpMutationVariables = Exact<{
+  password: Scalars['String']['input'];
+}>;
+
+export type DisableTotpMutation = { __typename?: 'Mutation'; disableTotp?: boolean | null };
+
+export type RegenerateTotpBackupCodesMutationVariables = Exact<{
+  currentPassword: Scalars['String']['input'];
+}>;
+
+export type RegenerateTotpBackupCodesMutation = {
+  __typename?: 'Mutation';
+  regenerateTotpBackupCodes?: {
+    __typename?: 'ConfirmTotpSetupResult';
+    backupCodes?: Array<string> | null;
+  } | null;
+};
+
+export type LinkedOAuthAccountsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type LinkedOAuthAccountsQuery = {
+  __typename?: 'Query';
+  linkedOAuthAccounts?: Array<{
+    __typename?: 'LinkedOAuthAccount';
+    provider?: OAuthProvider | null;
+    email?: string | null;
+    createdAt?: string | null;
+  }> | null;
+};
+
+export type UnlinkOAuthAccountMutationVariables = Exact<{
+  provider: OAuthProvider;
+}>;
+
+export type UnlinkOAuthAccountMutation = {
+  __typename?: 'Mutation';
+  unlinkOAuthAccount?: boolean | null;
+};
+
+export type StepUpMethodsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type StepUpMethodsQuery = {
+  __typename?: 'Query';
+  me?: { __typename?: 'User'; stepUpMethods?: Array<StepUpMethod> | null } | null;
+};
+
+export type StartOAuthReauthMutationVariables = Exact<{
+  provider: OAuthProvider;
+}>;
+
+export type StartOAuthReauthMutation = {
+  __typename?: 'Mutation';
+  startOAuthReauth?: string | null;
+};
+
+export type RequestStepUpCodeMutationVariables = Exact<{ [key: string]: never }>;
+
+export type RequestStepUpCodeMutation = {
+  __typename?: 'Mutation';
+  requestStepUpCode?: boolean | null;
+};
+
+export type VerifyStepUpCodeMutationVariables = Exact<{
+  code: Scalars['String']['input'];
+}>;
+
+export type VerifyStepUpCodeMutation = {
+  __typename?: 'Mutation';
+  verifyStepUpCode?: boolean | null;
+};
+
 export const UpdateApplicationDocument = {
   kind: 'Document',
   definitions: [
@@ -9211,3 +9704,1812 @@ export const SkillsDocument = {
     },
   ],
 } as unknown as DocumentNode<SkillsQuery, SkillsQueryVariables>;
+export const MeDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Me' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'timezone' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'targetRole' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'phone' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'profileLinks' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'avatarUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'backupEmail' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'backupEmailVerifiedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'hasPassword' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<MeQuery, MeQueryVariables>;
+export const RequestAvatarUploadUrlDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestAvatarUploadUrl' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filename' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'mimeType' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'requestAvatarUploadUrl' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filename' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'filename' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'mimeType' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'mimeType' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'uploadUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'storageKey' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RequestAvatarUploadUrlMutation,
+  RequestAvatarUploadUrlMutationVariables
+>;
+export const ConfirmAvatarDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmAvatar' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'storageKey' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'mimeType' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sizeBytes' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmAvatar' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'storageKey' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'storageKey' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'mimeType' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'mimeType' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sizeBytes' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sizeBytes' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmAvatarMutation, ConfirmAvatarMutationVariables>;
+export const RemoveAvatarDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RemoveAvatar' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'removeAvatar' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RemoveAvatarMutation, RemoveAvatarMutationVariables>;
+export const UpdateProfileDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateProfile' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'timezone' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'targetRole' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'phone' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'location' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'profileLinks' } },
+          type: {
+            kind: 'ListType',
+            type: {
+              kind: 'NonNullType',
+              type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'customAiPrompt' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'useCrossApplicationContext' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'llmFallbackWhenLimited' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateProfile' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'name' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'timezone' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'timezone' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'targetRole' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'targetRole' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'phone' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'phone' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'location' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'location' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'profileLinks' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'profileLinks' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'customAiPrompt' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'customAiPrompt' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'useCrossApplicationContext' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'useCrossApplicationContext' },
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'llmFallbackWhenLimited' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'llmFallbackWhenLimited' },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateProfileMutation, UpdateProfileMutationVariables>;
+export const ExportUserDataDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ExportUserData' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'exportUserData' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ExportUserDataQuery, ExportUserDataQueryVariables>;
+export const ImportUserDataDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ImportUserData' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'data' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'importUserData' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'data' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'data' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationsImported' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationsSkipped' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notesImported' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'documentsSkipped' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ImportUserDataMutation, ImportUserDataMutationVariables>;
+export const NotificationPreferencesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'NotificationPreferences' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'notificationPreferences' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'weeklyDigestEnabled' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'digestFrequency' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'followUpRemindersEnabled' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'pushNotificationsEnabled' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'weeklyApplicationGoal' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<NotificationPreferencesQuery, NotificationPreferencesQueryVariables>;
+export const UpdateNotificationPreferencesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateNotificationPreferences' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'digestFrequency' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'DigestFrequency' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'followUpRemindersEnabled' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'pushNotificationsEnabled' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'weeklyApplicationGoal' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateNotificationPreferences' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'digestFrequency' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'digestFrequency' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'followUpRemindersEnabled' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'followUpRemindersEnabled' },
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'pushNotificationsEnabled' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'pushNotificationsEnabled' },
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'weeklyApplicationGoal' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'weeklyApplicationGoal' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateNotificationPreferencesMutation,
+  UpdateNotificationPreferencesMutationVariables
+>;
+export const StorageUsageDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'StorageUsage' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'storageUsedBytes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'storageLimitBytes' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<StorageUsageQuery, StorageUsageQueryVariables>;
+export const LlmApiKeysDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'LlmApiKeys' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'llmApiKeys' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'provider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'model' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'baseUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'monthlyTokenLimit' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'aiProviderOrder' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customAiPrompt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'useCrossApplicationContext' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LlmApiKeysQuery, LlmApiKeysQueryVariables>;
+export const SetAiProviderOrderDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'SetAiProviderOrder' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'order' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'setAiProviderOrder' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'order' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'order' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SetAiProviderOrderMutation, SetAiProviderOrderMutationVariables>;
+export const SaveLlmApiKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'SaveLlmApiKey' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'apiKey' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'baseUrl' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'saveLlmApiKey' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'apiKey' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'apiKey' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'model' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'baseUrl' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'baseUrl' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SaveLlmApiKeyMutation, SaveLlmApiKeyMutationVariables>;
+export const DeleteLlmApiKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteLlmApiKey' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteLlmApiKey' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteLlmApiKeyMutation, DeleteLlmApiKeyMutationVariables>;
+export const SetLlmApiKeyMonthlyLimitDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'SetLlmApiKeyMonthlyLimit' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'monthlyTokenLimit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'setLlmApiKeyMonthlyLimit' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'monthlyTokenLimit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'monthlyTokenLimit' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  SetLlmApiKeyMonthlyLimitMutation,
+  SetLlmApiKeyMonthlyLimitMutationVariables
+>;
+export const TestLlmApiKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'TestLlmApiKey' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'apiKey' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'baseUrl' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'testLlmApiKey' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'apiKey' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'apiKey' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'model' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'baseUrl' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'baseUrl' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'ok' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'error' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<TestLlmApiKeyMutation, TestLlmApiKeyMutationVariables>;
+export const LlmUsageSummaryDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'LlmUsageSummary' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'llmUsageSummary' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'provider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'requestCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'promptTokens' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completionTokens' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cacheReadTokens' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cacheWriteTokens' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'monthlyTokenLimit' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'limitReached' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LlmUsageSummaryQuery, LlmUsageSummaryQueryVariables>;
+export const ApiTokensDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ApiTokens' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'apiTokens' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ApiTokensQuery, ApiTokensQueryVariables>;
+export const CreateApiTokenDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateApiToken' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'scope' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ApiTokenScope' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createApiToken' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'name' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'scope' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'scope' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'token' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateApiTokenMutation, CreateApiTokenMutationVariables>;
+export const DeleteApiTokenDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteApiToken' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteApiToken' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteApiTokenMutation, DeleteApiTokenMutationVariables>;
+export const McpOAuthGrantsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'McpOAuthGrants' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mcpOAuthGrants' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'clientName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'authorizedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<McpOAuthGrantsQuery, McpOAuthGrantsQueryVariables>;
+export const RevokeMcpOAuthGrantDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RevokeMcpOAuthGrant' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'revokeMcpOAuthGrant' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RevokeMcpOAuthGrantMutation, RevokeMcpOAuthGrantMutationVariables>;
+export const ShareLinksDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ShareLinks' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'shareLinks' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ShareLinksQuery, ShareLinksQueryVariables>;
+export const CreateShareLinkDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateShareLink' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createShareLink' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'name' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'token' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateShareLinkMutation, CreateShareLinkMutationVariables>;
+export const DeleteShareLinkDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteShareLink' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteShareLink' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteShareLinkMutation, DeleteShareLinkMutationVariables>;
+export const RequestEmailChangeDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestEmailChange' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'newEmail' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'requestEmailChange' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'currentPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'newEmail' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'newEmail' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RequestEmailChangeMutation, RequestEmailChangeMutationVariables>;
+export const RequestAddBackupEmailDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestAddBackupEmail' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'backupEmail' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'requestAddBackupEmail' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'currentPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'backupEmail' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'backupEmail' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RequestAddBackupEmailMutation, RequestAddBackupEmailMutationVariables>;
+export const RemoveBackupEmailDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RemoveBackupEmail' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'removeBackupEmail' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'currentPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RemoveBackupEmailMutation, RemoveBackupEmailMutationVariables>;
+export const UpdatePasswordDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdatePassword' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'newPassword' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updatePassword' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'currentPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'newPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'newPassword' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdatePasswordMutation, UpdatePasswordMutationVariables>;
+export const ReauthenticateDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'Reauthenticate' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'reauthenticate' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'code' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'success' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'totpRequired' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'accessToken' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ReauthenticateMutation, ReauthenticateMutationVariables>;
+export const SecurityActivityDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'SecurityActivity' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'securityActivity' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'eventType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'ipAddress' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'userAgent' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SecurityActivityQuery, SecurityActivityQueryVariables>;
+export const SessionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Sessions' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'sessions' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'userAgent' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'ipAddress' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'deviceLabel' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'current' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SessionsQuery, SessionsQueryVariables>;
+export const RevokeSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RevokeSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'revokeSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RevokeSessionMutation, RevokeSessionMutationVariables>;
+export const RevokeOtherSessionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RevokeOtherSessions' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'revokeOtherSessions' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RevokeOtherSessionsMutation, RevokeOtherSessionsMutationVariables>;
+export const TotpEnabledDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'TotpEnabled' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'totpEnabled' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<TotpEnabledQuery, TotpEnabledQueryVariables>;
+export const BeginTotpSetupDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'BeginTotpSetup' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'beginTotpSetup' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'secret' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'otpauthUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'qrCodeDataUrl' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<BeginTotpSetupMutation, BeginTotpSetupMutationVariables>;
+export const ConfirmTotpSetupDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmTotpSetup' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmTotpSetup' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'code' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'backupCodes' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmTotpSetupMutation, ConfirmTotpSetupMutationVariables>;
+export const DisableTotpDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DisableTotp' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'disableTotp' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DisableTotpMutation, DisableTotpMutationVariables>;
+export const RegenerateTotpBackupCodesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RegenerateTotpBackupCodes' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'regenerateTotpBackupCodes' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'currentPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'currentPassword' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'backupCodes' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RegenerateTotpBackupCodesMutation,
+  RegenerateTotpBackupCodesMutationVariables
+>;
+export const LinkedOAuthAccountsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'LinkedOAuthAccounts' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'linkedOAuthAccounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'provider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LinkedOAuthAccountsQuery, LinkedOAuthAccountsQueryVariables>;
+export const UnlinkOAuthAccountDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UnlinkOAuthAccount' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'OAuthProvider' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'unlinkOAuthAccount' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UnlinkOAuthAccountMutation, UnlinkOAuthAccountMutationVariables>;
+export const StepUpMethodsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'StepUpMethods' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'stepUpMethods' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<StepUpMethodsQuery, StepUpMethodsQueryVariables>;
+export const StartOAuthReauthDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'StartOAuthReauth' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'OAuthProvider' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'startOAuthReauth' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<StartOAuthReauthMutation, StartOAuthReauthMutationVariables>;
+export const RequestStepUpCodeDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestStepUpCode' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'requestStepUpCode' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RequestStepUpCodeMutation, RequestStepUpCodeMutationVariables>;
+export const VerifyStepUpCodeDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'VerifyStepUpCode' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'verifyStepUpCode' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'code' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'code' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<VerifyStepUpCodeMutation, VerifyStepUpCodeMutationVariables>;

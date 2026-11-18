@@ -51,9 +51,13 @@ vi.mock('#/features/ai/lib/aiCredits', async () => {
 vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () => null }));
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function documentOf(arg: unknown): string {
-  return typeof arg === 'string' ? arg : (arg as { document: string }).document;
+  // A request object carries `document`; a string or a typed document is the document itself.
+  if (typeof arg === 'object' && arg !== null && 'document' in arg)
+    return (arg as { document: string }).document;
+  return arg as string;
 }
 
 const makeClient = () =>
@@ -77,14 +81,14 @@ function setup({
 }: Setup = {}) {
   mockGqlRequest.mockImplementation((arg: unknown) => {
     const query = documentOf(arg);
-    if (query.includes('LlmApiKeys'))
+    if (gqlText(query).includes('LlmApiKeys'))
       return Promise.resolve({ llmApiKeys: keys, me: { aiProviderOrder: order } });
-    if (query.includes('CreateConversation'))
+    if (gqlText(query).includes('CreateConversation'))
       return Promise.resolve({
         createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
       });
-    if (query.includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-    if (query.includes('Conversations')) return Promise.resolve({ conversations });
+    if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
+    if (gqlText(query).includes('Conversations')) return Promise.resolve({ conversations });
     return Promise.resolve({});
   });
 }
@@ -92,11 +96,13 @@ function setup({
 /** Resolves once the AI settings request has been answered and React has rendered the result. */
 async function settingsRendered(): Promise<void> {
   await waitFor(() =>
-    expect(mockGqlRequest.mock.calls.some((c) => documentOf(c[0]).includes('LlmApiKeys'))).toBe(
-      true,
-    ),
+    expect(
+      mockGqlRequest.mock.calls.some((c) => gqlText(documentOf(c[0])).includes('LlmApiKeys')),
+    ).toBe(true),
   );
-  const index = mockGqlRequest.mock.calls.findIndex((c) => documentOf(c[0]).includes('LlmApiKeys'));
+  const index = mockGqlRequest.mock.calls.findIndex((c) =>
+    gqlText(documentOf(c[0])).includes('LlmApiKeys'),
+  );
   await mockGqlRequest.mock.results[index]?.value;
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -105,7 +111,9 @@ async function settingsRendered(): Promise<void> {
 
 /** The variables the page sent when it created a conversation, or `undefined` if it never did. */
 function createConversationCall() {
-  return mockGqlRequest.mock.calls.find((c) => documentOf(c[0]).includes('CreateConversation'));
+  return mockGqlRequest.mock.calls.find((c) =>
+    gqlText(documentOf(c[0])).includes('CreateConversation'),
+  );
 }
 
 describe('AssistantPage: which AI answers (JEF-503)', () => {

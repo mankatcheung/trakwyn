@@ -15,9 +15,9 @@ import {
   REQUEST_AVATAR_UPLOAD_URL,
   CONFIRM_AVATAR,
   REMOVE_AVATAR,
-  type Me,
-  extractGqlError,
-} from '../lib/shared';
+} from '../graphql/accountQueries';
+import type { Me } from '../lib/account/accountTypes';
+import { extractGqlError } from '../lib/gqlErrors';
 
 export function SettingsProfilePage() {
   const qc = useQueryClient();
@@ -32,7 +32,7 @@ export function SettingsProfilePage() {
 
   const { data: meData, isLoading: meLoading } = useQuery({
     queryKey: ['me'],
-    queryFn: () => gqlClient.request<{ me: Me | null }>(ME_QUERY),
+    queryFn: () => gqlClient.request(ME_QUERY) as Promise<{ me: Me | null }>,
   });
   const me = meData?.me;
 
@@ -46,9 +46,12 @@ export function SettingsProfilePage() {
     setAvatarUploading(true);
     setAvatarError(null);
     try {
-      const { requestAvatarUploadUrl } = await gqlClient.request<{
+      const { requestAvatarUploadUrl } = (await gqlClient.request(REQUEST_AVATAR_UPLOAD_URL, {
+        filename: file.name,
+        mimeType: file.type,
+      })) as {
         requestAvatarUploadUrl: { uploadUrl: string; storageKey: string };
-      }>(REQUEST_AVATAR_UPLOAD_URL, { filename: file.name, mimeType: file.type });
+      };
 
       await putBlob(requestAvatarUploadUrl.storageKey, file, {
         access: 'public',

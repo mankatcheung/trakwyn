@@ -36,6 +36,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsProfilePage } from '#/features/settings/pages/SettingsProfilePage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -110,7 +111,7 @@ describe('SettingsProfilePage', () => {
       fireEvent.click(saveBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UpdateProfile'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateProfile'), {
           name: 'Jeff Man',
           timezone: 'UTC',
           targetRole: 'Staff Engineer',
@@ -160,7 +161,7 @@ describe('SettingsProfilePage', () => {
 
         await waitFor(() =>
           expect(mockGqlRequest).toHaveBeenCalledWith(
-            expect.stringContaining('UpdateProfile'),
+            gqlContaining('UpdateProfile'),
             expect.objectContaining({
               phone: '555 0100',
               location: 'Paris',
@@ -187,7 +188,7 @@ describe('SettingsProfilePage', () => {
 
         await waitFor(() =>
           expect(mockGqlRequest).toHaveBeenCalledWith(
-            expect.stringContaining('UpdateProfile'),
+            gqlContaining('UpdateProfile'),
             expect.objectContaining({ phone: null, location: null, profileLinks: [] }),
           ),
         );
@@ -212,7 +213,7 @@ describe('SettingsProfilePage', () => {
 
         expect(await screen.findByText(message)).toBeInTheDocument();
         expect(mockGqlRequest).not.toHaveBeenCalledWith(
-          expect.stringContaining('UpdateProfile'),
+          gqlContaining('UpdateProfile'),
           expect.anything(),
         );
       });
@@ -242,7 +243,7 @@ describe('SettingsProfilePage', () => {
 
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('UpdateProfile'),
+          gqlContaining('UpdateProfile'),
           expect.objectContaining({ name: null }),
         );
       });
@@ -275,7 +276,7 @@ describe('SettingsProfilePage', () => {
       mockPutBlob.mockResolvedValue({ url: 'https://blob.example.com/avatar.png' });
 
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('RequestAvatarUploadUrl')) {
+        if (gqlText(query).includes('RequestAvatarUploadUrl')) {
           return Promise.resolve({
             requestAvatarUploadUrl: {
               uploadUrl: 'https://storage.example.com/upload',
@@ -283,7 +284,7 @@ describe('SettingsProfilePage', () => {
             },
           });
         }
-        if (typeof query === 'string' && query.includes('ConfirmAvatar')) {
+        if (gqlText(query).includes('ConfirmAvatar')) {
           return Promise.resolve({ confirmAvatar: 'https://cdn.example.com/avatar.png' });
         }
         return Promise.resolve(defaultResponse);
@@ -295,10 +296,10 @@ describe('SettingsProfilePage', () => {
       selectAvatarFile();
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('RequestAvatarUploadUrl'),
-          { filename: 'me.png', mimeType: 'image/png' },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestAvatarUploadUrl'), {
+          filename: 'me.png',
+          mimeType: 'image/png',
+        });
       });
       expect(mockPutBlob).toHaveBeenCalledWith('users/user-1/avatar/key.png', expect.any(File), {
         access: 'public',
@@ -306,7 +307,7 @@ describe('SettingsProfilePage', () => {
         contentType: 'image/png',
       });
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ConfirmAvatar'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ConfirmAvatar'), {
           storageKey: 'users/user-1/avatar/key.png',
           mimeType: 'image/png',
           sizeBytes: expect.any(Number) as number,
@@ -317,7 +318,7 @@ describe('SettingsProfilePage', () => {
     it('shows an error message when the upload fails', async () => {
       mockPutBlob.mockResolvedValue({ url: 'https://blob.example.com/avatar.png' });
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('RequestAvatarUploadUrl')) {
+        if (gqlText(query).includes('RequestAvatarUploadUrl')) {
           return Promise.reject({ response: { errors: [{ message: 'Unsupported file type' }] } });
         }
         return Promise.resolve(defaultResponse);
@@ -346,7 +347,7 @@ describe('SettingsProfilePage', () => {
       fireEvent.click(removeBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RemoveAvatar'));
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RemoveAvatar'));
       });
     });
 
@@ -389,7 +390,7 @@ describe('SettingsProfilePage', () => {
       fireEvent.click(updateEmailBtn);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestEmailChange'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestEmailChange'), {
           currentPassword: 'mypassword',
           newEmail: 'new@example.com',
         });
@@ -480,7 +481,7 @@ describe('SettingsProfilePage', () => {
       fireEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Reauthenticate'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('Reauthenticate'), {
           password: 'mypassword',
           code: undefined,
         });
@@ -488,7 +489,7 @@ describe('SettingsProfilePage', () => {
       await waitFor(() => {
         expect(screen.queryByText("Confirm it's you")).not.toBeInTheDocument();
       });
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestEmailChange'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestEmailChange'), {
         currentPassword: 'mypassword',
         newEmail: 'new@example.com',
       });
@@ -539,7 +540,7 @@ describe('SettingsProfilePage', () => {
       fireEvent.click(updateEmailBtn);
 
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestEmailChange'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestEmailChange'), {
           newEmail: 'new@example.com',
           currentPassword: null,
         }),

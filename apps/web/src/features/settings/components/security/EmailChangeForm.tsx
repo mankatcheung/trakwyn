@@ -6,12 +6,9 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { isStepUpCancelled, type WithStepUp } from '../../hooks/useStepUpReauth';
-import {
-  REQUEST_EMAIL_CHANGE,
-  emailSchema,
-  extractGqlError,
-  type EmailForm,
-} from '../../lib/shared';
+import { REQUEST_EMAIL_CHANGE } from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import { emailSchema, type EmailForm } from '../../lib/security/securitySchemas';
 
 /**
  * Asks for a new sign-in email. It only mails a confirmation link and changes

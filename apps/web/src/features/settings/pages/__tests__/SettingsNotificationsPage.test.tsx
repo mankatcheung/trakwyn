@@ -34,6 +34,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsNotificationsPage } from '#/features/settings/pages/SettingsNotificationsPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -100,8 +101,8 @@ describe('SettingsNotificationsPage', () => {
 
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('UpdateNotificationPreferences'),
-          { digestFrequency: 'off' },
+          gqlContaining('UpdateNotificationPreferences'),
+          { digestFrequency: 'OFF' },
         );
       });
     });
@@ -115,7 +116,7 @@ describe('SettingsNotificationsPage', () => {
 
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('UpdateNotificationPreferences'),
+          gqlContaining('UpdateNotificationPreferences'),
           { followUpRemindersEnabled: false },
         );
       });

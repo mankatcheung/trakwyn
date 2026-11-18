@@ -39,9 +39,13 @@ vi.mock('#/features/ai/lib/aiCredits', async () => {
 import { ChatDockProvider } from '#/features/chat/lib/chatDock';
 import { ChatDockConversationPicker } from '#/features/chat/components/dock/ChatDockPicker';
 import { ConversationHistoryPage } from '#/features/chat/pages/ConversationHistoryPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function documentOf(arg: unknown): string {
-  return typeof arg === 'string' ? arg : (arg as { document: string }).document;
+  // A request object carries `document`; a string or a typed document is the document itself.
+  if (typeof arg === 'object' && arg !== null && 'document' in arg)
+    return (arg as { document: string }).document;
+  return arg as string;
 }
 
 const makeClient = () =>
@@ -76,7 +80,7 @@ const conversations = [
 function setup(order: string[]) {
   mockGqlRequest.mockImplementation((arg: unknown) => {
     const query = documentOf(arg);
-    if (query.includes('LlmApiKeys'))
+    if (gqlText(query).includes('LlmApiKeys'))
       return Promise.resolve({
         llmApiKeys: [{ provider: 'openai' }, { provider: 'anthropic' }],
         me: { aiProviderOrder: order },

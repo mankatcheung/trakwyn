@@ -6,14 +6,14 @@ import { Alert, FormLabel, Input, SubmitButton, Textarea } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
+import { UPDATE_PROFILE } from '../../graphql/accountQueries';
+import type { Me } from '../../lib/account/accountTypes';
 import {
-  UPDATE_PROFILE,
   parseProfileLinks,
   profileSchema,
-  extractGqlError,
-  type Me,
   type ProfileForm,
-} from '../../lib/shared';
+} from '../../lib/account/profileSchema';
+import { extractGqlError } from '../../lib/gqlErrors';
 
 /** Name, timezone, target role and contact details. Saves through `updateProfile`. */
 export function ProfileDetailsForm({ me }: { me: Me | null | undefined }) {

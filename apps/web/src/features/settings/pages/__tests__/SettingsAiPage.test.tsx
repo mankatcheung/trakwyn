@@ -21,6 +21,7 @@ vi.mock('#/graphql/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsAiPage } from '#/features/settings/pages/SettingsAiPage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -148,7 +149,7 @@ describe('SettingsAiPage', () => {
       await user.click(toggle);
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('UpdateProfile'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('UpdateProfile'), {
           useCrossApplicationContext: true,
         });
       });
@@ -156,7 +157,7 @@ describe('SettingsAiPage', () => {
 
     it('shows an error and leaves the toggle usable when the save fails', async () => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('UpdateProfile')) {
+        if (gqlText(document).includes('UpdateProfile')) {
           return Promise.reject(new Error('network error'));
         }
         return Promise.resolve({
@@ -205,7 +206,7 @@ describe('SettingsAiPage', () => {
   describe('testing a saved key (JEF-247)', () => {
     beforeEach(() => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [
               { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
@@ -225,7 +226,7 @@ describe('SettingsAiPage', () => {
       await chooseRowAction(user, row, 'Test');
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('testLlmApiKey'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('testLlmApiKey'), {
           provider: 'openrouter',
         });
       });
@@ -243,7 +244,7 @@ describe('SettingsAiPage', () => {
 
     it('shows the failure message after a failed test', async () => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [
               { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
@@ -281,7 +282,7 @@ describe('SettingsAiPage', () => {
 
     it('tests the unsaved form values without persisting anything', async () => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [],
             me: { defaultLlmProvider: null, customAiPrompt: null },
@@ -297,7 +298,7 @@ describe('SettingsAiPage', () => {
       await user.click(screen.getByRole('button', { name: 'Test' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('testLlmApiKey'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('testLlmApiKey'), {
           provider: 'openrouter',
           apiKey: 'sk-123',
           model: undefined,
@@ -305,7 +306,7 @@ describe('SettingsAiPage', () => {
         });
       });
       expect(mockGqlRequest).not.toHaveBeenCalledWith(
-        expect.stringContaining('saveLlmApiKey'),
+        gqlContaining('saveLlmApiKey'),
         expect.anything(),
       );
       expect(await screen.findByText('Connection works.')).toBeInTheDocument();
@@ -386,13 +387,13 @@ describe('SettingsAiPage', () => {
     it('collapses the form again after a successful save', async () => {
       let saved = false;
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: saved ? [{ provider: 'openrouter', model: null, baseUrl: null }] : [],
             me: { defaultLlmProvider: saved ? 'openrouter' : null, customAiPrompt: null },
           });
         }
-        if (document.includes('saveLlmApiKey')) {
+        if (gqlText(document).includes('saveLlmApiKey')) {
           saved = true;
           return Promise.resolve({ saveLlmApiKey: true });
         }
@@ -414,7 +415,7 @@ describe('SettingsAiPage', () => {
   describe('usage summary (JEF-250)', () => {
     beforeEach(() => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [
               { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
@@ -422,7 +423,7 @@ describe('SettingsAiPage', () => {
             me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
           });
         }
-        if (document.includes('query LlmUsageSummary')) {
+        if (gqlText(document).includes('query LlmUsageSummary')) {
           return Promise.resolve({
             llmUsageSummary: [
               {
@@ -454,13 +455,13 @@ describe('SettingsAiPage', () => {
 
     it('shows nothing for a provider with no recorded usage yet', async () => {
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [{ provider: 'anthropic', model: null, baseUrl: null }],
             me: { defaultLlmProvider: 'anthropic', customAiPrompt: null },
           });
         }
-        if (document.includes('query LlmUsageSummary')) {
+        if (gqlText(document).includes('query LlmUsageSummary')) {
           return Promise.resolve({ llmUsageSummary: [] });
         }
         return Promise.resolve({});
@@ -484,7 +485,7 @@ describe('SettingsAiPage', () => {
       } | null,
     ) =>
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: [
               {
@@ -497,7 +498,7 @@ describe('SettingsAiPage', () => {
             me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
           });
         }
-        if (document.includes('query LlmUsageSummary')) {
+        if (gqlText(document).includes('query LlmUsageSummary')) {
           return Promise.resolve({
             llmUsageSummary: usage
               ? [
@@ -630,10 +631,10 @@ describe('SettingsAiPage', () => {
       await user.click(within(el).getByRole('button', { name: 'Save limit' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('setLlmApiKeyMonthlyLimit'),
-          { provider: 'openrouter', monthlyTokenLimit: 250000 },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('setLlmApiKeyMonthlyLimit'), {
+          provider: 'openrouter',
+          monthlyTokenLimit: 250000,
+        });
       });
     });
 
@@ -648,10 +649,10 @@ describe('SettingsAiPage', () => {
       await user.click(within(el).getByRole('button', { name: 'Save limit' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('setLlmApiKeyMonthlyLimit'),
-          { provider: 'openrouter', monthlyTokenLimit: null },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('setLlmApiKeyMonthlyLimit'), {
+          provider: 'openrouter',
+          monthlyTokenLimit: null,
+        });
       });
     });
 
@@ -667,7 +668,7 @@ describe('SettingsAiPage', () => {
 
       expect(await within(el).findByText(/whole number of tokens/)).toBeInTheDocument();
       expect(mockGqlRequest).not.toHaveBeenCalledWith(
-        expect.stringContaining('setLlmApiKeyMonthlyLimit'),
+        gqlContaining('setLlmApiKeyMonthlyLimit'),
         expect.anything(),
       );
     });
@@ -700,7 +701,7 @@ describe('SettingsAiPage', () => {
       onSave?: () => Promise<unknown>,
     ) =>
       mockGqlRequest.mockImplementation((document: string) => {
-        if (document.includes('query LlmApiKeys')) {
+        if (gqlText(document).includes('query LlmApiKeys')) {
           return Promise.resolve({
             llmApiKeys: providers.map(key),
             me: {
@@ -710,14 +711,14 @@ describe('SettingsAiPage', () => {
             },
           });
         }
-        if (document.includes('setAiProviderOrder') && onSave) return onSave();
+        if (gqlText(document).includes('setAiProviderOrder') && onSave) return onSave();
         return Promise.resolve({});
       });
 
     const rowIds = () =>
       screen.getAllByTestId(/^ai-order-/).map((el) => el.getAttribute('data-testid'));
     const savedWith = (order: string[]) =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiProviderOrder'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('setAiProviderOrder'), {
         order,
       });
 
@@ -840,7 +841,7 @@ describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
   });
   const serve = (limit: number, keys: ReturnType<typeof payload>) =>
     mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(query.includes('BillingStatus') ? billing(limit) : keys),
+      Promise.resolve(gqlText(query).includes('BillingStatus') ? billing(limit) : keys),
     );
 
   beforeEach(() => {
@@ -877,7 +878,7 @@ describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Add Trakwyn AI' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('setAiProviderOrder'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('setAiProviderOrder'), {
         order: ['openai', 'trakwyn'],
       }),
     );

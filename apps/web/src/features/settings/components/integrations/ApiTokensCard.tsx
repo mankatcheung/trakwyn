@@ -11,11 +11,13 @@ import {
   API_TOKENS_QUERY,
   CREATE_API_TOKEN,
   DELETE_API_TOKEN,
-  type ApiToken,
-  type ApiTokenScope,
-  type CreateApiTokenPayload,
-  extractGqlError,
-} from '../../lib/shared';
+} from '../../graphql/integrationsQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import type {
+  ApiToken,
+  ApiTokenScope,
+  CreateApiTokenPayload,
+} from '../../lib/integrations/integrationTypes';
 
 export function ApiTokensCard() {
   const { t } = useLocale();
@@ -25,7 +27,7 @@ export function ApiTokensCard() {
 
   const { data: apiTokensData } = useQuery({
     queryKey: ['apiTokens'],
-    queryFn: () => gqlClient.request<{ apiTokens: ApiToken[] }>(API_TOKENS_QUERY),
+    queryFn: () => gqlClient.request(API_TOKENS_QUERY) as Promise<{ apiTokens: ApiToken[] }>,
   });
   const apiTokens = apiTokensData?.apiTokens ?? [];
   const apiTokensFull = useQuotaState('apiTokens', apiTokens.length)?.level === 'full';
@@ -45,13 +47,10 @@ export function ApiTokensCard() {
     setCreatingApiToken(true);
     setApiTokenError(null);
     try {
-      const res = await gqlClient.request<{ createApiToken: CreateApiTokenPayload }>(
-        CREATE_API_TOKEN,
-        {
-          name: apiTokenName.trim(),
-          scope: apiTokenScope,
-        },
-      );
+      const res = (await gqlClient.request(CREATE_API_TOKEN, {
+        name: apiTokenName.trim(),
+        scope: apiTokenScope,
+      })) as { createApiToken: CreateApiTokenPayload };
       setNewApiToken(res.createApiToken);
       setApiTokenName('');
       setApiTokenScope('read');

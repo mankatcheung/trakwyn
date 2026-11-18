@@ -8,14 +8,9 @@ import { Alert, Button, Input, Menu, SubmitButton, type MenuItem } from '@trakwy
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
-import {
-  LLM_PROVIDER_AVATAR,
-  LLM_PROVIDER_LABEL,
-  SET_LLM_API_KEY_MONTHLY_LIMIT,
-  type LlmApiKey,
-  type LlmUsageSummary,
-  type TestLlmApiKeyResult,
-} from '../../lib/shared';
+import { SET_LLM_API_KEY_MONTHLY_LIMIT } from '../../graphql/aiQueries';
+import type { LlmApiKey, LlmUsageSummary, TestLlmApiKeyResult } from '../../lib/ai/aiTypes';
+import { LLM_PROVIDER_AVATAR, LLM_PROVIDER_LABEL } from '../../lib/ai/llmProviders';
 
 /** Above this share of the limit the meter warns rather than just reports. */
 const NEARING_LIMIT_RATIO = 0.8;

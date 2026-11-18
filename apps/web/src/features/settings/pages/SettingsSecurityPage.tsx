@@ -16,13 +16,15 @@ import {
   REVOKE_SESSION,
   REVOKE_OTHER_SESSIONS,
   SECURITY_ACTIVITY,
+} from '../graphql/securityQueries';
+import { extractGqlError } from '../lib/gqlErrors';
+import {
   type TotpSetup,
   type LinkedOAuthAccount,
   type Session,
   type SecurityActivityItem,
   describeDevice,
-  extractGqlError,
-} from '../lib/shared';
+} from '../lib/security/securityTypes';
 import { useStepUpReauth } from '../hooks/useStepUpReauth';
 import { PasswordUpdateForm } from '../components/security/PasswordUpdateForm';
 import {
@@ -41,7 +43,9 @@ export function SettingsSecurityPage() {
   const { data: linkedAccountsData, isLoading: linkedAccountsLoading } = useQuery({
     queryKey: ['linkedOAuthAccounts'],
     queryFn: () =>
-      gqlClient.request<{ linkedOAuthAccounts: LinkedOAuthAccount[] }>(LINKED_OAUTH_ACCOUNTS_QUERY),
+      gqlClient.request(LINKED_OAUTH_ACCOUNTS_QUERY) as Promise<{
+        linkedOAuthAccounts: LinkedOAuthAccount[];
+      }>,
   });
   const linkedAccounts = linkedAccountsData?.linkedOAuthAccounts ?? [];
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
@@ -63,7 +67,7 @@ export function SettingsSecurityPage() {
   // Two-factor authentication
   const { data: totpData, isLoading: totpLoading } = useQuery({
     queryKey: ['totpEnabled'],
-    queryFn: () => gqlClient.request<{ totpEnabled: boolean }>(TOTP_ENABLED_QUERY),
+    queryFn: () => gqlClient.request(TOTP_ENABLED_QUERY) as Promise<{ totpEnabled: boolean }>,
   });
   const totpEnabled = totpData?.totpEnabled ?? false;
   const [totpSetup, setTotpSetup] = useState<TotpSetup | null>(null);
@@ -72,7 +76,7 @@ export function SettingsSecurityPage() {
   // Active sessions
   const { data: sessionsData } = useQuery({
     queryKey: ['sessions'],
-    queryFn: () => gqlClient.request<{ sessions: Session[] }>(SESSIONS_QUERY),
+    queryFn: () => gqlClient.request(SESSIONS_QUERY) as Promise<{ sessions: Session[] }>,
   });
   const sessions = sessionsData?.sessions ?? [];
 
@@ -90,8 +94,7 @@ export function SettingsSecurityPage() {
   const [securityActivity, setSecurityActivity] = useState<SecurityActivityItem[] | null>(null);
   const [securityActivityError, setSecurityActivityError] = useState<string | null>(null);
   useEffect(() => {
-    gqlClient
-      .request<{ securityActivity: SecurityActivityItem[] }>(SECURITY_ACTIVITY)
+    (gqlClient.request(SECURITY_ACTIVITY) as Promise<{ securityActivity: SecurityActivityItem[] }>)
       .then((res) => setSecurityActivity(res.securityActivity))
       .catch((err) =>
         setSecurityActivityError(extractGqlError(err) ?? t('security.loadSecurityActivityFailed')),
