@@ -2353,6 +2353,142 @@ export type WorkExperience = {
   userId?: Maybe<Scalars['ID']['output']>;
 };
 
+export type AnalyticsApplicationsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type AnalyticsApplicationsQuery = {
+  __typename?: 'Query';
+  applications?: Array<{
+    __typename?: 'JobApplication';
+    id?: string | null;
+    company?: string | null;
+    role?: string | null;
+    status?: ApplicationStatus | null;
+    appliedAt?: string | null;
+    createdAt?: string | null;
+    likelyGhosted?: boolean | null;
+  }> | null;
+};
+
+export type ApplicationChannelAnalyticsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ApplicationChannelAnalyticsQuery = {
+  __typename?: 'Query';
+  applicationChannelAnalytics?: {
+    __typename?: 'ApplicationChannelAnalytics';
+    bySource?: Array<{
+      __typename?: 'ApplicationGroupStat';
+      label?: string | null;
+      applicationCount?: number | null;
+      respondedCount?: number | null;
+      responseRate?: number | null;
+      offerCount?: number | null;
+      offerRate?: number | null;
+    }> | null;
+    byTag?: Array<{
+      __typename?: 'ApplicationGroupStat';
+      label?: string | null;
+      applicationCount?: number | null;
+      respondedCount?: number | null;
+      responseRate?: number | null;
+      offerCount?: number | null;
+      offerRate?: number | null;
+    }> | null;
+  } | null;
+};
+
+export type DocumentVersionOutcomesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type DocumentVersionOutcomesQuery = {
+  __typename?: 'Query';
+  documentVersionOutcomes?: Array<{
+    __typename?: 'DocumentVersionOutcome';
+    documentType?: string | null;
+    version?: string | null;
+    applicationCount?: number | null;
+    interviewCount?: number | null;
+    interviewRate?: number | null;
+  }> | null;
+};
+
+export type InterviewRoundAnalyticsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type InterviewRoundAnalyticsQuery = {
+  __typename?: 'Query';
+  interviewRoundAnalytics?: {
+    __typename?: 'InterviewRoundAnalytics';
+    byType?: Array<{
+      __typename?: 'InterviewRoundTypeStat';
+      type?: InterviewRoundType | null;
+      passed?: number | null;
+      failed?: number | null;
+      pending?: number | null;
+      cancelled?: number | null;
+    }> | null;
+    roundsToOffer?: {
+      __typename?: 'RoundsToTerminalStat';
+      average?: number | null;
+      median?: number | null;
+      sampleSize?: number | null;
+    } | null;
+    roundsToRejection?: {
+      __typename?: 'RoundsToTerminalStat';
+      average?: number | null;
+      median?: number | null;
+      sampleSize?: number | null;
+    } | null;
+  } | null;
+};
+
+export type OfferAnalyticsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type OfferAnalyticsQuery = {
+  __typename?: 'Query';
+  offerAnalytics?: {
+    __typename?: 'OfferAnalytics';
+    trend?: Array<{
+      __typename?: 'OfferTrendPoint';
+      offerId?: string | null;
+      applicationId?: string | null;
+      company?: string | null;
+      role?: string | null;
+      createdAt?: string | null;
+      currency?: string | null;
+      normalizedYearlySalary?: number | null;
+    }> | null;
+    byCurrency?: Array<{
+      __typename?: 'CurrencyGroupStat';
+      currency?: string | null;
+      count?: number | null;
+      minYearlySalary?: number | null;
+      maxYearlySalary?: number | null;
+      medianYearlySalary?: number | null;
+      averageYearlySalary?: number | null;
+    }> | null;
+  } | null;
+};
+
+export type ResponseTimeAnalyticsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ResponseTimeAnalyticsQuery = {
+  __typename?: 'Query';
+  responseTimeAnalytics?: {
+    __typename?: 'ResponseTimeAnalytics';
+    timeInStage?: Array<{
+      __typename?: 'StageDurationStat';
+      status?: ApplicationStatus | null;
+      averageDays?: number | null;
+      medianDays?: number | null;
+      sampleSize?: number | null;
+    }> | null;
+    timeToFirstResponse?: {
+      __typename?: 'TimeToResponseStat';
+      averageDays?: number | null;
+      medianDays?: number | null;
+      sampleSize?: number | null;
+    } | null;
+  } | null;
+};
+
 export type UpdateApplicationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   input: UpdateApplicationInput;
@@ -2819,6 +2955,22 @@ export type RefreshTokenMutation = { __typename?: 'Mutation'; refreshToken?: str
 export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
 
 export type LogoutMutation = { __typename?: 'Mutation'; logout?: boolean | null };
+
+export type CalendarEventsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type CalendarEventsQuery = {
+  __typename?: 'Query';
+  calendarEvents?: Array<{
+    __typename?: 'CalendarEvent';
+    id?: string | null;
+    applicationId?: string | null;
+    company?: string | null;
+    role?: string | null;
+    type?: CalendarEventType | null;
+    date?: string | null;
+    interviewRoundType?: InterviewRoundType | null;
+  }> | null;
+};
 
 export type DashboardApplicationsQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -4752,6 +4904,289 @@ export type VerifyStepUpCodeMutation = {
   verifyStepUpCode?: boolean | null;
 };
 
+export const AnalyticsApplicationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'AnalyticsApplications' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'applications' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'likelyGhosted' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AnalyticsApplicationsQuery, AnalyticsApplicationsQueryVariables>;
+export const ApplicationChannelAnalyticsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ApplicationChannelAnalytics' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'applicationChannelAnalytics' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'bySource' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'applicationCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'respondedCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'responseRate' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offerCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offerRate' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'byTag' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'label' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'applicationCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'respondedCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'responseRate' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offerCount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offerRate' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ApplicationChannelAnalyticsQuery,
+  ApplicationChannelAnalyticsQueryVariables
+>;
+export const DocumentVersionOutcomesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'DocumentVersionOutcomes' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'documentVersionOutcomes' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'documentType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'version' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRate' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DocumentVersionOutcomesQuery, DocumentVersionOutcomesQueryVariables>;
+export const InterviewRoundAnalyticsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'InterviewRoundAnalytics' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'interviewRoundAnalytics' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'byType' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'passed' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'pending' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'cancelled' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'roundsToOffer' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'sampleSize' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'roundsToRejection' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'sampleSize' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<InterviewRoundAnalyticsQuery, InterviewRoundAnalyticsQueryVariables>;
+export const OfferAnalyticsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'OfferAnalytics' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'offerAnalytics' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'trend' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'offerId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'normalizedYearlySalary' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'byCurrency' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'minYearlySalary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maxYearlySalary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'medianYearlySalary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'averageYearlySalary' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OfferAnalyticsQuery, OfferAnalyticsQueryVariables>;
+export const ResponseTimeAnalyticsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ResponseTimeAnalytics' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'responseTimeAnalytics' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'timeInStage' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'averageDays' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'medianDays' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'sampleSize' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'timeToFirstResponse' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'averageDays' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'medianDays' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'sampleSize' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ResponseTimeAnalyticsQuery, ResponseTimeAnalyticsQueryVariables>;
 export const UpdateApplicationDocument = {
   kind: 'Document',
   definitions: [
@@ -6350,6 +6785,37 @@ export const LogoutDocument = {
     },
   ],
 } as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
+export const CalendarEventsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CalendarEvents' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'calendarEvents' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'date' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'interviewRoundType' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CalendarEventsQuery, CalendarEventsQueryVariables>;
 export const DashboardApplicationsDocument = {
   kind: 'Document',
   definitions: [

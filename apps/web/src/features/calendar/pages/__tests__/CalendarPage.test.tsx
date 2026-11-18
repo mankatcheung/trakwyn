@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ComponentType } from 'react';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: object) => ({ ...opts, useSearch: () => ({}) }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
@@ -18,9 +16,7 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { Route } from '#/routes/_authenticated/calendar';
-
-const CalendarPage = (Route as unknown as { component: ComponentType }).component;
+import { CalendarPage } from '../CalendarPage';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 

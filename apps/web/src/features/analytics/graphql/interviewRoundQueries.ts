@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const INTERVIEW_ROUND_ANALYTICS_QUERY = `
+const INTERVIEW_ROUND_ANALYTICS_QUERY = graphql(`
   query InterviewRoundAnalytics {
     interviewRoundAnalytics {
       byType {
@@ -23,7 +24,7 @@ const INTERVIEW_ROUND_ANALYTICS_QUERY = `
       }
     }
   }
-`;
+`);
 
 export interface InterviewRoundTypeStat {
   type: string;
@@ -47,8 +48,8 @@ export interface InterviewRoundAnalytics {
 
 export const interviewRoundAnalyticsQueryOptions = queryOptions({
   queryKey: ['interviewRoundAnalytics'],
-  queryFn: () =>
-    gqlClient.request<{ interviewRoundAnalytics: InterviewRoundAnalytics }>(
-      INTERVIEW_ROUND_ANALYTICS_QUERY,
-    ),
+  queryFn: async () =>
+    (await gqlClient.request(INTERVIEW_ROUND_ANALYTICS_QUERY)) as {
+      interviewRoundAnalytics: InterviewRoundAnalytics;
+    },
 });

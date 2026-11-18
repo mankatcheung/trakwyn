@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ComponentType } from 'react';
 
 const { mockGqlRequest } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
@@ -11,10 +10,7 @@ const { mockGqlRequest } = vi.hoisted(() => ({
 vi.mock('#/features/quota/lib/contentQuota', () => ({ useQuotaState: () => null }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: object) => ({
-    ...opts,
-    useParams: () => ({ applicationId: 'app-1' }),
-  }),
+  getRouteApi: () => ({ useParams: () => ({ applicationId: 'app-1' }) }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
@@ -24,10 +20,8 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { Route } from '#/routes/_authenticated/applications/$applicationId/offers/index';
-import { gqlText } from '../helpers/gqlText';
-
-const OffersPage = (Route as unknown as { component: ComponentType }).component;
+import { gqlText } from '#/__tests__/helpers/gqlText';
+import { ApplicationOffersPage } from '../ApplicationOffersPage';
 
 const offer = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'offer-1',
@@ -59,7 +53,7 @@ let client: QueryClient;
 function renderPage() {
   return render(
     <QueryClientProvider client={client}>
-      <OffersPage />
+      <ApplicationOffersPage />
     </QueryClientProvider>,
   );
 }

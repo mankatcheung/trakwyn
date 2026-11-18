@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const RESPONSE_TIME_ANALYTICS_QUERY = `
+const RESPONSE_TIME_ANALYTICS_QUERY = graphql(`
   query ResponseTimeAnalytics {
     responseTimeAnalytics {
       timeInStage {
@@ -17,7 +18,7 @@ const RESPONSE_TIME_ANALYTICS_QUERY = `
       }
     }
   }
-`;
+`);
 
 export interface StageDurationStat {
   status: string;
@@ -39,8 +40,8 @@ export interface ResponseTimeAnalytics {
 
 export const responseTimeAnalyticsQueryOptions = queryOptions({
   queryKey: ['responseTimeAnalytics'],
-  queryFn: () =>
-    gqlClient.request<{ responseTimeAnalytics: ResponseTimeAnalytics }>(
-      RESPONSE_TIME_ANALYTICS_QUERY,
-    ),
+  queryFn: async () =>
+    (await gqlClient.request(RESPONSE_TIME_ANALYTICS_QUERY)) as {
+      responseTimeAnalytics: ResponseTimeAnalytics;
+    },
 });
