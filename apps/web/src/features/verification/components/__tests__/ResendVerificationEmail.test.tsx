@@ -13,6 +13,17 @@ const gqlError = (code: string) => ({
 
 const resendButton = () => screen.getByRole('button', { name: /Resend|Sending/ });
 
+/**
+ * Moves the clock once the countdown is running. `useCooldown` starts its interval in
+ * an effect, which React flushes through a (faked) `setImmediate`; jumping the clock
+ * before that effect has run moves time with no interval to tick, and the label stays
+ * at the full cooldown. So wait for the interval, then advance asynchronously.
+ */
+async function advanceCountdown(ms: number) {
+  await waitFor(() => expect(vi.getTimerCount()).toBeGreaterThan(0));
+  await act(() => vi.advanceTimersByTimeAsync(ms));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -56,9 +67,7 @@ describe('ResendVerificationEmail', () => {
     expect(resendButton()).toHaveTextContent(`Resend in ${RESEND_COOLDOWN_SECONDS}s`);
     expect(resendButton()).toBeDisabled();
 
-    await act(async () => {
-      vi.advanceTimersByTime(RESEND_COOLDOWN_SECONDS * 1000 + 1000);
-    });
+    await advanceCountdown(RESEND_COOLDOWN_SECONDS * 1000 + 1000);
     expect(resendButton()).toHaveTextContent('Resend verification email');
     expect(resendButton()).toBeEnabled();
   });
@@ -68,9 +77,7 @@ describe('ResendVerificationEmail', () => {
 
     fireEvent.click(resendButton());
     await screen.findByText(/A new link is on its way/);
-    await act(async () => {
-      vi.advanceTimersByTime(10_000);
-    });
+    await advanceCountdown(10_000);
 
     expect(resendButton().textContent).toMatch(/Resend in (49|50)s/);
   });
