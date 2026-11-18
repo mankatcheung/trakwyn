@@ -79,6 +79,33 @@ vi.mock('#/lib/undoToast', () => ({
 
 import { ApplicationDetailPage } from '#/features/application-detail/pages/ApplicationDetailPage';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, overrideGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import {
+  COMPANY_BRIEFING_QUERY,
+  GENERATE_COMPANY_BRIEFING,
+} from '#/features/application-detail/graphql/applicationDetailQueries';
+import { APPLICATION_QUERY } from '#/features/application-detail/graphql/applicationQuery';
+import {
+  CREATE_NOTE,
+  DELETE_NOTE,
+  NOTES_QUERY,
+  UPDATE_NOTE,
+} from '#/features/notes/graphql/noteQueries';
+import {
+  PERMANENTLY_DELETE_APPLICATION,
+  RESTORE_APPLICATION,
+} from '#/features/applications/graphql/trashQueries';
+import { DELETE_APPLICATION } from '#/features/applications/graphql/applicationMutations';
+import {
+  DOCUMENTS_QUERY,
+  DOCUMENT_DRAFTS_QUERY,
+} from '#/features/documents/graphql/documentQueries';
+import {
+  SECTION_COUNTS_QUERY,
+  UPDATE_APPLICATION,
+} from '#/features/application-detail/graphql/applicationDetailQueries';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -87,7 +114,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={makeClient()}>{children}</QueryClientProvider>;
 }
 
-const mockApp = {
+const mockApp: NonNullable<ResultOf<typeof APPLICATION_QUERY>['application']> = {
   id: 'app-test-id',
   company: 'Stripe',
   role: 'Software Engineer',
@@ -105,6 +132,9 @@ const mockApp = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
+type Doc = NonNullable<ResultOf<typeof DOCUMENTS_QUERY>['documents']>[number];
+type DraftRow = NonNullable<ResultOf<typeof DOCUMENT_DRAFTS_QUERY>['documentDrafts']>[number];
+
 const mockNotes = [
   {
     id: 'note-1',
@@ -119,6 +149,11 @@ describe('ApplicationDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     searchStore.set({});
+    // What the page asks for by default; a test overrides one operation with `overrideGql`.
+    mockGql(mockGqlRequest, [
+      respond(APPLICATION_QUERY, { application: mockApp }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
   });
 
   it('shows loading skeleton when data is not yet available', () => {
@@ -129,11 +164,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders application company and role when data loads', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: [] })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -143,11 +174,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders application metadata', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: [] })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -157,11 +184,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('renders existing notes', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: mockNotes })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -170,22 +193,18 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('submits a new note', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('CreateNote')) {
-        return Promise.resolve({
-          createNote: {
-            id: 'note-2',
-            applicationId: 'app-test-id',
-            content: 'New note',
-            createdAt: '2024-01-03T00:00:00.000Z',
-            updatedAt: '2024-01-03T00:00:00.000Z',
-          },
-        });
-      }
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(CREATE_NOTE, {
+        createNote: {
+          id: 'note-2',
+          applicationId: 'app-test-id',
+          content: 'New note',
+          createdAt: '2024-01-03T00:00:00.000Z',
+          updatedAt: '2024-01-03T00:00:00.000Z',
+        },
+      }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -205,12 +224,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   describe('overview (JEF-403)', () => {
-    const loadApp = () =>
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+    const loadApp = () => overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: [] })]);
     const defaultMatchMedia = window.matchMedia;
     afterEach(() => {
       window.matchMedia = defaultMatchMedia;
@@ -271,11 +285,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('shows the notes tab and the three document tabs, with no combined Documents tab', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: [] })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -292,12 +302,10 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('switches to the other documents tab and offers an Upload file button', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Documents')) return Promise.resolve({ documents: [] });
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(DOCUMENTS_QUERY, { documents: [] }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -325,12 +333,10 @@ describe('ApplicationDetailPage', () => {
       url: 'https://example.com/resume.pdf',
       createdAt: '2024-01-02T00:00:00.000Z',
     };
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Documents')) return Promise.resolve({ documents: [mockDoc] });
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(DOCUMENTS_QUERY, { documents: [mockDoc] }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -381,12 +387,10 @@ describe('ApplicationDetailPage', () => {
     };
 
     it('opens an inline PDF preview when the file name is pressed (PDF)', async () => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+      overrideGql(mockGqlRequest, [
+        respond(DOCUMENTS_QUERY, { documents: [mockPdfDoc] }),
+        respond(NOTES_QUERY, { notes: [] }),
+      ]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -409,12 +413,10 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('opens an inline image preview when the file name is pressed (image)', async () => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockImageDoc] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+      overrideGql(mockGqlRequest, [
+        respond(DOCUMENTS_QUERY, { documents: [mockImageDoc] }),
+        respond(NOTES_QUERY, { notes: [] }),
+      ]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -432,12 +434,10 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('closes the preview modal when the close button is clicked', async () => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockPdfDoc] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+      overrideGql(mockGqlRequest, [
+        respond(DOCUMENTS_QUERY, { documents: [mockPdfDoc] }),
+        respond(NOTES_QUERY, { notes: [] }),
+      ]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
       fireEvent.click(
@@ -458,12 +458,10 @@ describe('ApplicationDetailPage', () => {
     });
 
     it('offers Download, not Preview, in the more menu for non-previewable documents (e.g. .docx)', async () => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Documents')) return Promise.resolve({ documents: [mockDocxDoc] });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+      overrideGql(mockGqlRequest, [
+        respond(DOCUMENTS_QUERY, { documents: [mockDocxDoc] }),
+        respond(NOTES_QUERY, { notes: [] }),
+      ]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -493,13 +491,11 @@ describe('ApplicationDetailPage', () => {
       createdAt: '2024-01-02T00:00:00.000Z',
     };
 
-    const openResumes = async (documents: unknown[]) => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Documents')) return Promise.resolve({ documents });
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+    const openResumes = async (documents: Doc[]) => {
+      overrideGql(mockGqlRequest, [
+        respond(DOCUMENTS_QUERY, { documents }),
+        respond(NOTES_QUERY, { notes: [] }),
+      ]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -511,11 +507,7 @@ describe('ApplicationDetailPage', () => {
     };
 
     it('has no standalone Resume Match section', async () => {
-      mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-        const query = gqlText(queryDoc);
-        if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-        return Promise.resolve({ application: mockApp });
-      });
+      overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: [] })]);
       render(<ApplicationDetailPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -535,11 +527,7 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('enters edit mode for a note', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [respond(NOTES_QUERY, { notes: mockNotes })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -560,15 +548,12 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('saves an edited note', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('UpdateNote'))
-        return Promise.resolve({
-          updateNote: { ...mockNotes[0], content: 'Updated note' },
-        });
-      if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(UPDATE_NOTE, {
+        updateNote: { ...mockNotes[0], content: 'Updated note' },
+      }),
+      respond(NOTES_QUERY, { notes: mockNotes }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -599,12 +584,10 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('deletes a note', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('DeleteNote')) return Promise.resolve({ deleteNote: true });
-      if (query.includes('Notes')) return Promise.resolve({ notes: mockNotes });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(DELETE_NOTE, { deleteNote: true }),
+      respond(NOTES_QUERY, { notes: mockNotes }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -626,12 +609,10 @@ describe('ApplicationDetailPage', () => {
   });
 
   it('deletes the application and leaves the page at once, without an undo window', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('DeleteApplication')) return Promise.resolve({ deleteApplication: true });
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(DELETE_APPLICATION, { deleteApplication: true }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -667,21 +648,15 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
     companyBriefing: false,
   };
 
-  const respond = (
-    extra: (query: string) => unknown = () => undefined,
-    sectionCounts: typeof counts = counts,
-  ) =>
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      const custom = extra(query);
-      if (custom !== undefined) return custom;
-      if (query.includes('ApplicationSectionCounts'))
-        return Promise.resolve({ application: { id: 'app-test-id', sectionCounts } });
-      if (query.includes('DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-      if (query.includes('query Documents')) return Promise.resolve({ documents: [] });
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+  /** Defaults first; a later entry for the same operation wins, so `extra` replaces them. */
+  const serve = (extra: GqlResponse[] = [], sectionCounts: typeof counts = counts) =>
+    overrideGql(mockGqlRequest, [
+      respond(SECTION_COUNTS_QUERY, { application: { id: 'app-test-id', sectionCounts } }),
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+      respond(DOCUMENTS_QUERY, { documents: [] }),
+      respond(NOTES_QUERY, { notes: [] }),
+      ...extra,
+    ]);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -689,7 +664,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('badges each section with its count, and leaves an empty one unbadged', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -704,7 +679,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('marks Company Briefing as not generated until one exists', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -717,7 +692,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('marks Company Briefing as generated once one exists, without a number', async () => {
-    respond(() => undefined, { ...counts, companyBriefing: true });
+    serve([], { ...counts, companyBriefing: true });
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -733,9 +708,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('shows no briefing marker before the counts arrive', async () => {
-    respond((query) =>
-      query.includes('ApplicationSectionCounts') ? new Promise(() => undefined) : undefined,
-    );
+    serve([respondWith(SECTION_COUNTS_QUERY, () => new Promise(() => undefined))]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -744,20 +717,17 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('refreshes the counts when a briefing is generated, so the marker cannot go stale', async () => {
-    respond((query) =>
-      query.includes('GenerateCompanyBriefing')
-        ? Promise.resolve({
-            generateCompanyBriefing: {
-              id: 'b-1',
-              applicationId: 'app-test-id',
-              content: 'About Stripe',
-              generatedAt: '2024-01-03T00:00:00.000Z',
-            },
-          })
-        : query.includes('query CompanyBriefing')
-          ? Promise.resolve({ companyBriefing: null })
-          : undefined,
-    );
+    serve([
+      respond(GENERATE_COMPANY_BRIEFING, {
+        generateCompanyBriefing: {
+          id: 'b-1',
+          applicationId: 'app-test-id',
+          content: 'About Stripe',
+          generatedAt: '2024-01-03T00:00:00.000Z',
+        },
+      }),
+      respond(COMPANY_BRIEFING_QUERY, { companyBriefing: null }),
+    ]);
     searchStore.set({ section: 'company-briefing' });
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
@@ -773,7 +743,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('badges each document tab with its own category, drafts and uploads together', async () => {
-    const upload = (id: string, documentType: string) => ({
+    const upload = (id: string, documentType: Doc['documentType']): Doc => ({
       id,
       applicationId: 'app-test-id',
       name: `${id}.pdf`,
@@ -784,7 +754,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
       version: null,
       createdAt: '2024-01-02T00:00:00.000Z',
     });
-    const draft = (id: string, type: string) => ({
+    const draft = (id: string, type: DraftRow['type']): DraftRow => ({
       id,
       applicationId: 'app-test-id',
       type,
@@ -792,17 +762,14 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
       createdAt: '2024-01-02T00:00:00.000Z',
       updatedAt: '2024-01-02T00:00:00.000Z',
     });
-    respond((query) => {
-      if (query.includes('DocumentDrafts'))
-        return Promise.resolve({
-          documentDrafts: [draft('d1', 'cover_letter'), draft('d2', 'resume')],
-        });
-      if (query.includes('query Documents'))
-        return Promise.resolve({
-          documents: [upload('u1', 'resume'), upload('u2', 'portfolio'), upload('u3', 'other')],
-        });
-      return undefined;
-    });
+    serve([
+      respond(DOCUMENT_DRAFTS_QUERY, {
+        documentDrafts: [draft('d1', 'cover_letter'), draft('d2', 'resume')],
+      }),
+      respond(DOCUMENTS_QUERY, {
+        documents: [upload('u1', 'resume'), upload('u2', 'portfolio'), upload('u3', 'other')],
+      }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -815,7 +782,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('groups the sections under Track, Documents & AI and Outcome', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -827,7 +794,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
 
   it('opens on the section named in the URL', async () => {
     searchStore.set({ section: 'offers' });
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Offer comparison')).toBeInTheDocument());
@@ -836,7 +803,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('puts the chosen section in the URL rather than in component state', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -856,7 +823,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
 
   it('leaves the section, not the application, when the phone back button is used', async () => {
     searchStore.set({ section: 'interviews' });
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -871,18 +838,14 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('falls back to Notes when the URL names no section', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByPlaceholderText(/add a note/i)).toBeInTheDocument());
   });
 
   it('stars the application from the actions sheet', async () => {
-    respond((query) =>
-      query.includes('UpdateApplication')
-        ? Promise.resolve({ updateApplication: { id: 'app-test-id', starred: true } })
-        : undefined,
-    );
+    serve([respond(UPDATE_APPLICATION, { updateApplication: { id: 'app-test-id' } })]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -900,13 +863,11 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('changes status from the actions sheet, showing the current one as chosen', async () => {
-    respond((query) =>
-      query.includes('UpdateApplication')
-        ? Promise.resolve({
-            updateApplication: { id: 'app-test-id', starred: false, status: 'interviewing' },
-          })
-        : undefined,
-    );
+    serve([
+      respond(UPDATE_APPLICATION, {
+        updateApplication: { id: 'app-test-id' },
+      }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -932,7 +893,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('reopens the actions sheet on its first pane, not on the status list', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -949,7 +910,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('offers an edit link from the actions sheet', async () => {
-    respond();
+    serve();
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -962,19 +923,17 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
   });
 
   it('refreshes the counts when a note is added, so a badge cannot go stale', async () => {
-    respond((query) =>
-      query.includes('CreateNote')
-        ? Promise.resolve({
-            createNote: {
-              id: 'note-2',
-              applicationId: 'app-test-id',
-              content: 'New note',
-              createdAt: '2024-01-03T00:00:00.000Z',
-              updatedAt: '2024-01-03T00:00:00.000Z',
-            },
-          })
-        : undefined,
-    );
+    serve([
+      respond(CREATE_NOTE, {
+        createNote: {
+          id: 'note-2',
+          applicationId: 'app-test-id',
+          content: 'New note',
+          createdAt: '2024-01-03T00:00:00.000Z',
+          updatedAt: '2024-01-03T00:00:00.000Z',
+        },
+      }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
@@ -1006,7 +965,7 @@ describe('ApplicationDetailPage — section index (JEF-208)', () => {
 });
 
 describe('ApplicationDetailPage — trashed application', () => {
-  const trashedApp = {
+  const trashedApp: typeof mockApp = {
     ...mockApp,
     deletedAt: '2026-08-15T12:00:00.000Z',
     purgeAt: '2026-09-14T12:00:00.000Z',
@@ -1053,12 +1012,11 @@ describe('ApplicationDetailPage — trashed application', () => {
   });
 
   it('restores from the banner', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('RestoreApplication'))
-        return Promise.resolve({ restoreApplication: true });
-      return Promise.resolve({ application: trashedApp });
-    });
+    mockGql(mockGqlRequest, [
+      respond(RESTORE_APPLICATION, { restoreApplication: true }),
+      respond(APPLICATION_QUERY, { application: trashedApp }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
     await waitFor(() =>
@@ -1074,12 +1032,11 @@ describe('ApplicationDetailPage — trashed application', () => {
   });
 
   it('permanently deletes from the banner and returns to Trash', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('PermanentlyDeleteApplication'))
-        return Promise.resolve({ permanentlyDeleteApplication: true });
-      return Promise.resolve({ application: trashedApp });
-    });
+    mockGql(mockGqlRequest, [
+      respond(PERMANENTLY_DELETE_APPLICATION, { permanentlyDeleteApplication: true }),
+      respond(APPLICATION_QUERY, { application: trashedApp }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
 
@@ -1114,14 +1071,12 @@ describe('ApplicationDetailPage — actions popover on wide screens (JEF-404)', 
   beforeEach(() => {
     vi.clearAllMocks();
     searchStore.set({});
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('UpdateApplication'))
-        return Promise.resolve({ updateApplication: { id: 'app-test-id' } });
-      if (query.includes('DeleteApplication')) return Promise.resolve({ deleteApplication: true });
-      if (query.includes('Notes')) return Promise.resolve({ notes: [] });
-      return Promise.resolve({ application: mockApp });
-    });
+    mockGql(mockGqlRequest, [
+      respond(APPLICATION_QUERY, { application: mockApp }),
+      respond(UPDATE_APPLICATION, { updateApplication: { id: 'app-test-id' } }),
+      respond(DELETE_APPLICATION, { deleteApplication: true }),
+      respond(NOTES_QUERY, { notes: [] }),
+    ]);
   });
 
   afterEach(() => {

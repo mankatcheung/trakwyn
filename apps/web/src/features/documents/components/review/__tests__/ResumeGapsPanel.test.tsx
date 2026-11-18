@@ -22,6 +22,9 @@ import {
   type ResumeGaps,
 } from '#/features/documents/graphql/resumeGapsQueries';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { UPDATE_WORK_EXPERIENCE } from '#/features/profile/graphql/workExperienceQueries';
+import { RESUME_GAPS_QUERY } from '#/features/documents/graphql/resumeGapsQueries';
 
 const gaps: ResumeGaps = {
   requirementsRead: true,
@@ -169,13 +172,10 @@ describe('ResumeGapsPanel', () => {
   });
 
   it('saves once on a double click and clears the field after it saves', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
-      Promise.resolve(
-        gqlText(queryDoc).includes('UpdateWorkExperience')
-          ? { updateWorkExperience: { id: 'we-1' } }
-          : { resumeGaps: gaps },
-      ),
-    );
+    mockGql(mockGqlRequest, [
+      respond(UPDATE_WORK_EXPERIENCE, { updateWorkExperience: { id: 'we-1' } }),
+      respond(RESUME_GAPS_QUERY, { resumeGaps: gaps }),
+    ]);
 
     renderPanel();
     const input = await screen.findByLabelText(/Engineer at Acme has no numbers yet/);
@@ -192,15 +192,15 @@ describe('ResumeGapsPanel', () => {
   });
 
   it('keeps the typed line and shows the error when the save fails', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
-      gqlText(queryDoc).includes('UpdateWorkExperience')
-        ? Promise.reject(
-            Object.assign(new Error('boom'), {
-              response: { errors: [{ message: 'Could not save the role.' }] },
-            }),
-          )
-        : Promise.resolve({ resumeGaps: gaps }),
-    );
+    mockGql(mockGqlRequest, [
+      respondError(
+        UPDATE_WORK_EXPERIENCE,
+        Object.assign(new Error('boom'), {
+          response: { errors: [{ message: 'Could not save the role.' }] },
+        }),
+      ),
+      respond(RESUME_GAPS_QUERY, { resumeGaps: gaps }),
+    ]);
 
     renderPanel();
     const input = await screen.findByLabelText(/Engineer at Acme has no numbers yet/);

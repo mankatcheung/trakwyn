@@ -40,43 +40,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
   'components/ErrorState.tsx imports features/plans/components/UpgradePrompt.tsx',
 ]);
 
-/**
- * Tests still answering a mocked `gqlClient` by hand, moved onto `mockGql` folder by
- * folder (JEF-652). The list can only shrink: a file that no longer matches must come off.
- */
-const HAND_ROLLED_GQL_MOCKS = new Set<string>([
-  'features/application-detail/components/tabs/__tests__/ContactsTab.test.tsx',
-  'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
-  'features/application-detail/pages/__tests__/ApplicationDetailSectionSwitch.test.tsx',
-  'features/applications/pages/__tests__/ApplicationsPage.test.tsx',
-  'features/applications/pages/__tests__/TrashPage.test.tsx',
-  'features/chat/components/__tests__/ChatConversationView.test.tsx',
-  'features/chat/lib/__tests__/ConversationListProvider.test.tsx',
-  'features/chat/pages/__tests__/AssistantChatPage.test.tsx',
-  'features/chat/pages/__tests__/AssistantHistoryPage.test.tsx',
-  'features/documents/components/__tests__/AiHelperPanel.test.tsx',
-  'features/documents/components/__tests__/DocumentList.test.tsx',
-  'features/documents/components/__tests__/DraftHistoryPanel.test.tsx',
-  'features/documents/components/__tests__/EmptyProfilePrompt.test.tsx',
-  'features/documents/components/__tests__/ImportDocumentAction.test.tsx',
-  'features/documents/components/__tests__/ResumeSourcePicker.test.tsx',
-  'features/documents/components/review/__tests__/ResumeAtsPanel.test.tsx',
-  'features/documents/components/review/__tests__/ResumeGapsPanel.test.tsx',
-  'features/documents/components/review/__tests__/ResumeMatchPanel.test.tsx',
-  'features/documents/hooks/__tests__/useCreateOrOpenDraft.test.tsx',
-  'features/documents/hooks/__tests__/useDraftEditor.test.tsx',
-  'features/documents/pages/__tests__/DocumentDraftEditPage.test.tsx',
-  'features/documents/pages/__tests__/DocumentDraftSaveState.test.tsx',
-  'features/interviews/components/__tests__/InterviewQuestionsPanel.test.tsx',
-  'features/interviews/components/__tests__/InterviewsTab.test.tsx',
-  'features/interviews/components/mock/__tests__/MockQuestionsPanel.test.tsx',
-  'features/offers/pages/__tests__/ApplicationOffersPage.test.tsx',
-  'features/profile/components/sections/__tests__/ProfileSectionsDeleteUndo.test.tsx',
-  'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
-  'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
-  'features/settings/pages/__tests__/SettingsDangerZonePage.test.tsx',
-]);
-
 /** Lines above which a source file must justify itself below. */
 const MAX_LINES = 400;
 
@@ -262,16 +225,10 @@ describe('web src structure', () => {
         .filter((file) => /\.test\.tsx?$/.test(file) && !file.startsWith('__tests__/config/'))
         .map((id) => ({ id, code: readFileSync(join(SRC, id), 'utf8') }));
 
-    it('answers a mocked gqlClient with mockGql, except the files still to move', () => {
-      const offenders = findHandRolledGqlMocks(tests());
-
+    it('answers a mocked gqlClient with mockGql, never by matching on gqlText', () => {
       expect(
-        offenders.filter((id) => !HAND_ROLLED_GQL_MOCKS.has(id)),
+        findHandRolledGqlMocks(tests()),
         'use mockGql(request, [respond(DOCUMENT, data)]) from #/__tests__/helpers/gqlMock',
-      ).toEqual([]);
-      expect(
-        [...HAND_ROLLED_GQL_MOCKS].filter((id) => !offenders.includes(id)),
-        'already moved: remove it from HAND_ROLLED_GQL_MOCKS',
       ).toEqual([]);
     });
 

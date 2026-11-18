@@ -30,7 +30,16 @@ vi.mock('sonner', () => ({
 
 import { TrashPage } from '#/features/applications/pages/TrashPage';
 import { daysUntilPurge } from '#/features/applications/graphql/trashQueries';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  BULK_RESTORE_APPLICATIONS,
+  EMPTY_TRASH,
+  PERMANENTLY_DELETE_APPLICATION,
+  RESTORE_APPLICATION,
+  TRASHED_APPLICATIONS_QUERY,
+} from '#/features/applications/graphql/trashQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -39,9 +48,13 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={makeClient()}>{children}</QueryClientProvider>;
 }
 
+type Trashed = NonNullable<
+  NonNullable<ResultOf<typeof TRASHED_APPLICATIONS_QUERY>['trashedApplications']>[number]
+>;
+
 const NOW = new Date('2026-08-20T12:00:00.000Z');
 
-const second = {
+const second: Trashed = {
   id: 'app-2',
   company: 'Globex',
   role: 'Designer',
@@ -52,7 +65,7 @@ const second = {
   purgeAt: '2026-09-15T12:00:00.000Z',
 };
 
-const trashed = {
+const trashed: Trashed = {
   id: 'app-1',
   company: 'Stripe',
   role: 'Software Engineer',
@@ -90,7 +103,9 @@ describe('TrashPage', () => {
   });
 
   it('lists trashed applications with a countdown to permanent deletion', async () => {
-    mockGqlRequest.mockResolvedValue({ trashedApplications: [trashed] });
+    mockGql(mockGqlRequest, [
+      respond(TRASHED_APPLICATIONS_QUERY, { trashedApplications: [trashed] }),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
@@ -106,11 +121,10 @@ describe('TrashPage', () => {
   });
 
   it('restores an application', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('RestoreApplication'))
-        return Promise.resolve({ restoreApplication: true });
-      return Promise.resolve({ trashedApplications: [trashed] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(RESTORE_APPLICATION, { restoreApplication: true }),
+      respond(TRASHED_APPLICATIONS_QUERY, { trashedApplications: [trashed] }),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
@@ -125,7 +139,9 @@ describe('TrashPage', () => {
   });
 
   it('does not permanently delete when the confirmation is declined', async () => {
-    mockGqlRequest.mockResolvedValue({ trashedApplications: [trashed] });
+    mockGql(mockGqlRequest, [
+      respond(TRASHED_APPLICATIONS_QUERY, { trashedApplications: [trashed] }),
+    ]);
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<TrashPage />, { wrapper: Wrapper });
 
@@ -140,11 +156,10 @@ describe('TrashPage', () => {
   });
 
   it('permanently deletes once confirmed', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('PermanentlyDeleteApplication'))
-        return Promise.resolve({ permanentlyDeleteApplication: true });
-      return Promise.resolve({ trashedApplications: [trashed] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(PERMANENTLY_DELETE_APPLICATION, { permanentlyDeleteApplication: true }),
+      respond(TRASHED_APPLICATIONS_QUERY, { trashedApplications: [trashed] }),
+    ]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<TrashPage />, { wrapper: Wrapper });
 
@@ -181,14 +196,13 @@ describe('TrashPage — bulk actions', () => {
     vi.useRealTimers();
   });
 
-  const listOf = (...items: unknown[]) => ({ trashedApplications: items });
+  const listOf = (...items: Trashed[]) => ({ trashedApplications: items });
 
   it('restores a selection in one call', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('BulkRestoreApplications'))
-        return Promise.resolve({ bulkRestoreApplications: { restored: 2 } });
-      return Promise.resolve(listOf(trashed, second));
-    });
+    mockGql(mockGqlRequest, [
+      respond(BULK_RESTORE_APPLICATIONS, { bulkRestoreApplications: { restored: 2 } }),
+      respond(TRASHED_APPLICATIONS_QUERY, listOf(trashed, second)),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
@@ -204,11 +218,10 @@ describe('TrashPage — bulk actions', () => {
   });
 
   it('sends only the rows that are actually selected', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('BulkRestoreApplications'))
-        return Promise.resolve({ bulkRestoreApplications: { restored: 1 } });
-      return Promise.resolve(listOf(trashed, second));
-    });
+    mockGql(mockGqlRequest, [
+      respond(BULK_RESTORE_APPLICATIONS, { bulkRestoreApplications: { restored: 1 } }),
+      respond(TRASHED_APPLICATIONS_QUERY, listOf(trashed, second)),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Globex')).toBeInTheDocument());
@@ -253,11 +266,10 @@ describe('TrashPage — bulk actions', () => {
   });
 
   it('empties the Trash once confirmed and reports the count', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('EmptyTrash'))
-        return Promise.resolve({ emptyTrash: { deleted: 2, failed: 0 } });
-      return Promise.resolve(listOf(trashed, second));
-    });
+    mockGql(mockGqlRequest, [
+      respond(EMPTY_TRASH, { emptyTrash: { deleted: 2, failed: 0 } }),
+      respond(TRASHED_APPLICATIONS_QUERY, listOf(trashed, second)),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
@@ -270,11 +282,10 @@ describe('TrashPage — bulk actions', () => {
   });
 
   it('says what actually happened when part of the Trash could not be deleted', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('EmptyTrash'))
-        return Promise.resolve({ emptyTrash: { deleted: 1, failed: 1 } });
-      return Promise.resolve(listOf(trashed, second));
-    });
+    mockGql(mockGqlRequest, [
+      respond(EMPTY_TRASH, { emptyTrash: { deleted: 1, failed: 1 } }),
+      respond(TRASHED_APPLICATIONS_QUERY, listOf(trashed, second)),
+    ]);
     render(<TrashPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());

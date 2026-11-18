@@ -2,7 +2,11 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResumeSourcePicker } from '#/features/documents/components/ResumeSourcePicker';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import {
+  DOCUMENTS_QUERY,
+  DOCUMENT_DRAFTS_QUERY,
+} from '#/features/documents/graphql/documentQueries';
 
 const { mockGqlRequest } = vi.hoisted(() => ({ mockGqlRequest: vi.fn() }));
 
@@ -59,11 +63,10 @@ const drafts = [
 ];
 
 function serve(docs = documents, dr = drafts) {
-  mockGqlRequest.mockImplementation((doc: unknown) =>
-    Promise.resolve(
-      gqlText(doc).includes('DocumentDrafts') ? { documentDrafts: dr } : { documents: docs },
-    ),
-  );
+  mockGql(mockGqlRequest, [
+    respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: dr }),
+    respond(DOCUMENTS_QUERY, { documents: docs }),
+  ]);
 }
 
 function renderPicker(props: Partial<Parameters<typeof ResumeSourcePicker>[0]> = {}) {

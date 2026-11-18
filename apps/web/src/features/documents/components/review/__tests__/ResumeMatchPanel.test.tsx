@@ -18,7 +18,12 @@ vi.mock('#/graphql/client', () => ({
 
 import { ResumeMatch as ResumeMatchSlot } from '#/features/documents/components/review/ResumeMatchPanel';
 import type { ResumeMatch } from '#/features/documents/graphql/resumeMatchQueries';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import {
+  COMPUTE_RESUME_MATCH_SCORE,
+  RESUME_MATCHES_QUERY,
+} from '#/features/documents/graphql/resumeMatchQueries';
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
@@ -76,15 +81,12 @@ function mockApi({
   computed?: ResumeMatch;
   computeError?: Error;
 }) {
-  mockGqlRequest.mockImplementation((documentDoc: unknown) => {
-    const document = gqlText(documentDoc);
-    if (document.includes('mutation ComputeResumeMatchScore')) {
-      return computeError
-        ? Promise.reject(computeError)
-        : Promise.resolve({ computeResumeMatchScore: computed });
-    }
-    return Promise.resolve({ resumeMatches: matches });
-  });
+  mockGql(mockGqlRequest, [
+    computeError
+      ? respondError(COMPUTE_RESUME_MATCH_SCORE, computeError)
+      : respond(COMPUTE_RESUME_MATCH_SCORE, { computeResumeMatchScore: computed }),
+    respond(RESUME_MATCHES_QUERY, { resumeMatches: matches }),
+  ]);
 }
 
 const chipName = (name: RegExp | string) => screen.findByRole('button', { name });

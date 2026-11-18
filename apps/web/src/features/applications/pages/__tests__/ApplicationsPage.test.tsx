@@ -50,7 +50,15 @@ vi.mock('#/features/quota/components/ApplicationCapNotice', () => ({
 }));
 
 import { ApplicationsPage } from '#/features/applications/pages/ApplicationsPage';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import type { ApplicationStatus } from '#/graphql/generated/graphql';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import { APPLICATIONS_PAGE_QUERY } from '#/features/applications/graphql/applicationsPageQueries';
+import {
+  BULK_UPDATE_APPLICATION,
+  DELETE_APPLICATION,
+} from '#/features/applications/graphql/applicationMutations';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -62,7 +70,7 @@ type ApplicationFixture = {
   id: string;
   company: string;
   role: string;
-  status: string;
+  status: ApplicationStatus;
   location: string | null;
   starred?: boolean;
   appliedAt: string | null;
@@ -428,12 +436,8 @@ describe('ApplicationsPage', () => {
     // mutation, which triggers a refetch through this same mock — so the
     // mock must keep answering that refetch correctly rather than being
     // blanket-overridden to only the mutation's response.
-    function mockMutationResult(result: unknown) {
-      mockGqlRequest.mockImplementation((query: unknown) =>
-        gqlText(query).includes('applicationsPage')
-          ? Promise.resolve(page(apps))
-          : Promise.resolve(result),
-      );
+    function mockMutationResult(result: GqlResponse) {
+      mockGql(mockGqlRequest, [respond(APPLICATIONS_PAGE_QUERY, page(apps)), result]);
     }
 
     it('shows a select-all checkbox with no selection message initially', async () => {
@@ -468,7 +472,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select all'));
-      mockMutationResult({ updateApplication: { id: '1' } });
+      mockMutationResult(respond(BULK_UPDATE_APPLICATION, { updateApplication: { id: '1' } }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Change status…' }));
       fireEvent.click(screen.getByRole('option', { name: /Interviewing/ }));
@@ -490,7 +494,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select all'));
-      mockMutationResult({ updateApplication: { id: '1' } });
+      mockMutationResult(respond(BULK_UPDATE_APPLICATION, { updateApplication: { id: '1' } }));
 
       fireEvent.change(screen.getByPlaceholderText('Add tag…'), { target: { value: 'urgent' } });
       fireEvent.click(screen.getByLabelText('Add tag to selected'));
@@ -512,7 +516,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select Stripe'));
-      mockMutationResult({ updateApplication: { id: '1' } });
+      mockMutationResult(respond(BULK_UPDATE_APPLICATION, { updateApplication: { id: '1' } }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Star selected' }));
       await waitFor(() => {
@@ -536,7 +540,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select all'));
-      mockMutationResult({ deleteApplication: true });
+      mockMutationResult(respond(DELETE_APPLICATION, { deleteApplication: true }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
@@ -556,7 +560,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select all'));
-      mockMutationResult({ deleteApplication: true });
+      mockMutationResult(respond(DELETE_APPLICATION, { deleteApplication: true }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
@@ -586,7 +590,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select all'));
-      mockMutationResult({ deleteApplication: true });
+      mockMutationResult(respond(DELETE_APPLICATION, { deleteApplication: true }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
@@ -607,7 +611,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
 
       fireEvent.click(screen.getByLabelText('Select Stripe'));
-      mockMutationResult({ deleteApplication: true });
+      mockMutationResult(respond(DELETE_APPLICATION, { deleteApplication: true }));
       fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
       expect(screen.queryByText('Stripe')).not.toBeInTheDocument();

@@ -74,8 +74,6 @@ type Documents = {
   '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
   '\n  query OnboardingChecklist {\n    me {\n      onboardingChecklistDismissedAt\n      onboardingGoals\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n      }\n    }\n    apiTokens {\n      id\n    }\n    llmApiKeys {\n      provider\n    }\n    workExperiences {\n      id\n    }\n  }\n': typeof types.OnboardingChecklistDocument;
   '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n': typeof types.DismissOnboardingChecklistDocument;
-  '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n': typeof types.GenerateIntoDocumentDraftDocument;
-  '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n': typeof types.ExtractDocumentTextDocument;
   '\n  query Documents($applicationId: ID!) {\n    documents(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      mimeType\n      sizeBytes\n      url\n      documentType\n      version\n      createdAt\n    }\n  }\n': typeof types.DocumentsDocument;
   '\n  query DocumentDrafts($applicationId: ID!) {\n    documentDrafts(applicationId: $applicationId) {\n      id\n      applicationId\n      type\n      title\n      plainText\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.DocumentDraftsDocument;
   '\n  mutation RequestUploadUrl($input: RequestUploadUrlInput!) {\n    requestUploadUrl(input: $input) {\n      uploadUrl\n      storageKey\n      access\n    }\n  }\n': typeof types.RequestUploadUrlDocument;
@@ -90,6 +88,8 @@ type Documents = {
   '\n  query DocumentDraftVersion($id: ID!) {\n    documentDraftVersion(id: $id) {\n      id\n      source\n      plainText\n      createdAt\n    }\n  }\n': typeof types.DocumentDraftVersionDocument;
   '\n  mutation CreateDocumentDraftVersion($draftId: ID!) {\n    createDocumentDraftVersion(draftId: $draftId) {\n      id\n      source\n    }\n  }\n': typeof types.CreateDocumentDraftVersionDocument;
   '\n  mutation RestoreDocumentDraftVersion($versionId: ID!) {\n    restoreDocumentDraftVersion(versionId: $versionId) {\n      id\n      contentJson\n      plainText\n    }\n  }\n': typeof types.RestoreDocumentDraftVersionDocument;
+  '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n': typeof types.GenerateIntoDocumentDraftDocument;
+  '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n': typeof types.ExtractDocumentTextDocument;
   '\n  mutation PolishDocumentDraft($draftId: ID!, $plainText: String!, $instructions: String) {\n    polishDocumentDraft(draftId: $draftId, plainText: $plainText, instructions: $instructions) {\n      markdown\n    }\n  }\n': typeof types.PolishDocumentDraftDocument;
   '\n  query PostingRequirements($applicationId: ID!) {\n    postingRequirements(applicationId: $applicationId) {\n      id\n      applicationId\n      mustHave\n      niceToHave\n      keywords\n      seniority\n      generatedAt\n      isStale\n    }\n  }\n': typeof types.PostingRequirementsDocument;
   '\n  mutation ExtractPostingRequirements($applicationId: ID!) {\n    extractPostingRequirements(applicationId: $applicationId) {\n      id\n      applicationId\n      mustHave\n      niceToHave\n      keywords\n      seniority\n      generatedAt\n      isStale\n    }\n  }\n': typeof types.ExtractPostingRequirementsDocument;
@@ -338,10 +338,6 @@ const documents: Documents = {
     types.OnboardingChecklistDocument,
   '\n  mutation DismissOnboardingChecklist {\n    dismissOnboardingChecklist\n  }\n':
     types.DismissOnboardingChecklistDocument,
-  '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n':
-    types.GenerateIntoDocumentDraftDocument,
-  '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n':
-    types.ExtractDocumentTextDocument,
   '\n  query Documents($applicationId: ID!) {\n    documents(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      mimeType\n      sizeBytes\n      url\n      documentType\n      version\n      createdAt\n    }\n  }\n':
     types.DocumentsDocument,
   '\n  query DocumentDrafts($applicationId: ID!) {\n    documentDrafts(applicationId: $applicationId) {\n      id\n      applicationId\n      type\n      title\n      plainText\n      createdAt\n      updatedAt\n    }\n  }\n':
@@ -370,6 +366,10 @@ const documents: Documents = {
     types.CreateDocumentDraftVersionDocument,
   '\n  mutation RestoreDocumentDraftVersion($versionId: ID!) {\n    restoreDocumentDraftVersion(versionId: $versionId) {\n      id\n      contentJson\n      plainText\n    }\n  }\n':
     types.RestoreDocumentDraftVersionDocument,
+  '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n':
+    types.GenerateIntoDocumentDraftDocument,
+  '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n':
+    types.ExtractDocumentTextDocument,
   '\n  mutation PolishDocumentDraft($draftId: ID!, $plainText: String!, $instructions: String) {\n    polishDocumentDraft(draftId: $draftId, plainText: $plainText, instructions: $instructions) {\n      markdown\n    }\n  }\n':
     types.PolishDocumentDraftDocument,
   '\n  query PostingRequirements($applicationId: ID!) {\n    postingRequirements(applicationId: $applicationId) {\n      id\n      applicationId\n      mustHave\n      niceToHave\n      keywords\n      seniority\n      generatedAt\n      isStale\n    }\n  }\n':
@@ -1000,18 +1000,6 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n',
-): (typeof documents)['\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n'];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(
-  source: '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n',
-): (typeof documents)['\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n'];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(
   source: '\n  query Documents($applicationId: ID!) {\n    documents(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      mimeType\n      sizeBytes\n      url\n      documentType\n      version\n      createdAt\n    }\n  }\n',
 ): (typeof documents)['\n  query Documents($applicationId: ID!) {\n    documents(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      mimeType\n      sizeBytes\n      url\n      documentType\n      version\n      createdAt\n    }\n  }\n'];
 /**
@@ -1092,6 +1080,18 @@ export function graphql(
 export function graphql(
   source: '\n  mutation RestoreDocumentDraftVersion($versionId: ID!) {\n    restoreDocumentDraftVersion(versionId: $versionId) {\n      id\n      contentJson\n      plainText\n    }\n  }\n',
 ): (typeof documents)['\n  mutation RestoreDocumentDraftVersion($versionId: ID!) {\n    restoreDocumentDraftVersion(versionId: $versionId) {\n      id\n      contentJson\n      plainText\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n',
+): (typeof documents)['\n  mutation GenerateIntoDocumentDraft(\n    $draftId: ID!\n    $instructions: String\n    $resumeDocumentId: ID\n    $resumeDraftId: ID\n  ) {\n    generateIntoDocumentDraft(\n      draftId: $draftId\n      instructions: $instructions\n      resumeDocumentId: $resumeDocumentId\n      resumeDraftId: $resumeDraftId\n    ) {\n      contentJson\n      plainText\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n',
+): (typeof documents)['\n  mutation ExtractDocumentText($documentId: ID!) {\n    extractDocumentText(documentId: $documentId) {\n      text\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

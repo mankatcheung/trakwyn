@@ -7,17 +7,22 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockRequest } }));
 
 import { ImportDocumentAction } from '#/features/documents/components/ImportDocumentAction';
 import type { DocumentEditorHandle } from '#/features/documents/components/editor/DocumentDraftEditor';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { DOCUMENTS_QUERY } from '#/features/documents/graphql/documentQueries';
+import { EXTRACT_TEXT_MUTATION } from '#/features/documents/graphql/importQueries';
 
 const DOCS = [
   { id: 'd-1', name: 'old-cv.pdf', documentType: 'resume' },
   { id: 'd-2', name: 'notes.docx', documentType: 'other' },
 ];
 
-function api(extract: () => Promise<unknown>, documents = DOCS) {
-  mockRequest.mockImplementation((queryDoc: unknown) =>
-    gqlText(queryDoc).includes('ExtractDocumentText') ? extract() : Promise.resolve({ documents }),
-  );
+function api(extract: () => Promise<ResultOf<typeof EXTRACT_TEXT_MUTATION>>, documents = DOCS) {
+  mockGql(mockRequest, [
+    respondWith(EXTRACT_TEXT_MUTATION, extract),
+    respond(DOCUMENTS_QUERY, { documents }),
+  ]);
 }
 
 function setup() {

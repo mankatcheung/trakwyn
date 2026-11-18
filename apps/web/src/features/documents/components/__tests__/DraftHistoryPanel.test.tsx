@@ -11,7 +11,15 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 vi.mock('sonner', () => ({ toast: { success: mockToastSuccess } }));
 
 import { DraftHistoryPanel } from '#/features/documents/components/DraftHistoryPanel';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import {
+  CREATE_DRAFT_VERSION_MUTATION,
+  DRAFT_VERSION_QUERY,
+  DRAFT_VERSIONS_QUERY,
+  RESTORE_DRAFT_VERSION_MUTATION,
+} from '#/features/documents/graphql/draftHistoryQueries';
 
 const VERSIONS = [
   { id: 'v3', source: 'ai', characterCount: 1200, createdAt: '2026-11-13T12:00:00.000Z' },
@@ -19,42 +27,42 @@ const VERSIONS = [
   { id: 'v1', source: 'autosave', characterCount: 900, createdAt: '2026-11-13T10:00:00.000Z' },
 ];
 
+type Versions = ResultOf<typeof DRAFT_VERSIONS_QUERY>['documentDraftVersions'];
 type Handlers = {
-  versions?: unknown[] | (() => Promise<unknown>);
-  save?: () => Promise<unknown>;
-  restore?: () => Promise<unknown>;
+  versions?: Versions | (() => Promise<ResultOf<typeof DRAFT_VERSIONS_QUERY>>);
+  save?: () => Promise<ResultOf<typeof CREATE_DRAFT_VERSION_MUTATION>>;
+  restore?: () => Promise<ResultOf<typeof RESTORE_DRAFT_VERSION_MUTATION>>;
 };
 
 function mockApi({ versions = VERSIONS, save, restore }: Handlers = {}) {
-  mockGqlRequest.mockImplementation((queryDoc: unknown, vars?: { id?: string }) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('query DocumentDraftVersions'))
-      return typeof versions === 'function'
-        ? versions()
-        : Promise.resolve({ documentDraftVersions: versions });
-    if (/query DocumentDraftVersion(?!s)/.test(query))
-      return Promise.resolve({
-        documentDraftVersion: {
-          id: vars?.id,
-          source: 'ai',
-          plainText: `Text of ${vars?.id}`,
-          createdAt: '2026-11-13T12:00:00.000Z',
-        },
-      });
-    if (query.includes('CreateDocumentDraftVersion'))
-      return save ? save() : Promise.resolve({ createDocumentDraftVersion: { id: 'v4' } });
-    if (query.includes('RestoreDocumentDraftVersion'))
-      return restore
-        ? restore()
-        : Promise.resolve({
-            restoreDocumentDraftVersion: {
-              id: 'draft-1',
-              contentJson: '{"type":"doc","content":[]}',
-              plainText: 'Text of v1',
-            },
-          });
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    typeof versions === 'function'
+      ? respondWith(DRAFT_VERSIONS_QUERY, versions)
+      : respond(DRAFT_VERSIONS_QUERY, { documentDraftVersions: versions }),
+    respond(DRAFT_VERSION_QUERY, (vars) => ({
+      documentDraftVersion: {
+        id: vars.id,
+        source: 'ai',
+        plainText: `Text of ${vars.id}`,
+        createdAt: '2026-11-13T12:00:00.000Z',
+      },
+    })),
+    respondWith(
+      CREATE_DRAFT_VERSION_MUTATION,
+      save ?? (async () => ({ createDocumentDraftVersion: { id: 'v4' } })),
+    ),
+    respondWith(
+      RESTORE_DRAFT_VERSION_MUTATION,
+      restore ??
+        (async () => ({
+          restoreDocumentDraftVersion: {
+            id: 'draft-1',
+            contentJson: '{"type":"doc","content":[]}',
+            plainText: 'Text of v1',
+          },
+        })),
+    ),
+  ]);
 }
 
 function renderPanel(props: Partial<React.ComponentProps<typeof DraftHistoryPanel>> = {}) {

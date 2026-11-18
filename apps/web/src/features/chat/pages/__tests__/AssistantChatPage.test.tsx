@@ -62,7 +62,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 import { mockGql, respond, overrideGql } from '#/__tests__/helpers/gqlMock';
 import { CHAT_HISTORY_QUERY } from '#/features/chat/graphql/chatQueries';
 import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
@@ -76,10 +76,6 @@ import { DELETE_CONVERSATION } from '#/features/chat/graphql/chatQueries';
  * (JEF-240) — this normalizes both call shapes down to the query string so
  * mock implementations don't need to care which one fired.
  */
-function documentOf(arg: unknown): string {
-  return gqlText((arg as { document?: unknown })?.document ?? arg);
-}
-
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 
@@ -217,34 +213,30 @@ describe('AssistantPage (chat)', () => {
   it('sends a message into the active conversation and appends the reply', async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     let chatHistoryCallCount = 0;
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations')) return noConversations();
-      if (gqlText(query).includes('ChatHistory')) {
+    mockGql(mockGqlRequest, [
+      respond(CONVERSATIONS_QUERY, { conversations: [] }),
+      respond(CHAT_HISTORY_QUERY, () => {
         chatHistoryCallCount++;
-        return Promise.resolve(
-          chatHistoryCallCount === 1
-            ? { chatHistory: [] }
-            : {
-                chatHistory: [
-                  {
-                    id: 'm1',
-                    role: 'user',
-                    content: 'how many active applications do I have?',
-                    createdAt: '',
-                  },
-                  {
-                    id: 'm2',
-                    role: 'assistant',
-                    content: 'You have 2 active applications.',
-                    createdAt: '',
-                  },
-                ],
-              },
-        );
-      }
-      return Promise.resolve({});
-    });
+        return chatHistoryCallCount === 1
+          ? { chatHistory: [] }
+          : {
+              chatHistory: [
+                {
+                  id: 'm1',
+                  role: 'user',
+                  content: 'how many active applications do I have?',
+                  createdAt: '',
+                },
+                {
+                  id: 'm2',
+                  role: 'assistant',
+                  content: 'You have 2 active applications.',
+                  createdAt: '',
+                },
+              ],
+            };
+      }),
+    ]);
     mockStreamChatMessage.mockImplementation(
       async ({ onDelta }: { onDelta: (text: string) => void }) => {
         onDelta('You have 2 active applications.');
