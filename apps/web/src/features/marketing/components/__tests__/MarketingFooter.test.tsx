@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import en from '#/i18n/en.json';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
@@ -18,6 +19,12 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('#/graphql/client', () => ({
   hasSessionCookie: mockHasSessionCookie,
+}));
+
+const { mockSetTheme } = vi.hoisted(() => ({ mockSetTheme: vi.fn() }));
+
+vi.mock('#/lib/theme', () => ({
+  useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
 }));
 
 vi.mock('#/lib/i18n', () => ({
@@ -86,6 +93,17 @@ describe('MarketingFooter', () => {
       'href',
       '/dashboard',
     );
+  });
+
+  it('renders one theme toggle that cycles the theme (JEF-655)', async () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<MarketingFooter />);
+
+    const toggle = screen.getByRole('button', { name: /theme/i });
+    await userEvent.click(toggle);
+
+    // light → dark, the same order as the Settings control.
+    expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
 
   it('links to the Privacy Policy and Terms of Service', () => {

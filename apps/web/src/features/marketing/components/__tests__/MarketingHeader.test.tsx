@@ -149,13 +149,11 @@ describe('MarketingHeader', () => {
     expect(header.className).toContain('border-transparent');
   });
 
-  it('renders a theme toggle button, once for desktop and once for mobile', () => {
+  it('has no theme toggle: it lives in the footer (JEF-655)', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingHeader />);
 
-    // One in the desktop nav row, one beside the mobile hamburger — both
-    // always rendered, shown/hidden purely by the `sm:` breakpoint classes.
-    expect(screen.getAllByRole('button', { name: /theme/i })).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /theme/i })).not.toBeInTheDocument();
   });
 
   it('renders a locale picker, once for desktop and once for mobile', () => {

@@ -18,8 +18,8 @@ const THEME_ICON: Record<Theme, ReactNode> = {
  * — `/` and `/features/*` didn't expose the app-wide `useTheme()` state
  * anywhere before this; the actual `dark:` styling already worked, there was
  * just no control to reach it outside Settings. Cycles the same three states
- * as {@link SettingsProfilePage}'s segmented control, just icon-only to fit a
- * header.
+ * as {@link SettingsProfilePage}'s segmented control, just icon-only to fit the
+ * footer's bottom bar (JEF-655 moved it there from the header).
  *
  * @category Actions
  */
