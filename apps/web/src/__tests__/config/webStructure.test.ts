@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findFeatureStrays } from '../../../scripts/lib/featureLayout.ts';
+import { findHandRolledGqlMocks } from '../../../scripts/lib/handRolledGqlMocks.ts';
 import { findInlineQueries } from '../../../scripts/lib/inlineQueries.ts';
 import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listImports.ts';
 
@@ -24,6 +25,8 @@ import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listIm
  *     with no exceptions (JEF-636).
  *   - No GraphQL string is written inline: every document is a typed `graphql()` call
  *     (JEF-637), except the client's own `REFRESH_MUTATION`.
+ *   - A test answers a mocked `gqlClient` with `mockGql`/`respond`, not a hand-rolled
+ *     `gqlText(query).includes(…)` (JEF-652).
  */
 
 const WEB_ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -35,6 +38,67 @@ const SRC = join(WEB_ROOT, 'src');
  */
 const ROOT_IMPORTS_OF_FEATURES = new Set([
   'components/ErrorState.tsx imports features/plans/components/UpgradePrompt.tsx',
+]);
+
+/**
+ * Tests still answering a mocked `gqlClient` by hand, moved onto `mockGql` folder by
+ * folder (JEF-652). The list can only shrink: a file that no longer matches must come off.
+ */
+const HAND_ROLLED_GQL_MOCKS = new Set<string>([
+  '__tests__/routes/VerifyEmailRequiredPage.test.tsx',
+  'features/app-shell/pages/__tests__/AuthenticatedLayout.test.tsx',
+  'features/application-detail/components/tabs/__tests__/CompanyBriefingTab.test.tsx',
+  'features/application-detail/components/tabs/__tests__/ContactsTab.test.tsx',
+  'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
+  'features/application-detail/pages/__tests__/ApplicationDetailSectionSwitch.test.tsx',
+  'features/applications/pages/__tests__/ApplicationsPage.test.tsx',
+  'features/applications/pages/__tests__/TrashPage.test.tsx',
+  'features/chat/components/__tests__/ChatConversationView.test.tsx',
+  'features/chat/components/dock/__tests__/ChatDockFloatingWindow.test.tsx',
+  'features/chat/lib/__tests__/AssistantChatProvider.test.tsx',
+  'features/chat/lib/__tests__/ConversationListProvider.test.tsx',
+  'features/chat/pages/__tests__/AssistantChatPage.test.tsx',
+  'features/chat/pages/__tests__/AssistantHistoryPage.test.tsx',
+  'features/dashboard/components/__tests__/CvProfileSummaryCard.test.tsx',
+  'features/documents/components/__tests__/AiHelperPanel.test.tsx',
+  'features/documents/components/__tests__/DocumentList.test.tsx',
+  'features/documents/components/__tests__/DraftHistoryPanel.test.tsx',
+  'features/documents/components/__tests__/EmptyProfilePrompt.test.tsx',
+  'features/documents/components/__tests__/ImportDocumentAction.test.tsx',
+  'features/documents/components/__tests__/ResumeSourcePicker.test.tsx',
+  'features/documents/components/review/__tests__/ResumeAtsPanel.test.tsx',
+  'features/documents/components/review/__tests__/ResumeGapsPanel.test.tsx',
+  'features/documents/components/review/__tests__/ResumeMatchPanel.test.tsx',
+  'features/documents/hooks/__tests__/useCreateOrOpenDraft.test.tsx',
+  'features/documents/hooks/__tests__/useDraftEditor.test.tsx',
+  'features/documents/pages/__tests__/DocumentDraftEditPage.test.tsx',
+  'features/documents/pages/__tests__/DocumentDraftSaveState.test.tsx',
+  'features/interviews/components/__tests__/InterviewQuestionsPanel.test.tsx',
+  'features/interviews/components/__tests__/InterviewsTab.test.tsx',
+  'features/interviews/components/mock/__tests__/MockQuestionsPanel.test.tsx',
+  'features/notes/components/__tests__/NotesTab.test.tsx',
+  'features/notifications/components/__tests__/NotificationInbox.test.tsx',
+  'features/notifications/pages/__tests__/NotificationsPage.test.tsx',
+  'features/offers/pages/__tests__/ApplicationOffersPage.test.tsx',
+  'features/offers/pages/__tests__/OffersPage.test.tsx',
+  'features/onboarding/pages/__tests__/WelcomePage.test.tsx',
+  'features/plans/components/__tests__/LockedFeaturePreview.test.tsx',
+  'features/profile/components/sections/__tests__/ProfileSections.test.tsx',
+  'features/profile/components/sections/__tests__/ProfileSectionsDeleteUndo.test.tsx',
+  'features/profile/components/sections/__tests__/ProjectsAwardsSections.test.tsx',
+  'features/profile/pages/__tests__/ProfilePage.test.tsx',
+  'features/quota/components/__tests__/QuotaHint.test.tsx',
+  'features/quota/components/__tests__/QuotaWiring.test.tsx',
+  'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
+  'features/settings/components/integrations/__tests__/McpClientsCard.test.tsx',
+  'features/settings/components/integrations/__tests__/ShareLinksCard.test.tsx',
+  'features/settings/lib/__tests__/StorageUsage.test.tsx',
+  'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
+  'features/settings/pages/__tests__/SettingsDangerZonePage.test.tsx',
+  'features/settings/pages/__tests__/SettingsDataPage.test.tsx',
+  'features/settings/pages/__tests__/SettingsPlanPage.test.tsx',
+  'features/settings/pages/__tests__/SettingsProfilePage.test.tsx',
+  'features/settings/pages/__tests__/SettingsSecurityPage.test.tsx',
 ]);
 
 /** Lines above which a source file must justify itself below. */
@@ -213,6 +277,43 @@ describe('web src structure', () => {
       expect(findInlineQueries([{ id: 'features/x/lib/x.ts', code }])).toEqual([
         'features/x/lib/x.ts REFRESH_MUTATION',
       ]);
+    });
+  });
+
+  describe('typed gqlClient mocks (JEF-652)', () => {
+    const tests = () =>
+      files
+        .filter((file) => /\.test\.tsx?$/.test(file) && !file.startsWith('__tests__/config/'))
+        .map((id) => ({ id, code: readFileSync(join(SRC, id), 'utf8') }));
+
+    it('answers a mocked gqlClient with mockGql, except the files still to move', () => {
+      const offenders = findHandRolledGqlMocks(tests());
+
+      expect(
+        offenders.filter((id) => !HAND_ROLLED_GQL_MOCKS.has(id)),
+        'use mockGql(request, [respond(DOCUMENT, data)]) from #/__tests__/helpers/gqlMock',
+      ).toEqual([]);
+      expect(
+        [...HAND_ROLLED_GQL_MOCKS].filter((id) => !offenders.includes(id)),
+        'already moved: remove it from HAND_ROLLED_GQL_MOCKS',
+      ).toEqual([]);
+    });
+
+    it('flags a mockImplementation that matches on gqlText', () => {
+      const mock = "vi.mock('#/graphql/client', () => ({}));\n";
+      expect(
+        findHandRolledGqlMocks([
+          {
+            id: 'a.test.ts',
+            code: `${mock}m.mockImplementation((q) => gqlText(q).includes('A') ? 1 : 2);`,
+          },
+          {
+            id: 'b.test.ts',
+            code: `${mock}m.mockImplementation(respondWith(x));\nm.mock.calls.filter(([q]) => gqlText(q).includes('A'));`,
+          },
+          { id: 'c.test.ts', code: "m.mockImplementation((q) => gqlText(q).includes('A'));" },
+        ]),
+      ).toEqual(['a.test.ts']);
     });
   });
 });
