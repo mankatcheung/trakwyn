@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { guideRouteRules, listGuides } from '@trakwyn/content/node';
+import { INDEXED_LOCALES, LOCALIZED_PATHS, localizedRouteRules } from '#/lib/localePaths';
 
 /**
  * Guards the marketing-pages SSR/prerender setup (JEF-169 follow-up):
@@ -83,7 +84,8 @@ const EXCEPTIONS: Record<string, string> = {
  * Marketing pages that may skip `marketingHead` (JEF-462), and so ship no
  * link-preview card. Every other marketing page must use it, so a new one
  * can't go out with no og:image, or with the square app icon WhatsApp used
- * to blow up above the title.
+ * to blow up above the title. They use `legalHead` instead: the localized
+ * title, canonical and hreflang (JEF-653), without the card.
  */
 const NO_SOCIAL_CARD: Record<string, string> = {
   'privacy.tsx': 'legal page, not shared as a link preview',
@@ -132,11 +134,46 @@ describe('marketing page SSR/prerender invariant', () => {
     for (const [path, file] of Object.entries(PRERENDERED_MARKETING)) {
       if (file in NO_SOCIAL_CARD) continue;
       const source = withoutComments(readFileSync(join(ROUTES_DIR, file), 'utf8'));
-      expect(source, `${path} (${file})`).toMatch(/head:\s*\(\)\s*=>\s*marketingHead\(/);
+      expect(source, `${path} (${file})`).toMatch(
+        /head:\s*\(\{\s*match\s*\}\)\s*=>\s*marketingHead\(/,
+      );
       // The path it passes is the route's own, so og:url and the canonical
       // link point at this page rather than one it was copied from.
       expect(source, `${path} (${file}) passes its own path`).toContain(`path: '${path}'`);
     }
+  });
+
+  it('every marketing head is built in the page locale, from the translation bundles (JEF-653)', () => {
+    for (const [path, file] of Object.entries(PRERENDERED_MARKETING)) {
+      const source = withoutComments(readFileSync(join(ROUTES_DIR, file), 'utf8'));
+      const builder = file in NO_SOCIAL_CARD ? 'legalHead' : 'marketingHead';
+      expect(source, `${path} (${file})`).toMatch(
+        new RegExp(`head:\\s*\\(\\{\\s*match\\s*\\}\\)\\s*=>\\s*${builder}\\(`),
+      );
+      // The text comes from `seo.<key>.*` in the bundles, not a string typed
+      // into the route, which would be English on every locale's page.
+      expect(source, `${path} (${file}) uses a seo key`).toMatch(/seo:\s*'[A-Za-z]+'/);
+      expect(source, `${path} (${file}) passes the page locale`).toContain(
+        'match.context.pageLocale',
+      );
+      expect(source, `${path} (${file}) has no hand-written title`).not.toMatch(/title:\s*'/);
+    }
+  });
+
+  it('localizes exactly the prerendered marketing pages (JEF-653)', () => {
+    expect([...LOCALIZED_PATHS].sort()).toEqual(Object.keys(PRERENDERED_MARKETING).sort());
+  });
+
+  it('vite.config prerenders every localized page in every non-English locale (JEF-653)', () => {
+    expect(VITE_CONFIG).toContain('...localizedRouteRules()');
+    const rules = localizedRouteRules();
+    const expected = INDEXED_LOCALES.filter((l) => l !== 'en').flatMap((locale) =>
+      Object.keys(PRERENDERED_MARKETING).map((path) =>
+        path === '/' ? `/${locale.toLowerCase()}` : `/${locale.toLowerCase()}${path}`,
+      ),
+    );
+    expect(Object.keys(rules).sort()).toEqual(expected.sort());
+    for (const rule of Object.values(rules)) expect(rule).toEqual({ prerender: true });
   });
 
   it('vite.config prerenders exactly the marketing routes', () => {

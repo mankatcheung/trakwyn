@@ -2,15 +2,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
 import { GuidesIndexPage } from '../../features/guides/pages/GuidesIndexPage';
 
-const TITLE = 'Guides — Trakwyn';
-const DESCRIPTION =
-  'Step-by-step guides for tracking job applications, tailoring cover letters and getting more out of Trakwyn.';
-
 export const Route = createFileRoute('/guides/')({
   validateSearch: (search: Record<string, unknown>): { tag?: string } => ({
     tag: typeof search.tag === 'string' && search.tag ? search.tag : undefined,
   }),
-  head: () => marketingHead({ path: '/guides', title: TITLE, description: DESCRIPTION }),
+  head: ({ match }) => marketingHead({ path: '/guides', seo: 'guides' }, match.context.pageLocale),
   component: GuidesIndexRoute,
 });
 

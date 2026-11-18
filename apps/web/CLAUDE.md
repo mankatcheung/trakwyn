@@ -50,6 +50,18 @@ Rules, held by `src/__tests__/config/webStructure.test.ts`:
 
 `pnpm build && pnpm --filter @trakwyn/web check:chunks` fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
 
+## Localized marketing URLs (JEF-653)
+
+Search engines index a URL, not a language setting, so the prerendered marketing pages exist once per indexed locale: `/pricing`, `/zh-hk/pricing`, `/zh-tw/pricing`, `/zh-cn/pricing`. English stays at the root; `en-GB` has no URLs of its own (it is a UI locale only, and its pages would duplicate `en`).
+
+- **No route file knows about the prefix.** `router.tsx` installs a URL `rewrite` (`lib/localeRewrite.ts`): input turns `/zh-hk/pricing` into `/pricing?locale=zh-HK` before routes match, output turns every URL the router builds (`<Link>`, `buildLocation`) back, inheriting the current page's locale. `?locale=` stays the router's internal carrier, so the legacy `/pricing?locale=zh-TW` URL redirects (307) to `/zh-tw/pricing`.
+- **Which pages:** `LOCALIZED_PATHS` in `lib/localePaths.ts` (no imports, because `vite.config.ts` reads it). A prefix in front of any other page (`/zh-hk/login`, a guide article, `/xx/pricing`) matches nothing and is a 404. `marketingSsr.test.ts` holds the list equal to the prerendered pages; `localizedRouteRules()` generates the other locales' prerender entries.
+- **A new marketing page** needs its path in `LOCALIZED_PATHS` and `PRERENDERED_MARKETING`, a `seo.<key>.title` / `.description` pair in all five bundles, and `head: ({ match }) => marketingHead({ path, seo: '<key>' }, match.context.pageLocale)`. Legal pages use `legalHead` (no link-preview card).
+- **The server renders the URL's locale.** The root `beforeLoad` loads that bundle first (also on the server) and puts `pageLocale` in the route context; `LocaleProvider` gets `urlLocale` from the router. `getRouter` is async so the client loads the bundle before hydrating a prefixed page, or it would render English over Chinese HTML. Never read `i18next.language` for a server render: it is shared by every request.
+- **`<head>` is built from `lib/seo.ts`:** a self-referencing canonical, the same `hreflang` set on every page in a group plus `x-default` (English), and `og:locale`. There is no `og:locale:alternate`: the router keeps one meta tag per name/property, so it would list one locale of three.
+- **The language picker** changes the URL: `LocaleProvider`'s `onLocaleChange` (supplied by the root route, which owns the router) pushes `localizedHref(...)` on a localized page and does nothing elsewhere. `writeLocaleToUrl` skips these pages, so no `?locale=` is added to them.
+- **Not localized:** guide articles (English only), the auth pages and the signed-in app, which keep the query/localStorage behaviour.
+
 ## Where the detail lives
 
 Each file loads only when you work in its directory. Read it before changing that code.

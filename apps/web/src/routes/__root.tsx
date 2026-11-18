@@ -1,12 +1,27 @@
 import { useEffect } from 'react';
-import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
+import {
+  HeadContent,
+  Scripts,
+  createRootRouteWithContext,
+  useRouter,
+  useRouterState,
+} from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { queryClient } from '#/lib/queryClient';
 import { THEME_INIT_SCRIPT, ThemeProvider, useTheme } from '#/lib/theme';
-import { LOCALE_INIT_SCRIPT, LocaleProvider, useLocale } from '#/lib/i18n';
+import {
+  LOCALE_INIT_SCRIPT,
+  LocaleProvider,
+  ensureLocaleLoaded,
+  localeFromSearch,
+  useLocale,
+  type Locale,
+} from '#/lib/i18n';
+import { indexedLocale } from '#/lib/localePaths';
+import { localizedHref } from '#/lib/localeRewrite';
 import { RootOverlays } from '../features/app-shell/pages/RootOverlays';
 import { NotFoundPage } from '../features/app-shell/pages/NotFoundPage';
 import { RouteErrorPage } from '../features/app-shell/pages/RouteErrorPage';
@@ -21,6 +36,16 @@ export interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // The language the URL names (`/zh-hk/pricing`, or the legacy `?locale=`),
+  // as one of the locales that have pages of their own — English otherwise.
+  // Marketing routes build their <head> from it (JEF-653), and its bundle has
+  // to be loaded first, on the server as well, or the title and the page
+  // would be rendered in English.
+  beforeLoad: async ({ location }) => {
+    const pageLocale = indexedLocale(localeFromSearch(location.search)) ?? 'en';
+    await ensureLocaleLoaded(pageLocale);
+    return { pageLocale };
+  },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -50,8 +75,17 @@ function AppToaster() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const urlLocale = useRouterState({ select: (s) => localeFromSearch(s.location.search) });
+  // On a page that has a URL per language, picking a language moves to that
+  // URL (JEF-653), so the back button, a reload and a copied link keep it.
+  // Anywhere else `localizedHref` has nothing to say and the URL is untouched.
+  const followLocale = (next: Locale) => {
+    const href = localizedHref(router.latestLocation, next);
+    if (href) router.history.push(href);
+  };
   return (
-    <LocaleProvider>
+    <LocaleProvider urlLocale={urlLocale} onLocaleChange={followLocale}>
       <LocalizedDocument>{children}</LocalizedDocument>
     </LocaleProvider>
   );

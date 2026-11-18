@@ -2,12 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { marketingHead } from '#/lib/seo';
 import { FeatureAiAssistantPage } from '../../features/marketing/pages/FeatureAiAssistantPage';
 
-const TITLE = 'AI Job Search Assistant — Trakwyn';
-const DESCRIPTION =
-  'An AI assistant that knows your applications, notes and interviews — bring your own OpenAI, Anthropic, or compatible key.';
-
 export const Route = createFileRoute('/features/ai-assistant')({
-  head: () =>
-    marketingHead({ path: '/features/ai-assistant', title: TITLE, description: DESCRIPTION }),
+  head: ({ match }) =>
+    marketingHead({ path: '/features/ai-assistant', seo: 'aiAssistant' }, match.context.pageLocale),
   component: FeatureAiAssistantPage,
 });

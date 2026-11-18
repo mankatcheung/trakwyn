@@ -46,7 +46,59 @@ describe('buildSitemap', () => {
 
   it('is a urlset document', () => {
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
-    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
+    expect(xml).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+  });
+
+  describe('localized pages (JEF-653)', () => {
+    /** The `<url>` block whose `<loc>` is `loc`. */
+    function entry(loc: string): string {
+      const block = xml.split('  <url>\n').find((b) => b.includes(`<loc>${loc}</loc>`));
+      if (!block) throw new Error(`no <url> for ${loc}`);
+      return block;
+    }
+
+    it('lists every localized page once per indexed locale', () => {
+      for (const loc of [
+        'https://www.trakwyn.com/pricing',
+        'https://www.trakwyn.com/zh-hk/pricing',
+        'https://www.trakwyn.com/zh-tw/pricing',
+        'https://www.trakwyn.com/zh-cn/pricing',
+        'https://www.trakwyn.com',
+        'https://www.trakwyn.com/zh-hk',
+        'https://www.trakwyn.com/zh-cn/features/tracking',
+        'https://www.trakwyn.com/zh-tw/guides',
+      ]) {
+        expect(xml).toContain(`<loc>${loc}</loc>`);
+      }
+    });
+
+    it('gives every entry the same reciprocal alternates, plus x-default', () => {
+      const expected = [
+        'hreflang="en" href="https://www.trakwyn.com/pricing"',
+        'hreflang="zh-HK" href="https://www.trakwyn.com/zh-hk/pricing"',
+        'hreflang="zh-TW" href="https://www.trakwyn.com/zh-tw/pricing"',
+        'hreflang="zh-CN" href="https://www.trakwyn.com/zh-cn/pricing"',
+        'hreflang="x-default" href="https://www.trakwyn.com/pricing"',
+      ];
+      for (const loc of [
+        'https://www.trakwyn.com/pricing',
+        'https://www.trakwyn.com/zh-hk/pricing',
+        'https://www.trakwyn.com/zh-cn/pricing',
+      ]) {
+        const block = entry(loc);
+        for (const link of expected) expect(block).toContain(link);
+        expect(block.match(/<xhtml:link/g)).toHaveLength(5);
+      }
+    });
+
+    it('does not localize auth pages or guide articles', () => {
+      expect(xml).not.toContain('/zh-hk/login');
+      expect(xml).not.toContain('/zh-hk/register');
+      expect(xml).not.toContain('/zh-hk/guides/first-guide');
+      expect(entry('https://www.trakwyn.com/login')).not.toContain('xhtml:link');
+      expect(entry('https://www.trakwyn.com/guides/first-guide')).not.toContain('xhtml:link');
+    });
   });
 });
 

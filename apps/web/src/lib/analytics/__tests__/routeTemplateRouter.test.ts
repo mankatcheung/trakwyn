@@ -18,8 +18,8 @@ const DRAFT_ID = 'Uakgb_J5m9g-0JDMbcJqL';
  * that changes any of them fails here rather than in PostHog.
  */
 describe('route templating against the real router', () => {
-  beforeAll(() => {
-    getRouter();
+  beforeAll(async () => {
+    await getRouter();
   });
 
   afterAll(() => resetRouteResolverForTests());
@@ -37,8 +37,17 @@ describe('route templating against the real router', () => {
     ['/applications', '/applications'],
     ['/dashboard', '/dashboard'],
     ['/', '/'],
+    // A localized marketing page is reported as the route it is, not as a
+    // second route per language (JEF-653).
+    ['/zh-hk/pricing', '/pricing'],
+    ['/zh-tw/features/tracking', '/features/tracking'],
+    ['/zh-cn', '/'],
   ])('reports %s as %s', (pathname, template) => {
     expect(templatePath(pathname)).toBe(template);
+  });
+
+  it('reports a locale prefix in front of a page that is not localized as unmatched', () => {
+    expect(templatePath('/zh-hk/dashboard')).toBe(UNMATCHED_ROUTE);
   });
 
   it('reports a path no route matches as unmatched', () => {

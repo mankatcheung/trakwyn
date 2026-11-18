@@ -1,6 +1,7 @@
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import { apiOrigin, webPort } from './devPorts.ts';
 import { guideRouteRules } from '../../content/src/node.ts';
+import { localizedRouteRules } from './src/lib/localePaths.ts';
 import { devtools } from '@tanstack/devtools-vite';
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -84,6 +85,10 @@ const config = defineConfig(({ command }) => ({
               '/guides': { prerender: true },
               '/guides/rss.xml': { prerender: true },
               '/sitemap.xml': { prerender: true },
+              // The same pages once more per non-English locale, `/zh-hk/pricing`
+              // and so on (JEF-653). The router rewrite (lib/localeRewrite.ts)
+              // maps each back to the route above, rendered in that language.
+              ...localizedRouteRules(),
               // One entry per published guide, read from content/ (JEF-531).
               ...guideRouteRules(),
             },

@@ -4,11 +4,18 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next, I18nextProvider, useTranslation } from 'react-i18next';
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 import en from '#/i18n/en.json';
+import {
+  LOCALE_PATH_PREFIX,
+  LOCALE_QUERY_KEY,
+  isLocalizedPath,
+  localeFromPathname,
+  stripLocalePrefix,
+} from '#/lib/localePaths';
 
 export const SUPPORTED_LOCALES = ['en', 'en-GB', 'zh-HK', 'zh-TW', 'zh-CN'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const LOCALE_STORAGE_KEY = 'locale';
-export const LOCALE_QUERY_KEY = 'locale';
+export { LOCALE_QUERY_KEY };
 
 export const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
   { value: 'en', label: 'English' },
@@ -20,6 +27,12 @@ export const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
 
 export function isLocale(value: string | null | undefined): value is Locale {
   return !!value && (SUPPORTED_LOCALES as readonly string[]).includes(value);
+}
+
+/** The supported locale named by a router `search` object's `?locale=`, if any. */
+export function localeFromSearch(search: unknown): Locale | undefined {
+  const value = (search as { locale?: unknown } | null | undefined)?.locale;
+  return typeof value === 'string' && isLocale(value) ? value : undefined;
 }
 
 function normalizeLocale(value: string | undefined): Locale {
@@ -84,20 +97,23 @@ export async function ensureLocaleLoaded(locale: Locale): Promise<void> {
 /**
  * Resolves the locale without consulting i18next, so it can run before
  * `init()` and start the bundle fetch as early as possible. Mirrors the
- * precedence in LOCALE_INIT_SCRIPT (query → stored → browser) — note that
- * differs from LanguageDetector's configured order, but this has always been
- * the effective precedence, since LocaleProvider's own initial state wins.
+ * precedence in LOCALE_INIT_SCRIPT (URL path prefix → query → stored →
+ * browser) — note that differs from LanguageDetector's configured order, but
+ * this has always been the effective precedence, since LocaleProvider's own
+ * initial state wins.
  */
 function detectLocale(): Locale {
-  // The server always renders English: there's no Accept-Language or cookie
-  // available to the prerender/SSR pass, so the static marketing pages
-  // (.vercel/output/static/*.html) are English HTML by design. A non-English
-  // visitor hydrates into their locale via LocaleProvider below — the same
-  // brief flash of English the lazy bundle fetch already accepts. Localized
-  // SSR would need the locale to become part of the URL; revisit if SEO in
-  // non-English markets ever demands it.
+  // The server has no Accept-Language or cookie to go on, so an unprefixed
+  // marketing page is English HTML by design; a non-English visitor hydrates
+  // into their locale via LocaleProvider below — the same brief flash of
+  // English the lazy bundle fetch already accepts. The pages crawlers index
+  // in other languages are the prefixed ones (`/zh-hk/pricing`, JEF-653):
+  // their locale is in the URL, so the server renders it (LocaleProvider's
+  // `urlLocale`) and `waitForUrlLocale` keeps hydration from flashing English.
   if (typeof window === 'undefined') return 'en';
   try {
+    const prefixed = localeFromPathname(window.location.pathname);
+    if (prefixed) return prefixed;
     const queryLocale = new URLSearchParams(window.location.search).get(LOCALE_QUERY_KEY);
     return normalizeLocale(
       queryLocale ?? localStorage.getItem(LOCALE_STORAGE_KEY) ?? navigator.languages?.[0],
@@ -108,13 +124,6 @@ function detectLocale(): Locale {
 }
 
 const detectedLocale = detectLocale();
-
-// Kick the fetch off at module scope rather than waiting for React to mount
-// and run an effect — it then overlaps hydration instead of following it, so
-// in the common case the bundle has landed before anything renders. Non-en
-// users may still see a brief flash of English on a cold cache; that's the
-// accepted cost of not blocking first paint on a network round-trip.
-void ensureLocaleLoaded(detectedLocale);
 
 void i18next
   .use(LanguageDetector)
@@ -134,8 +143,33 @@ void i18next
     },
   });
 
+// Kick the fetch off at module scope rather than waiting for React to mount
+// and run an effect — it then overlaps hydration instead of following it, so
+// in the common case the bundle has landed before anything renders. Non-en
+// users may still see a brief flash of English on a cold cache; that's the
+// accepted cost of not blocking first paint on a network round-trip.
+//
+// After `init()`, not before: i18next only defines `hasResourceBundle` and the
+// rest of its store API when `init()` runs, so asking earlier throws. That used
+// to be swallowed (nothing awaited the promise); `waitForUrlLocale` does.
+const initialLocaleLoad = ensureLocaleLoaded(detectedLocale);
+
+/**
+ * Resolves once the page's first locale bundle is registered, but only when
+ * the URL itself names a non-English locale. A prerendered `/zh-hk/pricing`
+ * arrives as Chinese HTML, so hydrating before its bundle lands would render
+ * English over it (a hydration mismatch and a flash). `getRouter` awaits this
+ * before hydration starts. Every other page keeps the non-blocking fetch.
+ */
+export function waitForUrlLocale(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  return localeFromPathname(window.location.pathname) ? initialLocaleLoad : Promise.resolve();
+}
+
 function getInitialLocale(): Locale {
-  if (typeof window === 'undefined') return normalizeLocale(i18next.language);
+  // Not `i18next.language`: on the server that is one global shared by every
+  // request in flight. A server render gets its locale from `urlLocale`.
+  if (typeof window === 'undefined') return 'en';
   const queryLocale = new URLSearchParams(window.location.search).get(LOCALE_QUERY_KEY);
   return normalizeLocale(
     queryLocale ?? localStorage.getItem(LOCALE_STORAGE_KEY) ?? i18next.language,
@@ -144,6 +178,9 @@ function getInitialLocale(): Locale {
 
 function writeLocaleToUrl(locale: Locale): void {
   if (typeof window === 'undefined') return;
+  // A marketing page's language is in its path (`/zh-hk/pricing`), which the
+  // router rewrites. A `?locale=` on top would make a second URL for the page.
+  if (isLocalizedPath(stripLocalePrefix(window.location.pathname))) return;
   const url = new URL(window.location.href);
   url.searchParams.set(LOCALE_QUERY_KEY, locale);
   window.history.replaceState(window.history.state, '', url);
@@ -160,8 +197,25 @@ interface LocaleContextValue {
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
 }
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+interface LocaleProviderProps {
+  children: React.ReactNode;
+  /**
+   * The locale the URL itself names (`/zh-hk/…` or `?locale=`), read from the
+   * router by the root route. It wins over storage and the browser, and on the
+   * server it is the only source, so each request renders its own page's
+   * language (JEF-653).
+   */
+  urlLocale?: Locale;
+  /**
+   * Called when the user picks a language, so a page with a URL per language
+   * can move to the matching one. The root supplies it because it owns the
+   * router; the provider stays usable (and testable) without one.
+   */
+  onLocaleChange?: (locale: Locale) => void;
+}
+
+export function LocaleProvider({ children, urlLocale, onLocaleChange }: LocaleProviderProps) {
+  const [locale, setLocaleState] = useState<Locale>(() => urlLocale ?? getInitialLocale());
   // Bumped once a lazily-fetched bundle registers, to rebuild the memoized
   // `t` below. Without this the initial render for a non-English locale would
   // stay stuck on English: i18next's language is already correct at that
@@ -176,6 +230,18 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       i18next.off('languageChanged', handleLanguageChanged);
     };
   }, []);
+
+  // Back/forward and the language picker change the URL's locale after mount.
+  useEffect(() => {
+    if (!urlLocale) return;
+    let cancelled = false;
+    void ensureLocaleLoaded(urlLocale).then(() => {
+      if (!cancelled && i18next.language !== urlLocale) void i18next.changeLanguage(urlLocale);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [urlLocale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +265,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       locale,
       setLocale: (next) => {
         writeLocaleToUrl(next);
+        onLocaleChange?.(next);
         // Await the bundle before switching, so the UI never flips to a
         // language whose strings aren't loaded yet (which would render
         // English, then correct itself a moment later).
@@ -262,4 +329,9 @@ export function useLocale(): LocaleContextValue {
   return context ?? fallback;
 }
 
-export const LOCALE_INIT_SCRIPT = `(function(){try{var p=new URLSearchParams(location.search).get('${LOCALE_QUERY_KEY}');var l=p||localStorage.getItem('${LOCALE_STORAGE_KEY}')||((navigator.languages||[])[0])||'en';document.documentElement.lang=l;}catch(e){}})();`;
+/**
+ * Sets `<html lang>` before hydration. The path prefix is checked first, so a
+ * `/zh-hk/…` page is not relabelled with the visitor's stored or browser
+ * language while it waits for JavaScript.
+ */
+export const LOCALE_INIT_SCRIPT = `(function(){try{var m=${JSON.stringify(LOCALE_PATH_PREFIX)};var s=location.pathname.split('/')[1];var f=null;for(var k in m){if(m[k]===s){f=k}}var p=new URLSearchParams(location.search).get('${LOCALE_QUERY_KEY}');var l=f||p||localStorage.getItem('${LOCALE_STORAGE_KEY}')||((navigator.languages||[])[0])||'en';document.documentElement.lang=l;}catch(e){}})();`;
