@@ -4,7 +4,7 @@
  * The web editor draws the draft on a page of the same size and spacing, so what
  * is typed looks like what is exported (JEF-581). The web app does not share
  * code with the API, so the same numbers are written out in
- * `apps/web/src/lib/documentPage.ts`, and a test on each side pins them to the
+ * `apps/web/src/features/documents/lib/editor/documentPage.ts`, and a test on each side pins them to the
  * other: change a value here and `documentPage.test.ts` fails until the web file
  * and its test follow, and the reverse.
  */

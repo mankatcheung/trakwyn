@@ -1,6 +1,6 @@
 # Profile: CV import
 
-Loaded when working under `apps/web/src/routes/_authenticated/profile`. The rest of the web notes are in `apps/web/CLAUDE.md`. Paths are relative to `apps/web/src/` unless stated.
+Loaded when working under `apps/web/src/features/profile`. The rest of the web notes are in `apps/web/CLAUDE.md`. Paths are relative to `apps/web/src/` unless stated.
 
 ## Where things live (JEF-643)
 

@@ -1,19 +1,18 @@
 import { useEffect } from 'react';
-import { HeadContent, Link, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
+import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { AlertTriangleIcon } from 'lucide-react';
 import { queryClient } from '#/lib/queryClient';
 import { THEME_INIT_SCRIPT, ThemeProvider, useTheme } from '#/lib/theme';
 import { LOCALE_INIT_SCRIPT, LocaleProvider, useLocale } from '#/lib/i18n';
 import { RootOverlays } from '../features/app-shell/pages/RootOverlays';
+import { NotFoundPage } from '../features/app-shell/pages/NotFoundPage';
+import { RouteErrorPage } from '../features/app-shell/pages/RouteErrorPage';
 import { watchForServiceWorkerUpdate } from '#/lib/swUpdateToast';
-import { RouteErrorReporter } from '#/components/RouteErrorReporter';
 import { replayPendingOperations } from '#/lib/pendingOperations';
-import { StaleChunkReloader } from '#/components/StaleChunkReloader';
-import { isStaleChunkError, watchForStaleChunks } from '#/lib/staleChunkReload';
+import { watchForStaleChunks } from '#/lib/staleChunkReload';
 
 import appCss from '../styles.css?url';
 
@@ -40,60 +39,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
-  notFoundComponent: NotFound,
-  errorComponent: RouteError,
+  notFoundComponent: NotFoundPage,
+  errorComponent: RouteErrorPage,
   shellComponent: RootDocument,
 });
-
-function NotFound() {
-  const { t } = useLocale();
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="space-y-4 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">404</h1>
-        <p className="text-gray-500 dark:text-gray-400">{t('errors.notFound')}</p>
-        <Link to="/dashboard" className="inline-block text-sm text-blue-600 hover:underline">
-          {t('errors.goDashboard')}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// TanStack Router's catch-all for a render-time exception anywhere in the
-// route tree — without this, an uncaught error just blanks the page. The
-// error is also the only one PostHog's own autocapture cannot see: React
-// swallows it at the boundary rather than letting it reach `window.onerror`,
-// so RouteErrorReporter reports it explicitly (JEF-349).
-function RouteError({ error }: { error: unknown }) {
-  const { t } = useLocale();
-  // A route chunk that 404s because the tab predates a deploy is not a bug to
-  // report: reload once to pick up the new build (see staleChunkReload.ts).
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <StaleChunkReloader error={error} />
-      {!isStaleChunkError(error) && <RouteErrorReporter error={error} />}
-      <div className="space-y-4 text-center">
-        <AlertTriangleIcon size={40} className="mx-auto text-red-500" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('errors.somethingWrong')}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">{t('errors.reloadHelp')}</p>
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => window.location.reload()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-700"
-          >
-            {t('errors.reload')}
-          </button>
-          <Link to="/dashboard" className="text-sm text-blue-600 hover:underline">
-            {t('errors.goDashboard')}
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function AppToaster() {
   const { theme } = useTheme();

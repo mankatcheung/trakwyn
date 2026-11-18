@@ -3,12 +3,12 @@ import { DOCUMENT_PAGE } from '#src/infrastructure/pdf/documentPage.js';
 
 /*
  * The web editor draws a draft on a page with these numbers (JEF-581), copied
- * into `apps/web/src/lib/documentPage.ts` because the two apps share no code.
+ * into `apps/web/src/features/documents/lib/editor/documentPage.ts` because the two apps share no code.
  * The web side has the same literal in its own test. Change one and both tests
  * fail until the other side matches, so the editor cannot drift from the PDF.
  */
 describe('DOCUMENT_PAGE', () => {
-  it('is the page the web editor draws (apps/web/src/lib/documentPage.ts)', () => {
+  it('is the page the web editor draws (apps/web/src/features/documents/lib/editor/documentPage.ts)', () => {
     expect(DOCUMENT_PAGE).toEqual({
       widthPt: 595.28,
       paddingPt: 40,

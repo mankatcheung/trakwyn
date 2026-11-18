@@ -20,7 +20,7 @@ Where AI-related user data leaves Trakwyn, and which code makes each privacy-pol
 
 ## What each bring-your-own-key provider says
 
-The key form (web and mobile) links to these, from `LLM_PROVIDER_DATA_USE_URL` in `apps/web/src/features/settings/lib/shared.ts` and `apps/mobile/src/features/settings/types.ts`. `custom` has no link: the operator of the endpoint decides, and the form says so. Only `https:` URLs are opened.
+The key form (web and mobile) links to these, from `LLM_PROVIDER_DATA_USE_URL` in `apps/web/src/features/settings/lib/ai/llmProviders.ts` and `apps/mobile/src/features/settings/types.ts`. `custom` has no link: the operator of the endpoint decides, and the form says so. Only `https:` URLs are opened.
 
 | Provider   | Page                                                                 | Checked                                                   |
 | ---------- | -------------------------------------------------------------------- | --------------------------------------------------------- |
