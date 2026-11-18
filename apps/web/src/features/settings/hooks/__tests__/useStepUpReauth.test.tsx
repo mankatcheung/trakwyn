@@ -122,7 +122,10 @@ describe('useStepUpReauth', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText('123456')).toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: /verify code/i })).toBeInTheDocument();
+    // The code field renders from inside the password submit, while its action is
+    // still pending, so SubmitButton reads "Verifying…" for a tick before the label
+    // becomes "Verify code". Wait for it rather than asserting at once (flaked in CI).
+    expect(await screen.findByRole('button', { name: /verify code/i })).toBeInTheDocument();
   });
 
   it('rejects with STEP_UP_CANCELLED when the dialog is dismissed', async () => {
