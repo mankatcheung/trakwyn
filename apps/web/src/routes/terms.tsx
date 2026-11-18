@@ -1,12 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { legalHead } from '#/lib/seo';
 import { TermsPage } from '../features/legal/pages/TermsPage';
 
 export const Route = createFileRoute('/terms')({
-  head: () => ({
-    meta: [
-      { title: 'Terms of Service — Trakwyn' },
-      { name: 'description', content: 'The terms that govern your use of Trakwyn.' },
-    ],
-  }),
+  head: ({ match }) => legalHead({ path: '/terms', seo: 'terms' }, match.context.pageLocale),
   component: TermsPage,
 });

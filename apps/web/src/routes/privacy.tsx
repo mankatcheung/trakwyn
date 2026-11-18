@@ -1,15 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { legalHead } from '#/lib/seo';
 import { PrivacyPage } from '../features/legal/pages/PrivacyPage';
 
 export const Route = createFileRoute('/privacy')({
-  head: () => ({
-    meta: [
-      { title: 'Privacy Policy — Trakwyn' },
-      {
-        name: 'description',
-        content: 'How Trakwyn collects, uses, and protects your information.',
-      },
-    ],
-  }),
+  head: ({ match }) => legalHead({ path: '/privacy', seo: 'privacy' }, match.context.pageLocale),
   component: PrivacyPage,
 });

@@ -1,15 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { ensureLocaleLoaded } from '#/lib/i18n';
+import type { IndexedLocale } from '#/lib/localePaths';
 
 vi.mock('../../features/guides/pages/GuidesIndexPage', () => ({
   GuidesIndexPage: ({ tag }: { tag?: string }) => <p>{tag}</p>,
 }));
 
+type HeadContext = { match: { context: { pageLocale: IndexedLocale } } };
+
 type Options = {
   component: () => React.ReactNode;
   validateSearch: (search: Record<string, unknown>) => { tag?: string };
-  head: () => { meta?: Array<Record<string, string>> };
+  head: (ctx: HeadContext) => {
+    meta?: Array<Record<string, string>>;
+    links?: Array<Record<string, string>>;
+  };
 };
+
+/** What the router hands `head()`: the root route's `pageLocale` in the match context. */
+function headContext(pageLocale: IndexedLocale): HeadContext {
+  return { match: { context: { pageLocale } } };
+}
 
 async function loadOptions(): Promise<Options> {
   const mod = await import('#/routes/guides/index');
@@ -38,10 +50,25 @@ describe('/guides route', () => {
   it('builds its head from marketingHead for /guides', async () => {
     const { head } = await loadOptions();
 
-    const { meta = [] } = head();
+    const { meta = [] } = head(headContext('en'));
 
     expect(meta).toContainEqual({ title: 'Guides — Trakwyn' });
     expect(meta).toContainEqual({ property: 'og:type', content: 'website' });
+  });
+
+  // The locale comes from the root route's context (JEF-653), not from the
+  // route itself, so the same head serves /guides and /zh-hk/guides.
+  it('builds the head in the page locale', async () => {
+    await ensureLocaleLoaded('zh-HK');
+    const { head } = await loadOptions();
+
+    const { meta = [], links = [] } = head(headContext('zh-HK'));
+
+    expect(meta).toContainEqual({ title: '指南 — Trakwyn' });
+    expect(links).toContainEqual({
+      rel: 'canonical',
+      href: 'https://www.trakwyn.com/zh-hk/guides',
+    });
   });
 
   it('passes the tag from the search to the page', async () => {

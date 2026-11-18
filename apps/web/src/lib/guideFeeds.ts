@@ -1,4 +1,5 @@
 import type { Guide } from '@trakwyn/content';
+import { isLocalizedPath, localizedAlternates } from '#/lib/localePaths';
 import { OG_IMAGE, pageUrl, SITE_NAME } from '#/lib/seo';
 
 /** schema.org `Article` markup for a guide page (same data as the visible page). */
@@ -60,18 +61,45 @@ export const STATIC_SITEMAP_PAGES: readonly SitemapPage[] = [
   { path: '/accessibility', changefreq: 'yearly', priority: 0.1 },
 ];
 
+function sitemapUrl(page: SitemapPage, publicPath: string, alternates: string[]): string {
+  return [
+    '  <url>',
+    `    <loc>${escapeXml(pageUrl(publicPath))}</loc>`,
+    ...alternates,
+    `    <changefreq>${page.changefreq}</changefreq>`,
+    `    <priority>${page.priority.toFixed(1)}</priority>`,
+    '  </url>',
+  ].join('\n');
+}
+
+/**
+ * One `<url>` per indexed locale for a localized page (JEF-653), each listing
+ * the whole set as `xhtml:link` alternates plus `x-default`. Sitemap
+ * alternates have to be reciprocal, so every entry carries the same list.
+ */
+function localizedSitemapUrls(page: SitemapPage): string[] {
+  const variants = localizedAlternates(page.path);
+  const alternates = [
+    ...variants.map(
+      (v) =>
+        `    <xhtml:link rel="alternate" hreflang="${v.locale}" href="${escapeXml(pageUrl(v.path))}"/>`,
+    ),
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(pageUrl(page.path))}"/>`,
+  ];
+  return variants.map((v) => sitemapUrl(page, v.path, alternates));
+}
+
 export function buildSitemap(guides: readonly Guide[]): string {
   const entries = [
-    ...STATIC_SITEMAP_PAGES.map(
-      (p) =>
-        `  <url>\n    <loc>${escapeXml(pageUrl(p.path))}</loc>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority.toFixed(1)}</priority>\n  </url>`,
+    ...STATIC_SITEMAP_PAGES.flatMap((p) =>
+      isLocalizedPath(p.path) ? localizedSitemapUrls(p) : [sitemapUrl(p, p.path, [])],
     ),
     ...guides.map(
       (g) =>
         `  <url>\n    <loc>${escapeXml(pageUrl(guidePath(g.slug)))}</loc>\n    <lastmod>${g.frontmatter.updated ?? g.frontmatter.date}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`,
     ),
   ];
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>\n`;
 }
 
 export const RSS_TITLE = `${SITE_NAME} Guides`;
