@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.18.0...api-v0.19.0) (2026-11-18)
+
+
+### Miscellaneous Chores
+
+* **api:** Synchronize server versions
+
 ## [0.18.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.17.0...api-v0.18.0) (2026-11-17)
 
 

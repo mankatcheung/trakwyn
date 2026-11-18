@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.18.0...web-v0.19.0) (2026-11-18)
+
+
+### Features
+
+* **web:** convert the offers queries to typed codegen documents (JEF-637) ([#1531](https://github.com/mankatcheung/trakwyn/issues/1531)) ([c30f584](https://github.com/mankatcheung/trakwyn/commit/c30f584fadbfe52a4710ce38642ac850759defd6))
+* **web:** delete profile items behind an undo toast (JEF-625) ([#1502](https://github.com/mankatcheung/trakwyn/issues/1502)) ([8e2614c](https://github.com/mankatcheung/trakwyn/commit/8e2614caab1d77e1dbab7785184775804968c0bd))
+* **web:** read typed codegen documents from .ts files and convert the dashboard queries (JEF-637) ([#1529](https://github.com/mankatcheung/trakwyn/issues/1529)) ([dd04caa](https://github.com/mankatcheung/trakwyn/commit/dd04caafb7015c52937466992476eead0e819b9e))
+* **web:** show a saving state on the note edit Save button (JEF-626) ([#1503](https://github.com/mankatcheung/trakwyn/issues/1503)) ([09a1ed8](https://github.com/mankatcheung/trakwyn/commit/09a1ed89bb30c60d00ee050fc022f2a1e514d881))
+
+
+### Bug Fixes
+
+* **web:** wait for the resend countdown's interval before moving the clock ([#1560](https://github.com/mankatcheung/trakwyn/issues/1560)) ([507a6ba](https://github.com/mankatcheung/trakwyn/commit/507a6ba573c462f7c485bc68348a199d22685437))
+
 ## [0.18.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.17.0...web-v0.18.0) (2026-11-17)
 
 
