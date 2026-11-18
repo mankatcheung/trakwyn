@@ -11,15 +11,17 @@ import {
   CONFIRM_TOTP_SETUP,
   DISABLE_TOTP,
   REGENERATE_TOTP_BACKUP_CODES,
+} from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import {
   totpBeginSchema,
   totpConfirmSchema,
   totpDisableSchema,
-  extractGqlError,
   type TotpBeginForm,
   type TotpConfirmForm,
   type TotpDisableForm,
-  type TotpSetup,
-} from '../../lib/shared';
+} from '../../lib/security/securitySchemas';
+import type { TotpSetup } from '../../lib/security/securityTypes';
 
 /** Step 1 of enabling 2FA: the password gets a QR code and secret. Nothing is stored yet. */
 export function TotpBeginForm({ onBegun }: { onBegun: (setup: TotpSetup) => void }) {
@@ -29,7 +31,9 @@ export function TotpBeginForm({ onBegun }: { onBegun: (setup: TotpSetup) => void
 
   const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
-      const res = await gqlClient.request<{ beginTotpSetup: TotpSetup }>(BEGIN_TOTP_SETUP, data);
+      const res = (await gqlClient.request(BEGIN_TOTP_SETUP, data)) as {
+        beginTotpSetup: TotpSetup;
+      };
       resetFields({ password: '' });
       onBegun(res.beginTotpSetup);
       return null;
@@ -65,7 +69,9 @@ export function TotpConfirmForm({ onConfirmed }: { onConfirmed: (backupCodes: st
 
   const confirm = useMutation({
     mutationFn: (data: TotpConfirmForm) =>
-      gqlClient.request<{ confirmTotpSetup: { backupCodes: string[] } }>(CONFIRM_TOTP_SETUP, data),
+      gqlClient.request(CONFIRM_TOTP_SETUP, data) as Promise<{
+        confirmTotpSetup: { backupCodes: string[] };
+      }>,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['totpEnabled'] }),
   });
 
@@ -157,11 +163,11 @@ export function RegenerateBackupCodesForm({
 
   const { state, formProps } = useFormAction(form, async (data, { resetFields }) => {
     try {
-      const result = await withStepUp(() =>
-        gqlClient.request<{ regenerateTotpBackupCodes: { backupCodes: string[] } }>(
-          REGENERATE_TOTP_BACKUP_CODES,
-          { currentPassword: data.password },
-        ),
+      const result = await withStepUp(
+        () =>
+          gqlClient.request(REGENERATE_TOTP_BACKUP_CODES, {
+            currentPassword: data.password,
+          }) as Promise<{ regenerateTotpBackupCodes: { backupCodes: string[] } }>,
       );
       resetFields({ password: '' });
       onRegenerated(result.regenerateTotpBackupCodes.backupCodes);

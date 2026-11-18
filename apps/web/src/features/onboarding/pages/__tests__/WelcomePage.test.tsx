@@ -18,6 +18,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { WelcomePage } from '#/features/onboarding/pages/WelcomePage';
 import { ONBOARDING_STATE_KEY } from '#/features/onboarding/lib/onboarding';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 let client: QueryClient;
 
@@ -36,11 +37,12 @@ let llmApiKeys: { provider: string }[] = [];
 
 function mockApi() {
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('completeOnboarding')) return Promise.resolve({ completeOnboarding: true });
-    if (query.includes('LlmApiKeys'))
+    if (gqlText(query).includes('completeOnboarding'))
+      return Promise.resolve({ completeOnboarding: true });
+    if (gqlText(query).includes('LlmApiKeys'))
       return Promise.resolve({ llmApiKeys, me: { defaultLlmProvider: null } });
-    if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
-    if (query.includes('Skills')) return Promise.resolve({ skills: [] });
+    if (gqlText(query).includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
+    if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
     return Promise.resolve({});
   });
 }
@@ -51,7 +53,7 @@ const heading = () => screen.getByRole('heading', { level: 1 });
 
 function completeCalls() {
   return mockGqlRequest.mock.calls.filter(([query]) =>
-    String(query).includes('completeOnboarding'),
+    gqlText(query).includes('completeOnboarding'),
   );
 }
 
@@ -184,7 +186,7 @@ describe('WelcomePage (JEF-460)', () => {
 
   it('stays put and says so when saving fails', async () => {
     mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('completeOnboarding')
+      gqlText(query).includes('completeOnboarding')
         ? Promise.reject(new Error('boom'))
         : Promise.resolve({}),
     );

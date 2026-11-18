@@ -35,6 +35,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsDataPage } from '#/features/settings/pages/SettingsDataPage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -67,7 +68,7 @@ describe('SettingsDataPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /download export/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('exportUserData'));
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('exportUserData'));
       });
       await waitFor(() => {
         expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
@@ -96,7 +97,7 @@ describe('SettingsDataPage', () => {
       selectFile('{"applications":[]}');
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ImportUserData'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ImportUserData'), {
           data: '{"applications":[]}',
         });
       });
@@ -109,7 +110,7 @@ describe('SettingsDataPage', () => {
 
     it('shows error message when import fails', async () => {
       mockGqlRequest.mockImplementation((query: unknown) => {
-        if (typeof query === 'string' && query.includes('ImportUserData')) {
+        if (gqlText(query).includes('ImportUserData')) {
           return Promise.reject({
             response: { errors: [{ message: 'Import file is not valid JSON' }] },
           });

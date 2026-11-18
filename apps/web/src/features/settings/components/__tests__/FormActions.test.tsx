@@ -10,7 +10,8 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 import { ThemeProvider } from '#/lib/theme';
 import { AddLlmApiKeyForm } from '#/features/settings/components/ai/AddLlmApiKeyForm';
 import { StepUpPasswordForm } from '#/features/settings/components/security/StepUpPasswordForm';
-import { LLM_PROVIDER_OPTIONS } from '#/features/settings/lib/shared';
+import { LLM_PROVIDER_OPTIONS } from '../../lib/ai/llmProviders';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -49,7 +50,7 @@ describe('AddLlmApiKeyForm as a form action (JEF-612)', () => {
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('saveLlmApiKey'),
+      gqlContaining('saveLlmApiKey'),
       expect.objectContaining({ apiKey: 'sk-secret' }),
     );
     expect(document.querySelector<HTMLInputElement>('input[name="apiKey"]')!.value).toBe('');
@@ -126,7 +127,7 @@ describe('StepUpPasswordForm as a form action (JEF-612)', () => {
     await user.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('reauthenticate'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('reauthenticate'), {
       password: 'hunter2',
       code: undefined,
     });

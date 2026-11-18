@@ -14,7 +14,7 @@ import {
   UPDATE_CERTIFICATION,
   certificationsQueryOptions,
   type Certification,
-} from '../../graphql/profileQueries';
+} from '../../graphql/certificationQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

@@ -4,12 +4,20 @@ import { toast } from 'sonner';
 import {
   NOTIFICATION_PREFERENCES_QUERY,
   UPDATE_NOTIFICATION_PREFERENCES,
-  type NotificationPreferences,
-} from '../lib/shared';
+} from '../graphql/accountQueries';
+import type { NotificationPreferences } from '../lib/account/accountTypes';
 import { usePushNotifications } from '#/features/notifications/hooks/usePushNotifications';
 import { useLocale } from '#/lib/i18n';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { Card, Checkbox, Select, Skeleton } from '@trakwyn/ui';
+import type { DigestFrequency } from '#/graphql/generated/graphql';
+
+/** The API reads the digest back as `daily`, but takes the enum's name as input. */
+const DIGEST_FREQUENCY_INPUT = {
+  daily: 'DAILY',
+  weekly: 'WEEKLY',
+  off: 'OFF',
+} as const satisfies Record<NotificationPreferences['digestFrequency'], DigestFrequency>;
 
 export function SettingsNotificationsPage() {
   const { t } = useLocale();
@@ -19,9 +27,9 @@ export function SettingsNotificationsPage() {
   const { data: prefsData, isLoading: prefsLoading } = useQuery({
     queryKey: ['notificationPreferences'],
     queryFn: () =>
-      gqlClient.request<{ notificationPreferences: NotificationPreferences }>(
-        NOTIFICATION_PREFERENCES_QUERY,
-      ),
+      gqlClient.request(NOTIFICATION_PREFERENCES_QUERY) as Promise<{
+        notificationPreferences: NotificationPreferences;
+      }>,
   });
   const prefs = prefsData?.notificationPreferences;
   const digestFrequency = prefs?.digestFrequency ?? (prefs?.weeklyDigestEnabled ? 'weekly' : 'off');
@@ -29,7 +37,9 @@ export function SettingsNotificationsPage() {
   const onChangeDigestFrequency = async (
     digestFrequency: NotificationPreferences['digestFrequency'],
   ) => {
-    await gqlClient.request(UPDATE_NOTIFICATION_PREFERENCES, { digestFrequency });
+    await gqlClient.request(UPDATE_NOTIFICATION_PREFERENCES, {
+      digestFrequency: DIGEST_FREQUENCY_INPUT[digestFrequency],
+    });
     await qc.invalidateQueries({ queryKey: ['notificationPreferences'] });
   };
 

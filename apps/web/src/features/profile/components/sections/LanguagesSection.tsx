@@ -14,7 +14,7 @@ import {
   UPDATE_LANGUAGE,
   languagesQueryOptions,
   type Language,
-} from '../../graphql/profileQueries';
+} from '../../graphql/languageQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

@@ -10,6 +10,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { SettingsDangerZonePage } from '#/features/settings/pages/SettingsDangerZonePage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const EMAIL = 'jeff@example.com';
 
@@ -28,7 +29,7 @@ function serve(handlers: {
   reauthenticate?: Handler;
 }) {
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('BillingStatus')) {
+    if (gqlText(query).includes('BillingStatus')) {
       return Promise.resolve({
         billingStatus: {
           enforced: false,
@@ -36,18 +37,18 @@ function serve(handlers: {
         },
       });
     }
-    if (query.includes('EmailVerification')) {
+    if (gqlText(query).includes('EmailVerification')) {
       return Promise.resolve({
         me: { email: EMAIL, emailVerified: true, deletionScheduledAt: null },
       });
     }
-    if (query.includes('RequestAccountDeletion')) {
+    if (gqlText(query).includes('RequestAccountDeletion')) {
       return (handlers.request ?? (() => Promise.resolve({ requestAccountDeletion: true })))();
     }
-    if (query.includes('StepUpMethods')) {
+    if (gqlText(query).includes('StepUpMethods')) {
       return Promise.resolve({ me: { stepUpMethods: handlers.methods ?? ['password'] } });
     }
-    if (query.includes('Reauthenticate') && handlers.reauthenticate) {
+    if (gqlText(query).includes('Reauthenticate') && handlers.reauthenticate) {
       return handlers.reauthenticate();
     }
     return Promise.reject(new Error(`unexpected operation: ${query}`));
@@ -105,9 +106,9 @@ describe('SettingsDangerZonePage (JEF-463)', () => {
     await userEvent.click(deleteButton());
 
     expect(await screen.findByText(new RegExp(`Check ${EMAIL}`))).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestAccountDeletion'));
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestAccountDeletion'));
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('deleteAccount'),
+      gqlContaining('deleteAccount'),
       expect.anything(),
     );
   });

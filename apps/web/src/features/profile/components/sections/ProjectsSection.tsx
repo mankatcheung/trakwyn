@@ -14,7 +14,7 @@ import {
   UPDATE_PROJECT,
   projectsQueryOptions,
   type Project,
-} from '../../graphql/profileQueries';
+} from '../../graphql/projectQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

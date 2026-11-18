@@ -9,7 +9,7 @@ import { useEmailVerification } from '#/features/verification/lib/emailVerificat
 import { useLocale } from '#/lib/i18n';
 import { REQUEST_ACCOUNT_DELETION } from '#/features/account-deletion/lib/accountDeletion';
 import { Alert, Card, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
-import { extractGqlError } from '../lib/shared';
+import { extractGqlError } from '../lib/gqlErrors';
 import { useStepUpReauth, isStepUpCancelled } from '../hooks/useStepUpReauth';
 
 const confirmEmailSchema = (email: string) =>

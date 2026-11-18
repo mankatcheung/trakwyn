@@ -1,12 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  educationsQueryOptions,
-  skillsQueryOptions,
-  workExperiencesQueryOptions,
-  type Education,
-  type Skill,
-  type WorkExperience,
-} from '../graphql/profileQueries';
+import { educationsQueryOptions, type Education } from '../graphql/educationQueries';
+import { skillsQueryOptions, type Skill } from '../graphql/skillQueries';
+import { workExperiencesQueryOptions, type WorkExperience } from '../graphql/workExperienceQueries';
 
 export interface ProfileDataState {
   workExperiences: WorkExperience[];

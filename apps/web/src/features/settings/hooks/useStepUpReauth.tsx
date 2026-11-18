@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Button, Modal } from '@trakwyn/ui';
-import { extractGqlErrorCode } from '../lib/shared';
+import { STEP_UP_METHODS_QUERY } from '../graphql/securityQueries';
+import { extractGqlErrorCode } from '../lib/gqlErrors';
 import { StepUpPasswordForm } from '../components/security/StepUpPasswordForm';
 import {
   StepUpWithoutPassword,
@@ -20,9 +21,6 @@ export function isStepUpCancelled(err: unknown): boolean {
 
 /** `withStepUp` from `useStepUpReauth`, as a form component receives it. */
 export type WithStepUp = <T>(fn: () => Promise<T>) => Promise<T>;
-
-/** How the API says this user can step up (JEF-463), in the order to offer them. */
-const STEP_UP_METHODS = `query StepUpMethods { me { stepUpMethods } }`;
 
 type StepUpMethod = 'password' | 'google' | 'github' | 'email_code';
 
@@ -42,9 +40,10 @@ interface PendingStepUp {
  */
 async function loadStepUpMethods(): Promise<StepUpMethod[]> {
   try {
-    const res = await gqlClient.request<{ me: { stepUpMethods: StepUpMethod[] } | null }>(
-      STEP_UP_METHODS,
-    );
+    // How the API says this user can step up (JEF-463), in the order to offer them.
+    const res = (await gqlClient.request(STEP_UP_METHODS_QUERY)) as {
+      me: { stepUpMethods: StepUpMethod[] } | null;
+    };
     const methods = res?.me?.stepUpMethods;
     return methods && methods.length > 0 ? methods : ['password'];
   } catch {

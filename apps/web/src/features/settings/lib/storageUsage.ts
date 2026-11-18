@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
-
-const STORAGE_USAGE_QUERY = `
-  query StorageUsage {
-    me { storageUsedBytes storageLimitBytes }
-  }
-`;
+import { STORAGE_USAGE_QUERY } from '../graphql/accountQueries';
 
 export const storageUsageQueryKey = ['storageUsage'] as const;
 
@@ -53,9 +48,9 @@ export function useStorageUsage(): StorageUsage | null {
   const { data } = useQuery({
     queryKey: storageUsageQueryKey,
     queryFn: () =>
-      gqlClient.request<{
+      gqlClient.request(STORAGE_USAGE_QUERY) as Promise<{
         me: { storageUsedBytes: number; storageLimitBytes: number } | null;
-      }>(STORAGE_USAGE_QUERY),
+      }>,
   });
   const me = data?.me;
   if (!me || typeof me.storageUsedBytes !== 'number' || typeof me.storageLimitBytes !== 'number') {

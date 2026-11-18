@@ -1,4 +1,4 @@
-import { LLM_PROVIDER_LABEL } from './shared';
+import { LLM_PROVIDER_LABEL } from './ai/llmProviders';
 
 /** The platform's entry in the user's provider order; every other entry is the id of one of their keys (JEF-503). */
 export const TRAKWYN_ENTRY = 'trakwyn';

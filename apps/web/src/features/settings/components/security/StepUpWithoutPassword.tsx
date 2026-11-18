@@ -8,25 +8,18 @@ import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { OAuthProviderLogo } from '#/features/auth/components/OAuthProviderLogo';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
-import { extractGqlError } from '../../lib/shared';
+import {
+  REQUEST_STEP_UP_CODE,
+  START_OAUTH_REAUTH,
+  VERIFY_STEP_UP_CODE,
+} from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
 
 /** The emailed code is six digits, like the authenticator code. */
 const stepUpCodeSchema = z.object({
   code: z.string().trim().length(6, 'Enter the 6-digit code'),
 });
 type StepUpCodeForm = z.infer<typeof stepUpCodeSchema>;
-
-export const START_OAUTH_REAUTH = `
-  mutation StartOAuthReauth($provider: OAuthProvider!) {
-    startOAuthReauth(provider: $provider)
-  }
-`;
-export const REQUEST_STEP_UP_CODE = `mutation RequestStepUpCode { requestStepUpCode }`;
-export const VERIFY_STEP_UP_CODE = `
-  mutation VerifyStepUpCode($code: String!) {
-    verifyStepUpCode(code: $code)
-  }
-`;
 
 /** A provider that can prove a fresh sign-in; only Google today (JEF-463). */
 export type ReauthProvider = 'google';
@@ -38,10 +31,9 @@ export type ReauthProvider = 'google';
  * so the person presses it again.
  */
 async function reauthenticateWith(provider: ReauthProvider): Promise<void> {
-  const { startOAuthReauth: ticket } = await gqlClient.request<{ startOAuthReauth: string }>(
-    START_OAUTH_REAUTH,
-    { provider },
-  );
+  const { startOAuthReauth: ticket } = (await gqlClient.request(START_OAUTH_REAUTH, {
+    provider,
+  })) as { startOAuthReauth: string };
   const returnTo = `${window.location.pathname}${window.location.search}`;
   const query = new URLSearchParams({ mode: 'reauth', ticket, returnTo });
   window.location.assign(`${API_ORIGIN}/auth/oauth/${provider}/start?${query.toString()}`);

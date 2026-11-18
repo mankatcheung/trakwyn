@@ -24,6 +24,7 @@ import {
 } from '#/features/settings/components/security/TwoFactorForms';
 import { CustomAiPromptForm } from '#/features/settings/components/ai/CustomAiPromptForm';
 import { STEP_UP_CANCELLED } from '#/features/settings/hooks/useStepUpReauth';
+import { UPDATE_PROFILE } from '../../graphql/accountQueries';
 import {
   BEGIN_TOTP_SETUP,
   CONFIRM_TOTP_SETUP,
@@ -33,8 +34,7 @@ import {
   REQUEST_ADD_BACKUP_EMAIL,
   REQUEST_EMAIL_CHANGE,
   UPDATE_PASSWORD,
-  UPDATE_PROFILE,
-} from '#/features/settings/lib/shared';
+} from '../../graphql/securityQueries';
 
 const withStepUp = <T,>(fn: () => Promise<T>) => fn();
 
@@ -84,7 +84,7 @@ interface FormCase {
   submit: string;
   pending: string;
   /** The GraphQL document the submit sends. */
-  document: string;
+  document: unknown;
   /** A field that is empty again after a successful save, for forms that clear themselves. */
   clearsOnSuccess?: string;
 }

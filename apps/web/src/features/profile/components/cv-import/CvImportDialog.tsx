@@ -29,16 +29,14 @@ import {
   toImportInput,
   type CvDrafts,
 } from '../../lib/cvImportDrafts';
-import {
-  IMPORT_CV_PROFILE,
-  awardsQueryOptions,
-  certificationsQueryOptions,
-  educationsQueryOptions,
-  languagesQueryOptions,
-  projectsQueryOptions,
-  skillsQueryOptions,
-  workExperiencesQueryOptions,
-} from '../../graphql/profileQueries';
+import { awardsQueryOptions } from '../../graphql/awardQueries';
+import { certificationsQueryOptions } from '../../graphql/certificationQueries';
+import { IMPORT_CV_PROFILE } from '../../graphql/cvImportQueries';
+import { educationsQueryOptions } from '../../graphql/educationQueries';
+import { languagesQueryOptions } from '../../graphql/languageQueries';
+import { projectsQueryOptions } from '../../graphql/projectQueries';
+import { skillsQueryOptions } from '../../graphql/skillQueries';
+import { workExperiencesQueryOptions } from '../../graphql/workExperienceQueries';
 
 /**
  * Import the profile from a CV (JEF-461). Three steps in one dialog: choose a
@@ -98,7 +96,9 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
 
   const save = useMutation({
     mutationFn: (rows: CvDrafts) =>
-      gqlClient.request<ImportResult>(IMPORT_CV_PROFILE, { input: toImportInput(rows, contact) }),
+      gqlClient.request(IMPORT_CV_PROFILE, {
+        input: toImportInput(rows, contact),
+      }) as Promise<ImportResult>,
     onSuccess: ({ importCvProfile: added }) => {
       for (const options of [
         workExperiencesQueryOptions,

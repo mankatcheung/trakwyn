@@ -7,17 +7,11 @@ import { Alert, Button, FormLabel, Input, Select, SubmitButton } from '@trakwyn/
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
-import {
-  CUSTOM_LLM_PROVIDER,
-  SAVE_LLM_API_KEY,
-  TEST_LLM_API_KEY,
-  extractGqlError,
-  LLM_PROVIDER_LABEL,
-  llmApiKeySchema,
-  llmProviderDataUseUrl,
-  type LlmApiKeyForm,
-  type TestLlmApiKeyResult,
-} from '../../lib/shared';
+import { SAVE_LLM_API_KEY, TEST_LLM_API_KEY } from '../../graphql/aiQueries';
+import { CUSTOM_LLM_PROVIDER, llmApiKeySchema, type LlmApiKeyForm } from '../../lib/ai/aiSchemas';
+import type { TestLlmApiKeyResult } from '../../lib/ai/aiTypes';
+import { LLM_PROVIDER_LABEL, llmProviderDataUseUrl } from '../../lib/ai/llmProviders';
+import { extractGqlError } from '../../lib/gqlErrors';
 
 function TestResultLine({ result }: { result: TestLlmApiKeyResult }) {
   const { t } = useLocale();
@@ -105,15 +99,12 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
     setTesting(true);
     setTestResult(null);
     try {
-      const data = await gqlClient.request<{ testLlmApiKey: TestLlmApiKeyResult }>(
-        TEST_LLM_API_KEY,
-        {
-          provider,
-          apiKey,
-          model: model?.trim() || undefined,
-          baseUrl: baseUrl?.trim() || undefined,
-        },
-      );
+      const data = (await gqlClient.request(TEST_LLM_API_KEY, {
+        provider,
+        apiKey,
+        model: model?.trim() || undefined,
+        baseUrl: baseUrl?.trim() || undefined,
+      })) as { testLlmApiKey: TestLlmApiKeyResult };
       setTestResult(data.testLlmApiKey);
     } catch (err) {
       setTestResult({

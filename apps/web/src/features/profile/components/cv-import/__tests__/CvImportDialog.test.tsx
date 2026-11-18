@@ -28,6 +28,7 @@ vi.mock('#/features/profile/lib/cvImport', async (importOriginal) => ({
   uploadCv: mockUploadCv,
 }));
 
+import { gqlText } from '#/__tests__/helpers/gqlText';
 import { CvImportDialog } from '#/features/profile/components/cv-import/CvImportDialog';
 import {
   CV_IMPORT_MAX_BYTES,
@@ -507,7 +508,7 @@ describe('CvImportDialog', () => {
       await waitFor(() => expect(onClose).toHaveBeenCalled());
       expect(mockGqlRequest).toHaveBeenCalledTimes(1);
       const [document, variables] = mockGqlRequest.mock.calls[0]!;
-      expect(document).toContain('importCvProfile');
+      expect(gqlText(document)).toContain('importCvProfile');
       expect(variables).toEqual({
         input: {
           workExperiences: [

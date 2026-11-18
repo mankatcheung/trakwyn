@@ -4,12 +4,9 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Card } from '@trakwyn/ui';
 import { StorageCard } from '../components/account/StorageCard';
-import {
-  EXPORT_USER_DATA,
-  IMPORT_USER_DATA,
-  type ImportSummary,
-  extractGqlError,
-} from '../lib/shared';
+import { EXPORT_USER_DATA, IMPORT_USER_DATA } from '../graphql/accountQueries';
+import type { ImportSummary } from '../lib/account/accountTypes';
+import { extractGqlError } from '../lib/gqlErrors';
 
 export function SettingsDataPage() {
   const { t } = useLocale();
@@ -17,7 +14,7 @@ export function SettingsDataPage() {
   // Export
   const onExport = async () => {
     try {
-      const res = await gqlClient.request<{ exportUserData: string }>(EXPORT_USER_DATA);
+      const res = (await gqlClient.request(EXPORT_USER_DATA)) as { exportUserData: string };
       const blob = new Blob([res.exportUserData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -44,9 +41,9 @@ export function SettingsDataPage() {
     setImportError(null);
     try {
       const text = await file.text();
-      const res = await gqlClient.request<{ importUserData: ImportSummary }>(IMPORT_USER_DATA, {
+      const res = (await gqlClient.request(IMPORT_USER_DATA, {
         data: text,
-      });
+      })) as { importUserData: ImportSummary };
       setImportResult(res.importUserData);
     } catch (err) {
       setImportError(extractGqlError(err) ?? t('data.importFailed'));

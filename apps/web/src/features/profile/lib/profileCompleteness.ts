@@ -1,4 +1,6 @@
-import type { Education, Skill, WorkExperience } from '../graphql/profileQueries';
+import type { Education } from '../graphql/educationQueries';
+import type { Skill } from '../graphql/skillQueries';
+import type { WorkExperience } from '../graphql/workExperienceQueries';
 
 /** Enough skills for a resume to have something to choose from. */
 export const MIN_SKILLS_FOR_COMPLETE_PROFILE = 5;

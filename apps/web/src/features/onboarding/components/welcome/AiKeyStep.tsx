@@ -4,11 +4,9 @@ import { Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { AddLlmApiKeyForm } from '../../../settings/components/ai/AddLlmApiKeyForm';
-import {
-  LLM_API_KEYS_QUERY,
-  LLM_PROVIDER_OPTIONS,
-  type LlmApiKey,
-} from '../../../settings/lib/shared';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
+import type { LlmApiKey } from '#/features/settings/lib/ai/aiTypes';
+import { LLM_PROVIDER_OPTIONS } from '#/features/settings/lib/ai/llmProviders';
 
 /**
  * The AI key step, for AI goals only: Settings → AI's own add-key form. Once
@@ -19,9 +17,10 @@ export function AiKeyStep() {
   const { data, isLoading } = useQuery({
     queryKey: ['llmApiKeys'],
     queryFn: () =>
-      gqlClient.request<{ llmApiKeys: LlmApiKey[]; me: { defaultLlmProvider: string | null } }>(
-        LLM_API_KEYS_QUERY,
-      ),
+      gqlClient.request(LLM_API_KEYS_QUERY) as Promise<{
+        llmApiKeys: LlmApiKey[];
+        me: { defaultLlmProvider: string | null };
+      }>,
   });
   const llmApiKeys = data?.llmApiKeys ?? [];
 

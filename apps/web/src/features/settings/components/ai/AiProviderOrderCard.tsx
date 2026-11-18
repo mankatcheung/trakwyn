@@ -10,7 +10,8 @@ import {
   removeEntry,
   unlistedEntries,
 } from '../../lib/aiProviderOrder';
-import { LLM_PROVIDER_AVATAR, type LlmApiKey } from '../../lib/shared';
+import type { LlmApiKey } from '../../lib/ai/aiTypes';
+import { LLM_PROVIDER_AVATAR } from '../../lib/ai/llmProviders';
 
 const ICON = 16;
 

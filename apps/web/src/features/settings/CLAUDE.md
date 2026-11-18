@@ -2,6 +2,11 @@
 
 Loaded when working under `apps/web/src/routes/_authenticated/settings`. The rest of the web notes are in `apps/web/CLAUDE.md`. Paths are relative to `apps/web/src/` unless stated.
 
+## Where things live (JEF-643)
+
+- **Documents** are typed `graphql()` calls in `graphql/`, one file per area: `accountQueries.ts` (profile, notifications, data, storage), `securityQueries.ts` (email, password, 2FA, sessions, step-up), `aiQueries.ts` and `integrationsQueries.ts`.
+- **Schemas, types and helpers** sit in the `lib/` subfolder of the area that uses them (`lib/ai/`, `lib/security/`, `lib/integrations/`, `lib/account/`). `lib/gqlErrors.ts` reads the message and code out of a failed request. There is no catch-all file: a new helper goes with its area.
+
 ## Which AI answers (JEF-503)
 
 - **One ordered list replaces the source picker, "make default" and the fall-through checkbox.** `AiProviderOrderCard` (`components/ai/`) lists `me.aiProviderOrder`, tried first to last, with move up, move down and remove on each row and an "add" button for every saved key (and Trakwyn AI on a plan that has it) that is not listed. Each change saves the whole list with `setAiProviderOrder`. The last provider cannot be removed, since an empty list would mean no AI. `lib/aiProviderOrder.ts` holds the pure list helpers, tested without a renderer.

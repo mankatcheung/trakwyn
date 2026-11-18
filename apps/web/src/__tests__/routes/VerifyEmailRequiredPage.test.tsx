@@ -39,6 +39,7 @@ vi.mock('#/lib/queryClient', () => ({
 import type { ComponentType } from 'react';
 import { Route } from '#/routes/verify-email-required';
 import { RESEND_COOLDOWN_SECONDS } from '#/features/verification/lib/emailVerification';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const VerifyEmailRequiredRoute = (Route as unknown as { component: ComponentType }).component;
 
@@ -54,18 +55,19 @@ const renderGate = () =>
 const waitForWall = () => screen.findByRole('heading', { name: 'Verify your email to continue' });
 
 const requestsMatching = (fragment: string) =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(fragment));
+  mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(fragment));
 
 describe('verification wall (JEF-438)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     verification.emailVerified = false;
     mockGqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes('EmailVerification')) {
+      if (gqlText(query).includes('EmailVerification')) {
         return { me: { email: 'new@example.com', emailVerified: verification.emailVerified } };
       }
-      if (query.includes('ResendVerificationEmail')) return { resendVerificationEmail: true };
-      if (query.includes('RequestEmailChange')) return { requestEmailChange: true };
+      if (gqlText(query).includes('ResendVerificationEmail'))
+        return { resendVerificationEmail: true };
+      if (gqlText(query).includes('RequestEmailChange')) return { requestEmailChange: true };
       return {};
     });
   });
@@ -117,7 +119,7 @@ describe('verification wall (JEF-438)', () => {
       renderGate();
       await waitForWall();
       mockGqlRequest.mockImplementation(async (query: string) => {
-        if (query.includes('ResendVerificationEmail')) {
+        if (gqlText(query).includes('ResendVerificationEmail')) {
           throw {
             response: {
               errors: [
@@ -197,7 +199,7 @@ describe('verification wall (JEF-438)', () => {
       expect(
         await screen.findByText('Check right@example.com for a link to confirm the new address.'),
       ).toBeVisible();
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestEmailChange'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestEmailChange'), {
         currentPassword: 'hunter2hunter2',
         newEmail: 'right@example.com',
       });

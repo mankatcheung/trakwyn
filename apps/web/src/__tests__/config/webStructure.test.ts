@@ -55,18 +55,6 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/quota/components/QuotaHint.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/plans/components/UpgradePrompt.tsx',
   'routes/_authenticated/applications/$applicationId/offers/index.tsx imports features/quota/lib/contentQuota.ts',
-  'routes/_authenticated/profile/index.tsx imports features/auth/lib/returnTo.ts',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/cv-import/CvImportDialog.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/WorkExperienceSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/EducationSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/SkillsSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/CertificationsSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/LanguagesSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/ProjectsSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/sections/AwardsSection.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/components/CompletenessMeter.tsx',
-  'routes/_authenticated/profile/index.tsx imports features/profile/lib/profileCompleteness.ts',
-  'routes/_authenticated/profile/index.tsx imports features/profile/hooks/useProfileData.ts',
   'routes/_authenticated/route.tsx imports features/auth/lib/sessionGate.ts',
   'routes/account-deletion-scheduled.tsx imports features/verification/lib/emailVerification.ts',
   'routes/guides/$slug.tsx imports features/guides/lib/guideFeeds.ts',
@@ -103,13 +91,7 @@ const MAX_LINES = 400;
  * and each PR removes its entries. The list can only shrink.
  */
 const OVERSIZED_BY_DESIGN: Record<string, string> = {
-  'features/settings/lib/shared.ts':
-    'Holds the helpers for ai/, security/, integrations/ and account/ in one file named "shared". JEF-636 splits it by the subfolder that uses each part and renames the pieces.',
-  'features/profile/components/cv-import/CvImportReview.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/app-shell/components/AuthenticatedLayout.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
-  'features/profile/graphql/profileQueries.ts':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
   'features/marketing/pages/AiMcpSetupPage.tsx':
     'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',

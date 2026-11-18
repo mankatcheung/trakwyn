@@ -9,7 +9,8 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { LlmApiKeyRow } from '#/features/settings/components/ai/LlmApiKeyRow';
-import type { LlmApiKey, LlmUsageSummary } from '#/features/settings/lib/shared';
+import type { LlmApiKey, LlmUsageSummary } from '../../../lib/ai/aiTypes';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const key = (overrides: Partial<LlmApiKey> = {}): LlmApiKey => ({
   provider: 'openai',
@@ -46,7 +47,9 @@ function renderEditor(llmApiKey: LlmApiKey = key()) {
 
 const saveButton = () => screen.getByRole('button', { name: /raise limit & resume/i });
 const limitCalls = () =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes('SetLlmApiKeyMonthlyLimit'));
+  mockGqlRequest.mock.calls.filter(([query]) =>
+    gqlText(query).includes('SetLlmApiKeyMonthlyLimit'),
+  );
 
 describe('LlmApiKeyRow limit editor', () => {
   beforeEach(() => {

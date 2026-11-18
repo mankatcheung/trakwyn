@@ -14,7 +14,7 @@ import {
   UPDATE_EDUCATION,
   educationsQueryOptions,
   type Education,
-} from '../../graphql/profileQueries';
+} from '../../graphql/educationQueries';
 import { ENTRY_CLASS, FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

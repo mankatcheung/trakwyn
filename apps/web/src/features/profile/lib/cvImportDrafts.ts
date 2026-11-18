@@ -119,7 +119,7 @@ export interface ImportCvProfileInput {
   awards?: Array<{ title: string; issuer?: string; date?: string; description?: string }>;
 }
 
-const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+export const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const text = (value: string | null): string => value ?? '';
 const given = (value: string): string | undefined => value.trim() || undefined;

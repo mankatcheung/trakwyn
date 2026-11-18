@@ -1,5 +1,6 @@
 import { CV_IMPORT_URL, gqlClient, traceHeaders } from '#/graphql/client';
 import { ERROR_CODES } from '#/constants';
+import { CV_IMPORT_SESSION_PROBE } from '../graphql/cvImportQueries';
 
 /**
  * The CV import upload (JEF-461): a multipart POST to `/profile/cv-import`,
@@ -161,9 +162,6 @@ export class CvImportError extends Error {
   }
 }
 
-// Any authenticated GraphQL call will do: its refresh-and-retry is the point.
-const SESSION_REFRESH_PROBE = `query CvImportSession { me { id } }`;
-
 function post(file: File, mimeType: string, signal?: AbortSignal): Promise<Response> {
   const body = new FormData();
   // slice() re-types the file without copying it.
@@ -192,7 +190,7 @@ export async function uploadCv(file: File, signal?: AbortSignal): Promise<Parsed
 
   let response = await post(file, mimeType, signal);
   if (response.status === 401) {
-    await gqlClient.request(SESSION_REFRESH_PROBE);
+    await gqlClient.request(CV_IMPORT_SESSION_PROBE);
     response = await post(file, mimeType, signal);
   }
 

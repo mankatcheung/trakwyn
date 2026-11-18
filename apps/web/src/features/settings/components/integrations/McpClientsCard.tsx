@@ -4,12 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert, Badge, Card, Skeleton } from '@trakwyn/ui';
-import {
-  MCP_OAUTH_GRANTS_QUERY,
-  REVOKE_MCP_OAUTH_GRANT,
-  type McpOAuthGrant,
-  extractGqlError,
-} from '../../lib/shared';
+import { MCP_OAUTH_GRANTS_QUERY, REVOKE_MCP_OAUTH_GRANT } from '../../graphql/integrationsQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import type { McpOAuthGrant } from '../../lib/integrations/integrationTypes';
 
 /**
  * Distinct from the API tokens card: these were not created here, they were
@@ -24,7 +21,8 @@ export function McpClientsCard() {
   const [grantError, setGrantError] = useState<string | null>(null);
   const { data: mcpGrantsData, isLoading: mcpGrantsLoading } = useQuery({
     queryKey: ['mcpOAuthGrants'],
-    queryFn: () => gqlClient.request<{ mcpOAuthGrants: McpOAuthGrant[] }>(MCP_OAUTH_GRANTS_QUERY),
+    queryFn: () =>
+      gqlClient.request(MCP_OAUTH_GRANTS_QUERY) as Promise<{ mcpOAuthGrants: McpOAuthGrant[] }>,
   });
   const mcpGrants = mcpGrantsData?.mcpOAuthGrants ?? [];
 

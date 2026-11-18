@@ -14,7 +14,7 @@ import {
   UPDATE_AWARD,
   awardsQueryOptions,
   type Award,
-} from '../../graphql/profileQueries';
+} from '../../graphql/awardQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

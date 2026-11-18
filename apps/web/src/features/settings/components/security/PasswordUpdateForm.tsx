@@ -6,12 +6,9 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { isStepUpCancelled, type WithStepUp } from '../../hooks/useStepUpReauth';
-import {
-  UPDATE_PASSWORD,
-  passwordSchema,
-  extractGqlError,
-  type PasswordForm,
-} from '../../lib/shared';
+import { UPDATE_PASSWORD } from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import { passwordSchema, type PasswordForm } from '../../lib/security/securitySchemas';
 
 /** Changes the password. Nothing a query shows changes, so it stays a direct call. */
 export function PasswordUpdateForm({ withStepUp }: { withStepUp: WithStepUp }) {

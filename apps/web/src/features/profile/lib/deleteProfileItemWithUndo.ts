@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import type { DocumentNode } from 'graphql';
 import { showUndoToast } from '#/lib/undoToast';
 
 interface DeleteProfileItemOptions {
@@ -7,7 +8,7 @@ interface DeleteProfileItemOptions {
   queryKey: readonly string[];
   id: string;
   /** The GraphQL delete mutation. It takes `$id` and is sent once the undo window closes. */
-  document: string;
+  document: string | DocumentNode;
   message: string;
 }
 

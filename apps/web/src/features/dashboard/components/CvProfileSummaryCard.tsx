@@ -4,7 +4,7 @@ import { Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import { CompletenessMeter } from '../../profile/components/CompletenessMeter';
 import { profileCompleteness } from '../../profile/lib/profileCompleteness';
-import type { WorkExperience } from '../../profile/graphql/profileQueries';
+import type { WorkExperience } from '#/features/profile/graphql/workExperienceQueries';
 import { useProfileData } from '../../profile/hooks/useProfileData';
 
 // Dates are ISO strings, so they order correctly as text; a role still held

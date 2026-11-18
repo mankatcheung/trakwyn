@@ -36,6 +36,7 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { McpClientsCard } from '#/features/settings/components/integrations/McpClientsCard';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -72,10 +73,10 @@ describe('McpClientsCard', () => {
         : vi.fn().mockResolvedValue({ revokeMcpOAuthGrant: true });
       let listed = grants;
       mockGqlRequest.mockImplementation((doc: string, vars?: Record<string, unknown>) => {
-        if (typeof doc === 'string' && doc.includes('query McpOAuthGrants')) {
+        if (gqlText(doc).includes('query McpOAuthGrants')) {
           return Promise.resolve({ mcpOAuthGrants: listed });
         }
-        if (typeof doc === 'string' && doc.includes('mutation RevokeMcpOAuthGrant')) {
+        if (gqlText(doc).includes('mutation RevokeMcpOAuthGrant')) {
           if (!revokeFails) listed = listed.filter((g) => g.id !== vars?.id);
           return revoke(vars);
         }

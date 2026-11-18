@@ -13,7 +13,7 @@ import {
   LLM_PROVIDER_DATA_USE_URL,
   LLM_PROVIDER_OPTIONS,
   llmProviderDataUseUrl,
-} from '#/features/settings/lib/shared';
+} from '../../../lib/ai/llmProviders';
 
 function renderForm() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

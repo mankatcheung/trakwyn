@@ -12,11 +12,9 @@ import {
   SHARE_LINKS_QUERY,
   CREATE_SHARE_LINK,
   DELETE_SHARE_LINK,
-  type ShareLink,
-  type CreateShareLinkPayload,
-  extractGqlError,
-  extractGqlErrorCode,
-} from '../../lib/shared';
+} from '../../graphql/integrationsQueries';
+import { extractGqlError, extractGqlErrorCode } from '../../lib/gqlErrors';
+import type { ShareLink, CreateShareLinkPayload } from '../../lib/integrations/integrationTypes';
 
 /** An inline failure under a form: the upgrade prompt when the action needs Pro, else a plain error. */
 function FormMessage({ message, needsPro }: { message: string; needsPro: boolean }) {
@@ -29,7 +27,7 @@ export function ShareLinksCard() {
 
   const { data: shareLinksData } = useQuery({
     queryKey: ['shareLinks'],
-    queryFn: () => gqlClient.request<{ shareLinks: ShareLink[] }>(SHARE_LINKS_QUERY),
+    queryFn: () => gqlClient.request(SHARE_LINKS_QUERY) as Promise<{ shareLinks: ShareLink[] }>,
   });
   const shareLinks = shareLinksData?.shareLinks ?? [];
   const shareLinksFull = useQuotaState('shareLinks', shareLinks.length)?.level === 'full';
@@ -50,12 +48,9 @@ export function ShareLinksCard() {
     setShareLinkError(null);
     setShareLinkNeedsPro(false);
     try {
-      const res = await gqlClient.request<{ createShareLink: CreateShareLinkPayload }>(
-        CREATE_SHARE_LINK,
-        {
-          name: shareLinkName.trim(),
-        },
-      );
+      const res = (await gqlClient.request(CREATE_SHARE_LINK, {
+        name: shareLinkName.trim(),
+      })) as { createShareLink: CreateShareLinkPayload };
       setNewShareLink(res.createShareLink);
       setShareLinkName('');
       setShareLinkFormOverride(null);

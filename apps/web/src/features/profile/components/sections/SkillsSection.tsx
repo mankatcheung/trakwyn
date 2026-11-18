@@ -14,7 +14,7 @@ import {
   UPDATE_SKILL,
   skillsQueryOptions,
   type Skill,
-} from '../../graphql/profileQueries';
+} from '../../graphql/skillQueries';
 import { FORM_CLASS, FieldError, FormActions, ProfileSection } from './ProfileSection';
 import { deleteProfileItemWithUndo } from '../../lib/deleteProfileItemWithUndo';
 

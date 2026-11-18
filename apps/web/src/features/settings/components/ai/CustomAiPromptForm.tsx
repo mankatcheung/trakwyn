@@ -6,12 +6,12 @@ import { Alert, SubmitButton, Textarea } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
+import { UPDATE_PROFILE } from '../../graphql/accountQueries';
 import {
-  UPDATE_PROFILE,
   customAiPromptSchema,
-  extractGqlError,
   type CustomAiPromptForm as CustomAiPromptValues,
-} from '../../lib/shared';
+} from '../../lib/ai/aiSchemas';
+import { extractGqlError } from '../../lib/gqlErrors';
 
 /** The custom instructions appended to every AI prompt. Saves through `updateProfile`. */
 export function CustomAiPromptForm({ customAiPrompt }: { customAiPrompt: string | null }) {

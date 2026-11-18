@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ComponentType } from 'react';
 
 const { mockGqlRequest, mockNavigate, mockSearch } = vi.hoisted(() => ({
   mockGqlRequest: vi.fn(),
@@ -10,7 +9,7 @@ const { mockGqlRequest, mockNavigate, mockSearch } = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (opts: object) => ({ ...opts, useSearch: mockSearch }),
+  getRouteApi: () => ({ useSearch: mockSearch }),
   useNavigate: () => mockNavigate,
   Link: ({ children, to, hash }: { children: React.ReactNode; to: string; hash?: string }) => (
     <a href={hash ? `${to}#${hash}` : to}>{children}</a>
@@ -21,9 +20,8 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: { request: mockGqlRequest },
 }));
 
-import { Route } from '#/routes/_authenticated/profile/index';
-
-const ProfilePage = (Route as unknown as { component: ComponentType }).component;
+import { ProfilePage } from '#/features/profile/pages/ProfilePage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const skill = (id: string, name: string) => ({
   id,
@@ -44,9 +42,10 @@ describe('ProfilePage', () => {
     vi.clearAllMocks();
     mockSearch.mockReturnValue({});
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
-      if (query.includes('Educations')) return Promise.resolve({ educations: [] });
-      if (query.includes('Skills')) return Promise.resolve({ skills: [] });
+      if (gqlText(query).includes('WorkExperiences'))
+        return Promise.resolve({ workExperiences: [] });
+      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
+      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
       return Promise.resolve({});
     });
   });
@@ -72,7 +71,7 @@ describe('ProfilePage', () => {
 
   it('renders an existing work experience entry', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('WorkExperiences')) {
+      if (gqlText(query).includes('WorkExperiences')) {
         return Promise.resolve({
           workExperiences: [
             {
@@ -89,8 +88,8 @@ describe('ProfilePage', () => {
           ],
         });
       }
-      if (query.includes('Educations')) return Promise.resolve({ educations: [] });
-      if (query.includes('Skills')) return Promise.resolve({ skills: [] });
+      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
+      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
       return Promise.resolve({});
     });
 
@@ -127,7 +126,7 @@ describe('ProfilePage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateWorkExperience'),
+        gqlContaining('CreateWorkExperience'),
         expect.objectContaining({
           input: expect.objectContaining({ company: 'Globex', title: 'Staff Engineer' }),
         }),
@@ -137,7 +136,7 @@ describe('ProfilePage', () => {
 
   it('removes a work experience entry at once and holds the delete for the undo window (JEF-625)', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('WorkExperiences')) {
+      if (gqlText(query).includes('WorkExperiences')) {
         return Promise.resolve({
           workExperiences: [
             {
@@ -154,9 +153,9 @@ describe('ProfilePage', () => {
           ],
         });
       }
-      if (query.includes('Educations')) return Promise.resolve({ educations: [] });
-      if (query.includes('Skills')) return Promise.resolve({ skills: [] });
-      if (query.includes('DeleteWorkExperience'))
+      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
+      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
+      if (gqlText(query).includes('DeleteWorkExperience'))
         return Promise.resolve({ deleteWorkExperience: true });
       return Promise.resolve({});
     });
@@ -173,7 +172,7 @@ describe('ProfilePage', () => {
     });
     // The request goes out when the undo toast closes (ProfileSectionsDeleteUndo.test.tsx).
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('DeleteWorkExperience'),
+      gqlContaining('DeleteWorkExperience'),
       expect.anything(),
     );
   });
@@ -196,7 +195,7 @@ describe('ProfilePage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateSkill'),
+        gqlContaining('CreateSkill'),
         expect.objectContaining({ input: expect.objectContaining({ name: 'GraphQL' }) }),
       );
     });
@@ -204,8 +203,9 @@ describe('ProfilePage', () => {
 
   it('pre-fills the education form when editing an existing entry', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
-      if (query.includes('Educations')) {
+      if (gqlText(query).includes('WorkExperiences'))
+        return Promise.resolve({ workExperiences: [] });
+      if (gqlText(query).includes('Educations')) {
         return Promise.resolve({
           educations: [
             {
@@ -222,7 +222,7 @@ describe('ProfilePage', () => {
           ],
         });
       }
-      if (query.includes('Skills')) return Promise.resolve({ skills: [] });
+      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
       return Promise.resolve({});
     });
 
@@ -276,7 +276,7 @@ describe('ProfilePage', () => {
 
   it('asks for more skills once the other checks pass', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('WorkExperiences')) {
+      if (gqlText(query).includes('WorkExperiences')) {
         return Promise.resolve({
           workExperiences: [
             {
@@ -293,7 +293,7 @@ describe('ProfilePage', () => {
           ],
         });
       }
-      if (query.includes('Educations')) {
+      if (gqlText(query).includes('Educations')) {
         return Promise.resolve({
           educations: [
             {
@@ -310,7 +310,8 @@ describe('ProfilePage', () => {
           ],
         });
       }
-      if (query.includes('Skills')) return Promise.resolve({ skills: [skill('s-1', 'Go')] });
+      if (gqlText(query).includes('Skills'))
+        return Promise.resolve({ skills: [skill('s-1', 'Go')] });
       return Promise.resolve({});
     });
 

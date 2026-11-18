@@ -5,13 +5,10 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
-import {
-  REAUTHENTICATE,
-  reauthSchema,
-  type ReauthForm,
-  type ReauthenticateResult,
-  extractGqlError,
-} from '../../lib/shared';
+import { REAUTHENTICATE } from '../../graphql/securityQueries';
+import { extractGqlError } from '../../lib/gqlErrors';
+import { reauthSchema, type ReauthForm } from '../../lib/security/securitySchemas';
+import type { ReauthenticateResult } from '../../lib/security/securityTypes';
 
 /** The password (and TOTP code, if 2FA is on) step-up for an account that has a password. */
 export function StepUpPasswordForm({
@@ -27,10 +24,10 @@ export function StepUpPasswordForm({
 
   const { state, formProps } = useFormAction(form, async (data) => {
     try {
-      const res = await gqlClient.request<{ reauthenticate: ReauthenticateResult }>(
-        REAUTHENTICATE,
-        { password: data.password, code: data.code || undefined },
-      );
+      const res = (await gqlClient.request(REAUTHENTICATE, {
+        password: data.password,
+        code: data.code || undefined,
+      })) as { reauthenticate: ReauthenticateResult };
       if (res.reauthenticate.totpRequired) {
         setTotpRequired(true);
         return null;
