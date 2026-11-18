@@ -32,6 +32,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -87,7 +88,7 @@ describe('ContactsTab', () => {
 
   it('creates a new contact', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('CreateContact')) {
+      if (gqlText(query).includes('CreateContact')) {
         return Promise.resolve({ createContact: { ...mockContact, id: 'contact-2' } });
       }
       return Promise.resolve({ contacts: [] });
@@ -106,7 +107,7 @@ describe('ContactsTab', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateContact'),
+        gqlContaining('CreateContact'),
         expect.objectContaining({ applicationId: 'app-1', name: 'New Contact' }),
       );
     });
@@ -114,7 +115,7 @@ describe('ContactsTab', () => {
 
   it('edits an existing contact', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('UpdateContact')) {
+      if (gqlText(query).includes('UpdateContact')) {
         return Promise.resolve({ updateContact: { ...mockContact, name: 'Updated Name' } });
       }
       return Promise.resolve({ contacts: [mockContact] });
@@ -140,7 +141,7 @@ describe('ContactsTab', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateContact'),
+        gqlContaining('UpdateContact'),
         expect.objectContaining({ id: 'contact-1', name: 'Updated Name' }),
       );
     });
@@ -148,7 +149,7 @@ describe('ContactsTab', () => {
 
   it('deletes a contact', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('DeleteContact')) return Promise.resolve({ deleteContact: true });
+      if (gqlText(query).includes('DeleteContact')) return Promise.resolve({ deleteContact: true });
       return Promise.resolve({ contacts: [mockContact] });
     });
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
@@ -164,7 +165,7 @@ describe('ContactsTab', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('DeleteContact'),
+        gqlContaining('DeleteContact'),
         expect.objectContaining({ id: 'contact-1' }),
       );
     });
@@ -178,7 +179,7 @@ describe('ContactsTab', () => {
       return screen.getByPlaceholderText('Jane Smith');
     }
     const createCalls = () =>
-      mockGqlRequest.mock.calls.filter(([q]) => String(q).includes('CreateContact'));
+      mockGqlRequest.mock.calls.filter(([q]) => gqlText(q).includes('CreateContact'));
 
     it('is a real form', async () => {
       mockGqlRequest.mockResolvedValue({ contacts: [] });
@@ -199,7 +200,7 @@ describe('ContactsTab', () => {
     it('submits on Enter', async () => {
       mockGqlRequest.mockImplementation((query: string) =>
         Promise.resolve(
-          query.includes('CreateContact')
+          gqlText(query).includes('CreateContact')
             ? { createContact: { ...mockContact, id: 'contact-2' } }
             : { contacts: [] },
         ),
@@ -215,7 +216,7 @@ describe('ContactsTab', () => {
     it('creates once on a double click', async () => {
       let release: (value: unknown) => void = () => {};
       mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('CreateContact')
+        gqlText(query).includes('CreateContact')
           ? new Promise((resolve) => {
               release = resolve;
             })
@@ -236,7 +237,7 @@ describe('ContactsTab', () => {
 
     it('shows a failed save under the form and keeps what was typed', async () => {
       mockGqlRequest.mockImplementation((query: string) =>
-        query.includes('CreateContact')
+        gqlText(query).includes('CreateContact')
           ? Promise.reject({
               response: {
                 errors: [{ message: 'Contact limit reached', extensions: { code: 'VALIDATION' } }],

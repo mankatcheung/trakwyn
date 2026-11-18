@@ -34,34 +34,17 @@ import {
   documentDraftsQueryOptions,
   documentsQueryOptions,
 } from '../../documents/graphql/documentQueries';
+import {
+  UPDATE_APPLICATION_FLAGS,
+  HEALTH_SCORE_QUERY,
+  SECTION_COUNTS_QUERY,
+} from '../graphql/applicationDetailQueries';
 
 /** Where Overview appears and the page widens to make room for the sidebar (Tailwind `lg`). */
 const WIDE_QUERY = '(min-width: 1024px)';
 
 /** Wide screens get a wider page, which pays for the section sidebar's width (JEF-402, JEF-411). */
 const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-6xl xl:max-w-7xl';
-
-const UPDATE_APPLICATION = `
-  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {
-    updateApplication(id: $id, input: $input) { id starred status }
-  }
-`;
-const HEALTH_SCORE_QUERY = `
-  query ApplicationHealthScore($applicationId: ID!) {
-    applicationHealthScore(applicationId: $applicationId) {
-      score label
-      criteria { key label points earned met }
-    }
-  }
-`;
-const SECTION_COUNTS_QUERY = `
-  query ApplicationSectionCounts($id: ID!) {
-    application(id: $id) {
-      id
-      sectionCounts { notes interviews contacts offers companyBriefing }
-    }
-  }
-`;
 
 const route = getRouteApi('/_authenticated/applications/$applicationId/');
 
@@ -127,10 +110,10 @@ export function ApplicationDetailPage() {
 
   const { data: healthScoreData } = useQuery({
     queryKey: ['healthScore', applicationId],
-    queryFn: () =>
-      gqlClient.request<{ applicationHealthScore: HealthScore }>(HEALTH_SCORE_QUERY, {
+    queryFn: async () =>
+      (await gqlClient.request(HEALTH_SCORE_QUERY, {
         applicationId,
-      }),
+      })) as { applicationHealthScore: HealthScore },
     enabled: canLoadPanels,
   });
 
@@ -139,13 +122,10 @@ export function ApplicationDetailPage() {
   // counts are invalidated on their own schedule as sections change.
   const { data: countsData } = useQuery({
     queryKey: ['sectionCounts', applicationId],
-    queryFn: () =>
-      gqlClient.request<{ application: { sectionCounts: ApiSectionCounts } }>(
-        SECTION_COUNTS_QUERY,
-        {
-          id: applicationId,
-        },
-      ),
+    queryFn: async () =>
+      (await gqlClient.request(SECTION_COUNTS_QUERY, {
+        id: applicationId,
+      })) as { application: { sectionCounts: ApiSectionCounts } },
     enabled: canLoadPanels,
   });
   // The three document badges count one category each, which the API does not
@@ -198,7 +178,7 @@ export function ApplicationDetailPage() {
 
   const changeStatus = useMutation({
     mutationFn: (status: ApplicationStatus) =>
-      gqlClient.request(UPDATE_APPLICATION, { id: applicationId, input: { status } }),
+      gqlClient.request(UPDATE_APPLICATION_FLAGS, { id: applicationId, input: { status } }),
     onMutate: async (status) => {
       await qc.cancelQueries({ queryKey: ['application', applicationId] });
       const prevApp = qc.getQueryData<{ application: Application }>(['application', applicationId]);
@@ -220,7 +200,7 @@ export function ApplicationDetailPage() {
 
   const toggleStar = useMutation({
     mutationFn: (starred: boolean) =>
-      gqlClient.request(UPDATE_APPLICATION, { id: applicationId, input: { starred } }),
+      gqlClient.request(UPDATE_APPLICATION_FLAGS, { id: applicationId, input: { starred } }),
     onMutate: async (starred) => {
       await qc.cancelQueries({ queryKey: ['application', applicationId] });
       const prevApp = qc.getQueryData<{ application: Application }>(['application', applicationId]);

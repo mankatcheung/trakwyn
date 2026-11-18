@@ -10,6 +10,7 @@ vi.mock('#/graphql/client', () => ({
 
 import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
 import { ProfileSection } from '#/features/profile/components/sections/ProfileSection';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -61,7 +62,7 @@ beforeEach(() => {
 describe('ContactsTab at the cap (JEF-494)', () => {
   it('disables Add contact and names the limit', async () => {
     mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('ContentQuota')
+      gqlText(query).includes('ContentQuota')
         ? Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } })
         : Promise.resolve({ contacts: [contact(1), contact(2), contact(3)] }),
     );
@@ -73,7 +74,7 @@ describe('ContactsTab at the cap (JEF-494)', () => {
 
   it('shows "N of M" when close to the limit and keeps Add contact enabled', async () => {
     mockGqlRequest.mockImplementation((query: string) =>
-      query.includes('ContentQuota')
+      gqlText(query).includes('ContentQuota')
         ? Promise.resolve({
             contentQuota: { limits: { ...LIMITS, contactsPerApplication: 5 }, usage: USAGE },
           })

@@ -76,8 +76,8 @@ export function TrashPage() {
   });
 
   const restoreSelected = useMutation({
-    mutationFn: (ids: string[]) =>
-      gqlClient.request<BulkRestoreResult>(BULK_RESTORE_APPLICATIONS, { ids }),
+    mutationFn: async (ids: string[]) =>
+      (await gqlClient.request(BULK_RESTORE_APPLICATIONS, { ids })) as BulkRestoreResult,
     onSuccess: (result) => {
       clearSelection();
       invalidate();
@@ -98,7 +98,7 @@ export function TrashPage() {
   });
 
   const emptyTrash = useMutation({
-    mutationFn: () => gqlClient.request<EmptyTrashResult>(EMPTY_TRASH),
+    mutationFn: async () => (await gqlClient.request(EMPTY_TRASH)) as EmptyTrashResult,
     onSuccess: ({ emptyTrash: { deleted, failed } }) => {
       setConfirmingEmpty(false);
       clearSelection();

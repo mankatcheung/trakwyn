@@ -30,6 +30,7 @@ vi.mock('sonner', () => ({
 
 import { TrashPage } from '#/features/applications/pages/TrashPage';
 import { daysUntilPurge } from '#/features/applications/graphql/trashQueries';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -106,7 +107,7 @@ describe('TrashPage', () => {
 
   it('restores an application', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('RestoreApplication'))
+      if (gqlText(query).includes('RestoreApplication'))
         return Promise.resolve({ restoreApplication: true });
       return Promise.resolve({ trashedApplications: [trashed] });
     });
@@ -116,7 +117,7 @@ describe('TrashPage', () => {
     fireEvent.click(screen.getByLabelText('Restore Stripe'));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RestoreApplication'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RestoreApplication'), {
         id: 'app-1',
       }),
     );
@@ -133,14 +134,14 @@ describe('TrashPage', () => {
 
     expect(window.confirm).toHaveBeenCalled();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('PermanentlyDeleteApplication'),
+      gqlContaining('PermanentlyDeleteApplication'),
       expect.anything(),
     );
   });
 
   it('permanently deletes once confirmed', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('PermanentlyDeleteApplication'))
+      if (gqlText(query).includes('PermanentlyDeleteApplication'))
         return Promise.resolve({ permanentlyDeleteApplication: true });
       return Promise.resolve({ trashedApplications: [trashed] });
     });
@@ -151,10 +152,9 @@ describe('TrashPage', () => {
     fireEvent.click(screen.getByLabelText('Permanently delete Stripe'));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('PermanentlyDeleteApplication'),
-        { id: 'app-1' },
-      ),
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('PermanentlyDeleteApplication'), {
+        id: 'app-1',
+      }),
     );
     expect(mockToastSuccess).toHaveBeenCalled();
   });
@@ -185,7 +185,7 @@ describe('TrashPage — bulk actions', () => {
 
   it('restores a selection in one call', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('BulkRestoreApplications'))
+      if (gqlText(query).includes('BulkRestoreApplications'))
         return Promise.resolve({ bulkRestoreApplications: { restored: 2 } });
       return Promise.resolve(listOf(trashed, second));
     });
@@ -196,17 +196,16 @@ describe('TrashPage — bulk actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore selected' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('BulkRestoreApplications'),
-        { ids: ['app-1', 'app-2'] },
-      ),
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('BulkRestoreApplications'), {
+        ids: ['app-1', 'app-2'],
+      }),
     );
     expect(mockToastSuccess).toHaveBeenCalledWith('2 applications restored');
   });
 
   it('sends only the rows that are actually selected', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('BulkRestoreApplications'))
+      if (gqlText(query).includes('BulkRestoreApplications'))
         return Promise.resolve({ bulkRestoreApplications: { restored: 1 } });
       return Promise.resolve(listOf(trashed, second));
     });
@@ -217,10 +216,9 @@ describe('TrashPage — bulk actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore selected' }));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('BulkRestoreApplications'),
-        { ids: ['app-2'] },
-      ),
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('BulkRestoreApplications'), {
+        ids: ['app-2'],
+      }),
     );
   });
 
@@ -251,15 +249,12 @@ describe('TrashPage — bulk actions', () => {
 
     const cancel = await screen.findByRole('button', { name: 'Cancel' });
     await waitFor(() => expect(document.activeElement).toBe(cancel));
-    expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('EmptyTrash'),
-      expect.anything(),
-    );
+    expect(mockGqlRequest).not.toHaveBeenCalledWith(gqlContaining('EmptyTrash'), expect.anything());
   });
 
   it('empties the Trash once confirmed and reports the count', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('EmptyTrash'))
+      if (gqlText(query).includes('EmptyTrash'))
         return Promise.resolve({ emptyTrash: { deleted: 2, failed: 0 } });
       return Promise.resolve(listOf(trashed, second));
     });
@@ -276,7 +271,7 @@ describe('TrashPage — bulk actions', () => {
 
   it('says what actually happened when part of the Trash could not be deleted', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('EmptyTrash'))
+      if (gqlText(query).includes('EmptyTrash'))
         return Promise.resolve({ emptyTrash: { deleted: 1, failed: 1 } });
       return Promise.resolve(listOf(trashed, second));
     });
@@ -303,9 +298,6 @@ describe('TrashPage — bulk actions', () => {
     await waitFor(() =>
       expect(screen.queryByText('Permanently delete all 2 applications?')).not.toBeInTheDocument(),
     );
-    expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('EmptyTrash'),
-      expect.anything(),
-    );
+    expect(mockGqlRequest).not.toHaveBeenCalledWith(gqlContaining('EmptyTrash'), expect.anything());
   });
 });

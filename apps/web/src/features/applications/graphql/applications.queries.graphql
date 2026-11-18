@@ -16,23 +16,3 @@ query Applications($status: ApplicationStatus) {
     updatedAt
   }
 }
-
-query Application($id: ID!) {
-  application(id: $id) {
-    id
-    company
-    role
-    status
-    jobUrl
-    location
-    salaryRange
-    description
-    appliedAt
-    starred
-    source
-    followUpAt
-    tags
-    createdAt
-    updatedAt
-  }
-}

@@ -1,13 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
-const ACTIVITY_LOGS_QUERY = `
-  query ActivityLogs($applicationId: ID!) {
-    activityLogs(applicationId: $applicationId) {
-      id eventType payload createdAt
-    }
-  }
-`;
+import { ACTIVITY_LOGS_QUERY } from '../../graphql/applicationDetailQueries';
 
 type ActivityLog = {
   id: string;
@@ -63,8 +57,10 @@ function formatActor(payloadStr: string): string | null {
 export function ActivityTab({ applicationId }: { applicationId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['activityLogs', applicationId],
-    queryFn: () =>
-      gqlClient.request<{ activityLogs: ActivityLog[] }>(ACTIVITY_LOGS_QUERY, { applicationId }),
+    queryFn: async () =>
+      (await gqlClient.request(ACTIVITY_LOGS_QUERY, { applicationId })) as {
+        activityLogs: ActivityLog[];
+      },
   });
 
   const logs = data?.activityLogs ?? [];

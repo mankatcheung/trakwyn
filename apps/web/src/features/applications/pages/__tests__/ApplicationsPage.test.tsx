@@ -44,14 +44,13 @@ vi.mock('#/graphql/client', () => ({
 // timing away cannot tell an immediate delete from a delayed one.
 vi.mock('sonner', () => ({ toast: mockToast }));
 
-vi.mock('#/graphql/generated/graphql', () => ({}));
-
 // Covered by ApplicationCapNotice.test.tsx; its billing request would take the ordered mock responses below.
 vi.mock('#/features/quota/components/ApplicationCapNotice', () => ({
   ApplicationCapNotice: () => null,
 }));
 
 import { ApplicationsPage } from '#/features/applications/pages/ApplicationsPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -238,7 +237,7 @@ describe('ApplicationsPage', () => {
       render(<ApplicationsPage />, { wrapper: Wrapper });
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('applicationsPage'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('applicationsPage'), {
           status: null,
           starred: null,
           search: null,
@@ -255,7 +254,7 @@ describe('ApplicationsPage', () => {
 
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('applicationsPage'),
+          gqlContaining('applicationsPage'),
           expect.objectContaining({ status: 'applied', starred: true }),
         );
       });
@@ -275,7 +274,7 @@ describe('ApplicationsPage', () => {
 
       await waitFor(() => {
         expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('applicationsPage'),
+          gqlContaining('applicationsPage'),
           expect.objectContaining({ search: 'stripe' }),
         );
       });
@@ -364,7 +363,7 @@ describe('ApplicationsPage', () => {
 
       await waitFor(() => expect(screen.getByText('Vercel')).toBeInTheDocument());
       expect(mockGqlRequest).toHaveBeenLastCalledWith(
-        expect.stringContaining('applicationsPage'),
+        gqlContaining('applicationsPage'),
         expect.objectContaining({ cursor: '1' }),
       );
     });
@@ -431,7 +430,7 @@ describe('ApplicationsPage', () => {
     // blanket-overridden to only the mutation's response.
     function mockMutationResult(result: unknown) {
       mockGqlRequest.mockImplementation((query: unknown) =>
-        typeof query === 'string' && query.includes('applicationsPage')
+        gqlText(query).includes('applicationsPage')
           ? Promise.resolve(page(apps))
           : Promise.resolve(result),
       );
@@ -475,11 +474,11 @@ describe('ApplicationsPage', () => {
       fireEvent.click(screen.getByRole('option', { name: /Interviewing/ }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '1',
           input: { status: 'interviewing' },
         });
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '2',
           input: { status: 'interviewing' },
         });
@@ -497,11 +496,11 @@ describe('ApplicationsPage', () => {
       fireEvent.click(screen.getByLabelText('Add tag to selected'));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '1',
           input: { tags: ['backend', 'urgent'] },
         });
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '2',
           input: { tags: ['urgent'] },
         });
@@ -517,7 +516,7 @@ describe('ApplicationsPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Star selected' }));
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '1',
           input: { starred: true },
         });
@@ -525,7 +524,7 @@ describe('ApplicationsPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Unstar selected' }));
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('updateApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('updateApplication'), {
           id: '1',
           input: { starred: false },
         });
@@ -542,10 +541,10 @@ describe('ApplicationsPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
           id: '1',
         });
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
           id: '2',
         });
       });
@@ -570,7 +569,7 @@ describe('ApplicationsPage', () => {
       expect(screen.queryByText('Vercel')).not.toBeInTheDocument();
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
           id: '1',
         });
       });
@@ -595,7 +594,7 @@ describe('ApplicationsPage', () => {
       expect(screen.queryByText('Vercel')).not.toBeInTheDocument();
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
           id: '1',
         });
       });
@@ -613,7 +612,7 @@ describe('ApplicationsPage', () => {
 
       expect(screen.queryByText('Stripe')).not.toBeInTheDocument();
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
           id: '1',
         }),
       );
@@ -628,7 +627,7 @@ describe('ApplicationsPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe')).toBeInTheDocument());
       // ...and the server is told to undo it too.
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RestoreApplication'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RestoreApplication'), {
           id: '1',
         }),
       );

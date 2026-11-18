@@ -26,7 +26,11 @@ import { ListIcon, PlusIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { ApplicationDisplayFieldsPicker } from '#/features/applications/components/ApplicationDisplayFieldsPicker';
 import { useApplicationDisplayFields } from '#/features/applications/lib/applicationDisplayFields';
-import { boardApplicationsQueryOptions, type BoardApplication } from '../graphql/boardQueries';
+import {
+  MOVE_ON_BOARD,
+  boardApplicationsQueryOptions,
+  type BoardApplication,
+} from '../graphql/boardQueries';
 import {
   findColumnOf,
   groupByStatus,
@@ -36,12 +40,6 @@ import {
 } from '../lib/boardMove';
 import { APPLICATION_STATUSES } from '#/features/applications/lib/statusColors';
 import { Skeleton } from '@trakwyn/ui';
-
-const MOVE_ON_BOARD = `
-  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {
-    moveApplicationOnBoard(input: $input) { id status boardPosition }
-  }
-`;
 
 const STATUSES = APPLICATION_STATUSES;
 
@@ -89,8 +87,11 @@ export function KanbanBoard() {
   }, [serverColumns, activeId]);
 
   const moveOnBoard = useMutation({
-    mutationFn: (input: { applicationId: string; toStatus: string; orderedIds: string[] }) =>
-      gqlClient.request(MOVE_ON_BOARD, { input }),
+    mutationFn: (input: {
+      applicationId: string;
+      toStatus: ApplicationStatus;
+      orderedIds: string[];
+    }) => gqlClient.request(MOVE_ON_BOARD, { input }),
     onMutate: async ({ toStatus, orderedIds }) => {
       await qc.cancelQueries({ queryKey: QUERY_KEY });
       const prevData = qc.getQueryData<{ applications: BoardApplication[] }>(QUERY_KEY);
@@ -106,7 +107,7 @@ export function KanbanBoard() {
             rank.has(app.id)
               ? {
                   ...app,
-                  status: toStatus as ApplicationStatus,
+                  status: toStatus,
                   boardPosition: rank.get(app.id)!,
                 }
               : app,
@@ -187,7 +188,7 @@ export function KanbanBoard() {
     setColumns(move.columns);
     moveOnBoard.mutate({
       applicationId: String(active.id),
-      toStatus: move.toStatus,
+      toStatus: move.toStatus as ApplicationStatus,
       orderedIds: move.orderedIds,
     });
   }

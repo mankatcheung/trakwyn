@@ -20,6 +20,7 @@ import {
   deleteApplicationWithUndo,
   deleteApplicationsWithUndo,
 } from '#/features/applications/lib/deleteWithUndo';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 /** The Undo handler the helper installed on the toast it raised. */
 function capturedUndo(): () => void {
@@ -28,7 +29,7 @@ function capturedUndo(): () => void {
 }
 
 const queriesFor = (fragment: string) =>
-  mockGqlRequest.mock.calls.filter(([query]) => String(query).includes(fragment));
+  mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(fragment));
 
 describe('deleteApplicationWithUndo', () => {
   let qc: QueryClient;
@@ -50,7 +51,7 @@ describe('deleteApplicationWithUndo', () => {
     // No timers advanced. This is the whole point of JEF-190: if the request
     // is ever put back behind a setTimeout, this assertion fails.
     await vi.waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('deleteApplication'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('deleteApplication'), {
         id: 'app-1',
       }),
     );
@@ -71,7 +72,7 @@ describe('deleteApplicationWithUndo', () => {
     capturedUndo()();
 
     await vi.waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RestoreApplication'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RestoreApplication'), {
         id: 'app-1',
       }),
     );
@@ -127,10 +128,9 @@ describe('deleteApplicationsWithUndo', () => {
 
     expect(onUndoOptimistic).toHaveBeenCalledTimes(1);
     await vi.waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('BulkRestoreApplications'),
-        { ids: ['a', 'b'] },
-      ),
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('BulkRestoreApplications'), {
+        ids: ['a', 'b'],
+      }),
     );
   });
 

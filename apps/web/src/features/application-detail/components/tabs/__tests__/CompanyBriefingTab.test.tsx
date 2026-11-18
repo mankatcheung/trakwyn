@@ -13,6 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { CompanyBriefingTab } from '#/features/application-detail/components/tabs/CompanyBriefingTab';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
@@ -45,7 +46,7 @@ const stored = {
 
 const respondWith = (briefing: unknown, generated?: unknown) =>
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('GenerateCompanyBriefing'))
+    if (gqlText(query).includes('GenerateCompanyBriefing'))
       return Promise.resolve({ generateCompanyBriefing: generated ?? stored });
     return Promise.resolve({ companyBriefing: briefing });
   });
@@ -65,7 +66,7 @@ describe('CompanyBriefingTab', () => {
 
     await waitFor(() => expect(screen.getByText(/Acme builds widgets/)).toBeInTheDocument());
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('GenerateCompanyBriefing'),
+      gqlContaining('GenerateCompanyBriefing'),
       expect.anything(),
     );
   });
@@ -112,10 +113,9 @@ describe('CompanyBriefingTab', () => {
       render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
 
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('sources { url title publishedAt }'),
-          { applicationId: 'app-1' },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('publishedAt'), {
+          applicationId: 'app-1',
+        }),
       );
     });
 
@@ -265,7 +265,7 @@ describe('CompanyBriefingTab', () => {
     // Declining must not spend the user's API quota on a replacement.
     expect(window.confirm).toHaveBeenCalled();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('GenerateCompanyBriefing'),
+      gqlContaining('GenerateCompanyBriefing'),
       expect.anything(),
     );
   });
@@ -286,7 +286,7 @@ describe('CompanyBriefingTab', () => {
 
   it('shows a link to Account settings when the AI key is not configured', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('GenerateCompanyBriefing'))
+      if (gqlText(query).includes('GenerateCompanyBriefing'))
         return Promise.reject({
           response: { errors: [{ extensions: { code: 'AI_NOT_CONFIGURED' } }] },
         });
@@ -334,10 +334,10 @@ describe('CompanyBriefingTab', () => {
       fireEvent.click(screen.getByRole('button', { name: /generate briefing/i }));
 
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('GenerateCompanyBriefing'),
-          { applicationId: 'app-1', instructions: 'focus on remote culture' },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('GenerateCompanyBriefing'), {
+          applicationId: 'app-1',
+          instructions: 'focus on remote culture',
+        }),
       );
     });
 
@@ -351,10 +351,10 @@ describe('CompanyBriefingTab', () => {
       fireEvent.click(screen.getByRole('button', { name: /generate briefing/i }));
 
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('GenerateCompanyBriefing'),
-          { applicationId: 'app-1', instructions: null },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('GenerateCompanyBriefing'), {
+          applicationId: 'app-1',
+          instructions: null,
+        }),
       );
     });
 

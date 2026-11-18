@@ -52,6 +52,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ApplicationDetailPage } from '#/features/application-detail/pages/ApplicationDetailPage';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const mockApp = {
   id: 'app-test-id',
@@ -78,12 +79,12 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 const countCalls = (name: string) =>
-  mockGqlRequest.mock.calls.filter(([doc]) => typeof doc === 'string' && doc.includes(name)).length;
+  mockGqlRequest.mock.calls.filter(([doc]) => gqlText(doc).includes(name)).length;
 
 const loadApp = () =>
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('query Notes')) return Promise.resolve({ notes: [] });
-    if (query.includes('query Contacts')) return Promise.resolve({ contacts: [] });
+    if (gqlText(query).includes('query Notes')) return Promise.resolve({ notes: [] });
+    if (gqlText(query).includes('query Contacts')) return Promise.resolve({ contacts: [] });
     return Promise.resolve({ application: mockApp });
   });
 
