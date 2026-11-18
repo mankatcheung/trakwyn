@@ -1,3 +1,4 @@
+import type { CreateApplicationInput } from '#/graphql/generated/graphql';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import { StarIcon, XIcon } from 'lucide-react';
 import { Alert, Checkbox, FormLabel, Input, SubmitButton, Textarea } from '@trakwyn/ui';
 import { JdImportPanel } from '../components/new/JdImportPanel';
 import { POSTING_TEXT_MAX_CHARS, PostingTextField } from '../components/new/PostingTextField';
+import { CREATE_APPLICATION } from '../graphql/applicationMutations';
 
 const schema = z.object({
   company: z.string().min(1, 'Company is required'),
@@ -35,12 +37,6 @@ const schema = z.object({
   starred: z.boolean().optional(),
 });
 type FormValues = z.infer<typeof schema>;
-
-const CREATE_MUTATION = `
-  mutation CreateApplication($input: CreateApplicationInput!) {
-    createApplication(input: $input) { id }
-  }
-`;
 
 function Field({
   label,
@@ -77,8 +73,10 @@ export function NewApplicationPage() {
   } = form;
 
   const create = useMutation({
-    mutationFn: (input: Record<string, unknown>) =>
-      gqlClient.request<{ createApplication: { id: string } }>(CREATE_MUTATION, { input }),
+    mutationFn: async (input: CreateApplicationInput) =>
+      (await gqlClient.request(CREATE_APPLICATION, { input })) as {
+        createApplication: { id: string };
+      },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['applications'] }),
   });
 

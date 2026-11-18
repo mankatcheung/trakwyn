@@ -14,12 +14,31 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-  'query ActivityLogs($applicationId: ID!) {\n  activityLogs(applicationId: $applicationId) {\n    id\n    applicationId\n    actorId\n    eventType\n    payload\n    createdAt\n  }\n}': typeof types.ActivityLogsDocument;
-  'mutation CreateContact($applicationId: ID!, $name: String!, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  createContact(\n    applicationId: $applicationId\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateContact($id: ID!, $name: String, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  updateContact(\n    id: $id\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteContact($id: ID!) {\n  deleteContact(id: $id)\n}': typeof types.CreateContactDocument;
-  'query Contacts($applicationId: ID!) {\n  contacts(applicationId: $applicationId) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}': typeof types.ContactsDocument;
-  'mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}': typeof types.CreateApplicationDocument;
-  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nquery Application($id: ID!) {\n  application(id: $id) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}': typeof types.ApplicationsDocument;
-  'mutation ParseJobDescription($text: String, $url: String) {\n  parseJobDescription(text: $text, url: $url) {\n    company\n    role\n    location\n    salary\n    description\n  }\n}': typeof types.ParseJobDescriptionDocument;
+  '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateApplicationDocument;
+  '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n': typeof types.UpdateApplicationFlagsDocument;
+  '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n': typeof types.ApplicationHealthScoreDocument;
+  '\n  query ApplicationSectionCounts($id: ID!) {\n    application(id: $id) {\n      id\n      sectionCounts {\n        notes\n        interviews\n        contacts\n        offers\n        companyBriefing\n      }\n    }\n  }\n': typeof types.ApplicationSectionCountsDocument;
+  '\n  query ActivityLogs($applicationId: ID!) {\n    activityLogs(applicationId: $applicationId) {\n      id\n      eventType\n      payload\n      createdAt\n    }\n  }\n': typeof types.ActivityLogsDocument;
+  '\n  query CompanyBriefing($applicationId: ID!) {\n    companyBriefing(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n': typeof types.CompanyBriefingDocument;
+  '\n  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {\n    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n': typeof types.GenerateCompanyBriefingDocument;
+  '\n  query Contacts($applicationId: ID!) {\n    contacts(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.ContactsDocument;
+  '\n  mutation CreateContact(\n    $applicationId: ID!\n    $name: String!\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    createContact(\n      applicationId: $applicationId\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateContactDocument;
+  '\n  mutation UpdateContact(\n    $id: ID!\n    $name: String\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    updateContact(\n      id: $id\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.UpdateContactDocument;
+  '\n  mutation DeleteContact($id: ID!) {\n    deleteContact(id: $id)\n  }\n': typeof types.DeleteContactDocument;
+  '\n  query Application($id: ID!) {\n    application(id: $id) {\n      id\n      company\n      role\n      status\n      jobUrl\n      location\n      salaryRange\n      description\n      postingText\n      appliedAt\n      starred\n      source\n      followUpAt\n      tags\n      createdAt\n      updatedAt\n      deletedAt\n      purgeAt\n    }\n  }\n': typeof types.ApplicationDocument;
+  '\n  mutation BulkUpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n': typeof types.BulkUpdateApplicationDocument;
+  '\n  mutation CreateApplication($input: CreateApplicationInput!) {\n    createApplication(input: $input) {\n      id\n    }\n  }\n': typeof types.CreateApplicationDocument;
+  '\n  mutation ParseJobDescription($text: String, $url: String) {\n    parseJobDescription(text: $text, url: $url) {\n      company\n      role\n      location\n      salary\n      description\n      postingText\n    }\n  }\n': typeof types.ParseJobDescriptionDocument;
+  '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n': typeof types.DeleteApplicationDocument;
+  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}': typeof types.ApplicationsDocument;
+  '\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n': typeof types.ApplicationsPageDocument;
+  '\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n': typeof types.BoardApplicationsDocument;
+  '\n  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {\n    moveApplicationOnBoard(input: $input) {\n      id\n      status\n      boardPosition\n    }\n  }\n': typeof types.MoveApplicationOnBoardDocument;
+  '\n  query TrashedApplications {\n    trashedApplications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      deletedAt\n      purgeAt\n    }\n  }\n': typeof types.TrashedApplicationsDocument;
+  '\n  mutation RestoreApplication($id: ID!) {\n    restoreApplication(id: $id)\n  }\n': typeof types.RestoreApplicationDocument;
+  '\n  mutation PermanentlyDeleteApplication($id: ID!) {\n    permanentlyDeleteApplication(id: $id)\n  }\n': typeof types.PermanentlyDeleteApplicationDocument;
+  '\n  mutation BulkRestoreApplications($ids: [ID!]!) {\n    bulkRestoreApplications(ids: $ids) {\n      restored\n    }\n  }\n': typeof types.BulkRestoreApplicationsDocument;
+  '\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n': typeof types.EmptyTrashDocument;
   'mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}': typeof types.RegisterDocument;
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n': typeof types.DashboardApplicationsDocument;
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.DashboardCalendarEventsDocument;
@@ -81,18 +100,56 @@ type Documents = {
   'query WorkExperiences {\n  workExperiences {\n    id\n    company\n    title\n    location\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Educations {\n  educations {\n    id\n    institution\n    degree\n    field\n    startDate\n    endDate\n    description\n    createdAt\n    updatedAt\n  }\n}\n\nquery Skills {\n  skills {\n    id\n    name\n    category\n    proficiency\n    createdAt\n  }\n}': typeof types.WorkExperiencesDocument;
 };
 const documents: Documents = {
-  'query ActivityLogs($applicationId: ID!) {\n  activityLogs(applicationId: $applicationId) {\n    id\n    applicationId\n    actorId\n    eventType\n    payload\n    createdAt\n  }\n}':
+  '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n':
+    types.UpdateApplicationDocument,
+  '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n':
+    types.UpdateApplicationFlagsDocument,
+  '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n':
+    types.ApplicationHealthScoreDocument,
+  '\n  query ApplicationSectionCounts($id: ID!) {\n    application(id: $id) {\n      id\n      sectionCounts {\n        notes\n        interviews\n        contacts\n        offers\n        companyBriefing\n      }\n    }\n  }\n':
+    types.ApplicationSectionCountsDocument,
+  '\n  query ActivityLogs($applicationId: ID!) {\n    activityLogs(applicationId: $applicationId) {\n      id\n      eventType\n      payload\n      createdAt\n    }\n  }\n':
     types.ActivityLogsDocument,
-  'mutation CreateContact($applicationId: ID!, $name: String!, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  createContact(\n    applicationId: $applicationId\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateContact($id: ID!, $name: String, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  updateContact(\n    id: $id\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteContact($id: ID!) {\n  deleteContact(id: $id)\n}':
-    types.CreateContactDocument,
-  'query Contacts($applicationId: ID!) {\n  contacts(applicationId: $applicationId) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}':
+  '\n  query CompanyBriefing($applicationId: ID!) {\n    companyBriefing(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n':
+    types.CompanyBriefingDocument,
+  '\n  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {\n    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n':
+    types.GenerateCompanyBriefingDocument,
+  '\n  query Contacts($applicationId: ID!) {\n    contacts(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n':
     types.ContactsDocument,
-  'mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}':
+  '\n  mutation CreateContact(\n    $applicationId: ID!\n    $name: String!\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    createContact(\n      applicationId: $applicationId\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.CreateContactDocument,
+  '\n  mutation UpdateContact(\n    $id: ID!\n    $name: String\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    updateContact(\n      id: $id\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.UpdateContactDocument,
+  '\n  mutation DeleteContact($id: ID!) {\n    deleteContact(id: $id)\n  }\n':
+    types.DeleteContactDocument,
+  '\n  query Application($id: ID!) {\n    application(id: $id) {\n      id\n      company\n      role\n      status\n      jobUrl\n      location\n      salaryRange\n      description\n      postingText\n      appliedAt\n      starred\n      source\n      followUpAt\n      tags\n      createdAt\n      updatedAt\n      deletedAt\n      purgeAt\n    }\n  }\n':
+    types.ApplicationDocument,
+  '\n  mutation BulkUpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n':
+    types.BulkUpdateApplicationDocument,
+  '\n  mutation CreateApplication($input: CreateApplicationInput!) {\n    createApplication(input: $input) {\n      id\n    }\n  }\n':
     types.CreateApplicationDocument,
-  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nquery Application($id: ID!) {\n  application(id: $id) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}':
-    types.ApplicationsDocument,
-  'mutation ParseJobDescription($text: String, $url: String) {\n  parseJobDescription(text: $text, url: $url) {\n    company\n    role\n    location\n    salary\n    description\n  }\n}':
+  '\n  mutation ParseJobDescription($text: String, $url: String) {\n    parseJobDescription(text: $text, url: $url) {\n      company\n      role\n      location\n      salary\n      description\n      postingText\n    }\n  }\n':
     types.ParseJobDescriptionDocument,
+  '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n':
+    types.DeleteApplicationDocument,
+  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}':
+    types.ApplicationsDocument,
+  '\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n':
+    types.ApplicationsPageDocument,
+  '\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n':
+    types.BoardApplicationsDocument,
+  '\n  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {\n    moveApplicationOnBoard(input: $input) {\n      id\n      status\n      boardPosition\n    }\n  }\n':
+    types.MoveApplicationOnBoardDocument,
+  '\n  query TrashedApplications {\n    trashedApplications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      deletedAt\n      purgeAt\n    }\n  }\n':
+    types.TrashedApplicationsDocument,
+  '\n  mutation RestoreApplication($id: ID!) {\n    restoreApplication(id: $id)\n  }\n':
+    types.RestoreApplicationDocument,
+  '\n  mutation PermanentlyDeleteApplication($id: ID!) {\n    permanentlyDeleteApplication(id: $id)\n  }\n':
+    types.PermanentlyDeleteApplicationDocument,
+  '\n  mutation BulkRestoreApplications($ids: [ID!]!) {\n    bulkRestoreApplications(ids: $ids) {\n      restored\n    }\n  }\n':
+    types.BulkRestoreApplicationsDocument,
+  '\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n':
+    types.EmptyTrashDocument,
   'mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}':
     types.RegisterDocument,
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n':
@@ -231,38 +288,152 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'query ActivityLogs($applicationId: ID!) {\n  activityLogs(applicationId: $applicationId) {\n    id\n    applicationId\n    actorId\n    eventType\n    payload\n    createdAt\n  }\n}',
-): (typeof documents)['query ActivityLogs($applicationId: ID!) {\n  activityLogs(applicationId: $applicationId) {\n    id\n    applicationId\n    actorId\n    eventType\n    payload\n    createdAt\n  }\n}'];
+  source: '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation CreateContact($applicationId: ID!, $name: String!, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  createContact(\n    applicationId: $applicationId\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateContact($id: ID!, $name: String, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  updateContact(\n    id: $id\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteContact($id: ID!) {\n  deleteContact(id: $id)\n}',
-): (typeof documents)['mutation CreateContact($applicationId: ID!, $name: String!, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  createContact(\n    applicationId: $applicationId\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateContact($id: ID!, $name: String, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {\n  updateContact(\n    id: $id\n    name: $name\n    role: $role\n    email: $email\n    phone: $phone\n    linkedinUrl: $linkedinUrl\n    notes: $notes\n  ) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteContact($id: ID!) {\n  deleteContact(id: $id)\n}'];
+  source: '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'query Contacts($applicationId: ID!) {\n  contacts(applicationId: $applicationId) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}',
-): (typeof documents)['query Contacts($applicationId: ID!) {\n  contacts(applicationId: $applicationId) {\n    id\n    applicationId\n    name\n    role\n    email\n    phone\n    linkedinUrl\n    notes\n    createdAt\n    updatedAt\n  }\n}'];
+  source: '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}',
-): (typeof documents)['mutation CreateApplication($input: CreateApplicationInput!) {\n  createApplication(input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n  updateApplication(id: $id, input: $input) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteApplication($id: ID!) {\n  deleteApplication(id: $id)\n}'];
+  source: '\n  query ApplicationSectionCounts($id: ID!) {\n    application(id: $id) {\n      id\n      sectionCounts {\n        notes\n        interviews\n        contacts\n        offers\n        companyBriefing\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ApplicationSectionCounts($id: ID!) {\n    application(id: $id) {\n      id\n      sectionCounts {\n        notes\n        interviews\n        contacts\n        offers\n        companyBriefing\n      }\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nquery Application($id: ID!) {\n  application(id: $id) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}',
-): (typeof documents)['query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}\n\nquery Application($id: ID!) {\n  application(id: $id) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    description\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}'];
+  source: '\n  query ActivityLogs($applicationId: ID!) {\n    activityLogs(applicationId: $applicationId) {\n      id\n      eventType\n      payload\n      createdAt\n    }\n  }\n',
+): (typeof documents)['\n  query ActivityLogs($applicationId: ID!) {\n    activityLogs(applicationId: $applicationId) {\n      id\n      eventType\n      payload\n      createdAt\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation ParseJobDescription($text: String, $url: String) {\n  parseJobDescription(text: $text, url: $url) {\n    company\n    role\n    location\n    salary\n    description\n  }\n}',
-): (typeof documents)['mutation ParseJobDescription($text: String, $url: String) {\n  parseJobDescription(text: $text, url: $url) {\n    company\n    role\n    location\n    salary\n    description\n  }\n}'];
+  source: '\n  query CompanyBriefing($applicationId: ID!) {\n    companyBriefing(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query CompanyBriefing($applicationId: ID!) {\n    companyBriefing(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {\n    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {\n    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) {\n      id\n      applicationId\n      content\n      sources {\n        url\n        title\n        publishedAt\n      }\n      generatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Contacts($applicationId: ID!) {\n    contacts(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query Contacts($applicationId: ID!) {\n    contacts(applicationId: $applicationId) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateContact(\n    $applicationId: ID!\n    $name: String!\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    createContact(\n      applicationId: $applicationId\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateContact(\n    $applicationId: ID!\n    $name: String!\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    createContact(\n      applicationId: $applicationId\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateContact(\n    $id: ID!\n    $name: String\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    updateContact(\n      id: $id\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateContact(\n    $id: ID!\n    $name: String\n    $role: String\n    $email: String\n    $phone: String\n    $linkedinUrl: String\n    $notes: String\n  ) {\n    updateContact(\n      id: $id\n      name: $name\n      role: $role\n      email: $email\n      phone: $phone\n      linkedinUrl: $linkedinUrl\n      notes: $notes\n    ) {\n      id\n      applicationId\n      name\n      role\n      email\n      phone\n      linkedinUrl\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteContact($id: ID!) {\n    deleteContact(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteContact($id: ID!) {\n    deleteContact(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Application($id: ID!) {\n    application(id: $id) {\n      id\n      company\n      role\n      status\n      jobUrl\n      location\n      salaryRange\n      description\n      postingText\n      appliedAt\n      starred\n      source\n      followUpAt\n      tags\n      createdAt\n      updatedAt\n      deletedAt\n      purgeAt\n    }\n  }\n',
+): (typeof documents)['\n  query Application($id: ID!) {\n    application(id: $id) {\n      id\n      company\n      role\n      status\n      jobUrl\n      location\n      salaryRange\n      description\n      postingText\n      appliedAt\n      starred\n      source\n      followUpAt\n      tags\n      createdAt\n      updatedAt\n      deletedAt\n      purgeAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation BulkUpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  mutation BulkUpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateApplication($input: CreateApplicationInput!) {\n    createApplication(input: $input) {\n      id\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateApplication($input: CreateApplicationInput!) {\n    createApplication(input: $input) {\n      id\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ParseJobDescription($text: String, $url: String) {\n    parseJobDescription(text: $text, url: $url) {\n      company\n      role\n      location\n      salary\n      description\n      postingText\n    }\n  }\n',
+): (typeof documents)['\n  mutation ParseJobDescription($text: String, $url: String) {\n    parseJobDescription(text: $text, url: $url) {\n      company\n      role\n      location\n      salary\n      description\n      postingText\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: 'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}',
+): (typeof documents)['query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n',
+): (typeof documents)['\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {\n    moveApplicationOnBoard(input: $input) {\n      id\n      status\n      boardPosition\n    }\n  }\n',
+): (typeof documents)['\n  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {\n    moveApplicationOnBoard(input: $input) {\n      id\n      status\n      boardPosition\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query TrashedApplications {\n    trashedApplications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      deletedAt\n      purgeAt\n    }\n  }\n',
+): (typeof documents)['\n  query TrashedApplications {\n    trashedApplications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      deletedAt\n      purgeAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RestoreApplication($id: ID!) {\n    restoreApplication(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation RestoreApplication($id: ID!) {\n    restoreApplication(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation PermanentlyDeleteApplication($id: ID!) {\n    permanentlyDeleteApplication(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation PermanentlyDeleteApplication($id: ID!) {\n    permanentlyDeleteApplication(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation BulkRestoreApplications($ids: [ID!]!) {\n    bulkRestoreApplications(ids: $ids) {\n      restored\n    }\n  }\n',
+): (typeof documents)['\n  mutation BulkRestoreApplications($ids: [ID!]!) {\n    bulkRestoreApplications(ids: $ids) {\n      restored\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n',
+): (typeof documents)['\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

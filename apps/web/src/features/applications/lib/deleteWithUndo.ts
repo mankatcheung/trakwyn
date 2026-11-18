@@ -5,8 +5,7 @@ import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { showUndoableActionToast } from '#/lib/undoToast';
 import { BULK_RESTORE_APPLICATIONS, RESTORE_APPLICATION } from '../graphql/trashQueries';
-
-const DELETE_APPLICATION = `mutation DeleteApplication($id: ID!) { deleteApplication(id: $id) }`;
+import { DELETE_APPLICATION } from '../graphql/applicationMutations';
 
 /**
  * Deleting an application is a soft delete (JEF-187), so undo is a real

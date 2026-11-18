@@ -1,13 +1,31 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const APPLICATION_QUERY = `
+const APPLICATION_QUERY = graphql(`
   query Application($id: ID!) {
     application(id: $id) {
-      id company role status jobUrl location salaryRange description postingText appliedAt starred source followUpAt tags createdAt updatedAt deletedAt purgeAt
+      id
+      company
+      role
+      status
+      jobUrl
+      location
+      salaryRange
+      description
+      postingText
+      appliedAt
+      starred
+      source
+      followUpAt
+      tags
+      createdAt
+      updatedAt
+      deletedAt
+      purgeAt
     }
   }
-`;
+`);
 
 export type Application = {
   id: string;
@@ -38,6 +56,8 @@ export type Application = {
 export const applicationQueryOptions = (applicationId: string) =>
   queryOptions({
     queryKey: ['application', applicationId],
-    queryFn: () =>
-      gqlClient.request<{ application: Application }>(APPLICATION_QUERY, { id: applicationId }),
+    queryFn: async () =>
+      (await gqlClient.request(APPLICATION_QUERY, { id: applicationId })) as {
+        application: Application;
+      },
   });

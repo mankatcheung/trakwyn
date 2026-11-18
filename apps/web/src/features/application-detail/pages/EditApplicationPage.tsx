@@ -27,6 +27,7 @@ import {
   POSTING_TEXT_MAX_CHARS,
   PostingTextField,
 } from '../../applications/components/new/PostingTextField';
+import { UPDATE_APPLICATION } from '../graphql/applicationDetailQueries';
 
 const APPLICATION_STATUSES = [
   'draft',
@@ -55,12 +56,6 @@ const schema = z.object({
   starred: z.boolean().optional(),
 });
 type FormValues = z.infer<typeof schema>;
-
-const UPDATE_MUTATION = `
-  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {
-    updateApplication(id: $id, input: $input) { id }
-  }
-`;
 
 function Field({
   label,
@@ -127,7 +122,7 @@ export function EditApplicationPage() {
 
   const update = useMutation({
     mutationFn: (input: Record<string, unknown>) =>
-      gqlClient.request(UPDATE_MUTATION, { id: applicationId, input }),
+      gqlClient.request(UPDATE_APPLICATION, { id: applicationId, input }),
     // The list and this application's own detail both show what was edited.
     onSuccess: () =>
       Promise.all([

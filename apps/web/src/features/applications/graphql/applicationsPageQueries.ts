@@ -1,10 +1,11 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
+import { graphql } from '#/graphql/generated';
 
 export const PAGE_SIZE = 20;
 
-export const APPLICATIONS_PAGE_QUERY = `
+export const APPLICATIONS_PAGE_QUERY = graphql(`
   query ApplicationsPage(
     $status: ApplicationStatus
     $starred: Boolean
@@ -39,7 +40,7 @@ export const APPLICATIONS_PAGE_QUERY = `
       }
     }
   }
-`;
+`);
 
 export type Application = {
   id: string;
@@ -89,15 +90,15 @@ export function applicationsPageQueryOptions(
 ) {
   return infiniteQueryOptions({
     queryKey: applicationsPageQueryKey(status, starred, searchTerm, likelyGhosted),
-    queryFn: ({ pageParam }) =>
-      gqlClient.request<ApplicationsPageResult>(APPLICATIONS_PAGE_QUERY, {
-        status: status ?? null,
+    queryFn: async ({ pageParam }) =>
+      (await gqlClient.request(APPLICATIONS_PAGE_QUERY, {
+        status: (status as ApplicationStatus | undefined) ?? null,
         starred: starred ?? null,
         search: searchTerm || null,
         cursor: pageParam,
         limit: PAGE_SIZE,
         ...(likelyGhosted !== undefined ? { likelyGhosted } : {}),
-      }),
+      })) as ApplicationsPageResult,
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.applicationsPage.hasNextPage ? lastPage.applicationsPage.nextCursor : undefined,

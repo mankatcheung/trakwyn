@@ -10,20 +10,10 @@ import { invalidateSectionCounts } from '../../lib/sectionCounts';
 import { Button, Card } from '@trakwyn/ui';
 import { AiActionBar } from '#/features/ai/components/AiActionBar';
 import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
-
-const BRIEFING_FIELDS = `id applicationId content sources { url title publishedAt } generatedAt`;
-
-const COMPANY_BRIEFING_QUERY = `
-  query CompanyBriefing($applicationId: ID!) {
-    companyBriefing(applicationId: $applicationId) { ${BRIEFING_FIELDS} }
-  }
-`;
-
-const GENERATE_COMPANY_BRIEFING = `
-  mutation GenerateCompanyBriefing($applicationId: ID!, $instructions: String) {
-    generateCompanyBriefing(applicationId: $applicationId, instructions: $instructions) { ${BRIEFING_FIELDS} }
-  }
-`;
+import {
+  COMPANY_BRIEFING_QUERY,
+  GENERATE_COMPANY_BRIEFING,
+} from '../../graphql/applicationDetailQueries';
 
 const BRIEFING_EXAMPLES = [
   'aiHelper.briefingExample1',
@@ -55,20 +45,20 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
   // means paying to produce it again.
   const { data, isLoading } = useQuery({
     queryKey,
-    queryFn: () =>
-      gqlClient.request<{ companyBriefing: Briefing | null }>(COMPANY_BRIEFING_QUERY, {
+    queryFn: async () =>
+      (await gqlClient.request(COMPANY_BRIEFING_QUERY, {
         applicationId,
-      }),
+      })) as { companyBriefing: Briefing | null },
   });
   const briefing = data?.companyBriefing ?? null;
   const sources = briefing?.sources ?? [];
 
   const generate = useMutation({
-    mutationFn: () =>
-      gqlClient.request<{ generateCompanyBriefing: Briefing }>(GENERATE_COMPANY_BRIEFING, {
+    mutationFn: async () =>
+      (await gqlClient.request(GENERATE_COMPANY_BRIEFING, {
         applicationId,
         instructions: instructions.trim() || null,
-      }),
+      })) as { generateCompanyBriefing: Briefing },
     onSuccess: (result) => {
       qc.setQueryData(queryKey, { companyBriefing: result.generateCompanyBriefing });
       setCopied(false);

@@ -1,9 +1,0 @@
-mutation ParseJobDescription($text: String, $url: String) {
-  parseJobDescription(text: $text, url: $url) {
-    company
-    role
-    location
-    salary
-    description
-  }
-}

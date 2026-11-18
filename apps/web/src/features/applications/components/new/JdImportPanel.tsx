@@ -9,14 +9,7 @@ import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { SparklesIcon } from 'lucide-react';
 import { Button, Input, Textarea } from '@trakwyn/ui';
-
-const PARSE_JD_MUTATION = `
-  mutation ParseJobDescription($text: String, $url: String) {
-    parseJobDescription(text: $text, url: $url) {
-      company role location salary description postingText
-    }
-  }
-`;
+import { PARSE_JOB_DESCRIPTION } from '../../graphql/applicationMutations';
 
 type ParsedJd = {
   company: string | null;
@@ -48,8 +41,8 @@ export function JdImportPanel({ onFill }: Props) {
   // Nothing cached changes (the result fills the form), so there is nothing
   // to invalidate; the mutation is here for its pending and error state.
   const parse = useMutation({
-    mutationFn: (vars: { text: string } | { url: string }) =>
-      gqlClient.request<{ parseJobDescription: ParsedJd }>(PARSE_JD_MUTATION, vars),
+    mutationFn: async (vars: { text?: string; url?: string }) =>
+      (await gqlClient.request(PARSE_JOB_DESCRIPTION, vars)) as { parseJobDescription: ParsedJd },
     onSuccess: (data) => {
       onFill(data.parseJobDescription);
       setFilled(true);

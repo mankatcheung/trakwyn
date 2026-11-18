@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-export const TRASHED_APPLICATIONS_QUERY = `
+export const TRASHED_APPLICATIONS_QUERY = graphql(`
   query TrashedApplications {
     trashedApplications {
       id
@@ -14,31 +15,36 @@ export const TRASHED_APPLICATIONS_QUERY = `
       purgeAt
     }
   }
-`;
+`);
 
-export const RESTORE_APPLICATION = `
+export const RESTORE_APPLICATION = graphql(`
   mutation RestoreApplication($id: ID!) {
     restoreApplication(id: $id)
   }
-`;
+`);
 
-export const PERMANENTLY_DELETE_APPLICATION = `
+export const PERMANENTLY_DELETE_APPLICATION = graphql(`
   mutation PermanentlyDeleteApplication($id: ID!) {
     permanentlyDeleteApplication(id: $id)
   }
-`;
+`);
 
-export const BULK_RESTORE_APPLICATIONS = `
+export const BULK_RESTORE_APPLICATIONS = graphql(`
   mutation BulkRestoreApplications($ids: [ID!]!) {
-    bulkRestoreApplications(ids: $ids) { restored }
+    bulkRestoreApplications(ids: $ids) {
+      restored
+    }
   }
-`;
+`);
 
-export const EMPTY_TRASH = `
+export const EMPTY_TRASH = graphql(`
   mutation EmptyTrash {
-    emptyTrash { deleted failed }
+    emptyTrash {
+      deleted
+      failed
+    }
   }
-`;
+`);
 
 export type TrashedApplication = {
   id: string;
@@ -57,7 +63,8 @@ export type TrashedApplicationsResult = { trashedApplications: TrashedApplicatio
 export const trashedApplicationsQueryOptions = () =>
   queryOptions({
     queryKey: ['applications', 'trash'] as const,
-    queryFn: () => gqlClient.request<TrashedApplicationsResult>(TRASHED_APPLICATIONS_QUERY),
+    queryFn: async () =>
+      (await gqlClient.request(TRASHED_APPLICATIONS_QUERY)) as TrashedApplicationsResult,
   });
 
 /**

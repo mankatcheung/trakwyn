@@ -25,6 +25,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { EditApplicationPage } from '#/features/application-detail/pages/EditApplicationPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
@@ -127,7 +128,7 @@ describe('EditApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({
           id: 'app-test-id',
           input: expect.objectContaining({ company: 'Acme Corp' }),
@@ -181,7 +182,7 @@ describe('EditApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({
           input: expect.objectContaining({ jobUrl: 'https://stripe.com/jobs/1' }),
         }),
@@ -223,7 +224,7 @@ describe('EditApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({
           input: expect.objectContaining({ postingText: 'Must have Kubernetes and Go.' }),
         }),
@@ -246,7 +247,7 @@ describe('EditApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('UpdateApplication'),
+        gqlContaining('UpdateApplication'),
         expect.objectContaining({ input: expect.objectContaining({ postingText: null }) }),
       );
     });
@@ -284,7 +285,7 @@ describe('EditApplicationPage', () => {
     resolve({ updateApplication: { id: 'app-test-id' } });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
     const updates = mockGqlRequest.mock.calls.filter(([q]) =>
-      String(q).includes('UpdateApplication'),
+      gqlText(q).includes('UpdateApplication'),
     );
     expect(updates).toHaveLength(1);
   });

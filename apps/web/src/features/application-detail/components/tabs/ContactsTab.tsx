@@ -23,26 +23,12 @@ import {
   Textarea,
 } from '@trakwyn/ui';
 import { invalidateSectionCounts } from '../../lib/sectionCounts';
-const CONTACTS_QUERY = `
-  query Contacts($applicationId: ID!) {
-    contacts(applicationId: $applicationId) { id applicationId name role email phone linkedinUrl notes createdAt updatedAt }
-  }
-`;
-const CREATE_CONTACT = `
-  mutation CreateContact($applicationId: ID!, $name: String!, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {
-    createContact(applicationId: $applicationId, name: $name, role: $role, email: $email, phone: $phone, linkedinUrl: $linkedinUrl, notes: $notes) {
-      id applicationId name role email phone linkedinUrl notes createdAt updatedAt
-    }
-  }
-`;
-const UPDATE_CONTACT = `
-  mutation UpdateContact($id: ID!, $name: String, $role: String, $email: String, $phone: String, $linkedinUrl: String, $notes: String) {
-    updateContact(id: $id, name: $name, role: $role, email: $email, phone: $phone, linkedinUrl: $linkedinUrl, notes: $notes) {
-      id applicationId name role email phone linkedinUrl notes createdAt updatedAt
-    }
-  }
-`;
-const DELETE_CONTACT = `mutation DeleteContact($id: ID!) { deleteContact(id: $id) }`;
+import {
+  CONTACTS_QUERY,
+  CREATE_CONTACT,
+  DELETE_CONTACT,
+  UPDATE_CONTACT,
+} from '../../graphql/applicationDetailQueries';
 
 type Contact = {
   id: string;
@@ -181,7 +167,8 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts', applicationId],
-    queryFn: () => gqlClient.request<{ contacts: Contact[] }>(CONTACTS_QUERY, { applicationId }),
+    queryFn: async () =>
+      (await gqlClient.request(CONTACTS_QUERY, { applicationId })) as { contacts: Contact[] },
   });
 
   const invalidate = () => {

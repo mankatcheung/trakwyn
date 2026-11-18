@@ -23,6 +23,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { NewApplicationPage } from '#/features/applications/pages/NewApplicationPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 vi.mock('#/features/ai/hooks/useAiCredits', () => ({
   useAiCredits: () => ({
@@ -102,7 +103,7 @@ describe('NewApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateApplication'),
+        gqlContaining('CreateApplication'),
         expect.objectContaining({
           input: expect.objectContaining({ company: 'Acme Corp', role: 'Engineer' }),
         }),
@@ -190,7 +191,7 @@ describe('NewApplicationPage', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateApplication'),
+        gqlContaining('CreateApplication'),
         expect.objectContaining({
           input: expect.objectContaining({ postingText: 'Must have Kubernetes and PostgreSQL.' }),
         }),
