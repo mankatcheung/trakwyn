@@ -46,8 +46,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
  */
 const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
-  'features/chat/components/__tests__/ChatConversationView.test.tsx',
-  'features/chat/pages/__tests__/AssistantChatPage.test.tsx',
   'features/documents/components/__tests__/DocumentList.test.tsx',
   'features/documents/pages/__tests__/DocumentDraftEditPage.test.tsx',
   'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
