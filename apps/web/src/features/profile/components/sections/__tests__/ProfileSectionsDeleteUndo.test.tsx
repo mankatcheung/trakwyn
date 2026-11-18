@@ -20,6 +20,20 @@ import { LanguagesSection } from '#/features/profile/components/sections/Languag
 import { ProjectsSection } from '#/features/profile/components/sections/ProjectsSection';
 import { SkillsSection } from '#/features/profile/components/sections/SkillsSection';
 import { WorkExperienceSection } from '#/features/profile/components/sections/WorkExperienceSection';
+import { mockGql, respond, respondWith, type GqlResponse } from '#/__tests__/helpers/gqlMock';
+import {
+  WORK_EXPERIENCES_QUERY,
+  DELETE_WORK_EXPERIENCE,
+} from '#/features/profile/graphql/workExperienceQueries';
+import { EDUCATIONS_QUERY, DELETE_EDUCATION } from '#/features/profile/graphql/educationQueries';
+import { SKILLS_QUERY, DELETE_SKILL } from '#/features/profile/graphql/skillQueries';
+import {
+  CERTIFICATIONS_QUERY,
+  DELETE_CERTIFICATION,
+} from '#/features/profile/graphql/certificationQueries';
+import { LANGUAGES_QUERY, DELETE_LANGUAGE } from '#/features/profile/graphql/languageQueries';
+import { PROJECTS_QUERY, DELETE_PROJECT } from '#/features/profile/graphql/projectQueries';
+import { AWARDS_QUERY, DELETE_AWARD } from '#/features/profile/graphql/awardQueries';
 import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const UNDO_WINDOW_MS = 5000;
@@ -28,22 +42,38 @@ const CREATED_AT = '2024-01-01T00:00:00.000Z';
 interface SectionCase {
   name: string;
   Section: ComponentType;
-  /** Name of the list query in the document, and the field it returns. */
-  query: string;
-  field: string;
   /** The delete mutation's field in the document. */
   deleteField: string;
-  row: { id: string } & Record<string, unknown>;
   /** Text only this row renders. */
   text: RegExp;
+  row: { id: string } & Record<string, unknown>;
+  /** Answers the section's list query (empty once deleted) and its delete mutation. */
+  serve: (isDeleted: () => boolean, onDelete: () => void) => GqlResponse[];
+}
+
+/** One section, typed by its own row: `serve` gets the rows still listed. */
+function caseOf<Row extends { id: string }>(c: {
+  name: string;
+  Section: ComponentType;
+  deleteField: string;
+  row: Row;
+  text: RegExp;
+  serve: (rows: () => Row[], onDelete: () => void) => GqlResponse[];
+}): SectionCase {
+  return {
+    name: c.name,
+    Section: c.Section,
+    deleteField: c.deleteField,
+    text: c.text,
+    row: c.row,
+    serve: (isDeleted, onDelete) => c.serve(() => (isDeleted() ? [] : [c.row]), onDelete),
+  };
 }
 
 const CASES: SectionCase[] = [
-  {
+  caseOf({
     name: 'WorkExperienceSection',
     Section: WorkExperienceSection,
-    query: 'query WorkExperiences',
-    field: 'workExperiences',
     deleteField: 'deleteWorkExperience',
     row: {
       id: 'w1',
@@ -57,12 +87,17 @@ const CASES: SectionCase[] = [
       updatedAt: CREATED_AT,
     },
     text: /Zeta Labs/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(WORK_EXPERIENCES_QUERY, () => ({ workExperiences: rows() })),
+      respondWith(DELETE_WORK_EXPERIENCE, async () => {
+        onDelete();
+        return { deleteWorkExperience: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'EducationSection',
     Section: EducationSection,
-    query: 'query Educations',
-    field: 'educations',
     deleteField: 'deleteEducation',
     row: {
       id: 'e1',
@@ -76,21 +111,31 @@ const CASES: SectionCase[] = [
       updatedAt: CREATED_AT,
     },
     text: /Northfield University/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(EDUCATIONS_QUERY, () => ({ educations: rows() })),
+      respondWith(DELETE_EDUCATION, async () => {
+        onDelete();
+        return { deleteEducation: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'SkillsSection',
     Section: SkillsSection,
-    query: 'query Skills',
-    field: 'skills',
     deleteField: 'deleteSkill',
     row: { id: 's1', name: 'Rustacean', category: null, proficiency: null, createdAt: CREATED_AT },
     text: /Rustacean/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(SKILLS_QUERY, () => ({ skills: rows() })),
+      respondWith(DELETE_SKILL, async () => {
+        onDelete();
+        return { deleteSkill: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'CertificationsSection',
     Section: CertificationsSection,
-    query: 'query Certifications',
-    field: 'certifications',
     deleteField: 'deleteCertification',
     row: {
       id: 'c1',
@@ -102,21 +147,31 @@ const CASES: SectionCase[] = [
       createdAt: CREATED_AT,
     },
     text: /Certified Kubernetes Admin/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(CERTIFICATIONS_QUERY, () => ({ certifications: rows() })),
+      respondWith(DELETE_CERTIFICATION, async () => {
+        onDelete();
+        return { deleteCertification: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'LanguagesSection',
     Section: LanguagesSection,
-    query: 'query Languages',
-    field: 'languages',
     deleteField: 'deleteLanguage',
     row: { id: 'l1', name: 'Esperanto', proficiency: 'Fluent', createdAt: CREATED_AT },
     text: /Esperanto/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(LANGUAGES_QUERY, () => ({ languages: rows() })),
+      respondWith(DELETE_LANGUAGE, async () => {
+        onDelete();
+        return { deleteLanguage: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'ProjectsSection',
     Section: ProjectsSection,
-    query: 'query Projects',
-    field: 'projects',
     deleteField: 'deleteProject',
     row: {
       id: 'p1',
@@ -129,12 +184,17 @@ const CASES: SectionCase[] = [
       createdAt: CREATED_AT,
     },
     text: /Lighthouse CLI/,
-  },
-  {
+    serve: (rows, onDelete) => [
+      respond(PROJECTS_QUERY, () => ({ projects: rows() })),
+      respondWith(DELETE_PROJECT, async () => {
+        onDelete();
+        return { deleteProject: true };
+      }),
+    ],
+  }),
+  caseOf({
     name: 'AwardsSection',
     Section: AwardsSection,
-    query: 'query Awards',
-    field: 'awards',
     deleteField: 'deleteAward',
     row: {
       id: 'a1',
@@ -145,7 +205,14 @@ const CASES: SectionCase[] = [
       createdAt: CREATED_AT,
     },
     text: /Hackathon Grand Prize/,
-  },
+    serve: (rows, onDelete) => [
+      respond(AWARDS_QUERY, () => ({ awards: rows() })),
+      respondWith(DELETE_AWARD, async () => {
+        onDelete();
+        return { deleteAward: true };
+      }),
+    ],
+  }),
 ];
 
 function Wrapper({ children }: { children: ReactNode }) {
@@ -166,15 +233,15 @@ describe.each(CASES)('$name: delete with undo (JEF-625)', (c) => {
     mockGqlRequest.mockReset();
     mockToast.mockReset();
     deleted = false;
-    mockGqlRequest.mockImplementation((document: string) => {
-      if (gqlText(document).includes(c.query))
-        return Promise.resolve({ [c.field]: deleted ? [] : [c.row] });
-      if (gqlText(document).includes(c.deleteField)) {
-        deleted = true;
-        return Promise.resolve({ [c.deleteField]: true });
-      }
-      return Promise.resolve({});
-    });
+    mockGql(
+      mockGqlRequest,
+      c.serve(
+        () => deleted,
+        () => {
+          deleted = true;
+        },
+      ),
+    );
   });
 
   afterEach(() => {

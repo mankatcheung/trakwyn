@@ -60,6 +60,12 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
 
 import { DraftEditPage } from '../DraftEditPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  DRAFT_QUERY,
+  UPDATE_CONTENT_MUTATION,
+} from '#/features/documents/graphql/draftEditQueries';
 
 const DRAFT = {
   id: 'draft-1',
@@ -81,13 +87,11 @@ const saves = () =>
 const state = () => screen.getByTestId('state').textContent;
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
 
-function mockApi(save: () => Promise<unknown>) {
-  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
-    if (query.includes('UpdateDocumentDraftContent')) return save();
-    return Promise.resolve({});
-  });
+function mockApi(save: () => Promise<ResultOf<typeof UPDATE_CONTENT_MUTATION>>) {
+  mockGql(mockGqlRequest, [
+    respond(DRAFT_QUERY, { documentDraft: DRAFT }),
+    respondWith(UPDATE_CONTENT_MUTATION, save),
+  ]);
 }
 
 async function renderPage() {
@@ -113,7 +117,7 @@ describe('DocumentDraftEditPage — save state (JEF-577)', () => {
   });
 
   it('goes Saved → Unsaved → Saving → Saved around a save', async () => {
-    let finish: (v: unknown) => void = () => {};
+    let finish: (v: ResultOf<typeof UPDATE_CONTENT_MUTATION>) => void = () => {};
     mockApi(() => new Promise((resolve) => (finish = resolve)));
     await renderPage();
     expect(state()).toBe('saved');

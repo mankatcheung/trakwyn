@@ -39,6 +39,14 @@ vi.mock('#/features/ai/hooks/useAiCredits', () => ({
 
 import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import { WORK_EXPERIENCES_QUERY } from '#/features/profile/graphql/workExperienceQueries';
+import { SKILLS_QUERY } from '#/features/profile/graphql/skillQueries';
+import { GENERATE_MUTATION } from '#/features/documents/graphql/generateQueries';
+import {
+  DOCUMENTS_QUERY,
+  DOCUMENT_DRAFTS_QUERY,
+} from '#/features/documents/graphql/documentQueries';
 
 interface Profile {
   workExperiences?: { id: string }[];
@@ -53,13 +61,13 @@ const GENERATED = {
 };
 
 function mockApi({ workExperiences = [], skills = [] }: Profile = {}) {
-  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('WorkExperiences')) return Promise.resolve({ workExperiences });
-    if (query.includes('Skills')) return Promise.resolve({ skills });
-    if (query.includes('GenerateIntoDocumentDraft')) return Promise.resolve(GENERATED);
-    return Promise.resolve({ documents: [], documentDrafts: [] });
-  });
+  mockGql(mockGqlRequest, [
+    respond(WORK_EXPERIENCES_QUERY, { workExperiences }),
+    respond(SKILLS_QUERY, { skills }),
+    respond(GENERATE_MUTATION, GENERATED),
+    respond(DOCUMENTS_QUERY, { documents: [] }),
+    respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+  ]);
 }
 
 function renderPanel(type: 'cover_letter' | 'resume') {
@@ -170,13 +178,13 @@ describe('EmptyProfilePrompt in the AI helper (JEF-460, JEF-506)', () => {
   });
 
   it('does not hold up generating while the profile is still loading', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-      const query = gqlText(queryDoc);
-      if (query.includes('WorkExperiences') || query.includes('query Skills'))
-        return new Promise(() => {});
-      if (query.includes('GenerateIntoDocumentDraft')) return Promise.resolve(GENERATED);
-      return Promise.resolve({ documents: [], documentDrafts: [] });
-    });
+    mockGql(mockGqlRequest, [
+      respondWith(WORK_EXPERIENCES_QUERY, () => new Promise(() => {})),
+      respondWith(SKILLS_QUERY, () => new Promise(() => {})),
+      respond(GENERATE_MUTATION, GENERATED),
+      respond(DOCUMENTS_QUERY, { documents: [] }),
+      respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+    ]);
     renderPanel('resume');
 
     fireEvent.click(generateButton());

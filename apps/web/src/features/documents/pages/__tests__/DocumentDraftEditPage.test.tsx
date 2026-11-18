@@ -113,8 +113,18 @@ vi.mock('#/features/documents/components/editor/DocumentDraftEditor', () => ({
 
 import { DraftEditPage } from '../DraftEditPage';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  DRAFT_QUERY,
+  EXPORT_PDF_MUTATION,
+  RENAME_DRAFT_MUTATION,
+  UPDATE_CONTENT_MUTATION,
+} from '#/features/documents/graphql/draftEditQueries';
 
-const DRAFT = {
+type Draft = NonNullable<ResultOf<typeof DRAFT_QUERY>['documentDraft']>;
+
+const DRAFT: Draft = {
   id: 'draft-1',
   applicationId: 'app-1',
   type: 'resume',
@@ -126,27 +136,31 @@ const DRAFT = {
   createdAt: '2026-09-01T00:00:00Z',
   updatedAt: '2026-09-01T00:00:00Z',
 };
-const COVER_LETTER = { ...DRAFT, type: 'cover_letter' };
+const COVER_LETTER: Draft = { ...DRAFT, type: 'cover_letter' };
 const PDF = { id: 'doc-9', name: 'My_Resume.pdf', url: 'https://blob.example/doc-9.pdf' };
 
 type Handlers = {
-  save?: () => Promise<unknown>;
-  exportPdf?: () => Promise<unknown>;
-  rename?: () => Promise<unknown>;
+  save?: () => Promise<ResultOf<typeof UPDATE_CONTENT_MUTATION>>;
+  exportPdf?: () => Promise<ResultOf<typeof EXPORT_PDF_MUTATION>>;
+  rename?: () => Promise<ResultOf<typeof RENAME_DRAFT_MUTATION>>;
 };
 
 function mockApi({ save, exportPdf, rename }: Handlers = {}) {
-  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: DRAFT });
-    if (query.includes('UpdateDocumentDraftContent'))
-      return save ? save() : Promise.resolve({ updateDocumentDraftContent: { id: 'draft-1' } });
-    if (query.includes('RenameDocumentDraft'))
-      return rename ? rename() : Promise.resolve({ renameDocumentDraft: { id: 'draft-1' } });
-    if (query.includes('ExportDocumentDraftToPdf'))
-      return exportPdf ? exportPdf() : Promise.resolve({ exportDocumentDraftToPdf: PDF });
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    respond(DRAFT_QUERY, { documentDraft: DRAFT }),
+    respondWith(
+      UPDATE_CONTENT_MUTATION,
+      save ?? (async () => ({ updateDocumentDraftContent: { id: 'draft-1' } })),
+    ),
+    respondWith(
+      RENAME_DRAFT_MUTATION,
+      rename ?? (async () => ({ renameDocumentDraft: { id: 'draft-1' } })),
+    ),
+    respondWith(
+      EXPORT_PDF_MUTATION,
+      exportPdf ?? (async () => ({ exportDocumentDraftToPdf: PDF })),
+    ),
+  ]);
 }
 
 // The import action reads the application's documents; that is not what these tests are about.
@@ -272,7 +286,7 @@ describe('DocumentDraftEditPage — Export PDF', () => {
   });
 
   it('waits for an in-flight save to finish before exporting', async () => {
-    let finishSave: (value: unknown) => void = () => {};
+    let finishSave: (value: ResultOf<typeof UPDATE_CONTENT_MUTATION>) => void = () => {};
     mockApi({ save: () => new Promise((resolve) => (finishSave = resolve)) });
     renderPage();
     await clickExport();
@@ -345,7 +359,10 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
   it('keeps an AI save that failed visible, and retries it with what is on screen', async () => {
     let failNext = true;
     mockApi({
-      save: () => (failNext ? Promise.reject(new Error('offline')) : Promise.resolve({ ok: true })),
+      save: () =>
+        failNext
+          ? Promise.reject(new Error('offline'))
+          : Promise.resolve({ updateDocumentDraftContent: { id: 'draft-1' } }),
     });
     renderPage();
     fireEvent.click(await screen.findByText(/mock ai save/));
@@ -371,7 +388,7 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
   });
 
   it('runs saves one at a time, in order, so an older one cannot land after a newer one', async () => {
-    const finishers: Array<(v: unknown) => void> = [];
+    const finishers: Array<(v: ResultOf<typeof UPDATE_CONTENT_MUTATION>) => void> = [];
     mockApi({ save: () => new Promise((resolve) => finishers.push(resolve)) });
     renderPage();
     const button = await screen.findByText(/mock ai save/);
@@ -383,7 +400,7 @@ describe('DocumentDraftEditPage — AI helper (JEF-506)', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(finishers).toHaveLength(1);
 
-    finishers[0]!({ ok: true });
+    finishers[0]!({ updateDocumentDraftContent: { id: 'draft-1' } });
     await waitFor(() => expect(finishers).toHaveLength(2));
   });
 
@@ -500,7 +517,7 @@ describe('DocumentDraftEditPage — inline title (JEF-506)', () => {
   });
 
   it('makes Export wait for a title save still in flight', async () => {
-    let finishRename: (v: unknown) => void = () => {};
+    let finishRename: (v: ResultOf<typeof RENAME_DRAFT_MUTATION>) => void = () => {};
     mockApi({ rename: () => new Promise((resolve) => (finishRename = resolve)) });
     renderPage();
     const field = await titleField();
@@ -529,11 +546,9 @@ describe('DocumentDraftEditPage — import into an empty draft (JEF-506)', () =>
   });
 
   it('hides it once the draft has text', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
-      gqlText(queryDoc).includes('query DocumentDraft')
-        ? Promise.resolve({ documentDraft: { ...DRAFT, plainText: 'already written' } })
-        : Promise.resolve({}),
-    );
+    mockGql(mockGqlRequest, [
+      respond(DRAFT_QUERY, { documentDraft: { ...DRAFT, plainText: 'already written' } }),
+    ]);
     renderPage();
     await screen.findByRole('textbox', { name: /rename draft/i });
     expect(screen.queryByText('mock import')).not.toBeInTheDocument();
@@ -578,11 +593,7 @@ describe('DocumentDraftEditPage — resume checks (JEF-585)', () => {
   });
 
   it('does not show them for a cover letter', async () => {
-    mockGqlRequest.mockImplementation((queryDoc: unknown) =>
-      Promise.resolve(
-        gqlText(queryDoc).includes('query DocumentDraft') ? { documentDraft: COVER_LETTER } : {},
-      ),
-    );
+    mockGql(mockGqlRequest, [respond(DRAFT_QUERY, { documentDraft: COVER_LETTER })]);
     renderPage();
     await screen.findByTestId('editor');
     expect(screen.queryByRole('region', { name: /resume checks/i })).not.toBeInTheDocument();

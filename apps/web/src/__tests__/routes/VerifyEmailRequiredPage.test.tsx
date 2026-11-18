@@ -40,6 +40,13 @@ import type { ComponentType } from 'react';
 import { Route } from '#/routes/verify-email-required';
 import { RESEND_COOLDOWN_SECONDS } from '#/features/verification/graphql/emailVerification';
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import {
+  EMAIL_VERIFICATION_QUERY,
+  RESEND_VERIFICATION_EMAIL,
+} from '#/features/verification/graphql/verificationQueries';
+import { LOGOUT_MUTATION } from '#/features/auth/graphql/authQueries';
+import { REQUEST_EMAIL_CHANGE } from '#/features/settings/graphql/securityQueries';
 
 const VerifyEmailRequiredRoute = (Route as unknown as { component: ComponentType }).component;
 
@@ -61,15 +68,14 @@ describe('verification wall (JEF-438)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     verification.emailVerified = false;
-    mockGqlRequest.mockImplementation(async (query: string) => {
-      if (gqlText(query).includes('EmailVerification')) {
-        return { me: { email: 'new@example.com', emailVerified: verification.emailVerified } };
-      }
-      if (gqlText(query).includes('ResendVerificationEmail'))
-        return { resendVerificationEmail: true };
-      if (gqlText(query).includes('RequestEmailChange')) return { requestEmailChange: true };
-      return {};
-    });
+    mockGql(mockGqlRequest, [
+      respondWith(EMAIL_VERIFICATION_QUERY, async () => ({
+        me: { email: 'new@example.com', emailVerified: verification.emailVerified },
+      })),
+      respond(RESEND_VERIFICATION_EMAIL, { resendVerificationEmail: true }),
+      respond(REQUEST_EMAIL_CHANGE, { requestEmailChange: true }),
+      respond(LOGOUT_MUTATION, { logout: true }),
+    ]);
   });
 
   afterEach(() => {
@@ -118,18 +124,18 @@ describe('verification wall (JEF-438)', () => {
     it('says to wait when the API rate-limits the resend', async () => {
       renderGate();
       await waitForWall();
-      mockGqlRequest.mockImplementation(async (query: string) => {
-        if (gqlText(query).includes('ResendVerificationEmail')) {
-          throw {
-            response: {
-              errors: [
-                { message: 'Too many verification emails.', extensions: { code: 'RATE_LIMITED' } },
-              ],
-            },
-          };
-        }
-        return { me: { email: 'new@example.com', emailVerified: false } };
-      });
+      mockGql(mockGqlRequest, [
+        respondError(RESEND_VERIFICATION_EMAIL, {
+          response: {
+            errors: [
+              { message: 'Too many verification emails.', extensions: { code: 'RATE_LIMITED' } },
+            ],
+          },
+        }),
+        respond(EMAIL_VERIFICATION_QUERY, {
+          me: { email: 'new@example.com', emailVerified: false },
+        }),
+      ]);
 
       fireEvent.click(screen.getByRole('button', { name: 'Resend verification email' }));
 

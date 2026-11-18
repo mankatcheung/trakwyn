@@ -9,7 +9,7 @@ export type Language = {
   createdAt: string;
 };
 
-const LANGUAGES_QUERY = graphql(`
+export const LANGUAGES_QUERY = graphql(`
   query Languages {
     languages {
       id

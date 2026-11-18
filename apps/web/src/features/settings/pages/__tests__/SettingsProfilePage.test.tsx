@@ -36,7 +36,10 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsProfilePage } from '#/features/settings/pages/SettingsProfilePage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { respond, respondError, overrideGql } from '#/__tests__/helpers/gqlMock';
+import { CONFIRM_AVATAR } from '#/features/settings/graphql/accountQueries';
+import { REQUEST_AVATAR_UPLOAD_URL } from '#/features/settings/graphql/accountQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -275,20 +278,15 @@ describe('SettingsProfilePage', () => {
     it('uploads a photo via requestAvatarUploadUrl then confirmAvatar', async () => {
       mockPutBlob.mockResolvedValue({ url: 'https://blob.example.com/avatar.png' });
 
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('RequestAvatarUploadUrl')) {
-          return Promise.resolve({
-            requestAvatarUploadUrl: {
-              uploadUrl: 'https://storage.example.com/upload',
-              storageKey: 'users/user-1/avatar/key.png',
-            },
-          });
-        }
-        if (gqlText(query).includes('ConfirmAvatar')) {
-          return Promise.resolve({ confirmAvatar: 'https://cdn.example.com/avatar.png' });
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [
+        respond(REQUEST_AVATAR_UPLOAD_URL, {
+          requestAvatarUploadUrl: {
+            uploadUrl: 'https://storage.example.com/upload',
+            storageKey: 'users/user-1/avatar/key.png',
+          },
+        }),
+        respond(CONFIRM_AVATAR, { confirmAvatar: 'https://cdn.example.com/avatar.png' }),
+      ]);
 
       render(<SettingsProfilePage />, { wrapper: Wrapper });
       await meLoaded();
@@ -317,12 +315,11 @@ describe('SettingsProfilePage', () => {
 
     it('shows an error message when the upload fails', async () => {
       mockPutBlob.mockResolvedValue({ url: 'https://blob.example.com/avatar.png' });
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('RequestAvatarUploadUrl')) {
-          return Promise.reject({ response: { errors: [{ message: 'Unsupported file type' }] } });
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [
+        respondError(REQUEST_AVATAR_UPLOAD_URL, {
+          response: { errors: [{ message: 'Unsupported file type' }] },
+        }),
+      ]);
 
       render(<SettingsProfilePage />, { wrapper: Wrapper });
       await meLoaded();

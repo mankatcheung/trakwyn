@@ -12,7 +12,7 @@ export type Certification = {
   createdAt: string;
 };
 
-const CERTIFICATIONS_QUERY = graphql(`
+export const CERTIFICATIONS_QUERY = graphql(`
   query Certifications {
     certifications {
       id

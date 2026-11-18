@@ -23,26 +23,7 @@ import { EmptyProfilePrompt } from './EmptyProfilePrompt';
 import { PolishPreview } from './editor/PolishPreview';
 import { requestPolish } from '../graphql/polishApi';
 import { ResumeSourcePicker } from './ResumeSourcePicker';
-import { graphql } from '#/graphql/generated';
-
-const GENERATE_MUTATION = graphql(`
-  mutation GenerateIntoDocumentDraft(
-    $draftId: ID!
-    $instructions: String
-    $resumeDocumentId: ID
-    $resumeDraftId: ID
-  ) {
-    generateIntoDocumentDraft(
-      draftId: $draftId
-      instructions: $instructions
-      resumeDocumentId: $resumeDocumentId
-      resumeDraftId: $resumeDraftId
-    ) {
-      contentJson
-      plainText
-    }
-  }
-`);
+import { GENERATE_MUTATION } from '../graphql/generateQueries';
 
 export type DraftKind = 'cover_letter' | 'resume';
 

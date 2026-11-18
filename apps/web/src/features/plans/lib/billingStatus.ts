@@ -2,7 +2,7 @@ import { graphql } from '#/graphql/generated';
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const BILLING_STATUS_QUERY = graphql(`
+export const BILLING_STATUS_QUERY = graphql(`
   query BillingStatus {
     billingStatus {
       enforced

@@ -1,5 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import { DOCUMENTS_QUERY } from '#/features/documents/graphql/documentQueries';
+import {
+  CREATE_MOCK_QUESTION,
+  DELETE_MOCK_QUESTION,
+  GENERATE_MOCK_ANSWER,
+  GENERATE_MOCK_QUESTIONS,
+  GENERATE_MOCK_TALKING_POINTS,
+  MOCK_QUESTIONS_QUERY,
+  REORDER_MOCK_QUESTIONS,
+  UPDATE_MOCK_QUESTION,
+} from '#/features/interviews/graphql/mockQuestionApi';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -50,7 +64,11 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-const makeQuestion = (overrides: Record<string, unknown> = {}) => ({
+type Question = NonNullable<
+  ResultOf<typeof MOCK_QUESTIONS_QUERY>['mockInterviewQuestions']
+>[number];
+
+const makeQuestion = (overrides: Partial<Question> = {}): Question => ({
   id: 'q1',
   interviewRoundId: 'round-1',
   question: 'Describe a hard bug.',
@@ -96,59 +114,40 @@ const RESUME_DOCUMENT = {
   createdAt: '2024-01-01T00:00:00.000Z',
 };
 
-function mockApi(questions = QUESTIONS, extra?: (query: unknown) => unknown) {
-  mockGqlRequest.mockImplementation((query: unknown) => {
-    const handled = extra?.(query);
-    if (handled !== undefined) return handled;
-    if (gqlText(query).includes('query MockInterviewQuestions')) {
-      return Promise.resolve({ mockInterviewQuestions: questions });
-    }
-    if (gqlText(query).includes('CreateMockInterviewQuestion')) {
-      return Promise.resolve({ createMockInterviewQuestion: makeQuestion({ id: 'q-new' }) });
-    }
-    if (gqlText(query).includes('UpdateMockInterviewQuestion')) {
-      return Promise.resolve({ updateMockInterviewQuestion: makeQuestion() });
-    }
-    if (gqlText(query).includes('ReorderMockInterviewQuestions')) {
-      return Promise.resolve({ reorderMockInterviewQuestions: questions });
-    }
-    if (gqlText(query).includes('DeleteMockInterviewQuestion')) {
-      return Promise.resolve({ deleteMockInterviewQuestion: true });
-    }
-    if (gqlText(query).includes('query Documents')) {
-      return Promise.resolve({ documents: [RESUME_DOCUMENT] });
-    }
-    if (gqlText(query).includes('GenerateMockInterviewQuestions')) {
-      return Promise.resolve({ generateMockInterviewQuestions: GENERATED });
-    }
-    if (gqlText(query).includes('GenerateMockTalkingPoints')) {
-      return Promise.resolve({
-        generateMockTalkingPoints: {
-          nothingRelevant: false,
-          usedProfile: true,
-          usedDocument: false,
-          question: makeQuestion({
-            id: 'q3',
-            answer: null,
-            talkingPoints: '- Mention the migration (Engineer at Acme)',
-            talkingPointsGeneratedAt: '2024-06-01T00:00:00.000Z',
-          }),
-        },
-      });
-    }
-    if (gqlText(query).includes('GenerateMockInterviewAnswer')) {
-      return Promise.resolve({
-        generateMockInterviewAnswer: {
-          answer: 'A drafted answer.',
-          usedJobDescription: true,
-          usedBriefing: true,
-          usedProfile: false,
-          usedDocument: false,
-        },
-      });
-    }
-    return Promise.resolve({});
-  });
+/** Defaults first; a later entry for the same operation wins, so `extra` replaces them. */
+function mockApi(questions = QUESTIONS, extra: GqlResponse[] = []) {
+  mockGql(mockGqlRequest, [
+    respond(MOCK_QUESTIONS_QUERY, { mockInterviewQuestions: questions }),
+    respond(CREATE_MOCK_QUESTION, { createMockInterviewQuestion: makeQuestion({ id: 'q-new' }) }),
+    respond(UPDATE_MOCK_QUESTION, { updateMockInterviewQuestion: makeQuestion() }),
+    respond(REORDER_MOCK_QUESTIONS, { reorderMockInterviewQuestions: questions }),
+    respond(DELETE_MOCK_QUESTION, { deleteMockInterviewQuestion: true }),
+    respond(DOCUMENTS_QUERY, { documents: [RESUME_DOCUMENT] }),
+    respond(GENERATE_MOCK_QUESTIONS, { generateMockInterviewQuestions: GENERATED }),
+    respond(GENERATE_MOCK_TALKING_POINTS, {
+      generateMockTalkingPoints: {
+        nothingRelevant: false,
+        usedProfile: true,
+        usedDocument: false,
+        question: makeQuestion({
+          id: 'q3',
+          answer: null,
+          talkingPoints: '- Mention the migration (Engineer at Acme)',
+          talkingPointsGeneratedAt: '2024-06-01T00:00:00.000Z',
+        }),
+      },
+    }),
+    respond(GENERATE_MOCK_ANSWER, {
+      generateMockInterviewAnswer: {
+        answer: 'A drafted answer.',
+        usedJobDescription: true,
+        usedBriefing: true,
+        usedProfile: false,
+        usedDocument: false,
+      },
+    }),
+    ...extra,
+  ]);
 }
 
 const props = { applicationId: 'app-1', roundId: 'round-1', mockQuestionCount: 3 };
@@ -363,11 +362,11 @@ describe('MockQuestionsPanel', () => {
       [{ usedJobDescription: true, usedBriefing: false }, /no company briefing yet/i],
       [{ usedJobDescription: false, usedBriefing: true }, /no job description yet/i],
     ])('says so when the AI had little to work from (%j)', async (used, note) => {
-      mockApi(QUESTIONS, (query) =>
-        gqlText(query).includes('GenerateMockInterviewQuestions')
-          ? Promise.resolve({ generateMockInterviewQuestions: { ...GENERATED, ...used } })
-          : undefined,
-      );
+      mockApi(QUESTIONS, [
+        respond(GENERATE_MOCK_QUESTIONS, {
+          generateMockInterviewQuestions: { ...GENERATED, ...used },
+        }),
+      ]);
       await openGenerator();
 
       fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
@@ -376,20 +375,18 @@ describe('MockQuestionsPanel', () => {
     });
 
     it('shows the API’s message, such as a missing AI key, and keeps the prompt', async () => {
-      mockApi(QUESTIONS, (query) =>
-        gqlText(query).includes('GenerateMockInterviewQuestions')
-          ? Promise.reject({
-              response: {
-                errors: [
-                  {
-                    message: 'Add your AI API key in Settings to use this feature',
-                    extensions: { code: 'AI_NOT_CONFIGURED' },
-                  },
-                ],
+      mockApi(QUESTIONS, [
+        respondError(GENERATE_MOCK_QUESTIONS, {
+          response: {
+            errors: [
+              {
+                message: 'Add your AI API key in Settings to use this feature',
+                extensions: { code: 'AI_NOT_CONFIGURED' },
               },
-            })
-          : undefined,
-      );
+            ],
+          },
+        }),
+      ]);
       await openGenerator();
       fireEvent.change(screen.getByLabelText(/what should the questions focus on/i), {
         target: { value: 'behavioural' },
@@ -540,18 +537,16 @@ describe('MockQuestionsPanel', () => {
       });
 
       it('says nothing was relevant instead of showing made-up bullets', async () => {
-        mockApi(QUESTIONS, (query) =>
-          gqlText(query).includes('GenerateMockTalkingPoints')
-            ? Promise.resolve({
-                generateMockTalkingPoints: {
-                  nothingRelevant: true,
-                  usedProfile: true,
-                  usedDocument: false,
-                  question: makeQuestion({ id: 'q3', answer: null }),
-                },
-              })
-            : undefined,
-        );
+        mockApi(QUESTIONS, [
+          respond(GENERATE_MOCK_TALKING_POINTS, {
+            generateMockTalkingPoints: {
+              nothingRelevant: true,
+              usedProfile: true,
+              usedDocument: false,
+              question: makeQuestion({ id: 'q3', answer: null }),
+            },
+          }),
+        ]);
         const card = await openTalkingPoints();
 
         fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
@@ -573,20 +568,18 @@ describe('MockQuestionsPanel', () => {
       });
 
       it('shows the API’s message, such as a missing AI key', async () => {
-        mockApi(QUESTIONS, (query) =>
-          gqlText(query).includes('GenerateMockTalkingPoints')
-            ? Promise.reject({
-                response: {
-                  errors: [
-                    {
-                      message: 'Add your AI API key in Settings to use this feature',
-                      extensions: { code: 'AI_NOT_CONFIGURED' },
-                    },
-                  ],
+        mockApi(QUESTIONS, [
+          respondError(GENERATE_MOCK_TALKING_POINTS, {
+            response: {
+              errors: [
+                {
+                  message: 'Add your AI API key in Settings to use this feature',
+                  extensions: { code: 'AI_NOT_CONFIGURED' },
                 },
-              })
-            : undefined,
-        );
+              ],
+            },
+          }),
+        ]);
         const card = await openTalkingPoints();
 
         fireEvent.click(within(card).getByRole('button', { name: 'Generate talking points' }));
@@ -639,17 +632,15 @@ describe('MockQuestionsPanel', () => {
 
     it('regenerating replaces the draft text', async () => {
       await startDraft();
-      mockApi(QUESTIONS, (query) =>
-        gqlText(query).includes('GenerateMockInterviewAnswer')
-          ? Promise.resolve({
-              generateMockInterviewAnswer: {
-                answer: 'A second attempt.',
-                usedJobDescription: true,
-                usedBriefing: true,
-              },
-            })
-          : undefined,
-      );
+      mockApi(QUESTIONS, [
+        respond(GENERATE_MOCK_ANSWER, {
+          generateMockInterviewAnswer: {
+            answer: 'A second attempt.',
+            usedJobDescription: true,
+            usedBriefing: true,
+          },
+        }),
+      ]);
 
       fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
 
@@ -657,20 +648,18 @@ describe('MockQuestionsPanel', () => {
     });
 
     it('shows the API’s message when the draft cannot be generated', async () => {
-      mockApi(QUESTIONS, (query) =>
-        gqlText(query).includes('GenerateMockInterviewAnswer')
-          ? Promise.reject({
-              response: {
-                errors: [
-                  {
-                    message: 'Too many requests — please wait a moment and try again',
-                    extensions: { code: 'RATE_LIMITED' },
-                  },
-                ],
+      mockApi(QUESTIONS, [
+        respondError(GENERATE_MOCK_ANSWER, {
+          response: {
+            errors: [
+              {
+                message: 'Too many requests — please wait a moment and try again',
+                extensions: { code: 'RATE_LIMITED' },
               },
-            })
-          : undefined,
-      );
+            ],
+          },
+        }),
+      ]);
       await openPanel();
 
       fireEvent.click(screen.getByRole('button', { name: 'Generate answer with AI' }));

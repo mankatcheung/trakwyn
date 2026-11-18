@@ -50,7 +50,13 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { ConversationHistoryPage } from '#/features/chat/pages/ConversationHistoryPage';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import {
+  CONVERSATIONS_QUERY,
+  DELETE_CONVERSATION,
+  SEARCH_CONVERSATIONS_QUERY,
+} from '#/features/chat/graphql/chatQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -130,10 +136,9 @@ describe('ConversationHistoryPage', () => {
   });
 
   it('deletes a conversation from the list', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('DeleteConversation'))
-        return Promise.resolve({ deleteConversation: true });
-      return Promise.resolve({
+    mockGql(mockGqlRequest, [
+      respond(DELETE_CONVERSATION, { deleteConversation: true }),
+      respond(CONVERSATIONS_QUERY, {
         conversations: [
           {
             id: 'conv-1',
@@ -143,8 +148,8 @@ describe('ConversationHistoryPage', () => {
             updatedAt: new Date().toISOString(),
           },
         ],
-      });
-    });
+      }),
+    ]);
     render(<ConversationHistoryPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Old chat')).toBeInTheDocument());
@@ -220,11 +225,10 @@ describe('ConversationHistoryPage', () => {
     });
 
     it('queries the server for the debounced term and renders only matches', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (gqlText(query).includes('SearchConversations'))
-          return Promise.resolve(searchResults(['conv-2']));
-        return Promise.resolve(fullHistory);
-      });
+      mockGql(mockGqlRequest, [
+        respond(SEARCH_CONVERSATIONS_QUERY, searchResults(['conv-2'])),
+        respond(CONVERSATIONS_QUERY, fullHistory),
+      ]);
       render(<ConversationHistoryPage />, { wrapper: Wrapper });
 
       await waitFor(() => expect(screen.getByText('Stripe interview prep')).toBeInTheDocument());
@@ -245,11 +249,10 @@ describe('ConversationHistoryPage', () => {
     });
 
     it('shows a no-results state instead of the empty-history one', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (gqlText(query).includes('SearchConversations'))
-          return Promise.resolve({ searchConversations: [] });
-        return Promise.resolve(fullHistory);
-      });
+      mockGql(mockGqlRequest, [
+        respond(SEARCH_CONVERSATIONS_QUERY, { searchConversations: [] }),
+        respond(CONVERSATIONS_QUERY, fullHistory),
+      ]);
       render(<ConversationHistoryPage />, { wrapper: Wrapper });
 
       await waitFor(() => expect(screen.getByText('Stripe interview prep')).toBeInTheDocument());
@@ -265,11 +268,10 @@ describe('ConversationHistoryPage', () => {
     });
 
     it('returns to the full list when the query is cleared', async () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (gqlText(query).includes('SearchConversations'))
-          return Promise.resolve(searchResults([]));
-        return Promise.resolve(fullHistory);
-      });
+      mockGql(mockGqlRequest, [
+        respond(SEARCH_CONVERSATIONS_QUERY, searchResults([])),
+        respond(CONVERSATIONS_QUERY, fullHistory),
+      ]);
       render(<ConversationHistoryPage />, { wrapper: Wrapper });
 
       const input = screen.getByPlaceholderText('Search conversations…');

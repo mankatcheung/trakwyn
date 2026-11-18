@@ -40,6 +40,9 @@ vi.mock('#/features/chat/lib/chatStream', async () => {
 import { ChatConversationView } from '#/features/chat/components/ChatConversationView';
 import { ChatStreamError } from '#/features/chat/lib/chatStream';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { CHAT_HISTORY_QUERY } from '#/features/chat/graphql/chatQueries';
+import { CREATE_CONVERSATION } from '#/features/chat/graphql/chatQueries';
 
 /**
  * `gqlClient.request` is called positionally (query, variables) for most
@@ -166,25 +169,23 @@ describe('ChatConversationView', () => {
       status,
       error: null,
     });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      if (documentOf(arg).includes('ChatHistory'))
-        return Promise.resolve({
-          chatHistory: [
-            { id: 'm1', role: 'user', content: 'move them', createdAt: '', proposals: [] },
-            {
-              id: 'm2',
-              role: 'assistant',
-              content: 'I have proposed two changes.',
-              createdAt: '',
-              proposals: [
-                proposal('p1', 'pending', 'Move Acme to interviewing'),
-                proposal('p2', 'confirmed', 'Move Globex to applied'),
-              ],
-            },
-          ],
-        });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CHAT_HISTORY_QUERY, {
+        chatHistory: [
+          { id: 'm1', role: 'user', content: 'move them', createdAt: '', proposals: [] },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'I have proposed two changes.',
+            createdAt: '',
+            proposals: [
+              proposal('p1', 'pending', 'Move Acme to interviewing'),
+              proposal('p2', 'confirmed', 'Move Globex to applied'),
+            ],
+          },
+        ],
+      }),
+    ]);
 
     render(<ChatConversationView conversationId="c1" onConversationCreated={vi.fn()} />, {
       wrapper: Wrapper,
@@ -216,21 +217,17 @@ describe('ChatConversationView', () => {
     // This test asserts what the component itself is responsible for: the
     // create + stream calls firing with the right arguments, the streamed
     // text rendering live, and the callback firing with the new id.
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('CreateConversation'))
-        return Promise.resolve({
-          createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
-        });
-      if (gqlText(query).includes('ChatHistory'))
-        return Promise.resolve({
-          chatHistory: [
-            { id: 'm1', role: 'user', content: 'What are my active applications?', createdAt: '' },
-            { id: 'm2', role: 'assistant', content: 'Here you go.', createdAt: '' },
-          ],
-        });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CREATE_CONVERSATION, {
+        createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
+      }),
+      respond(CHAT_HISTORY_QUERY, {
+        chatHistory: [
+          { id: 'm1', role: 'user', content: 'What are my active applications?', createdAt: '' },
+          { id: 'm2', role: 'assistant', content: 'Here you go.', createdAt: '' },
+        ],
+      }),
+    ]);
     let capturedOnDelta: ((text: string) => void) | undefined;
     mockStreamChatMessage.mockImplementation(({ onDelta }: { onDelta: (text: string) => void }) => {
       capturedOnDelta = onDelta;
@@ -274,22 +271,19 @@ describe('ChatConversationView', () => {
   });
 
   it('renders existing chat history for an active conversation', async () => {
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('ChatHistory'))
-        return Promise.resolve({
-          chatHistory: [
-            { id: 'm1', role: 'user', content: 'hi', createdAt: '2024-01-01T00:00:00.000Z' },
-            {
-              id: 'm2',
-              role: 'assistant',
-              content: 'hello!',
-              createdAt: '2024-01-01T00:00:01.000Z',
-            },
-          ],
-        });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CHAT_HISTORY_QUERY, {
+        chatHistory: [
+          { id: 'm1', role: 'user', content: 'hi', createdAt: '2024-01-01T00:00:00.000Z' },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'hello!',
+            createdAt: '2024-01-01T00:00:01.000Z',
+          },
+        ],
+      }),
+    ]);
 
     render(<ChatConversationView conversationId="conv-1" onConversationCreated={vi.fn()} />, {
       wrapper: Wrapper,
@@ -315,23 +309,19 @@ describe('ChatConversationView', () => {
 
   it('replaces the streamed bubble with the persisted history once the stream finishes', async () => {
     let chatHistoryCallCount = 0;
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('ChatHistory')) {
+    mockGql(mockGqlRequest, [
+      respond(CHAT_HISTORY_QUERY, () => {
         chatHistoryCallCount++;
-        return Promise.resolve(
-          chatHistoryCallCount === 1
-            ? { chatHistory: [] }
-            : {
-                chatHistory: [
-                  { id: 'm1', role: 'user', content: 'hi', createdAt: '' },
-                  { id: 'm2', role: 'assistant', content: 'Persisted reply.', createdAt: '' },
-                ],
-              },
-        );
-      }
-      return Promise.resolve({});
-    });
+        return chatHistoryCallCount === 1
+          ? { chatHistory: [] }
+          : {
+              chatHistory: [
+                { id: 'm1', role: 'user', content: 'hi', createdAt: '' },
+                { id: 'm2', role: 'assistant', content: 'Persisted reply.', createdAt: '' },
+              ],
+            };
+      }),
+    ]);
     mockStreamChatMessage.mockImplementation(
       async ({ onDelta }: { onDelta: (text: string) => void }) => {
         onDelta('Persisted');

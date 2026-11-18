@@ -6,7 +6,7 @@ import type { Resolved } from '#/graphql/resolved';
 
 /** Documents and shapes for an interview round's practice (mock) questions (JEF-393). */
 
-const MOCK_QUESTIONS_QUERY = graphql(`
+export const MOCK_QUESTIONS_QUERY = graphql(`
   query MockInterviewQuestions($interviewRoundId: ID!) {
     mockInterviewQuestions(interviewRoundId: $interviewRoundId) {
       id

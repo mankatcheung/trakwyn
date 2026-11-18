@@ -33,6 +33,14 @@ vi.mock('#/lib/undoToast', () => ({
 
 import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  CONTACTS_QUERY,
+  CREATE_CONTACT,
+  DELETE_CONTACT,
+  UPDATE_CONTACT,
+} from '#/features/application-detail/graphql/applicationDetailQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -87,12 +95,10 @@ describe('ContactsTab', () => {
   });
 
   it('creates a new contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('CreateContact')) {
-        return Promise.resolve({ createContact: { ...mockContact, id: 'contact-2' } });
-      }
-      return Promise.resolve({ contacts: [] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(CREATE_CONTACT, { createContact: { ...mockContact, id: 'contact-2' } }),
+      respond(CONTACTS_QUERY, { contacts: [] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -114,12 +120,10 @@ describe('ContactsTab', () => {
   });
 
   it('edits an existing contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('UpdateContact')) {
-        return Promise.resolve({ updateContact: { ...mockContact, name: 'Updated Name' } });
-      }
-      return Promise.resolve({ contacts: [mockContact] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(UPDATE_CONTACT, { updateContact: { ...mockContact, name: 'Updated Name' } }),
+      respond(CONTACTS_QUERY, { contacts: [mockContact] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -148,10 +152,10 @@ describe('ContactsTab', () => {
   });
 
   it('deletes a contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('DeleteContact')) return Promise.resolve({ deleteContact: true });
-      return Promise.resolve({ contacts: [mockContact] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(DELETE_CONTACT, { deleteContact: true }),
+      respond(CONTACTS_QUERY, { contacts: [mockContact] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -198,13 +202,10 @@ describe('ContactsTab', () => {
     });
 
     it('submits on Enter', async () => {
-      mockGqlRequest.mockImplementation((query: string) =>
-        Promise.resolve(
-          gqlText(query).includes('CreateContact')
-            ? { createContact: { ...mockContact, id: 'contact-2' } }
-            : { contacts: [] },
-        ),
-      );
+      mockGql(mockGqlRequest, [
+        respond(CREATE_CONTACT, { createContact: { ...mockContact, id: 'contact-2' } }),
+        respond(CONTACTS_QUERY, { contacts: [] }),
+      ]);
       const nameInput = await openAddForm();
 
       await userEvent.type(nameInput, 'Enter Contact{Enter}');
@@ -214,14 +215,17 @@ describe('ContactsTab', () => {
     });
 
     it('creates once on a double click', async () => {
-      let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((query: string) =>
-        gqlText(query).includes('CreateContact')
-          ? new Promise((resolve) => {
+      let release: (value: ResultOf<typeof CREATE_CONTACT>) => void = () => {};
+      mockGql(mockGqlRequest, [
+        respondWith(
+          CREATE_CONTACT,
+          () =>
+            new Promise((resolve) => {
               release = resolve;
-            })
-          : Promise.resolve({ contacts: [] }),
-      );
+            }),
+        ),
+        respond(CONTACTS_QUERY, { contacts: [] }),
+      ]);
       const nameInput = await openAddForm();
       fireEvent.change(nameInput, { target: { value: 'Double' } });
 
@@ -236,15 +240,14 @@ describe('ContactsTab', () => {
     });
 
     it('shows a failed save under the form and keeps what was typed', async () => {
-      mockGqlRequest.mockImplementation((query: string) =>
-        gqlText(query).includes('CreateContact')
-          ? Promise.reject({
-              response: {
-                errors: [{ message: 'Contact limit reached', extensions: { code: 'VALIDATION' } }],
-              },
-            })
-          : Promise.resolve({ contacts: [] }),
-      );
+      mockGql(mockGqlRequest, [
+        respondError(CREATE_CONTACT, {
+          response: {
+            errors: [{ message: 'Contact limit reached', extensions: { code: 'VALIDATION' } }],
+          },
+        }),
+        respond(CONTACTS_QUERY, { contacts: [] }),
+      ]);
       const nameInput = await openAddForm();
       fireEvent.change(nameInput, { target: { value: 'Kept' } });
 

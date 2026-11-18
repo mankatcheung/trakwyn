@@ -13,6 +13,11 @@ vi.mock('#/graphql/client', () => ({
 import { ResumeAts } from '#/features/documents/components/review/ResumeAtsPanel';
 import type { AtsScore } from '#/features/documents/graphql/resumeAtsQueries';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import {
+  COMPUTE_RESUME_ATS_SCORE,
+  RESUME_ATS_SCORES_QUERY,
+} from '#/features/documents/graphql/resumeAtsQueries';
 
 const goodScore: AtsScore = {
   id: 'ats-1',
@@ -92,15 +97,12 @@ function mockApi({
   computed?: AtsScore;
   computeError?: unknown;
 }) {
-  mockGqlRequest.mockImplementation((documentDoc: unknown) => {
-    const document = gqlText(documentDoc);
-    if (document.includes('mutation ComputeResumeAtsScore')) {
-      return computeError
-        ? Promise.reject(computeError)
-        : Promise.resolve({ computeResumeAtsScore: computed });
-    }
-    return Promise.resolve({ resumeAtsScores: saved });
-  });
+  mockGql(mockGqlRequest, [
+    computeError
+      ? respondError(COMPUTE_RESUME_ATS_SCORE, computeError)
+      : respond(COMPUTE_RESUME_ATS_SCORE, { computeResumeAtsScore: computed }),
+    respond(RESUME_ATS_SCORES_QUERY, { resumeAtsScores: saved }),
+  ]);
 }
 
 const computeCalls = () =>

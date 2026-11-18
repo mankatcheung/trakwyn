@@ -36,7 +36,11 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { ShareLinksCard } from '#/features/settings/components/integrations/ShareLinksCard';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import {
+  CREATE_SHARE_LINK,
+  SHARE_LINKS_QUERY,
+} from '#/features/settings/graphql/integrationsQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -63,12 +67,10 @@ describe('ShareLinksCard', () => {
     });
 
     it('offers the plan page when creating a share link needs Pro', async () => {
-      mockGqlRequest.mockImplementation((doc: string) => {
-        if (gqlText(doc).includes('mutation CreateShareLink')) {
-          return Promise.reject(planRequired('Share links is a Pro feature'));
-        }
-        return Promise.resolve({ shareLinks: [] });
-      });
+      mockGql(mockGqlRequest, [
+        respond(SHARE_LINKS_QUERY, { shareLinks: [] }),
+        respondError(CREATE_SHARE_LINK, planRequired('Share links is a Pro feature')),
+      ]);
       render(<ShareLinksCard />, { wrapper: Wrapper });
 
       fireEvent.change(await screen.findByPlaceholderText('e.g. For my mentor'), {
@@ -81,14 +83,12 @@ describe('ShareLinksCard', () => {
     });
 
     it('shows other failures as a plain error, with no upgrade link', async () => {
-      mockGqlRequest.mockImplementation((doc: string) => {
-        if (gqlText(doc).includes('mutation CreateShareLink')) {
-          return Promise.reject({
-            response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
-          });
-        }
-        return Promise.resolve({ shareLinks: [] });
-      });
+      mockGql(mockGqlRequest, [
+        respond(SHARE_LINKS_QUERY, { shareLinks: [] }),
+        respondError(CREATE_SHARE_LINK, {
+          response: { errors: [{ message: 'Nope', extensions: { code: 'VALIDATION' } }] },
+        }),
+      ]);
       render(<ShareLinksCard />, { wrapper: Wrapper });
 
       fireEvent.change(await screen.findByPlaceholderText('e.g. For my mentor'), {
@@ -103,22 +103,17 @@ describe('ShareLinksCard', () => {
 
   describe('progressive disclosure of the create-share-link form (redesign)', () => {
     function respondByOperation(links: Array<Record<string, unknown>> = []) {
-      mockGqlRequest.mockImplementation((doc: string) => {
-        if (gqlText(doc).includes('query ShareLinks')) {
-          return Promise.resolve({ shareLinks: links });
-        }
-        if (gqlText(doc).includes('mutation CreateShareLink')) {
-          return Promise.resolve({
-            createShareLink: {
-              id: 's1',
-              name: 'n',
-              token: 'share_secret',
-              createdAt: '2026-01-01T00:00:00.000Z',
-            },
-          });
-        }
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respond(SHARE_LINKS_QUERY, { shareLinks: links }),
+        respond(CREATE_SHARE_LINK, {
+          createShareLink: {
+            id: 's1',
+            name: 'n',
+            token: 'share_secret',
+            createdAt: '2026-01-01T00:00:00.000Z',
+          },
+        }),
+      ]);
     }
 
     it('opens the create-link form automatically when no link exists yet', async () => {

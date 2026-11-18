@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findFeatureStrays } from '../../../scripts/lib/featureLayout.ts';
+import { findHandRolledGqlMocks } from '../../../scripts/lib/handRolledGqlMocks.ts';
 import { findInlineQueries } from '../../../scripts/lib/inlineQueries.ts';
 import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listImports.ts';
 
@@ -24,6 +25,8 @@ import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listIm
  *     with no exceptions (JEF-636).
  *   - No GraphQL string is written inline: every document is a typed `graphql()` call
  *     (JEF-637), except the client's own `REFRESH_MUTATION`.
+ *   - A test answers a mocked `gqlClient` with `mockGql`/`respond`, not a hand-rolled
+ *     `gqlText(query).includes(…)` (JEF-652).
  */
 
 const WEB_ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -213,6 +216,37 @@ describe('web src structure', () => {
       expect(findInlineQueries([{ id: 'features/x/lib/x.ts', code }])).toEqual([
         'features/x/lib/x.ts REFRESH_MUTATION',
       ]);
+    });
+  });
+
+  describe('typed gqlClient mocks (JEF-652)', () => {
+    const tests = () =>
+      files
+        .filter((file) => /\.test\.tsx?$/.test(file) && !file.startsWith('__tests__/config/'))
+        .map((id) => ({ id, code: readFileSync(join(SRC, id), 'utf8') }));
+
+    it('answers a mocked gqlClient with mockGql, never by matching on gqlText', () => {
+      expect(
+        findHandRolledGqlMocks(tests()),
+        'use mockGql(request, [respond(DOCUMENT, data)]) from #/__tests__/helpers/gqlMock',
+      ).toEqual([]);
+    });
+
+    it('flags a mockImplementation that matches on gqlText', () => {
+      const mock = "vi.mock('#/graphql/client', () => ({}));\n";
+      expect(
+        findHandRolledGqlMocks([
+          {
+            id: 'a.test.ts',
+            code: `${mock}m.mockImplementation((q) => gqlText(q).includes('A') ? 1 : 2);`,
+          },
+          {
+            id: 'b.test.ts',
+            code: `${mock}m.mockImplementation(respondWith(x));\nm.mock.calls.filter(([q]) => gqlText(q).includes('A'));`,
+          },
+          { id: 'c.test.ts', code: "m.mockImplementation((q) => gqlText(q).includes('A'));" },
+        ]),
+      ).toEqual(['a.test.ts']);
     });
   });
 });

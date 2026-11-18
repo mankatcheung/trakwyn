@@ -21,6 +21,15 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import {
+  CREATE_OFFER_MUTATION,
+  DELETE_OFFER_MUTATION,
+  OFFERS_QUERY,
+  UPDATE_OFFER_MUTATION,
+} from '#/features/offers/graphql/applicationOffersQueries';
 import { ApplicationOffersPage } from '../ApplicationOffersPage';
 
 const offer = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -61,20 +70,9 @@ function renderPage() {
 const callsTo = (name: string) =>
   mockGqlRequest.mock.calls.filter(([query]) => gqlText(query).includes(name));
 
-/** Answers the list query from `list()` and every other request from `others`. */
-function serve(list: () => unknown[], others: Record<string, unknown> = {}) {
-  mockGqlRequest.mockImplementation((document: unknown) => {
-    const query = gqlText(document);
-    if (query.includes('query Offers')) return Promise.resolve({ offers: list() });
-    for (const [name, value] of Object.entries(others)) {
-      if (query.includes(name)) {
-        return value instanceof Error || (value as { response?: unknown }).response
-          ? Promise.reject(value)
-          : Promise.resolve(value);
-      }
-    }
-    return Promise.resolve({});
-  });
+/** Answers the list query from `list()` and every other operation from `others`. */
+function serve(list: () => ResultOf<typeof OFFERS_QUERY>['offers'], others: GqlResponse[] = []) {
+  mockGql(mockGqlRequest, [respond(OFFERS_QUERY, () => ({ offers: list() })), ...others]);
 }
 
 function fillSalary(value: string) {
@@ -123,9 +121,10 @@ describe('OffersPage', () => {
   describe('create', () => {
     it('saves the offer and shows it from the refetched list, closing the form', async () => {
       let saved = false;
-      serve(() => (saved ? [offer({ id: 'offer-2', baseSalary: 120000 })] : []), {
-        CreateOffer: { createOffer: { id: 'offer-2' } },
-      });
+      serve(
+        () => (saved ? [offer({ id: 'offer-2', baseSalary: 120000 })] : []),
+        [respond(CREATE_OFFER_MUTATION, { createOffer: { id: 'offer-2' } })],
+      );
       renderPage();
       await screen.findByText(/no offers yet/i);
 
@@ -142,7 +141,7 @@ describe('OffersPage', () => {
     });
 
     it('refreshes /offers and the tab badge too', async () => {
-      serve(() => [], { CreateOffer: { createOffer: { id: 'offer-2' } } });
+      serve(() => [], [respond(CREATE_OFFER_MUTATION, { createOffer: { id: 'offer-2' } })]);
       const invalidate = vi.spyOn(client, 'invalidateQueries');
       renderPage();
       await screen.findByText(/no offers yet/i);
@@ -160,14 +159,17 @@ describe('OffersPage', () => {
     });
 
     it('creates once on a double click', async () => {
-      let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((document: unknown) =>
-        gqlText(document).includes('CreateOffer')
-          ? new Promise((resolve) => {
+      let release: (value: ResultOf<typeof CREATE_OFFER_MUTATION>) => void = () => {};
+      mockGql(mockGqlRequest, [
+        respondWith(
+          CREATE_OFFER_MUTATION,
+          () =>
+            new Promise((resolve) => {
               release = resolve;
-            })
-          : Promise.resolve({ offers: [] }),
-      );
+            }),
+        ),
+        respond(OFFERS_QUERY, { offers: [] }),
+      ]);
       renderPage();
       await screen.findByText(/no offers yet/i);
       fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
@@ -184,13 +186,16 @@ describe('OffersPage', () => {
     });
 
     it('shows the API message under the form and keeps it open when the save fails', async () => {
-      serve(() => [], {
-        CreateOffer: {
-          response: {
-            errors: [{ message: 'Offer limit reached', extensions: { code: 'VALIDATION' } }],
-          },
-        },
-      });
+      serve(
+        () => [],
+        [
+          respondError(CREATE_OFFER_MUTATION, {
+            response: {
+              errors: [{ message: 'Offer limit reached', extensions: { code: 'VALIDATION' } }],
+            },
+          }),
+        ],
+      );
       renderPage();
       await screen.findByText(/no offers yet/i);
       fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
@@ -203,7 +208,7 @@ describe('OffersPage', () => {
     });
 
     it('shows the upgrade prompt, not an alert, when the plan has no offers', async () => {
-      serve(() => [], { CreateOffer: planRequired });
+      serve(() => [], [respondError(CREATE_OFFER_MUTATION, planRequired)]);
       renderPage();
       await screen.findByText(/no offers yet/i);
       fireEvent.click(screen.getByRole('button', { name: /add offer/i }));
@@ -231,9 +236,10 @@ describe('OffersPage', () => {
 
     it('saves the change with the offer id and shows the refetched list', async () => {
       let salary = 150000;
-      serve(() => [offer({ baseSalary: salary })], {
-        UpdateOffer: { updateOffer: { id: 'offer-1' } },
-      });
+      serve(
+        () => [offer({ baseSalary: salary })],
+        [respond(UPDATE_OFFER_MUTATION, { updateOffer: { id: 'offer-1' } })],
+      );
       renderPage();
       await screen.findByText('$150,000/yr');
       fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
@@ -250,7 +256,7 @@ describe('OffersPage', () => {
     });
 
     it('shows a failed update under the form instead of only logging it', async () => {
-      serve(() => [offer()], { UpdateOffer: planRequired });
+      serve(() => [offer()], [respondError(UPDATE_OFFER_MUTATION, planRequired)]);
       renderPage();
       await screen.findByText('$150,000/yr');
       fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
@@ -262,14 +268,17 @@ describe('OffersPage', () => {
     });
 
     it('updates once on a double click', async () => {
-      let release: (value: unknown) => void = () => {};
-      mockGqlRequest.mockImplementation((document: unknown) =>
-        gqlText(document).includes('UpdateOffer')
-          ? new Promise((resolve) => {
+      let release: (value: ResultOf<typeof UPDATE_OFFER_MUTATION>) => void = () => {};
+      mockGql(mockGqlRequest, [
+        respondWith(
+          UPDATE_OFFER_MUTATION,
+          () =>
+            new Promise((resolve) => {
               release = resolve;
-            })
-          : Promise.resolve({ offers: [offer()] }),
-      );
+            }),
+        ),
+        respond(OFFERS_QUERY, { offers: [offer()] }),
+      ]);
       renderPage();
       await screen.findByText('$150,000/yr');
       fireEvent.click(within(cardFor('$150,000/yr')).getAllByRole('button')[0]);
@@ -288,7 +297,7 @@ describe('OffersPage', () => {
   describe('delete', () => {
     it('deletes an offer after confirming and shows the refetched list', async () => {
       let offers = [offer()];
-      serve(() => offers, { DeleteOffer: { deleteOffer: true } });
+      serve(() => offers, [respond(DELETE_OFFER_MUTATION, { deleteOffer: true })]);
       vi.stubGlobal(
         'confirm',
         vi.fn(() => true),
@@ -333,7 +342,7 @@ describe('OffersPage', () => {
     });
 
     it('shows a failed delete and keeps the offer', async () => {
-      serve(() => [offer()], { DeleteOffer: planRequired });
+      serve(() => [offer()], [respondError(DELETE_OFFER_MUTATION, planRequired)]);
       vi.stubGlobal(
         'confirm',
         vi.fn(() => true),

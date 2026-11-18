@@ -21,7 +21,12 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ProfilePage } from '#/features/profile/pages/ProfilePage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { DELETE_WORK_EXPERIENCE } from '#/features/profile/graphql/workExperienceQueries';
+import { EDUCATIONS_QUERY } from '#/features/profile/graphql/educationQueries';
+import { SKILLS_QUERY } from '#/features/profile/graphql/skillQueries';
+import { WORK_EXPERIENCES_QUERY } from '#/features/profile/graphql/workExperienceQueries';
 
 const skill = (id: string, name: string) => ({
   id,
@@ -41,13 +46,11 @@ describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearch.mockReturnValue({});
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('WorkExperiences'))
-        return Promise.resolve({ workExperiences: [] });
-      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
-      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(WORK_EXPERIENCES_QUERY, { workExperiences: [] }),
+      respond(EDUCATIONS_QUERY, { educations: [] }),
+      respond(SKILLS_QUERY, { skills: [] }),
+    ]);
   });
 
   it('shows loading placeholders instead of empty states while the requests are in flight', () => {
@@ -70,28 +73,25 @@ describe('ProfilePage', () => {
   });
 
   it('renders an existing work experience entry', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('WorkExperiences')) {
-        return Promise.resolve({
-          workExperiences: [
-            {
-              id: 'we-1',
-              company: 'Acme Corp',
-              title: 'Software Engineer',
-              location: 'Remote',
-              startDate: '2020-01-01T00:00:00.000Z',
-              endDate: null,
-              description: 'Built things.',
-              createdAt: '2020-01-01T00:00:00.000Z',
-              updatedAt: '2020-01-01T00:00:00.000Z',
-            },
-          ],
-        });
-      }
-      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
-      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(WORK_EXPERIENCES_QUERY, {
+        workExperiences: [
+          {
+            id: 'we-1',
+            company: 'Acme Corp',
+            title: 'Software Engineer',
+            location: 'Remote',
+            startDate: '2020-01-01T00:00:00.000Z',
+            endDate: null,
+            description: 'Built things.',
+            createdAt: '2020-01-01T00:00:00.000Z',
+            updatedAt: '2020-01-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      respond(EDUCATIONS_QUERY, { educations: [] }),
+      respond(SKILLS_QUERY, { skills: [] }),
+    ]);
 
     render(<ProfilePage />, { wrapper: Wrapper });
 
@@ -135,30 +135,26 @@ describe('ProfilePage', () => {
   });
 
   it('removes a work experience entry at once and holds the delete for the undo window (JEF-625)', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('WorkExperiences')) {
-        return Promise.resolve({
-          workExperiences: [
-            {
-              id: 'we-1',
-              company: 'Acme Corp',
-              title: 'Software Engineer',
-              location: null,
-              startDate: '2020-01-01T00:00:00.000Z',
-              endDate: null,
-              description: null,
-              createdAt: '2020-01-01T00:00:00.000Z',
-              updatedAt: '2020-01-01T00:00:00.000Z',
-            },
-          ],
-        });
-      }
-      if (gqlText(query).includes('Educations')) return Promise.resolve({ educations: [] });
-      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
-      if (gqlText(query).includes('DeleteWorkExperience'))
-        return Promise.resolve({ deleteWorkExperience: true });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(WORK_EXPERIENCES_QUERY, {
+        workExperiences: [
+          {
+            id: 'we-1',
+            company: 'Acme Corp',
+            title: 'Software Engineer',
+            location: null,
+            startDate: '2020-01-01T00:00:00.000Z',
+            endDate: null,
+            description: null,
+            createdAt: '2020-01-01T00:00:00.000Z',
+            updatedAt: '2020-01-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      respond(EDUCATIONS_QUERY, { educations: [] }),
+      respond(SKILLS_QUERY, { skills: [] }),
+      respond(DELETE_WORK_EXPERIENCE, { deleteWorkExperience: true }),
+    ]);
 
     render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
@@ -202,29 +198,25 @@ describe('ProfilePage', () => {
   });
 
   it('pre-fills the education form when editing an existing entry', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('WorkExperiences'))
-        return Promise.resolve({ workExperiences: [] });
-      if (gqlText(query).includes('Educations')) {
-        return Promise.resolve({
-          educations: [
-            {
-              id: 'edu-1',
-              institution: 'MIT',
-              degree: 'B.S.',
-              field: 'Computer Science',
-              startDate: '2015-09-01T00:00:00.000Z',
-              endDate: '2019-06-01T00:00:00.000Z',
-              description: null,
-              createdAt: '2015-09-01T00:00:00.000Z',
-              updatedAt: '2015-09-01T00:00:00.000Z',
-            },
-          ],
-        });
-      }
-      if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(WORK_EXPERIENCES_QUERY, { workExperiences: [] }),
+      respond(EDUCATIONS_QUERY, {
+        educations: [
+          {
+            id: 'edu-1',
+            institution: 'MIT',
+            degree: 'B.S.',
+            field: 'Computer Science',
+            startDate: '2015-09-01T00:00:00.000Z',
+            endDate: '2019-06-01T00:00:00.000Z',
+            description: null,
+            createdAt: '2015-09-01T00:00:00.000Z',
+            updatedAt: '2015-09-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      respond(SKILLS_QUERY, { skills: [] }),
+    ]);
 
     render(<ProfilePage />, { wrapper: Wrapper });
     await waitFor(() => {
@@ -275,45 +267,39 @@ describe('ProfilePage', () => {
   });
 
   it('asks for more skills once the other checks pass', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('WorkExperiences')) {
-        return Promise.resolve({
-          workExperiences: [
-            {
-              id: 'we-1',
-              company: 'Acme Corp',
-              title: 'Software Engineer',
-              location: null,
-              startDate: '2020-01-01T00:00:00.000Z',
-              endDate: null,
-              description: 'Built things.',
-              createdAt: '2020-01-01T00:00:00.000Z',
-              updatedAt: '2020-01-01T00:00:00.000Z',
-            },
-          ],
-        });
-      }
-      if (gqlText(query).includes('Educations')) {
-        return Promise.resolve({
-          educations: [
-            {
-              id: 'edu-1',
-              institution: 'MIT',
-              degree: null,
-              field: null,
-              startDate: '2015-09-01T00:00:00.000Z',
-              endDate: null,
-              description: null,
-              createdAt: '2015-09-01T00:00:00.000Z',
-              updatedAt: '2015-09-01T00:00:00.000Z',
-            },
-          ],
-        });
-      }
-      if (gqlText(query).includes('Skills'))
-        return Promise.resolve({ skills: [skill('s-1', 'Go')] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(WORK_EXPERIENCES_QUERY, {
+        workExperiences: [
+          {
+            id: 'we-1',
+            company: 'Acme Corp',
+            title: 'Software Engineer',
+            location: null,
+            startDate: '2020-01-01T00:00:00.000Z',
+            endDate: null,
+            description: 'Built things.',
+            createdAt: '2020-01-01T00:00:00.000Z',
+            updatedAt: '2020-01-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      respond(EDUCATIONS_QUERY, {
+        educations: [
+          {
+            id: 'edu-1',
+            institution: 'MIT',
+            degree: null,
+            field: null,
+            startDate: '2015-09-01T00:00:00.000Z',
+            endDate: null,
+            description: null,
+            createdAt: '2015-09-01T00:00:00.000Z',
+            updatedAt: '2015-09-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      respond(SKILLS_QUERY, { skills: [skill('s-1', 'Go')] }),
+    ]);
 
     render(<ProfilePage />, { wrapper: Wrapper });
 

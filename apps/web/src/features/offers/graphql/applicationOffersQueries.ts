@@ -6,7 +6,7 @@ import type { ResultOf } from '@graphql-typed-document-node/core';
 import { myOffersQueryOptions } from './offersQueries';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
 
-const OFFERS_QUERY = graphql(`
+export const OFFERS_QUERY = graphql(`
   query Offers($applicationId: ID!) {
     offers(applicationId: $applicationId) {
       id

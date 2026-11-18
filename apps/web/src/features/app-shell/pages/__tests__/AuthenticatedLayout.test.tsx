@@ -64,7 +64,10 @@ vi.mock('#/lib/queryClient', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { AuthenticatedLayout } from '#/features/app-shell/pages/AuthenticatedLayout';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { RECENT_CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
+import { AVATAR_QUERY } from '#/features/app-shell/graphql/appShellQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -207,10 +210,10 @@ describe('AuthenticatedLayout', () => {
     it('renders recent conversations under Assistant while in the section', async () => {
       mockPathname.mockReturnValue('/assistant');
       mockSearch.mockReturnValue({ conversation: 'conv-1' });
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (gqlText(query).includes('RecentConversations')) return Promise.resolve(recent);
-        return Promise.resolve({ me: { avatarUrl: null } });
-      });
+      mockGql(mockGqlRequest, [
+        respond(RECENT_CONVERSATIONS_QUERY, recent),
+        respond(AVATAR_QUERY, { me: { avatarUrl: null } }),
+      ]);
       render(<AuthenticatedLayout />, { wrapper: Wrapper });
 
       await waitFor(() =>
@@ -228,10 +231,10 @@ describe('AuthenticatedLayout', () => {
     });
 
     it('does not render conversation subitems outside the assistant section', () => {
-      mockGqlRequest.mockImplementation((query: string) => {
-        if (gqlText(query).includes('RecentConversations')) return Promise.resolve(recent);
-        return Promise.resolve({ me: { avatarUrl: null } });
-      });
+      mockGql(mockGqlRequest, [
+        respond(RECENT_CONVERSATIONS_QUERY, recent),
+        respond(AVATAR_QUERY, { me: { avatarUrl: null } }),
+      ]);
       render(<AuthenticatedLayout />, { wrapper: Wrapper });
 
       expect(screen.queryByText('Stripe prep')).not.toBeInTheDocument();

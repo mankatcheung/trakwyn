@@ -53,8 +53,13 @@ vi.mock('#/graphql/client', () => ({
 
 import { ApplicationDetailPage } from '#/features/application-detail/pages/ApplicationDetailPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { NOTES_QUERY } from '#/features/notes/graphql/noteQueries';
+import { CONTACTS_QUERY } from '#/features/application-detail/graphql/applicationDetailQueries';
+import { APPLICATION_QUERY } from '#/features/application-detail/graphql/applicationQuery';
 
-const mockApp = {
+const mockApp: NonNullable<ResultOf<typeof APPLICATION_QUERY>['application']> = {
   id: 'app-test-id',
   company: 'Stripe',
   role: 'Software Engineer',
@@ -82,11 +87,11 @@ const countCalls = (name: string) =>
   mockGqlRequest.mock.calls.filter(([doc]) => gqlText(doc).includes(name)).length;
 
 const loadApp = () =>
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('query Notes')) return Promise.resolve({ notes: [] });
-    if (gqlText(query).includes('query Contacts')) return Promise.resolve({ contacts: [] });
-    return Promise.resolve({ application: mockApp });
-  });
+  mockGql(mockGqlRequest, [
+    respond(NOTES_QUERY, { notes: [] }),
+    respond(CONTACTS_QUERY, { contacts: [] }),
+    respond(APPLICATION_QUERY, { application: mockApp }),
+  ]);
 
 const nav = () => within(screen.getByLabelText('Section navigation'));
 

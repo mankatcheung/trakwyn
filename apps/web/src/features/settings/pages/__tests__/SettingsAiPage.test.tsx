@@ -21,7 +21,16 @@ vi.mock('#/graphql/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsAiPage } from '#/features/settings/pages/SettingsAiPage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { BILLING_STATUS_QUERY } from '#/features/plans/lib/billingStatus';
+import { SET_AI_PROVIDER_ORDER } from '#/features/settings/graphql/aiQueries';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
+import { LLM_USAGE_SUMMARY_QUERY } from '#/features/settings/graphql/aiQueries';
+import { SAVE_LLM_API_KEY } from '#/features/settings/graphql/aiQueries';
+import { TEST_LLM_API_KEY } from '#/features/settings/graphql/aiQueries';
+import { UPDATE_PROFILE } from '#/features/settings/graphql/accountQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -75,7 +84,7 @@ describe('SettingsAiPage', () => {
     stubWideViewport();
     mockGqlRequest.mockResolvedValue({
       llmApiKeys: [],
-      me: { defaultLlmProvider: null, customAiPrompt: null },
+      me: { customAiPrompt: null },
     });
   });
 
@@ -92,10 +101,7 @@ describe('SettingsAiPage', () => {
   });
 
   it('shows a loading state before the add-key form, instead of flashing it open', async () => {
-    let resolveKeys!: (value: {
-      llmApiKeys: never[];
-      me: { defaultLlmProvider: null; customAiPrompt: null };
-    }) => void;
+    let resolveKeys!: (value: { llmApiKeys: never[]; me: { customAiPrompt: null } }) => void;
     mockGqlRequest.mockReturnValue(
       new Promise((resolve) => {
         resolveKeys = resolve;
@@ -109,7 +115,7 @@ describe('SettingsAiPage', () => {
 
     resolveKeys({
       llmApiKeys: [],
-      me: { defaultLlmProvider: null, customAiPrompt: null },
+      me: { customAiPrompt: null },
     });
 
     expect(await screen.findByPlaceholderText('sk-…')).toBeInTheDocument();
@@ -128,7 +134,7 @@ describe('SettingsAiPage', () => {
     it('reflects the saved preference when already enabled', async () => {
       mockGqlRequest.mockResolvedValue({
         llmApiKeys: [],
-        me: { defaultLlmProvider: null, customAiPrompt: null, useCrossApplicationContext: true },
+        me: { customAiPrompt: null, useCrossApplicationContext: true },
       });
       render(<SettingsAiPage />, { wrapper: Wrapper });
 
@@ -156,15 +162,13 @@ describe('SettingsAiPage', () => {
     });
 
     it('shows an error and leaves the toggle usable when the save fails', async () => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('UpdateProfile')) {
-          return Promise.reject(new Error('network error'));
-        }
-        return Promise.resolve({
+      mockGql(mockGqlRequest, [
+        respondError(UPDATE_PROFILE, new Error('network error')),
+        respond(LLM_API_KEYS_QUERY, {
           llmApiKeys: [],
-          me: { defaultLlmProvider: null, customAiPrompt: null, useCrossApplicationContext: false },
-        });
-      });
+          me: { customAiPrompt: null, useCrossApplicationContext: false },
+        }),
+      ]);
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
       const toggle = await screen.findByRole('checkbox', {
@@ -205,17 +209,15 @@ describe('SettingsAiPage', () => {
 
   describe('testing a saved key (JEF-247)', () => {
     beforeEach(() => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [
-              { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
-            ],
-            me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
-          });
-        }
-        return Promise.resolve({ testLlmApiKey: { ok: true, error: null } });
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [
+            { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
+          ],
+          me: { customAiPrompt: null },
+        }),
+        respond(TEST_LLM_API_KEY, { testLlmApiKey: { ok: true, error: null } }),
+      ]);
     });
 
     it('tests the saved key by provider, without sending an apiKey', async () => {
@@ -243,19 +245,17 @@ describe('SettingsAiPage', () => {
     });
 
     it('shows the failure message after a failed test', async () => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [
-              { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
-            ],
-            me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
-          });
-        }
-        return Promise.resolve({
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [
+            { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
+          ],
+          me: { customAiPrompt: null },
+        }),
+        respond(TEST_LLM_API_KEY, {
           testLlmApiKey: { ok: false, error: 'Invalid API key' },
-        });
-      });
+        }),
+      ]);
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
       const row = await screen.findByTestId('llm-provider-row-openrouter');
@@ -281,15 +281,13 @@ describe('SettingsAiPage', () => {
     });
 
     it('tests the unsaved form values without persisting anything', async () => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [],
-            me: { defaultLlmProvider: null, customAiPrompt: null },
-          });
-        }
-        return Promise.resolve({ testLlmApiKey: { ok: true, error: null } });
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [],
+          me: { customAiPrompt: null },
+        }),
+        respond(TEST_LLM_API_KEY, { testLlmApiKey: { ok: true, error: null } }),
+      ]);
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
       await screen.findByPlaceholderText('sk-…');
@@ -347,7 +345,7 @@ describe('SettingsAiPage', () => {
         llmApiKeys: [
           { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
         ],
-        me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
+        me: { customAiPrompt: null },
       });
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
@@ -367,7 +365,7 @@ describe('SettingsAiPage', () => {
         llmApiKeys: [
           { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
         ],
-        me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
+        me: { customAiPrompt: null },
       });
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
@@ -386,19 +384,16 @@ describe('SettingsAiPage', () => {
 
     it('collapses the form again after a successful save', async () => {
       let saved = false;
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: saved ? [{ provider: 'openrouter', model: null, baseUrl: null }] : [],
-            me: { defaultLlmProvider: saved ? 'openrouter' : null, customAiPrompt: null },
-          });
-        }
-        if (gqlText(document).includes('saveLlmApiKey')) {
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, () => ({
+          llmApiKeys: saved ? [{ provider: 'openrouter', model: null, baseUrl: null }] : [],
+          me: { customAiPrompt: null },
+        })),
+        respondWith(SAVE_LLM_API_KEY, async () => {
           saved = true;
-          return Promise.resolve({ saveLlmApiKey: true });
-        }
-        return Promise.resolve({});
-      });
+          return { saveLlmApiKey: true };
+        }),
+      ]);
       const user = userEvent.setup();
       render(<SettingsAiPage />, { wrapper: Wrapper });
       await waitFor(() => expect(screen.getByPlaceholderText('sk-…')).toBeInTheDocument());
@@ -414,34 +409,29 @@ describe('SettingsAiPage', () => {
 
   describe('usage summary (JEF-250)', () => {
     beforeEach(() => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [
-              { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
-            ],
-            me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
-          });
-        }
-        if (gqlText(document).includes('query LlmUsageSummary')) {
-          return Promise.resolve({
-            llmUsageSummary: [
-              {
-                provider: 'openrouter',
-                requestCount: 3,
-                promptTokens: 100,
-                completionTokens: 40,
-                cacheReadTokens: 0,
-                cacheWriteTokens: 0,
-                lastUsedAt: '2026-01-01T00:00:00.000Z',
-                monthlyTokenLimit: null,
-                limitReached: false,
-              },
-            ],
-          });
-        }
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [
+            { provider: 'openrouter', model: null, baseUrl: null, monthlyTokenLimit: null },
+          ],
+          me: { customAiPrompt: null },
+        }),
+        respond(LLM_USAGE_SUMMARY_QUERY, {
+          llmUsageSummary: [
+            {
+              provider: 'openrouter',
+              requestCount: 3,
+              promptTokens: 100,
+              completionTokens: 40,
+              cacheReadTokens: 0,
+              cacheWriteTokens: 0,
+              lastUsedAt: '2026-01-01T00:00:00.000Z',
+              monthlyTokenLimit: null,
+              limitReached: false,
+            },
+          ],
+        }),
+      ]);
     });
 
     it("shows the provider's request count and token count for the current month", async () => {
@@ -454,18 +444,13 @@ describe('SettingsAiPage', () => {
     });
 
     it('shows nothing for a provider with no recorded usage yet', async () => {
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [{ provider: 'anthropic', model: null, baseUrl: null }],
-            me: { defaultLlmProvider: 'anthropic', customAiPrompt: null },
-          });
-        }
-        if (gqlText(document).includes('query LlmUsageSummary')) {
-          return Promise.resolve({ llmUsageSummary: [] });
-        }
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [{ provider: 'anthropic', model: null, baseUrl: null }],
+          me: { customAiPrompt: null },
+        }),
+        respond(LLM_USAGE_SUMMARY_QUERY, { llmUsageSummary: [] }),
+      ]);
       render(<SettingsAiPage />, { wrapper: Wrapper });
       const row = await screen.findByTestId('llm-provider-row-anthropic');
 
@@ -474,7 +459,7 @@ describe('SettingsAiPage', () => {
   });
 
   describe('monthly token limits (JEF-258)', () => {
-    const respond = (
+    const serveKeyUsage = (
       key: { monthlyTokenLimit: number | null },
       usage: {
         promptTokens: number;
@@ -484,46 +469,41 @@ describe('SettingsAiPage', () => {
         cacheWriteTokens?: number;
       } | null,
     ) =>
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: [
-              {
-                provider: 'openrouter',
-                model: null,
-                baseUrl: null,
-                monthlyTokenLimit: key.monthlyTokenLimit,
-              },
-            ],
-            me: { defaultLlmProvider: 'openrouter', customAiPrompt: null },
-          });
-        }
-        if (gqlText(document).includes('query LlmUsageSummary')) {
-          return Promise.resolve({
-            llmUsageSummary: usage
-              ? [
-                  {
-                    provider: 'openrouter',
-                    requestCount: 3,
-                    promptTokens: usage.promptTokens,
-                    completionTokens: usage.completionTokens,
-                    cacheReadTokens: usage.cacheReadTokens ?? 0,
-                    cacheWriteTokens: usage.cacheWriteTokens ?? 0,
-                    lastUsedAt: '2026-01-01T00:00:00.000Z',
-                    monthlyTokenLimit: key.monthlyTokenLimit,
-                    limitReached: usage.limitReached,
-                  },
-                ]
-              : [],
-          });
-        }
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: [
+            {
+              provider: 'openrouter',
+              model: null,
+              baseUrl: null,
+              monthlyTokenLimit: key.monthlyTokenLimit,
+            },
+          ],
+          me: { customAiPrompt: null },
+        }),
+        respond(LLM_USAGE_SUMMARY_QUERY, {
+          llmUsageSummary: usage
+            ? [
+                {
+                  provider: 'openrouter',
+                  requestCount: 3,
+                  promptTokens: usage.promptTokens,
+                  completionTokens: usage.completionTokens,
+                  cacheReadTokens: usage.cacheReadTokens ?? 0,
+                  cacheWriteTokens: usage.cacheWriteTokens ?? 0,
+                  lastUsedAt: '2026-01-01T00:00:00.000Z',
+                  monthlyTokenLimit: key.monthlyTokenLimit,
+                  limitReached: usage.limitReached,
+                },
+              ]
+            : [],
+        }),
+      ]);
 
     const row = () => screen.findByTestId('llm-provider-row-openrouter');
 
     it('shows no meter for a key with no limit', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: null },
         { promptTokens: 100, completionTokens: 40, limitReached: false },
       );
@@ -535,7 +515,7 @@ describe('SettingsAiPage', () => {
     });
 
     it('meters usage against the limit when one is set', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: 2_000_000 },
         { promptTokens: 1_000_000, completionTokens: 240_000, limitReached: false },
       );
@@ -549,7 +529,7 @@ describe('SettingsAiPage', () => {
     });
 
     it('shows the prompt-cache hit rate when the provider reports one (F12)', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: null },
         {
           promptTokens: 1000,
@@ -566,7 +546,7 @@ describe('SettingsAiPage', () => {
     });
 
     it('says nothing about caching for a provider that never reports a split', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: null },
         { promptTokens: 1000, completionTokens: 40, limitReached: false },
       );
@@ -579,7 +559,7 @@ describe('SettingsAiPage', () => {
 
     /** The request count and last-used date survive the meter arriving. */
     it('keeps the request count and last-used date alongside the meter', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: 2_000_000 },
         { promptTokens: 100, completionTokens: 40, limitReached: false },
       );
@@ -591,7 +571,7 @@ describe('SettingsAiPage', () => {
     });
 
     it('marks a key at its limit as paused, with a way back', async () => {
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: 2_000_000 },
         { promptTokens: 2_000_000, completionTokens: 0, limitReached: true },
       );
@@ -605,7 +585,7 @@ describe('SettingsAiPage', () => {
 
     it('offers to set a limit when there is none, and to edit one when there is', async () => {
       const user = userEvent.setup();
-      respond({ monthlyTokenLimit: null }, null);
+      serveKeyUsage({ monthlyTokenLimit: null }, null);
       const { unmount } = render(<SettingsAiPage />, { wrapper: Wrapper });
 
       let el = await row();
@@ -613,7 +593,7 @@ describe('SettingsAiPage', () => {
       expect(screen.getByRole('menuitem', { name: 'Set limit' })).toBeInTheDocument();
       unmount();
 
-      respond({ monthlyTokenLimit: 500_000 }, null);
+      serveKeyUsage({ monthlyTokenLimit: 500_000 }, null);
       render(<SettingsAiPage />, { wrapper: Wrapper });
       el = await row();
       await user.click(within(el).getByRole('button', { name: 'Key actions' }));
@@ -622,7 +602,7 @@ describe('SettingsAiPage', () => {
 
     it('saves a limit and refreshes both queries', async () => {
       const user = userEvent.setup();
-      respond({ monthlyTokenLimit: null }, null);
+      serveKeyUsage({ monthlyTokenLimit: null }, null);
       render(<SettingsAiPage />, { wrapper: Wrapper });
 
       const el = await row();
@@ -640,7 +620,7 @@ describe('SettingsAiPage', () => {
 
     it('clears the limit when the No limit preset is used', async () => {
       const user = userEvent.setup();
-      respond({ monthlyTokenLimit: 500_000 }, null);
+      serveKeyUsage({ monthlyTokenLimit: 500_000 }, null);
       render(<SettingsAiPage />, { wrapper: Wrapper });
 
       const el = await row();
@@ -658,7 +638,7 @@ describe('SettingsAiPage', () => {
 
     it('refuses a value that is not a whole number of tokens', async () => {
       const user = userEvent.setup();
-      respond({ monthlyTokenLimit: null }, null);
+      serveKeyUsage({ monthlyTokenLimit: null }, null);
       render(<SettingsAiPage />, { wrapper: Wrapper });
 
       const el = await row();
@@ -675,7 +655,7 @@ describe('SettingsAiPage', () => {
 
     it('labels the save action as resuming when the key is already at its limit', async () => {
       const user = userEvent.setup();
-      respond(
+      serveKeyUsage(
         { monthlyTokenLimit: 2_000_000 },
         { promptTokens: 2_000_000, completionTokens: 0, limitReached: true },
       );
@@ -698,22 +678,19 @@ describe('SettingsAiPage', () => {
     const withOrder = (
       order: string[],
       providers: string[] = ['openai', 'anthropic'],
-      onSave?: () => Promise<unknown>,
+      onSave?: () => Promise<ResultOf<typeof SET_AI_PROVIDER_ORDER>>,
     ) =>
-      mockGqlRequest.mockImplementation((document: string) => {
-        if (gqlText(document).includes('query LlmApiKeys')) {
-          return Promise.resolve({
-            llmApiKeys: providers.map(key),
-            me: {
-              aiProviderOrder: order,
-              customAiPrompt: null,
-              useCrossApplicationContext: false,
-            },
-          });
-        }
-        if (gqlText(document).includes('setAiProviderOrder') && onSave) return onSave();
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respond(LLM_API_KEYS_QUERY, {
+          llmApiKeys: providers.map(key),
+          me: {
+            aiProviderOrder: order,
+            customAiPrompt: null,
+            useCrossApplicationContext: false,
+          },
+        }),
+        respondWith(SET_AI_PROVIDER_ORDER, onSave ?? (async () => ({ setAiProviderOrder: true }))),
+      ]);
 
     const rowIds = () =>
       screen.getAllByTestId(/^ai-order-/).map((el) => el.getAttribute('data-testid'));
@@ -836,13 +813,20 @@ describe('SettingsAiPage hosted AI, Pro-only for now (JEF-451)', () => {
   });
   const billing = (limit: number) => ({
     billingStatus: {
-      aiCredits: { used: 6, limit, bonusRemaining: 0, resetsAt: '2026-12-01T00:00:00.000Z' },
+      aiCredits: {
+        used: 6,
+        limit,
+        bonusRemaining: 0,
+        resetsAt: '2026-12-01T00:00:00.000Z',
+        costs: [],
+      },
     },
   });
   const serve = (limit: number, keys: ReturnType<typeof payload>) =>
-    mockGqlRequest.mockImplementation((query: string) =>
-      Promise.resolve(gqlText(query).includes('BillingStatus') ? billing(limit) : keys),
-    );
+    mockGql(mockGqlRequest, [
+      respond(BILLING_STATUS_QUERY, billing(limit)),
+      respond(LLM_API_KEYS_QUERY, keys),
+    ]);
 
   beforeEach(() => {
     vi.clearAllMocks();

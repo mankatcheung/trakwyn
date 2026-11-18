@@ -27,7 +27,12 @@ import {
   NotificationInboxButton,
   NotificationInboxLink,
 } from '#/features/notifications/components/NotificationInbox';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import {
+  NOTIFICATIONS_PAGE_QUERY,
+  UNREAD_COUNT_QUERY,
+} from '#/features/notifications/graphql/notificationQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -62,17 +67,12 @@ function mockResponses({
   unreadCount?: number;
   items?: (typeof notification1)[];
 } = {}) {
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('UnreadNotificationCount')) {
-      return Promise.resolve({ unreadNotificationCount: unreadCount });
-    }
-    if (gqlText(query).includes('NotificationsPage')) {
-      return Promise.resolve({
-        notificationsPage: { hasNextPage: false, nextCursor: null, items },
-      });
-    }
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    respond(UNREAD_COUNT_QUERY, { unreadNotificationCount: unreadCount }),
+    respond(NOTIFICATIONS_PAGE_QUERY, {
+      notificationsPage: { hasNextPage: false, nextCursor: null, items },
+    }),
+  ]);
 }
 
 describe('NotificationInboxLink (mobile)', () => {

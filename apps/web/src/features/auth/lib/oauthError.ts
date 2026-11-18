@@ -24,5 +24,7 @@ const SLUG_KEYS: Record<string, string> = {
 };
 
 export function oauthErrorKey(slug: string): string {
-  return SLUG_KEYS[slug] ?? 'oauthError.failed';
+  // Own keys only: the slug comes from the URL, and `constructor` or `__proto__`
+  // would otherwise find a member of Object.prototype instead of falling back.
+  return Object.hasOwn(SLUG_KEYS, slug) ? SLUG_KEYS[slug] : 'oauthError.failed';
 }

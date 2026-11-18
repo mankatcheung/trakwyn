@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { graphql } from '#/graphql/generated';
 
-const APPLICATION_QUERY = graphql(`
+export const APPLICATION_QUERY = graphql(`
   query Application($id: ID!) {
     application(id: $id) {
       id

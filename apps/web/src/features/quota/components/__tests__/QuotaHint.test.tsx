@@ -11,7 +11,9 @@ vi.mock('#/graphql/client', () => ({
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { NotesTab } from '#/features/notes/components/NotesTab';
 import { quotaLevel } from '#/features/quota/lib/contentQuota';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { CONTENT_QUOTA_QUERY } from '#/features/quota/lib/contentQuota';
+import { CREATE_NOTE, NOTES_QUERY } from '#/features/notes/graphql/noteQueries';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -96,11 +98,10 @@ describe('NotesTab at the cap', () => {
   });
 
   it('disables Add note and names the limit', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('ContentQuota'))
-        return Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } });
-      return Promise.resolve({ notes: Array.from({ length: 10 }, (_, i) => note(i)) });
-    });
+    mockGql(mockGqlRequest, [
+      respond(CONTENT_QUOTA_QUERY, { contentQuota: { limits: LIMITS, usage: USAGE } }),
+      respond(NOTES_QUERY, { notes: Array.from({ length: 10 }, (_, i) => note(i)) }),
+    ]);
     render(<NotesTab applicationId="a1" enabled />, { wrapper: Wrapper });
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Limit reached: 10 notes');
@@ -109,22 +110,20 @@ describe('NotesTab at the cap', () => {
   });
 
   it("shows the API's message when a create loses the race", async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('ContentQuota'))
-        return Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } });
-      if (gqlText(query).includes('CreateNote'))
-        return Promise.reject({
-          response: {
-            errors: [
-              {
-                message: 'Notes limit reached: 10 per application',
-                extensions: { code: 'QUOTA_EXCEEDED' },
-              },
-            ],
-          },
-        });
-      return Promise.resolve({ notes: [note(1)] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(CONTENT_QUOTA_QUERY, { contentQuota: { limits: LIMITS, usage: USAGE } }),
+      respondError(CREATE_NOTE, {
+        response: {
+          errors: [
+            {
+              message: 'Notes limit reached: 10 per application',
+              extensions: { code: 'QUOTA_EXCEEDED' },
+            },
+          ],
+        },
+      }),
+      respond(NOTES_QUERY, { notes: [note(1)] }),
+    ]);
     render(<NotesTab applicationId="a1" enabled />, { wrapper: Wrapper });
 
     await screen.findByText('note 1');

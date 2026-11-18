@@ -4,7 +4,7 @@ import { graphql } from '#/graphql/generated';
 import type { Resolved } from '#/graphql/resolved';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 
-const APPLICATIONS_QUERY = graphql(`
+export const APPLICATIONS_QUERY = graphql(`
   query DashboardApplications {
     applications {
       id
@@ -18,7 +18,7 @@ const APPLICATIONS_QUERY = graphql(`
   }
 `);
 
-const CALENDAR_EVENTS_QUERY = graphql(`
+export const CALENDAR_EVENTS_QUERY = graphql(`
   query DashboardCalendarEvents {
     calendarEvents {
       id
@@ -32,7 +32,7 @@ const CALENDAR_EVENTS_QUERY = graphql(`
   }
 `);
 
-const WEEKLY_APPLICATION_GOAL_QUERY = graphql(`
+export const WEEKLY_APPLICATION_GOAL_QUERY = graphql(`
   query WeeklyApplicationGoal {
     weeklyApplicationGoal {
       weeklyApplicationGoal
@@ -43,7 +43,7 @@ const WEEKLY_APPLICATION_GOAL_QUERY = graphql(`
   }
 `);
 
-const ONBOARDING_CHECKLIST_QUERY = graphql(`
+export const ONBOARDING_CHECKLIST_QUERY = graphql(`
   query OnboardingChecklist {
     me {
       onboardingChecklistDismissedAt

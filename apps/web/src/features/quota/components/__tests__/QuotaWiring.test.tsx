@@ -10,7 +10,9 @@ vi.mock('#/graphql/client', () => ({
 
 import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
 import { ProfileSection } from '#/features/profile/components/sections/ProfileSection';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { CONTENT_QUOTA_QUERY } from '#/features/quota/lib/contentQuota';
+import { CONTACTS_QUERY } from '#/features/application-detail/graphql/applicationDetailQueries';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -61,11 +63,10 @@ beforeEach(() => {
 
 describe('ContactsTab at the cap (JEF-494)', () => {
   it('disables Add contact and names the limit', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      gqlText(query).includes('ContentQuota')
-        ? Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } })
-        : Promise.resolve({ contacts: [contact(1), contact(2), contact(3)] }),
-    );
+    mockGql(mockGqlRequest, [
+      respond(CONTENT_QUOTA_QUERY, { contentQuota: { limits: LIMITS, usage: USAGE } }),
+      respond(CONTACTS_QUERY, { contacts: [contact(1), contact(2), contact(3)] }),
+    ]);
     render(<ContactsTab applicationId="a1" />, { wrapper: Wrapper });
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Limit reached: 3 contacts');
@@ -73,13 +74,12 @@ describe('ContactsTab at the cap (JEF-494)', () => {
   });
 
   it('shows "N of M" when close to the limit and keeps Add contact enabled', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      gqlText(query).includes('ContentQuota')
-        ? Promise.resolve({
-            contentQuota: { limits: { ...LIMITS, contactsPerApplication: 5 }, usage: USAGE },
-          })
-        : Promise.resolve({ contacts: [contact(1), contact(2), contact(3), contact(4)] }),
-    );
+    mockGql(mockGqlRequest, [
+      respond(CONTENT_QUOTA_QUERY, {
+        contentQuota: { limits: { ...LIMITS, contactsPerApplication: 5 }, usage: USAGE },
+      }),
+      respond(CONTACTS_QUERY, { contacts: [contact(1), contact(2), contact(3), contact(4)] }),
+    ]);
     render(<ContactsTab applicationId="a1" />, { wrapper: Wrapper });
 
     expect(await screen.findByText('4 of 5 contacts')).toBeInTheDocument();

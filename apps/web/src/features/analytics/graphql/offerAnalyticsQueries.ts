@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { graphql } from '#/graphql/generated';
 
-const OFFER_ANALYTICS_QUERY = graphql(`
+export const OFFER_ANALYTICS_QUERY = graphql(`
   query OfferAnalytics {
     offerAnalytics {
       trend {

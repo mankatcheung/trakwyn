@@ -11,7 +11,14 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { useStepUpReauth, STEP_UP_CANCELLED } from '#/features/settings/hooks/useStepUpReauth';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import {
+  REQUEST_STEP_UP_CODE,
+  START_OAUTH_REAUTH,
+  STEP_UP_METHODS_QUERY,
+  VERIFY_STEP_UP_CODE,
+} from '#/features/settings/graphql/securityQueries';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
 
 const stepUpRequiredError = {
   response: {
@@ -122,7 +129,10 @@ describe('useStepUpReauth', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText('123456')).toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: /verify code/i })).toBeInTheDocument();
+    // The code field renders from inside the password submit, while its action is
+    // still pending, so SubmitButton reads "Verifying…" for a tick before the label
+    // becomes "Verify code". Wait for it rather than asserting at once (flaked in CI).
+    expect(await screen.findByRole('button', { name: /verify code/i })).toBeInTheDocument();
   });
 
   it('rejects with STEP_UP_CANCELLED when the dialog is dismissed', async () => {
@@ -151,13 +161,7 @@ describe('useStepUpReauth', () => {
     // clearAllMocks keeps implementations; these tests set one per operation.
     afterEach(() => mockGqlRequest.mockReset());
 
-    /** Answers by operation, so the order the hook asks in does not matter. */
-    function serve(handlers: Record<string, () => Promise<unknown>>) {
-      mockGqlRequest.mockImplementation((query: string) => {
-        const name = Object.keys(handlers).find((key) => gqlText(query).includes(key));
-        return name ? handlers[name]!() : Promise.reject(new Error(`unexpected: ${query}`));
-      });
-    }
+    // mockGql answers by operation, so the order the hook asks in does not matter.
 
     it('sends the browser to Google with a step-up ticket and the page to return to', async () => {
       const assign = vi.fn();
@@ -167,10 +171,10 @@ describe('useStepUpReauth', () => {
         pathname: '/settings/danger-zone',
         search: '',
       });
-      serve({
-        StepUpMethods: () => Promise.resolve({ me: { stepUpMethods: ['google', 'email_code'] } }),
-        StartOAuthReauth: () => Promise.resolve({ startOAuthReauth: 'ticket-1' }),
-      });
+      mockGql(mockGqlRequest, [
+        respond(STEP_UP_METHODS_QUERY, { me: { stepUpMethods: ['google', 'email_code'] } }),
+        respond(START_OAUTH_REAUTH, { startOAuthReauth: 'ticket-1' }),
+      ]);
       const fn = vi.fn().mockRejectedValueOnce(stepUpRequiredError);
       render(<Harness fn={fn} onResolve={vi.fn()} onReject={vi.fn()} />);
 
@@ -186,11 +190,11 @@ describe('useStepUpReauth', () => {
     });
 
     it('mails a code, checks it, then retries the original call', async () => {
-      serve({
-        StepUpMethods: () => Promise.resolve({ me: { stepUpMethods: ['email_code'] } }),
-        RequestStepUpCode: () => Promise.resolve({ requestStepUpCode: true }),
-        VerifyStepUpCode: () => Promise.resolve({ verifyStepUpCode: true }),
-      });
+      mockGql(mockGqlRequest, [
+        respond(STEP_UP_METHODS_QUERY, { me: { stepUpMethods: ['email_code'] } }),
+        respond(REQUEST_STEP_UP_CODE, { requestStepUpCode: true }),
+        respond(VERIFY_STEP_UP_CODE, { verifyStepUpCode: true }),
+      ]);
       const fn = vi
         .fn()
         .mockRejectedValueOnce(stepUpRequiredError)

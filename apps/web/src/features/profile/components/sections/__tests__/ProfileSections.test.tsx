@@ -8,7 +8,14 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { CertificationsSection } from '#/features/profile/components/sections/CertificationsSection';
 import { LanguagesSection } from '#/features/profile/components/sections/LanguagesSection';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import {
+  CERTIFICATIONS_QUERY,
+  CREATE_CERTIFICATION,
+} from '#/features/profile/graphql/certificationQueries';
+import { LANGUAGES_QUERY } from '#/features/profile/graphql/languageQueries';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -28,11 +35,7 @@ const cert = {
 describe('CertificationsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Certifications'))
-        return Promise.resolve({ certifications: [cert] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [respond(CERTIFICATIONS_QUERY, { certifications: [cert] })]);
   });
 
   it('lists certifications with issuer and month', async () => {
@@ -50,12 +53,11 @@ describe('CertificationsSection (JEF-592)', () => {
   });
 
   it('keeps the form open and filled, with the Add button pending, while the save runs (JEF-612)', async () => {
-    let finish!: (value: unknown) => void;
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Certifications'))
-        return Promise.resolve({ certifications: [cert] });
-      return new Promise((resolve) => (finish = resolve));
-    });
+    let finish!: (value: ResultOf<typeof CREATE_CERTIFICATION>) => void;
+    mockGql(mockGqlRequest, [
+      respond(CERTIFICATIONS_QUERY, { certifications: [cert] }),
+      respondWith(CREATE_CERTIFICATION, () => new Promise((resolve) => (finish = resolve))),
+    ]);
     render(<CertificationsSection />, { wrapper: Wrapper });
     await screen.findByText('AWS Certified Solutions Architect');
 
@@ -68,7 +70,7 @@ describe('CertificationsSection (JEF-592)', () => {
     await screen.findByRole('button', { name: 'Saving…' });
     expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
     expect(name.value).toBe('CKA');
-    finish({});
+    finish({ createCertification: { id: 'c2', name: 'CKA' } });
 
     await waitFor(() => expect(document.querySelector('input[name="name"]')).toBeNull());
     expect(
@@ -77,17 +79,16 @@ describe('CertificationsSection (JEF-592)', () => {
   });
 
   it('shows the API error and keeps what was typed when the save fails (JEF-612)', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Certifications'))
-        return Promise.resolve({ certifications: [cert] });
-      return Promise.reject({
+    mockGql(mockGqlRequest, [
+      respond(CERTIFICATIONS_QUERY, { certifications: [cert] }),
+      respondError(CREATE_CERTIFICATION, {
         response: {
           errors: [
             { message: 'Certification limit reached', extensions: { code: 'QUOTA_EXCEEDED' } },
           ],
         },
-      });
-    });
+      }),
+    ]);
     render(<CertificationsSection />, { wrapper: Wrapper });
     await screen.findByText('AWS Certified Solutions Architect');
 
@@ -149,14 +150,11 @@ describe('CertificationsSection (JEF-592)', () => {
 describe('LanguagesSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Languages')) {
-        return Promise.resolve({
-          languages: [{ id: 'l1', name: 'French', proficiency: 'Fluent', createdAt: '2024-01-01' }],
-        });
-      }
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(LANGUAGES_QUERY, {
+        languages: [{ id: 'l1', name: 'French', proficiency: 'Fluent', createdAt: '2024-01-01' }],
+      }),
+    ]);
   });
 
   it('lists languages with their level', async () => {

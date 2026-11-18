@@ -35,7 +35,9 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsDataPage } from '#/features/settings/pages/SettingsDataPage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respondError } from '#/__tests__/helpers/gqlMock';
+import { IMPORT_USER_DATA } from '#/features/settings/graphql/accountQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -109,14 +111,11 @@ describe('SettingsDataPage', () => {
     });
 
     it('shows error message when import fails', async () => {
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('ImportUserData')) {
-          return Promise.reject({
-            response: { errors: [{ message: 'Import file is not valid JSON' }] },
-          });
-        }
-        return Promise.resolve({});
-      });
+      mockGql(mockGqlRequest, [
+        respondError(IMPORT_USER_DATA, {
+          response: { errors: [{ message: 'Import file is not valid JSON' }] },
+        }),
+      ]);
       render(<SettingsDataPage />, { wrapper: Wrapper });
 
       selectFile('not json');
