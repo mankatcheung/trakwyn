@@ -62,7 +62,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 import { mockGql, respond, overrideGql } from '#/__tests__/helpers/gqlMock';
 import { CHAT_HISTORY_QUERY } from '#/features/chat/graphql/chatQueries';
 import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
