@@ -16,6 +16,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { SharedSummaryPage } from '#/features/share/pages/SharedSummaryPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -59,7 +60,7 @@ describe('SharedSummaryPage', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('SharedSummary'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('SharedSummary'), {
         token: 'valid-token',
       });
     });

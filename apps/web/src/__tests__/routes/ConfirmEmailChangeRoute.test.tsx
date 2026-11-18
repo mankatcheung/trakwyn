@@ -10,8 +10,8 @@ const { mockGqlRequest, searchState } = vi.hoisted(() => ({
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (opts: object) => ({
     ...opts,
-    useSearch: () => searchState,
   }),
+  useSearch: () => searchState,
 }));
 
 vi.mock('#/graphql/client', () => ({
@@ -19,6 +19,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { Route } from '#/routes/confirm-email-change';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const ConfirmEmailChangePage = (Route as unknown as { component: ComponentType }).component;
 
@@ -46,7 +47,7 @@ describe('ConfirmEmailChangePage', () => {
     await waitFor(() => {
       expect(screen.getByText(/your email address has been updated/i)).toBeInTheDocument();
     });
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ConfirmEmailChange'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ConfirmEmailChange'), {
       token: 'valid-token',
     });
   });

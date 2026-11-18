@@ -16,18 +16,13 @@ import { useLocale } from '#/lib/i18n';
 import { ANALYTICS_EVENTS, captureEvent, markOAuthRegistration } from '#/lib/analytics';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
+import { REGISTER_MUTATION } from '#/features/auth/graphql/authQueries';
 
 const schema = z.object({
   email: z.email('Invalid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 type FormValues = z.infer<typeof schema>;
-
-const REGISTER_MUTATION = `
-  mutation Register($email: String!, $password: String!, $captchaToken: String) {
-    register(email: $email, password: $password, captchaToken: $captchaToken)
-  }
-`;
 
 export function RegisterPage() {
   const { t } = useLocale();

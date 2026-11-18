@@ -50,6 +50,7 @@ vi.mock('#/features/auth/components/CaptchaWidget', () => ({
 import { LoginPage } from '#/features/auth/pages/LoginPage';
 import { RegisterPage } from '#/features/auth/pages/RegisterPage';
 import { ForgotPasswordPage } from '#/features/auth/pages/ForgotPasswordPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const gqlError = (code: string, message: string) => ({
   response: { errors: [{ message, extensions: { code } }] },
@@ -82,7 +83,7 @@ describe('captcha on the auth forms', () => {
       fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Register'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('Register'), {
           email: 'new@example.com',
           password: 'password123',
           captchaToken: 'token-1',
@@ -136,7 +137,7 @@ describe('captcha on the auth forms', () => {
       fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenLastCalledWith(expect.stringContaining('Login'), {
+        expect(mockGqlRequest).toHaveBeenLastCalledWith(gqlContaining('Login'), {
           email: 'user@example.com',
           password: 'password123',
           captchaToken: 'token-1',
@@ -170,10 +171,10 @@ describe('captcha on the auth forms', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('RequestPasswordReset'),
-          { email: 'user@example.com', captchaToken: 'token-1' },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestPasswordReset'), {
+          email: 'user@example.com',
+          captchaToken: 'token-1',
+        });
       });
     });
 

@@ -35,6 +35,7 @@ vi.mock('#/lib/queryClient', () => ({
 }));
 
 import { LoginPage } from '#/features/auth/pages/LoginPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const noTotpResponse = {
   login: { success: true, totpRequired: false, accessToken: 'access-token' },
@@ -101,7 +102,7 @@ describe('LoginPage', () => {
     await fillCredentials('test@example.com', 'password123');
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Login'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('Login'), {
         email: 'test@example.com',
         password: 'password123',
         captchaToken: null,
@@ -189,7 +190,7 @@ describe('LoginPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /verify/i }));
 
       await waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('LoginWithTotp'), {
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('LoginWithTotp'), {
           email: 'test@example.com',
           password: 'password123',
           code: '654321',

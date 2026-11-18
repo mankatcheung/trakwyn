@@ -14,6 +14,7 @@ import {
   requestOpenCookiePreferences,
   onOpenCookiePreferencesRequested,
 } from '#/features/legal/lib/cookieConsent';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 describe('cookieConsent', () => {
   beforeEach(() => {
@@ -51,10 +52,9 @@ describe('cookieConsent', () => {
       saveConsent(false);
 
       await vi.waitFor(() => {
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('recordCookieConsent'),
-          { analyticsAccepted: false },
-        );
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('recordCookieConsent'), {
+          analyticsAccepted: false,
+        });
       });
     });
 

@@ -10,12 +10,11 @@ import { queryClient } from '#/lib/queryClient';
 import { useCooldown } from '#/hooks/useCooldown';
 import {
   RESEND_COOLDOWN_SECONDS,
-  RESEND_VERIFICATION_EMAIL,
   useEmailVerification,
 } from '#/features/verification/lib/emailVerification';
+import { RESEND_VERIFICATION_EMAIL } from '#/features/verification/graphql/verificationQueries';
 import { ChangeEmailForm } from '../../auth/components/ChangeEmailForm';
-
-const LOGOUT_MUTATION = `mutation { logout }`;
+import { LOGOUT_MUTATION } from '#/features/auth/graphql/authQueries';
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
 

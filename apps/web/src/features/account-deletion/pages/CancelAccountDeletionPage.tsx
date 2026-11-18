@@ -4,7 +4,7 @@ import { Alert, Button } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { extractGqlError } from '#/features/settings/lib/gqlErrors';
-import { CANCEL_ACCOUNT_DELETION } from '#/features/account-deletion/lib/accountDeletion';
+import { CANCEL_ACCOUNT_DELETION } from '#/features/account-deletion/graphql/accountDeletionQueries';
 import { AccountDeletionLayout } from '../components/AccountDeletionLayout';
 
 /**

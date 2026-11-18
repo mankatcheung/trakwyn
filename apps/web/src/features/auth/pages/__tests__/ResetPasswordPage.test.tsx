@@ -18,6 +18,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ResetPasswordPage } from '#/features/auth/pages/ResetPasswordPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
@@ -77,7 +78,7 @@ describe('ResetPasswordPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ResetPassword'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ResetPassword'), {
         token: 'valid-token',
         newPassword: 'newPassword123',
       });

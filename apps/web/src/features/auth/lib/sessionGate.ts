@@ -1,3 +1,4 @@
+import { SESSION_GATE_QUERY } from '#/features/auth/graphql/authQueries';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 import {
@@ -12,8 +13,6 @@ import { ONBOARDING_STATE_KEY, type OnboardingState } from '#/features/onboardin
  * flow (JEF-460). One request answers all three, so the guard costs a single
  * round trip instead of two in a row.
  */
-export const SESSION_GATE_QUERY = `query SessionGate { me { email emailVerified deletionScheduledAt onboardingCompletedAt onboardingGoals } }`;
-
 type SessionGateResponse = {
   me: (EmailVerificationState & OnboardingState) | null;
 };
@@ -68,7 +67,7 @@ async function readSessionGate(): Promise<SessionGate> {
   if (verification && onboarding) return { verification, onboarding };
 
   try {
-    const data = await gqlClient.request<SessionGateResponse>(SESSION_GATE_QUERY);
+    const data = (await gqlClient.request(SESSION_GATE_QUERY)) as SessionGateResponse;
     if (!data.me) return { verification: null, onboarding: null };
     const { email, emailVerified, deletionScheduledAt, onboardingCompletedAt, onboardingGoals } =
       data.me;

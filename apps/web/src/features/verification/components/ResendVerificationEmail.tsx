@@ -4,10 +4,8 @@ import { ERROR_CODES } from '#/constants';
 import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { useLocale } from '#/lib/i18n';
-import {
-  RESEND_COOLDOWN_SECONDS,
-  RESEND_VERIFICATION_EMAIL,
-} from '#/features/verification/lib/emailVerification';
+import { RESEND_COOLDOWN_SECONDS } from '#/features/verification/lib/emailVerification';
+import { RESEND_VERIFICATION_EMAIL } from '#/features/verification/graphql/verificationQueries';
 import { useCooldown } from '#/hooks/useCooldown';
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;

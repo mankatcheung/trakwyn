@@ -16,6 +16,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ForgotPasswordPage } from '#/features/auth/pages/ForgotPasswordPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('ForgotPasswordPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/If an account exists for that email/)).toBeInTheDocument();
     });
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RequestPasswordReset'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestPasswordReset'), {
       email: 'test@example.com',
       captchaToken: null,
     });
@@ -59,11 +60,8 @@ describe('ForgotPasswordPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/sent a recovery link/i)).toBeInTheDocument();
     });
-    expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('RequestBackupEmailRecovery'),
-      {
-        backupEmail: 'backup@example.com',
-      },
-    );
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RequestBackupEmailRecovery'), {
+      backupEmail: 'backup@example.com',
+    });
   });
 });

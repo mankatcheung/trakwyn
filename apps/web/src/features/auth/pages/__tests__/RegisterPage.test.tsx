@@ -40,6 +40,7 @@ vi.mock('#/lib/queryClient', () => ({
 }));
 
 import { RegisterPage } from '#/features/auth/pages/RegisterPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const fillForm = (email: string, password: string) => {
   fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
@@ -172,7 +173,7 @@ describe('RegisterPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('Register'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('Register'), {
         email: 'test@example.com',
         password: 'password123',
         captchaToken: null,
@@ -203,9 +204,7 @@ describe('RegisterPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /resend verification email/i }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenLastCalledWith(
-        expect.stringContaining('ResendVerificationEmail'),
-      );
+      expect(mockGqlRequest).toHaveBeenLastCalledWith(gqlContaining('ResendVerificationEmail'));
     });
     expect(await screen.findByText(/on its way to test@example.com/)).toBeInTheDocument();
   });

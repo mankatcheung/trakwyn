@@ -7,6 +7,7 @@ import { useLocale } from '#/lib/i18n';
 import { useState } from 'react';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
+import { RESET_PASSWORD_MUTATION } from '#/features/auth/graphql/authQueries';
 
 const schema = z
   .object({
@@ -18,12 +19,6 @@ const schema = z
     path: ['confirmPassword'],
   });
 type FormValues = z.infer<typeof schema>;
-
-const RESET_PASSWORD_MUTATION = `
-  mutation ResetPassword($token: String!, $newPassword: String!) {
-    resetPassword(token: $token, newPassword: $newPassword)
-  }
-`;
 
 function extractGqlError(err: unknown): string | null {
   if (typeof err === 'object' && err !== null && 'response' in err) {

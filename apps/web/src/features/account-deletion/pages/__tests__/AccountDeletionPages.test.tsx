@@ -24,6 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
 import { ConfirmAccountDeletionPage } from '#/features/account-deletion/pages/ConfirmAccountDeletionPage';
 import { CancelAccountDeletionPage } from '#/features/account-deletion/pages/CancelAccountDeletionPage';
 import { AccountDeletionScheduledPage } from '#/features/account-deletion/pages/AccountDeletionScheduledPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const DATE = '2026-11-12T12:00:00.000Z';
 const refusal = (message: string) =>
@@ -49,7 +50,7 @@ describe('ConfirmAccountDeletionPage (JEF-463)', () => {
 
     expect(await screen.findByText('Your account will be deleted')).toBeInTheDocument();
     expect(screen.getByText(/permanently deleted on .*2026/)).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ConfirmAccountDeletion'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ConfirmAccountDeletion'), {
       token: 'raw',
     });
     expect(mockClear).toHaveBeenCalled();
@@ -84,7 +85,7 @@ describe('CancelAccountDeletionPage (JEF-463)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancel deletion' }));
 
     expect(await screen.findByText(/Deletion cancelled/)).toBeInTheDocument();
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('CancelAccountDeletion'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CancelAccountDeletion'), {
       token: 'raw-cancel',
     });
   });
@@ -99,10 +100,7 @@ describe('AccountDeletionScheduledPage (JEF-463)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancel deletion' }));
 
     await vi.waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/dashboard' }));
-    expect(mockGqlRequest).toHaveBeenCalledWith(
-      expect.stringContaining('CancelAccountDeletion'),
-      {},
-    );
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CancelAccountDeletion'), {});
     expect(mockInvalidate).toHaveBeenCalled();
   });
 

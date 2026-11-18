@@ -18,6 +18,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { ConfirmBackupEmailPage } from '#/features/auth/pages/ConfirmBackupEmailPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 describe('ConfirmBackupEmailPage', () => {
   beforeEach(() => {
@@ -43,7 +44,7 @@ describe('ConfirmBackupEmailPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/your backup email is verified/i)).toBeInTheDocument();
     });
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ConfirmBackupEmail'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ConfirmBackupEmail'), {
       token: 'valid-token',
     });
   });
