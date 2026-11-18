@@ -1,5 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import {
+  CREATE_QUESTION,
+  DELETE_QUESTION,
+  INTERVIEW_QUESTIONS_QUERY,
+  REORDER_QUESTIONS,
+  UPDATE_QUESTION,
+} from '#/features/interviews/graphql/interviewQuestionQueries';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -43,7 +53,11 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-const makeQuestion = (overrides: Record<string, unknown> = {}) => ({
+type Question = NonNullable<
+  ResultOf<typeof INTERVIEW_QUESTIONS_QUERY>['interviewQuestions']
+>[number];
+
+const makeQuestion = (overrides: Partial<Question> = {}): Question => ({
   id: 'q1',
   interviewRoundId: 'round-1',
   question: 'Describe a hard bug.',
@@ -60,27 +74,16 @@ const THREE_QUESTIONS = [
   makeQuestion({ id: 'q3', question: 'Third question', answer: 'Third answer', position: 2 }),
 ];
 
-function mockApi(questions = THREE_QUESTIONS, extra?: (query: unknown) => unknown) {
-  mockGqlRequest.mockImplementation((query: unknown) => {
-    const handled = extra?.(query);
-    if (handled !== undefined) return handled;
-    if (gqlText(query).includes('query InterviewQuestions')) {
-      return Promise.resolve({ interviewQuestions: questions });
-    }
-    if (gqlText(query).includes('CreateInterviewQuestion')) {
-      return Promise.resolve({ createInterviewQuestion: makeQuestion({ id: 'q-new' }) });
-    }
-    if (gqlText(query).includes('UpdateInterviewQuestion')) {
-      return Promise.resolve({ updateInterviewQuestion: makeQuestion() });
-    }
-    if (gqlText(query).includes('ReorderInterviewQuestions')) {
-      return Promise.resolve({ reorderInterviewQuestions: questions });
-    }
-    if (gqlText(query).includes('DeleteInterviewQuestion')) {
-      return Promise.resolve({ deleteInterviewQuestion: true });
-    }
-    return Promise.resolve({});
-  });
+/** Defaults first; a later entry for the same operation wins, so `extra` replaces them. */
+function mockApi(questions = THREE_QUESTIONS, extra: GqlResponse[] = []) {
+  mockGql(mockGqlRequest, [
+    respond(INTERVIEW_QUESTIONS_QUERY, { interviewQuestions: questions }),
+    respond(CREATE_QUESTION, { createInterviewQuestion: makeQuestion({ id: 'q-new' }) }),
+    respond(UPDATE_QUESTION, { updateInterviewQuestion: makeQuestion() }),
+    respond(REORDER_QUESTIONS, { reorderInterviewQuestions: questions }),
+    respond(DELETE_QUESTION, { deleteInterviewQuestion: true }),
+    ...extra,
+  ]);
 }
 
 const props = { applicationId: 'app-1', roundId: 'round-1', questionCount: 3 };
@@ -142,11 +145,11 @@ describe('InterviewQuestionsPanel', () => {
     });
 
     it('shows the error when the questions cannot be loaded', async () => {
-      mockApi(THREE_QUESTIONS, (query) =>
-        gqlText(query).includes('query InterviewQuestions')
-          ? Promise.reject({ response: { errors: [{ message: 'Forbidden' }] } })
-          : undefined,
-      );
+      mockApi(THREE_QUESTIONS, [
+        respondError(INTERVIEW_QUESTIONS_QUERY, {
+          response: { errors: [{ message: 'Forbidden' }] },
+        }),
+      ]);
       render(<InterviewQuestionsPanel {...props} />, { wrapper: Wrapper });
 
       fireEvent.click(screen.getByRole('button', { name: '3 questions' }));
@@ -202,15 +205,13 @@ describe('InterviewQuestionsPanel', () => {
     });
 
     it('keeps what was typed when the save fails', async () => {
-      mockApi(THREE_QUESTIONS, (query) =>
-        gqlText(query).includes('CreateInterviewQuestion')
-          ? Promise.reject({
-              response: {
-                errors: [{ message: 'Try again later', extensions: { code: 'VALIDATION' } }],
-              },
-            })
-          : undefined,
-      );
+      mockApi(THREE_QUESTIONS, [
+        respondError(CREATE_QUESTION, {
+          response: {
+            errors: [{ message: 'Try again later', extensions: { code: 'VALIDATION' } }],
+          },
+        }),
+      ]);
       await openPanel();
 
       fireEvent.click(screen.getByRole('button', { name: /add question/i }));
@@ -235,20 +236,18 @@ describe('InterviewQuestionsPanel', () => {
     });
 
     it("shows the server's message when the round is full", async () => {
-      mockApi(THREE_QUESTIONS, (query) =>
-        gqlText(query).includes('CreateInterviewQuestion')
-          ? Promise.reject({
-              response: {
-                errors: [
-                  {
-                    message: 'This interview round already has the maximum of 50 questions',
-                    extensions: { code: 'QUOTA_EXCEEDED' },
-                  },
-                ],
+      mockApi(THREE_QUESTIONS, [
+        respondError(CREATE_QUESTION, {
+          response: {
+            errors: [
+              {
+                message: 'This interview round already has the maximum of 50 questions',
+                extensions: { code: 'QUOTA_EXCEEDED' },
               },
-            })
-          : undefined,
-      );
+            ],
+          },
+        }),
+      ]);
       await openPanel();
 
       fireEvent.click(screen.getByRole('button', { name: /add question/i }));
@@ -299,17 +298,13 @@ describe('InterviewQuestionsPanel', () => {
     });
 
     it("does not show one question's failed save on another question's form", async () => {
-      mockApi(THREE_QUESTIONS, (query) =>
-        gqlText(query).includes('UpdateInterviewQuestion')
-          ? Promise.reject({
-              response: {
-                errors: [
-                  { message: 'Could not save that one', extensions: { code: 'VALIDATION' } },
-                ],
-              },
-            })
-          : undefined,
-      );
+      mockApi(THREE_QUESTIONS, [
+        respondError(UPDATE_QUESTION, {
+          response: {
+            errors: [{ message: 'Could not save that one', extensions: { code: 'VALIDATION' } }],
+          },
+        }),
+      ]);
       await openPanel();
 
       fireEvent.click(screen.getAllByRole('button', { name: 'Edit question' })[0]);
@@ -337,18 +332,17 @@ describe('InterviewQuestionsPanel', () => {
     it('removes the question and sends the delete through the undo toast', async () => {
       // Once the delete has gone through, the server no longer lists the question.
       let deleted = false;
-      mockApi(THREE_QUESTIONS, (query) => {
-        if (gqlText(query).includes('DeleteInterviewQuestion')) {
+      mockApi(THREE_QUESTIONS, [
+        respondWith(DELETE_QUESTION, async () => {
           deleted = true;
-          return Promise.resolve({ deleteInterviewQuestion: true });
-        }
-        if (gqlText(query).includes('query InterviewQuestions') && deleted) {
-          return Promise.resolve({
-            interviewQuestions: THREE_QUESTIONS.filter((q) => q.id !== 'q2'),
-          });
-        }
-        return undefined;
-      });
+          return { deleteInterviewQuestion: true };
+        }),
+        respond(INTERVIEW_QUESTIONS_QUERY, () => ({
+          interviewQuestions: deleted
+            ? THREE_QUESTIONS.filter((q) => q.id !== 'q2')
+            : THREE_QUESTIONS,
+        })),
+      ]);
       await openPanel();
 
       fireEvent.click(screen.getAllByRole('button', { name: 'Delete question' })[1]);
