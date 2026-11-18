@@ -13,6 +13,9 @@ uploads/
 .env.local
 .env.*.local
 .env.production
+# Developer-local env for the unit/component test run and for Playwright e2e
+.env.test
+.env.e2e
 .vercel
 apps/api/src/index.js
 apps/api/src/generated/
