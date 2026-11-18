@@ -33,6 +33,11 @@ vi.mock('#/lib/undoToast', () => ({
 
 import { ContactsTab } from '#/features/application-detail/components/tabs/ContactsTab';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { CONTACTS_QUERY } from '#/features/application-detail/graphql/applicationDetailQueries';
+import { CREATE_CONTACT } from '#/features/application-detail/graphql/applicationDetailQueries';
+import { DELETE_CONTACT } from '#/features/application-detail/graphql/applicationDetailQueries';
+import { UPDATE_CONTACT } from '#/features/application-detail/graphql/applicationDetailQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -87,12 +92,10 @@ describe('ContactsTab', () => {
   });
 
   it('creates a new contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('CreateContact')) {
-        return Promise.resolve({ createContact: { ...mockContact, id: 'contact-2' } });
-      }
-      return Promise.resolve({ contacts: [] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(CREATE_CONTACT, { createContact: { ...mockContact, id: 'contact-2' } }),
+      respond(CONTACTS_QUERY, { contacts: [] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -114,12 +117,10 @@ describe('ContactsTab', () => {
   });
 
   it('edits an existing contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('UpdateContact')) {
-        return Promise.resolve({ updateContact: { ...mockContact, name: 'Updated Name' } });
-      }
-      return Promise.resolve({ contacts: [mockContact] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(UPDATE_CONTACT, { updateContact: { ...mockContact, name: 'Updated Name' } }),
+      respond(CONTACTS_QUERY, { contacts: [mockContact] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
@@ -148,10 +149,10 @@ describe('ContactsTab', () => {
   });
 
   it('deletes a contact', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('DeleteContact')) return Promise.resolve({ deleteContact: true });
-      return Promise.resolve({ contacts: [mockContact] });
-    });
+    mockGql(mockGqlRequest, [
+      respond(DELETE_CONTACT, { deleteContact: true }),
+      respond(CONTACTS_QUERY, { contacts: [mockContact] }),
+    ]);
     render(<ContactsTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
