@@ -23,6 +23,15 @@ vi.mock('#/lib/analytics', () => ({
 vi.mock('sonner', () => ({ toast: { success: m.toastSuccess } }));
 
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import {
+  DELETE_DRAFT_MUTATION,
+  DRAFT_QUERY,
+  EXPORT_PDF_MUTATION,
+  RENAME_DRAFT_MUTATION,
+  UPDATE_CONTENT_MUTATION,
+} from '#/features/documents/graphql/draftEditQueries';
 import en from '#/i18n/en.json';
 import { useDraftEditor, type EditorDraft } from '../useDraftEditor';
 
@@ -38,8 +47,8 @@ const draft: EditorDraft = {
 };
 
 let client: QueryClient;
-let updateImpl: () => Promise<unknown>;
-let exportImpl: () => Promise<unknown>;
+let updateImpl: () => Promise<ResultOf<typeof UPDATE_CONTENT_MUTATION>>;
+let exportImpl: () => Promise<ResultOf<typeof EXPORT_PDF_MUTATION>>;
 
 function setup() {
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -72,13 +81,15 @@ describe('useDraftEditor', () => {
       Promise.resolve({
         exportDocumentDraftToPdf: { id: 'p', name: 'cv.pdf', url: 'https://f.test/cv.pdf' },
       });
-    m.request.mockImplementation((doc: unknown) => {
-      const text = gqlText(doc);
-      if (text.includes('query DocumentDraft')) return Promise.resolve({ documentDraft: draft });
-      if (text.includes('UpdateDocumentDraftContent')) return updateImpl();
-      if (text.includes('ExportDocumentDraftToPdf')) return exportImpl();
-      return Promise.resolve({});
-    });
+    mockGql(m.request, [
+      respond(DRAFT_QUERY, { documentDraft: draft }),
+      respondWith(UPDATE_CONTENT_MUTATION, () => updateImpl()),
+      respondWith(EXPORT_PDF_MUTATION, () => exportImpl()),
+      respond(RENAME_DRAFT_MUTATION, (vars) => ({
+        renameDocumentDraft: { id: vars.draftId, title: vars.title },
+      })),
+      respond(DELETE_DRAFT_MUTATION, { deleteDocumentDraft: true }),
+    ]);
   });
 
   describe('loading', () => {

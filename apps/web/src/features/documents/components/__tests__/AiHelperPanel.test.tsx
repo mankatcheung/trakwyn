@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ResultOf } from '@graphql-typed-document-node/core';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -36,6 +37,14 @@ vi.mock('#/features/documents/components/EmptyProfilePrompt', () => ({
 import { AiHelperPanel } from '#/features/documents/components/AiHelperPanel';
 import type { DocumentEditorHandle } from '#/features/documents/components/editor/DocumentDraftEditor';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import type { GqlResponse } from '#/__tests__/helpers/gqlMock';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import { GENERATE_MUTATION } from '#/features/documents/graphql/generateQueries';
+import { POLISH_MUTATION } from '#/features/documents/graphql/polishApi';
+import {
+  DOCUMENTS_QUERY,
+  DOCUMENT_DRAFTS_QUERY,
+} from '#/features/documents/graphql/documentQueries';
 
 const GENERATED_DOC = {
   type: 'doc',
@@ -56,33 +65,29 @@ function makeEditor(text: string) {
   return handle;
 }
 
-function api(overrides: Record<string, () => Promise<unknown>> = {}) {
-  m.request.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    for (const [name, fn] of Object.entries(overrides)) if (query.includes(name)) return fn();
-    if (query.includes('PolishDocumentDraft'))
-      return Promise.resolve({ polishDocumentDraft: { markdown: '# Better\n\n- one\n- two' } });
-    if (query.includes('GenerateIntoDocumentDraft'))
-      return Promise.resolve({
-        generateIntoDocumentDraft: {
-          contentJson: JSON.stringify(GENERATED_DOC),
-          plainText: 'Hello',
+/** Defaults first; a later entry for the same operation wins, so `overrides` replace them. */
+function api(overrides: GqlResponse[] = []) {
+  mockGql(m.request, [
+    respond(POLISH_MUTATION, { polishDocumentDraft: { markdown: '# Better\n\n- one\n- two' } }),
+    respond(GENERATE_MUTATION, {
+      generateIntoDocumentDraft: {
+        contentJson: JSON.stringify(GENERATED_DOC),
+        plainText: 'Hello',
+      },
+    }),
+    respond(DOCUMENTS_QUERY, {
+      documents: [
+        {
+          id: 'f-1',
+          name: 'resume.pdf',
+          documentType: 'resume',
+          applicationId: 'app-1',
         },
-      });
-    if (query.includes('query Documents'))
-      return Promise.resolve({
-        documents: [
-          {
-            id: 'f-1',
-            name: 'resume.pdf',
-            documentType: 'resume',
-            applicationId: 'app-1',
-          },
-        ],
-      });
-    if (query.includes('query DocumentDrafts')) return Promise.resolve({ documentDrafts: [] });
-    return Promise.resolve({});
-  });
+      ],
+    }),
+    respond(DOCUMENT_DRAFTS_QUERY, { documentDrafts: [] }),
+    ...overrides,
+  ]);
 }
 
 function setup({
@@ -192,19 +197,18 @@ describe('AiHelperPanel — empty draft', () => {
   });
 
   it('shows a credits error with its links and leaves the editor alone', async () => {
-    api({
-      GenerateIntoDocumentDraft: () =>
-        Promise.reject({
-          response: {
-            errors: [
-              {
-                message: 'Out of credits until Dec 1.',
-                extensions: { code: 'AI_CREDITS_EXHAUSTED' },
-              },
-            ],
-          },
-        }),
-    });
+    api([
+      respondError(GENERATE_MUTATION, {
+        response: {
+          errors: [
+            {
+              message: 'Out of credits until Dec 1.',
+              extensions: { code: 'AI_CREDITS_EXHAUSTED' },
+            },
+          ],
+        },
+      }),
+    ]);
     const { editor, onSave } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
@@ -215,10 +219,11 @@ describe('AiHelperPanel — empty draft', () => {
   });
 
   it('reports an answer it cannot read instead of blanking the editor', async () => {
-    api({
-      GenerateIntoDocumentDraft: () =>
-        Promise.resolve({ generateIntoDocumentDraft: { contentJson: 'nope', plainText: '' } }),
-    });
+    api([
+      respond(GENERATE_MUTATION, {
+        generateIntoDocumentDraft: { contentJson: 'nope', plainText: '' },
+      }),
+    ]);
     const { editor } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
@@ -315,7 +320,7 @@ describe('AiHelperPanel — draft with text', () => {
   });
 
   it('shows why a polish failed and no preview', async () => {
-    api({ PolishDocumentDraft: () => Promise.reject(new Error('rate limited')) });
+    api([respondError(POLISH_MUTATION, new Error('rate limited'))]);
     setup({ plainText: 'text' });
     fireEvent.click(screen.getByRole('button', { name: 'Polish' }));
 
@@ -332,8 +337,8 @@ describe('AiHelperPanel — edits during and after a request (JEF-506)', () => {
   });
 
   it('makes the editor read-only while a request runs, and editable again after', async () => {
-    let finish: (v: unknown) => void = () => {};
-    api({ PolishDocumentDraft: () => new Promise((resolve) => (finish = resolve)) });
+    let finish: (v: ResultOf<typeof POLISH_MUTATION>) => void = () => {};
+    api([respondWith(POLISH_MUTATION, () => new Promise((resolve) => (finish = resolve)))]);
     const { editor } = setup({ plainText: 'text' });
     fireEvent.click(screen.getByRole('button', { name: 'Polish' }));
 
@@ -345,7 +350,7 @@ describe('AiHelperPanel — edits during and after a request (JEF-506)', () => {
   });
 
   it('restores editing when a generate fails', async () => {
-    api({ GenerateIntoDocumentDraft: () => Promise.reject(new Error('down')) });
+    api([respondError(GENERATE_MUTATION, new Error('down'))]);
     const { editor } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
