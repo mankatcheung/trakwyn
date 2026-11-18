@@ -6,10 +6,9 @@ import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AlertTriangleIcon } from 'lucide-react';
 import { queryClient } from '#/lib/queryClient';
-import { CookieConsent } from '#/features/legal/components/CookieConsent';
 import { THEME_INIT_SCRIPT, ThemeProvider, useTheme } from '#/lib/theme';
 import { LOCALE_INIT_SCRIPT, LocaleProvider, useLocale } from '#/lib/i18n';
-import { NavigationProgressBar } from '#/features/app-shell/components/NavigationProgressBar';
+import { RootOverlays } from '../features/app-shell/pages/RootOverlays';
 import { watchForServiceWorkerUpdate } from '#/lib/swUpdateToast';
 import { RouteErrorReporter } from '#/components/RouteErrorReporter';
 import { replayPendingOperations } from '#/lib/pendingOperations';
@@ -170,8 +169,7 @@ function LocalizedDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          <CookieConsent />
-          <NavigationProgressBar />
+          <RootOverlays />
           <AppToaster />
           <QueryClientProvider client={queryClient}>
             {children}

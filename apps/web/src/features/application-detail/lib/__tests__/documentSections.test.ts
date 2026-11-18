@@ -4,9 +4,9 @@ import {
   LEGACY_SECTION_IDS,
   SECTION_GROUPS,
   SECTION_IDS,
-  sectionSearchSchema,
   type SectionCounts,
 } from '#/features/application-detail/lib/sections';
+import { sectionSearchSchema } from '#/features/application-detail/pages/applicationDetailSearch';
 import { documentSectionCounts } from '#/features/application-detail/lib/sectionCounts';
 
 describe('document sections (JEF-396)', () => {

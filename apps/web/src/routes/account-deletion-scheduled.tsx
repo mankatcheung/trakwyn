@@ -3,7 +3,7 @@ import { hasSessionCookie } from '#/graphql/client';
 import {
   checkEmailVerification,
   useEmailVerification,
-} from '#/features/verification/lib/emailVerification';
+} from '#/features/verification/graphql/emailVerification';
 import { AccountDeletionScheduledPage } from '../features/account-deletion/pages/AccountDeletionScheduledPage';
 
 /**

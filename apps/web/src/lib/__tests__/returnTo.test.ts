@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeReturnTo, sameOriginPath } from '#/features/auth/lib/returnTo';
+import { safeReturnTo, sameOriginPath } from '#/lib/returnTo';
 
 describe('sameOriginPath (JEF-460)', () => {
   it('keeps a rooted path with its query string', () => {

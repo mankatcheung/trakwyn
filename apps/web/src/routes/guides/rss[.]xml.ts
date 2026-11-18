@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { buildRss } from '#/features/guides/lib/guideFeeds';
-import { GUIDES } from '#/features/guides/lib/guides';
+import { buildRss } from '#/lib/guideFeeds';
+import { GUIDES } from '#/lib/guides';
 
 export const Route = createFileRoute('/guides/rss.xml')({
   server: {

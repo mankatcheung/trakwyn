@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { buildSitemap } from '#/features/guides/lib/guideFeeds';
-import { GUIDES } from '#/features/guides/lib/guides';
+import { buildSitemap } from '#/lib/guideFeeds';
+import { GUIDES } from '#/lib/guides';
 
 export const Route = createFileRoute('/sitemap.xml')({
   server: {

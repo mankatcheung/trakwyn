@@ -16,7 +16,7 @@ import { LogoMark } from '#/components/LogoMark';
 import { LegalFooterLinks } from '#/features/legal/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
 import { oauthErrorKey } from '#/features/auth/lib/oauthError';
-import { safeReturnTo } from '#/features/auth/lib/returnTo';
+import { safeReturnTo } from '#/lib/returnTo';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
 import { LOGIN_MUTATION, LOGIN_WITH_TOTP_MUTATION } from '#/features/auth/graphql/authQueries';

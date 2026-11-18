@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   ActivityIcon,
   Building2Icon,
@@ -51,15 +50,10 @@ export const LEGACY_SECTION_IDS: Record<string, SectionId> = {
   'resume-match': 'resumes',
 };
 
-const resolveLegacySection = (value: unknown): unknown =>
+export const resolveLegacySection = (value: unknown): unknown =>
   typeof value === 'string' && Object.hasOwn(LEGACY_SECTION_IDS, value)
     ? LEGACY_SECTION_IDS[value]
     : value;
-
-/** Unknown or absent falls back to Notes rather than erroring the route. */
-export const sectionSearchSchema = z.object({
-  section: z.preprocess(resolveLegacySection, z.enum(SECTION_IDS).optional()),
-});
 
 /** What the API's `sectionCounts` returns. */
 export interface ApiSectionCounts {

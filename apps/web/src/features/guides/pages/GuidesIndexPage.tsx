@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
 import { useLocale } from '#/lib/i18n';
-import { allGuideTags, GUIDES } from '#/features/guides/lib/guides';
+import { allGuideTags, GUIDES } from '#/lib/guides';
 
 const CHIP = 'rounded-full border px-3 py-1 text-sm font-medium transition-colors';
 const CHIP_ON = 'border-blue-600 bg-blue-600 text-white';

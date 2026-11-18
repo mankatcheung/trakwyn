@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findFeatureStrays } from '../../../scripts/lib/featureLayout.ts';
+import { findInlineQueries } from '../../../scripts/lib/inlineQueries.ts';
 import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listImports.ts';
 
 /**
@@ -12,56 +13,21 @@ import { listSpecifiers, resolveImportTarget } from '../../../scripts/lib/listIm
  *
  *   - A feature holds only `pages`, `components`, `hooks`, `lib`, `graphql`,
  *     `__tests__` and a `CLAUDE.md`.
- *   - A route reaches a feature only through its `pages/`.
+ *   - A route reaches a feature only through its `pages/`, or its `graphql/` (a loader
+ *     needs the query options).
  *   - A feature never imports `routes/`. A page reads its params and search
  *     through `getRouteApi('<route id>')`, not by importing the route file.
  *   - The shared root (what stays in `components/`, `hooks/`, `lib/` …) never
  *     imports a feature.
  *   - A feature folder has no `index.ts` barrel.
- *   - A source file is at most 400 lines unless `OVERSIZED_BY_DESIGN` says why (JEF-636),
- *     the same limit and the same list as `apps/api`'s `fileSize.test.ts`.
+ *   - A source file is at most 400 lines, the same limit as `apps/api`'s `fileSize.test.ts`,
+ *     with no exceptions (JEF-636).
+ *   - No GraphQL string is written inline: every document is a typed `graphql()` call
+ *     (JEF-637), except the client's own `REFRESH_MUTATION`.
  */
 
 const WEB_ROOT = join(import.meta.dirname, '..', '..', '..');
 const SRC = join(WEB_ROOT, 'src');
-
-/**
- * Route files that reach into a feature's `components/` or `lib/` instead of its
- * `pages/`. Phase 2 moved those files without touching the routes, so each import
- * is named here. The list can only shrink: a route that gets its own page drops its
- * entries, and a new route import of a feature internal is a failure.
- */
-const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
-  'routes/_authenticated/applications/$applicationId/edit.tsx imports features/application-detail/graphql/applicationQuery.ts',
-  'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/graphql/applicationQuery.ts',
-  'routes/_authenticated/applications/$applicationId/index.tsx imports features/application-detail/lib/sections.ts',
-  'routes/_authenticated/applications/board.tsx imports features/applications/graphql/boardQueries.ts',
-  'routes/_authenticated/applications/index.tsx imports features/applications/graphql/applicationsPageQueries.ts',
-  'routes/_authenticated/applications/trash.tsx imports features/applications/graphql/trashQueries.ts',
-  'routes/__root.tsx imports features/legal/components/CookieConsent.tsx',
-  'routes/__root.tsx imports features/app-shell/components/NavigationProgressBar.tsx',
-  'routes/_authenticated/analytics.tsx imports features/analytics/graphql/analyticsQueries.ts',
-  'routes/_authenticated/calendar.tsx imports features/calendar/graphql/calendarQueries.ts',
-  'routes/_authenticated/assistant/history.tsx imports features/chat/lib/shared.ts',
-  'routes/_authenticated/assistant/index.tsx imports features/chat/lib/shared.ts',
-  'routes/_authenticated/dashboard.tsx imports features/dashboard/components/DashboardPending.tsx',
-  'routes/_authenticated/dashboard.tsx imports features/dashboard/graphql/dashboardQueries.ts',
-  'routes/_authenticated/offers.tsx imports features/offers/graphql/offersQueries.ts',
-  'routes/_authenticated/route.tsx imports features/onboarding/lib/onboarding.ts',
-  'routes/_authenticated/route.tsx imports features/app-shell/components/AuthenticatedLayout.tsx',
-  'routes/_authenticated/route.tsx imports features/dashboard/graphql/dashboardQueries.ts',
-  'routes/_authenticated/welcome.tsx imports features/onboarding/lib/onboarding.ts',
-  'routes/_authenticated/route.tsx imports features/auth/lib/sessionGate.ts',
-  'routes/account-deletion-scheduled.tsx imports features/verification/lib/emailVerification.ts',
-  'routes/guides/$slug.tsx imports features/guides/lib/guideFeeds.ts',
-  'routes/guides/$slug.tsx imports features/guides/lib/guides.ts',
-  'routes/guides/rss[.]xml.ts imports features/guides/lib/guideFeeds.ts',
-  'routes/guides/rss[.]xml.ts imports features/guides/lib/guides.ts',
-  'routes/login.tsx imports features/auth/lib/returnTo.ts',
-  'routes/sitemap[.]xml.ts imports features/guides/lib/guideFeeds.ts',
-  'routes/sitemap[.]xml.ts imports features/guides/lib/guides.ts',
-  'routes/verify-email-required.tsx imports features/verification/lib/emailVerification.ts',
-]);
 
 /**
  * Shared-root files that import a feature. `ErrorState` stays shared and renders the
@@ -73,13 +39,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
 
 /** Lines above which a source file must justify itself below. */
 const MAX_LINES = 400;
-
-/**
- * Over the limit for now, with the reason. Unlike the API's list these are not
- * cohesive tables: each is waiting for its split in JEF-636, one PR per area,
- * and each PR removes its entries. The list can only shrink.
- */
-const OVERSIZED_BY_DESIGN: Record<string, string> = {};
 
 function walk(dir: string, prefix = ''): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
@@ -129,24 +88,20 @@ describe('web src structure', () => {
     ).toEqual(['features/x/helpers.ts', 'features/x/utils/format.ts', 'features/stray.ts']);
   });
 
-  it('lets a route reach a feature only through its pages/', () => {
+  it('lets a route reach a feature only through its pages/ and graphql/', () => {
     const offenders = files
       .filter((file) => file.startsWith('routes/') && isCode(file) && !isTest(file))
       .filter((file) => !file.split('/').some((segment) => segment.startsWith('-')))
       .flatMap((file) =>
         importTargets(file)
           .filter((target) => target.startsWith('features/'))
-          .filter((target) => !/^features\/[^/]+\/pages\//.test(target))
+          .filter((target) => !/^features\/[^/]+\/(pages|graphql)\//.test(target))
           .map((target) => `${file} imports ${target}`),
       );
 
     expect(
-      offenders.filter((offender) => !ROUTE_IMPORTS_OF_FEATURE_INTERNALS.has(offender)),
-      'route files import a feature page; the page imports the rest',
-    ).toEqual([]);
-    expect(
-      [...ROUTE_IMPORTS_OF_FEATURE_INTERNALS].filter((entry) => !offenders.includes(entry)),
-      'an exemption no longer applies: remove it from ROUTE_IMPORTS_OF_FEATURE_INTERNALS',
+      offenders,
+      'route files import a feature page or its graphql documents; the page imports the rest',
     ).toEqual([]);
   });
 
@@ -198,35 +153,66 @@ describe('web src structure', () => {
         .map((id) => ({ id, lines: readFileSync(join(SRC, id), 'utf8').split('\n').length }))
         .filter(({ lines }) => lines > MAX_LINES);
 
-    it(`keeps every source file to ${MAX_LINES} lines unless it is listed`, () => {
-      const unlisted = sized()
-        .filter(({ id }) => !(id in OVERSIZED_BY_DESIGN))
-        .map(({ id, lines }) => `${id} (${lines} lines)`);
-
-      expect(unlisted, 'split the file, or add it to OVERSIZED_BY_DESIGN with a reason').toEqual(
-        [],
-      );
-    });
-
-    it('has no stale entries in the oversized list', () => {
-      const over = new Set(sized().map(({ id }) => id));
-
+    it(`keeps every source file to ${MAX_LINES} lines`, () => {
       expect(
-        Object.keys(OVERSIZED_BY_DESIGN).filter((id) => !over.has(id)),
-        'the file is under the limit now: remove it from OVERSIZED_BY_DESIGN',
-      ).toEqual([]);
-    });
-
-    it('gives a real reason for every exemption', () => {
-      expect(
-        Object.entries(OVERSIZED_BY_DESIGN)
-          .filter(([, reason]) => reason.trim().length < 40)
-          .map(([id]) => id),
+        sized().map(({ id, lines }) => `${id} (${lines} lines)`),
+        'split the file by what it contains',
       ).toEqual([]);
     });
 
     it('walked a realistic number of files', () => {
       expect(files.filter(isCode).length).toBeGreaterThan(300);
+    });
+  });
+
+  describe('inline GraphQL', () => {
+    it('has no inline query or mutation string except the client refresh call', () => {
+      const sources = files
+        .filter((file) => isCode(file) && !isTest(file) && !isGenerated(file))
+        .map((id) => ({ id, code: readFileSync(join(SRC, id), 'utf8') }));
+
+      expect(
+        findInlineQueries(sources),
+        'write the document as graphql(`…`) in the feature’s graphql/ folder (JEF-637)',
+      ).toEqual([]);
+    });
+
+    it('flags a template literal that opens with an operation keyword', () => {
+      expect(
+        findInlineQueries([
+          { id: 'features/x/lib/x.ts', code: 'const X_QUERY = `\n  query X { me { id } }\n`;' },
+          { id: 'features/x/lib/y.ts', code: 'export const Y_MUTATION = `mutation Y { y }`;' },
+          { id: 'features/x/lib/z.ts', code: 'client.request(`query Z { z }`);' },
+        ]),
+      ).toEqual([
+        'features/x/lib/x.ts X_QUERY',
+        'features/x/lib/y.ts Y_MUTATION',
+        'features/x/lib/z.ts <inline>',
+      ]);
+    });
+
+    it('accepts a typed document', () => {
+      expect(
+        findInlineQueries([
+          {
+            id: 'features/x/graphql/xQueries.ts',
+            code: 'export const X = graphql(`query X { x }`);',
+          },
+          {
+            id: 'features/x/graphql/yQueries.ts',
+            code: 'export const Y = graphql(\n`\n query Y { y }`);',
+          },
+        ]),
+      ).toEqual([]);
+    });
+
+    it('allows REFRESH_MUTATION in the client and nowhere else', () => {
+      const code = 'const REFRESH_MUTATION = `mutation { refreshToken }`;';
+
+      expect(findInlineQueries([{ id: 'graphql/client.ts', code }])).toEqual([]);
+      expect(findInlineQueries([{ id: 'features/x/lib/x.ts', code }])).toEqual([
+        'features/x/lib/x.ts REFRESH_MUTATION',
+      ]);
     });
   });
 });

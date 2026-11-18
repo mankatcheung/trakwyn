@@ -11,7 +11,7 @@ import { useCooldown } from '#/hooks/useCooldown';
 import {
   RESEND_COOLDOWN_SECONDS,
   useEmailVerification,
-} from '#/features/verification/lib/emailVerification';
+} from '#/features/verification/graphql/emailVerification';
 import { RESEND_VERIFICATION_EMAIL } from '#/features/verification/graphql/verificationQueries';
 import { ChangeEmailForm } from '../../auth/components/ChangeEmailForm';
 import { LOGOUT_MUTATION } from '#/features/auth/graphql/authQueries';

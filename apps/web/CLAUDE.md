@@ -19,35 +19,34 @@ Loaded when working under `apps/web`. The cross-cutting conventions are in the r
 - **Session detection:** `hasSessionCookie()` does a synchronous `document.cookie` read of the non-HttpOnly `trakwyn_logged_in` hint. It is used by `/`, `/login` and `/_authenticated`. These routes set **`ssr: false`**, because TanStack Start does not re-run `beforeLoad` on hydration otherwise. The cookie deploy prerequisites are in `apps/api/CLAUDE.md`.
 - **Codegen:** after changing `.graphql` files, a `graphql()` document or the API schema, run `pnpm codegen` (the API must be running), then `pnpm exec prettier --write src/graphql/generated`. **Never edit `src/graphql/generated/` by hand.**
 - **Typed documents (JEF-637):** write a query as `graphql(`query Name { … }`)` (import from `#/graphql/generated`) next to the `queryOptions` that use it, not as a template-literal string. Codegen reads `src/**/*.{ts,tsx,graphql}`, validates every document against the schema (a field that does not exist fails `pnpm codegen`) and types `gqlClient.request` through `ResultOf`. **Operation names must be unique across the whole app** (`Applications` already exists, so the dashboard's is `DashboardApplications`). Test mocks that match on query text use `gqlText`, and assertions on the document argument use `gqlContaining('Name')` instead of `expect.stringContaining` (both in `src/__tests__/helpers/gqlText.ts`, and both read strings and typed documents). The API schema leaves fields nullable, so wrap a selection in `Resolved<T, 'nullableKey'>` (`src/graphql/resolved.ts`) and assert it at the `queryFn`, as `features/dashboard/graphql/dashboardQueries.ts` does.
-  - **A `.graphql` file that already holds the operation must go** (the name would clash). Search for the name first, and delete a twin nothing imports; check its field selection against the inline one, since they can differ.
   - **Call `gqlClient.request(DOC, vars)` with no type argument** and cast the awaited result (`as { … }`); an explicit `request<T>` fights the document's own type.
   - **A query with a parameter** gets a key factory and an `xQueryOptions(id)` next to its document (`features/interviews/graphql/interviewRoundQueries.ts`), so the loader, the component and the cache edits share one key.
   - **A form field that maps to an API enum** uses `z.enum` over its values, so the variables type-check against the input type.
   - **`showUndoToast` takes a typed document** and prints it, because what it stores and replays after a refresh is text.
   - **An enum input takes the enum's name** (`OFF`), not the value the API reads back (`off`), so a variable typed from the schema needs a map from the UI value (`DIGEST_FREQUENCY_INPUT` in `SettingsNotificationsPage`).
-  - Converted so far: the dashboard, offers, interviews, documents, applications, application detail, settings, the profile, the calendar, analytics, and the auth, verification, account-deletion, legal and share screens; the rest are tracked under JEF-636.
+  - **Every document is typed.** No `.graphql` file and no inline `query`/`mutation` template literal is left, except `REFRESH_MUTATION` in `graphql/client.ts`: it is the client's own token-refresh call, and routing it through the generated documents would make the client depend on its own output. `webStructure.test.ts` fails on a new one (JEF-646).
 
 ## Folder layout (JEF-627)
 
 `src/` has one folder per feature, like `apps/mobile`.
 
-| Kind of file                                                          | Where it goes                                                                                                     |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| A route (`createFileRoute`, loader, `beforeLoad`)                     | `routes/`, kept thin: it renders a page                                                                           |
-| A route-only helper                                                   | `routes/…/-name.ts(x)` (the `-` prefix hides it from the router)                                                  |
-| A page and what only it uses                                          | `features/<name>/pages/`, `components/`, `hooks/`, `lib/`                                                         |
-| A GraphQL document                                                    | a `graphql()` call in `features/<name>/graphql/<name>Queries.ts` (JEF-637; older ones are still `.graphql` files) |
-| Used by more than one feature                                         | the shared root: `components/`, `hooks/`, `lib/`                                                                  |
-| A test                                                                | `__tests__/` beside the code it tests                                                                             |
-| A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                                                                   |
+| Kind of file                                                          | Where it goes                                                              |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A route (`createFileRoute`, loader, `beforeLoad`)                     | `routes/`, kept thin: it renders a page                                    |
+| A route-only helper                                                   | `routes/…/-name.ts(x)` (the `-` prefix hides it from the router)           |
+| A page and what only it uses                                          | `features/<name>/pages/`, `components/`, `hooks/`, `lib/`                  |
+| A GraphQL document                                                    | a `graphql()` call in `features/<name>/graphql/<name>Queries.ts` (JEF-637) |
+| Used by more than one feature                                         | the shared root: `components/`, `hooks/`, `lib/`                           |
+| A test                                                                | `__tests__/` beside the code it tests                                      |
+| A test of the whole app or the config (route tree, parity, structure) | `src/__tests__/{config,content,guides,routes}/`                            |
 
 Rules, held by `src/__tests__/config/webStructure.test.ts`:
 
 - A feature folder holds only `pages`, `components`, `hooks`, `lib`, `graphql`, `__tests__` and a `CLAUDE.md`.
-- A route imports only `features/*/pages/*`, the shared root and `graphql/`. A few older routes still import a feature's `components/`, `lib/` or `graphql/`; each is named in the test, and the list can only shrink.
+- A route imports only `features/*/pages/*`, `features/*/graphql/*` (a loader needs the query options), the shared root and `graphql/`. A page the route needs only to render something (`RootOverlays`, `DashboardPending`) lives in `pages/` too.
 - The shared root never imports `features/`. A feature may import the shared root and another feature's `lib/` or `components/`.
 - No `features/**/index.ts` barrel files. Import from the file that defines it.
-- A source file is at most 400 lines, the API's limit (generated files and tests are exempt). One over it needs an `OVERSIZED_BY_DESIGN` entry with a reason; remove the entry when the file shrinks (JEF-636).
+- A source file is at most 400 lines, the API's limit (generated files and tests are exempt), with no exceptions list (JEF-636).
 
 `pnpm build && pnpm --filter @trakwyn/web check:chunks` fails if a route that had a chunk of its own in `scripts/chunk-baseline.json` has none. Rewrite the baseline with `pnpm check:chunks --record` after a build, only when a route is added or removed on purpose.
 

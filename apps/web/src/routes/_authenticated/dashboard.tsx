@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { DashboardPage } from '../../features/dashboard/pages/DashboardPage';
-import { DashboardPending } from '../../features/dashboard/components/DashboardPending';
+import { DashboardPending } from '../../features/dashboard/pages/DashboardPending';
 import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';
 
 export * from '../../features/dashboard/graphql/dashboardQueries';

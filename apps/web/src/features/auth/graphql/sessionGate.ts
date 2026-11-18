@@ -4,7 +4,7 @@ import { queryClient } from '#/lib/queryClient';
 import {
   EMAIL_VERIFICATION_KEY,
   type EmailVerificationState,
-} from '#/features/verification/lib/emailVerification';
+} from '#/features/verification/graphql/emailVerification';
 import {
   ONBOARDING_STATE_KEY,
   type OnboardingState,

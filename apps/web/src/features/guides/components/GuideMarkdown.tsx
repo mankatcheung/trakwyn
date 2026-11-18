@@ -1,6 +1,6 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { guideImageUrl } from '#/features/guides/lib/guides';
+import { guideImageUrl } from '#/lib/guides';
 
 /** Every guide screenshot is exported at this size (16:10); a test enforces it. */
 export const GUIDE_IMAGE_WIDTH = 1600;

@@ -6,13 +6,13 @@ import { extractImages, parseGuide, type Guide } from '@trakwyn/content';
  * invalid frontmatter, a duplicate slug or an image reference with no file.
  */
 
-const MARKDOWN = import.meta.glob('../../../../../../content/guides/en/*/index.md', {
+const MARKDOWN = import.meta.glob('../../../../content/guides/en/*/index.md', {
   query: '?raw',
   import: 'default',
   eager: true,
 }) as Record<string, string>;
 
-const IMAGES = import.meta.glob('../../../../../../content/guides/en/*/*.webp', {
+const IMAGES = import.meta.glob('../../../../content/guides/en/*/*.webp', {
   query: '?url',
   import: 'default',
   eager: true,

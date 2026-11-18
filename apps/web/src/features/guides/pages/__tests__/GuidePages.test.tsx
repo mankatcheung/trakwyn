@@ -47,7 +47,7 @@ vi.mock('#/lib/i18n', () => ({
   }),
 }));
 
-import { GUIDES } from '#/features/guides/lib/guides';
+import { GUIDES } from '#/lib/guides';
 import { GuidePage } from '#/features/guides/pages/GuidePage';
 import { GuidesIndexPage } from '#/features/guides/pages/GuidesIndexPage';
 

@@ -10,7 +10,7 @@ vi.mock('#/graphql/client', () => ({
   gqlClient: {},
 }));
 
-vi.mock('#/features/verification/lib/emailVerification', () => ({
+vi.mock('#/features/verification/graphql/emailVerification', () => ({
   checkEmailVerification: mockCheckEmailVerification,
   useEmailVerification: vi.fn(),
 }));

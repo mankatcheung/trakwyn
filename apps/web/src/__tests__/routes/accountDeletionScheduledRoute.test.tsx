@@ -7,7 +7,7 @@ const { mockUseEmailVerification } = vi.hoisted(() => ({
 }));
 
 vi.mock('#/graphql/client', () => ({ hasSessionCookie: () => true, gqlClient: {} }));
-vi.mock('#/features/verification/lib/emailVerification', () => ({
+vi.mock('#/features/verification/graphql/emailVerification', () => ({
   checkEmailVerification: vi.fn(),
   useEmailVerification: mockUseEmailVerification,
 }));

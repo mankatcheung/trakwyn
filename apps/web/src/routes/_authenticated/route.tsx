@@ -2,8 +2,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasSessionCookie } from '#/graphql/client';
 import { needsWelcome } from '#/features/onboarding/graphql/onboardingQueries';
-import { checkSessionGate, type SessionGate } from '#/features/auth/lib/sessionGate';
-import { AuthenticatedLayout } from '../../features/app-shell/components/AuthenticatedLayout';
+import { checkSessionGate, type SessionGate } from '#/features/auth/graphql/sessionGate';
+import { AuthenticatedLayout } from '../../features/app-shell/pages/AuthenticatedLayout';
 import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';
 
 export const Route = createFileRoute('/_authenticated')({

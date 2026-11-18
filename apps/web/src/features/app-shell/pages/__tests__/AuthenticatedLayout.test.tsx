@@ -63,7 +63,7 @@ vi.mock('#/lib/queryClient', () => ({
 }));
 
 import { ThemeProvider } from '#/lib/theme';
-import { AuthenticatedLayout } from '#/features/app-shell/components/AuthenticatedLayout';
+import { AuthenticatedLayout } from '#/features/app-shell/pages/AuthenticatedLayout';
 import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });

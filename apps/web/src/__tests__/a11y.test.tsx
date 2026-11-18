@@ -123,7 +123,7 @@ describe('Accessibility audits', () => {
       mockGqlRequest.mockResolvedValue({ me: { avatarUrl: null } });
       const { ThemeProvider } = await import('#/lib/theme');
       const { AuthenticatedLayout } =
-        await import('#/features/app-shell/components/AuthenticatedLayout');
+        await import('#/features/app-shell/pages/AuthenticatedLayout');
 
       function AuthWrapper({ children }: { children: React.ReactNode }) {
         return (
