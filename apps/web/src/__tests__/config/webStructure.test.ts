@@ -40,14 +40,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
   'components/ErrorState.tsx imports features/plans/components/UpgradePrompt.tsx',
 ]);
 
-/**
- * Tests still answering a mocked `gqlClient` by hand, moved onto `mockGql` folder by
- * folder (JEF-652). The list can only shrink: a file that no longer matches must come off.
- */
-const HAND_ROLLED_GQL_MOCKS = new Set<string>([
-  'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
-]);
-
 /** Lines above which a source file must justify itself below. */
 const MAX_LINES = 400;
 
@@ -233,16 +225,10 @@ describe('web src structure', () => {
         .filter((file) => /\.test\.tsx?$/.test(file) && !file.startsWith('__tests__/config/'))
         .map((id) => ({ id, code: readFileSync(join(SRC, id), 'utf8') }));
 
-    it('answers a mocked gqlClient with mockGql, except the files still to move', () => {
-      const offenders = findHandRolledGqlMocks(tests());
-
+    it('answers a mocked gqlClient with mockGql, never by matching on gqlText', () => {
       expect(
-        offenders.filter((id) => !HAND_ROLLED_GQL_MOCKS.has(id)),
+        findHandRolledGqlMocks(tests()),
         'use mockGql(request, [respond(DOCUMENT, data)]) from #/__tests__/helpers/gqlMock',
-      ).toEqual([]);
-      expect(
-        [...HAND_ROLLED_GQL_MOCKS].filter((id) => !offenders.includes(id)),
-        'already moved: remove it from HAND_ROLLED_GQL_MOCKS',
       ).toEqual([]);
     });
 
