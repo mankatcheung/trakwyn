@@ -38,7 +38,7 @@ vi.mock('#/lib/queryClient', () => ({
 
 import type { ComponentType } from 'react';
 import { Route } from '#/routes/verify-email-required';
-import { RESEND_COOLDOWN_SECONDS } from '#/features/verification/lib/emailVerification';
+import { RESEND_COOLDOWN_SECONDS } from '#/features/verification/graphql/emailVerification';
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const VerifyEmailRequiredRoute = (Route as unknown as { component: ComponentType }).component;

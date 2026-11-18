@@ -17,12 +17,15 @@ type Documents = {
   '\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n': typeof types.RequestAccountDeletionDocument;
   '\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n': typeof types.ConfirmAccountDeletionDocument;
   '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n': typeof types.CancelAccountDeletionDocument;
+  '\n  mutation RateAiOutput(\n    $targetKind: AiFeedbackTarget!\n    $targetId: ID!\n    $rating: AiFeedbackRating!\n    $reason: AiFeedbackReason\n  ) {\n    rateAiOutput(targetKind: $targetKind, targetId: $targetId, rating: $rating, reason: $reason) {\n      rating\n      reason\n    }\n  }\n': typeof types.RateAiOutputDocument;
+  '\n  mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {\n    clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)\n  }\n': typeof types.ClearAiOutputRatingDocument;
   '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n': typeof types.AnalyticsApplicationsDocument;
   '\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n': typeof types.ApplicationChannelAnalyticsDocument;
   '\n  query DocumentVersionOutcomes {\n    documentVersionOutcomes {\n      documentType\n      version\n      applicationCount\n      interviewCount\n      interviewRate\n    }\n  }\n': typeof types.DocumentVersionOutcomesDocument;
   '\n  query InterviewRoundAnalytics {\n    interviewRoundAnalytics {\n      byType {\n        type\n        passed\n        failed\n        pending\n        cancelled\n      }\n      roundsToOffer {\n        average\n        median\n        sampleSize\n      }\n      roundsToRejection {\n        average\n        median\n        sampleSize\n      }\n    }\n  }\n': typeof types.InterviewRoundAnalyticsDocument;
   '\n  query OfferAnalytics {\n    offerAnalytics {\n      trend {\n        offerId\n        applicationId\n        company\n        role\n        createdAt\n        currency\n        normalizedYearlySalary\n      }\n      byCurrency {\n        currency\n        count\n        minYearlySalary\n        maxYearlySalary\n        medianYearlySalary\n        averageYearlySalary\n      }\n    }\n  }\n': typeof types.OfferAnalyticsDocument;
   '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n': typeof types.ResponseTimeAnalyticsDocument;
+  '\n  query AccountAvatar {\n    me {\n      avatarUrl\n    }\n  }\n': typeof types.AccountAvatarDocument;
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateApplicationDocument;
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n': typeof types.UpdateApplicationFlagsDocument;
   '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n': typeof types.ApplicationHealthScoreDocument;
@@ -39,7 +42,6 @@ type Documents = {
   '\n  mutation CreateApplication($input: CreateApplicationInput!) {\n    createApplication(input: $input) {\n      id\n    }\n  }\n': typeof types.CreateApplicationDocument;
   '\n  mutation ParseJobDescription($text: String, $url: String) {\n    parseJobDescription(text: $text, url: $url) {\n      company\n      role\n      location\n      salary\n      description\n      postingText\n    }\n  }\n': typeof types.ParseJobDescriptionDocument;
   '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n': typeof types.DeleteApplicationDocument;
-  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}': typeof types.ApplicationsDocument;
   '\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n': typeof types.ApplicationsPageDocument;
   '\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n': typeof types.BoardApplicationsDocument;
   '\n  mutation MoveApplicationOnBoard($input: MoveApplicationOnBoardInput!) {\n    moveApplicationOnBoard(input: $input) {\n      id\n      status\n      boardPosition\n    }\n  }\n': typeof types.MoveApplicationOnBoardDocument;
@@ -59,6 +61,14 @@ type Documents = {
   '\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n': typeof types.ConfirmBackupEmailDocument;
   '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n': typeof types.ConfirmEmailChangeDocument;
   '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.CalendarEventsDocument;
+  '\n  query Conversations {\n    conversations {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.ConversationsDocument;
+  '\n  query RecentConversations($limit: Int!) {\n    conversations(limit: $limit) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.RecentConversationsDocument;
+  '\n  query SearchConversations($query: String!) {\n    searchConversations(query: $query) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.SearchConversationsDocument;
+  '\n  query ChatHistory($conversationId: ID!) {\n    chatHistory(conversationId: $conversationId) {\n      id\n      role\n      content\n      createdAt\n      myRating {\n        rating\n        reason\n      }\n      proposals {\n        id\n        toolName\n        summary\n        status\n        error\n      }\n    }\n  }\n': typeof types.ChatHistoryDocument;
+  '\n  mutation ConfirmChatAction($id: ID!) {\n    confirmChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n': typeof types.ConfirmChatActionDocument;
+  '\n  mutation DismissChatAction($id: ID!) {\n    dismissChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n': typeof types.DismissChatActionDocument;
+  '\n  mutation CreateConversation($provider: String, $model: String) {\n    createConversation(provider: $provider, model: $model) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateConversationDocument;
+  '\n  mutation DeleteConversation($id: ID!) {\n    deleteConversation(id: $id)\n  }\n': typeof types.DeleteConversationDocument;
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n': typeof types.DashboardApplicationsDocument;
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.DashboardCalendarEventsDocument;
   '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
@@ -108,14 +118,26 @@ type Documents = {
   '\n  mutation GenerateMockInterviewAnswer(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockInterviewAnswer(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      answer\n      usedJobDescription\n      usedBriefing\n      usedProfile\n      usedDocument\n    }\n  }\n': typeof types.GenerateMockInterviewAnswerDocument;
   '\n  mutation GenerateMockTalkingPoints(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockTalkingPoints(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      nothingRelevant\n      usedProfile\n      usedDocument\n      question {\n        id\n        interviewRoundId\n        question\n        answer\n        answerSource\n        talkingPoints\n        talkingPointsGeneratedAt\n        position\n        createdAt\n        updatedAt\n      }\n    }\n  }\n': typeof types.GenerateMockTalkingPointsDocument;
   '\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n': typeof types.RecordCookieConsentDocument;
-  'mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}': typeof types.CreateNoteDocument;
-  'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}': typeof types.NotesDocument;
+  '\n  query Notes($applicationId: ID!) {\n    notes(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.NotesDocument;
+  '\n  mutation CreateNote($applicationId: ID!, $content: String!) {\n    createNote(applicationId: $applicationId, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateNoteDocument;
+  '\n  mutation UpdateNote($id: ID!, $content: String!) {\n    updateNote(id: $id, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.UpdateNoteDocument;
+  '\n  mutation DeleteNote($id: ID!) {\n    deleteNote(id: $id)\n  }\n': typeof types.DeleteNoteDocument;
+  '\n  query UnreadNotificationCount {\n    unreadNotificationCount\n  }\n': typeof types.UnreadNotificationCountDocument;
+  '\n  query NotificationsPage($cursor: String, $limit: Int) {\n    notificationsPage(cursor: $cursor, limit: $limit) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        type\n        title\n        body\n        url\n        read\n        createdAt\n      }\n    }\n  }\n': typeof types.NotificationsPageDocument;
+  '\n  mutation MarkNotificationsRead($ids: [ID!]!, $isRead: Boolean!) {\n    markNotificationsRead(ids: $ids, isRead: $isRead)\n  }\n': typeof types.MarkNotificationsReadDocument;
+  '\n  mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {\n    registerPushSubscription(endpoint: $endpoint, p256dh: $p256dh, auth: $auth)\n  }\n': typeof types.RegisterPushSubscriptionDocument;
+  '\n  mutation UnregisterPushSubscription($endpoint: String!) {\n    unregisterPushSubscription(endpoint: $endpoint)\n  }\n': typeof types.UnregisterPushSubscriptionDocument;
   '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.OffersDocument;
   '\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n': typeof types.CreateOfferDocument;
   '\n  mutation UpdateOffer($input: UpdateOfferInput!) {\n    updateOffer(input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateOfferDocument;
   '\n  mutation DeleteOffer($id: String!) {\n    deleteOffer(id: $id)\n  }\n': typeof types.DeleteOfferDocument;
   '\n  query MyOffers {\n    myOffers {\n      company\n      role\n      offer {\n        id\n        applicationId\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n        notes\n      }\n    }\n  }\n': typeof types.MyOffersDocument;
   '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n': typeof types.CompareOffersDocument;
+  '\n  query OnboardingState {\n    me {\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n': typeof types.OnboardingStateDocument;
+  '\n  mutation CompleteOnboarding($goals: [OnboardingGoal!]!) {\n    completeOnboarding(goals: $goals)\n  }\n': typeof types.CompleteOnboardingDocument;
+  '\n  mutation CreateCheckoutSession($plan: CheckoutPlan!) {\n    createCheckoutSession(plan: $plan) {\n      url\n    }\n  }\n': typeof types.CreateCheckoutSessionDocument;
+  '\n  mutation CreateBillingPortalSession {\n    createBillingPortalSession {\n      url\n    }\n  }\n': typeof types.CreateBillingPortalSessionDocument;
+  '\n  query BillingStatus {\n    billingStatus {\n      enforced\n      plan\n      planExpiresAt\n      planSource\n      features {\n        notifications\n        analytics\n        offers\n        shareLinks\n        apiAccess\n        mcpAccess\n      }\n      limits {\n        applications\n        documentBytes\n        aiCreditsPerMonth\n      }\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n        resetsAt\n        costs {\n          feature\n          credits\n        }\n      }\n      catalogue {\n        free {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n        pro {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n      }\n      usage {\n        applications\n        documentBytes\n      }\n    }\n  }\n': typeof types.BillingStatusDocument;
   '\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.AwardsDocument;
   '\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.CreateAwardDocument;
   '\n  mutation UpdateAward($id: ID!, $input: UpdateAwardInput!) {\n    updateAward(id: $id, input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n': typeof types.UpdateAwardDocument;
@@ -146,6 +168,7 @@ type Documents = {
   '\n  mutation CreateWorkExperience($input: CreateWorkExperienceInput!) {\n    createWorkExperience(input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.CreateWorkExperienceDocument;
   '\n  mutation UpdateWorkExperience($id: ID!, $input: UpdateWorkExperienceInput!) {\n    updateWorkExperience(id: $id, input: $input) {\n      id\n      company\n      title\n      location\n      startDate\n      endDate\n      description\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.UpdateWorkExperienceDocument;
   '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n': typeof types.DeleteWorkExperienceDocument;
+  '\n  query ContentQuota {\n    contentQuota {\n      limits {\n        notesPerApplication\n        contactsPerApplication\n        interviewRoundsPerApplication\n        offersPerApplication\n        tagsPerApplication\n        documentDraftsPerApplication\n        conversationsPerUser\n        workExperiencesPerUser\n        educationsPerUser\n        skillsPerUser\n        shareLinksPerUser\n        apiTokensPerUser\n        pushSubscriptionsPerUser\n      }\n      usage {\n        conversations\n        workExperiences\n        educations\n        skills\n        shareLinks\n        apiTokens\n        pushSubscriptions\n      }\n    }\n  }\n': typeof types.ContentQuotaDocument;
   '\n  query Me {\n    me {\n      id\n      email\n      name\n      timezone\n      targetRole\n      phone\n      location\n      profileLinks\n      avatarUrl\n      backupEmail\n      backupEmailVerifiedAt\n      hasPassword\n    }\n  }\n': typeof types.MeDocument;
   '\n  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {\n    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {\n      uploadUrl\n      storageKey\n    }\n  }\n': typeof types.RequestAvatarUploadUrlDocument;
   '\n  mutation ConfirmAvatar($storageKey: String!, $mimeType: String!, $sizeBytes: Int!) {\n    confirmAvatar(storageKey: $storageKey, mimeType: $mimeType, sizeBytes: $sizeBytes)\n  }\n': typeof types.ConfirmAvatarDocument;
@@ -203,6 +226,10 @@ const documents: Documents = {
     types.ConfirmAccountDeletionDocument,
   '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n':
     types.CancelAccountDeletionDocument,
+  '\n  mutation RateAiOutput(\n    $targetKind: AiFeedbackTarget!\n    $targetId: ID!\n    $rating: AiFeedbackRating!\n    $reason: AiFeedbackReason\n  ) {\n    rateAiOutput(targetKind: $targetKind, targetId: $targetId, rating: $rating, reason: $reason) {\n      rating\n      reason\n    }\n  }\n':
+    types.RateAiOutputDocument,
+  '\n  mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {\n    clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)\n  }\n':
+    types.ClearAiOutputRatingDocument,
   '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n':
     types.AnalyticsApplicationsDocument,
   '\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n':
@@ -215,6 +242,7 @@ const documents: Documents = {
     types.OfferAnalyticsDocument,
   '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n':
     types.ResponseTimeAnalyticsDocument,
+  '\n  query AccountAvatar {\n    me {\n      avatarUrl\n    }\n  }\n': types.AccountAvatarDocument,
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n':
     types.UpdateApplicationDocument,
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n':
@@ -247,8 +275,6 @@ const documents: Documents = {
     types.ParseJobDescriptionDocument,
   '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n':
     types.DeleteApplicationDocument,
-  'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}':
-    types.ApplicationsDocument,
   '\n  query ApplicationsPage(\n    $status: ApplicationStatus\n    $starred: Boolean\n    $search: String\n    $cursor: String\n    $limit: Int\n    $likelyGhosted: Boolean\n  ) {\n    applicationsPage(\n      status: $status\n      starred: $starred\n      search: $search\n      cursor: $cursor\n      limit: $limit\n      likelyGhosted: $likelyGhosted\n    ) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        company\n        role\n        status\n        location\n        description\n        appliedAt\n        starred\n        source\n        followUpAt\n        tags\n        createdAt\n      }\n    }\n  }\n':
     types.ApplicationsPageDocument,
   '\n  query BoardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      location\n      appliedAt\n      starred\n      createdAt\n      tags\n      likelyGhosted\n      boardPosition\n    }\n  }\n':
@@ -286,6 +312,22 @@ const documents: Documents = {
     types.ConfirmEmailChangeDocument,
   '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
     types.CalendarEventsDocument,
+  '\n  query Conversations {\n    conversations {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.ConversationsDocument,
+  '\n  query RecentConversations($limit: Int!) {\n    conversations(limit: $limit) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.RecentConversationsDocument,
+  '\n  query SearchConversations($query: String!) {\n    searchConversations(query: $query) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.SearchConversationsDocument,
+  '\n  query ChatHistory($conversationId: ID!) {\n    chatHistory(conversationId: $conversationId) {\n      id\n      role\n      content\n      createdAt\n      myRating {\n        rating\n        reason\n      }\n      proposals {\n        id\n        toolName\n        summary\n        status\n        error\n      }\n    }\n  }\n':
+    types.ChatHistoryDocument,
+  '\n  mutation ConfirmChatAction($id: ID!) {\n    confirmChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n':
+    types.ConfirmChatActionDocument,
+  '\n  mutation DismissChatAction($id: ID!) {\n    dismissChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n':
+    types.DismissChatActionDocument,
+  '\n  mutation CreateConversation($provider: String, $model: String) {\n    createConversation(provider: $provider, model: $model) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.CreateConversationDocument,
+  '\n  mutation DeleteConversation($id: ID!) {\n    deleteConversation(id: $id)\n  }\n':
+    types.DeleteConversationDocument,
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n':
     types.DashboardApplicationsDocument,
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
@@ -384,10 +426,23 @@ const documents: Documents = {
     types.GenerateMockTalkingPointsDocument,
   '\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n':
     types.RecordCookieConsentDocument,
-  'mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}':
-    types.CreateNoteDocument,
-  'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}':
+  '\n  query Notes($applicationId: ID!) {\n    notes(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n':
     types.NotesDocument,
+  '\n  mutation CreateNote($applicationId: ID!, $content: String!) {\n    createNote(applicationId: $applicationId, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.CreateNoteDocument,
+  '\n  mutation UpdateNote($id: ID!, $content: String!) {\n    updateNote(id: $id, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n':
+    types.UpdateNoteDocument,
+  '\n  mutation DeleteNote($id: ID!) {\n    deleteNote(id: $id)\n  }\n': types.DeleteNoteDocument,
+  '\n  query UnreadNotificationCount {\n    unreadNotificationCount\n  }\n':
+    types.UnreadNotificationCountDocument,
+  '\n  query NotificationsPage($cursor: String, $limit: Int) {\n    notificationsPage(cursor: $cursor, limit: $limit) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        type\n        title\n        body\n        url\n        read\n        createdAt\n      }\n    }\n  }\n':
+    types.NotificationsPageDocument,
+  '\n  mutation MarkNotificationsRead($ids: [ID!]!, $isRead: Boolean!) {\n    markNotificationsRead(ids: $ids, isRead: $isRead)\n  }\n':
+    types.MarkNotificationsReadDocument,
+  '\n  mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {\n    registerPushSubscription(endpoint: $endpoint, p256dh: $p256dh, auth: $auth)\n  }\n':
+    types.RegisterPushSubscriptionDocument,
+  '\n  mutation UnregisterPushSubscription($endpoint: String!) {\n    unregisterPushSubscription(endpoint: $endpoint)\n  }\n':
+    types.UnregisterPushSubscriptionDocument,
   '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n':
     types.OffersDocument,
   '\n  mutation CreateOffer($input: CreateOfferInput!) {\n    createOffer(input: $input) {\n      id\n    }\n  }\n':
@@ -400,6 +455,16 @@ const documents: Documents = {
     types.MyOffersDocument,
   '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n':
     types.CompareOffersDocument,
+  '\n  query OnboardingState {\n    me {\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n':
+    types.OnboardingStateDocument,
+  '\n  mutation CompleteOnboarding($goals: [OnboardingGoal!]!) {\n    completeOnboarding(goals: $goals)\n  }\n':
+    types.CompleteOnboardingDocument,
+  '\n  mutation CreateCheckoutSession($plan: CheckoutPlan!) {\n    createCheckoutSession(plan: $plan) {\n      url\n    }\n  }\n':
+    types.CreateCheckoutSessionDocument,
+  '\n  mutation CreateBillingPortalSession {\n    createBillingPortalSession {\n      url\n    }\n  }\n':
+    types.CreateBillingPortalSessionDocument,
+  '\n  query BillingStatus {\n    billingStatus {\n      enforced\n      plan\n      planExpiresAt\n      planSource\n      features {\n        notifications\n        analytics\n        offers\n        shareLinks\n        apiAccess\n        mcpAccess\n      }\n      limits {\n        applications\n        documentBytes\n        aiCreditsPerMonth\n      }\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n        resetsAt\n        costs {\n          feature\n          credits\n        }\n      }\n      catalogue {\n        free {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n        pro {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n      }\n      usage {\n        applications\n        documentBytes\n      }\n    }\n  }\n':
+    types.BillingStatusDocument,
   '\n  query Awards {\n    awards {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n':
     types.AwardsDocument,
   '\n  mutation CreateAward($input: CreateAwardInput!) {\n    createAward(input: $input) {\n      id\n      title\n      issuer\n      date\n      description\n      createdAt\n    }\n  }\n':
@@ -459,6 +524,8 @@ const documents: Documents = {
     types.UpdateWorkExperienceDocument,
   '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n':
     types.DeleteWorkExperienceDocument,
+  '\n  query ContentQuota {\n    contentQuota {\n      limits {\n        notesPerApplication\n        contactsPerApplication\n        interviewRoundsPerApplication\n        offersPerApplication\n        tagsPerApplication\n        documentDraftsPerApplication\n        conversationsPerUser\n        workExperiencesPerUser\n        educationsPerUser\n        skillsPerUser\n        shareLinksPerUser\n        apiTokensPerUser\n        pushSubscriptionsPerUser\n      }\n      usage {\n        conversations\n        workExperiences\n        educations\n        skills\n        shareLinks\n        apiTokens\n        pushSubscriptions\n      }\n    }\n  }\n':
+    types.ContentQuotaDocument,
   '\n  query Me {\n    me {\n      id\n      email\n      name\n      timezone\n      targetRole\n      phone\n      location\n      profileLinks\n      avatarUrl\n      backupEmail\n      backupEmailVerifiedAt\n      hasPassword\n    }\n  }\n':
     types.MeDocument,
   '\n  mutation RequestAvatarUploadUrl($filename: String!, $mimeType: String!) {\n    requestAvatarUploadUrl(filename: $filename, mimeType: $mimeType) {\n      uploadUrl\n      storageKey\n    }\n  }\n':
@@ -591,6 +658,18 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
+  source: '\n  mutation RateAiOutput(\n    $targetKind: AiFeedbackTarget!\n    $targetId: ID!\n    $rating: AiFeedbackRating!\n    $reason: AiFeedbackReason\n  ) {\n    rateAiOutput(targetKind: $targetKind, targetId: $targetId, rating: $rating, reason: $reason) {\n      rating\n      reason\n    }\n  }\n',
+): (typeof documents)['\n  mutation RateAiOutput(\n    $targetKind: AiFeedbackTarget!\n    $targetId: ID!\n    $rating: AiFeedbackRating!\n    $reason: AiFeedbackReason\n  ) {\n    rateAiOutput(targetKind: $targetKind, targetId: $targetId, rating: $rating, reason: $reason) {\n      rating\n      reason\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {\n    clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)\n  }\n',
+): (typeof documents)['\n  mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {\n    clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
   source: '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n',
 ): (typeof documents)['\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n'];
 /**
@@ -623,6 +702,12 @@ export function graphql(
 export function graphql(
   source: '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n',
 ): (typeof documents)['\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query AccountAvatar {\n    me {\n      avatarUrl\n    }\n  }\n',
+): (typeof documents)['\n  query AccountAvatar {\n    me {\n      avatarUrl\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -719,12 +804,6 @@ export function graphql(
 export function graphql(
   source: '\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n',
 ): (typeof documents)['\n  mutation DeleteApplication($id: ID!) {\n    deleteApplication(id: $id)\n  }\n'];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(
-  source: 'query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}',
-): (typeof documents)['query Applications($status: ApplicationStatus) {\n  applications(status: $status) {\n    id\n    company\n    role\n    status\n    jobUrl\n    location\n    salaryRange\n    appliedAt\n    starred\n    source\n    followUpAt\n    tags\n    createdAt\n    updatedAt\n  }\n}'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -839,6 +918,54 @@ export function graphql(
 export function graphql(
   source: '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n',
 ): (typeof documents)['\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query Conversations {\n    conversations {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query Conversations {\n    conversations {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query RecentConversations($limit: Int!) {\n    conversations(limit: $limit) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query RecentConversations($limit: Int!) {\n    conversations(limit: $limit) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query SearchConversations($query: String!) {\n    searchConversations(query: $query) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query SearchConversations($query: String!) {\n    searchConversations(query: $query) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query ChatHistory($conversationId: ID!) {\n    chatHistory(conversationId: $conversationId) {\n      id\n      role\n      content\n      createdAt\n      myRating {\n        rating\n        reason\n      }\n      proposals {\n        id\n        toolName\n        summary\n        status\n        error\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ChatHistory($conversationId: ID!) {\n    chatHistory(conversationId: $conversationId) {\n      id\n      role\n      content\n      createdAt\n      myRating {\n        rating\n        reason\n      }\n      proposals {\n        id\n        toolName\n        summary\n        status\n        error\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ConfirmChatAction($id: ID!) {\n    confirmChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n',
+): (typeof documents)['\n  mutation ConfirmChatAction($id: ID!) {\n    confirmChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DismissChatAction($id: ID!) {\n    dismissChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n',
+): (typeof documents)['\n  mutation DismissChatAction($id: ID!) {\n    dismissChatAction(id: $id) {\n      id\n      toolName\n      summary\n      status\n      error\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateConversation($provider: String, $model: String) {\n    createConversation(provider: $provider, model: $model) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateConversation($provider: String, $model: String) {\n    createConversation(provider: $provider, model: $model) {\n      id\n      title\n      llmProvider\n      llmModel\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteConversation($id: ID!) {\n    deleteConversation(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteConversation($id: ID!) {\n    deleteConversation(id: $id)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1137,14 +1264,56 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}',
-): (typeof documents)['mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}'];
+  source: '\n  query Notes($applicationId: ID!) {\n    notes(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query Notes($applicationId: ID!) {\n    notes(applicationId: $applicationId) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}',
-): (typeof documents)['query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}'];
+  source: '\n  mutation CreateNote($applicationId: ID!, $content: String!) {\n    createNote(applicationId: $applicationId, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateNote($applicationId: ID!, $content: String!) {\n    createNote(applicationId: $applicationId, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateNote($id: ID!, $content: String!) {\n    updateNote(id: $id, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateNote($id: ID!, $content: String!) {\n    updateNote(id: $id, content: $content) {\n      id\n      applicationId\n      content\n      createdAt\n      updatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DeleteNote($id: ID!) {\n    deleteNote(id: $id)\n  }\n',
+): (typeof documents)['\n  mutation DeleteNote($id: ID!) {\n    deleteNote(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query UnreadNotificationCount {\n    unreadNotificationCount\n  }\n',
+): (typeof documents)['\n  query UnreadNotificationCount {\n    unreadNotificationCount\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query NotificationsPage($cursor: String, $limit: Int) {\n    notificationsPage(cursor: $cursor, limit: $limit) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        type\n        title\n        body\n        url\n        read\n        createdAt\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query NotificationsPage($cursor: String, $limit: Int) {\n    notificationsPage(cursor: $cursor, limit: $limit) {\n      hasNextPage\n      nextCursor\n      items {\n        id\n        type\n        title\n        body\n        url\n        read\n        createdAt\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation MarkNotificationsRead($ids: [ID!]!, $isRead: Boolean!) {\n    markNotificationsRead(ids: $ids, isRead: $isRead)\n  }\n',
+): (typeof documents)['\n  mutation MarkNotificationsRead($ids: [ID!]!, $isRead: Boolean!) {\n    markNotificationsRead(ids: $ids, isRead: $isRead)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {\n    registerPushSubscription(endpoint: $endpoint, p256dh: $p256dh, auth: $auth)\n  }\n',
+): (typeof documents)['\n  mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {\n    registerPushSubscription(endpoint: $endpoint, p256dh: $p256dh, auth: $auth)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UnregisterPushSubscription($endpoint: String!) {\n    unregisterPushSubscription(endpoint: $endpoint)\n  }\n',
+): (typeof documents)['\n  mutation UnregisterPushSubscription($endpoint: String!) {\n    unregisterPushSubscription(endpoint: $endpoint)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1181,6 +1350,36 @@ export function graphql(
 export function graphql(
   source: '\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n',
 ): (typeof documents)['\n  mutation CompareOffers($offerIds: [String!]!) {\n    compareOffers(offerIds: $offerIds) {\n      offer {\n        id\n        baseSalary\n        bonus\n        equity\n        benefits\n        costOfLivingAdjustment\n        currency\n        period\n      }\n      company\n      role\n      normalizedYearlySalary\n      totalCompensation\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query OnboardingState {\n    me {\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n',
+): (typeof documents)['\n  query OnboardingState {\n    me {\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CompleteOnboarding($goals: [OnboardingGoal!]!) {\n    completeOnboarding(goals: $goals)\n  }\n',
+): (typeof documents)['\n  mutation CompleteOnboarding($goals: [OnboardingGoal!]!) {\n    completeOnboarding(goals: $goals)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateCheckoutSession($plan: CheckoutPlan!) {\n    createCheckoutSession(plan: $plan) {\n      url\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateCheckoutSession($plan: CheckoutPlan!) {\n    createCheckoutSession(plan: $plan) {\n      url\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateBillingPortalSession {\n    createBillingPortalSession {\n      url\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateBillingPortalSession {\n    createBillingPortalSession {\n      url\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query BillingStatus {\n    billingStatus {\n      enforced\n      plan\n      planExpiresAt\n      planSource\n      features {\n        notifications\n        analytics\n        offers\n        shareLinks\n        apiAccess\n        mcpAccess\n      }\n      limits {\n        applications\n        documentBytes\n        aiCreditsPerMonth\n      }\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n        resetsAt\n        costs {\n          feature\n          credits\n        }\n      }\n      catalogue {\n        free {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n        pro {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n      }\n      usage {\n        applications\n        documentBytes\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query BillingStatus {\n    billingStatus {\n      enforced\n      plan\n      planExpiresAt\n      planSource\n      features {\n        notifications\n        analytics\n        offers\n        shareLinks\n        apiAccess\n        mcpAccess\n      }\n      limits {\n        applications\n        documentBytes\n        aiCreditsPerMonth\n      }\n      aiCredits {\n        used\n        limit\n        bonusRemaining\n        resetsAt\n        costs {\n          feature\n          credits\n        }\n      }\n      catalogue {\n        free {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n        pro {\n          features {\n            notifications\n            analytics\n            offers\n            shareLinks\n            apiAccess\n            mcpAccess\n          }\n          limits {\n            applications\n            documentBytes\n            aiCreditsPerMonth\n          }\n        }\n      }\n      usage {\n        applications\n        documentBytes\n      }\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1361,6 +1560,12 @@ export function graphql(
 export function graphql(
   source: '\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n',
 ): (typeof documents)['\n  mutation DeleteWorkExperience($id: ID!) {\n    deleteWorkExperience(id: $id)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query ContentQuota {\n    contentQuota {\n      limits {\n        notesPerApplication\n        contactsPerApplication\n        interviewRoundsPerApplication\n        offersPerApplication\n        tagsPerApplication\n        documentDraftsPerApplication\n        conversationsPerUser\n        workExperiencesPerUser\n        educationsPerUser\n        skillsPerUser\n        shareLinksPerUser\n        apiTokensPerUser\n        pushSubscriptionsPerUser\n      }\n      usage {\n        conversations\n        workExperiences\n        educations\n        skills\n        shareLinks\n        apiTokens\n        pushSubscriptions\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ContentQuota {\n    contentQuota {\n      limits {\n        notesPerApplication\n        contactsPerApplication\n        interviewRoundsPerApplication\n        offersPerApplication\n        tagsPerApplication\n        documentDraftsPerApplication\n        conversationsPerUser\n        workExperiencesPerUser\n        educationsPerUser\n        skillsPerUser\n        shareLinksPerUser\n        apiTokensPerUser\n        pushSubscriptionsPerUser\n      }\n      usage {\n        conversations\n        workExperiences\n        educations\n        skills\n        shareLinks\n        apiTokens\n        pushSubscriptions\n      }\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

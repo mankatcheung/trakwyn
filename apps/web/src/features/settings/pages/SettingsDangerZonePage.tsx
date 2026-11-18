@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { gqlClient } from '#/graphql/client';
 import { useFormAction } from '#/hooks/useFormAction';
 import { useBillingStatus } from '#/features/plans/lib/billingStatus';
-import { useEmailVerification } from '#/features/verification/lib/emailVerification';
+import { useEmailVerification } from '#/features/verification/graphql/emailVerification';
 import { useLocale } from '#/lib/i18n';
 import { REQUEST_ACCOUNT_DELETION } from '#/features/account-deletion/graphql/accountDeletionQueries';
 import { Alert, Card, FormLabel, Input, SubmitButton } from '@trakwyn/ui';

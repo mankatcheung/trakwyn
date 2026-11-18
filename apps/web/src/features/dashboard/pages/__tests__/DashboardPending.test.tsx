@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DashboardPending } from '#/features/dashboard/components/DashboardPending';
+import { DashboardPending } from '#/features/dashboard/pages/DashboardPending';
 
 describe('DashboardPending (JEF-535)', () => {
   it('shows the dashboard heading and a busy placeholder while the loader runs', () => {

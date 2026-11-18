@@ -15,6 +15,7 @@ vi.mock('#/lib/analytics', async () => {
 
 import { ChatProposalCard } from '#/features/chat/components/ChatProposalCard';
 import type { ChatProposal } from '#/features/chat/lib/shared';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const proposal = (overrides?: Partial<ChatProposal>): ChatProposal => ({
   id: 'p1',
@@ -56,7 +57,7 @@ describe('ChatProposalCard (JEF-469)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => expect(mockGqlRequest).toHaveBeenCalledTimes(1));
-    expect(mockGqlRequest.mock.calls[0][0]).toContain('confirmChatAction');
+    expect(gqlText(mockGqlRequest.mock.calls[0][0])).toContain('confirmChatAction');
     expect(mockGqlRequest.mock.calls[0][1]).toEqual({ id: 'p1' });
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith());
     expect(mockCapture).toHaveBeenCalledWith('assistant_change_confirmed', {
@@ -71,7 +72,7 @@ describe('ChatProposalCard (JEF-469)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 
     await waitFor(() => expect(mockGqlRequest).toHaveBeenCalledTimes(1));
-    expect(mockGqlRequest.mock.calls[0][0]).toContain('dismissChatAction');
+    expect(gqlText(mockGqlRequest.mock.calls[0][0])).toContain('dismissChatAction');
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['chatHistory', 'c1'] }),
     );

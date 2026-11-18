@@ -5,9 +5,9 @@ const { mockRequest } = vi.hoisted(() => ({ mockRequest: vi.fn() }));
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockRequest } }));
 
 import { queryClient } from '#/lib/queryClient';
-import { EMAIL_VERIFICATION_KEY } from '#/features/verification/lib/emailVerification';
-import { ONBOARDING_STATE_KEY } from '#/features/onboarding/lib/onboarding';
-import { checkSessionGate } from '#/features/auth/lib/sessionGate';
+import { EMAIL_VERIFICATION_KEY } from '#/features/verification/graphql/emailVerification';
+import { ONBOARDING_STATE_KEY } from '#/features/onboarding/graphql/onboardingQueries';
+import { checkSessionGate } from '#/features/auth/graphql/sessionGate';
 import { SESSION_GATE_QUERY } from '#/features/auth/graphql/authQueries';
 
 const ME = {

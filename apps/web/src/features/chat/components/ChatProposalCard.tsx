@@ -4,12 +4,12 @@ import { gqlClient } from '#/graphql/client';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { type ChatProposal } from '#/features/chat/lib/shared';
 import {
   CONFIRM_CHAT_ACTION,
   DISMISS_CHAT_ACTION,
   chatHistoryQueryOptions,
-  type ChatProposal,
-} from '#/features/chat/lib/shared';
+} from '#/features/chat/graphql/chatQueries';
 
 interface ChatProposalCardProps {
   proposal: ChatProposal;

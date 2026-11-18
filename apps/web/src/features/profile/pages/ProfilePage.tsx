@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Skeleton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
-import { sameOriginPath } from '#/features/auth/lib/returnTo';
+import { sameOriginPath } from '#/lib/returnTo';
 import { CvImportDialog } from '../components/cv-import/CvImportDialog';
 import {
   WORK_EXPERIENCE_SECTION_ID,

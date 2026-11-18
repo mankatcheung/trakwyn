@@ -6,7 +6,7 @@ import { serializeJsonLd } from '#/features/marketing/components/FaqSection';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
 import { trackCta } from '#/lib/analytics';
-import { buildArticleJsonLd } from '#/features/guides/lib/guideFeeds';
+import { buildArticleJsonLd } from '#/lib/guideFeeds';
 import { useLocale } from '#/lib/i18n';
 
 /** Feature page → the existing nav label for it. */

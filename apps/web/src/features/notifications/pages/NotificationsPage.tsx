@@ -11,14 +11,16 @@ import { useLocale } from '#/lib/i18n';
 import { Button, Checkbox, Spinner } from '@trakwyn/ui';
 import { CheckCheckIcon, EyeOffIcon } from 'lucide-react';
 import {
-  NOTIFICATIONS_PAGE_QUERY,
-  MARK_NOTIFICATIONS_READ,
   NOTIFICATION_ICON,
   NotificationRowSkeleton,
   timeAgo,
   type NotificationItem,
   type NotificationsPageResult,
 } from '../components/NotificationInbox';
+import {
+  NOTIFICATIONS_PAGE_QUERY,
+  MARK_NOTIFICATIONS_READ,
+} from '#/features/notifications/graphql/notificationQueries';
 
 const PAGE_SIZE = 20;
 

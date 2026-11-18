@@ -17,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { WelcomePage } from '#/features/onboarding/pages/WelcomePage';
-import { ONBOARDING_STATE_KEY } from '#/features/onboarding/lib/onboarding';
+import { ONBOARDING_STATE_KEY } from '#/features/onboarding/graphql/onboardingQueries';
 import { gqlText } from '#/__tests__/helpers/gqlText';
 
 let client: QueryClient;
@@ -78,7 +78,7 @@ describe('WelcomePage (JEF-460)', () => {
     click(/skip setup/i);
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/dashboard' }));
-    expect(completeCalls()).toEqual([[expect.any(String), { goals: [] }]]);
+    expect(completeCalls()).toEqual([[expect.anything(), { goals: [] }]]);
     expect(client.getQueryData(ONBOARDING_STATE_KEY)).toMatchObject({
       onboardingCompletedAt: expect.any(String),
       onboardingGoals: [],
@@ -105,7 +105,7 @@ describe('WelcomePage (JEF-460)', () => {
     click(/add your first application/i);
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/applications/new' }));
-    expect(completeCalls()).toEqual([[expect.any(String), { goals: ['TRACK_APPLICATIONS'] }]]);
+    expect(completeCalls()).toEqual([[expect.anything(), { goals: ['TRACK_APPLICATIONS'] }]]);
   });
 
   it('asks for no profile or key for the MCP goal alone', () => {
@@ -144,7 +144,7 @@ describe('WelcomePage (JEF-460)', () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/dashboard' }));
     // Kept in display order, not the order they were ticked in.
     expect(completeCalls()).toEqual([
-      [expect.any(String), { goals: ['TRACK_APPLICATIONS', 'AI_DOCUMENTS'] }],
+      [expect.anything(), { goals: ['TRACK_APPLICATIONS', 'AI_DOCUMENTS'] }],
     ]);
   });
 
@@ -170,7 +170,7 @@ describe('WelcomePage (JEF-460)', () => {
     click(/go to the dashboard/i);
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
-    expect(completeCalls()).toEqual([[expect.any(String), { goals: [] }]]);
+    expect(completeCalls()).toEqual([[expect.anything(), { goals: [] }]]);
   });
 
   it('goes back a step without losing the goals', () => {

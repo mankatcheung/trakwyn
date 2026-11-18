@@ -4,10 +4,10 @@ import { Alert } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import {
   finishDestination,
-  useCompleteOnboarding,
   welcomeSteps,
   type OnboardingGoal,
 } from '#/features/onboarding/lib/onboarding';
+import { useCompleteOnboarding } from '#/features/onboarding/hooks/useCompleteOnboarding';
 import { WelcomeStepFrame } from '../components/welcome/WelcomeStepFrame';
 import { GoalsStep } from '../components/welcome/GoalsStep';
 import { ProfileStep } from '../components/welcome/ProfileStep';

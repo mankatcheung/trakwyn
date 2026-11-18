@@ -8,24 +8,13 @@ import { useLocale } from '#/lib/i18n';
 import { Card, Textarea } from '@trakwyn/ui';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { useQuotaState } from '#/features/quota/lib/contentQuota';
+import {
+  CREATE_NOTE,
+  DELETE_NOTE,
+  NOTES_QUERY,
+  UPDATE_NOTE,
+} from '#/features/notes/graphql/noteQueries';
 import { invalidateSectionCounts } from '../../application-detail/lib/sectionCounts';
-
-const NOTES_QUERY = `
-  query Notes($applicationId: ID!) {
-    notes(applicationId: $applicationId) { id applicationId content createdAt updatedAt }
-  }
-`;
-const CREATE_NOTE = `
-  mutation CreateNote($applicationId: ID!, $content: String!) {
-    createNote(applicationId: $applicationId, content: $content) { id applicationId content createdAt updatedAt }
-  }
-`;
-const UPDATE_NOTE = `
-  mutation UpdateNote($id: ID!, $content: String!) {
-    updateNote(id: $id, content: $content) { id applicationId content createdAt updatedAt }
-  }
-`;
-const DELETE_NOTE = `mutation DeleteNote($id: ID!) { deleteNote(id: $id) }`;
 
 export type Note = {
   id: string;

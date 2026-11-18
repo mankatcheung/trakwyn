@@ -11,6 +11,7 @@ vi.mock('#/graphql/client', () => ({
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { NotesTab } from '#/features/notes/components/NotesTab';
 import { quotaLevel } from '#/features/quota/lib/contentQuota';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -96,7 +97,7 @@ describe('NotesTab at the cap', () => {
 
   it('disables Add note and names the limit', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('ContentQuota'))
+      if (gqlText(query).includes('ContentQuota'))
         return Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } });
       return Promise.resolve({ notes: Array.from({ length: 10 }, (_, i) => note(i)) });
     });
@@ -109,9 +110,9 @@ describe('NotesTab at the cap', () => {
 
   it("shows the API's message when a create loses the race", async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('ContentQuota'))
+      if (gqlText(query).includes('ContentQuota'))
         return Promise.resolve({ contentQuota: { limits: LIMITS, usage: USAGE } });
-      if (query.includes('CreateNote'))
+      if (gqlText(query).includes('CreateNote'))
         return Promise.reject({
           response: {
             errors: [

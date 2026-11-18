@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { applicationQueryOptions } from '../../../../features/application-detail/graphql/applicationQuery';
 import { ApplicationDetailPage } from '../../../../features/application-detail/pages/ApplicationDetailPage';
-import { sectionSearchSchema } from '../../../../features/application-detail/lib/sections';
+import { sectionSearchSchema } from '../../../../features/application-detail/pages/applicationDetailSearch';
 
 export const Route = createFileRoute('/_authenticated/applications/$applicationId/')({
   // The open section lives in the URL, not component state: on a phone the

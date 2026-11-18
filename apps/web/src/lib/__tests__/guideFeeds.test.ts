@@ -6,7 +6,7 @@ import {
   buildSitemap,
   escapeXml,
   STATIC_SITEMAP_PAGES,
-} from '#/features/guides/lib/guideFeeds';
+} from '#/lib/guideFeeds';
 
 const GUIDE: Guide = {
   slug: 'first-guide',

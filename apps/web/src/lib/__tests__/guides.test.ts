@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  allGuideTags,
-  getGuide,
-  GUIDES,
-  guideImageUrl,
-  loadGuides,
-} from '#/features/guides/lib/guides';
+import { allGuideTags, getGuide, GUIDES, guideImageUrl, loadGuides } from '#/lib/guides';
 
 const FILE = (extra = '', body = 'Hello.') => `---
 title: T

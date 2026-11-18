@@ -50,6 +50,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { ConversationHistoryPage } from '#/features/chat/pages/ConversationHistoryPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -130,7 +131,7 @@ describe('ConversationHistoryPage', () => {
 
   it('deletes a conversation from the list', async () => {
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('DeleteConversation'))
+      if (gqlText(query).includes('DeleteConversation'))
         return Promise.resolve({ deleteConversation: true });
       return Promise.resolve({
         conversations: [
@@ -150,7 +151,7 @@ describe('ConversationHistoryPage', () => {
     fireEvent.click(screen.getByLabelText('Delete Old chat'));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DeleteConversation'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DeleteConversation'), {
         id: 'conv-1',
       }),
     );
@@ -182,7 +183,7 @@ describe('ConversationHistoryPage', () => {
 
     await new Promise((r) => setTimeout(r, 100));
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('DeleteConversation'),
+      gqlContaining('DeleteConversation'),
       expect.anything(),
     );
   });
@@ -220,7 +221,7 @@ describe('ConversationHistoryPage', () => {
 
     it('queries the server for the debounced term and renders only matches', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('SearchConversations'))
+        if (gqlText(query).includes('SearchConversations'))
           return Promise.resolve(searchResults(['conv-2']));
         return Promise.resolve(fullHistory);
       });
@@ -235,10 +236,9 @@ describe('ConversationHistoryPage', () => {
       // The search request carries the term; results replace the full list
       // once the debounce fires.
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('SearchConversations'),
-          { query: 'cover letter' },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('SearchConversations'), {
+          query: 'cover letter',
+        }),
       );
       await waitFor(() => expect(screen.getByText('conv-2 match')).toBeInTheDocument());
       expect(screen.queryByText('Stripe interview prep')).not.toBeInTheDocument();
@@ -246,7 +246,7 @@ describe('ConversationHistoryPage', () => {
 
     it('shows a no-results state instead of the empty-history one', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('SearchConversations'))
+        if (gqlText(query).includes('SearchConversations'))
           return Promise.resolve({ searchConversations: [] });
         return Promise.resolve(fullHistory);
       });
@@ -266,7 +266,8 @@ describe('ConversationHistoryPage', () => {
 
     it('returns to the full list when the query is cleared', async () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('SearchConversations')) return Promise.resolve(searchResults([]));
+        if (gqlText(query).includes('SearchConversations'))
+          return Promise.resolve(searchResults([]));
         return Promise.resolve(fullHistory);
       });
       render(<ConversationHistoryPage />, { wrapper: Wrapper });
@@ -275,10 +276,9 @@ describe('ConversationHistoryPage', () => {
       await waitFor(() => expect(screen.getByText('Stripe interview prep')).toBeInTheDocument());
       fireEvent.change(input, { target: { value: 'cover letter' } });
       await waitFor(() =>
-        expect(mockGqlRequest).toHaveBeenCalledWith(
-          expect.stringContaining('SearchConversations'),
-          { query: 'cover letter' },
-        ),
+        expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('SearchConversations'), {
+          query: 'cover letter',
+        }),
       );
 
       fireEvent.change(input, { target: { value: '' } });

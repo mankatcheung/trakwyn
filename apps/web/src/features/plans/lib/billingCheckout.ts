@@ -1,17 +1,22 @@
+import { graphql } from '#/graphql/generated';
 import { useMutation } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const CREATE_CHECKOUT_SESSION = `
+const CREATE_CHECKOUT_SESSION = graphql(`
   mutation CreateCheckoutSession($plan: CheckoutPlan!) {
-    createCheckoutSession(plan: $plan) { url }
+    createCheckoutSession(plan: $plan) {
+      url
+    }
   }
-`;
+`);
 
-const CREATE_BILLING_PORTAL_SESSION = `
+const CREATE_BILLING_PORTAL_SESSION = graphql(`
   mutation CreateBillingPortalSession {
-    createBillingPortalSession { url }
+    createBillingPortalSession {
+      url
+    }
   }
-`;
+`);
 
 export type CheckoutPlan = 'monthly' | 'pass3Months' | 'pass6Months';
 

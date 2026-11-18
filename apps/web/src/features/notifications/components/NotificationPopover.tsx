@@ -6,14 +6,16 @@ import { gqlClient } from '#/graphql/client';
 import { useHotkeys } from '#/hooks/useHotkeys';
 import { useLocale } from '#/lib/i18n';
 import {
-  MARK_NOTIFICATIONS_READ,
-  NOTIFICATIONS_PAGE_QUERY,
   NOTIFICATION_ICON,
   NotificationRowSkeleton,
   timeAgo,
   type NotificationItem,
   type NotificationsPageResult,
 } from './NotificationInbox';
+import {
+  MARK_NOTIFICATIONS_READ,
+  NOTIFICATIONS_PAGE_QUERY,
+} from '#/features/notifications/graphql/notificationQueries';
 
 const RECENT_LIMIT = 5;
 

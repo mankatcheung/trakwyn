@@ -27,6 +27,7 @@ import {
   NotificationInboxButton,
   NotificationInboxLink,
 } from '#/features/notifications/components/NotificationInbox';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -62,10 +63,10 @@ function mockResponses({
   items?: (typeof notification1)[];
 } = {}) {
   mockGqlRequest.mockImplementation((query: string) => {
-    if (query.includes('UnreadNotificationCount')) {
+    if (gqlText(query).includes('UnreadNotificationCount')) {
       return Promise.resolve({ unreadNotificationCount: unreadCount });
     }
-    if (query.includes('NotificationsPage')) {
+    if (gqlText(query).includes('NotificationsPage')) {
       return Promise.resolve({
         notificationsPage: { hasNextPage: false, nextCursor: null, items },
       });
@@ -130,7 +131,7 @@ describe('NotificationInboxButton (desktop popover)', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('NotificationsPage'),
+      gqlContaining('NotificationsPage'),
       expect.anything(),
     );
 
@@ -146,7 +147,7 @@ describe('NotificationInboxButton (desktop popover)', () => {
 
     await waitFor(() => {
       expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('NotificationsPage'),
+        gqlContaining('NotificationsPage'),
         expect.objectContaining({ limit: 5 }),
       );
     });
@@ -226,13 +227,10 @@ describe('NotificationInboxButton (desktop popover)', () => {
     fireEvent.click(screen.getByText('Upcoming interview: Acme'));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('MarkNotificationsRead'),
-        {
-          ids: ['n-1'],
-          isRead: true,
-        },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('MarkNotificationsRead'), {
+        ids: ['n-1'],
+        isRead: true,
+      });
     });
     expect(window.location.href).toBe('/applications/app-1');
     vi.unstubAllGlobals();
@@ -251,7 +249,7 @@ describe('NotificationInboxButton (desktop popover)', () => {
       expect(window.location.href).toBe('/settings/security');
     });
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('MarkNotificationsRead'),
+      gqlContaining('MarkNotificationsRead'),
       expect.anything(),
     );
     vi.unstubAllGlobals();

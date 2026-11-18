@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { hasSessionCookie } from '#/graphql/client';
-import { safeReturnTo } from '#/features/auth/lib/returnTo';
+import { safeReturnTo } from '#/lib/returnTo';
 import { z } from 'zod';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 

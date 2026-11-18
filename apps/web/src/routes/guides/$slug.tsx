@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { guidePath } from '#/features/guides/lib/guideFeeds';
-import { getGuide } from '#/features/guides/lib/guides';
+import { guidePath } from '#/lib/guideFeeds';
+import { getGuide } from '#/lib/guides';
 import { marketingHead } from '#/lib/seo';
 import { GuidePage } from '../../features/guides/pages/GuidePage';
 

@@ -6,6 +6,7 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: m.request } }));
 
 import { AiFeedbackControl } from '#/features/ai/components/AiFeedbackControl';
 import type { AiRating } from '#/features/ai/lib/aiFeedback';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 function setup(rating: AiRating | null = null) {
   const onChange = vi.fn();
@@ -22,7 +23,7 @@ function setup(rating: AiRating | null = null) {
 
 const up = () => screen.getByRole('button', { name: 'Good response' });
 const down = () => screen.getByRole('button', { name: 'Bad response' });
-const calls = (name: string) => m.request.mock.calls.filter(([q]) => String(q).includes(name));
+const calls = (name: string) => m.request.mock.calls.filter(([q]) => gqlText(q).includes(name));
 
 describe('AiFeedbackControl (JEF-547)', () => {
   beforeEach(() => {

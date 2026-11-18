@@ -1,3 +1,4 @@
+import { graphql } from '#/graphql/generated';
 /**
  * Thumbs up/down on AI output (JEF-547). The API stores which model and prompt
  * wrote the output and the rating, never the text, so all the client sends is
@@ -25,7 +26,7 @@ export interface AiRating {
   reason: AiFeedbackReason | null;
 }
 
-export const RATE_AI_OUTPUT = `
+export const RATE_AI_OUTPUT = graphql(`
   mutation RateAiOutput(
     $targetKind: AiFeedbackTarget!
     $targetId: ID!
@@ -37,10 +38,10 @@ export const RATE_AI_OUTPUT = `
       reason
     }
   }
-`;
+`);
 
-export const CLEAR_AI_OUTPUT_RATING = `
+export const CLEAR_AI_OUTPUT_RATING = graphql(`
   mutation ClearAiOutputRating($targetKind: AiFeedbackTarget!, $targetId: ID!) {
     clearAiOutputRating(targetKind: $targetKind, targetId: $targetId)
   }
-`;
+`);

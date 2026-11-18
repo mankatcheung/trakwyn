@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GUIDES } from '#/features/guides/lib/guides';
+import { GUIDES } from '#/lib/guides';
 import { Route as SitemapRoute } from '#/routes/sitemap[.]xml';
 import { Route as RssRoute } from '#/routes/guides/rss[.]xml';
 

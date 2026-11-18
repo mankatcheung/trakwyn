@@ -33,6 +33,7 @@ vi.mock('#/features/chat/lib/chatDock', () => ({
 }));
 
 import { ChatDockFloatingWindow } from '#/features/chat/components/dock/ChatDockFloatingWindow';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -46,12 +47,12 @@ describe('ChatDockFloatingWindow', () => {
     mockDock.sections = [];
     mockDock.expanded = null;
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('LlmApiKeys'))
+      if (gqlText(query).includes('LlmApiKeys'))
         return Promise.resolve({
           llmApiKeys: [{ provider: 'anthropic' }],
           me: { defaultLlmProvider: 'anthropic' },
         });
-      if (query.includes('Conversations'))
+      if (gqlText(query).includes('Conversations'))
         return Promise.resolve({
           conversations: [
             { id: 'conv-1', title: 'Ghosted applications', updatedAt: '2024-01-01T00:00:00.000Z' },
@@ -126,7 +127,7 @@ describe('ChatDockFloatingWindow', () => {
   it('shows the chat view without a key, since Trakwyn AI answers (JEF-451)', async () => {
     mockDock.expanded = 'new';
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('LlmApiKeys'))
+      if (gqlText(query).includes('LlmApiKeys'))
         return Promise.resolve({ llmApiKeys: [], me: { defaultLlmProvider: null } });
       return Promise.resolve({ conversations: [] });
     });

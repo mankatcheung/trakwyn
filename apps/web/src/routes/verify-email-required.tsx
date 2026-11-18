@@ -4,7 +4,7 @@ import { hasSessionCookie } from '#/graphql/client';
 import {
   checkEmailVerification,
   useEmailVerification,
-} from '#/features/verification/lib/emailVerification';
+} from '#/features/verification/graphql/emailVerification';
 import { VerifyEmailRequiredPage } from '../features/verification/pages/VerifyEmailRequiredPage';
 
 /**

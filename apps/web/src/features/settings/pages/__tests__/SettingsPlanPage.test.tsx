@@ -22,6 +22,7 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
 
 import { SettingsPlanPage } from '#/features/settings/pages/SettingsPlanPage';
 import type { BillingStatus } from '#/features/plans/lib/billingStatus';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 const MB = 1024 * 1024;
 const NO_FEATURES = {
@@ -195,7 +196,7 @@ describe('SettingsPlanPage', () => {
     it('offers the three purchases to a Free user and sends them to checkout', async () => {
       serve(freeStatus());
       mockGqlRequest.mockImplementation(async (query: string) =>
-        query.includes('CreateCheckoutSession')
+        gqlText(query).includes('CreateCheckoutSession')
           ? { createCheckoutSession: { url: 'https://pay.example/c' } }
           : { billingStatus: freeStatus() },
       );
@@ -208,10 +209,9 @@ describe('SettingsPlanPage', () => {
       await userEvent.click(screen.getByRole('button', { name: '3-month pass, $29' }));
 
       await waitFor(() => expect(assign).toHaveBeenCalledWith('https://pay.example/c'));
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('CreateCheckoutSession'),
-        { plan: 'pass3Months' },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('CreateCheckoutSession'), {
+        plan: 'pass3Months',
+      });
     });
 
     it('says prices are in dollars and include VAT in the UK and EU (JEF-431)', async () => {
@@ -278,7 +278,7 @@ describe('SettingsPlanPage', () => {
 
     it('says so when checkout cannot start', async () => {
       mockGqlRequest.mockImplementation(async (query: string) => {
-        if (query.includes('CreateCheckoutSession')) throw new Error('boom');
+        if (gqlText(query).includes('CreateCheckoutSession')) throw new Error('boom');
         return { billingStatus: freeStatus() };
       });
       render(<SettingsPlanPage />, { wrapper: Wrapper });

@@ -2,6 +2,7 @@ import { lazy, Suspense, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { UNREAD_COUNT_QUERY } from '#/features/notifications/graphql/notificationQueries';
 import { useLocale } from '#/lib/i18n';
 import { IconButton, Skeleton } from '@trakwyn/ui';
 import { BellIcon, CalendarIcon, ClockIcon, ShieldIcon } from 'lucide-react';
@@ -11,32 +12,6 @@ import { BellIcon, CalendarIcon, ClockIcon, ShieldIcon } from 'lucide-react';
 const NotificationPopover = lazy(() =>
   import('./NotificationPopover').then((m) => ({ default: m.NotificationPopover })),
 );
-
-export const UNREAD_COUNT_QUERY = `query UnreadNotificationCount { unreadNotificationCount }`;
-
-export const NOTIFICATIONS_PAGE_QUERY = `
-  query NotificationsPage($cursor: String, $limit: Int) {
-    notificationsPage(cursor: $cursor, limit: $limit) {
-      hasNextPage
-      nextCursor
-      items {
-        id
-        type
-        title
-        body
-        url
-        read
-        createdAt
-      }
-    }
-  }
-`;
-
-export const MARK_NOTIFICATIONS_READ = `
-  mutation MarkNotificationsRead($ids: [ID!]!, $isRead: Boolean!) {
-    markNotificationsRead(ids: $ids, isRead: $isRead)
-  }
-`;
 
 export type NotificationType = 'interview_reminder' | 'follow_up_reminder' | 'security_alert';
 

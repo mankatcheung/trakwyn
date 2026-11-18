@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { PlusIcon } from 'lucide-react';
 import { useChatDock } from '#/features/chat/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
-import { conversationsQueryOptions, timeAgo } from '#/features/chat/lib/shared';
+import { timeAgo } from '#/features/chat/lib/shared';
+import { conversationsQueryOptions } from '#/features/chat/graphql/chatQueries';
 import { useChatRunsOn } from '#/features/chat/lib/runsOn';
 
 const RECENT_LIMIT = 6;
