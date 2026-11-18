@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const CALENDAR_EVENTS_QUERY = `
+const CALENDAR_EVENTS_QUERY = graphql(`
   query CalendarEvents {
     calendarEvents {
       id
@@ -13,7 +14,7 @@ const CALENDAR_EVENTS_QUERY = `
       interviewRoundType
     }
   }
-`;
+`);
 
 export type CalendarEventKind = 'applied' | 'followUp' | 'interview';
 
@@ -33,5 +34,6 @@ export const calendarEventsQueryOptions = queryOptions({
   // the dashboard widget's stale cached result (60s default staleTime)
   // instead of fetching fresh data, hiding events created in between.
   queryKey: ['calendarEvents', 'page'],
-  queryFn: () => gqlClient.request<{ calendarEvents: CalendarEvent[] }>(CALENDAR_EVENTS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(CALENDAR_EVENTS_QUERY)) as { calendarEvents: CalendarEvent[] },
 });
