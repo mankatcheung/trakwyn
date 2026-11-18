@@ -38,7 +38,9 @@ vi.mock('@vercel/blob/client', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { SettingsSecurityPage } from '#/features/settings/pages/SettingsSecurityPage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { respond, respondError, overrideGql } from '#/__tests__/helpers/gqlMock';
+import { SECURITY_ACTIVITY } from '#/features/settings/graphql/securityQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -317,22 +319,19 @@ describe('SettingsSecurityPage', () => {
 
   describe('security activity', () => {
     it('renders a login event with device and IP', async () => {
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('SecurityActivity')) {
-          return Promise.resolve({
-            securityActivity: [
-              {
-                id: 'event-1',
-                eventType: 'login',
-                ipAddress: '203.0.113.5',
-                userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-                createdAt: '2024-01-01T00:00:00.000Z',
-              },
-            ],
-          });
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [
+        respond(SECURITY_ACTIVITY, {
+          securityActivity: [
+            {
+              id: 'event-1',
+              eventType: 'login',
+              ipAddress: '203.0.113.5',
+              userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+              createdAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      ]);
 
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
 
@@ -343,22 +342,19 @@ describe('SettingsSecurityPage', () => {
     });
 
     it('renders a non-login security event with its label', async () => {
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('SecurityActivity')) {
-          return Promise.resolve({
-            securityActivity: [
-              {
-                id: 'event-1',
-                eventType: 'password_changed',
-                ipAddress: '203.0.113.5',
-                userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-                createdAt: '2024-01-01T00:00:00.000Z',
-              },
-            ],
-          });
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [
+        respond(SECURITY_ACTIVITY, {
+          securityActivity: [
+            {
+              id: 'event-1',
+              eventType: 'password_changed',
+              ipAddress: '203.0.113.5',
+              userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+              createdAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      ]);
 
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
 
@@ -373,22 +369,19 @@ describe('SettingsSecurityPage', () => {
       // Worth pinning on the reuse case specifically: it means a detected
       // token theft revoked the user's access, so it's the row they most
       // need to be able to read.
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('SecurityActivity')) {
-          return Promise.resolve({
-            securityActivity: [
-              {
-                id: 'event-1',
-                eventType: 'mcp_oauth_refresh_reuse_detected',
-                ipAddress: null,
-                userAgent: null,
-                createdAt: '2024-01-01T00:00:00.000Z',
-              },
-            ],
-          });
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [
+        respond(SECURITY_ACTIVITY, {
+          securityActivity: [
+            {
+              id: 'event-1',
+              eventType: 'mcp_oauth_refresh_reuse_detected',
+              ipAddress: null,
+              userAgent: null,
+              createdAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      ]);
 
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
 
@@ -409,12 +402,7 @@ describe('SettingsSecurityPage', () => {
     });
 
     it('shows an error message when security activity fails to load', async () => {
-      mockGqlRequest.mockImplementation((query: unknown) => {
-        if (gqlText(query).includes('SecurityActivity')) {
-          return Promise.reject(new Error('network error'));
-        }
-        return Promise.resolve(defaultResponse);
-      });
+      overrideGql(mockGqlRequest, [respondError(SECURITY_ACTIVITY, new Error('network error'))]);
 
       render(<SettingsSecurityPage />, { wrapper: Wrapper });
 

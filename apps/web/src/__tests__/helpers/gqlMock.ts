@@ -94,3 +94,22 @@ export function mockGql(request: AnyRequest, responses: readonly GqlResponse[]):
     },
   );
 }
+
+/**
+ * Answers `responses` and leaves every other operation to the implementation the mock
+ * had before (a `mockResolvedValue(defaultResponse)` set in `beforeEach`). For a test
+ * that changes one operation of a page that fires many, without retyping the rest.
+ */
+export function overrideGql(request: AnyRequest, responses: readonly GqlResponse[]): void {
+  const typed = request as Mock<(document: unknown, variables?: unknown) => unknown>;
+  const previous = typed.getMockImplementation();
+  const byOperation = new Map(responses.map((r) => [r.operation, r]));
+  typed.mockImplementation((document, variables) => {
+    const response = byOperation.get(operationName(document));
+    if (response) return response.settle(variables);
+    if (previous) return previous(document, variables);
+    return Promise.reject(
+      new Error(`overrideGql: no response for operation "${operationName(document)}"`),
+    );
+  });
+}

@@ -81,8 +81,6 @@ const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
   'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
   'features/settings/pages/__tests__/SettingsDangerZonePage.test.tsx',
-  'features/settings/pages/__tests__/SettingsProfilePage.test.tsx',
-  'features/settings/pages/__tests__/SettingsSecurityPage.test.tsx',
 ]);
 
 /** Lines above which a source file must justify itself below. */

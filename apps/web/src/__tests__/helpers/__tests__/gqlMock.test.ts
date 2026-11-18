@@ -3,7 +3,14 @@ import {
   REQUEST_STEP_UP_CODE,
   VERIFY_STEP_UP_CODE,
 } from '#/features/settings/graphql/securityQueries';
-import { mockGql, operationName, respond, respondError, respondWith } from '../gqlMock';
+import {
+  mockGql,
+  operationName,
+  overrideGql,
+  respond,
+  respondError,
+  respondWith,
+} from '../gqlMock';
 
 describe('operationName', () => {
   it('reads the name from a typed document', () => {
@@ -97,6 +104,16 @@ describe('mockGql', () => {
     mockGql(request, [respond(REQUEST_STEP_UP_CODE, { requestStepUpCode: false })]);
 
     await expect(request(REQUEST_STEP_UP_CODE)).resolves.toEqual({ requestStepUpCode: false });
+  });
+
+  it('lets overrideGql change one operation and leave the rest to the earlier implementation', async () => {
+    const request = vi.fn().mockResolvedValue({ requestStepUpCode: true });
+    overrideGql(request, [respond(VERIFY_STEP_UP_CODE, { verifyStepUpCode: false })]);
+
+    await expect(request(VERIFY_STEP_UP_CODE, { code: '1' })).resolves.toEqual({
+      verifyStepUpCode: false,
+    });
+    await expect(request(REQUEST_STEP_UP_CODE)).resolves.toEqual({ requestStepUpCode: true });
   });
 
   it('holds a response to the shape of its document', () => {
