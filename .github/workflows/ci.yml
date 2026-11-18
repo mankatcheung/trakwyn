@@ -214,6 +214,11 @@ jobs:
       - run: pnpm format:check
       - run: pnpm typecheck
 
+      # Web's GraphQL documents and generated types against the API schema
+      # (JEF-651). Needs no API, database or port: the schema is printed.
+      - name: Check web's generated GraphQL types
+        run: pnpm --filter @trakwyn/web codegen:check
+
   # build, test and mobile-integration do not wait for each other (JEF-478).
   # `pnpm test` has no `dependsOn: build` in turbo.json, @trakwyn/ui is
   # consumed from src, and the integration tier boots the API with tsx, so none
