@@ -57,13 +57,6 @@ const ROUTE_IMPORTS_OF_FEATURE_INTERNALS = new Set([
   'routes/guides/$slug.tsx imports features/guides/lib/guides.ts',
   'routes/guides/rss[.]xml.ts imports features/guides/lib/guideFeeds.ts',
   'routes/guides/rss[.]xml.ts imports features/guides/lib/guides.ts',
-  'routes/index.tsx imports features/marketing/components/MarketingHeader.tsx',
-  'routes/index.tsx imports features/marketing/components/MarketingFooter.tsx',
-  'routes/index.tsx imports features/marketing/components/AiDemoSection.tsx',
-  'routes/index.tsx imports features/marketing/components/ClipperSection.tsx',
-  'routes/index.tsx imports features/marketing/components/FeatureRow.tsx',
-  'routes/index.tsx imports features/marketing/components/ThemedScreenshot.tsx',
-  'routes/index.tsx imports features/marketing/components/FaqSection.tsx',
   'routes/login.tsx imports features/auth/lib/returnTo.ts',
   'routes/sitemap[.]xml.ts imports features/guides/lib/guideFeeds.ts',
   'routes/sitemap[.]xml.ts imports features/guides/lib/guides.ts',
@@ -86,12 +79,7 @@ const MAX_LINES = 400;
  * cohesive tables: each is waiting for its split in JEF-636, one PR per area,
  * and each PR removes its entries. The list can only shrink.
  */
-const OVERSIZED_BY_DESIGN: Record<string, string> = {
-  'features/app-shell/components/AuthenticatedLayout.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
-  'features/marketing/pages/AiMcpSetupPage.tsx':
-    'Over the 400-line limit when the guard was added. JEF-636 splits it by what it contains, in the PR for its area, and removes this entry.',
-};
+const OVERSIZED_BY_DESIGN: Record<string, string> = {};
 
 function walk(dir: string, prefix = ''): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>

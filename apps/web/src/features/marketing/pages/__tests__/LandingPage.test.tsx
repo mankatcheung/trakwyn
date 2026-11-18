@@ -58,11 +58,7 @@ vi.mock('#/lib/i18n', () => ({
   }),
 }));
 
-import { Route } from '#/routes/index';
-
-// The route file does not export its component (see the note there), so the
-// mocked `createFileRoute` hands it back through the route options.
-const LandingPage = (Route as unknown as { component: () => React.JSX.Element }).component;
+import { LandingPage } from '../LandingPage';
 import userEvent from '@testing-library/user-event';
 
 describe('LandingPage', () => {

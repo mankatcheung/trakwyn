@@ -22,49 +22,24 @@ import { AssistantNavConversations } from '../../chat/components/AssistantNavCon
 import { useLocale } from '#/lib/i18n';
 import { consumeOAuthRegistration } from '#/lib/analytics';
 import {
-  BarChart2Icon,
   BriefcaseIcon,
   CalendarIcon,
-  GitCompareArrowsIcon,
-  IdCardIcon,
   KeyboardIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
   MessageCircleIcon,
-  PlugIcon,
-  BellIcon,
-  DatabaseIcon,
-  ShieldIcon,
-  SparklesIcon,
-  AlertTriangleIcon,
-  UserIcon,
   XIcon,
 } from 'lucide-react';
+import {
+  AccountAvatarIcon,
+  BottomNavItem,
+  NavItem,
+} from '#/features/app-shell/components/NavItems';
+import { MAIN_NAV, SETTINGS_NAV } from '#/features/app-shell/lib/navItems';
 
 const LOGOUT_MUTATION = `mutation { logout }`;
 const AVATAR_QUERY = `query AccountAvatar { me { avatarUrl } }`;
-
-const SETTINGS_NAV = [
-  { to: '/settings/profile', labelKey: 'settings.profile', icon: UserIcon },
-  { to: '/settings/security', labelKey: 'settings.security', icon: ShieldIcon },
-  { to: '/settings/ai', labelKey: 'settings.ai', icon: SparklesIcon },
-  { to: '/settings/integrations', labelKey: 'settings.integrations', icon: PlugIcon },
-  { to: '/settings/notifications', labelKey: 'settings.notifications', icon: BellIcon },
-  { to: '/settings/data', labelKey: 'settings.data', icon: DatabaseIcon },
-  // Last, deliberately: the only irreversible action in Settings.
-  { to: '/settings/danger-zone', labelKey: 'settings.dangerZone', icon: AlertTriangleIcon },
-] as const;
-
-const MAIN_NAV = [
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboardIcon },
-  { to: '/applications', labelKey: 'nav.applications', icon: BriefcaseIcon },
-  { to: '/profile', labelKey: 'nav.profile', icon: IdCardIcon },
-  { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon },
-  { to: '/offers', labelKey: 'nav.offers', icon: GitCompareArrowsIcon },
-  { to: '/analytics', labelKey: 'nav.analytics', icon: BarChart2Icon },
-  { to: '/assistant', labelKey: 'nav.assistant', icon: MessageCircleIcon },
-] as const;
 
 export function AuthenticatedLayout() {
   const { t } = useLocale();
@@ -395,83 +370,5 @@ export function AuthenticatedLayout() {
         <LazyChatDockFloatingWindow />
       </div>
     </ChatDockProvider>
-  );
-}
-
-function AccountAvatarIcon({
-  avatarUrl,
-  size,
-}: {
-  avatarUrl: string | null | undefined;
-  size: number;
-}) {
-  const { t } = useLocale();
-  if (avatarUrl) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={t('authenticatedLayout.yourAvatarAlt')}
-        className="rounded-full object-cover"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return <UserIcon size={size} />;
-}
-
-function NavItem({
-  to,
-  icon,
-  label,
-  active,
-  staggerIndex,
-  staggerDelay,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  staggerIndex?: number;
-  staggerDelay?: number;
-}) {
-  const delay = staggerDelay ?? (staggerIndex !== undefined ? staggerIndex * 50 : 0);
-
-  return (
-    <Link
-      to={to}
-      className={`sidebar-nav-item flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
-        active
-          ? 'bg-blue-50 font-medium text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100'
-      }`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      {icon}
-      {label}
-    </Link>
-  );
-}
-
-function BottomNavItem({
-  to,
-  icon,
-  label,
-  active,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
-        active ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </Link>
   );
 }
