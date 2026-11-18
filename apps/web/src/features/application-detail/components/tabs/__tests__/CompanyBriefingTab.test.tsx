@@ -13,7 +13,11 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { CompanyBriefingTab } from '#/features/application-detail/components/tabs/CompanyBriefingTab';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { COMPANY_BRIEFING_QUERY } from '#/features/application-detail/graphql/applicationDetailQueries';
+import { GENERATE_COMPANY_BRIEFING } from '#/features/application-detail/graphql/applicationDetailQueries';
 
 const credits = vi.hoisted(() => ({ onTrakwynAi: false }));
 
@@ -44,12 +48,14 @@ const stored = {
   generatedAt: '2026-08-01T09:00:00.000Z',
 };
 
-const respondWith = (briefing: unknown, generated?: unknown) =>
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('GenerateCompanyBriefing'))
-      return Promise.resolve({ generateCompanyBriefing: generated ?? stored });
-    return Promise.resolve({ companyBriefing: briefing });
-  });
+type Briefing = ResultOf<typeof COMPANY_BRIEFING_QUERY>['companyBriefing'];
+type Generated = ResultOf<typeof GENERATE_COMPANY_BRIEFING>['generateCompanyBriefing'];
+
+const respondWith = (briefing: Briefing, generated?: Generated) =>
+  mockGql(mockGqlRequest, [
+    respond(GENERATE_COMPANY_BRIEFING, { generateCompanyBriefing: generated ?? stored }),
+    respond(COMPANY_BRIEFING_QUERY, { companyBriefing: briefing }),
+  ]);
 
 describe('CompanyBriefingTab', () => {
   beforeEach(() => {
@@ -285,13 +291,12 @@ describe('CompanyBriefingTab', () => {
   });
 
   it('shows a link to Account settings when the AI key is not configured', async () => {
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('GenerateCompanyBriefing'))
-        return Promise.reject({
-          response: { errors: [{ extensions: { code: 'AI_NOT_CONFIGURED' } }] },
-        });
-      return Promise.resolve({ companyBriefing: null });
-    });
+    mockGql(mockGqlRequest, [
+      respondError(GENERATE_COMPANY_BRIEFING, {
+        response: { errors: [{ extensions: { code: 'AI_NOT_CONFIGURED' } }] },
+      }),
+      respond(COMPANY_BRIEFING_QUERY, { companyBriefing: null }),
+    ]);
     render(<CompanyBriefingTab applicationId="app-1" />, { wrapper: Wrapper });
 
     // Enabled, not merely present: the button stays disabled until the stored

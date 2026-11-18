@@ -6,7 +6,7 @@ import type { Resolved } from '#/graphql/resolved';
 
 /** Documents and shapes for an application's interview rounds. */
 
-const INTERVIEW_ROUNDS_QUERY = graphql(`
+export const INTERVIEW_ROUNDS_QUERY = graphql(`
   query InterviewRounds($applicationId: ID!) {
     interviewRounds(applicationId: $applicationId) {
       id

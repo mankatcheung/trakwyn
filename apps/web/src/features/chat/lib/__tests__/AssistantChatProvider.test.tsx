@@ -52,6 +52,11 @@ vi.mock('#/features/ai/components/AiCreditsMeter', () => ({ AiCreditsMeter: () =
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { CHAT_HISTORY_QUERY } from '#/features/chat/graphql/chatQueries';
+import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
+import { CREATE_CONVERSATION } from '#/features/chat/graphql/chatQueries';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
 
 function documentOf(arg: unknown): string {
   // A request object carries `document`; a string or a typed document is the document itself.
@@ -79,18 +84,14 @@ function setup({
   keys = [{ provider: 'openai' }],
   conversations = [],
 }: Setup = {}) {
-  mockGqlRequest.mockImplementation((arg: unknown) => {
-    const query = documentOf(arg);
-    if (gqlText(query).includes('LlmApiKeys'))
-      return Promise.resolve({ llmApiKeys: keys, me: { aiProviderOrder: order } });
-    if (gqlText(query).includes('CreateConversation'))
-      return Promise.resolve({
-        createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
-      });
-    if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-    if (gqlText(query).includes('Conversations')) return Promise.resolve({ conversations });
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    respond(LLM_API_KEYS_QUERY, { llmApiKeys: keys, me: { aiProviderOrder: order } }),
+    respond(CREATE_CONVERSATION, {
+      createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
+    }),
+    respond(CHAT_HISTORY_QUERY, { chatHistory: [] }),
+    respond(CONVERSATIONS_QUERY, { conversations }),
+  ]);
 }
 
 /** Resolves once the AI settings request has been answered and React has rendered the result. */

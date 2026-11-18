@@ -14,7 +14,7 @@ export type Education = {
   updatedAt: string;
 };
 
-const EDUCATIONS_QUERY = graphql(`
+export const EDUCATIONS_QUERY = graphql(`
   query Educations {
     educations {
       id

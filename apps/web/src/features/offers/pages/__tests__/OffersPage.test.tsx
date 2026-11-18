@@ -16,6 +16,8 @@ vi.mock('#/graphql/client', () => ({
 
 import { OffersPage } from '#/features/offers/pages/OffersPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { COMPARE_OFFERS_MUTATION, MY_OFFERS_QUERY } from '#/features/offers/graphql/offersQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -96,31 +98,27 @@ describe('OffersPage', () => {
   });
 
   it('renders a comparison table with the best offer highlighted first', async () => {
-    mockGqlRequest.mockImplementation((document: unknown) => {
-      const query = gqlText(document);
-      if (query.includes('MyOffers')) return Promise.resolve({ myOffers: [offerA, offerB] });
-      if (query.includes('CompareOffers')) {
-        return Promise.resolve({
-          compareOffers: [
-            {
-              offer: offerA.offer,
-              company: 'Acme',
-              role: 'Engineer',
-              normalizedYearlySalary: 150000,
-              totalCompensation: 160000,
-            },
-            {
-              offer: offerB.offer,
-              company: 'Globex',
-              role: 'Staff Engineer',
-              normalizedYearlySalary: 140000,
-              totalCompensation: 140000,
-            },
-          ],
-        });
-      }
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(MY_OFFERS_QUERY, { myOffers: [offerA, offerB] }),
+      respond(COMPARE_OFFERS_MUTATION, {
+        compareOffers: [
+          {
+            offer: offerA.offer,
+            company: 'Acme',
+            role: 'Engineer',
+            normalizedYearlySalary: 150000,
+            totalCompensation: 160000,
+          },
+          {
+            offer: offerB.offer,
+            company: 'Globex',
+            role: 'Staff Engineer',
+            normalizedYearlySalary: 140000,
+            totalCompensation: 140000,
+          },
+        ],
+      }),
+    ]);
     render(<OffersPage />, { wrapper: Wrapper });
 
     await waitFor(() => {

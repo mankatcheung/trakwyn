@@ -63,6 +63,11 @@ vi.mock('#/lib/undoToast', () => ({
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
 import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, overrideGql } from '#/__tests__/helpers/gqlMock';
+import { CHAT_HISTORY_QUERY } from '#/features/chat/graphql/chatQueries';
+import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
+import { CREATE_CONVERSATION } from '#/features/chat/graphql/chatQueries';
+import { DELETE_CONVERSATION } from '#/features/chat/graphql/chatQueries';
 
 /**
  * `gqlClient.request` is called positionally (query, variables) for most
@@ -103,14 +108,11 @@ describe('AssistantPage (chat)', () => {
   });
 
   it('does not render an embedded conversation list — recent chats live in the app sidebar', () => {
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations'))
-        return Promise.resolve({
-          conversations: [{ id: 'conv-1', title: 'Which applications have I applied to?' }],
-        });
-      return Promise.resolve({ chatHistory: [] });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(CONVERSATIONS_QUERY, {
+        conversations: [{ id: 'conv-1', title: 'Which applications have I applied to?' }],
+      }),
+    ]);
     render(<AssistantPage />, { wrapper: Wrapper });
 
     // JEF-229: conversation switching moved to subitems under Assistant in
@@ -136,12 +138,7 @@ describe('AssistantPage (chat)', () => {
 
   it('only shows the delete-conversation button when a conversation is active', async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations')) return noConversations();
-      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [respond(CHAT_HISTORY_QUERY, { chatHistory: [] })]);
     render(<AssistantPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByLabelText('Delete conversation')).toBeInTheDocument());
@@ -149,15 +146,12 @@ describe('AssistantPage (chat)', () => {
 
   it("names the active conversation in the header, so it's clear which one is open", async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations'))
-        return Promise.resolve({
-          conversations: [{ id: 'conv-1', title: 'Interview prep for Stripe' }],
-        });
-      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CONVERSATIONS_QUERY, {
+        conversations: [{ id: 'conv-1', title: 'Interview prep for Stripe' }],
+      }),
+      respond(CHAT_HISTORY_QUERY, { chatHistory: [] }),
+    ]);
     render(<AssistantPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText('Interview prep for Stripe')).toBeInTheDocument());
@@ -165,13 +159,10 @@ describe('AssistantPage (chat)', () => {
 
   it('falls back to the new-conversation label in the header for an untitled conversation', async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations'))
-        return Promise.resolve({ conversations: [{ id: 'conv-1', title: null }] });
-      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CONVERSATIONS_QUERY, { conversations: [{ id: 'conv-1', title: null }] }),
+      respond(CHAT_HISTORY_QUERY, { chatHistory: [] }),
+    ]);
     render(<AssistantPage />, { wrapper: Wrapper });
 
     // The title is derived server-side from the first message, so a
@@ -195,28 +186,24 @@ describe('AssistantPage (chat)', () => {
 
   it('renders the active conversation’s history from the loader-populated query', async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations')) return noConversations();
-      if (gqlText(query).includes('ChatHistory'))
-        return Promise.resolve({
-          chatHistory: [
-            {
-              id: 'm1',
-              role: 'user',
-              content: 'earlier question',
-              createdAt: '2024-01-01T00:00:00.000Z',
-            },
-            {
-              id: 'm2',
-              role: 'assistant',
-              content: 'earlier answer',
-              createdAt: '2024-01-01T00:00:01.000Z',
-            },
-          ],
-        });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CHAT_HISTORY_QUERY, {
+        chatHistory: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'earlier question',
+            createdAt: '2024-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'm2',
+            role: 'assistant',
+            content: 'earlier answer',
+            createdAt: '2024-01-01T00:00:01.000Z',
+          },
+        ],
+      }),
+    ]);
 
     render(<AssistantPage />, { wrapper: Wrapper });
 
@@ -290,16 +277,12 @@ describe('AssistantPage (chat)', () => {
   });
 
   it('creates a conversation implicitly when sending with no active conversation', async () => {
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations')) return noConversations();
-      if (gqlText(query).includes('CreateConversation'))
-        return Promise.resolve({
-          createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
-        });
-      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(CREATE_CONVERSATION, {
+        createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
+      }),
+      respond(CHAT_HISTORY_QUERY, { chatHistory: [] }),
+    ]);
     mockStreamChatMessage.mockResolvedValue(undefined);
 
     render(<AssistantPage />, { wrapper: Wrapper });
@@ -321,14 +304,10 @@ describe('AssistantPage (chat)', () => {
 
   it('deletes the active conversation and navigates back to a blank chat', async () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
-    mockGqlRequest.mockImplementation((arg: unknown) => {
-      const query = documentOf(arg);
-      if (gqlText(query).includes('Conversations'))
-        return Promise.resolve({ conversations: [{ id: 'conv-1', title: 'Old chat' }] });
-      if (gqlText(query).includes('DeleteConversation'))
-        return Promise.resolve({ deleteConversation: true });
-      return Promise.resolve({ chatHistory: [] });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(CONVERSATIONS_QUERY, { conversations: [{ id: 'conv-1', title: 'Old chat' }] }),
+      respond(DELETE_CONVERSATION, { deleteConversation: true }),
+    ]);
 
     render(<AssistantPage />, { wrapper: Wrapper });
     await waitFor(() => expect(screen.getByLabelText('Delete conversation')).toBeInTheDocument());

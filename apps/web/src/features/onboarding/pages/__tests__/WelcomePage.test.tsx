@@ -17,8 +17,15 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { WelcomePage } from '#/features/onboarding/pages/WelcomePage';
-import { ONBOARDING_STATE_KEY } from '#/features/onboarding/graphql/onboardingQueries';
+import {
+  COMPLETE_ONBOARDING,
+  ONBOARDING_STATE_KEY,
+} from '#/features/onboarding/graphql/onboardingQueries';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
+import { SKILLS_QUERY } from '#/features/profile/graphql/skillQueries';
+import { WORK_EXPERIENCES_QUERY } from '#/features/profile/graphql/workExperienceQueries';
 
 let client: QueryClient;
 
@@ -36,15 +43,13 @@ function renderPage() {
 let llmApiKeys: { provider: string }[] = [];
 
 function mockApi() {
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('completeOnboarding'))
-      return Promise.resolve({ completeOnboarding: true });
-    if (gqlText(query).includes('LlmApiKeys'))
-      return Promise.resolve({ llmApiKeys, me: { defaultLlmProvider: null } });
-    if (gqlText(query).includes('WorkExperiences')) return Promise.resolve({ workExperiences: [] });
-    if (gqlText(query).includes('Skills')) return Promise.resolve({ skills: [] });
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    respond(COMPLETE_ONBOARDING, { completeOnboarding: true }),
+    // Read at request time: a test sets `llmApiKeys` after `mockApi()` has run.
+    respond(LLM_API_KEYS_QUERY, () => ({ llmApiKeys, me: { aiProviderOrder: [] } })),
+    respond(WORK_EXPERIENCES_QUERY, { workExperiences: [] }),
+    respond(SKILLS_QUERY, { skills: [] }),
+  ]);
 }
 
 const click = (name: RegExp) => fireEvent.click(screen.getByRole('button', { name }));
@@ -185,11 +190,12 @@ describe('WelcomePage (JEF-460)', () => {
   });
 
   it('stays put and says so when saving fails', async () => {
-    mockGqlRequest.mockImplementation((query: string) =>
-      gqlText(query).includes('completeOnboarding')
-        ? Promise.reject(new Error('boom'))
-        : Promise.resolve({}),
-    );
+    mockGql(mockGqlRequest, [
+      respondError(COMPLETE_ONBOARDING, new Error('boom')),
+      respond(LLM_API_KEYS_QUERY, { llmApiKeys: [], me: { aiProviderOrder: [] } }),
+      respond(WORK_EXPERIENCES_QUERY, { workExperiences: [] }),
+      respond(SKILLS_QUERY, { skills: [] }),
+    ]);
     renderPage();
 
     click(/skip setup/i);

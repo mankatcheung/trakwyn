@@ -33,7 +33,9 @@ vi.mock('#/features/chat/lib/chatDock', () => ({
 }));
 
 import { ChatDockFloatingWindow } from '#/features/chat/components/dock/ChatDockFloatingWindow';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { respond, overrideGql } from '#/__tests__/helpers/gqlMock';
+import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -46,20 +48,17 @@ describe('ChatDockFloatingWindow', () => {
     vi.clearAllMocks();
     mockDock.sections = [];
     mockDock.expanded = null;
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('LlmApiKeys'))
-        return Promise.resolve({
-          llmApiKeys: [{ provider: 'anthropic' }],
-          me: { defaultLlmProvider: 'anthropic' },
-        });
-      if (gqlText(query).includes('Conversations'))
-        return Promise.resolve({
-          conversations: [
-            { id: 'conv-1', title: 'Ghosted applications', updatedAt: '2024-01-01T00:00:00.000Z' },
-          ],
-        });
-      return Promise.resolve({ chatHistory: [] });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(LLM_API_KEYS_QUERY, {
+        llmApiKeys: [{ provider: 'anthropic' }],
+        me: { aiProviderOrder: ['anthropic'] },
+      }),
+      respond(CONVERSATIONS_QUERY, {
+        conversations: [
+          { id: 'conv-1', title: 'Ghosted applications', updatedAt: '2024-01-01T00:00:00.000Z' },
+        ],
+      }),
+    ]);
   });
 
   it('renders nothing when nothing is expanded', () => {
@@ -126,11 +125,9 @@ describe('ChatDockFloatingWindow', () => {
 
   it('shows the chat view without a key, since Trakwyn AI answers (JEF-451)', async () => {
     mockDock.expanded = 'new';
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('LlmApiKeys'))
-        return Promise.resolve({ llmApiKeys: [], me: { defaultLlmProvider: null } });
-      return Promise.resolve({ conversations: [] });
-    });
+    overrideGql(mockGqlRequest, [
+      respond(LLM_API_KEYS_QUERY, { llmApiKeys: [], me: { aiProviderOrder: [] } }),
+    ]);
     render(<ChatDockFloatingWindow />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByPlaceholderText('Ask a question…')).toBeInTheDocument());

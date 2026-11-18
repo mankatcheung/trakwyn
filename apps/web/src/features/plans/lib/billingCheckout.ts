@@ -2,7 +2,7 @@ import { graphql } from '#/graphql/generated';
 import { useMutation } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const CREATE_CHECKOUT_SESSION = graphql(`
+export const CREATE_CHECKOUT_SESSION = graphql(`
   mutation CreateCheckoutSession($plan: CheckoutPlan!) {
     createCheckoutSession(plan: $plan) {
       url
@@ -10,7 +10,7 @@ const CREATE_CHECKOUT_SESSION = graphql(`
   }
 `);
 
-const CREATE_BILLING_PORTAL_SESSION = graphql(`
+export const CREATE_BILLING_PORTAL_SESSION = graphql(`
   mutation CreateBillingPortalSession {
     createBillingPortalSession {
       url

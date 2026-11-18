@@ -21,8 +21,13 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
 }));
 
 import { SettingsPlanPage } from '#/features/settings/pages/SettingsPlanPage';
-import type { BillingStatus } from '#/features/plans/lib/billingStatus';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { CREATE_CHECKOUT_SESSION } from '#/features/plans/lib/billingCheckout';
+import { BILLING_STATUS_QUERY } from '#/features/plans/lib/billingStatus';
+
+type BillingStatus = NonNullable<ResultOf<typeof BILLING_STATUS_QUERY>['billingStatus']>;
 
 const MB = 1024 * 1024;
 const NO_FEATURES = {
@@ -195,11 +200,12 @@ describe('SettingsPlanPage', () => {
 
     it('offers the three purchases to a Free user and sends them to checkout', async () => {
       serve(freeStatus());
-      mockGqlRequest.mockImplementation(async (query: string) =>
-        gqlText(query).includes('CreateCheckoutSession')
-          ? { createCheckoutSession: { url: 'https://pay.example/c' } }
-          : { billingStatus: freeStatus() },
-      );
+      mockGql(mockGqlRequest, [
+        respond(CREATE_CHECKOUT_SESSION, {
+          createCheckoutSession: { url: 'https://pay.example/c' },
+        }),
+        respond(BILLING_STATUS_QUERY, { billingStatus: freeStatus() }),
+      ]);
       render(<SettingsPlanPage />, { wrapper: Wrapper });
 
       expect(await screen.findByRole('button', { name: '3-month pass, $29' })).toBeInTheDocument();
@@ -277,10 +283,10 @@ describe('SettingsPlanPage', () => {
     });
 
     it('says so when checkout cannot start', async () => {
-      mockGqlRequest.mockImplementation(async (query: string) => {
-        if (gqlText(query).includes('CreateCheckoutSession')) throw new Error('boom');
-        return { billingStatus: freeStatus() };
-      });
+      mockGql(mockGqlRequest, [
+        respondError(CREATE_CHECKOUT_SESSION, new Error('boom')),
+        respond(BILLING_STATUS_QUERY, { billingStatus: freeStatus() }),
+      ]);
       render(<SettingsPlanPage />, { wrapper: Wrapper });
 
       await userEvent.click(await screen.findByRole('button', { name: 'Subscribe, $12 a month' }));

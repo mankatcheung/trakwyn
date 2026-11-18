@@ -18,7 +18,11 @@ import {
   CvProfileSummaryCard,
   latestRole,
 } from '#/features/dashboard/components/CvProfileSummaryCard';
-import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { EDUCATIONS_QUERY } from '#/features/profile/graphql/educationQueries';
+import { SKILLS_QUERY } from '#/features/profile/graphql/skillQueries';
+import { WORK_EXPERIENCES_QUERY } from '#/features/profile/graphql/workExperienceQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -40,16 +44,15 @@ const role = (overrides: Record<string, unknown> = {}) => ({
 });
 
 function mockProfile({
-  workExperiences = [] as unknown[],
-  educations = [] as unknown[],
-  skills = [] as unknown[],
+  workExperiences = [] as ResultOf<typeof WORK_EXPERIENCES_QUERY>['workExperiences'],
+  educations = [] as ResultOf<typeof EDUCATIONS_QUERY>['educations'],
+  skills = [] as ResultOf<typeof SKILLS_QUERY>['skills'],
 } = {}) {
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('WorkExperiences')) return Promise.resolve({ workExperiences });
-    if (gqlText(query).includes('Educations')) return Promise.resolve({ educations });
-    if (gqlText(query).includes('Skills')) return Promise.resolve({ skills });
-    return Promise.resolve({});
-  });
+  mockGql(mockGqlRequest, [
+    respond(WORK_EXPERIENCES_QUERY, { workExperiences }),
+    respond(EDUCATIONS_QUERY, { educations }),
+    respond(SKILLS_QUERY, { skills }),
+  ]);
 }
 
 describe('CvProfileSummaryCard', () => {

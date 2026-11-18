@@ -11,6 +11,9 @@ vi.mock('#/graphql/client', () => ({
 
 import { NotesTab } from '#/features/notes/components/NotesTab';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import { NOTES_QUERY, UPDATE_NOTE } from '#/features/notes/graphql/noteQueries';
 
 const NOTE = {
   id: 'note-1',
@@ -44,15 +47,17 @@ describe('NotesTab edit mode', () => {
   });
 
   it('disables Save and Cancel and shows the saving label while the update is in flight', async () => {
-    let resolveUpdate: (v: unknown) => void = () => {};
-    mockGqlRequest.mockImplementation((doc: string) => {
-      if (gqlText(doc).includes('mutation UpdateNote')) {
-        return new Promise((resolve) => {
-          resolveUpdate = resolve;
-        });
-      }
-      return Promise.resolve({ notes: [NOTE] });
-    });
+    let resolveUpdate: (v: ResultOf<typeof UPDATE_NOTE>) => void = () => {};
+    mockGql(mockGqlRequest, [
+      respond(NOTES_QUERY, { notes: [NOTE] }),
+      respondWith(
+        UPDATE_NOTE,
+        () =>
+          new Promise((resolve) => {
+            resolveUpdate = resolve;
+          }),
+      ),
+    ]);
     const user = await startEditing();
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -85,11 +90,10 @@ describe('NotesTab edit mode', () => {
   });
 
   it('keeps the editor open with the typed content when the update fails', async () => {
-    mockGqlRequest.mockImplementation((doc: string) =>
-      gqlText(doc).includes('mutation UpdateNote')
-        ? Promise.reject(new Error('boom'))
-        : Promise.resolve({ notes: [NOTE] }),
-    );
+    mockGql(mockGqlRequest, [
+      respond(NOTES_QUERY, { notes: [NOTE] }),
+      respondError(UPDATE_NOTE, new Error('boom')),
+    ]);
     const user = await startEditing();
 
     const textarea = screen.getByDisplayValue('Original note');

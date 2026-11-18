@@ -54,6 +54,20 @@ export function respond<R, V>(
   };
 }
 
+/**
+ * Answers `document` with the promise `handler` returns, for a test that settles the
+ * request itself (a response held open, then released) and still wants it typed.
+ */
+export function respondWith<R, V>(
+  document: TypedDocumentNode<R, V>,
+  handler: (variables: V) => Promise<R>,
+): GqlResponse {
+  return {
+    operation: operationName(document),
+    settle: (variables) => handler(variables as V),
+  };
+}
+
 /** Rejects `document` with `error`, for the failure path. */
 export function respondError<R, V>(document: TypedDocumentNode<R, V>, error: unknown): GqlResponse {
   return { operation: operationName(document), settle: () => Promise.reject(error) };
@@ -79,4 +93,23 @@ export function mockGql(request: AnyRequest, responses: readonly GqlResponse[]):
       return response.settle(variables);
     },
   );
+}
+
+/**
+ * Answers `responses` and leaves every other operation to the implementation the mock
+ * had before (a `mockResolvedValue(defaultResponse)` set in `beforeEach`). For a test
+ * that changes one operation of a page that fires many, without retyping the rest.
+ */
+export function overrideGql(request: AnyRequest, responses: readonly GqlResponse[]): void {
+  const typed = request as Mock<(document: unknown, variables?: unknown) => unknown>;
+  const previous = typed.getMockImplementation();
+  const byOperation = new Map(responses.map((r) => [r.operation, r]));
+  typed.mockImplementation((document, variables) => {
+    const response = byOperation.get(operationName(document));
+    if (response) return response.settle(variables);
+    if (previous) return previous(document, variables);
+    return Promise.reject(
+      new Error(`overrideGql: no response for operation "${operationName(document)}"`),
+    );
+  });
 }

@@ -25,7 +25,10 @@ import {
   storageLevel,
   storagePercent,
 } from '#/features/settings/lib/storageUsage';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { STORAGE_USAGE_QUERY } from '#/features/settings/graphql/accountQueries';
+import { REQUEST_UPLOAD_URL } from '#/features/documents/graphql/documentQueries';
 
 const MB = 1024 * 1024;
 
@@ -35,14 +38,11 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 const withUsage = (usedMb: number, limitMb = 100) =>
-  mockGqlRequest.mockImplementation((queryDoc: unknown) => {
-    const query = gqlText(queryDoc);
-    if (query.includes('StorageUsage')) {
-      return Promise.resolve({
-        me: { storageUsedBytes: usedMb * MB, storageLimitBytes: limitMb * MB },
-      });
-    }
-    return Promise.reject({
+  mockGql(mockGqlRequest, [
+    respond(STORAGE_USAGE_QUERY, {
+      me: { storageUsedBytes: usedMb * MB, storageLimitBytes: limitMb * MB },
+    }),
+    respondError(REQUEST_UPLOAD_URL, {
       response: {
         errors: [
           {
@@ -51,8 +51,8 @@ const withUsage = (usedMb: number, limitMb = 100) =>
           },
         ],
       },
-    });
-  });
+    }),
+  ]);
 
 describe('storageLevel', () => {
   it('is ok below 80%, warning from 80%, full at the limit', () => {

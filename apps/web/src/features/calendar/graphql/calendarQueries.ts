@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { graphql } from '#/graphql/generated';
 
-const CALENDAR_EVENTS_QUERY = graphql(`
+export const CALENDAR_EVENTS_QUERY = graphql(`
   query CalendarEvents {
     calendarEvents {
       id
