@@ -45,7 +45,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
  * folder (JEF-652). The list can only shrink: a file that no longer matches must come off.
  */
 const HAND_ROLLED_GQL_MOCKS = new Set<string>([
-  'features/application-detail/components/tabs/__tests__/ContactsTab.test.tsx',
   'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
   'features/applications/pages/__tests__/TrashPage.test.tsx',
   'features/chat/components/__tests__/ChatConversationView.test.tsx',
@@ -59,7 +58,6 @@ const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/offers/pages/__tests__/ApplicationOffersPage.test.tsx',
   'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
   'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
-  'features/settings/pages/__tests__/SettingsDangerZonePage.test.tsx',
 ]);
 
 /** Lines above which a source file must justify itself below. */

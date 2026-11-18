@@ -10,7 +10,14 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { SettingsDangerZonePage } from '#/features/settings/pages/SettingsDangerZonePage';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondWith } from '#/__tests__/helpers/gqlMock';
+import type { ResultOf } from '@graphql-typed-document-node/core';
+import type { PlanSource, StepUpMethod } from '#/graphql/generated/graphql';
+import { BILLING_STATUS_QUERY } from '#/features/plans/lib/billingStatus';
+import { EMAIL_VERIFICATION_QUERY } from '#/features/verification/graphql/verificationQueries';
+import { REQUEST_ACCOUNT_DELETION } from '#/features/account-deletion/graphql/accountDeletionQueries';
+import { REAUTHENTICATE, STEP_UP_METHODS_QUERY } from '#/features/settings/graphql/securityQueries';
 
 const EMAIL = 'jeff@example.com';
 
@@ -19,40 +26,30 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-type Handler = () => Promise<unknown>;
-
 /** Answers each operation by name; anything not named fails the test loudly. */
 function serve(handlers: {
-  plan?: { plan: 'free' | 'pro'; planSource: string | null };
-  request?: Handler;
-  methods?: string[];
-  reauthenticate?: Handler;
+  plan?: { plan: 'free' | 'pro'; planSource: PlanSource | null };
+  request?: () => Promise<ResultOf<typeof REQUEST_ACCOUNT_DELETION>>;
+  methods?: StepUpMethod[];
+  reauthenticate?: () => Promise<ResultOf<typeof REAUTHENTICATE>>;
 }) {
-  mockGqlRequest.mockImplementation((query: string) => {
-    if (gqlText(query).includes('BillingStatus')) {
-      return Promise.resolve({
-        billingStatus: {
-          enforced: false,
-          ...(handlers.plan ?? { plan: 'free', planSource: null }),
-        },
-      });
-    }
-    if (gqlText(query).includes('EmailVerification')) {
-      return Promise.resolve({
-        me: { email: EMAIL, emailVerified: true, deletionScheduledAt: null },
-      });
-    }
-    if (gqlText(query).includes('RequestAccountDeletion')) {
-      return (handlers.request ?? (() => Promise.resolve({ requestAccountDeletion: true })))();
-    }
-    if (gqlText(query).includes('StepUpMethods')) {
-      return Promise.resolve({ me: { stepUpMethods: handlers.methods ?? ['password'] } });
-    }
-    if (gqlText(query).includes('Reauthenticate') && handlers.reauthenticate) {
-      return handlers.reauthenticate();
-    }
-    return Promise.reject(new Error(`unexpected operation: ${query}`));
-  });
+  mockGql(mockGqlRequest, [
+    respond(BILLING_STATUS_QUERY, {
+      billingStatus: {
+        enforced: false,
+        ...(handlers.plan ?? { plan: 'free', planSource: null }),
+      },
+    }),
+    respond(EMAIL_VERIFICATION_QUERY, {
+      me: { email: EMAIL, emailVerified: true, deletionScheduledAt: null },
+    }),
+    respondWith(
+      REQUEST_ACCOUNT_DELETION,
+      handlers.request ?? (() => Promise.resolve({ requestAccountDeletion: true })),
+    ),
+    respond(STEP_UP_METHODS_QUERY, { me: { stepUpMethods: handlers.methods ?? ['password'] } }),
+    ...(handlers.reauthenticate ? [respondWith(REAUTHENTICATE, handlers.reauthenticate)] : []),
+  ]);
 }
 
 const refusal = (message: string, code: string) =>
@@ -69,7 +66,7 @@ describe('SettingsDangerZonePage (JEF-463)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('tells a subscriber that the subscription stops renewing', async () => {
-    serve({ plan: { plan: 'pro', planSource: 'subscription' } });
+    serve({ plan: { plan: 'pro', planSource: 'subscription' as const } });
     render(<SettingsDangerZonePage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(NOTE)).toBeInTheDocument();
@@ -77,7 +74,7 @@ describe('SettingsDangerZonePage (JEF-463)', () => {
 
   it.each([
     ['a free user', { plan: 'free' as const, planSource: null }],
-    ['a pass holder', { plan: 'pro' as const, planSource: 'pass' }],
+    ['a pass holder', { plan: 'pro' as const, planSource: 'pass' as const }],
   ])('says nothing about a subscription to %s', async (_label, plan) => {
     serve({ plan });
     render(<SettingsDangerZonePage />, { wrapper: Wrapper });
