@@ -79,13 +79,8 @@ const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/profile/components/sections/__tests__/ProjectsAwardsSections.test.tsx',
   'features/profile/pages/__tests__/ProfilePage.test.tsx',
   'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
-  'features/settings/components/integrations/__tests__/McpClientsCard.test.tsx',
-  'features/settings/components/integrations/__tests__/ShareLinksCard.test.tsx',
-  'features/settings/lib/__tests__/StorageUsage.test.tsx',
   'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
   'features/settings/pages/__tests__/SettingsDangerZonePage.test.tsx',
-  'features/settings/pages/__tests__/SettingsDataPage.test.tsx',
-  'features/settings/pages/__tests__/SettingsPlanPage.test.tsx',
   'features/settings/pages/__tests__/SettingsProfilePage.test.tsx',
   'features/settings/pages/__tests__/SettingsSecurityPage.test.tsx',
 ]);
