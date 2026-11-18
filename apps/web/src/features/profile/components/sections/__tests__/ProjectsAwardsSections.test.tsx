@@ -8,7 +8,10 @@ vi.mock('#/graphql/client', () => ({ gqlClient: { request: mockGqlRequest } }));
 
 import { ProjectsSection } from '#/features/profile/components/sections/ProjectsSection';
 import { AwardsSection } from '#/features/profile/components/sections/AwardsSection';
-import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { AWARDS_QUERY } from '#/features/profile/graphql/awardQueries';
+import { PROJECTS_QUERY } from '#/features/profile/graphql/projectQueries';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -38,11 +41,7 @@ const award = {
 describe('ProjectsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Projects'))
-        return Promise.resolve({ projects: [project] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [respond(PROJECTS_QUERY, { projects: [project] })]);
   });
 
   it('lists projects with role, start month and description', async () => {
@@ -101,10 +100,7 @@ describe('ProjectsSection (JEF-592)', () => {
 describe('AwardsSection (JEF-592)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('query Awards')) return Promise.resolve({ awards: [award] });
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [respond(AWARDS_QUERY, { awards: [award] })]);
   });
 
   it('lists awards with issuer and month', async () => {
