@@ -50,7 +50,6 @@ const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/chat/pages/__tests__/AssistantChatPage.test.tsx',
   'features/documents/components/__tests__/DocumentList.test.tsx',
   'features/documents/pages/__tests__/DocumentDraftEditPage.test.tsx',
-  'features/settings/components/integrations/__tests__/ApiTokensCard.test.tsx',
   'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
 ]);
 
