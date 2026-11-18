@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "codegen": "graphql-codegen --config codegen.ts",
+    "codegen:check": "bash scripts/checkGeneratedGraphql.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
