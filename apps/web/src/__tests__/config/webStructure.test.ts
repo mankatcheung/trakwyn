@@ -74,8 +74,6 @@ const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/interviews/components/__tests__/InterviewsTab.test.tsx',
   'features/interviews/components/mock/__tests__/MockQuestionsPanel.test.tsx',
   'features/offers/pages/__tests__/ApplicationOffersPage.test.tsx',
-  'features/offers/pages/__tests__/OffersPage.test.tsx',
-  'features/plans/components/__tests__/LockedFeaturePreview.test.tsx',
   'features/profile/components/sections/__tests__/ProfileSections.test.tsx',
   'features/profile/components/sections/__tests__/ProfileSectionsDeleteUndo.test.tsx',
   'features/profile/components/sections/__tests__/ProjectsAwardsSections.test.tsx',

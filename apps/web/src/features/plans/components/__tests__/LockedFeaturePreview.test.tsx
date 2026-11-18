@@ -29,6 +29,11 @@ import { LockedFeaturePreview } from '#/features/plans/components/LockedFeatureP
 import { AnalyticsPage } from '#/features/analytics/pages/AnalyticsPage';
 import { OffersPage } from '#/features/offers/pages/OffersPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond, respondError } from '#/__tests__/helpers/gqlMock';
+import { BILLING_STATUS_QUERY } from '#/features/plans/lib/billingStatus';
+import { OFFER_ANALYTICS_QUERY } from '#/features/analytics/graphql/offerAnalyticsQueries';
+import { MY_OFFERS_QUERY } from '#/features/offers/graphql/offersQueries';
+import { ANALYTICS_QUERY } from '#/features/analytics/graphql/analyticsQueries';
 
 function Wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -46,28 +51,21 @@ const features = (locked: boolean) => ({
 
 /** Answers each query by name; `locked` is what the API says about the plan's features. */
 function serve(locked: boolean) {
-  mockGqlRequest.mockImplementation((document: unknown) => {
-    const query = gqlText(document);
-    if (query.includes('BillingStatus')) {
-      return Promise.resolve({ billingStatus: { enforced: true, features: features(locked) } });
-    }
-    if (query.includes('offerAnalytics')) {
-      return locked
-        ? Promise.reject({
-            response: { errors: [{ message: 'x', extensions: { code: 'PLAN_REQUIRED' } }] },
-          })
-        : Promise.resolve({ offerAnalytics: { byCurrency: [], trend: [] } });
-    }
-    if (query.includes('myOffers')) {
-      return locked
-        ? Promise.reject({
-            response: { errors: [{ message: 'x', extensions: { code: 'PLAN_REQUIRED' } }] },
-          })
-        : Promise.resolve({ myOffers: [] });
-    }
-    if (query.includes('applications')) return Promise.resolve({ applications: [] });
-    return Promise.resolve({});
-  });
+  const planRequired = {
+    response: { errors: [{ message: 'x', extensions: { code: 'PLAN_REQUIRED' } }] },
+  };
+  mockGql(mockGqlRequest, [
+    respond(BILLING_STATUS_QUERY, {
+      billingStatus: { enforced: true, features: features(locked) },
+    }),
+    locked
+      ? respondError(OFFER_ANALYTICS_QUERY, planRequired)
+      : respond(OFFER_ANALYTICS_QUERY, { offerAnalytics: { byCurrency: [], trend: [] } }),
+    locked
+      ? respondError(MY_OFFERS_QUERY, planRequired)
+      : respond(MY_OFFERS_QUERY, { myOffers: [] }),
+    respond(ANALYTICS_QUERY, { applications: [] }),
+  ]);
 }
 
 describe('LockedFeaturePreview', () => {
@@ -160,13 +158,12 @@ describe('OffersPage plan gating', () => {
   });
 
   it('shows no preview where plans are not enforced', async () => {
-    mockGqlRequest.mockImplementation((document: unknown) =>
-      Promise.resolve(
-        gqlText(document).includes('BillingStatus')
-          ? { billingStatus: { enforced: false, features: features(false) } }
-          : { myOffers: [] },
-      ),
-    );
+    mockGql(mockGqlRequest, [
+      respond(BILLING_STATUS_QUERY, {
+        billingStatus: { enforced: false, features: features(false) },
+      }),
+      respond(MY_OFFERS_QUERY, { myOffers: [] }),
+    ]);
     render(<OffersPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/no offers to compare/i)).toBeInTheDocument();
